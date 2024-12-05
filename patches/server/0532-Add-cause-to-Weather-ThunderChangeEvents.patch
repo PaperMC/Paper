@@ -1,0 +1,118 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 2 Dec 2020 18:23:26 -0800
+Subject: [PATCH] Add cause to Weather/ThunderChangeEvents
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 4f2d1a70007cd0a30567886e970bbfda6d750488..4982cdfbceb829e06f26eb927e1176bb4a975336 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -435,8 +435,8 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         this.serverLevelData.setClearWeatherTime(clearDuration);
+         this.serverLevelData.setRainTime(rainDuration);
+         this.serverLevelData.setThunderTime(rainDuration);
+-        this.serverLevelData.setRaining(raining);
+-        this.serverLevelData.setThundering(thundering);
++        this.serverLevelData.setRaining(raining, org.bukkit.event.weather.WeatherChangeEvent.Cause.COMMAND); // Paper - Add cause to Weather/ThunderChangeEvents
++        this.serverLevelData.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.COMMAND); // Paper - Add cause to Weather/ThunderChangeEvents
+     }
+ 
+     @Override
+@@ -852,8 +852,8 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+                 this.serverLevelData.setThunderTime(j);
+                 this.serverLevelData.setRainTime(k);
+                 this.serverLevelData.setClearWeatherTime(i);
+-                this.serverLevelData.setThundering(flag1);
+-                this.serverLevelData.setRaining(flag2);
++                this.serverLevelData.setThundering(flag1, org.bukkit.event.weather.ThunderChangeEvent.Cause.NATURAL); // Paper - Add cause to Weather/ThunderChangeEvents
++                this.serverLevelData.setRaining(flag2, org.bukkit.event.weather.WeatherChangeEvent.Cause.NATURAL); // Paper - Add cause to Weather/ThunderChangeEvents
+             }
+ 
+             this.oThunderLevel = this.thunderLevel;
+@@ -920,14 +920,14 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+     @VisibleForTesting
+     public void resetWeatherCycle() {
+         // CraftBukkit start
+-        this.serverLevelData.setRaining(false);
++        this.serverLevelData.setRaining(false, org.bukkit.event.weather.WeatherChangeEvent.Cause.SLEEP); // Paper - Add cause to Weather/ThunderChangeEvents
+         // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
+         // Not that everyone ever manages to get the whole server to sleep at the same time....
+         if (!this.serverLevelData.isRaining()) {
+             this.serverLevelData.setRainTime(0);
+         }
+         // CraftBukkit end
+-        this.serverLevelData.setThundering(false);
++        this.serverLevelData.setThundering(false, org.bukkit.event.weather.ThunderChangeEvent.Cause.SLEEP); // Paper - Add cause to Weather/ThunderChangeEvents
+         // CraftBukkit start
+         // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
+         // Not that everyone ever manages to get the whole server to sleep at the same time....
+diff --git a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+index 6a3959095e57f76b3a092b32d26ff91cf1c5e068..0fa16ff37f09ecfda104b751e48bf246820afc98 100644
+--- a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
++++ b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+@@ -337,6 +337,11 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+ 
+     @Override
+     public void setThundering(boolean thundering) {
++        // Paper start - Add cause to Weather/ThunderChangeEvents
++        this.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.UNKNOWN);
++    }
++    public void setThundering(boolean thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause cause) {
++        // Paper end - Add cause to Weather/ThunderChangeEvents
+         // CraftBukkit start
+         if (this.thundering == thundering) {
+             return;
+@@ -344,7 +349,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+ 
+         org.bukkit.World world = Bukkit.getWorld(this.getLevelName());
+         if (world != null) {
+-            ThunderChangeEvent thunder = new ThunderChangeEvent(world, thundering);
++            ThunderChangeEvent thunder = new ThunderChangeEvent(world, thundering, cause); // Paper - Add cause to Weather/ThunderChangeEvents
+             Bukkit.getServer().getPluginManager().callEvent(thunder);
+             if (thunder.isCancelled()) {
+                 return;
+@@ -371,6 +376,12 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+ 
+     @Override
+     public void setRaining(boolean raining) {
++        // Paper start - Add cause to Weather/ThunderChangeEvents
++        this.setRaining(raining, org.bukkit.event.weather.WeatherChangeEvent.Cause.UNKNOWN);
++    }
++
++    public void setRaining(boolean raining, org.bukkit.event.weather.WeatherChangeEvent.Cause cause) {
++        // Paper end - Add cause to Weather/ThunderChangeEvents
+         // CraftBukkit start
+         if (this.raining == raining) {
+             return;
+@@ -378,7 +389,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+ 
+         org.bukkit.World world = Bukkit.getWorld(this.getLevelName());
+         if (world != null) {
+-            WeatherChangeEvent weather = new WeatherChangeEvent(world, raining);
++            WeatherChangeEvent weather = new WeatherChangeEvent(world, raining, cause); // Paper - Add cause to Weather/ThunderChangeEvents
+             Bukkit.getServer().getPluginManager().callEvent(weather);
+             if (weather.isCancelled()) {
+                 return;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index f20717ee4505d28fa44f0f9ced5c71ae75c8a6d9..691d65bca79d503a43f696d92a0a32226cddaad5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -1201,7 +1201,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public void setStorm(boolean hasStorm) {
+-        this.world.levelData.setRaining(hasStorm);
++        this.world.serverLevelData.setRaining(hasStorm, org.bukkit.event.weather.WeatherChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
+         this.setWeatherDuration(0); // Reset weather duration (legacy behaviour)
+         this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
+     }
+@@ -1223,7 +1223,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public void setThundering(boolean thundering) {
+-        this.world.serverLevelData.setThundering(thundering);
++        this.world.serverLevelData.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.PLUGIN); // Paper - Add cause to Weather/ThunderChangeEvents
+         this.setThunderDuration(0); // Reset weather duration (legacy behaviour)
+         this.setClearWeatherDuration(0); // Reset clear weather duration (reset "/weather clear" commands)
+     }

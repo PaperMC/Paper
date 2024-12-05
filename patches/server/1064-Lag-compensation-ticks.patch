@@ -1,0 +1,129 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sat, 23 Sep 2023 22:05:35 -0700
+Subject: [PATCH] Lag compensation ticks
+
+Areas affected by lag comepnsation:
+ - Block breaking and destroying
+ - Eating food items
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index fb755174410eac6778f91e9a2e00877505a43889..ae4ebf509837e8d44255781c61d02873f8b74be8 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -332,6 +332,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+     public volatile Thread shutdownThread; // Paper
+     public volatile boolean abnormalExit = false; // Paper
++    public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
+         ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.init(); // Paper - rewrite data converter system
+@@ -1855,6 +1856,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             worldserver.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
+             worldserver.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
+             net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = worldserver.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
++            worldserver.updateLagCompensationTick(); // Paper - lag compensation
+ 
+             gameprofilerfiller.push(() -> {
+                 String s = String.valueOf(worldserver);
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 5295f893dff94ff2bb0c6bb1964f38f98b30b065..b3e709c9ce116bf41cd050674ee1fb31b08e684f 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -583,6 +583,17 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         );
+     }
+     // Paper end - chunk tick iteration
++    // Paper start - lag compensation
++    private long lagCompensationTick = net.minecraft.server.MinecraftServer.SERVER_INIT;
++
++    public long getLagCompensationTick() {
++        return this.lagCompensationTick;
++    }
++
++    public void updateLagCompensationTick() {
++        this.lagCompensationTick = (System.nanoTime() - net.minecraft.server.MinecraftServer.SERVER_INIT) / (java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(50L));
++    }
++    // Paper end - lag compensation
+ 
+     // Add env and gen to constructor, IWorldDataServer -> WorldDataServer
+     public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PrimaryLevelData iworlddataserver, ResourceKey<Level> resourcekey, LevelStem worlddimension, ChunkProgressListener worldloadlistener, boolean flag, long i, List<CustomSpawner> list, boolean flag1, @Nullable RandomSequences randomsequences, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 504c996220b278c194c93e001a3b326d549868ec..a96f859a5d0c6ec692d4627a69f3c9ee49199dbc 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -127,7 +127,7 @@ public class ServerPlayerGameMode {
+     }
+ 
+     public void tick() {
+-        this.gameTicks = MinecraftServer.currentTick; // CraftBukkit;
++        this.gameTicks = (int)this.level.getLagCompensationTick(); // CraftBukkit; // Paper - lag compensation
+         BlockState iblockdata;
+ 
+         if (this.hasDelayedDestroy) {
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index d54f6f1f8ef4df5233478d6341f3181e8c1baace..96b4fbe4a4655777ff10b32e3257e2fac2aba12a 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -4080,6 +4080,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         this.resendPossiblyDesyncedDataValues(java.util.List.of(DATA_LIVING_ENTITY_FLAGS), serverPlayer);
+     }
+     // Paper end - Properly cancel usable items
++    // Paper start - lag compensate eating
++    protected long eatStartTime;
++    protected int totalEatTimeTicks;
++    // Paper end - lag compensate eating
+     private void updatingUsingItem() {
+         if (this.isUsingItem()) {
+             if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
+@@ -4094,7 +4098,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+     protected void updateUsingItem(ItemStack stack) {
+         stack.onUseTick(this.level(), this, this.getUseItemRemainingTicks());
+-        if (--this.useItemRemaining == 0 && !this.level().isClientSide && !stack.useOnRelease()) {
++        // Paper start - lag compensate eating
++        // we add 1 to the expected time to avoid lag compensating when we should not
++        final boolean shouldLagCompensate = this.useItem.has(DataComponents.FOOD) && this.eatStartTime != -1 && (System.nanoTime() - this.eatStartTime) > ((1L + this.totalEatTimeTicks) * 50L * (1000L * 1000L));
++        if ((--this.useItemRemaining == 0 || shouldLagCompensate) && !this.level().isClientSide && !stack.useOnRelease()) {
++            this.useItemRemaining = 0;
++            // Paper end - lag compensate eating
+             this.completeUsingItem();
+         }
+ 
+@@ -4132,7 +4141,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+         if (!itemstack.isEmpty() && !this.isUsingItem() || forceUpdate) { // Paper - Prevent consuming the wrong itemstack
+             this.useItem = itemstack;
+-            this.useItemRemaining = itemstack.getUseDuration(this);
++            // Paper start - lag compensate eating
++            this.useItemRemaining = this.totalEatTimeTicks = itemstack.getUseDuration(this);
++            this.eatStartTime = System.nanoTime();
++            // Paper end - lag compensate eating
+             if (!this.level().isClientSide) {
+                 this.setLivingEntityFlag(1, true);
+                 this.setLivingEntityFlag(2, hand == InteractionHand.OFF_HAND);
+@@ -4157,7 +4169,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 }
+             } else if (!this.isUsingItem() && !this.useItem.isEmpty()) {
+                 this.useItem = ItemStack.EMPTY;
+-                this.useItemRemaining = 0;
++                // Paper start - lag compensate eating
++                this.useItemRemaining = this.totalEatTimeTicks = 0;
++                this.eatStartTime = -1L;
++                // Paper end - lag compensate eating
+             }
+         }
+ 
+@@ -4288,7 +4303,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         }
+ 
+         this.useItem = ItemStack.EMPTY;
+-        this.useItemRemaining = 0;
++        // Paper start - lag compensate eating
++        this.useItemRemaining = this.totalEatTimeTicks = 0;
++        this.eatStartTime = -1L;
++        // Paper end - lag compensate eating
+     }
+ 
+     public boolean isBlocking() {

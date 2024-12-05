@@ -1,0 +1,1402 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Mon, 21 Jun 2021 23:56:07 -0400
+Subject: [PATCH] Missing Entity API
+
+== AT ==
+public net.minecraft.world.entity.animal.Fox isDefending()Z
+public net.minecraft.world.entity.animal.Fox setDefending(Z)V
+public net.minecraft.world.entity.animal.Fox setFaceplanted(Z)V
+public net.minecraft.world.entity.animal.Panda getEatCounter()I
+public net.minecraft.world.entity.animal.Panda setEatCounter(I)V
+public net.minecraft.world.entity.animal.Bee isRolling()Z
+public net.minecraft.world.entity.animal.Bee setRolling(Z)V
+public net.minecraft.world.entity.animal.Bee numCropsGrownSincePollination
+public net.minecraft.world.entity.animal.Bee ticksWithoutNectarSinceExitingHive
+public net.minecraft.world.entity.monster.piglin.Piglin isChargingCrossbow()Z
+public net.minecraft.world.entity.ambient.Bat targetPosition
+public net.minecraft.world.entity.monster.Ravager attackTick
+public net.minecraft.world.entity.monster.Ravager stunnedTick
+public net.minecraft.world.entity.monster.Ravager roarTick
+public net.minecraft.world.entity.vehicle.MinecartTNT explode(D)V
+public net.minecraft.world.entity.vehicle.MinecartTNT fuse
+public net.minecraft.world.entity.monster.Endermite life
+public net.minecraft.world.entity.projectile.AbstractArrow soundEvent
+public net.minecraft.world.entity.monster.Phantom anchorPoint
+public net.minecraft.world.entity.npc.WanderingTrader getWanderTarget()Lnet/minecraft/core/BlockPos;
+public net.minecraft.world.entity.animal.AbstractSchoolingFish leader
+public net.minecraft.world.entity.animal.AbstractSchoolingFish schoolSize
+public net.minecraft.world.entity.animal.Rabbit moreCarrotTicks
+public net.minecraft.world.entity.AreaEffectCloud ownerUUID
+public net.minecraft.world.entity.animal.MushroomCow stewEffects
+public net.minecraft.world.entity.Entity FLAG_INVISIBLE
+public net.minecraft.world.entity.animal.Cat setRelaxStateOne(Z)V
+public net.minecraft.world.entity.animal.Cat isRelaxStateOne()Z
+
+Co-authored-by: Nassim Jahnke <nassim@njahnke.dev>
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
+Co-authored-by: SoSeDiK <mrsosedik@gmail.com>
+Co-authored-by: booky10 <boooky10@gmail.com>
+Co-authored-by: Amin <amin.haddou@frg.wwschool.de>
+Co-authored-by: TrollyLoki <trollyloki@gmail.com>
+Co-authored-by: FireInstall <kettnerl@hu-berlin.de>
+Co-authored-by: maxcom1 <46265094+maxcom1@users.noreply.github.com>
+Co-authored-by: TotalledZebra <Holappa57@gmail.com>
+
+diff --git a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
+index 99d0118061233eced90ca5aed2eb5ff0b188837b..6bdc683b5ade408ee27f1d6636b4d60c8c89cb7c 100644
+--- a/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
++++ b/src/main/java/com/destroystokyo/paper/entity/ai/MobGoalHelper.java
+@@ -164,7 +164,7 @@ public class MobGoalHelper {
+         bukkitMap.put(net.minecraft.world.entity.monster.Endermite.class, Endermite.class);
+         bukkitMap.put(net.minecraft.world.entity.monster.Evoker.class, Evoker.class);
+         bukkitMap.put(AbstractFish.class, Fish.class);
+-        bukkitMap.put(AbstractSchoolingFish.class, Fish.class); // close enough
++        bukkitMap.put(AbstractSchoolingFish.class, io.papermc.paper.entity.SchoolableFish.class);
+         bukkitMap.put(FlyingMob.class, Flying.class);
+         bukkitMap.put(net.minecraft.world.entity.animal.Fox.class, Fox.class);
+         bukkitMap.put(net.minecraft.world.entity.monster.Ghast.class, Ghast.class);
+diff --git a/src/main/java/io/papermc/paper/entity/PaperSchoolableFish.java b/src/main/java/io/papermc/paper/entity/PaperSchoolableFish.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..41bf71d116ffc5431586ce54abba7f8def6c1dcf
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/entity/PaperSchoolableFish.java
+@@ -0,0 +1,52 @@
++package io.papermc.paper.entity;
++
++import net.minecraft.world.entity.animal.AbstractSchoolingFish;
++import org.bukkit.craftbukkit.CraftServer;
++import org.bukkit.craftbukkit.entity.CraftFish;
++import org.jetbrains.annotations.NotNull;
++
++public class PaperSchoolableFish extends CraftFish implements SchoolableFish {
++
++    public PaperSchoolableFish(CraftServer server, AbstractSchoolingFish entity) {
++        super(server, entity);
++    }
++
++    @Override
++    public AbstractSchoolingFish getHandle() {
++        return (AbstractSchoolingFish) super.getHandle();
++    }
++
++    @Override
++    public void startFollowing(@NotNull SchoolableFish fish) {
++        if (this.getHandle().isFollower()) { // If following a fish already, properly remove the old one
++            this.stopFollowing();
++        }
++
++        this.getHandle().startFollowing(((PaperSchoolableFish) fish).getHandle());
++    }
++
++    @Override
++    public void stopFollowing() {
++        this.getHandle().stopFollowing();
++    }
++
++    @Override
++    public int getSchoolSize() {
++        return this.getHandle().schoolSize;
++    }
++
++    @Override
++    public int getMaxSchoolSize() {
++        return this.getHandle().getMaxSchoolSize();
++    }
++
++    @Override
++    public SchoolableFish getSchoolLeader() {
++        AbstractSchoolingFish leader = this.getHandle().leader;
++        if (leader == null) {
++            return null;
++        }
++
++        return (SchoolableFish) leader.getBukkitEntity();
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/entity/animal/AbstractSchoolingFish.java b/src/main/java/net/minecraft/world/entity/animal/AbstractSchoolingFish.java
+index 30095df7b64cfda4931dbfa22549ff5abefd53e0..c8ae49f58c254119c0e64a4e1501ebc5a70f9a46 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/AbstractSchoolingFish.java
++++ b/src/main/java/net/minecraft/world/entity/animal/AbstractSchoolingFish.java
+@@ -51,6 +51,7 @@ public abstract class AbstractSchoolingFish extends AbstractFish {
+     }
+ 
+     public void stopFollowing() {
++        if (this.leader == null) return; // Avoid NPE, plugins can now set the leader and certain fish goals might cause this method to be called
+         this.leader.removeFollower();
+         this.leader = null;
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+index a48a29b5b1963db679b053f3530f64d2b9560290..a5eab5cdb761e3e9d37ea66287f26a2c3345182d 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+@@ -565,11 +565,13 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+         this.setFlag(4, hasStung);
+     }
+ 
++    public net.kyori.adventure.util.TriState rollingOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Rolling override
+     public boolean isRolling() {
+         return this.getFlag(2);
+     }
+ 
+     public void setRolling(boolean nearTarget) {
++        nearTarget = rollingOverride.toBooleanOrElse(nearTarget); // Paper - Rolling override
+         this.setFlag(2, nearTarget);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
+index b9d7aa4aa0fc3472a2a0700e526778daf62bdc6f..48ac8c3f6e00c3c2dc67b6c994be7c0ac6dfcf81 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
++++ b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
+@@ -50,6 +50,7 @@ public class Tadpole extends AbstractFish {
+     public int age;
+     protected static final ImmutableList<SensorType<? extends Sensor<? super Tadpole>>> SENSOR_TYPES = ImmutableList.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_PLAYERS, SensorType.HURT_BY, SensorType.FROG_TEMPTATIONS);
+     protected static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(MemoryModuleType.LOOK_TARGET, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.WALK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.PATH, MemoryModuleType.NEAREST_VISIBLE_ADULT, MemoryModuleType.TEMPTATION_COOLDOWN_TICKS, MemoryModuleType.IS_TEMPTED, MemoryModuleType.TEMPTING_PLAYER, MemoryModuleType.BREED_TARGET, MemoryModuleType.IS_PANICKING);
++    public boolean ageLocked; // Paper
+ 
+     public Tadpole(EntityType<? extends AbstractFish> type, Level world) {
+         super(type, world);
+@@ -102,7 +103,7 @@ public class Tadpole extends AbstractFish {
+     @Override
+     public void aiStep() {
+         super.aiStep();
+-        if (!this.level().isClientSide) {
++        if (!this.level().isClientSide && !this.ageLocked) { // Paper
+             this.setAge(this.age + 1);
+         }
+ 
+@@ -112,12 +113,14 @@ public class Tadpole extends AbstractFish {
+     public void addAdditionalSaveData(CompoundTag nbt) {
+         super.addAdditionalSaveData(nbt);
+         nbt.putInt("Age", this.age);
++        nbt.putBoolean("AgeLocked", this.ageLocked); // Paper
+     }
+ 
+     @Override
+     public void readAdditionalSaveData(CompoundTag nbt) {
+         super.readAdditionalSaveData(nbt);
+         this.setAge(nbt.getInt("Age"));
++        this.ageLocked = nbt.getBoolean("AgeLocked"); // Paper
+     }
+ 
+     @Nullable
+@@ -169,6 +172,7 @@ public class Tadpole extends AbstractFish {
+         Bucketable.saveDefaultDataToBucketTag(this, stack);
+         CustomData.update(DataComponents.BUCKET_ENTITY_DATA, stack, (nbttagcompound) -> {
+             nbttagcompound.putInt("Age", this.getAge());
++            nbttagcompound.putBoolean("AgeLocked", this.ageLocked); // Paper
+         });
+     }
+ 
+@@ -179,6 +183,7 @@ public class Tadpole extends AbstractFish {
+             this.setAge(nbt.getInt("Age"));
+         }
+ 
++        this.ageLocked = nbt.getBoolean("AgeLocked"); // Paper
+     }
+ 
+     @Override
+@@ -210,6 +215,7 @@ public class Tadpole extends AbstractFish {
+     }
+ 
+     private void ageUp(int seconds) {
++        if (this.ageLocked) return; // Paper
+         this.setAge(this.age + seconds * 20);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+index 709237639ef0ec1cb623f270302a27b0072e8685..74151d69380e4adede40c7d7fc20834553706730 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+@@ -779,6 +779,15 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+ 
+     }
+ 
++    // Paper start - Horse API
++    public void setMouthOpen(boolean open) {
++        this.setFlag(FLAG_OPEN_MOUTH, open);
++    }
++    public boolean isMouthOpen() {
++        return this.getFlag(FLAG_OPEN_MOUTH);
++    }
++    // Paper end - Horse API
++
+     @Override
+     public InteractionResult mobInteract(Player player, InteractionHand hand) {
+         if (!this.isVehicle() && !this.isBaby()) {
+@@ -821,6 +830,11 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+         this.setFlag(16, eatingGrass);
+     }
+ 
++    // Paper start - Horse API
++    public void setForceStanding(boolean standing) {
++        this.setFlag(FLAG_STANDING, standing);
++    }
++    // Paper end - Horse API
+     public void setStanding(boolean angry) {
+         if (angry) {
+             this.setEating(false);
+diff --git a/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java b/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
+index 04842dd7b9beabcecbd492d0b98faaebeea1a5d9..d5808d0c190877554a4a8191f68e8b4a36f2ff46 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
++++ b/src/main/java/net/minecraft/world/entity/animal/horse/Llama.java
+@@ -71,11 +71,12 @@ public class Llama extends AbstractChestedHorse implements VariantHolder<Llama.V
+     @Nullable
+     private Llama caravanHead;
+     @Nullable
+-    private Llama caravanTail;
++    public Llama caravanTail; // Paper
+ 
+     public Llama(EntityType<? extends Llama> type, Level world) {
+         super(type, world);
+         this.getNavigation().setRequiredPathLength(40.0F);
++        this.maxDomestication = 30; // Paper - Missing entity API; configure max temper instead of a hardcoded value
+     }
+ 
+     public boolean isTraderLlama() {
+@@ -294,7 +295,7 @@ public class Llama extends AbstractChestedHorse implements VariantHolder<Llama.V
+ 
+     @Override
+     public int getMaxTemper() {
+-        return 30;
++        return super.getMaxTemper(); // Paper - Missing entity API; delegate to parent
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index af721305a3b31f4aa9a36dfbc1cbe0cd278fa6ad..8415f7e1f8c391961dc5b0669da1ab4f8ae4950d 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -86,6 +86,11 @@ public class WitherBoss extends Monster implements RangedAttackMob {
+         return !entityliving.getType().is(EntityTypeTags.WITHER_FRIENDS) && entityliving.attackable();
+     };
+     private static final TargetingConditions TARGETING_CONDITIONS = TargetingConditions.forCombat().range(20.0D).selector(WitherBoss.LIVING_ENTITY_SELECTOR);
++    // Paper start
++    private boolean canPortal = false;
++
++    public void setCanTravelThroughPortals(boolean canPortal) { this.canPortal = canPortal; }
++    // Paper end
+ 
+     public WitherBoss(EntityType<? extends WitherBoss> type, Level world) {
+         super(type, world);
+@@ -591,7 +596,7 @@ public class WitherBoss extends Monster implements RangedAttackMob {
+ 
+     @Override
+     public boolean canUsePortal(boolean allowVehicles) {
+-        return false;
++        return this.canPortal; // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+index 0ddbebbe6eea00c379f2a250f7a44ba9313c1de1..4b798695af365dc97cbbbd09f370b8fc425f9ed6 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+@@ -428,6 +428,16 @@ public class EnderMan extends Monster implements NeutralMob {
+         this.entityData.set(EnderMan.DATA_STARED_AT, true);
+     }
+ 
++    // Paper start
++    public void setCreepy(boolean creepy) {
++        this.entityData.set(EnderMan.DATA_CREEPY, creepy);
++    }
++
++    public void setHasBeenStaredAt(boolean hasBeenStaredAt) {
++        this.entityData.set(EnderMan.DATA_STARED_AT, hasBeenStaredAt);
++    }
++    // Paper end
++
+     @Override
+     public boolean requiresCustomPersistence() {
+         return super.requiresCustomPersistence() || this.getCarriedBlock() != null;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Ghast.java b/src/main/java/net/minecraft/world/entity/monster/Ghast.java
+index 71259b92a01a4feca270a250b1964f25f6da2d33..a8c8c03e972aa6352843cf4c3e4aebfb8f493125 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Ghast.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Ghast.java
+@@ -66,6 +66,12 @@ public class Ghast extends FlyingMob implements Enemy {
+         return this.explosionPower;
+     }
+ 
++    // Paper start
++    public void setExplosionPower(int explosionPower) {
++        this.explosionPower = explosionPower;
++    }
++    // Paper end
++
+     @Override
+     protected boolean shouldDespawnInPeaceful() {
+         return true;
+diff --git a/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java b/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
+index 7f4c186a757e51ac788ec664a2c75dc7d7ce0eb3..a5d13b8bf7d0b6423ef428042e1134f5999cc24b 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
++++ b/src/main/java/net/minecraft/world/entity/monster/ZombieVillager.java
+@@ -207,6 +207,12 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
+     }
+ 
+     public void startConverting(@Nullable UUID uuid, int delay) {
++    // Paper start - missing entity behaviour api - converting without entity event
++        this.startConverting(uuid, delay, true);
++    }
++
++    public void startConverting(@Nullable UUID uuid, int delay, boolean broadcastEntityEvent) {
++    // Paper end - missing entity behaviour api - converting without entity event
+         this.conversionStarter = uuid;
+         this.villagerConversionTime = delay;
+         this.getEntityData().set(ZombieVillager.DATA_CONVERTING_ID, true);
+@@ -214,7 +220,7 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
+         this.removeEffect(MobEffects.WEAKNESS, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
+         this.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, delay, Math.min(this.level().getDifficulty().getId() - 1, 0)), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
+         // CraftBukkit end
+-        this.level().broadcastEntityEvent(this, (byte) 16);
++        if (broadcastEntityEvent) this.level().broadcastEntityEvent(this, (byte) 16); // Paper - missing entity behaviour api - converting without entity event
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
+index 20a9dae93ee17bdef16b67a2db8e5e78b94d2c53..3888f13a49af26b0ece8813b607c20fc380cecd5 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownTrident.java
+@@ -114,6 +114,20 @@ public class ThrownTrident extends AbstractArrow {
+         return (Boolean) this.entityData.get(ThrownTrident.ID_FOIL);
+     }
+ 
++    // Paper start
++    public void setFoil(boolean foil) {
++        this.entityData.set(ThrownTrident.ID_FOIL, foil);
++    }
++
++    public int getLoyalty() {
++        return this.entityData.get(ThrownTrident.ID_LOYALTY);
++    }
++
++    public void setLoyalty(byte loyalty) {
++        this.entityData.set(ThrownTrident.ID_LOYALTY, loyalty);
++    }
++    // Paper end
++
+     @Nullable
+     @Override
+     protected EntityHitResult findHitEntity(Vec3 currentPosition, Vec3 nextPosition) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java
+index 3952e52b94c1cc97e1d2d3885f59d7690efb74ad..9bcc0931510607b8fbd01233e2b3c346369b214d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractHorse.java
+@@ -114,4 +114,36 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
+     public AbstractHorseInventory getInventory() {
+         return new CraftSaddledInventory(getHandle().inventory);
+     }
++
++    // Paper start - Horse API
++    @Override
++    public boolean isEatingGrass() {
++        return this.getHandle().isEating();
++    }
++
++    @Override
++    public void setEatingGrass(boolean eating) {
++        this.getHandle().setEating(eating);
++    }
++
++    @Override
++    public boolean isRearing() {
++        return this.getHandle().isStanding();
++    }
++
++    @Override
++    public void setRearing(boolean rearing) {
++        this.getHandle().setForceStanding(rearing);
++    }
++
++    @Override
++    public boolean isEating() {
++        return this.getHandle().isMouthOpen();
++    }
++
++    @Override
++    public void setEating(boolean eating) {
++       this.getHandle().setMouthOpen(eating);
++    }
++    // Paper end - Horse API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java
+index 17bffb45453f15328ca91794e26f6be1defef700..6591513bb62226b6f85fd2ef9f6ebe376f0f7362 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java
+@@ -229,4 +229,17 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
+             this.getHandle().setOwner(null);
+         }
+     }
++
++    // Paper start - owner API
++    @Override
++    public java.util.UUID getOwnerUniqueId() {
++        return this.getHandle().ownerUUID;
++    }
++
++    @Override
++    public void setOwnerUniqueId(final java.util.UUID ownerUuid) {
++        this.getHandle().setOwner(null);
++        this.getHandle().ownerUUID = ownerUuid;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBat.java
+index b0a3531476f5a05ae846b68d825eddc35ebddea9..1bb72f28085f3885bec068b586ec222111044884 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBat.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftBat.java
+@@ -27,4 +27,25 @@ public class CraftBat extends CraftAmbient implements Bat {
+     public void setAwake(boolean state) {
+         this.getHandle().setResting(!state);
+     }
++    // Paper start
++    @Override
++    public org.bukkit.Location getTargetLocation() {
++        net.minecraft.core.BlockPos pos = this.getHandle().targetPosition;
++        if (pos == null) {
++            return null;
++        }
++
++        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), pos);
++    }
++
++    @Override
++    public void setTargetLocation(org.bukkit.Location location) {
++        net.minecraft.core.BlockPos pos = null;
++        if (location != null) {
++            pos = io.papermc.paper.util.MCUtil.toBlockPosition(location);
++        }
++
++        this.getHandle().targetPosition = pos;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java
+index cfff1be6a4a4936a2dadb2590abc3d33c123d048..3dac93b0ab5d5acf5b33dc4b0efed60319eb657b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftBee.java
+@@ -86,4 +86,42 @@ public class CraftBee extends CraftAnimals implements Bee {
+     public void setCannotEnterHiveTicks(int ticks) {
+         this.getHandle().setStayOutOfHiveCountdown(ticks);
+     }
++    // Paper start
++    @Override
++    public void setRollingOverride(net.kyori.adventure.util.TriState rolling) {
++        this.getHandle().rollingOverride = rolling;
++
++        this.getHandle().setRolling(this.getHandle().isRolling()); // Refresh rolling state
++    }
++
++    @Override
++    public boolean isRolling() {
++        return this.getRollingOverride().toBooleanOrElse(this.getHandle().isRolling());
++    }
++
++    @Override
++    public net.kyori.adventure.util.TriState getRollingOverride() {
++        return this.getHandle().rollingOverride;
++    }
++
++    @Override
++    public void setCropsGrownSincePollination(int crops) {
++        this.getHandle().numCropsGrownSincePollination = crops;
++    }
++
++    @Override
++    public int getCropsGrownSincePollination() {
++        return this.getHandle().numCropsGrownSincePollination;
++    }
++
++    @Override
++    public void setTicksSincePollination(int ticks) {
++        this.getHandle().ticksWithoutNectarSinceExitingHive = ticks;
++    }
++
++    @Override
++    public int getTicksSincePollination() {
++        return this.getHandle().ticksWithoutNectarSinceExitingHive;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftCat.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftCat.java
+index 57664124968e6268ad6699c6bd932981cc2fe6ba..88e876da7df64b68a5b71fd1deab75b59c5a64e3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftCat.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftCat.java
+@@ -139,4 +139,26 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
+             return this.getKey().hashCode();
+         }
+     }
++
++    // Paper start - More cat api
++    @Override
++    public void setLyingDown(boolean lyingDown) {
++        this.getHandle().setLying(lyingDown);
++    }
++
++    @Override
++    public boolean isLyingDown() {
++        return this.getHandle().isLying();
++    }
++
++    @Override
++    public void setHeadUp(boolean headUp) {
++        this.getHandle().setRelaxStateOne(headUp);
++    }
++
++    @Override
++    public boolean isHeadUp() {
++        return this.getHandle().isRelaxStateOne();
++    }
++    // Paper end - More cat api
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftChicken.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftChicken.java
+index 64b75682a936e071353707f7615d6ff512fd617d..96f6e2fd9c6b20d34122abfe5c7fba732502d5a0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftChicken.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftChicken.java
+@@ -18,4 +18,26 @@ public class CraftChicken extends CraftAnimals implements Chicken {
+     public String toString() {
+         return "CraftChicken";
+     }
++
++    // Paper start
++    @Override
++    public boolean isChickenJockey() {
++        return this.getHandle().isChickenJockey();
++    }
++
++    @Override
++    public void setIsChickenJockey(boolean isChickenJockey) {
++        this.getHandle().setChickenJockey(isChickenJockey);
++    }
++
++    @Override
++    public int getEggLayTime() {
++        return this.getHandle().eggTime;
++    }
++
++    @Override
++    public void setEggLayTime(int eggLayTime) {
++        this.getHandle().eggTime = eggLayTime;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftCod.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftCod.java
+index fa0bf7db880063427ba12df1df1c72240fff93e9..63e6b07e3b159c74d9ef17be20b5ab43d07f0f5f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftCod.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftCod.java
+@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit.entity;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Cod;
+ 
+-public class CraftCod extends CraftFish implements Cod {
++public class CraftCod extends io.papermc.paper.entity.PaperSchoolableFish implements Cod { // Paper - School Fish API
+ 
+     public CraftCod(CraftServer server, net.minecraft.world.entity.animal.Cod entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftDolphin.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftDolphin.java
+index 5bae70ad160d0d0912aa9ef054c5515812957289..83867b9c5497e6e793b21c482646cc419587e182 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftDolphin.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftDolphin.java
+@@ -18,4 +18,36 @@ public class CraftDolphin extends CraftAgeable implements Dolphin {
+     public String toString() {
+         return "CraftDolphin";
+     }
++
++    // Paper start - Missing Dolphin API
++    @Override
++    public int getMoistness() {
++        return this.getHandle().getMoistnessLevel();
++    }
++
++    @Override
++    public void setMoistness(int moistness) {
++        this.getHandle().setMoisntessLevel(moistness);
++    }
++
++    @Override
++    public void setHasFish(boolean hasFish) {
++        this.getHandle().setGotFish(hasFish);
++    }
++
++    @Override
++    public boolean hasFish() {
++        return this.getHandle().gotFish();
++    }
++
++    @Override
++    public org.bukkit.Location getTreasureLocation() {
++        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), this.getHandle().getTreasurePos());
++    }
++
++    @Override
++    public void setTreasureLocation(org.bukkit.Location location) {
++        this.getHandle().setTreasurePos(io.papermc.paper.util.MCUtil.toBlockPosition(location));
++    }
++    // Paper end - Missing Dolphin API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragonPart.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragonPart.java
+index cc4194ac9d7501b5d15655674dade14d59cb6733..33ae03b78b01c005a291a343b42507fb539e81a6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragonPart.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderDragonPart.java
+@@ -51,6 +51,13 @@ public class CraftEnderDragonPart extends CraftComplexPart implements EnderDrago
+         this.getParent().setHealth(health);
+     }
+ 
++    // Paper start - entity heal API
++    @Override
++    public void heal(final double amount, final org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason reason) {
++        this.getParent().heal(amount, reason);
++    }
++    // Paper end - entity heal API
++
+     @Override
+     public double getAbsorptionAmount() {
+         return this.getParent().getAbsorptionAmount();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderman.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderman.java
+index 21dc209e6f98b6306833b41e2763e746047d5a94..983b9d6ddb58eff297e96e5c8b28ec427efa267d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderman.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEnderman.java
+@@ -40,6 +40,28 @@ public class CraftEnderman extends CraftMonster implements Enderman {
+         this.getHandle().setCarriedBlock(blockData == null ? null : ((CraftBlockData) blockData).getState());
+     }
+ 
++    // Paper start
++    @Override
++    public boolean isScreaming() {
++        return this.getHandle().isCreepy();
++    }
++
++    @Override
++    public void setScreaming(boolean screaming) {
++        this.getHandle().setCreepy(screaming);
++    }
++
++    @Override
++    public boolean hasBeenStaredAt() {
++        return this.getHandle().hasBeenStaredAt();
++    }
++
++    @Override
++    public void setHasBeenStaredAt(boolean hasBeenStaredAt) {
++        this.getHandle().setHasBeenStaredAt(hasBeenStaredAt);
++    }
++    // Paper end
++
+     @Override
+     public EnderMan getHandle() {
+         return (EnderMan) this.entity;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEndermite.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEndermite.java
+index fc0f0e841dc974d080e1abb9bbafb5165801131f..d657fd2c507a5b215aeab0a5f3e9c2ee892a27c8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEndermite.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEndermite.java
+@@ -28,4 +28,15 @@ public class CraftEndermite extends CraftMonster implements Endermite {
+     public void setPlayerSpawned(boolean playerSpawned) {
+         // Nop
+     }
++    // Paper start
++    @Override
++    public void setLifetimeTicks(int ticks) {
++        this.getHandle().life = ticks;
++    }
++
++    @Override
++    public int getLifetimeTicks() {
++        return this.getHandle().life;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 78afac72265e3f586c0203951b8237832fb7c6fb..888a75423ac90ca85308eeb6d67bac5348bf31e0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1082,4 +1082,27 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return set;
+     }
+     // Paper end - tracked players API
++
++    // Paper start - missing entity api
++    @Override
++    public boolean isInvisible() {  // Paper - moved up from LivingEntity
++        return this.getHandle().isInvisible();
++    }
++
++    @Override
++    public void setInvisible(boolean invisible) {  // Paper - moved up from LivingEntity
++        this.getHandle().persistentInvisibility = invisible;
++        this.getHandle().setSharedFlag(Entity.FLAG_INVISIBLE, invisible);
++    }
++
++    @Override
++    public void setNoPhysics(boolean noPhysics) {
++        this.getHandle().noPhysics = noPhysics;
++    }
++
++    @Override
++    public boolean hasNoPhysics() {
++        return this.getHandle().noPhysics;
++    }
++    // Paper end - missing entity api
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
+index 142f3e3257afebb2e831fd0970678123d99a1717..1b084d63bdbb24dad45d28eed1693eb6e26e24dc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFireball.java
+@@ -84,6 +84,18 @@ public class CraftFireball extends AbstractProjectile implements Fireball {
+         return new Vector(delta.x, delta.y, delta.z);
+     }
+ 
++    // Paper start - Expose power on fireball projectiles
++    @Override
++    public void setPower(final Vector power) {
++        this.setAcceleration(power);
++    }
++
++    @Override
++    public Vector getPower() {
++        return this.getAcceleration();
++    }
++    // Paper end - Expose power on fireball projectiles
++
+     @Override
+     public AbstractHurtingProjectile getHandle() {
+         return (AbstractHurtingProjectile) this.entity;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java
+index dd912be2933864236cd4fb35631d505972082d77..bb2b59ce9775a0d1dd9828885e57c14cf40d9f04 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFox.java
+@@ -113,4 +113,41 @@ public class CraftFox extends CraftAnimals implements Fox {
+     public boolean isFaceplanted() {
+         return this.getHandle().isFaceplanted();
+     }
++
++    // Paper start - Add more fox behavior API
++    @Override
++    public void setInterested(boolean interested) {
++        this.getHandle().setIsInterested(interested);
++    }
++
++    @Override
++    public boolean isInterested() {
++        return this.getHandle().isInterested();
++    }
++
++    @Override
++    public void setLeaping(boolean leaping) {
++        this.getHandle().setIsPouncing(leaping);
++    }
++
++    @Override
++    public boolean isLeaping() {
++        return this.getHandle().isPouncing();
++    }
++
++    @Override
++    public void setDefending(boolean defending) {
++        this.getHandle().setDefending(defending);
++    }
++
++    @Override
++    public boolean isDefending() {
++        return this.getHandle().isDefending();
++    }
++
++    @Override
++    public void setFaceplanted(boolean faceplanted) {
++        this.getHandle().setFaceplanted(faceplanted);
++    }
++    // Paper end - Add more fox behavior API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftGhast.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftGhast.java
+index 2cec61a1bb050c1ef81c5fc3d0afafe9ff29d459..97fa4e1e70203194bd939618b2fad92665af6d59 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftGhast.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftGhast.java
+@@ -28,4 +28,17 @@ public class CraftGhast extends CraftFlying implements Ghast, CraftEnemy {
+     public void setCharging(boolean flag) {
+         this.getHandle().setCharging(flag);
+     }
++
++    // Paper start
++    @Override
++    public int getExplosionPower() {
++        return this.getHandle().getExplosionPower();
++    }
++
++    @Override
++    public void setExplosionPower(int explosionPower) {
++        com.google.common.base.Preconditions.checkArgument(explosionPower >= 0 && explosionPower <= 127, "The explosion power has to be between 0 and 127");
++        this.getHandle().setExplosionPower(explosionPower);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index a4a30f52f45bf91dc88d53f5d6a376ed739d09eb..6020c0c164595db4e2001edf0c1fbe99ed87682d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -128,6 +128,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         }
+     }
+ 
++    // Paper start - entity heal API
++    @Override
++    public void heal(final double amount, final org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason reason) {
++        this.getHandle().heal((float) amount, reason);
++    }
++    // Paper end - entity heal API
++
+     @Override
+     public double getAbsorptionAmount() {
+         return this.getHandle().getAbsorptionAmount();
+@@ -939,14 +946,29 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+ 
+     @Override
+     public boolean isInvisible() {
+-        return this.getHandle().isInvisible();
++        return super.isInvisible(); // Paper - move invisibility up to Entity - diff on change
+     }
+ 
+     @Override
+     public void setInvisible(boolean invisible) {
+-        this.getHandle().persistentInvisibility = invisible;
+-        this.getHandle().setSharedFlag(5, invisible);
++        super.setInvisible(invisible); // Paper - move invisibility up to Entity
+     }
++    // Paper start
++    @Override
++    public float getSidewaysMovement() {
++        return this.getHandle().xxa;
++    }
++
++    @Override
++    public float getForwardsMovement() {
++        return this.getHandle().zza;
++    }
++
++    @Override
++    public float getUpwardsMovement() {
++        return this.getHandle().yya;
++    }
++    // Paper end
+ 
+     // Paper start
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
+index bf297388c75521266c93580a9caafe6bad70ab45..351f42842b780d053cd2e5bad9ae299449141b10 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLlama.java
+@@ -58,4 +58,36 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
+     public String toString() {
+         return "CraftLlama";
+     }
++
++    // Paper start
++    @Override
++    public boolean inCaravan() {
++        return this.getHandle().inCaravan();
++    }
++
++    @Override
++    public void joinCaravan(@org.jetbrains.annotations.NotNull Llama llama) {
++        this.getHandle().joinCaravan(((CraftLlama) llama).getHandle());
++    }
++
++    @Override
++    public void leaveCaravan() {
++        this.getHandle().leaveCaravan();
++    }
++
++    @Override
++    public boolean hasCaravanTail() {
++        return this.getHandle().hasCaravanTail();
++    }
++
++    @Override
++    public Llama getCaravanHead() {
++        return this.getHandle().getCaravanHead() == null ? null : (Llama) this.getHandle().getCaravanHead().getBukkitEntity();
++    }
++
++    @Override
++    public Llama getCaravanTail() {
++        return this.getHandle().caravanTail == null ? null : (Llama) this.getHandle().caravanTail.getBukkitEntity();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartHopper.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartHopper.java
+index 17f5684cba9d3ed22d9925d1951520cc4751dfe2..3a3563a1bdbc0d84d973b3a04b50b78b4bc3d379 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartHopper.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMinecartHopper.java
+@@ -33,4 +33,20 @@ public final class CraftMinecartHopper extends CraftMinecartContainer implements
+     public void setEnabled(boolean enabled) {
+         ((MinecartHopper) this.getHandle()).setEnabled(enabled);
+     }
++    // Paper start
++    @Override
++    public net.minecraft.world.entity.vehicle.MinecartHopper getHandle() {
++        return (net.minecraft.world.entity.vehicle.MinecartHopper) super.getHandle();
++    }
++
++    @Override
++    public int getPickupCooldown() {
++        throw new UnsupportedOperationException("Hopper minecarts don't have cooldowns");
++    }
++
++    @Override
++    public void setPickupCooldown(int cooldown) {
++        throw new UnsupportedOperationException("Hopper minecarts don't have cooldowns");
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
+index bd739428a7e5e35ebcdb70cd187379b3d222339b..7cf42f62d91c131b1cab576979f85c58c3cecb3b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftMob.java
+@@ -146,4 +146,16 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob {
+         return getHandle().getMaxHeadXRot();
+     }
+     // Paper end
++
++    // Paper start
++    @Override
++    public boolean isAggressive() {
++        return this.getHandle().isAggressive();
++    }
++
++    @Override
++    public void setAggressive(boolean aggressive) {
++        this.getHandle().setAggressive(aggressive);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPanda.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPanda.java
+index 5467e4a74b70ff57b49d9e6bc686c493178f8511..01d104d91de9e1319d27e39d3f474318c7809486 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPanda.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPanda.java
+@@ -41,6 +41,38 @@ public class CraftPanda extends CraftAnimals implements Panda {
+         this.getHandle().setHiddenGene(CraftPanda.toNms(gene));
+     }
+ 
++    // Paper start - Panda API
++    @Override
++    public void setSneezeTicks(int ticks) {
++        this.getHandle().setSneezeCounter(ticks);
++    }
++
++    @Override
++    public int getSneezeTicks() {
++        return this.getHandle().getSneezeCounter();
++    }
++
++    @Override
++    public void setEatingTicks(int ticks) {
++        this.getHandle().setEatCounter(ticks);
++    }
++
++    @Override
++    public int getEatingTicks() {
++        return this.getHandle().getEatCounter();
++    }
++
++    @Override
++    public void setUnhappyTicks(int ticks) {
++        this.getHandle().setUnhappyCounter(ticks);
++    }
++
++    @Override
++    public Gene getCombinedGene() {
++        return CraftPanda.fromNms(this.getHandle().getVariant());
++    }
++    // Paper end - Panda API
++
+     @Override
+     public boolean isRolling() {
+         return this.getHandle().isRolling();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+index 9304e201db1ec96d0916aa8ea781f3e4bc7991e6..83e77c6d287d8e239d2f55f3e9f19ef74946be7c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPhantom.java
+@@ -44,5 +44,17 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
+     public void setShouldBurnInDay(boolean shouldBurnInDay) {
+         getHandle().setShouldBurnInDay(shouldBurnInDay);
+     }
++
++    @Override
++    public org.bukkit.Location getAnchorLocation() {
++        net.minecraft.core.BlockPos pos = this.getHandle().anchorPoint;
++        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), pos);
++    }
++
++    @Override
++    public void setAnchorLocation(org.bukkit.Location location) {
++        com.google.common.base.Preconditions.checkArgument(location != null, "location cannot be null");
++        this.getHandle().anchorPoint = io.papermc.paper.util.MCUtil.toBlockPosition(location);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
+index f5ecb8c1dc92e5a4b123effd2859123b17a586d3..5124a383b60b2c8de89fa992547d0c61db760c21 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPiglin.java
+@@ -84,4 +84,37 @@ public class CraftPiglin extends CraftPiglinAbstract implements Piglin, com.dest
+     public String toString() {
+         return "CraftPiglin";
+     }
++    // Paper start
++    @Override
++    public void setChargingCrossbow(boolean chargingCrossbow) {
++        this.getHandle().setChargingCrossbow(chargingCrossbow);
++    }
++
++    @Override
++    public boolean isChargingCrossbow() {
++        return this.getHandle().isChargingCrossbow();
++    }
++
++    @Override
++    public void setDancing(boolean dancing) {
++        if (dancing) {
++            this.getHandle().getBrain().setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.DANCING, true);
++            this.getHandle().getBrain().setMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.CELEBRATE_LOCATION, this.getHandle().getOnPos());
++        } else {
++            this.getHandle().getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.DANCING);
++            this.getHandle().getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.CELEBRATE_LOCATION);
++        }
++    }
++
++    @Override
++    public void setDancing(long duration) {
++        this.getHandle().getBrain().setMemoryWithExpiry(net.minecraft.world.entity.ai.memory.MemoryModuleType.DANCING, true, duration);
++        this.getHandle().getBrain().setMemoryWithExpiry(net.minecraft.world.entity.ai.memory.MemoryModuleType.CELEBRATE_LOCATION, this.getHandle().getOnPos(), duration);
++    }
++
++    @Override
++    public boolean isDancing() {
++        return this.getHandle().isDancing();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPolarBear.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPolarBear.java
+index c7aec6f28e5d3546235b30f6b1112440a76163c5..fe075cfdf3097d6cb768e71b8cc360abb8eaf367 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPolarBear.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPolarBear.java
+@@ -17,4 +17,16 @@ public class CraftPolarBear extends CraftAnimals implements PolarBear {
+     public String toString() {
+         return "CraftPolarBear";
+     }
++
++    // Paper start
++    @Override
++    public boolean isStanding() {
++        return this.getHandle().isStanding();
++    }
++
++    @Override
++    public void setStanding(boolean standing) {
++        this.getHandle().setStanding(standing);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftRabbit.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftRabbit.java
+index 6b48b117a9cba12aae055c0ea981dfb5bc03a86e..519ef701a7d6534f7cb516f6296b95ee521f661d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftRabbit.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftRabbit.java
+@@ -29,4 +29,15 @@ public class CraftRabbit extends CraftAnimals implements Rabbit {
+     public void setRabbitType(Type type) {
+         this.getHandle().setVariant(net.minecraft.world.entity.animal.Rabbit.Variant.values()[type.ordinal()]);
+     }
++    // Paper start
++    @Override
++    public void setMoreCarrotTicks(int ticks) {
++        this.getHandle().moreCarrotTicks = ticks;
++    }
++
++    @Override
++    public int getMoreCarrotTicks() {
++        return this.getHandle().moreCarrotTicks;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftRavager.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftRavager.java
+index cae59f77c704a5b9515dc4917ed5fdc89631ecfb..09796ce15658e3f7c223a265a547a51ee729ed40 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftRavager.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftRavager.java
+@@ -18,4 +18,35 @@ public class CraftRavager extends CraftRaider implements Ravager {
+     public String toString() {
+         return "CraftRavager";
+     }
++    // Paper start - Missing Entity Behavior
++    @Override
++    public int getAttackTicks() {
++        return this.getHandle().getAttackTick();
++    }
++
++    @Override
++    public void setAttackTicks(int ticks) {
++        this.getHandle().attackTick = ticks;
++    }
++
++    @Override
++    public int getStunnedTicks() {
++        return this.getHandle().getStunnedTick();
++    }
++
++    @Override
++    public void setStunnedTicks(int ticks) {
++        this.getHandle().stunnedTick = ticks;
++    }
++
++    @Override
++    public int getRoarTicks() {
++        return this.getHandle().getRoarTick();
++    }
++
++    @Override
++    public void setRoarTicks(int ticks) {
++        this.getHandle().roarTick = ticks;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftSalmon.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftSalmon.java
+index 551c30cb0fb41dfe4a03663d34ecf9764566c215..7660cc21e936002ebb23510f0ec2b58d71e5157d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftSalmon.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftSalmon.java
+@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
+ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.Salmon;
+ 
+-public class CraftSalmon extends CraftFish implements Salmon {
++public class CraftSalmon extends io.papermc.paper.entity.PaperSchoolableFish implements Salmon { // Paper - Schooling Fish API
+ 
+     public CraftSalmon(CraftServer server, net.minecraft.world.entity.animal.Salmon entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java
+index 36ab282e2c4060bdea4e57f3ab9dfef9f6cd622c..a61aec087fa7cec27a803668bdc1b9e6eb336755 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTNTPrimed.java
+@@ -67,4 +67,17 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
+             this.getHandle().owner = null;
+         }
+     }
++
++    // Paper start
++    @Override
++    public void setBlockData(org.bukkit.block.data.BlockData data) {
++        com.google.common.base.Preconditions.checkArgument(data != null, "The visual block data of this tnt cannot be null. To reset it just set to the TNT default block data");
++        this.getHandle().setBlockState(((org.bukkit.craftbukkit.block.data.CraftBlockData) data).getState());
++    }
++
++    @Override
++    public org.bukkit.block.data.BlockData getBlockData() {
++        return org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(this.getHandle().getBlockState());
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java
+index 451a9bfd9b9b6945e224f1bb05c7951ed934b4e3..d7c6a0bbc5671ea8f2488230c94df5146a1e98b9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTadpole.java
+@@ -28,4 +28,15 @@ public class CraftTadpole extends CraftFish implements org.bukkit.entity.Tadpole
+     public void setAge(int age) {
+         this.getHandle().age = age;
+     }
++    // Paper start
++    @Override
++    public void setAgeLock(boolean lock) {
++        this.getHandle().ageLocked = lock;
++    }
++
++    @Override
++    public boolean getAgeLock() {
++        return this.getHandle().ageLocked;
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
+index 33d6e8121755ad6cddacb4fc69e795f9831c27bd..e374b9f40eddca13b30855d25a2030f8df98138f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTrident.java
+@@ -31,4 +31,27 @@ public class CraftTrident extends CraftAbstractArrow implements Trident {
+     public String toString() {
+         return "CraftTrident";
+     }
++
++    // Paper start
++    @Override
++    public boolean hasGlint() {
++        return this.getHandle().isFoil();
++    }
++
++    @Override
++    public void setGlint(boolean glint) {
++        this.getHandle().setFoil(glint);
++    }
++
++    @Override
++    public int getLoyaltyLevel() {
++        return this.getHandle().getLoyalty();
++    }
++
++    @Override
++    public void setLoyaltyLevel(int loyaltyLevel) {
++        com.google.common.base.Preconditions.checkArgument(loyaltyLevel >= 0 && loyaltyLevel <= 127, "The loyalty level has to be between 0 and 127");
++        this.getHandle().setLoyalty((byte) loyaltyLevel);
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftTropicalFish.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftTropicalFish.java
+index e3bde6d1c0e03407af1382a61748470063bb2e18..9e53c30801c700719c78c0fd521fd615c94e02c8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftTropicalFish.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftTropicalFish.java
+@@ -7,7 +7,7 @@ import org.bukkit.craftbukkit.CraftServer;
+ import org.bukkit.entity.TropicalFish;
+ import org.bukkit.entity.TropicalFish.Pattern;
+ 
+-public class CraftTropicalFish extends CraftFish implements TropicalFish {
++public class CraftTropicalFish extends io.papermc.paper.entity.PaperSchoolableFish implements TropicalFish { // Paper - Schooling Fish API
+ 
+     public CraftTropicalFish(CraftServer server, net.minecraft.world.entity.animal.TropicalFish entity) {
+         super(server, entity);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java
+index 1cfbe9c476f4a254edf3edf4b70696bbaba78558..e9ec3455eabc473e104b5342a615a38c1ac25a4f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftVex.java
+@@ -29,6 +29,26 @@ public class CraftVex extends CraftMonster implements Vex {
+     public void setSummoner(org.bukkit.entity.Mob summoner) {
+         getHandle().setOwner(summoner == null ? null : ((CraftMob) summoner).getHandle());
+     }
++
++    @Override
++    public boolean hasLimitedLifetime() {
++        return this.getHandle().hasLimitedLife;
++    }
++
++    @Override
++    public void setLimitedLifetime(boolean hasLimitedLifetime) {
++        this.getHandle().hasLimitedLife = hasLimitedLifetime;
++    }
++
++    @Override
++    public int getLimitedLifetimeTicks() {
++        return this.getHandle().limitedLifeTicks;
++    }
++
++    @Override
++    public void setLimitedLifetimeTicks(int ticks) {
++        this.getHandle().limitedLifeTicks = ticks;
++    }
+     // Paper end
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillagerZombie.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillagerZombie.java
+index e2a0c11867abee6add8775259c54f2052de7b1ad..3aa23d9f22d5cd22231293fd7d1ca4cb79eb7cb3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftVillagerZombie.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftVillagerZombie.java
+@@ -60,13 +60,20 @@ public class CraftVillagerZombie extends CraftZombie implements ZombieVillager {
+ 
+     @Override
+     public void setConversionTime(int time) {
++    // Paper start - missing entity behaviour api - converting without entity event
++        this.setConversionTime(time, true);
++    }
++
++    @Override
++    public void setConversionTime(int time, boolean broadcastEntityEvent) {
++    // Paper end - missing entity behaviour api - converting without entity event
+         if (time < 0) {
+             this.getHandle().villagerConversionTime = -1;
+             this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.ZombieVillager.DATA_CONVERTING_ID, false);
+             this.getHandle().conversionStarter = null;
+             this.getHandle().removeEffect(MobEffects.DAMAGE_BOOST, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
+         } else {
+-            this.getHandle().startConverting(null, time);
++            this.getHandle().startConverting(null, time, broadcastEntityEvent); // Paper - missing entity behaviour api - converting without entity event
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
+index 0e597394a3dd08f022614fc9777302fea581eb55..3cceefa0d6278924a19641a49bdf16bcdacb2233 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWanderingTrader.java
+@@ -49,5 +49,25 @@ public class CraftWanderingTrader extends CraftAbstractVillager implements Wande
+     public boolean canDrinkMilk() {
+         return getHandle().canDrinkMilk;
+     }
++
++    @Override
++    public org.bukkit.Location getWanderingTowards() {
++        net.minecraft.core.BlockPos pos = this.getHandle().getWanderTarget();
++        if (pos == null) {
++            return null;
++        }
++
++        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), pos);
++    }
++
++    @Override
++    public void setWanderingTowards(org.bukkit.Location location) {
++        net.minecraft.core.BlockPos pos = null;
++        if (location != null) {
++            pos = io.papermc.paper.util.MCUtil.toBlockPosition(location);
++        }
++
++        this.getHandle().setWanderTarget(pos);
++    }
+     // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java
+index 794e4fe0a3fbd967f665b2707865c15491370c76..c284eb96a1e330078076cbe61f0f6e2ff4ed89bd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWarden.java
+@@ -37,6 +37,13 @@ public class CraftWarden extends CraftMonster implements org.bukkit.entity.Warde
+         return this.getHandle().getAngerManagement().getActiveAnger(((CraftEntity) entity).getHandle());
+     }
+ 
++    // Paper start
++    @Override
++    public int getHighestAnger() {
++        return this.getHandle().getAngerManagement().getActiveAnger(null);
++    }
++    // Paper end
++
+     @Override
+     public void increaseAnger(Entity entity, int increase) {
+         Preconditions.checkArgument(entity != null, "Entity cannot be null");
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
+index 1113533d281ed159bb735040fb1f913482debf3a..7881c6253c1d652c0c0d54a9a8accdf0a1ff0f3e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftWither.java
+@@ -67,4 +67,36 @@ public class CraftWither extends CraftMonster implements Wither, com.destroystok
+ 
+         this.getHandle().setInvulnerableTicks(ticks);
+     }
++
++    // Paper start
++    @Override
++    public boolean isCharged() {
++        return getHandle().isPowered();
++    }
++
++    @Override
++    public int getInvulnerableTicks() {
++        return getHandle().getInvulnerableTicks();
++    }
++
++    @Override
++    public void setInvulnerableTicks(int ticks) {
++        getHandle().setInvulnerableTicks(ticks);
++    }
++
++    @Override
++    public boolean canTravelThroughPortals() {
++        return getHandle().canUsePortal(false);
++    }
++
++    @Override
++    public void setCanTravelThroughPortals(boolean value) {
++        getHandle().setCanTravelThroughPortals(value);
++    }
++
++    @Override
++    public void enterInvulnerabilityPhase() {
++        this.getHandle().makeInvulnerable();
++    }
++    // Paper end
+ }

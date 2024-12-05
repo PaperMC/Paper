@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Sun, 6 Mar 2022 11:09:09 -0500
+Subject: [PATCH] Prevent entity loading causing async lookups
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index d078f48a7652a2e01984329ccf8301daa7ec4c38..8a4f99fcc32daad1e20035f9ad61a6d9801d1e3c 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -729,6 +729,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
+         gameprofilerfiller.push("entityBaseTick");
++        if (firstTick && this instanceof net.minecraft.world.entity.NeutralMob neutralMob) neutralMob.tickInitialPersistentAnger(level); // Paper - Prevent entity loading causing async lookups
+         this.inBlockState = null;
+         if (this.isPassenger() && this.getVehicle().isRemoved()) {
+             this.stopRiding();
+diff --git a/src/main/java/net/minecraft/world/entity/NeutralMob.java b/src/main/java/net/minecraft/world/entity/NeutralMob.java
+index bf577b06707ff197f13f0b5e16620c09d4a69fa8..053d947c4cc00096dae422df36fb8351b3266215 100644
+--- a/src/main/java/net/minecraft/world/entity/NeutralMob.java
++++ b/src/main/java/net/minecraft/world/entity/NeutralMob.java
+@@ -45,24 +45,11 @@ public interface NeutralMob {
+                 UUID uuid = nbt.getUUID("AngryAt");
+ 
+                 this.setPersistentAngerTarget(uuid);
+-                Entity entity = ((ServerLevel) world).getEntity(uuid);
+-
+-                if (entity != null) {
+-                    if (entity instanceof Mob) {
+-                        Mob entityinsentient = (Mob) entity;
+-
+-                        this.setTarget(entityinsentient, EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
+-                        this.setLastHurtByMob(entityinsentient);
+-                    }
+-
+-                    if (entity instanceof Player) {
+-                        Player entityhuman = (Player) entity;
+-
+-                        this.setTarget(entityhuman, EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
+-                        this.setLastHurtByPlayer(entityhuman);
+-                    }
+-
+-                }
++                // Paper - Prevent entity loading causing async lookups; Moved diff to separate method
++                // If this entity already survived its first tick, e.g. is loaded and ticked in sync, actively
++                // tick the initial persistent anger.
++                // If not, let the first tick on the baseTick call the method later down the line.
++                if (this instanceof Entity entity && !entity.firstTick) this.tickInitialPersistentAnger(world);
+             }
+         }
+     }
+@@ -136,4 +123,28 @@ public interface NeutralMob {
+ 
+     @Nullable
+     LivingEntity getTarget();
++
++    // Paper start - Prevent entity loading causing async lookups
++    // Update last hurt when ticking
++    default void tickInitialPersistentAnger(Level level) {
++        UUID target = getPersistentAngerTarget();
++        if (target == null) {
++            return;
++        }
++
++        Entity entity = ((ServerLevel) level).getEntity(target);
++
++        if (entity != null) {
++            if (entity instanceof Mob mob) {
++                this.setTarget(mob, EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
++                this.setLastHurtByMob(mob);
++            }
++
++            if (entity instanceof Player player) {
++                this.setTarget(player, EntityTargetEvent.TargetReason.UNKNOWN, false); // CraftBukkit
++                this.setLastHurtByPlayer(player);
++            }
++        }
++    }
++    // Paper end - Prevent entity loading causing async lookups
+ }

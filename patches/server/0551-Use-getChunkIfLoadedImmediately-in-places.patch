@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Mon, 8 Jul 2019 00:13:36 -0700
+Subject: [PATCH] Use getChunkIfLoadedImmediately in places
+
+This prevents us from hitting chunk loads for chunks at or less-than
+ticket level 33 (yes getChunkIfLoaded will actually perform a chunk
+load in that case).
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 4982cdfbceb829e06f26eb927e1176bb4a975336..dc3d6bbbd79a0decc134f792d884962534717c0e 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -233,7 +233,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+     public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
+ 
+     public LevelChunk getChunkIfLoaded(int x, int z) {
+-        return this.chunkSource.getChunk(x, z, false);
++        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 2f82f77ba6530dcdb98037aa627ef3cead758b2e..68cee32833a3d683852e67e3727d62b84fa60cc4 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -180,6 +180,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public CraftServer getCraftServer() {
+         return (CraftServer) Bukkit.getServer();
+     }
++    // Paper start - Use getChunkIfLoadedImmediately
++    @Override
++    public boolean hasChunk(int chunkX, int chunkZ) {
++        return this.getChunkIfLoaded(chunkX, chunkZ) != null;
++    }
++    // Paper end - Use getChunkIfLoadedImmediately
++
+ 
+     public abstract ResourceKey<LevelStem> getTypeKey();
+ 
+diff --git a/src/main/java/net/minecraft/world/level/gameevent/GameEventDispatcher.java b/src/main/java/net/minecraft/world/level/gameevent/GameEventDispatcher.java
+index 13b34e89bd3e55df1bb1d4d0cf013bafae43f502..df6c97be1b278c97a20390be5d3e60f429383702 100644
+--- a/src/main/java/net/minecraft/world/level/gameevent/GameEventDispatcher.java
++++ b/src/main/java/net/minecraft/world/level/gameevent/GameEventDispatcher.java
+@@ -56,7 +56,7 @@ public class GameEventDispatcher {
+ 
+         for (int l1 = j; l1 <= i1; ++l1) {
+             for (int i2 = l; i2 <= k1; ++i2) {
+-                LevelChunk chunk = this.level.getChunkSource().getChunkNow(l1, i2);
++                LevelChunk chunk = (LevelChunk) this.level.getChunkIfLoadedImmediately(l1, i2); // Paper - Use getChunkIfLoadedImmediately
+ 
+                 if (chunk != null) {
+                     for (int j2 = k; j2 <= j1; ++j2) {

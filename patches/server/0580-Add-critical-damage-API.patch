@@ -1,0 +1,101 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: dodison <kacpik@mapik.eu>
+Date: Mon, 26 Jul 2021 17:32:36 +0200
+Subject: [PATCH] Add critical damage API
+
+
+diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSource.java b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
+index c1d121d83591ca1b5bf9d9406c9622b4f24eafef..aee26dd78953ff43306aaa64161f5b9edcdd4b83 100644
+--- a/src/main/java/net/minecraft/world/damagesource/DamageSource.java
++++ b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
+@@ -276,4 +276,18 @@ public class DamageSource {
+     public Holder<DamageType> typeHolder() {
+         return this.type;
+     }
++
++    // Paper start - add critical damage API
++    private boolean critical;
++    public boolean isCritical() {
++        return this.critical;
++    }
++    public DamageSource critical() {
++        return this.critical(true);
++    }
++    public DamageSource critical(boolean critical) {
++        this.critical = critical;
++        return this;
++    }
++    // Paper end - add critical damage API
+ }
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 13f21822d0eb1d167b9b71addb46c4f508301c8d..4e33c6c612939e6970d5984825115768ebb6a5ea 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -1261,6 +1261,7 @@ public abstract class Player extends LivingEntity {
+ 
+                     flag2 = flag2 && !this.level().paperConfig().entities.behavior.disablePlayerCrits; // Paper - Toggleable player crits
+                     if (flag2) {
++                        damagesource = damagesource.critical(true); // Paper start - critical damage API
+                         f *= 1.5F;
+                     }
+ 
+@@ -1320,7 +1321,7 @@ public abstract class Player extends LivingEntity {
+                                     float f7 = this.getEnchantedDamage(entityliving2, f6, damagesource) * f2;
+ 
+                                     // CraftBukkit start - Only apply knockback if the damage hits
+-                                    if (!entityliving2.hurtServer((ServerLevel) this.level(), this.damageSources().playerAttack(this).sweep(), f7)) {
++                                    if (!entityliving2.hurtServer((ServerLevel) this.level(), this.damageSources().playerAttack(this).sweep().critical(flag2), f7)) { // Paper - add critical damage API
+                                         continue;
+                                     }
+                                     // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index 6637da7a1c17152e8fc5f0f12d8da55bab6070de..320ace815df1a76232df53d5ddeb3aef9b358d8e 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -465,6 +465,7 @@ public abstract class AbstractArrow extends Projectile {
+             entityliving.setLastHurtMob(entity);
+         }
+ 
++        if (this.isCritArrow()) damagesource = damagesource.critical(); // Paper - add critical damage API
+         boolean flag = entity.getType() == EntityType.ENDERMAN;
+         int k = entity.getRemainingFireTicks();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 24f86724012bb8bcd6d24683a1c78ce66b42ca30..a5285a8952b2d99bfbb928b1bb31d3ddcf8ed57b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1078,7 +1078,7 @@ public class CraftEventFactory {
+                 return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), source.getDirectBlockState(), entity, DamageCause.BLOCK_EXPLOSION, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
+             }
+             DamageCause damageCause = (damager.getBukkitEntity() instanceof org.bukkit.entity.TNTPrimed) ? DamageCause.BLOCK_EXPLOSION : DamageCause.ENTITY_EXPLOSION;
+-            return CraftEventFactory.callEntityDamageEvent(damager, entity, damageCause, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
++            return CraftEventFactory.callEntityDamageEvent(damager, entity, damageCause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.isCritical()); // Paper - add critical damage API
+         } else if (damager != null || source.getDirectEntity() != null) {
+             DamageCause cause = (source.isSweep()) ? DamageCause.ENTITY_SWEEP_ATTACK : DamageCause.ENTITY_ATTACK;
+ 
+@@ -1104,7 +1104,7 @@ public class CraftEventFactory {
+                 cause = DamageCause.MAGIC;
+             }
+ 
+-            return CraftEventFactory.callEntityDamageEvent(damager, entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
++            return CraftEventFactory.callEntityDamageEvent(damager, entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.isCritical()); // Paper - add critical damage API
+         } else if (source.is(DamageTypes.FELL_OUT_OF_WORLD)) {
+             return CraftEventFactory.callEntityDamageEvent(source.getDirectBlock(), source.getDirectBlockState(), entity, DamageCause.VOID, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
+         } else if (source.is(DamageTypes.LAVA)) {
+@@ -1164,13 +1164,13 @@ public class CraftEventFactory {
+             cause = DamageCause.CUSTOM;
+         }
+ 
+-        return CraftEventFactory.callEntityDamageEvent((Entity) null, entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled);
++        return CraftEventFactory.callEntityDamageEvent((Entity) null, entity, cause, bukkitDamageSource, modifiers, modifierFunctions, cancelled, source.isCritical()); // Paper - add critical damage API
+     }
+ 
+-    private static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled) {
++    private static EntityDamageEvent callEntityDamageEvent(Entity damager, Entity damagee, DamageCause cause, org.bukkit.damage.DamageSource bukkitDamageSource, Map<DamageModifier, Double> modifiers, Map<DamageModifier, Function<? super Double, Double>> modifierFunctions, boolean cancelled, boolean critical) { // Paper - add critical damage API
+         EntityDamageEvent event;
+         if (damager != null) {
+-            event = new EntityDamageByEntityEvent(damager.getBukkitEntity(), damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions);
++            event = new EntityDamageByEntityEvent(damager.getBukkitEntity(), damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions, critical);
+         } else {
+             event = new EntityDamageEvent(damagee.getBukkitEntity(), cause, bukkitDamageSource, modifiers, modifierFunctions);
+         }

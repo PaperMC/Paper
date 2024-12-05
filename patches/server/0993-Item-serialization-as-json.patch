@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: masmc05 <masmc05@gmail.com>
+Date: Sun, 11 Aug 2024 03:01:52 +0300
+Subject: [PATCH] Item serialization as json
+
+
+diff --git a/src/main/java/net/minecraft/world/item/component/CustomData.java b/src/main/java/net/minecraft/world/item/component/CustomData.java
+index 17b6bd630e9767c5e9fa5ceff228fb81f124be8c..0a905a59d97ed833cb4f1903006d6f340199fa14 100644
+--- a/src/main/java/net/minecraft/world/item/component/CustomData.java
++++ b/src/main/java/net/minecraft/world/item/component/CustomData.java
+@@ -34,7 +34,17 @@ public final class CustomData {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public static final CustomData EMPTY = new CustomData(new CompoundTag());
+     private static final String TYPE_TAG = "id";
+-    public static final Codec<CustomData> CODEC = Codec.withAlternative(CompoundTag.CODEC, TagParser.AS_CODEC)
++    // Paper start - Item serialization as json
++    public static ThreadLocal<Boolean> SERIALIZE_CUSTOM_AS_SNBT = ThreadLocal.withInitial(() -> false);
++    public static final Codec<CustomData> CODEC = Codec.either(CompoundTag.CODEC, TagParser.AS_CODEC)
++        .xmap(com.mojang.datafixers.util.Either::unwrap, data -> { // Both will be used for deserialization, but we decide which one to use for serialization
++            if (!SERIALIZE_CUSTOM_AS_SNBT.get()) {
++                return com.mojang.datafixers.util.Either.left(data); // First codec
++            } else {
++                return com.mojang.datafixers.util.Either.right(data); // Second codec
++            }
++        })
++        // Paper end - Item serialization as json
+         .xmap(CustomData::new, component -> component.tag);
+     public static final Codec<CustomData> CODEC_WITH_ID = CODEC.validate(
+         component -> component.getUnsafe().contains("id", 8) ? DataResult.success(component) : DataResult.error(() -> "Missing id for entity in: " + component)
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 869b0977a463d46ff7983f8d15c3c679027e7135..0e8f4710c0ce05e8cd42cbbc9fedc05bf8585a19 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -527,6 +527,36 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
+     }
+ 
++    @Override
++    public com.google.gson.JsonObject serializeItemAsJson(ItemStack itemStack) {
++        Preconditions.checkNotNull(itemStack, "Cannot serialize empty ItemStack");
++        Preconditions.checkArgument(!itemStack.isEmpty(), "Cannot serialize empty ItemStack");
++
++        net.minecraft.core.RegistryAccess.Frozen reg = net.minecraft.server.MinecraftServer.getServer().registryAccess();
++        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = reg.createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
++        com.google.gson.JsonObject item;
++        // Serialize as SNBT to preserve exact NBT types; vanilla codecs already can handle such deserialization.
++        net.minecraft.world.item.component.CustomData.SERIALIZE_CUSTOM_AS_SNBT.set(true);
++        try {
++            item = net.minecraft.world.item.ItemStack.CODEC.encodeStart(ops, CraftItemStack.unwrap(itemStack)).getOrThrow().getAsJsonObject();
++        } finally {
++            net.minecraft.world.item.component.CustomData.SERIALIZE_CUSTOM_AS_SNBT.set(false);
++        }
++        item.addProperty("DataVersion", this.getDataVersion());
++        return item;
++    }
++
++    @Override
++    public ItemStack deserializeItemFromJson(com.google.gson.JsonObject data) throws IllegalArgumentException {
++        Preconditions.checkNotNull(data, "null cannot be deserialized");
++
++        final int dataVersion = data.get("DataVersion").getAsInt();
++        final int currentVersion = org.bukkit.craftbukkit.util.CraftMagicNumbers.INSTANCE.getDataVersion();
++        data = (com.google.gson.JsonObject) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic<>(com.mojang.serialization.JsonOps.INSTANCE, data), dataVersion, currentVersion).getValue();
++        com.mojang.serialization.DynamicOps<com.google.gson.JsonElement> ops = MinecraftServer.getServer().registryAccess().createSerializationContext(com.mojang.serialization.JsonOps.INSTANCE);
++        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.CODEC.parse(ops, data).getOrThrow(IllegalArgumentException::new));
++    }
++
+     @Override
+     public byte[] serializeEntity(org.bukkit.entity.Entity entity) {
+         Preconditions.checkNotNull(entity, "null cannot be serialized");

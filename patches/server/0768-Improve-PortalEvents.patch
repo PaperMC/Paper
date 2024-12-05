@@ -1,0 +1,103 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 15 Dec 2022 10:33:39 -0800
+Subject: [PATCH] Improve PortalEvents
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 3a96eb35787ac4b45e4b212c221593516a32ea4d..07f14652768d4715eb9053b5a8381816a61b0d28 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1552,7 +1552,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+ 
+             Location enter = this.getBukkitEntity().getLocation();
+             PositionMoveRotation absolutePosition = PositionMoveRotation.calculateAbsolute(PositionMoveRotation.of(this), PositionMoveRotation.of(teleportTarget), teleportTarget.relatives());
+-            Location exit = (worldserver == null) ? null : CraftLocation.toBukkit(absolutePosition.position(), worldserver.getWorld(), absolutePosition.yRot(), absolutePosition.xRot());
++            Location exit = /* (worldserver == null) ? null : // Paper - always non-null */CraftLocation.toBukkit(absolutePosition.position(), worldserver.getWorld(), absolutePosition.yRot(), absolutePosition.xRot());
+             PlayerTeleportEvent tpEvent = new PlayerTeleportEvent(this.getBukkitEntity(), enter, exit, teleportTarget.cause());
+             // Paper start - gateway-specific teleport event
+             if (this.portalProcess != null && this.portalProcess.isSamePortal(((net.minecraft.world.level.block.EndGatewayBlock) net.minecraft.world.level.block.Blocks.END_GATEWAY)) && this.serverLevel().getBlockEntity(this.portalProcess.getEntryPosition()) instanceof net.minecraft.world.level.block.entity.TheEndGatewayBlockEntity theEndGatewayBlockEntity) {
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 59dd5179b3ac6e448304a94d1e6343b3c08d674d..1fa9a243c883120402ecc191d98a750b742bdbd0 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3777,7 +3777,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
+         Location enter = bukkitEntity.getLocation();
+ 
+-        EntityPortalEvent event = new EntityPortalEvent(bukkitEntity, enter, exit, searchRadius, true, creationRadius);
++        // Paper start
++        final org.bukkit.PortalType portalType = switch (cause) {
++            case END_PORTAL -> org.bukkit.PortalType.ENDER;
++            case NETHER_PORTAL -> org.bukkit.PortalType.NETHER;
++            case END_GATEWAY -> org.bukkit.PortalType.END_GATEWAY; // not actually used yet
++            default -> org.bukkit.PortalType.CUSTOM;
++        };
++        EntityPortalEvent event = new EntityPortalEvent(bukkitEntity, enter, exit, searchRadius, true, creationRadius, portalType);
++        // Paper end
+         event.getEntity().getServer().getPluginManager().callEvent(event);
+         if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !entity.isAlive()) {
+             return null;
+diff --git a/src/main/java/net/minecraft/world/level/block/EndGatewayBlock.java b/src/main/java/net/minecraft/world/level/block/EndGatewayBlock.java
+index 58b2454ac5bd3400559aba3c64f228f41f6218ae..af46f2885ead1e3ec1734504d8ba134c886e04fb 100644
+--- a/src/main/java/net/minecraft/world/level/block/EndGatewayBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/EndGatewayBlock.java
+@@ -94,6 +94,10 @@ public class EndGatewayBlock extends BaseEntityBlock implements Portal {
+     protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
+         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         if (entity.canUsePortal(false)) {
++            // Paper start - call EntityPortalEnterEvent
++            org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()), org.bukkit.PortalType.END_GATEWAY); // Paper - add portal type
++            if (!event.callEvent()) return;
++            // Paper end - call EntityPortalEnterEvent
+             BlockEntity tileentity = world.getBlockEntity(pos);
+ 
+             if (!world.isClientSide && tileentity instanceof TheEndGatewayBlockEntity) {
+diff --git a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
+index 8ca226641588a88c8b068a7acac9d7e92b077144..8cb4142562db0be1f1a7d961ec5a10d4abf31692 100644
+--- a/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/EndPortalBlock.java
+@@ -71,8 +71,9 @@ public class EndPortalBlock extends BaseEntityBlock implements Portal {
+         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         if (entity.canUsePortal(false)) {
+             // CraftBukkit start - Entity in portal
+-            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
++            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()), org.bukkit.PortalType.ENDER); // Paper - add portal type
+             world.getCraftServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) return; // Paper - make cancellable
+             // CraftBukkit end
+             if (!world.isClientSide && world.dimension() == Level.END && entity instanceof ServerPlayer) {
+                 ServerPlayer entityplayer = (ServerPlayer) entity;
+@@ -95,7 +96,7 @@ public class EndPortalBlock extends BaseEntityBlock implements Portal {
+         ServerLevel worldserver1 = world.getServer().getLevel(resourcekey);
+ 
+         if (worldserver1 == null) {
+-            return new TeleportTransition(PlayerTeleportEvent.TeleportCause.END_PORTAL); // CraftBukkit- always fire event in case plugins wish to change it
++            return null; // Paper - keep previous behavior of not firing PlayerTeleportEvent if the target world doesn't exist
+         } else {
+             boolean flag = resourcekey == Level.END;
+             BlockPos blockposition1 = flag ? ServerLevel.END_SPAWN_POINT : worldserver1.getSharedSpawnPos();
+diff --git a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
+index ac894e5651ea6145727639e2882edb236a47fb02..3e9642e5236d9a1cc8e8f3b375d76810f4bc7c6c 100644
+--- a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
+@@ -118,8 +118,9 @@ public class NetherPortalBlock extends Block implements Portal {
+         if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         if (entity.canUsePortal(false)) {
+             // CraftBukkit start - Entity in portal
+-            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
++            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()), org.bukkit.PortalType.NETHER); // Paper - add portal type
+             world.getCraftServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) return; // Paper - make cancellable
+             // CraftBukkit end
+             entity.setAsInsidePortal(this, pos);
+         }
+@@ -151,7 +152,7 @@ public class NetherPortalBlock extends Block implements Portal {
+         // Paper end - Add EntityPortalReadyEvent
+ 
+         if (worldserver1 == null) {
+-            return new TeleportTransition(PlayerTeleportEvent.TeleportCause.NETHER_PORTAL); // always fire event in case plugins wish to change it
++            return null; // Paper - keep previous behavior of not firing PlayerTeleportEvent if the target world doesn't exist
+         } else {
+             boolean flag = worldserver1.getTypeKey() == LevelStem.NETHER;
+             // CraftBukkit end

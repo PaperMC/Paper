@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Phoenix616 <mail@moep.tv>
+Date: Sat, 1 Feb 2020 16:50:39 +0100
+Subject: [PATCH] Pillager patrol spawn settings and per player options
+
+This adds config options for defining the spawn chance, spawn delay and
+spawn start day as well as toggles for handling the spawn delay and
+start day per player. (Based on the time played statistic)
+When not per player it will use the Vanilla mechanic of one delay per
+world and the world age for the start day.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 9b194fcae767647b719ca687d0574ef74dc310da..6a282b80e062a0dd769c0d94357bce9a40240200 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -295,6 +295,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+     public boolean wonGame;
+     private int containerUpdateDelay; // Paper - Configurable container update tick rate
+     public long loginTime; // Paper - Replace OfflinePlayer#getLastPlayed
++    public int patrolSpawnDelay; // Paper - Pillager patrol spawn settings and per player options
+     // Paper start - cancellable death event
+     public boolean queueHealthUpdatePacket;
+     public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java
+index 8837db46ced2412942949a3c6f81ec7d9a0bacda..e93ef232b0426a1095dad05fc4acb2a74db5b689 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/PatrolSpawner.java
+@@ -24,7 +24,7 @@ public class PatrolSpawner implements CustomSpawner {
+ 
+     @Override
+     public int tick(ServerLevel world, boolean spawnMonsters, boolean spawnAnimals) {
+-        if (world.paperConfig().entities.behavior.pillagerPatrols.disable) return 0; // Paper - Add option to disable pillager patrols
++        if (world.paperConfig().entities.behavior.pillagerPatrols.disable || world.paperConfig().entities.behavior.pillagerPatrols.spawnChance == 0) return 0; // Paper - Add option to disable pillager patrols & Pillager patrol spawn settings and per player options
+         if (!spawnMonsters) {
+             return 0;
+         } else if (!world.getGameRules().getBoolean(GameRules.RULE_DO_PATROL_SPAWNING)) {
+@@ -32,23 +32,51 @@ public class PatrolSpawner implements CustomSpawner {
+         } else {
+             RandomSource randomsource = world.random;
+ 
+-            --this.nextTick;
+-            if (this.nextTick > 0) {
++            // Paper start - Pillager patrol spawn settings and per player options
++            // Random player selection moved up for per player spawning and configuration
++            int j = world.players().size();
++            if (j < 1) {
+                 return 0;
++            }
++
++            net.minecraft.server.level.ServerPlayer entityhuman = world.players().get(randomsource.nextInt(j));
++            if (entityhuman.isSpectator()) {
++                return 0;
++            }
++
++            int patrolSpawnDelay;
++            if (world.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.perPlayer) {
++                --entityhuman.patrolSpawnDelay;
++                patrolSpawnDelay = entityhuman.patrolSpawnDelay;
+             } else {
+-                this.nextTick += 12000 + randomsource.nextInt(1200);
+-                long i = world.getDayTime() / 24000L;
++                this.nextTick--;
++                patrolSpawnDelay = this.nextTick;
++            }
++
++            if (patrolSpawnDelay > 0) {
++                return 0;
++            } else {
++                long days;
++                if (world.paperConfig().entities.behavior.pillagerPatrols.start.perPlayer) {
++                    days = entityhuman.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.PLAY_TIME)) / 24000L; // PLAY_ONE_MINUTE is actually counting in ticks, a misnomer by Mojang
++                } else {
++                    days = world.getDayTime() / 24000L;
++                }
++                if (world.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.perPlayer) {
++                    entityhuman.patrolSpawnDelay += world.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.ticks + randomsource.nextInt(1200);
++                } else {
++                    this.nextTick += world.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.ticks + randomsource.nextInt(1200);
++                }
+ 
+-                if (i >= 5L && world.isDay()) {
+-                    if (randomsource.nextInt(5) != 0) {
++                if (days >= world.paperConfig().entities.behavior.pillagerPatrols.start.day && world.isDay()) {
++                    if (randomsource.nextDouble() >= world.paperConfig().entities.behavior.pillagerPatrols.spawnChance) {
++                        // Paper end - Pillager patrol spawn settings and per player options
+                         return 0;
+                     } else {
+-                        int j = world.players().size();
+ 
+                         if (j < 1) {
+                             return 0;
+                         } else {
+-                            Player entityhuman = (Player) world.players().get(randomsource.nextInt(j));
+ 
+                             if (entityhuman.isSpectator()) {
+                                 return 0;

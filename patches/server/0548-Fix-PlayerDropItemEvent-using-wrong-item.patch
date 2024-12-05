@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 20 Jun 2021 21:55:59 -0700
+Subject: [PATCH] Fix PlayerDropItemEvent using wrong item
+
+
+diff --git a/src/main/java/net/minecraft/server/commands/GiveCommand.java b/src/main/java/net/minecraft/server/commands/GiveCommand.java
+index c81fd3e1108fb0a02f9240263404af2b968c8494..0d9de4c61c7b26a6ff37c12fde629161fd0c3d5a 100644
+--- a/src/main/java/net/minecraft/server/commands/GiveCommand.java
++++ b/src/main/java/net/minecraft/server/commands/GiveCommand.java
+@@ -38,6 +38,7 @@ public class GiveCommand {
+ 
+     private static int giveItem(CommandSourceStack source, ItemInput item, Collection<ServerPlayer> targets, int count) throws CommandSyntaxException {
+         ItemStack itemstack = item.createItemStack(1, false);
++        final Component displayName = itemstack.getDisplayName(); // Paper - get display name early
+         int j = itemstack.getMaxStackSize();
+         int k = j * 100;
+ 
+@@ -79,11 +80,11 @@ public class GiveCommand {
+ 
+             if (targets.size() == 1) {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.give.success.single", count, itemstack.getDisplayName(), ((ServerPlayer) targets.iterator().next()).getDisplayName());
++                    return Component.translatable("commands.give.success.single", count, displayName, ((ServerPlayer) targets.iterator().next()).getDisplayName()); // Paper - use cached display name
+                 }, true);
+             } else {
+                 source.sendSuccess(() -> {
+-                    return Component.translatable("commands.give.success.single", count, itemstack.getDisplayName(), targets.size());
++                    return Component.translatable("commands.give.success.single", count, displayName, targets.size()); // Paper - use cached display name
+                 }, true);
+             }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 32fc24fa05660ff941fc02bb3c1827790acbbb1a..33974faafabe763ac7d932f2fdb814ea914ccf88 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -2724,7 +2724,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+ 
+             if (flag1) {
+                 if (!itemstack1.isEmpty()) {
+-                    this.awardStat(Stats.ITEM_DROPPED.get(itemstack1.getItem()), itemstack.getCount());
++                    this.awardStat(Stats.ITEM_DROPPED.get(itemstack1.getItem()), itemstack1.getCount()); // Paper - Fix PlayerDropItemEvent using wrong item
+                 }
+ 
+                 this.awardStat(Stats.DROP);
+@@ -2740,6 +2740,11 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+             return null;
+         } else {
+             double d0 = this.getEyeY() - 0.30000001192092896D;
++            // Paper start
++            ItemStack tmp = stack.copy();
++            stack.setCount(0);
++            stack = tmp;
++            // Paper end
+             ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), d0, this.getZ(), stack);
+ 
+             entityitem.setPickUpDelay(40);

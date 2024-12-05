@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Kevin Raneri <kevin.raneri@gmail.com>
+Date: Mon, 30 Sep 2024 09:50:55 -0700
+Subject: [PATCH] Configurable Entity Despawn Time
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 6acba522ea92cabcb9f89414e3edce513003771b..9865fb52bcee1dd4dd068e69e45cd85fbcbe9060 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -429,6 +429,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     private UUID originWorld;
+     public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
+     public boolean fixedPose = false; // Paper - Expand Pose API
++    private final int despawnTime; // Paper - entity despawn time limit
+ 
+     public void setOrigin(@javax.annotation.Nonnull Location location) {
+         this.origin = location.toVector();
+@@ -461,6 +462,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+     public Entity(EntityType<?> type, Level world) {
+         this.id = Entity.ENTITY_COUNTER.incrementAndGet();
++        this.despawnTime = type == EntityType.PLAYER ? -1 : world.paperConfig().entities.spawning.despawnTime.getOrDefault(type, io.papermc.paper.configuration.type.number.IntOr.Disabled.DISABLED).or(-1); // Paper - entity despawn time limit
+         this.passengers = ImmutableList.of();
+         this.deltaMovement = Vec3.ZERO;
+         this.bb = Entity.INITIAL_AABB;
+@@ -731,6 +733,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public void tick() {
++        // Paper start - entity despawn time limit
++        if (this.despawnTime >= 0 && this.tickCount >= this.despawnTime) {
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN);
++            return;
++        }
++        // Paper end - entity despawn time limit
+         this.baseTick();
+     }
+ 

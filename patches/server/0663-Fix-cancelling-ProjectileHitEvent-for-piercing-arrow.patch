@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 19 Feb 2022 19:05:59 -0800
+Subject: [PATCH] Fix cancelling ProjectileHitEvent for piercing arrows
+
+Piercing arrows search for multiple entities inside a while
+loop that is checking the projectile entity's removed state.
+If the hit event is cancelled on the first entity, the event will
+be called over and over again inside that while loop until the event
+is not cancelled. The solution here, is to make use of an
+already-existing field on AbstractArrow for tracking entities hit by
+piercing arrows to avoid duplicate damage being applied.
+
+== AT ==
+protected net.minecraft.world.entity.projectile.Projectile hitCancelled
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index 320ace815df1a76232df53d5ddeb3aef9b358d8e..758fa49f9b420fdbb583ca3443b81ca151478ea8 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -345,6 +345,19 @@ public abstract class AbstractArrow extends Projectile {
+ 
+     }
+ 
++    // Paper start - Fix cancelling ProjectileHitEvent for piercing arrows
++    @Override
++    public ProjectileDeflection preHitTargetOrDeflectSelf(HitResult hitResult) {
++        if (hitResult instanceof EntityHitResult entityHitResult && this.hitCancelled && this.getPierceLevel() > 0) {
++            if (this.piercingIgnoreEntityIds == null) {
++                this.piercingIgnoreEntityIds = new IntOpenHashSet(5);
++            }
++            this.piercingIgnoreEntityIds.add(entityHitResult.getEntity().getId());
++        }
++        return super.preHitTargetOrDeflectSelf(hitResult);
++    }
++    // Paper end - Fix cancelling ProjectileHitEvent for piercing arrows
++
+     @Override
+     protected double getDefaultGravity() {
+         return 0.05D;

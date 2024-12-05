@@ -1,0 +1,154 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 27 Sep 2024 17:13:16 -0700
+Subject: [PATCH] Improve entity effect API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 2298b3203ce6bf8aca9f819fe27ab5ef6594dbed..7142319f6779078e65369bc406d898473abee85e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1291,4 +1291,15 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         return this.getHandle().getScoreboardName();
+     }
+     // Paper end - entity scoreboard name
++
++    // Paper start - broadcast hurt animation
++    @Override
++    public void broadcastHurtAnimation(java.util.Collection<Player> players) {
++        //noinspection SuspiciousMethodCalls
++        Preconditions.checkArgument(!players.contains(this), "Cannot broadcast hurt animation to self without a yaw");
++        for (final org.bukkit.entity.Player player : players) {
++            ((CraftPlayer) player).sendHurtAnimation(0, this);
++        }
++    }
++    // Paper end - broadcast hurt animation
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 3901d53737a04f821c8569fa6b79ee4e624f8729..a51115038962f322f45f0de2bbe52d7c1c6f7529 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1284,6 +1284,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public void sendHurtAnimation(float yaw) {
++        // Paper start - Add target entity to sendHurtAnimation
++        this.sendHurtAnimation(yaw, this);
++    }
++    public void sendHurtAnimation(float yaw, org.bukkit.entity.Entity target) {
++        // Paper end - Add target entity to sendHurtAnimation
+         if (this.getHandle().connection == null) {
+             return;
+         }
+@@ -1293,7 +1298,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+          * This makes no sense. We'll add 90 to it so that 0 = front, clockwise from there.
+          */
+         float actualYaw = yaw + 90;
+-        this.getHandle().connection.send(new ClientboundHurtAnimationPacket(this.getEntityId(), actualYaw));
++        this.getHandle().connection.send(new ClientboundHurtAnimationPacket(target.getEntityId(), actualYaw)); // Paper - Add target entity to sendHurtAnimation
+     }
+ 
+     @Override
+@@ -3515,4 +3520,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public void setSendViewDistance(final int viewDistance) {
+         throw new UnsupportedOperationException("Not implemented yet");
+     }
++
++    // Paper start - entity effect API
++    @Override
++    public void sendEntityEffect(final org.bukkit.EntityEffect effect, final org.bukkit.entity.Entity target) {
++        if (this.getHandle().connection == null || !effect.isApplicableTo(target)) {
++            return;
++        }
++        this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundEntityEventPacket(((CraftEntity) target).getHandle(), effect.getData()));
++    }
++    // Paper end - entity effect API
+ }
+diff --git a/src/test/java/org/bukkit/EntityEffectTest.java b/src/test/java/org/bukkit/EntityEffectTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5e64dfaeba167374dc45c5becfb2e7114657dff6
+--- /dev/null
++++ b/src/test/java/org/bukkit/EntityEffectTest.java
+@@ -0,0 +1,82 @@
++package org.bukkit;
++
++import com.google.common.base.Joiner;
++import java.lang.reflect.Field;
++import java.lang.reflect.Modifier;
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.HashSet;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++import net.minecraft.world.entity.EntityEvent;
++import org.bukkit.support.environment.Normal;
++import org.junit.jupiter.api.Test;
++
++import static org.junit.jupiter.api.Assertions.fail;
++
++@Normal
++public class EntityEffectTest {
++
++    private static List<Byte> collectNmsLevelEvents() throws ReflectiveOperationException {
++        final List<Byte> events = new ArrayList<>();
++        for (final Field field : EntityEvent.class.getFields()) {
++            if (Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers()) && field.getType() == byte.class) {
++                events.add((byte) field.get(null));
++            }
++        }
++        for (int i = 22; i <= 28; i++) {
++            events.remove(Byte.valueOf((byte) i)); // all have existing API (debug info and op level)
++        }
++        events.remove(Byte.valueOf(EntityEvent.STOP_ATTACKING)); // not used on client anywhere
++        events.remove(Byte.valueOf(EntityEvent.USE_ITEM_COMPLETE)); // not suitable for API (complete using item on Player)
++        events.remove(Byte.valueOf(EntityEvent.FISHING_ROD_REEL_IN)); // not suitable for API (fishing rod reel in on FishingHook)
++        events.add((byte) 0); // handled on Arrow (for some reason it's not in the EntityEvent nms file as a constant)
++        return events;
++    }
++
++    private static boolean isNotDeprecated(EntityEffect effect) throws ReflectiveOperationException {
++        return !EntityEffect.class.getDeclaredField(effect.name()).isAnnotationPresent(Deprecated.class);
++    }
++
++    @Test
++    public void checkAllApiExists() throws ReflectiveOperationException {
++        Map<Byte, EntityEffect> toId = new HashMap<>();
++        for (final EntityEffect effect : EntityEffect.values()) {
++            if (isNotDeprecated(effect)) {
++                toId.put(effect.getData(), effect);
++            }
++        }
++
++        final Set<Byte> missingEvents = new HashSet<>();
++        for (final Byte event : collectNmsLevelEvents()) {
++            if (toId.get(event) == null) {
++                missingEvents.add(event);
++            }
++        }
++        if (!missingEvents.isEmpty()) {
++            fail("Missing API EntityEffects:\n" + Joiner.on("\n").join(missingEvents));
++        }
++    }
++
++    @Test
++    public void checkNoExtraApi() throws ReflectiveOperationException {
++        Map<Byte, EntityEffect> toId = new HashMap<>();
++        for (final EntityEffect effect : EntityEffect.values()) {
++            if (isNotDeprecated(effect)) {
++                toId.put(effect.getData(), effect);
++            }
++        }
++
++        final List<Byte> nmsEvents = collectNmsLevelEvents();
++        final Set<EntityEffect> extraApiEffects = new HashSet<>();
++        for (final Map.Entry<Byte, EntityEffect> entry : toId.entrySet()) {
++            if (!nmsEvents.contains(entry.getKey())) {
++                extraApiEffects.add(entry.getValue());
++            }
++        }
++        if (!extraApiEffects.isEmpty()) {
++            fail("Extra API EntityEffects:\n" + Joiner.on("\n").join(extraApiEffects));
++        }
++    }
++}

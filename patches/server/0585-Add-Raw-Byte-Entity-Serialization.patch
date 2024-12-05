@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Mariell Hoversholm <proximyst@proximyst.com>
+Date: Sun, 24 Oct 2021 16:20:31 -0400
+Subject: [PATCH] Add Raw Byte Entity Serialization
+
+== AT ==
+public net.minecraft.world.entity.Entity setLevel(Lnet/minecraft/world/level/Level;)V
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 2a9be5b06f2f9db8f1ed2061c4fc3f94600e266a..fe1a30e4c73dbecbd44187dbdef0d98b7613e524 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2284,6 +2284,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         }
+     }
+ 
++    // Paper start - Entity serialization api
++    public boolean serializeEntity(CompoundTag compound) {
++        List<Entity> pass = new java.util.ArrayList<>(this.getPassengers());
++        this.passengers = ImmutableList.of();
++        boolean result = save(compound);
++        this.passengers = ImmutableList.copyOf(pass);
++        return result;
++    }
++    // Paper end - Entity serialization api
+     public boolean save(CompoundTag nbt) {
+         return this.isPassenger() ? false : this.saveAsPassenger(nbt);
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 888a75423ac90ca85308eeb6d67bac5348bf31e0..b13c947d2cfe085017b30cb0f8340dd64f338914 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1083,6 +1083,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     }
+     // Paper end - tracked players API
+ 
++    // Paper start - raw entity serialization API
++    @Override
++    public boolean spawnAt(Location location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++        Preconditions.checkNotNull(location, "location cannot be null");
++        Preconditions.checkNotNull(reason, "reason cannot be null");
++        this.entity.setLevel(((CraftWorld) location.getWorld()).getHandle());
++        this.entity.setPos(location.getX(), location.getY(), location.getZ());
++        this.entity.setRot(location.getYaw(), location.getPitch());
++        return !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
++    }
++    // Paper end - raw entity serialization API
++
+     // Paper start - missing entity api
+     @Override
+     public boolean isInvisible() {  // Paper - moved up from LivingEntity
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 6f780b76ebadb6155195b93f3e6d382141eb0bcc..d7698f8ae59195458148397406a104224676b76e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -510,7 +510,33 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
+     }
+ 
+-    private byte[] serializeNbtToBytes(CompoundTag compound) {
++    @Override
++    public byte[] serializeEntity(org.bukkit.entity.Entity entity) {
++        Preconditions.checkNotNull(entity, "null cannot be serialized");
++        Preconditions.checkArgument(entity instanceof org.bukkit.craftbukkit.entity.CraftEntity, "only CraftEntities can be serialized");
++
++        net.minecraft.nbt.CompoundTag compound = new net.minecraft.nbt.CompoundTag();
++        ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().serializeEntity(compound);
++        return serializeNbtToBytes(compound);
++    }
++
++    @Override
++    public org.bukkit.entity.Entity deserializeEntity(byte[] data, org.bukkit.World world, boolean preserveUUID) {
++        Preconditions.checkNotNull(data, "null cannot be deserialized");
++        Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
++
++        net.minecraft.nbt.CompoundTag compound = deserializeNbtFromBytes(data);
++        int dataVersion = compound.getInt("DataVersion");
++        compound = (net.minecraft.nbt.CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ENTITY, new Dynamic<>(NbtOps.INSTANCE, compound), dataVersion, this.getDataVersion()).getValue();
++        if (!preserveUUID) {
++            // Generate a new UUID so we don't have to worry about deserializing the same entity twice
++            compound.remove("UUID");
++        }
++        return net.minecraft.world.entity.EntityType.create(compound, ((org.bukkit.craftbukkit.CraftWorld) world).getHandle(), net.minecraft.world.entity.EntitySpawnReason.LOAD)
++            .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?")).getBukkitEntity();
++    }
++
++    private byte[] serializeNbtToBytes(net.minecraft.nbt.CompoundTag compound) {
+         compound.putInt("DataVersion", getDataVersion());
+         java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream();
+         try {

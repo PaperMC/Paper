@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SoSeDiK <mrsosedik@gmail.com>
+Date: Wed, 11 Jan 2023 20:59:01 +0200
+Subject: [PATCH] Expand Pose API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 86f3955f938a512d1cc3207862549f4a6e6e67c8..96c252a797a971f36ccaf83ee00da27cf38a2f6c 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -428,6 +428,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     @javax.annotation.Nullable
+     private UUID originWorld;
+     public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
++    public boolean fixedPose = false; // Paper - Expand Pose API
+ 
+     public void setOrigin(@javax.annotation.Nonnull Location location) {
+         this.origin = location.toVector();
+@@ -626,6 +627,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     public void onRemoval(Entity.RemovalReason reason) {}
+ 
+     public void setPose(net.minecraft.world.entity.Pose pose) {
++        if (this.fixedPose) return; // Paper - Expand Pose API
+         // CraftBukkit start
+         if (pose == this.getPose()) {
+             return;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 0278cd156e3a82df4289f483967512dad63a0644..4c3029a6e4b50afc945797ab23e8c67acba70345 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -895,6 +895,20 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     public boolean isSneaking() {
+         return this.getHandle().isShiftKeyDown();
+     }
++
++    @Override
++    public void setPose(Pose pose, boolean fixed) {
++        Preconditions.checkNotNull(pose, "Pose cannot be null");
++        final Entity handle = this.getHandle();
++        handle.fixedPose = false;
++        handle.setPose(net.minecraft.world.entity.Pose.values()[pose.ordinal()]);
++        handle.fixedPose = fixed;
++    }
++
++    @Override
++    public boolean hasFixedPose() {
++        return this.getHandle().fixedPose;
++    }
+     // Paper end
+ 
+     @Override

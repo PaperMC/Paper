@@ -1,0 +1,353 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Mon, 19 Aug 2024 18:05:26 +0200
+Subject: [PATCH] Fix InventoryOpenEvent cancellation
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index ebef3db3e42d3cb8c36ace390af0fc90a5405d26..8c0dcce3c43775185bc23df3a52a2f8ba1a72544 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1925,6 +1925,10 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+                     } else if (factory instanceof ChestBlock.DoubleInventory) {
+                         // SPIGOT-5355 - double chests too :(
+                         ((ChestBlock.DoubleInventory) factory).inventorylargechest.stopOpen(this);
++                        // Paper start - Fix InventoryOpenEvent cancellation
++                    } else if (!this.enderChestInventory.isActiveChest(null)) {
++                        this.enderChestInventory.stopOpen(this);
++                        // Paper end - Fix InventoryOpenEvent cancellation
+                     }
+                     return OptionalInt.empty();
+                 }
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index c4bc1819cba3287c4a67ae5d00f8c4d6ab899732..0d168d15d9adeb90a183d4a847931cbf2281a5c7 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -569,8 +569,7 @@ public class ServerPlayerGameMode {
+         } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
+             MenuProvider itileinventory = iblockdata.getMenuProvider(world, blockposition);
+ 
+-            if (itileinventory != null) {
+-                player.openMenu(itileinventory);
++            if (itileinventory != null && player.openMenu(itileinventory).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+                 return InteractionResult.CONSUME;
+             } else {
+                 return InteractionResult.PASS;
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
+index 8033abfd77bcc20326b992a9d81e2faa9582fb83..1f4cc08e84a23213bb9786ea09ad77caeec2d336 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
+@@ -125,10 +125,10 @@ public abstract class AbstractChestBoat extends AbstractBoat implements HasCusto
+ 
+     @Override
+     public void openCustomInventoryScreen(Player player) {
+-        player.openMenu(this);
++        // Paper - fix inventory open cancel - moved into below if
+         Level world = player.level();
+ 
+-        if (world instanceof ServerLevel worldserver) {
++        if (world instanceof ServerLevel worldserver && player.openMenu(this).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             this.gameEvent(GameEvent.CONTAINER_OPEN, player);
+             PiglinAi.angerNearbyPiglins(worldserver, player, true);
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+index cc7826a10f22e3307231d887db2fee98063b1f46..45f6191cc8e2ecdacbc2df0ddb5ea7cc6a546812 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+@@ -95,7 +95,11 @@ public interface ContainerEntity extends Container, MenuProvider {
+     }
+ 
+     default InteractionResult interactWithContainerVehicle(Player player) {
+-        player.openMenu(this);
++        // Paper start - Fix InventoryOpenEvent cancellation
++        if (player.openMenu(this).isEmpty()) {
++            return InteractionResult.PASS;
++        }
++        // Paper end - Fix InventoryOpenEvent cancellation
+         return InteractionResult.SUCCESS;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/AnvilBlock.java b/src/main/java/net/minecraft/world/level/block/AnvilBlock.java
+index f50135ddd1e3699b0e3390b316d82f3884bab719..50c907c962f936d2035bb7550750cdbd220b29c2 100644
+--- a/src/main/java/net/minecraft/world/level/block/AnvilBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/AnvilBlock.java
+@@ -62,8 +62,9 @@ public class AnvilBlock extends FallingBlock {
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+         if (!world.isClientSide) {
+-            player.openMenu(state.getMenuProvider(world, pos));
++            if (player.openMenu(state.getMenuProvider(world, pos)).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_ANVIL);
++            } // Paper - Fix InventoryOpenEvent cancellation
+         }
+ 
+         return InteractionResult.SUCCESS;
+diff --git a/src/main/java/net/minecraft/world/level/block/BarrelBlock.java b/src/main/java/net/minecraft/world/level/block/BarrelBlock.java
+index 6def42b083f9fdef254164d98f66edbfe0c512f3..2e87cb196996cd8c569b7ff68943e3f1a172f351 100644
+--- a/src/main/java/net/minecraft/world/level/block/BarrelBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BarrelBlock.java
+@@ -41,8 +41,7 @@ public class BarrelBlock extends BaseEntityBlock {
+ 
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+-        if (world instanceof ServerLevel serverLevel && world.getBlockEntity(pos) instanceof BarrelBlockEntity barrelBlockEntity) {
+-            player.openMenu(barrelBlockEntity);
++        if (world instanceof ServerLevel serverLevel && world.getBlockEntity(pos) instanceof BarrelBlockEntity barrelBlockEntity && player.openMenu(barrelBlockEntity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.OPEN_BARREL);
+             PiglinAi.angerNearbyPiglins(serverLevel, player, true);
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/BeaconBlock.java b/src/main/java/net/minecraft/world/level/block/BeaconBlock.java
+index 9c6c0309907a8f313f3e1abf1b743bb5cb12995a..ecd34884260a2ed0b3aff7e16183275dc8229505 100644
+--- a/src/main/java/net/minecraft/world/level/block/BeaconBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BeaconBlock.java
+@@ -46,8 +46,7 @@ public class BeaconBlock extends BaseEntityBlock implements BeaconBeamBlock {
+ 
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+-        if (!world.isClientSide && world.getBlockEntity(pos) instanceof BeaconBlockEntity beaconBlockEntity) {
+-            player.openMenu(beaconBlockEntity);
++        if (!world.isClientSide && world.getBlockEntity(pos) instanceof BeaconBlockEntity beaconBlockEntity && player.openMenu(beaconBlockEntity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_BEACON);
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/BlastFurnaceBlock.java b/src/main/java/net/minecraft/world/level/block/BlastFurnaceBlock.java
+index b491cc959d4ce65a7ba16b64a7e1a56e77d0052c..03fed46291ff2236da619c941f864b8c78408450 100644
+--- a/src/main/java/net/minecraft/world/level/block/BlastFurnaceBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BlastFurnaceBlock.java
+@@ -45,8 +45,7 @@ public class BlastFurnaceBlock extends AbstractFurnaceBlock {
+     @Override
+     protected void openContainer(Level world, BlockPos pos, Player player) {
+         BlockEntity blockEntity = world.getBlockEntity(pos);
+-        if (blockEntity instanceof BlastFurnaceBlockEntity) {
+-            player.openMenu((MenuProvider)blockEntity);
++        if (blockEntity instanceof BlastFurnaceBlockEntity && player.openMenu((MenuProvider)blockEntity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_BLAST_FURNACE);
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/BrewingStandBlock.java b/src/main/java/net/minecraft/world/level/block/BrewingStandBlock.java
+index d73dc882775ff25da7987628e5957603149480d9..594d2dc0379528d2535731390deba057b3d743c5 100644
+--- a/src/main/java/net/minecraft/world/level/block/BrewingStandBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BrewingStandBlock.java
+@@ -68,8 +68,7 @@ public class BrewingStandBlock extends BaseEntityBlock {
+ 
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+-        if (!world.isClientSide && world.getBlockEntity(pos) instanceof BrewingStandBlockEntity brewingStandBlockEntity) {
+-            player.openMenu(brewingStandBlockEntity);
++        if (!world.isClientSide && world.getBlockEntity(pos) instanceof BrewingStandBlockEntity brewingStandBlockEntity && player.openMenu(brewingStandBlockEntity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_BREWINGSTAND);
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/CartographyTableBlock.java b/src/main/java/net/minecraft/world/level/block/CartographyTableBlock.java
+index 20feecb9c7f5537e00788a30969b002dceda605f..9e7066ec9fa5a0a852f6e38052887a47be98cb55 100644
+--- a/src/main/java/net/minecraft/world/level/block/CartographyTableBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CartographyTableBlock.java
+@@ -32,8 +32,9 @@ public class CartographyTableBlock extends Block {
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+         if (!world.isClientSide) {
+-            player.openMenu(state.getMenuProvider(world, pos));
++            if (player.openMenu(state.getMenuProvider(world, pos)).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_CARTOGRAPHY_TABLE);
++            } // Paper - Fix InventoryOpenEvent cancellation
+         }
+ 
+         return InteractionResult.SUCCESS;
+diff --git a/src/main/java/net/minecraft/world/level/block/ChestBlock.java b/src/main/java/net/minecraft/world/level/block/ChestBlock.java
+index 252d2ab67c125ae075689fa779477eb698c20a15..ca69a9fbd4942f9079aeaab7cead2d7a2c3b8659 100644
+--- a/src/main/java/net/minecraft/world/level/block/ChestBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ChestBlock.java
+@@ -247,8 +247,7 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+         if (world instanceof ServerLevel worldserver) {
+             MenuProvider itileinventory = this.getMenuProvider(state, world, pos);
+ 
+-            if (itileinventory != null) {
+-                player.openMenu(itileinventory);
++            if (itileinventory != null && player.openMenu(itileinventory).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+                 player.awardStat(this.getOpenChestStat());
+                 PiglinAi.angerNearbyPiglins(worldserver, player, true);
+             }
+diff --git a/src/main/java/net/minecraft/world/level/block/CraftingTableBlock.java b/src/main/java/net/minecraft/world/level/block/CraftingTableBlock.java
+index 673a92d383db463b5c4e2ac3a4ecbd7e97c15c6d..6a2123cd808fa79f3cdb1cb56632d29bfe99058d 100644
+--- a/src/main/java/net/minecraft/world/level/block/CraftingTableBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CraftingTableBlock.java
+@@ -31,8 +31,9 @@ public class CraftingTableBlock extends Block {
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+         if (!world.isClientSide) {
+-            player.openMenu(state.getMenuProvider(world, pos));
++            if (player.openMenu(state.getMenuProvider(world, pos)).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_CRAFTING_TABLE);
++            } // Paper - Fix InventoryOpenEvent cancellation
+         }
+ 
+         return InteractionResult.SUCCESS;
+diff --git a/src/main/java/net/minecraft/world/level/block/DispenserBlock.java b/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
+index 84de82e83b885a5c567f45cd90df751f0ef8942a..01584d77a8877528c3ec65971a1a6377c09e763b 100644
+--- a/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/DispenserBlock.java
+@@ -80,8 +80,9 @@ public class DispenserBlock extends BaseEntityBlock {
+             if (tileentity instanceof DispenserBlockEntity) {
+                 DispenserBlockEntity tileentitydispenser = (DispenserBlockEntity) tileentity;
+ 
+-                player.openMenu(tileentitydispenser);
++                if (player.openMenu(tileentitydispenser).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+                 player.awardStat(tileentitydispenser instanceof DropperBlockEntity ? Stats.INSPECT_DROPPER : Stats.INSPECT_DISPENSER);
++                } // Paper - Fix InventoryOpenEvent cancellation
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java b/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
+index d3b4965bb0a067dccdb2d83ec0947de24dfb5145..9b6ab617ab7f503cf0b2d4e29333c706ffe95f46 100644
+--- a/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
+@@ -81,11 +81,13 @@ public class EnderChestBlock extends AbstractChestBlock<EnderChestBlockEntity> i
+             if (world.getBlockState(blockPos).isRedstoneConductor(world, blockPos)) { // Paper - diff on change; make sure that EnderChest#isBlocked uses the same logic
+                 return InteractionResult.SUCCESS;
+             } else {
+-                if (world instanceof ServerLevel serverLevel) {
+-                    playerEnderChestContainer.setActiveChest(enderChestBlockEntity);
+-                    player.openMenu(
+-                        new SimpleMenuProvider((i, inventory, playerx) -> ChestMenu.threeRows(i, inventory, playerEnderChestContainer), CONTAINER_TITLE)
+-                    );
++                // Paper start - Fix InventoryOpenEvent cancellation - moved up;
++                playerEnderChestContainer.setActiveChest(enderChestBlockEntity); // Needs to happen before ChestMenu.threeRows as it is required for opening animations
++                if (world instanceof ServerLevel serverLevel && player.openMenu(
++                    new SimpleMenuProvider((i, inventory, playerx) -> ChestMenu.threeRows(i, inventory, playerEnderChestContainer), CONTAINER_TITLE)
++                ).isPresent()) {
++                // Paper end - Fix InventoryOpenEvent cancellation - moved up;
++                    // Paper - Fix InventoryOpenEvent cancellation - moved up;
+                     player.awardStat(Stats.OPEN_ENDERCHEST);
+                     PiglinAi.angerNearbyPiglins(serverLevel, player, true);
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/block/FurnaceBlock.java b/src/main/java/net/minecraft/world/level/block/FurnaceBlock.java
+index 72a3002c291181e7d874a149a22b8004ee2a0b18..618b566f067d53f32351e13b692095ebf6402925 100644
+--- a/src/main/java/net/minecraft/world/level/block/FurnaceBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FurnaceBlock.java
+@@ -45,8 +45,7 @@ public class FurnaceBlock extends AbstractFurnaceBlock {
+     @Override
+     protected void openContainer(Level world, BlockPos pos, Player player) {
+         BlockEntity blockEntity = world.getBlockEntity(pos);
+-        if (blockEntity instanceof FurnaceBlockEntity) {
+-            player.openMenu((MenuProvider)blockEntity);
++        if (blockEntity instanceof FurnaceBlockEntity && player.openMenu((MenuProvider)blockEntity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_FURNACE);
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/GrindstoneBlock.java b/src/main/java/net/minecraft/world/level/block/GrindstoneBlock.java
+index 6a45ccb7f3def6eda6d2a81ba5e713353edcc2e6..a1a98c9407f8d9ce37cac073f9704c009355309f 100644
+--- a/src/main/java/net/minecraft/world/level/block/GrindstoneBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/GrindstoneBlock.java
+@@ -152,8 +152,9 @@ public class GrindstoneBlock extends FaceAttachedHorizontalDirectionalBlock {
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+         if (!world.isClientSide) {
+-            player.openMenu(state.getMenuProvider(world, pos));
++            if (player.openMenu(state.getMenuProvider(world, pos)).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_GRINDSTONE);
++            } // Paper - Fix InventoryOpenEvent cancellation
+         }
+ 
+         return InteractionResult.SUCCESS;
+diff --git a/src/main/java/net/minecraft/world/level/block/HopperBlock.java b/src/main/java/net/minecraft/world/level/block/HopperBlock.java
+index 9da02e643948aaea91307e28eb83177aa5d0ecec..8ba23af2fa6c5174aa3ec34e78f9c21ce786c4fc 100644
+--- a/src/main/java/net/minecraft/world/level/block/HopperBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/HopperBlock.java
+@@ -125,8 +125,7 @@ public class HopperBlock extends BaseEntityBlock {
+ 
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+-        if (!world.isClientSide && world.getBlockEntity(pos) instanceof HopperBlockEntity hopperBlockEntity) {
+-            player.openMenu(hopperBlockEntity);
++        if (!world.isClientSide && world.getBlockEntity(pos) instanceof HopperBlockEntity hopperBlockEntity && player.openMenu(hopperBlockEntity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INSPECT_HOPPER);
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/LecternBlock.java b/src/main/java/net/minecraft/world/level/block/LecternBlock.java
+index 9797d756ecf532db013093469a3e40d9c6ac0544..23066357205f5a67b8ab5a2fe6c2912e698c7f8c 100644
+--- a/src/main/java/net/minecraft/world/level/block/LecternBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LecternBlock.java
+@@ -293,8 +293,7 @@ public class LecternBlock extends BaseEntityBlock {
+     private void openScreen(Level world, BlockPos pos, Player player) {
+         BlockEntity tileentity = world.getBlockEntity(pos);
+ 
+-        if (tileentity instanceof LecternBlockEntity) {
+-            player.openMenu((LecternBlockEntity) tileentity);
++        if (tileentity instanceof LecternBlockEntity && player.openMenu((LecternBlockEntity) tileentity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_LECTERN);
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/LoomBlock.java b/src/main/java/net/minecraft/world/level/block/LoomBlock.java
+index 2806ca5b0e3c73a3704a514dba2038072947d9ae..1b57f8cf3f4f27f6a76fec82a542ec1c582470c9 100644
+--- a/src/main/java/net/minecraft/world/level/block/LoomBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LoomBlock.java
+@@ -33,8 +33,9 @@ public class LoomBlock extends HorizontalDirectionalBlock {
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+         if (!world.isClientSide) {
+-            player.openMenu(state.getMenuProvider(world, pos));
++            if (player.openMenu(state.getMenuProvider(world, pos)).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_LOOM);
++            } // Paper - Fix InventoryOpenEvent cancellation
+         }
+ 
+         return InteractionResult.SUCCESS;
+diff --git a/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java b/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
+index 0712818e2d9205078bfc8846452ba31388840034..c4e6c2714b215b99c884b2dca989c2d3d8f81fa0 100644
+--- a/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
+@@ -98,8 +98,8 @@ public class ShulkerBoxBlock extends BaseEntityBlock {
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+         if (world instanceof ServerLevel serverLevel
+             && world.getBlockEntity(pos) instanceof ShulkerBoxBlockEntity shulkerBoxBlockEntity
+-            && canOpen(state, world, pos, shulkerBoxBlockEntity)) {
+-            player.openMenu(shulkerBoxBlockEntity);
++            && canOpen(state, world, pos, shulkerBoxBlockEntity) // Paper - Fix InventoryOpenEvent cancellation - expand if for belows check
++            && player.openMenu(shulkerBoxBlockEntity).isPresent()) {  // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.OPEN_SHULKER_BOX);
+             PiglinAi.angerNearbyPiglins(serverLevel, player, true);
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/SmithingTableBlock.java b/src/main/java/net/minecraft/world/level/block/SmithingTableBlock.java
+index 6b316b8829f542023c20293d664a2d0716fb6c4c..43dc3d2c419a8b4a76de49a1e625076741a98c73 100644
+--- a/src/main/java/net/minecraft/world/level/block/SmithingTableBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SmithingTableBlock.java
+@@ -38,8 +38,9 @@ public class SmithingTableBlock extends CraftingTableBlock {
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+         if (!world.isClientSide) {
+-            player.openMenu(state.getMenuProvider(world, pos));
++            if (player.openMenu(state.getMenuProvider(world, pos)).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_SMITHING_TABLE);
++            } // Paper - Fix InventoryOpenEvent cancellation
+         }
+ 
+         return InteractionResult.SUCCESS;
+diff --git a/src/main/java/net/minecraft/world/level/block/SmokerBlock.java b/src/main/java/net/minecraft/world/level/block/SmokerBlock.java
+index b0929942ca06ee14d2ba4f2ec2ee93743ee6233e..83669dfbfec46d319aec82ea2beaa90c9f6b81c3 100644
+--- a/src/main/java/net/minecraft/world/level/block/SmokerBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SmokerBlock.java
+@@ -44,8 +44,7 @@ public class SmokerBlock extends AbstractFurnaceBlock {
+     @Override
+     protected void openContainer(Level world, BlockPos pos, Player player) {
+         BlockEntity blockEntity = world.getBlockEntity(pos);
+-        if (blockEntity instanceof SmokerBlockEntity) {
+-            player.openMenu((MenuProvider)blockEntity);
++        if (blockEntity instanceof SmokerBlockEntity && player.openMenu((MenuProvider)blockEntity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_SMOKER);
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/StonecutterBlock.java b/src/main/java/net/minecraft/world/level/block/StonecutterBlock.java
+index d791248c7f874264c7d72596f239d79bda3211b2..f1366aea49206afcd64bf058ee673d6a562315c5 100644
+--- a/src/main/java/net/minecraft/world/level/block/StonecutterBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/StonecutterBlock.java
+@@ -48,8 +48,9 @@ public class StonecutterBlock extends Block {
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
+         if (!world.isClientSide) {
+-            player.openMenu(state.getMenuProvider(world, pos));
++            if (player.openMenu(state.getMenuProvider(world, pos)).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_STONECUTTER);
++            } // Paper - Fix InventoryOpenEvent cancellation
+         }
+ 
+         return InteractionResult.SUCCESS;

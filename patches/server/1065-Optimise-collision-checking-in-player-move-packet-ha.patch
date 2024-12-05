@@ -1,0 +1,168 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Thu, 2 Jul 2020 12:02:43 -0700
+Subject: [PATCH] Optimise collision checking in player move packet handling
+
+Move collision logic to just the hasNewCollision call instead of getCubes + hasNewCollision
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 8cae479d7b299ff4215c80fa2bbebf41ca967df6..84fa24880d02dc7ba1ec8bda3575be38447fd4b2 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -579,7 +579,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                     return;
+                 }
+ 
+-                boolean flag = worldserver.noCollision(entity, entity.getBoundingBox().deflate(0.0625D));
++                AABB oldBox = entity.getBoundingBox(); // Paper - copy from player movement packet
+ 
+                 d6 = d3 - this.vehicleLastGoodX; // Paper - diff on change, used for checking large move vectors above
+                 d7 = d4 - this.vehicleLastGoodY; // Paper - diff on change, used for checking large move vectors above
+@@ -595,6 +595,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                 }
+ 
+                 entity.move(MoverType.PLAYER, new Vec3(d6, d7, d8));
++                boolean didCollide = toX != entity.getX() || toY != entity.getY() || toZ != entity.getZ(); // Paper - needed here as the difference in Y can be reset - also note: this is only a guess at whether collisions took place, floating point errors can make this true when it shouldn't be...
+                 double d11 = d7;
+ 
+                 d6 = d3 - entity.getX();
+@@ -608,15 +609,23 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                 boolean flag2 = false;
+ 
+                 if (d10 > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
+-                    flag2 = true;
++                    flag2 = true; // Paper - diff on change, this should be moved wrongly
+                     ServerGamePacketListenerImpl.LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", new Object[]{entity.getName().getString(), this.player.getName().getString(), Math.sqrt(d10)});
+                 }
+ 
+                 entity.absMoveTo(d3, d4, d5, f, f1);
+                 this.player.absMoveTo(d3, d4, d5, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
+-                boolean flag3 = worldserver.noCollision(entity, entity.getBoundingBox().deflate(0.0625D));
+ 
+-                if (flag && (flag2 || !flag3)) {
++                // Paper start - optimise out extra getCubes
++                boolean teleportBack = flag2; // violating this is always a fail
++                if (!teleportBack) {
++                    // note: only call after setLocation, or else getBoundingBox is wrong
++                    AABB newBox = entity.getBoundingBox();
++                    if (didCollide || !oldBox.equals(newBox)) {
++                        teleportBack = this.hasNewCollision(worldserver, entity, oldBox, newBox);
++                    } // else: no collision at all detected, why do we care?
++                }
++                if (teleportBack) { // Paper end - optimise out extra getCubes
+                     entity.absMoveTo(d0, d1, d2, f, f1);
+                     this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
+                     this.send(ClientboundMoveVehiclePacket.fromEntity(entity));
+@@ -692,7 +701,32 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     }
+ 
+     private boolean noBlocksAround(Entity entity) {
+-        return entity.level().getBlockStates(entity.getBoundingBox().inflate(0.0625D).expandTowards(0.0D, -0.55D, 0.0D)).allMatch(BlockBehaviour.BlockStateBase::isAir);
++        // Paper start - stop using streams, this is already a known fixed problem in Entity#move
++        AABB box = entity.getBoundingBox().inflate(0.0625D).expandTowards(0.0D, -0.55D, 0.0D);
++        int minX = Mth.floor(box.minX);
++        int minY = Mth.floor(box.minY);
++        int minZ = Mth.floor(box.minZ);
++        int maxX = Mth.floor(box.maxX);
++        int maxY = Mth.floor(box.maxY);
++        int maxZ = Mth.floor(box.maxZ);
++
++        Level world = entity.level();
++        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
++
++        for (int y = minY; y <= maxY; ++y) {
++            for (int z = minZ; z <= maxZ; ++z) {
++                for (int x = minX; x <= maxX; ++x) {
++                    pos.set(x, y, z);
++                    BlockState type = world.getBlockStateIfLoaded(pos);
++                    if (type != null && !type.isAir()) {
++                        return false;
++                    }
++                }
++            }
++        }
++
++        return true;
++        // Paper end - stop using streams, this is already a known fixed problem in Entity#move
+     }
+ 
+     @Override
+@@ -1452,7 +1486,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                 }
+                             }
+ 
+-                            AABB axisalignedbb = this.player.getBoundingBox();
++                            AABB axisalignedbb = this.player.getBoundingBox(); // Paper - diff on change, should be old AABB
+ 
+                             d6 = d0 - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
+                             d7 = d1 - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
+@@ -1494,6 +1528,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+                             this.player.move(MoverType.PLAYER, new Vec3(d6, d7, d8));
+                             this.player.onGround = packet.isOnGround(); // CraftBukkit - SPIGOT-5810, SPIGOT-5835, SPIGOT-6828: reset by this.player.move
++                            boolean didCollide = toX != this.player.getX() || toY != this.player.getY() || toZ != this.player.getZ(); // Paper - needed here as the difference in Y can be reset - also note: this is only a guess at whether collisions took place, floating point errors can make this true when it shouldn't be...
+                             // Paper start - prevent position desync
+                             if (this.awaitingPositionFromClient != null) {
+                                 return; // ... thanks Mojang for letting move calls teleport across dimensions.
+@@ -1524,7 +1559,17 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                             }
+ 
+                             // Paper start - Add fail move event
+-                            boolean teleportBack = !this.player.noPhysics && !this.player.isSleeping() && (movedWrongly && worldserver.noCollision(this.player, axisalignedbb) || this.isPlayerCollidingWithAnythingNew(worldserver, axisalignedbb, d0, d1, d2));
++                            // Paper start - optimise out extra getCubes
++                            boolean teleportBack = !this.player.noPhysics && !this.player.isSleeping() && movedWrongly;
++                            this.player.absMoveTo(d0, d1, d2, f, f1); // prevent desync by tping to the set position, dropped for unknown reasons by mojang
++                            if (!this.player.noPhysics && !this.player.isSleeping() && !teleportBack) {
++                                AABB newBox = this.player.getBoundingBox();
++                                if (didCollide || !axisalignedbb.equals(newBox)) {
++                                    // note: only call after setLocation, or else getBoundingBox is wrong
++                                    teleportBack = this.hasNewCollision(worldserver, this.player, axisalignedbb, newBox);
++                                } // else: no collision at all detected, why do we care?
++                            }
++                            // Paper end - optimise out extra getCubes
+                             if (teleportBack) {
+                                 io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
+                                     toX, toY, toZ, toYaw, toPitch, false);
+@@ -1648,7 +1693,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     private boolean updateAwaitingTeleport() {
+         if (this.awaitingPositionFromClient != null) {
+-            if (this.tickCount - this.awaitingTeleportTime > 20) {
++            if (false && this.tickCount - this.awaitingTeleportTime > 20) { // Paper - this will greatly screw with clients with > 1000ms RTT
+                 this.awaitingTeleportTime = this.tickCount;
+                 this.teleport(this.awaitingPositionFromClient.x, this.awaitingPositionFromClient.y, this.awaitingPositionFromClient.z, this.player.getYRot(), this.player.getXRot());
+             }
+@@ -1661,6 +1706,33 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         }
+     }
+ 
++    // Paper start - optimise out extra getCubes
++    private boolean hasNewCollision(final ServerLevel world, final Entity entity, final AABB oldBox, final AABB newBox) {
++        final List<AABB> collisionsBB = new java.util.ArrayList<>();
++        final List<VoxelShape> collisionsVoxel = new java.util.ArrayList<>();
++        ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getCollisions(
++            world, entity, newBox, collisionsVoxel, collisionsBB,
++            ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_COLLIDE_WITH_UNLOADED_CHUNKS | ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_BORDER,
++            null, null
++        );
++
++        for (int i = 0, len = collisionsBB.size(); i < len; ++i) {
++            final AABB box = collisionsBB.get(i);
++            if (!ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersect(box, oldBox)) {
++                return true;
++            }
++        }
++
++        for (int i = 0, len = collisionsVoxel.size(); i < len; ++i) {
++            final VoxelShape voxel = collisionsVoxel.get(i);
++            if (!ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.voxelShapeIntersectNoEmpty(voxel, oldBox)) {
++                return true;
++            }
++        }
++
++        return false;
++    }
++    // Paper end - optimise out extra getCubes
+     private boolean isPlayerCollidingWithAnythingNew(LevelReader world, AABB box, double newX, double newY, double newZ) {
+         AABB axisalignedbb1 = this.player.getBoundingBox().move(newX - this.player.getX(), newY - this.player.getY(), newZ - this.player.getZ());
+         Iterable<VoxelShape> iterable = world.getCollisions(this.player, axisalignedbb1.deflate(9.999999747378752E-6D));

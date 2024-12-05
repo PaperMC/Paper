@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <support@newwindserver.com>
+Date: Mon, 26 Aug 2024 14:01:37 +0200
+Subject: [PATCH] Check dead flag in isAlive()
+
+If a plugin sets the health of a living entity above 0 after it has already died, the entity will be "revived".
+It will behave the exact same as before, except with the internal "dead" flag set, resulting in 2 behavior changes,
+A: it's completely invulnerable to all damage
+B: it's unable to pickup items
+
+isValid() for these bugged entities will return true, isDead() will return false, despite the dead flag.
+This patch checks that the mob isn't dead before saying its alive.
+
+Also, even if the plugin is responsibly checking !isDead() before modifying health, on very rare circumstances
+I am currently unable to replicate, these "revived" entities can still appear
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index d80b6bf55f08bbe93be45d48a0a35b542a719f85..28e411016b4e95c0adf884fa2944cd0de87e168e 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -2152,7 +2152,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+     @Override
+     public boolean isAlive() {
+-        return !this.isRemoved() && this.getHealth() > 0.0F;
++        return !this.isRemoved() && this.getHealth() > 0.0F && !this.dead; // Paper - Check this.dead
+     }
+ 
+     public boolean isLookingAtMe(LivingEntity entity, double d0, boolean flag, boolean visualShape, double... checkedYs) {

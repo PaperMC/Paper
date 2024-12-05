@@ -1,0 +1,200 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MiniDigger <admin@benndorf.dev>
+Date: Mon, 20 Jan 2020 21:38:15 +0100
+Subject: [PATCH] Implement Player Client Options API
+
+== AT ==
+public net.minecraft.world.entity.player.Player DATA_PLAYER_MODE_CUSTOMISATION
+public net.minecraft.server.level.ServerPlayer particleStatus
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperSkinParts.java b/src/main/java/com/destroystokyo/paper/PaperSkinParts.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b6f4400df3d8ec7e06a996de54f8cabba57885e1
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/PaperSkinParts.java
+@@ -0,0 +1,74 @@
++package com.destroystokyo.paper;
++
++import com.google.common.base.Objects;
++
++import java.util.StringJoiner;
++
++public class PaperSkinParts implements SkinParts {
++
++    private final int raw;
++
++    public PaperSkinParts(int raw) {
++        this.raw = raw;
++    }
++
++    public boolean hasCapeEnabled() {
++        return (raw & 1) == 1;
++    }
++
++    public boolean hasJacketEnabled() {
++        return (raw >> 1 & 1) == 1;
++    }
++
++    public boolean hasLeftSleeveEnabled() {
++        return (raw >> 2 & 1) == 1;
++    }
++
++    public boolean hasRightSleeveEnabled() {
++        return (raw >> 3 & 1) == 1;
++    }
++
++    public boolean hasLeftPantsEnabled() {
++        return (raw >> 4 & 1) == 1;
++    }
++
++    public boolean hasRightPantsEnabled() {
++        return (raw >> 5 & 1) == 1;
++    }
++
++    public boolean hasHatsEnabled() {
++        return (raw >> 6 & 1) == 1;
++    }
++
++    @Override
++    public int getRaw() {
++        return raw;
++    }
++
++    @Override
++    public boolean equals(Object o) {
++        if (this == o) return true;
++        if (o == null || getClass() != o.getClass()) return false;
++        PaperSkinParts that = (PaperSkinParts) o;
++        return raw == that.raw;
++    }
++
++    @Override
++    public int hashCode() {
++        return Objects.hashCode(raw);
++    }
++
++    @Override
++    public String toString() {
++        return new StringJoiner(", ", PaperSkinParts.class.getSimpleName() + "[", "]")
++            .add("raw=" + raw)
++            .add("cape=" + hasCapeEnabled())
++            .add("jacket=" + hasJacketEnabled())
++            .add("leftSleeve=" + hasLeftSleeveEnabled())
++            .add("rightSleeve=" + hasRightSleeveEnabled())
++            .add("leftPants=" + hasLeftPantsEnabled())
++            .add("rightPants=" + hasRightPantsEnabled())
++            .add("hats=" + hasHatsEnabled())
++            .toString();
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 01afc19c566c07a1e57b57ab37d0df6095a64eac..0efa13f8eff9458318f462e42fdbffe90e21d814 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -418,7 +418,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+         this.stats = server.getPlayerList().getPlayerStats(this);
+         this.advancements = server.getPlayerList().getPlayerAdvancements(this);
+         // this.moveTo(this.adjustSpawnLocation(world, world.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F); // Paper - Don't move existing players to world spawn
+-        this.updateOptions(clientOptions);
++        this.updateOptionsNoEvents(clientOptions); // Paper - don't call options events on login
+         this.object = null;
+ 
+         // CraftBukkit start
+@@ -2385,6 +2385,19 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+     }
+ 
+     public void updateOptions(ClientInformation clientOptions) {
++        // Paper start - settings event
++        new com.destroystokyo.paper.event.player.PlayerClientOptionsChangeEvent(this.getBukkitEntity(), Util.make(new java.util.IdentityHashMap<>(), map -> {
++            map.put(com.destroystokyo.paper.ClientOption.LOCALE, clientOptions.language());
++            map.put(com.destroystokyo.paper.ClientOption.VIEW_DISTANCE, clientOptions.viewDistance());
++            map.put(com.destroystokyo.paper.ClientOption.CHAT_VISIBILITY, com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(clientOptions.chatVisibility().name()));
++            map.put(com.destroystokyo.paper.ClientOption.CHAT_COLORS_ENABLED, clientOptions.chatColors());
++            map.put(com.destroystokyo.paper.ClientOption.SKIN_PARTS, new com.destroystokyo.paper.PaperSkinParts(clientOptions.modelCustomisation()));
++            map.put(com.destroystokyo.paper.ClientOption.MAIN_HAND, clientOptions.mainHand() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
++            map.put(com.destroystokyo.paper.ClientOption.TEXT_FILTERING_ENABLED, clientOptions.textFilteringEnabled());
++            map.put(com.destroystokyo.paper.ClientOption.ALLOW_SERVER_LISTINGS, clientOptions.allowsListing());
++            map.put(com.destroystokyo.paper.ClientOption.PARTICLE_VISIBILITY, com.destroystokyo.paper.ClientOption.ParticleVisibility.valueOf(clientOptions.particleStatus().name()));
++        })).callEvent();
++        // Paper end - settings event
+         // CraftBukkit start
+         if (this.getMainArm() != clientOptions.mainHand()) {
+             PlayerChangedMainHandEvent event = new PlayerChangedMainHandEvent(this.getBukkitEntity(), this.getMainArm() == HumanoidArm.LEFT ? MainHand.LEFT : MainHand.RIGHT);
+@@ -2395,6 +2408,11 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+             this.server.server.getPluginManager().callEvent(event);
+         }
+         // CraftBukkit end
++        // Paper start - don't call options events on login
++        this.updateOptionsNoEvents(clientOptions);
++    }
++    public void updateOptionsNoEvents(ClientInformation clientOptions) {
++        // Paper end
+         this.language = clientOptions.language();
+         this.adventure$locale = java.util.Objects.requireNonNullElse(net.kyori.adventure.translation.Translator.parseLocale(this.language), java.util.Locale.US); // Paper
+         this.requestedViewDistance = clientOptions.viewDistance();
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index e548834f2bd6e1e0a510a14040cc6aca63e2e6f5..589c78cf8acc8868be686123ac893421b4848239 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -658,6 +658,30 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+             connection.disconnect(message == null ? net.kyori.adventure.text.Component.empty() : message);
+         }
+     }
++
++    @Override
++    public <T> T getClientOption(com.destroystokyo.paper.ClientOption<T> type) {
++        if (com.destroystokyo.paper.ClientOption.SKIN_PARTS == type) {
++            return type.getType().cast(new com.destroystokyo.paper.PaperSkinParts(this.getHandle().getEntityData().get(net.minecraft.world.entity.player.Player.DATA_PLAYER_MODE_CUSTOMISATION)));
++        } else if (com.destroystokyo.paper.ClientOption.CHAT_COLORS_ENABLED == type) {
++            return type.getType().cast(this.getHandle().canChatInColor());
++        } else if (com.destroystokyo.paper.ClientOption.CHAT_VISIBILITY == type) {
++            return type.getType().cast(com.destroystokyo.paper.ClientOption.ChatVisibility.valueOf(this.getHandle().getChatVisibility().name()));
++        } else if (com.destroystokyo.paper.ClientOption.LOCALE == type) {
++            return type.getType().cast(this.getLocale());
++        } else if (com.destroystokyo.paper.ClientOption.MAIN_HAND == type) {
++            return type.getType().cast(this.getMainHand());
++        } else if (com.destroystokyo.paper.ClientOption.VIEW_DISTANCE == type) {
++            return type.getType().cast(this.getClientViewDistance());
++        } else if (com.destroystokyo.paper.ClientOption.TEXT_FILTERING_ENABLED == type) {
++            return type.getType().cast(this.getHandle().isTextFilteringEnabled());
++        } else if (com.destroystokyo.paper.ClientOption.ALLOW_SERVER_LISTINGS == type) {
++            return type.getType().cast(this.getHandle().allowsListing());
++        } else if (com.destroystokyo.paper.ClientOption.PARTICLE_VISIBILITY == type) {
++            return type.getType().cast(com.destroystokyo.paper.ClientOption.ParticleVisibility.valueOf(this.getHandle().particleStatus.name()));
++        }
++        throw new RuntimeException("Unknown settings type");
++    }
+     // Paper end
+ 
+     @Override
+diff --git a/src/test/java/io/papermc/paper/world/TranslationKeyTest.java b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..01e0936ea8ce5bcacafd9e89a1c0dfd2c172024d
+--- /dev/null
++++ b/src/test/java/io/papermc/paper/world/TranslationKeyTest.java
+@@ -0,0 +1,25 @@
++package io.papermc.paper.world;
++
++import com.destroystokyo.paper.ClientOption;
++import net.minecraft.server.level.ParticleStatus;
++import net.minecraft.world.entity.player.ChatVisiblity;
++import org.junit.jupiter.api.Assertions;
++import org.junit.jupiter.api.Test;
++
++public class TranslationKeyTest {
++
++    @Test
++    public void testChatVisibilityKeys() {
++        for (ClientOption.ChatVisibility chatVisibility : ClientOption.ChatVisibility.values()) {
++            if (chatVisibility == ClientOption.ChatVisibility.UNKNOWN) continue;
++            Assertions.assertEquals(ChatVisiblity.valueOf(chatVisibility.name()).getKey(), chatVisibility.translationKey(), chatVisibility + "'s translation key doesn't match");
++        }
++    }
++
++    @Test
++    public void testParticleVisibilityKeys() {
++        for (ClientOption.ParticleVisibility particleVisibility : ClientOption.ParticleVisibility.values()) {
++            Assertions.assertEquals(ParticleStatus.valueOf(particleVisibility.name()).getKey(), particleVisibility.translationKey(), particleVisibility + "'s translation key doesn't match");
++        }
++    }
++}

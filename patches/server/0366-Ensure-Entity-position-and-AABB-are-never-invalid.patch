@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Sun, 10 May 2020 22:12:46 -0400
+Subject: [PATCH] Ensure Entity position and AABB are never invalid
+
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 2dc87373d687c04f89c7a3b033c8a188ba415904..abcdb8d082dd0bbcd60c1d0d924b6774dd196ea7 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -678,8 +678,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public void setPos(double x, double y, double z) {
+-        this.setPosRaw(x, y, z);
+-        this.setBoundingBox(this.makeBoundingBox());
++        this.setPosRaw(x, y, z, true); // Paper - Block invalid positions and bounding box; force update
++        // this.setBoundingBox(this.makeBoundingBox()); // Paper - Block invalid positions and bounding box; move into setPosRaw
+     }
+ 
+     protected final AABB makeBoundingBox() {
+@@ -4468,7 +4468,29 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         return this.getZ((2.0D * this.random.nextDouble() - 1.0D) * widthScale);
+     }
+ 
++    // Paper start - Block invalid positions and bounding box
++    public static boolean checkPosition(Entity entity, double newX, double newY, double newZ) {
++        if (Double.isFinite(newX) && Double.isFinite(newY) && Double.isFinite(newZ)) {
++            return true;
++        }
++
++        String entityInfo;
++        try {
++            entityInfo = entity.toString();
++        } catch (Exception ex) {
++            entityInfo = "[Entity info unavailable] ";
++        }
++        LOGGER.error("New entity position is invalid! Tried to set invalid position ({},{},{}) for entity {} located at {}, entity info: {}", newX, newY, newZ, entity.getClass().getName(), entity.position, entityInfo, new Throwable());
++        return false;
++    }
+     public final void setPosRaw(double x, double y, double z) {
++        this.setPosRaw(x, y, z, false);
++    }
++    public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
++        if (!checkPosition(this, x, y, z)) {
++            return;
++        }
++        // Paper end - Block invalid positions and bounding box
+         if (this.position.x != x || this.position.y != y || this.position.z != z) {
+             this.position = new Vec3(x, y, z);
+             int i = Mth.floor(x);
+@@ -4486,6 +4508,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             this.levelCallback.onMove();
+         }
+ 
++        // Paper start - Block invalid positions and bounding box; don't allow desync of pos and AABB
++        // hanging has its own special logic
++        if (!(this instanceof net.minecraft.world.entity.decoration.HangingEntity) && (forceBoundingBoxUpdate || this.position.x != x || this.position.y != y || this.position.z != z)) {
++            this.setBoundingBox(this.makeBoundingBox());
++        }
++        // Paper end - Block invalid positions and bounding box
+     }
+ 
+     public void checkDespawn() {}

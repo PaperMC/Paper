@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <git@lynxplay.dev>
+Date: Fri, 1 Nov 2024 14:58:57 +0100
+Subject: [PATCH] Correct update cursor
+
+Spigot uses a no longer valid ClientboundContainerSetSlotPacket with the
+slot -1, which would update the carried stack in versions <=1.21.1 but
+now leads to an IOOB.
+1.21.2 instead introduced the ClientboundSetCursorItemPacket, which this
+patch uses instead.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index fbc885e38b9568a51b0d1a604d5ebff408ee071e..cfad5925f7d6b9970e8abef981b67e805bf1866a 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3281,7 +3281,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                     case PLACE_SOME:
+                                     case PLACE_ONE:
+                                     case SWAP_WITH_CURSOR:
+-                                        this.player.connection.send(new ClientboundContainerSetSlotPacket(-1, -1, this.player.inventoryMenu.incrementStateId(), this.player.containerMenu.getCarried()));
++                                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetCursorItemPacket(this.player.containerMenu.getCarried().copy())); // Paper - correctly set cursor
+                                         this.player.connection.send(new ClientboundContainerSetSlotPacket(this.player.containerMenu.containerId, this.player.inventoryMenu.incrementStateId(), packet.getSlotNum(), this.player.containerMenu.getSlot(packet.getSlotNum()).getItem()));
+                                         break;
+                                     // Modified clicked only
+@@ -3293,7 +3293,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                     case DROP_ALL_CURSOR:
+                                     case DROP_ONE_CURSOR:
+                                     case CLONE_STACK:
+-                                        this.player.connection.send(new ClientboundContainerSetSlotPacket(-1, -1, this.player.inventoryMenu.incrementStateId(), this.player.containerMenu.getCarried()));
++                                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetCursorItemPacket(this.player.containerMenu.getCarried().copy())); // Paper - correctly set cursor
+                                         break;
+                                     // Nothing
+                                     case NOTHING:
+@@ -3471,7 +3471,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                     // Reset the slot
+                     if (packet.slotNum() >= 0) {
+                         this.player.connection.send(new ClientboundContainerSetSlotPacket(this.player.inventoryMenu.containerId, this.player.inventoryMenu.incrementStateId(), packet.slotNum(), this.player.inventoryMenu.getSlot(packet.slotNum()).getItem()));
+-                        this.player.connection.send(new ClientboundContainerSetSlotPacket(-1, this.player.inventoryMenu.incrementStateId(), -1, ItemStack.EMPTY));
++                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetCursorItemPacket(ItemStack.EMPTY.copy())); // Paper - correctly set cursor
+                     }
+                     return;
+                 }

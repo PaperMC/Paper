@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Thu, 28 Nov 2024 10:35:58 +0100
+Subject: [PATCH] Separate dimensiondata executor
+
+
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index cc5e2710d3edeaf60284ed95c33999c701d0678a..eb6a589280a433d915ad7c035b7ec4ddafb162a0 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -94,6 +94,7 @@ public class Util {
+     private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
+     private static final TracingExecutor BACKGROUND_EXECUTOR = makeExecutor("Main", -1); // Paper - Perf: add priority
+     private static final TracingExecutor IO_POOL = makeIoExecutor("IO-Worker-", false);
++    public static final TracingExecutor DIMENSION_DATA_IO_POOL = makeExtraIoExecutor("Dimension-Data-IO-Worker-"); // Paper - Separate dimension data IO pool
+     private static final TracingExecutor DOWNLOAD_POOL = makeIoExecutor("Download-", true);
+     // Paper start - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
+     public static final ExecutorService PROFILE_EXECUTOR = Executors.newFixedThreadPool(2, new java.util.concurrent.ThreadFactory() {
+@@ -264,6 +265,21 @@ public class Util {
+         }));
+     }
+ 
++    // Paper start - Separate dimension data IO pool
++    private static TracingExecutor makeExtraIoExecutor(String namePrefix) {
++        AtomicInteger atomicInteger = new AtomicInteger(1);
++        return new TracingExecutor(Executors.newFixedThreadPool(4, runnable -> {
++            Thread thread = new Thread(runnable);
++            String string2 = namePrefix + atomicInteger.getAndIncrement();
++            TracyClient.setThreadName(string2, namePrefix.hashCode());
++            thread.setName(string2);
++            thread.setDaemon(false);
++            thread.setUncaughtExceptionHandler(Util::onThreadException);
++            return thread;
++        }));
++    }
++    // Paper end - Separate dimension data IO pool
++
+     public static void throwAsRuntime(Throwable t) {
+         throw t instanceof RuntimeException ? (RuntimeException)t : new RuntimeException(t);
+     }
+diff --git a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
+index 3c3b18e5b419a0f785467c511dcdd65873ad0989..9272c91e0ee489091fdf1fedcf3801c070e9e82a 100644
+--- a/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
++++ b/src/main/java/net/minecraft/world/level/storage/DimensionDataStorage.java
+@@ -139,7 +139,7 @@ public class DimensionDataStorage implements AutoCloseable {
+         } else {
+             int i = Util.maxAllowedExecutorThreads();
+             int j = map.size();
+-            if (j > i) {
++            if (false && j > i) { // Paper - Separate dimension data IO pool; just throw them into the fixed pool queue
+                 this.pendingWriteFuture = this.pendingWriteFuture.thenCompose(object -> {
+                     List<CompletableFuture<?>> list = new ArrayList<>(i);
+                     int k = Mth.positiveCeilDiv(j, i);
+@@ -160,7 +160,7 @@ public class DimensionDataStorage implements AutoCloseable {
+                         v -> CompletableFuture.allOf(
+                                 map.entrySet()
+                                     .stream()
+-                                    .map(entry -> CompletableFuture.runAsync(() -> tryWrite(entry.getKey(), entry.getValue()), Util.ioPool()))
++                                    .map(entry -> CompletableFuture.runAsync(() -> tryWrite(entry.getKey(), entry.getValue()), Util.DIMENSION_DATA_IO_POOL)) // Paper - Separate dimension data IO pool
+                                     .toArray(CompletableFuture[]::new)
+                             )
+                     );

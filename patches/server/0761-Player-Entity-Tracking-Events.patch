@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Wed, 30 Mar 2022 18:16:52 +0200
+Subject: [PATCH] Player Entity Tracking Events
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 2d325c998e40a65af10d6adbb0dc304bea50e3d8..c1c2eeba0f5b8e499cc51cc1df7bf9acb61bd7d6 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1580,7 +1580,11 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 // CraftBukkit end
+                 if (flag) {
+                     if (this.seenBy.add(player.connection)) {
++                        // Paper start - entity tracking events
++                        if (io.papermc.paper.event.player.PlayerTrackEntityEvent.getHandlerList().getRegisteredListeners().length == 0 || new io.papermc.paper.event.player.PlayerTrackEntityEvent(player.getBukkitEntity(), this.entity.getBukkitEntity()).callEvent()) {
+                         this.serverEntity.addPairing(player);
++                        }
++                        // Paper end - entity tracking events
+                     }
+                 } else if (this.seenBy.remove(player.connection)) {
+                     this.serverEntity.removePairing(player);
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 584d658694ad23c0d047ca40208f766b9f44f8d6..59dd5179b3ac6e448304a94d1e6343b3c08d674d 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -4106,7 +4106,14 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+     public void startSeenByPlayer(ServerPlayer player) {}
+ 
+-    public void stopSeenByPlayer(ServerPlayer player) {}
++    // Paper start - entity tracking events
++    public void stopSeenByPlayer(ServerPlayer player) {
++        // Since this event cannot be cancelled, we should call it here to catch all "un-tracks"
++        if (io.papermc.paper.event.player.PlayerUntrackEntityEvent.getHandlerList().getRegisteredListeners().length > 0) {
++            new io.papermc.paper.event.player.PlayerUntrackEntityEvent(player.getBukkitEntity(), this.getBukkitEntity()).callEvent();
++        }
++    }
++    // Paper end - entity tracking events
+ 
+     public float rotate(Rotation rotation) {
+         float f = Mth.wrapDegrees(this.getYRot());

@@ -1,0 +1,119 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 2277 <38501234+2277@users.noreply.github.com>
+Date: Tue, 31 Mar 2020 10:33:55 +0100
+Subject: [PATCH] Move player to spawn point if spawn in unloaded world
+
+If the playerdata contains an invalid world (missing, unloaded, invalid,
+etc.), spawn the player at the spawn point of the main world.
+
+Co-authored-by: Wyatt Childers <wchilders@nearce.com>
+Co-authored-by: Jake Potrebic <jake.m.potrebic@gmail.com>
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 8239b9e2e1f5aa4f961aa40513f308f2fe44e7ef..f11bea4618757ac8060098ab7a7a2642ff0a1ae4 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -197,6 +197,7 @@ public abstract class PlayerList {
+         }
+ 
+         Optional<CompoundTag> optional = this.load(player); // CraftBukkit - decompile error
++        ResourceKey<Level> resourcekey = null; // Paper
+         // CraftBukkit start - Better rename detection
+         if (optional.isPresent()) {
+             CompoundTag nbttagcompound = optional.get();
+@@ -206,19 +207,47 @@ public abstract class PlayerList {
+             }
+         }
+         // CraftBukkit end
+-        ResourceKey<Level> resourcekey = (ResourceKey) optional.flatMap((nbttagcompound) -> {
++        // Paper start - move logic in Entity to here, to use bukkit supplied world UUID & reset to main world spawn if no valid world is found
++        boolean[] invalidPlayerWorld = {false};
++        bukkitData: if (optional.isPresent()) {
++            // The main way for bukkit worlds to store the world is the world UUID despite mojang adding custom worlds
++            final org.bukkit.World bWorld;
++            if (optional.get().contains("WorldUUIDMost") && optional.get().contains("WorldUUIDLeast")) {
++                bWorld = org.bukkit.Bukkit.getServer().getWorld(new UUID(optional.get().getLong("WorldUUIDMost"), optional.get().getLong("WorldUUIDLeast")));
++            } else if (optional.get().contains("world", net.minecraft.nbt.Tag.TAG_STRING)) { // Paper - legacy bukkit world name
++                bWorld = org.bukkit.Bukkit.getServer().getWorld(optional.get().getString("world"));
++            } else {
++                break bukkitData; // if neither of the bukkit data points exist, proceed to the vanilla migration section
++            }
++            if (bWorld != null) {
++                resourcekey = ((CraftWorld) bWorld).getHandle().dimension();
++            } else {
++                resourcekey = Level.OVERWORLD;
++                invalidPlayerWorld[0] = true;
++            }
++        }
++        if (resourcekey == null) { // only run the vanilla logic if we haven't found a world from the bukkit data
++        // Below is the vanilla way of getting the dimension, this is for migration from vanilla servers
++        resourcekey = optional.flatMap((nbttagcompound) -> {
++            // Paper end
+             DataResult<ResourceKey<Level>> dataresult = DimensionType.parseLegacy(new Dynamic(NbtOps.INSTANCE, nbttagcompound.get("Dimension"))); // CraftBukkit - decompile error
+             Logger logger = PlayerList.LOGGER;
+ 
+             Objects.requireNonNull(logger);
+-            return dataresult.resultOrPartial(logger::error);
+-        }).orElse(player.serverLevel().dimension()); // CraftBukkit - SPIGOT-7507: If no dimension, fall back to existing dimension loaded from "WorldUUID", which in turn defaults to World.OVERWORLD
++            // Paper start - reset to main world spawn if no valid world is found
++            final Optional<ResourceKey<Level>> result = dataresult.resultOrPartial(logger::error);
++            invalidPlayerWorld[0] = result.isEmpty();
++            return result;
++        }).orElse(Level.OVERWORLD); // Paper - revert to vanilla default main world, this isn't an "invalid world" since no player data existed
++        }
++        // Paper end
+         ServerLevel worldserver = this.server.getLevel(resourcekey);
+         ServerLevel worldserver1;
+ 
+         if (worldserver == null) {
+             PlayerList.LOGGER.warn("Unknown respawn dimension {}, defaulting to overworld", resourcekey);
+             worldserver1 = this.server.overworld();
++            invalidPlayerWorld[0] = true; // Paper - reset to main world if no world with parsed value is found
+         } else {
+             worldserver1 = worldserver;
+         }
+@@ -226,6 +255,10 @@ public abstract class PlayerList {
+         // Paper start - Entity#getEntitySpawnReason
+         if (optional.isEmpty()) {
+             player.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT; // set Player SpawnReason to DEFAULT on first login
++            // Paper start - reset to main world spawn if first spawn or invalid world
++        }
++        if (optional.isEmpty() || invalidPlayerWorld[0]) {
++            // Paper end - reset to main world spawn if first spawn or invalid world
+             player.moveTo(player.adjustSpawnLocation(worldserver1, worldserver1.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F);
+         }
+         // Paper end - Entity#getEntitySpawnReason
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index dcc6543f895c9bbf09301e64164873aa54c7b8b5..bccd5d2ef5cdc01d2785231d47ec17481f87f2cb 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2528,27 +2528,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             }
+             // CraftBukkit end
+ 
+-            // CraftBukkit start - Reset world
+-            if (this instanceof ServerPlayer) {
+-                Server server = Bukkit.getServer();
+-                org.bukkit.World bworld = null;
+-
+-                // TODO: Remove World related checks, replaced with WorldUID
+-                String worldName = nbt.getString("world");
+-
+-                if (nbt.contains("WorldUUIDMost") && nbt.contains("WorldUUIDLeast")) {
+-                    UUID uid = new UUID(nbt.getLong("WorldUUIDMost"), nbt.getLong("WorldUUIDLeast"));
+-                    bworld = server.getWorld(uid);
+-                } else {
+-                    bworld = server.getWorld(worldName);
+-                }
+-
+-                if (bworld == null) {
+-                    bworld = ((org.bukkit.craftbukkit.CraftServer) server).getServer().getLevel(Level.OVERWORLD).getWorld();
+-                }
+-
+-                ((ServerPlayer) this).setLevel(bworld == null ? null : ((CraftWorld) bworld).getHandle());
+-            }
++            // CraftBukkit start
++            // Paper - move world parsing/loading to PlayerList#placeNewPlayer
+             this.getBukkitEntity().readBukkitValues(nbt);
+             if (nbt.contains("Bukkit.invisible")) {
+                 boolean bukkitInvisible = nbt.getBoolean("Bukkit.invisible");

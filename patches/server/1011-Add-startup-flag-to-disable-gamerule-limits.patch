@@ -1,0 +1,69 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 25 Oct 2024 14:20:40 -0700
+Subject: [PATCH] Add startup flag to disable gamerule limits
+
+-DPaper.DisableGameRuleLimits=true will disable gamerule limits
+
+== AT ==
+public net.minecraft.server.level.ChunkLevel ENTITY_TICKING_LEVEL
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 1977815fce8acc10c8f2d1f168e6342c9faff5c0..7aedeb487a80ab6dbc67bac60a2cef29177c27d4 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1775,13 +1775,21 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         }
+ 
+         if (this.lastSpawnChunkRadius > 1) {
+-            this.getChunkSource().removeRegionTicket(TicketType.START, new ChunkPos(blockposition1), this.lastSpawnChunkRadius, Unit.INSTANCE);
++            // Paper start - allow disabling gamerule limits
++            for (ChunkPos chunkPos : io.papermc.paper.util.MCUtil.getSpiralOutChunks(blockposition1, this.lastSpawnChunkRadius - 2)) {
++                this.getChunkSource().removeTicketAtLevel(TicketType.START, chunkPos, net.minecraft.server.level.ChunkLevel.ENTITY_TICKING_LEVEL, Unit.INSTANCE);
++            }
++            // Paper end - allow disabling gamerule limits
+         }
+ 
+         int i = this.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS) + 1;
+ 
+         if (i > 1) {
+-            this.getChunkSource().addRegionTicket(TicketType.START, new ChunkPos(pos), i, Unit.INSTANCE);
++            // Paper start - allow disabling gamerule limits
++            for (ChunkPos chunkPos : io.papermc.paper.util.MCUtil.getSpiralOutChunks(pos, i - 2)) {
++                this.getChunkSource().addTicketAtLevel(TicketType.START, chunkPos, net.minecraft.server.level.ChunkLevel.ENTITY_TICKING_LEVEL, Unit.INSTANCE);
++            }
++            // Paper end - allow disabling gamerule limits
+         }
+ 
+         this.lastSpawnChunkRadius = i;
+diff --git a/src/main/java/net/minecraft/world/level/GameRules.java b/src/main/java/net/minecraft/world/level/GameRules.java
+index 4ae47c2c5a6bcfbf932d000a80974463e2d3818d..7c363d59c6567cae8e6caf213be51804efa5a96d 100644
+--- a/src/main/java/net/minecraft/world/level/GameRules.java
++++ b/src/main/java/net/minecraft/world/level/GameRules.java
+@@ -36,6 +36,14 @@ import org.slf4j.Logger;
+ 
+ public class GameRules {
+ 
++    // Paper start - allow disabling gamerule limits
++    private static final boolean DISABLE_LIMITS = Boolean.getBoolean("paper.disableGameRuleLimits");
++
++    private static int limit(final int limit, final int unlimited) {
++        return DISABLE_LIMITS ? unlimited : limit;
++    }
++    // Paper end - allow disabling gamerule limits
++
+     public static final int DEFAULT_RANDOM_TICK_SPEED = 3;
+     static final Logger LOGGER = LogUtils.getLogger();
+     private static final Map<GameRules.Key<?>, GameRules.Type<?>> GAME_RULE_TYPES = Maps.newTreeMap(Comparator.comparing((gamerules_gamerulekey) -> {
+@@ -120,9 +128,9 @@ public class GameRules {
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_GLOBAL_SOUND_EVENTS = GameRules.register("globalSoundEvents", GameRules.Category.MISC, GameRules.BooleanValue.create(true));
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_VINES_SPREAD = GameRules.register("doVinesSpread", GameRules.Category.UPDATES, GameRules.BooleanValue.create(true));
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_ENDER_PEARLS_VANISH_ON_DEATH = GameRules.register("enderPearlsVanishOnDeath", GameRules.Category.PLAYER, GameRules.BooleanValue.create(true));
+-    public static final GameRules.Key<GameRules.IntegerValue> RULE_MINECART_MAX_SPEED = GameRules.register("minecartMaxSpeed", GameRules.Category.MISC, GameRules.IntegerValue.create(8, 1, 1000, FeatureFlagSet.of(FeatureFlags.MINECART_IMPROVEMENTS), (minecraftserver, gamerules_gameruleint) -> {
++    public static final GameRules.Key<GameRules.IntegerValue> RULE_MINECART_MAX_SPEED = GameRules.register("minecartMaxSpeed", GameRules.Category.MISC, GameRules.IntegerValue.create(8, 1, limit(1000, Integer.MAX_VALUE), FeatureFlagSet.of(FeatureFlags.MINECART_IMPROVEMENTS), (minecraftserver, gamerules_gameruleint) -> { // Paper - allow disabling gamerule limits
+     }));
+-    public static final GameRules.Key<GameRules.IntegerValue> RULE_SPAWN_CHUNK_RADIUS = GameRules.register("spawnChunkRadius", GameRules.Category.MISC, GameRules.IntegerValue.create(2, 0, 32, FeatureFlagSet.of(), (minecraftserver, gamerules_gameruleint) -> {
++    public static final GameRules.Key<GameRules.IntegerValue> RULE_SPAWN_CHUNK_RADIUS = GameRules.register("spawnChunkRadius", GameRules.Category.MISC, GameRules.IntegerValue.create(2, 0, limit(32, Integer.MAX_VALUE), FeatureFlagSet.of(), (minecraftserver, gamerules_gameruleint) -> { // Paper - allow disabling gamerule limits
+         ServerLevel worldserver = minecraftserver; // CraftBukkit - per-world
+ 
+         worldserver.setDefaultSpawnPos(worldserver.getSharedSpawnPos(), worldserver.getSharedSpawnAngle());

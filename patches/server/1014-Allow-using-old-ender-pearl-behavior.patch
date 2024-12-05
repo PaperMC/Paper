@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Sun, 27 Oct 2024 12:36:53 -0700
+Subject: [PATCH] Allow using old ender pearl behavior
+
+When enabled, ender pearls will not load chunks and will save to the world instead of the player.
+
+== AT ==
+public net.minecraft.world.entity.projectile.Projectile cachedOwner
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 8c0dcce3c43775185bc23df3a52a2f8ba1a72544..382194ef4b5723d2b3476084c566b6d07cc9c91d 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -798,6 +798,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+ 
+             while (iterator.hasNext()) {
+                 ThrownEnderpearl entityenderpearl = (ThrownEnderpearl) iterator.next();
++                if (entityenderpearl.level().paperConfig().misc.legacyEnderPearlBehavior) continue; // Paper - Allow using old ender pearl behavior
+ 
+                 if (entityenderpearl.isRemoved()) {
+                     ServerPlayer.LOGGER.warn("Trying to save removed ender pearl, skipping");
+@@ -3079,7 +3080,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+     }
+ 
+     public static long placeEnderPearlTicket(ServerLevel world, ChunkPos chunkPos) {
+-        world.getChunkSource().addRegionTicket(TicketType.ENDER_PEARL, chunkPos, 2, chunkPos);
++        if (!world.paperConfig().misc.legacyEnderPearlBehavior) world.getChunkSource().addRegionTicket(TicketType.ENDER_PEARL, chunkPos, 2, chunkPos); // Paper - Allow using old ender pearl behavior
+         return TicketType.ENDER_PEARL.timeout();
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index f0e6e9478e42cd867237aec990fb1f739d46214e..af209a95b3f83e9c2c3f6473e3be7ca4414ebf40 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -601,7 +601,13 @@ public abstract class PlayerList {
+         while (iterator.hasNext()) {
+             ThrownEnderpearl entityenderpearl = (ThrownEnderpearl) iterator.next();
+ 
++            // Paper start - Allow using old ender pearl behavior
++            if (!entityenderpearl.level().paperConfig().misc.legacyEnderPearlBehavior) {
+             entityenderpearl.setRemoved(Entity.RemovalReason.UNLOADED_WITH_PLAYER, EntityRemoveEvent.Cause.PLAYER_QUIT); // CraftBukkit - add Bukkit remove cause
++            } else {
++                entityenderpearl.cachedOwner = null;
++            }
++            // Paper end - Allow using old ender pearl behavior
+         }
+ 
+         worldserver.removePlayerImmediately(entityplayer, Entity.RemovalReason.UNLOADED_WITH_PLAYER);
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+index 5f790dd24f2bdae827c6dc597064b9b265089751..bd2684528157f928460f2143dd71a48e11983123 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+@@ -252,7 +252,7 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
+         Entity entity = super.teleport(teleportTarget);
+ 
+         if (entity != null) {
+-            entity.placePortalTicket(BlockPos.containing(entity.position()));
++            if (!this.level().paperConfig().misc.legacyEnderPearlBehavior) entity.placePortalTicket(BlockPos.containing(entity.position())); // Paper - Allow using old ender pearl behavior
+         }
+ 
+         return entity;

@@ -1,0 +1,208 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 23 Nov 2023 10:33:25 -0800
+Subject: [PATCH] Don't fire sync events during worldgen
+
+Fixes EntityPotionEffectEvent
+Fixes EntityPoseChangeEvent
+
+Asynchronous chunk generation provides an opportunity for things
+to happen async that previously fired synchronous-only events. This
+patch is for mitigating those issues by various methods.
+
+Also fixes correctly marking/clearing the entity generation flag.
+This patch sets the generation flag anytime an entity is created
+via StructureTemplate before loading from NBT to catch uses of
+the flag during the loading logic. This patch clears the generation
+flag from an entity when added to a ServerLevel for the situation
+where generation happened directly to a ServerLevel and the
+entity still has the flag set.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 2a56e7846b3def7d1e9a2d5e473a6806a1acec28..48566fa87db695517214e17b560c84d78f0130bf 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1195,6 +1195,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+     // CraftBukkit start
+     private boolean addEntity(Entity entity, CreatureSpawnEvent.SpawnReason spawnReason) {
+         org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
++        entity.generation = false; // Paper - Don't fire sync event during generation; Reset flag if it was added during a ServerLevel generation process
+         // Paper start - extra debug info
+         if (entity.valid) {
+             MinecraftServer.LOGGER.error("Attempted Double World add on {}", entity, new Throwable());
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 098a526fdfe92e452f06b66189cd9cbd821198eb..b1145c1da1d2432f261804b335fe204d4b4247f6 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -632,7 +632,11 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         if (pose == this.getPose()) {
+             return;
+         }
+-        this.level.getCraftServer().getPluginManager().callEvent(new EntityPoseChangeEvent(this.getBukkitEntity(), Pose.values()[pose.ordinal()]));
++        // Paper start - Don't fire sync event during generation
++        if (!this.generation) {
++            this.level.getCraftServer().getPluginManager().callEvent(new EntityPoseChangeEvent(this.getBukkitEntity(), Pose.values()[pose.ordinal()]));
++        }
++        // Paper end - Don't fire sync event during generation
+         // CraftBukkit end
+         this.entityData.set(Entity.DATA_POSE, pose);
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index 979c99851ccb363d889069bafa5b5f7eb6b1a436..2cd74db8e3c51c97a2abcb801bb5c15cd55ca8f9 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -659,9 +659,15 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+     }
+ 
+     public static Optional<Entity> create(CompoundTag nbt, Level world, EntitySpawnReason reason) {
++    // Paper start - Don't fire sync event during generation
++        return create(nbt, world, reason, false);
++    }
++    public static Optional<Entity> create(CompoundTag nbt, Level world, EntitySpawnReason reason, boolean generation) {
++    // Paper end - Don't fire sync event during generation
+         return Util.ifElse(EntityType.by(nbt).map((entitytypes) -> {
+             return entitytypes.create(world, reason);
+         }), (entity) -> {
++            if (generation) entity.generation = true; // Paper - Don't fire sync event during generation
+             entity.load(nbt);
+         }, () -> {
+             EntityType.LOGGER.warn("Skipping Entity with id {}", nbt.getString("id"));
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 70574115423d95c9efabf77e4113e65e81f8c0d1..1618c415f5f9b356206f0e2f1474545f31dfbb01 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1159,6 +1159,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     public boolean addEffect(MobEffectInstance mobeffect, @Nullable Entity entity, EntityPotionEffectEvent.Cause cause) {
++        // Paper start - Don't fire sync event during generation
++        return this.addEffect(mobeffect, entity, cause, true);
++    }
++    public boolean addEffect(MobEffectInstance mobeffect, @Nullable Entity entity, EntityPotionEffectEvent.Cause cause, boolean fireEvent) {
++        // Paper end - Don't fire sync event during generation
+         // org.spigotmc.AsyncCatcher.catchOp("effect add"); // Spigot // Paper - move to API
+         if (this.isTickingEffects) {
+             this.effectsToProcess.add(new ProcessableEffect(mobeffect, cause));
+@@ -1178,10 +1183,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 override = new MobEffectInstance(mobeffect1).update(mobeffect);
+             }
+ 
++            if (fireEvent) { // Paper - Don't fire sync event during generation
+             EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, mobeffect1, mobeffect, cause, override);
++            override = event.isOverride(); // Paper - Don't fire sync event during generation
+             if (event.isCancelled()) {
+                 return false;
+             }
++            } // Paper - Don't fire sync event during generation
+             // CraftBukkit end
+ 
+             if (mobeffect1 == null) {
+@@ -1190,7 +1198,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 flag = true;
+                 mobeffect.onEffectAdded(this);
+                 // CraftBukkit start
+-            } else if (event.isOverride()) {
++            } else if (override) { // Paper - Don't fire sync event during generation
+                 mobeffect1.update(mobeffect);
+                 this.onEffectUpdated(mobeffect1, true, entity);
+                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Spider.java b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+index 6c2d4c2163cf299c0943af21d4dc367b5677c089..72e42605c278028480c368762da18f61806d766a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Spider.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+@@ -172,7 +172,7 @@ public class Spider extends Monster {
+             Holder<MobEffect> holder = entityspider_groupdataspider.effect;
+ 
+             if (holder != null) {
+-                this.addEffect(new MobEffectInstance(holder, -1), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN); // CraftBukkit
++                this.addEffect(new MobEffectInstance(holder, -1), null, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.SPIDER_SPAWN, world instanceof net.minecraft.server.level.ServerLevel); // CraftBukkit
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java b/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
+index 734f511d197bc6bf2b02588069eb02c0224781f5..d35b731751e851bee531aa5e7996557658ba6fae 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/structure/templatesystem/StructureTemplate.java
+@@ -549,7 +549,7 @@ public class StructureTemplate {
+     private static Optional<Entity> createEntityIgnoreException(ServerLevelAccessor world, CompoundTag nbt) {
+         // CraftBukkit start
+         // try {
+-            return EntityType.create(nbt, world.getLevel(), EntitySpawnReason.STRUCTURE);
++            return EntityType.create(nbt, world.getLevel(), EntitySpawnReason.STRUCTURE, true); // Paper - Don't fire sync event during generation
+         // } catch (Exception exception) {
+             // return Optional.empty();
+         // }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
+index e444662ee4d9405eeea7caa41b9cd6b36586d840..54c4434662d057a08800918641b95708cda61207 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/DelegatedGeneratorAccess.java
+@@ -90,15 +90,17 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
+         return this.handle.getLevel();
+     }
+ 
+-    @Override
+-    public void addFreshEntityWithPassengers(Entity entity) {
+-        this.handle.addFreshEntityWithPassengers(entity);
+-    }
+-
+-    @Override
+-    public void addFreshEntityWithPassengers(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
+-        this.handle.addFreshEntityWithPassengers(entity, reason);
+-    }
++    // Paper start - Don't fire sync event during generation; don't override these methods so all entities are run through addFreshEntity
++    // @Override
++    // public void addFreshEntityWithPassengers(Entity entity) {
++    //     this.handle.addFreshEntityWithPassengers(entity);
++    // }
++    //
++    // @Override
++    // public void addFreshEntityWithPassengers(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
++    //     this.handle.addFreshEntityWithPassengers(entity, reason);
++    // }
++    // Paper end - Don't fire sync event during generation; don't override these methods so all entities are run through addFreshEntity
+ 
+     @Override
+     public ServerLevel getMinecraftWorld() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java b/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java
+index 35ecf6f824aca56a20280dd683123df1d0c7d66e..1d1fdcf10498c421f106158254e052da6d68d8a5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/TransformerGeneratorAccess.java
+@@ -39,21 +39,23 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
+         return super.addFreshEntity(arg0, arg1);
+     }
+ 
+-    @Override
+-    public void addFreshEntityWithPassengers(Entity entity) {
+-        if (this.structureTransformer != null && !this.structureTransformer.transformEntity(entity)) {
+-            return;
+-        }
+-        super.addFreshEntityWithPassengers(entity);
+-    }
+-
+-    @Override
+-    public void addFreshEntityWithPassengers(Entity arg0, SpawnReason arg1) {
+-        if (this.structureTransformer != null && !this.structureTransformer.transformEntity(arg0)) {
+-            return;
+-        }
+-        super.addFreshEntityWithPassengers(arg0, arg1);
+-    }
++    // Paper start - Don't fire sync event during generation; don't override these methods so all entities are run through addFreshEntity
++    // @Override
++    // public void addFreshEntityWithPassengers(Entity entity) {
++    //     if (this.structureTransformer != null && !this.structureTransformer.transformEntity(entity)) {
++    //         return;
++    //     }
++    //     super.addFreshEntityWithPassengers(entity);
++    // }
++    //
++    // @Override
++    // public void addFreshEntityWithPassengers(Entity arg0, SpawnReason arg1) {
++    //     if (this.structureTransformer != null && !this.structureTransformer.transformEntity(arg0)) {
++    //         return;
++    //     }
++    //     super.addFreshEntityWithPassengers(arg0, arg1);
++    // }
++    // Paper end - Don't fire sync event during generation; don't override these methods
+ 
+     public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, int i, int j) {
+         if (this.structureTransformer != null) {

@@ -1,0 +1,292 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Byteflux <byte@byteflux.net>
+Date: Wed, 2 Mar 2016 02:17:54 -0600
+Subject: [PATCH] Flat bedrock generator settings
+
+== AT ==
+public net.minecraft.world.level.levelgen.SurfaceRules$Condition
+public net.minecraft.world.level.levelgen.SurfaceRules$Context
+public net.minecraft.world.level.levelgen.SurfaceRules$Context blockX
+public net.minecraft.world.level.levelgen.SurfaceRules$Context blockY
+public net.minecraft.world.level.levelgen.SurfaceRules$Context blockZ
+public net.minecraft.world.level.levelgen.SurfaceRules$Context context
+public net.minecraft.world.level.levelgen.SurfaceRules$Context randomState
+public net.minecraft.world.level.levelgen.SurfaceRules$LazyYCondition
+public net.minecraft.world.level.levelgen.SurfaceRules$LazyCondition
+public net.minecraft.world.level.levelgen.SurfaceRules$VerticalGradientConditionSource
+public net.minecraft.world.level.levelgen.SurfaceRules$SurfaceRule
+
+Co-authored-by: Noah van der Aa <ndvdaa@gmail.com>
+
+diff --git a/src/main/java/io/papermc/paper/world/worldgen/OptionallyFlatBedrockConditionSource.java b/src/main/java/io/papermc/paper/world/worldgen/OptionallyFlatBedrockConditionSource.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b5580727eef106fa193e450038d1b20d8d396059
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/worldgen/OptionallyFlatBedrockConditionSource.java
+@@ -0,0 +1,80 @@
++package io.papermc.paper.world.worldgen;
++
++import com.mojang.serialization.Codec;
++import com.mojang.serialization.MapCodec;
++import com.mojang.serialization.codecs.RecordCodecBuilder;
++import net.minecraft.core.Registry;
++import net.minecraft.core.registries.BuiltInRegistries;
++import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceKey;
++import net.minecraft.resources.ResourceLocation;
++import net.minecraft.util.KeyDispatchDataCodec;
++import net.minecraft.util.Mth;
++import net.minecraft.util.RandomSource;
++import net.minecraft.world.level.levelgen.PositionalRandomFactory;
++import net.minecraft.world.level.levelgen.SurfaceRules;
++import net.minecraft.world.level.levelgen.VerticalAnchor;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++// Modelled off of SurfaceRules$VerticalGradientConditionSource
++@DefaultQualifier(NonNull.class)
++public record OptionallyFlatBedrockConditionSource(ResourceLocation randomName, VerticalAnchor trueAtAndBelow, VerticalAnchor falseAtAndAbove, boolean isRoof) implements SurfaceRules.ConditionSource {
++
++    private static final ResourceKey<MapCodec<? extends SurfaceRules.ConditionSource>> CODEC_RESOURCE_KEY = ResourceKey.create(
++        Registries.MATERIAL_CONDITION,
++        ResourceLocation.fromNamespaceAndPath(ResourceLocation.PAPER_NAMESPACE, "optionally_flat_bedrock_condition_source")
++    );
++    private static final KeyDispatchDataCodec<OptionallyFlatBedrockConditionSource> CODEC = KeyDispatchDataCodec.of(RecordCodecBuilder.mapCodec((instance) -> {
++        return instance.group(
++            ResourceLocation.CODEC.fieldOf("random_name").forGetter(OptionallyFlatBedrockConditionSource::randomName),
++            VerticalAnchor.CODEC.fieldOf("true_at_and_below").forGetter(OptionallyFlatBedrockConditionSource::trueAtAndBelow),
++            VerticalAnchor.CODEC.fieldOf("false_at_and_above").forGetter(OptionallyFlatBedrockConditionSource::falseAtAndAbove),
++            Codec.BOOL.fieldOf("is_roof").forGetter(OptionallyFlatBedrockConditionSource::isRoof)
++        ).apply(instance, OptionallyFlatBedrockConditionSource::new);
++    }));
++
++    public static void bootstrap() {
++        Registry.register(BuiltInRegistries.MATERIAL_CONDITION, CODEC_RESOURCE_KEY, CODEC.codec());
++    }
++
++    @Override
++    public KeyDispatchDataCodec<? extends SurfaceRules.ConditionSource> codec() {
++        return CODEC;
++    }
++
++    @Override
++    public SurfaceRules.Condition apply(final SurfaceRules.Context context) {
++        boolean hasFlatBedrock = context.context.getWorld().paperConfig().environment.generateFlatBedrock;
++        int tempTrueAtAndBelowY = this.trueAtAndBelow().resolveY(context.context);
++        int tempFalseAtAndAboveY = this.falseAtAndAbove().resolveY(context.context);
++
++        int flatYLevel = this.isRoof ? Math.max(tempFalseAtAndAboveY, tempTrueAtAndBelowY) - 1 : Math.min(tempFalseAtAndAboveY, tempTrueAtAndBelowY);
++        final int trueAtAndBelowY = hasFlatBedrock ? flatYLevel : tempTrueAtAndBelowY;
++        final int falseAtAndAboveY = hasFlatBedrock ? flatYLevel : tempFalseAtAndAboveY;
++
++        final PositionalRandomFactory positionalRandomFactory = context.randomState.getOrCreateRandomFactory(this.randomName());
++
++        class VerticalGradientCondition extends SurfaceRules.LazyYCondition {
++            VerticalGradientCondition(SurfaceRules.Context context) {
++                super(context);
++            }
++
++            @Override
++            protected boolean compute() {
++                int blockY = this.context.blockY;
++                if (blockY <= trueAtAndBelowY) {
++                    return true;
++                } else if (blockY >= falseAtAndAboveY) {
++                    return false;
++                } else {
++                    double d = Mth.map(blockY, trueAtAndBelowY, falseAtAndAboveY, 1.0D, 0.0D);
++                    RandomSource randomSource = positionalRandomFactory.at(this.context.blockX, blockY, this.context.blockZ);
++                    return (double)randomSource.nextFloat() < d;
++                }
++            }
++        }
++
++        return new VerticalGradientCondition(context);
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/Bootstrap.java b/src/main/java/net/minecraft/server/Bootstrap.java
+index b86839c170ef01455a05e71cb8ba40b047b1659e..f5bf14bdd5ab7d6d50d835d3631d6b62636d96f0 100644
+--- a/src/main/java/net/minecraft/server/Bootstrap.java
++++ b/src/main/java/net/minecraft/server/Bootstrap.java
+@@ -80,6 +80,7 @@ public class Bootstrap {
+                     CauldronInteraction.bootStrap();
+                     // Paper start
+                     BuiltInRegistries.bootStrap(() -> {
++                        io.papermc.paper.world.worldgen.OptionallyFlatBedrockConditionSource.bootstrap(); // Paper - Flat bedrock generator settings
+                     });
+                     // Paper end
+                     CreativeModeTabs.validate();
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+index 44e64d716eee71492f9a8d813934bb96463ece45..1fcc2b287ed723cf51720f80e68f18f4a15cf429 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+@@ -206,7 +206,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
+     @Override
+     public void buildSurface(WorldGenRegion region, StructureManager structures, RandomState noiseConfig, ChunkAccess chunk) {
+         if (!SharedConstants.debugVoidTerrain(chunk.getPos())) {
+-            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, region);
++            WorldGenerationContext worldgenerationcontext = new WorldGenerationContext(this, region, region.getMinecraftWorld()); // Paper - Flat bedrock generator settings
+ 
+             this.buildSurface(chunk, worldgenerationcontext, noiseConfig, structures, region.getBiomeManager(), region.registryAccess().lookupOrThrow(Registries.BIOME), Blender.of(region));
+         }
+@@ -234,7 +234,7 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
+             return this.createNoiseChunk(ichunkaccess1, structureAccessor, Blender.of(chunkRegion), noiseConfig);
+         });
+         Aquifer aquifer = noisechunk.aquifer();
+-        CarvingContext carvingcontext = new CarvingContext(this, chunkRegion.registryAccess(), chunk.getHeightAccessorForGeneration(), noisechunk, noiseConfig, ((NoiseGeneratorSettings) this.settings.value()).surfaceRule());
++        CarvingContext carvingcontext = new CarvingContext(this, chunkRegion.registryAccess(), chunk.getHeightAccessorForGeneration(), noisechunk, noiseConfig, ((NoiseGeneratorSettings) this.settings.value()).surfaceRule(), chunkRegion.getMinecraftWorld()); // Paper - Flat bedrock generator settings
+         CarvingMask carvingmask = ((ProtoChunk) chunk).getOrCreateCarvingMask();
+ 
+         for (int j = -8; j <= 8; ++j) {
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/WorldGenerationContext.java b/src/main/java/net/minecraft/world/level/levelgen/WorldGenerationContext.java
+index e3360e0a19b610586a6194df1880f15799400fc5..aeee3ea1a3aff45febed1bc7f15ea56570620a6c 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/WorldGenerationContext.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/WorldGenerationContext.java
+@@ -6,10 +6,13 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
+ public class WorldGenerationContext {
+     private final int minY;
+     private final int height;
++    private final @javax.annotation.Nullable net.minecraft.world.level.Level level; // Paper - Flat bedrock generator settings
+ 
+-    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world) {
++    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world) { this(generator, world, null); } // Paper - Flat bedrock generator settings
++    public WorldGenerationContext(ChunkGenerator generator, LevelHeightAccessor world, @org.jetbrains.annotations.Nullable net.minecraft.world.level.Level level) { // Paper - Flat bedrock generator settings
+         this.minY = Math.max(world.getMinY(), generator.getMinY());
+         this.height = Math.min(world.getHeight(), generator.getGenDepth());
++        this.level = level; // Paper - Flat bedrock generator settings
+     }
+ 
+     public int getMinGenY() {
+@@ -19,4 +22,13 @@ public class WorldGenerationContext {
+     public int getGenDepth() {
+         return this.height;
+     }
++
++    // Paper start - Flat bedrock generator settings
++    public net.minecraft.world.level.Level getWorld() {
++        if (this.level == null) {
++            throw new NullPointerException("WorldGenerationContext was initialized without a Level, but WorldGenerationContext#getWorld was called");
++        }
++        return this.level;
++    }
++    // Paper end - Flat bedrock generator settings
+ }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/carver/CarvingContext.java b/src/main/java/net/minecraft/world/level/levelgen/carver/CarvingContext.java
+index 390bcf9c302effd9db42d7a0e65b5433cc2eadd6..b9e919d31e442f49300744395af3cf9431e86c57 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/carver/CarvingContext.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/carver/CarvingContext.java
+@@ -27,9 +27,9 @@ public class CarvingContext extends WorldGenerationContext {
+         LevelHeightAccessor heightLimitView,
+         NoiseChunk chunkNoiseSampler,
+         RandomState noiseConfig,
+-        SurfaceRules.RuleSource materialRule
++        SurfaceRules.RuleSource materialRule, @javax.annotation.Nullable net.minecraft.world.level.Level level  // Paper - Flat bedrock generator settings
+     ) {
+-        super(noiseChunkGenerator, heightLimitView);
++        super(noiseChunkGenerator, heightLimitView, level); // Paper - Flat bedrock generator settings
+         this.registryAccess = registryManager;
+         this.noiseChunk = chunkNoiseSampler;
+         this.randomState = noiseConfig;
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/placement/PlacementContext.java b/src/main/java/net/minecraft/world/level/levelgen/placement/PlacementContext.java
+index 298cedb398cc0dc362e02a2bd9db170a9595407f..4e7aa581c9afc20820b659bb1804f7cf460f0b97 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/placement/PlacementContext.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/placement/PlacementContext.java
+@@ -17,7 +17,7 @@ public class PlacementContext extends WorldGenerationContext {
+     private final Optional<PlacedFeature> topFeature;
+ 
+     public PlacementContext(WorldGenLevel world, ChunkGenerator generator, Optional<PlacedFeature> placedFeature) {
+-        super(generator, world);
++        super(generator, world, world.getLevel()); // Paper - Flat bedrock generator settings
+         this.level = world;
+         this.generator = generator;
+         this.topFeature = placedFeature;
+diff --git a/src/main/resources/data/minecraft/worldgen/noise_settings/amplified.json b/src/main/resources/data/minecraft/worldgen/noise_settings/amplified.json
+index 3f61ea695aa6a91a0cacf1fa8dc0a9bdc6fa36e6..02d32bbdbc795db271205bef95e6987ac34b0136 100644
+--- a/src/main/resources/data/minecraft/worldgen/noise_settings/amplified.json
++++ b/src/main/resources/data/minecraft/worldgen/noise_settings/amplified.json
+@@ -389,7 +389,8 @@
+       {
+         "type": "minecraft:condition",
+         "if_true": {
+-          "type": "minecraft:vertical_gradient",
++          "type": "paper:optionally_flat_bedrock_condition_source",
++          "is_roof": false,
+           "false_at_and_above": {
+             "above_bottom": 5
+           },
+diff --git a/src/main/resources/data/minecraft/worldgen/noise_settings/caves.json b/src/main/resources/data/minecraft/worldgen/noise_settings/caves.json
+index 1fe9ce904cba21ff4e6efb948a0bc274a22bcb0b..2e8c1aad10a2b0adbdee4180cfc1902984b6565b 100644
+--- a/src/main/resources/data/minecraft/worldgen/noise_settings/caves.json
++++ b/src/main/resources/data/minecraft/worldgen/noise_settings/caves.json
+@@ -110,7 +110,8 @@
+         "if_true": {
+           "type": "minecraft:not",
+           "invert": {
+-            "type": "minecraft:vertical_gradient",
++            "type": "paper:optionally_flat_bedrock_condition_source",
++            "is_roof": true,
+             "false_at_and_above": {
+               "below_top": 0
+             },
+@@ -130,7 +131,8 @@
+       {
+         "type": "minecraft:condition",
+         "if_true": {
+-          "type": "minecraft:vertical_gradient",
++          "type": "paper:optionally_flat_bedrock_condition_source",
++          "is_roof": false,
+           "false_at_and_above": {
+             "above_bottom": 5
+           },
+diff --git a/src/main/resources/data/minecraft/worldgen/noise_settings/large_biomes.json b/src/main/resources/data/minecraft/worldgen/noise_settings/large_biomes.json
+index f4c34de998d78a80bc026d8e0d423c9bed9bbf8a..fd5bd5474b8f931f2e04706997e71cd5145a5a82 100644
+--- a/src/main/resources/data/minecraft/worldgen/noise_settings/large_biomes.json
++++ b/src/main/resources/data/minecraft/worldgen/noise_settings/large_biomes.json
+@@ -389,7 +389,8 @@
+       {
+         "type": "minecraft:condition",
+         "if_true": {
+-          "type": "minecraft:vertical_gradient",
++          "type": "paper:optionally_flat_bedrock_condition_source",
++          "is_roof": false,
+           "false_at_and_above": {
+             "above_bottom": 5
+           },
+diff --git a/src/main/resources/data/minecraft/worldgen/noise_settings/nether.json b/src/main/resources/data/minecraft/worldgen/noise_settings/nether.json
+index 6219d25fcdbc761debc1d1e357757d1b977dc0b0..1657179b8c3f7e549e3b8774ecb75f292ae79c38 100644
+--- a/src/main/resources/data/minecraft/worldgen/noise_settings/nether.json
++++ b/src/main/resources/data/minecraft/worldgen/noise_settings/nether.json
+@@ -108,7 +108,8 @@
+       {
+         "type": "minecraft:condition",
+         "if_true": {
+-          "type": "minecraft:vertical_gradient",
++          "type": "paper:optionally_flat_bedrock_condition_source",
++          "is_roof": false,
+           "false_at_and_above": {
+             "above_bottom": 5
+           },
+@@ -129,7 +130,8 @@
+         "if_true": {
+           "type": "minecraft:not",
+           "invert": {
+-            "type": "minecraft:vertical_gradient",
++            "type": "paper:optionally_flat_bedrock_condition_source",
++            "is_roof": true,
+             "false_at_and_above": {
+               "below_top": 0
+             },
+diff --git a/src/main/resources/data/minecraft/worldgen/noise_settings/overworld.json b/src/main/resources/data/minecraft/worldgen/noise_settings/overworld.json
+index da3bda6167859f4ddf7d76ec2053f40b2139c13e..70beb7665a43a06b4afcb3c77aa77f923cb444cb 100644
+--- a/src/main/resources/data/minecraft/worldgen/noise_settings/overworld.json
++++ b/src/main/resources/data/minecraft/worldgen/noise_settings/overworld.json
+@@ -389,7 +389,8 @@
+       {
+         "type": "minecraft:condition",
+         "if_true": {
+-          "type": "minecraft:vertical_gradient",
++          "type": "paper:optionally_flat_bedrock_condition_source",
++          "is_roof": false,
+           "false_at_and_above": {
+             "above_bottom": 5
+           },

@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 13 Apr 2020 07:31:44 +0100
+Subject: [PATCH] Prevent opening inventories when frozen
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index be5ca29b0c8e1a78fc84885bb4b1c112fefdb63b..01afc19c566c07a1e57b57ab37d0df6095a64eac 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -935,7 +935,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+             this.containerUpdateDelay = this.level().paperConfig().tickRates.containerUpdate;
+         }
+         // Paper end - Configurable container update tick rate
+-        if (!this.containerMenu.stillValid(this)) {
++        if (this.containerMenu != this.inventoryMenu && (this.isImmobile() || !this.containerMenu.stillValid(this))) { // Paper - Prevent opening inventories when frozen
+             this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper - Inventory close reason
+             this.containerMenu = this.inventoryMenu;
+         }
+@@ -1886,7 +1886,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+             } else {
+                 // CraftBukkit start
+                 this.containerMenu = container;
+-                this.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(), container.getTitle()));
++                if (!this.isImmobile()) this.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(), container.getTitle())); // Paper - Prevent opening inventories when frozen
+                 // CraftBukkit end
+                 this.initMenu(container);
+                 return OptionalInt.of(this.containerCounter);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 5ff159be1a6dfb4b1a5b9aa1e435d294f205215e..6ec6b80d224e2402054afb85b78c793942a58bbf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -335,7 +335,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(container.getBukkitView().getTitle()); // Paper
+ 
+         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+-        player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
++        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
+         player.containerMenu = container;
+         player.initMenu(container);
+     }
+@@ -410,7 +410,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
+         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
+         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+-        player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper
++        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
+         player.containerMenu = container;
+         player.initMenu(container);
+     }

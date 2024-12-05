@@ -1,0 +1,134 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Tue, 4 Aug 2020 22:24:15 +0200
+Subject: [PATCH] Optimize Pathfinder - Remove Streams / Optimized collections
+
+I utilized the IDE to convert streams to non streams code, so shouldn't
+be any risk of behavior change. Only did minor optimization of the
+generated code set to remove unnecessary things.
+
+I expect us to just drop this patch on next major update and re-apply
+it with the IDE again and re-apply the collections optimization.
+
+Optimize collection by creating a list instead of a set of the key and value.
+
+This lets us get faster foreach iteration, as well as avoids map lookups on
+the values when needed.
+
+diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
+index 17006cd22152cf942455437ff7b21a8645259578..cc7d94144e39f7dace7b569b4567def98396e8f9 100644
+--- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
++++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
+@@ -43,8 +43,12 @@ public class PathFinder {
+         if (node == null) {
+             return null;
+         } else {
+-            Map<Target, BlockPos> map = positions.stream()
+-                .collect(Collectors.toMap(pos -> this.nodeEvaluator.getTarget((double)pos.getX(), (double)pos.getY(), (double)pos.getZ()), Function.identity()));
++            // Paper start - Perf: remove streams and optimize collection
++            List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
++            for (final BlockPos pos : positions) {
++                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), pos));
++            }
++            // Paper end - Perf: remove streams and optimize collection
+             Path path = this.findPath(node, map, followRange, distance, rangeMultiplier);
+             this.nodeEvaluator.done();
+             return path;
+@@ -52,19 +56,20 @@ public class PathFinder {
+     }
+ 
+     @Nullable
+-    private Path findPath(Node startNode, Map<Target, BlockPos> positions, float followRange, int distance, float rangeMultiplier) {
++    // Paper start - Perf: remove streams and optimize collection
++    private Path findPath(Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("find_path");
+         profilerFiller.markForCharting(MetricCategory.PATH_FINDING);
+-        Set<Target> set = positions.keySet();
++        // Set<Target> set = positions.keySet();
+         startNode.g = 0.0F;
+-        startNode.h = this.getBestH(startNode, set);
++        startNode.h = this.getBestH(startNode, positions); // Paper - optimize collection
+         startNode.f = startNode.h;
+         this.openSet.clear();
+         this.openSet.insert(startNode);
+-        Set<Node> set2 = ImmutableSet.of();
++        // Set<Node> set2 = ImmutableSet.of(); // Paper - unused - diff on change
+         int i = 0;
+-        Set<Target> set3 = Sets.newHashSetWithExpectedSize(set.size());
++        List<Map.Entry<Target, BlockPos>> entryList = Lists.newArrayListWithExpectedSize(positions.size()); // Paper - optimize collection
+         int j = (int)((float)this.maxVisitedNodes * rangeMultiplier);
+ 
+         while (!this.openSet.isEmpty()) {
+@@ -75,14 +80,18 @@ public class PathFinder {
+             Node node = this.openSet.pop();
+             node.closed = true;
+ 
+-            for (Target target : set) {
++            // Paper start - optimize collection
++            for (int i1 = 0; i1 < positions.size(); i1++) {
++                final Map.Entry<Target, BlockPos> entry = positions.get(i1);
++                Target target = entry.getKey();
+                 if (node.distanceManhattan(target) <= (float)distance) {
+                     target.setReached();
+-                    set3.add(target);
++                    entryList.add(entry);
++                    // Paper end - Perf: remove streams and optimize collection
+                 }
+             }
+ 
+-            if (!set3.isEmpty()) {
++            if (!entryList.isEmpty()) { // Paper - Perf: remove streams and optimize collection; rename
+                 break;
+             }
+ 
+@@ -97,7 +106,7 @@ public class PathFinder {
+                     if (node2.walkedDistance < followRange && (!node2.inOpenSet() || g < node2.g)) {
+                         node2.cameFrom = node;
+                         node2.g = g;
+-                        node2.h = this.getBestH(node2, set) * 1.5F;
++                        node2.h = this.getBestH(node2, positions) * 1.5F; // Paper - Perf: remove streams and optimize collection
+                         if (node2.inOpenSet()) {
+                             this.openSet.changeCost(node2, node2.g + node2.h);
+                         } else {
+@@ -109,23 +118,32 @@ public class PathFinder {
+             }
+         }
+ 
+-        Optional<Path> optional = !set3.isEmpty()
+-            ? set3.stream().map(node -> this.reconstructPath(node.getBestNode(), positions.get(node), true)).min(Comparator.comparingInt(Path::getNodeCount))
+-            : set.stream()
+-                .map(targetx -> this.reconstructPath(targetx.getBestNode(), positions.get(targetx), false))
+-                .min(Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount));
++        // Paper start - Perf: remove streams and optimize collection
++        Path best = null;
++        boolean entryListIsEmpty = entryList.isEmpty();
++        Comparator<Path> comparator = entryListIsEmpty ? Comparator.comparingInt(Path::getNodeCount)
++            : Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount);
++        for (Map.Entry<Target, BlockPos> entry : entryListIsEmpty ? positions : entryList) {
++            Path path = this.reconstructPath(entry.getKey().getBestNode(), entry.getValue(), !entryListIsEmpty);
++            if (best == null || comparator.compare(path, best) < 0)
++                best = path;
++        }
+         profilerFiller.pop();
+-        return optional.isEmpty() ? null : optional.get();
++        return best;
++        // Paper end - Perf: remove streams and optimize collection
+     }
+ 
+     protected float distance(Node a, Node b) {
+         return a.distanceTo(b);
+     }
+ 
+-    private float getBestH(Node node, Set<Target> targets) {
++    private float getBestH(Node node, List<Map.Entry<Target, BlockPos>> targets) { // Paper - Perf: remove streams and optimize collection; Set<Target> -> List<Map.Entry<Target, BlockPos>>
+         float f = Float.MAX_VALUE;
+ 
+-        for (Target target : targets) {
++        // Paper start - Perf: remove streams and optimize collection
++        for (int i = 0, targetsSize = targets.size(); i < targetsSize; i++) {
++            final Target target = targets.get(i).getKey();
++            // Paper end - Perf: remove streams and optimize collection
+             float g = node.distanceTo(target);
+             target.updateBest(g, node);
+             f = Math.min(g, f);

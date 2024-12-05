@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Sat, 21 Sep 2024 22:01:52 +0200
+Subject: [PATCH] Fix PlayerCommandPreprocessEvent on signed commands
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index accf3e43f58fe3588578cb15f53695d825e58670..dd8635efd225cef74924db01a84d41cb80e262b9 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2255,24 +2255,32 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+         PlayerCommandPreprocessEvent event = new PlayerCommandPreprocessEvent(this.getCraftPlayer(), command, new LazyPlayerSet(this.server));
+         this.cserver.getPluginManager().callEvent(event);
+-
+-        if (event.isCancelled()) {
+-            return;
+-        }
+         command = event.getMessage().substring(1);
+ 
+-        ParseResults<CommandSourceStack> parseresults = this.parseCommand(command);
+-        // CraftBukkit end
+-
+-        Map map;
++        // Paper start - Fix cancellation and message changing
++        ParseResults<CommandSourceStack> parseresults = this.parseCommand(packet.command());
+ 
++        Map<String, PlayerChatMessage> map;
+         try {
+-            map = (packet.command().equals(command)) ? this.collectSignedArguments(packet, SignableCommand.of(parseresults), lastSeenMessages) : Collections.emptyMap(); // CraftBukkit
++            // Always parse the original command to add to the chat chain
++            map = this.collectSignedArguments(packet, SignableCommand.of(parseresults), lastSeenMessages);
+         } catch (SignedMessageChain.DecodeException signedmessagechain_a) {
+             this.handleMessageDecodeFailure(signedmessagechain_a);
+             return;
+         }
+ 
++        if (event.isCancelled()) {
++            // Only now are we actually good to return
++            return;
++        }
++
++        // Remove signed parts if the command was changed
++        if (!command.equals(packet.command())) {
++            parseresults = this.parseCommand(command);
++            map = Collections.emptyMap();
++        }
++        // Paper end - Fix cancellation and message changing
++
+         CommandSigningContext.SignedArguments commandsigningcontext_a = new CommandSigningContext.SignedArguments(map);
+ 
+         parseresults = Commands.<CommandSourceStack>mapSource(parseresults, (commandlistenerwrapper) -> { // CraftBukkit - decompile error

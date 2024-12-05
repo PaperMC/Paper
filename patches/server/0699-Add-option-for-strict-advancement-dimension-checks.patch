@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 12 Jun 2022 11:47:24 -0700
+Subject: [PATCH] Add option for strict advancement dimension checks
+
+Craftbukkit attempts to translate worlds that use the
+same generation as the Overworld, The Nether, or The End
+to use those dimensions when checking the `changed_dimension`
+criteria trigger, or whether to trigger the `NETHER_TRAVEL`
+distance trigger. This adds a config option to ignore that
+and use the exact dimension key of the worlds involved.
+
+diff --git a/src/main/java/net/minecraft/advancements/critereon/LocationPredicate.java b/src/main/java/net/minecraft/advancements/critereon/LocationPredicate.java
+index 01b8f7024fbc965bc6a7f97f79ba3dec964ef769..801823d003a8e28a13fe90db4604cd0938899c6d 100644
+--- a/src/main/java/net/minecraft/advancements/critereon/LocationPredicate.java
++++ b/src/main/java/net/minecraft/advancements/critereon/LocationPredicate.java
+@@ -44,7 +44,7 @@ public record LocationPredicate(
+     public boolean matches(ServerLevel world, double x, double y, double z) {
+         if (this.position.isPresent() && !this.position.get().matches(x, y, z)) {
+             return false;
+-        } else if (this.dimension.isPresent() && this.dimension.get() != world.dimension()) {
++        } else if (this.dimension.isPresent() && this.dimension.get() != (io.papermc.paper.configuration.GlobalConfiguration.get().misc.strictAdvancementDimensionCheck ? world.dimension() : org.bukkit.craftbukkit.util.CraftDimensionUtil.getMainDimensionKey(world))) { // Paper - Add option for strict advancement dimension checks
+             return false;
+         } else {
+             BlockPos blockPos = BlockPos.containing(x, y, z);
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index ed8a1457b99f862762e49c84db2585ce410f278a..2821203352974f5bd1e873969f3bc64842761702 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1646,6 +1646,12 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+         ResourceKey<Level> maindimensionkey = CraftDimensionUtil.getMainDimensionKey(origin);
+         ResourceKey<Level> maindimensionkey1 = CraftDimensionUtil.getMainDimensionKey(this.level());
+ 
++        // Paper start - Add option for strict advancement dimension checks
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.strictAdvancementDimensionCheck) {
++            maindimensionkey = resourcekey;
++            maindimensionkey1 = resourcekey1;
++        }
++        // Paper end - Add option for strict advancement dimension checks
+         CriteriaTriggers.CHANGED_DIMENSION.trigger(this, maindimensionkey, maindimensionkey1);
+         if (maindimensionkey != resourcekey || maindimensionkey1 != resourcekey1) {
+             CriteriaTriggers.CHANGED_DIMENSION.trigger(this, resourcekey, resourcekey1);

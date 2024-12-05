@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 9 Apr 2020 21:20:33 -0400
+Subject: [PATCH] Don't move existing players to world spawn
+
+This can cause a nasty server lag the spawn chunks are not kept loaded
+or they aren't finished loading yet, or if the world spawn radius is
+larger than the keep loaded range.
+
+By skipping this, we avoid potential for a large spike on server start.
+
+== AT ==
+public net.minecraft.server.level.ServerPlayer fudgeSpawnLocation(Lnet/minecraft/server/level/ServerLevel;)V
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 4d73ccb30fde83497405b6a6a788f69e0349aec1..be5ca29b0c8e1a78fc84885bb4b1c112fefdb63b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -417,7 +417,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+         this.server = server;
+         this.stats = server.getPlayerList().getPlayerStats(this);
+         this.advancements = server.getPlayerList().getPlayerAdvancements(this);
+-        this.moveTo(this.adjustSpawnLocation(world, world.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F);
++        // this.moveTo(this.adjustSpawnLocation(world, world.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F); // Paper - Don't move existing players to world spawn
+         this.updateOptions(clientOptions);
+         this.object = null;
+ 
+@@ -854,7 +854,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+                 position = Vec3.atCenterOf(world.getSharedSpawnPos());
+             }
+             this.setLevel(world);
+-            this.setPos(position);
++            this.setPosRaw(position.x(), position.y(), position.z()); // Paper - don't register to chunks yet
+         }
+         this.gameMode.setLevel((ServerLevel) world);
+     }
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 768754f11d72921e1206e7bd029c94fae650ae82..d238dbd78fd18da46c703351cccc70c0b07622db 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -226,6 +226,7 @@ public abstract class PlayerList {
+         // Paper start - Entity#getEntitySpawnReason
+         if (optional.isEmpty()) {
+             player.spawnReason = org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT; // set Player SpawnReason to DEFAULT on first login
++            player.moveTo(player.adjustSpawnLocation(worldserver1, worldserver1.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F);
+         }
+         // Paper end - Entity#getEntitySpawnReason
+         player.setServerLevel(worldserver1);

@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+Date: Mon, 7 Aug 2023 12:58:28 +0200
+Subject: [PATCH] Cache map ids on item frames
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 436eb27ddc6a36b8bbf46efd9532c4e371024a98..12d5af9dc6e5d5ed4ea427384226dc5d022550ba 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -121,7 +121,7 @@ public class ServerEntity {
+                 ItemStack itemstack = entityitemframe.getItem();
+ 
+                 if (this.level.paperConfig().maps.itemFrameCursorUpdateInterval > 0 && this.tickCount % this.level.paperConfig().maps.itemFrameCursorUpdateInterval == 0 && itemstack.getItem() instanceof MapItem) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks // Paper - Make item frame map cursor update interval configurable
+-                    MapId mapid = (MapId) itemstack.get(DataComponents.MAP_ID);
++                    MapId mapid = entityitemframe.cachedMapId; // Paper - Perf: Cache map ids on item frames
+                     MapItemSavedData worldmap = MapItem.getSavedData(mapid, this.level);
+ 
+                     if (worldmap != null) {
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index 3ef9be2b076160783adce2f1d74b3118544e66da..7d83ad8a61f6aafbc063506c1858554f9b700b70 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -51,6 +51,7 @@ public class ItemFrame extends HangingEntity {
+     private static final float HEIGHT = 0.75F;
+     public float dropChance;
+     public boolean fixed;
++    public @Nullable MapId cachedMapId; // Paper - Perf: Cache map ids on item frames
+ 
+     public ItemFrame(EntityType<? extends ItemFrame> type, Level world) {
+         super(type, world);
+@@ -334,6 +335,7 @@ public class ItemFrame extends HangingEntity {
+     }
+ 
+     private void onItemChanged(ItemStack stack) {
++        this.cachedMapId = stack.getComponents().get(net.minecraft.core.component.DataComponents.MAP_ID); // Paper - Perf: Cache map ids on item frames
+         if (!stack.isEmpty() && stack.getFrame() != this) {
+             stack.setEntityRepresentation(this);
+         }

@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <support@newwindserver.com>
+Date: Thu, 25 Jul 2024 13:00:37 +0200
+Subject: [PATCH] Make interaction leniency distance configurable
+
+The server validates incoming interaction packets by ensuring the player
+sending them is inside their interaction range. For this, the server adds
+a magic value, by default 1.0, to the original interaction range to
+account for latency issues.
+
+This value however may be too low in high latency environments.
+The patch exposes a new configuration option to configure said value.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 401f4a071847cb987dbff3ae0e989d3a04fd9a7d..bb91b3c167d83548c4684d54851840dea183a937 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2788,7 +2788,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+                 AABB axisalignedbb = entity.getBoundingBox();
+ 
+-                if (this.player.canInteractWithEntity(axisalignedbb, 3.0D)) {
++            if (this.player.canInteractWithEntity(axisalignedbb, io.papermc.paper.configuration.GlobalConfiguration.get().misc.clientInteractionLeniencyDistance.or(3.0D))) { // Paper - configurable lenience value for interact range
+                     packet.dispatch(new ServerboundInteractPacket.Handler() {
+                         private void performInteraction(InteractionHand enumhand, ServerGamePacketListenerImpl.EntityInteraction playerconnection_a, PlayerInteractEntityEvent event) { // CraftBukkit
+                             ItemStack itemstack = ServerGamePacketListenerImpl.this.player.getItemInHand(enumhand);

@@ -1,0 +1,65 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Sun, 21 Jul 2024 19:11:22 +0200
+Subject: [PATCH] Fix PickupStatus getting reset
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+index 6edb5a76a503242a6528875184ccd62d6499205f..f4513b1887f823b088dabe425be042b8fb2bde66 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/AbstractArrow.java
+@@ -729,7 +729,14 @@ public abstract class AbstractArrow extends Projectile {
+ 
+     @Override
+     public void setOwner(@Nullable Entity entity) {
++        // Paper start - Fix PickupStatus getting reset
++        this.setOwner(entity, true);
++    }
++
++    public void setOwner(@Nullable Entity entity, boolean resetPickup) {
++        // Paper end - Fix PickupStatus getting reset
+         super.setOwner(entity);
++        if (!resetPickup) return; // Paper - Fix PickupStatus getting reset
+         Entity entity1 = entity;
+         byte b0 = 0;
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+index c1b39e6fda0b2003e5e28ef94d13546497cbb79f..4c71642474d97d1943db302947a4566a326b9ac3 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+@@ -353,7 +353,13 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+     public boolean deflect(ProjectileDeflection deflection, @Nullable Entity deflector, @Nullable Entity owner, boolean fromAttack) {
+         deflection.deflect(this, deflector, this.random);
+         if (!this.level().isClientSide) {
+-            this.setOwner(owner);
++            // Paper start - Fix PickupStatus getting reset
++            if (this instanceof AbstractArrow arrow) {
++                arrow.setOwner(owner, false);
++            } else {
++                this.setOwner(owner);
++            }
++            // Paper end - Fix PickupStatus getting reset
+             this.onDeflection(deflector, fromAttack);
+         }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractArrow.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractArrow.java
+index 1f30109abd86b76af343eb5eb75ec3db83ef9417..d0c30fd12aa9866900fe72b97d10c257479cf010 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractArrow.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAbstractArrow.java
+@@ -173,4 +173,16 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
+         this.getHandle().setSoundEvent(org.bukkit.craftbukkit.CraftSound.bukkitToMinecraft(sound));
+     }
+     // Paper end
++
++    // Paper start - Fix PickupStatus getting reset - Copy of CraftProjectile#setShooter, calling setOwner(Entity,boolean)
++    @Override
++    public void setShooter(org.bukkit.projectiles.ProjectileSource shooter, boolean resetPickupStatus) {
++        if (shooter instanceof CraftEntity craftEntity) {
++            this.getHandle().setOwner(craftEntity.getHandle(), resetPickupStatus);
++        } else {
++            this.getHandle().setOwner(null, resetPickupStatus);
++        }
++        this.getHandle().projectileSource = shooter;
++    }
++    // Paper end - Fix PickupStatus getting reset
+ }

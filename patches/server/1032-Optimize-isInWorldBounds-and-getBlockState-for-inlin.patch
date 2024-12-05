@@ -1,0 +1,99 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 3 Mar 2016 02:07:55 -0600
+Subject: [PATCH] Optimize isInWorldBounds and getBlockState for inlining
+
+Hot methods, so reduce # of instructions for the method.
+
+Move is valid location test to the BlockPosition class so that it can access local variables.
+
+Replace all calls to the new place to the unnecessary forward.
+
+Optimize getType and getBlockData to manually inline and optimize the calls
+
+diff --git a/src/main/java/net/minecraft/core/Vec3i.java b/src/main/java/net/minecraft/core/Vec3i.java
+index 2f2bcc1b9b32e58bf70ae6c171177ceb333ed6cd..d7afddd1d961495f0b50302a8da0a70fcd3ba1b0 100644
+--- a/src/main/java/net/minecraft/core/Vec3i.java
++++ b/src/main/java/net/minecraft/core/Vec3i.java
+@@ -28,6 +28,12 @@ public class Vec3i implements Comparable<Vec3i> {
+         );
+     }
+ 
++    // Paper start
++    public final boolean isInsideBuildHeightAndWorldBoundsHorizontal(net.minecraft.world.level.LevelHeightAccessor levelHeightAccessor) {
++        return getX() >= -30000000 && getZ() >= -30000000 && getX() < 30000000 && getZ() < 30000000 && !levelHeightAccessor.isOutsideBuildHeight(getY());
++    }
++    // Paper end
++
+     public Vec3i(int x, int y, int z) {
+         this.x = x;
+         this.y = y;
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 68f515dcc45306ac2751b1ef49fb4946f9e785db..a76439970968446fbb7ff5a1e086676962375234 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -340,7 +340,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     // Paper end
+ 
+     public boolean isInWorldBounds(BlockPos pos) {
+-        return !this.isOutsideBuildHeight(pos) && Level.isInWorldBoundsHorizontal(pos);
++        return pos.isInsideBuildHeightAndWorldBoundsHorizontal(this); // Paper - use better/optimized check
+     }
+ 
+     public static boolean isInSpawnableBounds(BlockPos pos) {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+index 4b56e7cb45026ac3323ecf0b9622a177e961112d..cc7a3d87238b7673f171c793a4f9c3a9e519c0f0 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+@@ -128,6 +128,7 @@ public abstract class ChunkAccess implements BiomeManager.NoiseBiomeSource, Ligh
+         return GameEventListenerRegistry.NOOP;
+     }
+ 
++    public abstract BlockState getBlockState(final int x, final int y, final int z); // Paper
+     @Nullable
+     public abstract BlockState setBlockState(BlockPos pos, BlockState state, boolean moved);
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
+index 7cce66d4c6efe6fd3cc22a6acf72878c964c61ae..f38700e5fbeeb8a913272d4464b8aa325d511dac 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ImposterProtoChunk.java
+@@ -56,6 +56,12 @@ public class ImposterProtoChunk extends ProtoChunk {
+     public BlockState getBlockState(BlockPos pos) {
+         return this.wrapped.getBlockState(pos);
+     }
++    // Paper start
++    @Override
++    public final BlockState getBlockState(final int x, final int y, final int z) {
++        return this.wrapped.getBlockStateFinal(x, y, z);
++    }
++    // Paper end
+ 
+     @Override
+     public FluidState getFluidState(BlockPos pos) {
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
+index fe8b9373a4906652bb6c0b3d8e1d83df04d592a2..15e14f5d006389c823fa6baf8c1a4f22804d4aa8 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ProtoChunk.java
+@@ -97,14 +97,18 @@ public class ProtoChunk extends ChunkAccess {
+ 
+     @Override
+     public BlockState getBlockState(BlockPos pos) {
+-        int i = pos.getY();
+-        if (this.isOutsideBuildHeight(i)) {
++        // Paper start
++        return getBlockState(pos.getX(), pos.getY(), pos.getZ());
++    }
++    public BlockState getBlockState(final int x, final int y, final int z) {
++        if (this.isOutsideBuildHeight(y)) {
+             return Blocks.VOID_AIR.defaultBlockState();
+         } else {
+-            LevelChunkSection levelChunkSection = this.getSection(this.getSectionIndex(i));
+-            return levelChunkSection.hasOnlyAir() ? Blocks.AIR.defaultBlockState() : levelChunkSection.getBlockState(pos.getX() & 15, i & 15, pos.getZ() & 15);
++            LevelChunkSection levelChunkSection = this.getSections()[this.getSectionIndex(y)];
++            return levelChunkSection.hasOnlyAir() ? Blocks.AIR.defaultBlockState() : levelChunkSection.getBlockState(x & 15, y & 15, z & 15);
+         }
+     }
++    // Paper end
+ 
+     @Override
+     public FluidState getFluidState(BlockPos pos) {

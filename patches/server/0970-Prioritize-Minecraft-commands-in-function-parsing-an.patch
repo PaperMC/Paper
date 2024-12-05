@@ -1,0 +1,135 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Mon, 1 Jul 2024 11:58:49 -0700
+Subject: [PATCH] Prioritize Minecraft commands in function parsing and command
+ blocks
+
+
+diff --git a/src/main/java/com/mojang/brigadier/CommandDispatcher.java b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
+index a4d5d7017e0be79844b996de85a63cad5f8488bc..770aec1976bd391eb5712b57b6c6a0290b4723a8 100644
+--- a/src/main/java/com/mojang/brigadier/CommandDispatcher.java
++++ b/src/main/java/com/mojang/brigadier/CommandDispatcher.java
+@@ -298,7 +298,7 @@ public class CommandDispatcher<S> {
+         List<ParseResults<S>> potentials = null;
+         final int cursor = originalReader.getCursor();
+ 
+-        for (final CommandNode<S> child : node.getRelevantNodes(originalReader)) {
++        for (final CommandNode<S> child : node.getRelevantNodes(originalReader, source)) { // Paper - prioritize mc commands in function parsing
+             if (!child.canUse(source)) {
+                 continue;
+             }
+diff --git a/src/main/java/com/mojang/brigadier/tree/CommandNode.java b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
+index 03ce8a2abb6dceaa922dcce7f3adbc228bbde4bc..dc76fcf4c6cc6cd65ce117b1855c15ede60f30ab 100644
+--- a/src/main/java/com/mojang/brigadier/tree/CommandNode.java
++++ b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
+@@ -173,6 +173,12 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
+     protected abstract String getSortedKey();
+ 
+     public Collection<? extends CommandNode<S>> getRelevantNodes(final StringReader input) {
++        // Paper start - prioritize mc commands in function parsing
++        return this.getRelevantNodes(input, null);
++    }
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public Collection<? extends CommandNode<S>> getRelevantNodes(final StringReader input, final Object source) {
++        // Paper end - prioritize mc commands in function parsing
+         if (this.literals.size() > 0) {
+             final int cursor = input.getCursor();
+             while (input.canRead() && input.peek() != ' ') {
+@@ -180,7 +186,21 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
+             }
+             final String text = input.getString().substring(cursor, input.getCursor());
+             input.setCursor(cursor);
+-            final LiteralCommandNode<S> literal = this.literals.get(text);
++            // Paper start - prioritize mc commands in function parsing
++            LiteralCommandNode<S> literal = null;
++            if (source instanceof CommandSourceStack css && css.source == net.minecraft.commands.CommandSource.NULL) {
++                if (!text.contains(":")) {
++                    literal = this.literals.get("minecraft:" + text);
++                }
++            } else if (source instanceof CommandSourceStack css && css.source instanceof net.minecraft.world.level.BaseCommandBlock) {
++                if (css.getServer().server.getCommandBlockOverride(text) && !text.contains(":")) {
++                    literal = this.literals.get("minecraft:" + text);
++                }
++            }
++            if (literal == null) {
++                literal = this.literals.get(text);
++            }
++            // Paper end - prioritize mc commands in function parsing
+             if (literal != null) {
+                 return Collections.singleton(literal);
+             } else {
+diff --git a/src/main/java/com/mojang/brigadier/tree/LiteralCommandNode.java b/src/main/java/com/mojang/brigadier/tree/LiteralCommandNode.java
+index 85a890403645f0f9d381e85b48efcae126673945..bcc27fec043a57eb5064934c967982deff9cdee4 100644
+--- a/src/main/java/com/mojang/brigadier/tree/LiteralCommandNode.java
++++ b/src/main/java/com/mojang/brigadier/tree/LiteralCommandNode.java
+@@ -23,11 +23,19 @@ import java.util.function.Predicate;
+ public class LiteralCommandNode<S> extends CommandNode<S> {
+     private final String literal;
+     private final String literalLowerCase;
++    private final String nonPrefixed; // Paper - prioritize mc commands in function parsing
+ 
+     public LiteralCommandNode(final String literal, final Command<S> command, final Predicate<S> requirement, final CommandNode<S> redirect, final RedirectModifier<S> modifier, final boolean forks) {
+         super(command, requirement, redirect, modifier, forks);
+         this.literal = literal;
+         this.literalLowerCase = literal.toLowerCase(Locale.ROOT);
++        // Paper start - prioritize mc commands in function parsing
++        if (literal.startsWith("minecraft:")) {
++            this.nonPrefixed = literal.substring("minecraft:".length());
++        } else {
++            this.nonPrefixed = null;
++        }
++        // Paper end - prioritize mc commands in function parsing
+     }
+ 
+     public String getLiteral() {
+@@ -42,7 +50,12 @@ public class LiteralCommandNode<S> extends CommandNode<S> {
+     @Override
+     public void parse(final StringReader reader, final CommandContextBuilder<S> contextBuilder) throws CommandSyntaxException {
+         final int start = reader.getCursor();
+-        final int end = parse(reader);
++        // Paper start - prioritize mc commands in function parsing
++        int end = parse(reader, false);
++        if (end == -1 && this.nonPrefixed != null) {
++            end = parse(reader, true);
++        }
++        // Paper end - prioritize mc commands in function parsing
+         if (end > -1) {
+             contextBuilder.withNode(this, StringRange.between(start, end));
+             return;
+@@ -51,7 +64,10 @@ public class LiteralCommandNode<S> extends CommandNode<S> {
+         throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().createWithContext(reader, literal);
+     }
+ 
+-    private int parse(final StringReader reader) {
++    // Paper start - prioritize mc commands in function parsing
++    private int parse(final StringReader reader, final boolean secondPass) {
++        String literal = secondPass ? this.nonPrefixed : this.literal;
++        // Paper end - prioritize mc commands in function parsing
+         final int start = reader.getCursor();
+         if (reader.canRead(literal.length())) {
+             final int end = start + literal.length();
+@@ -78,7 +94,7 @@ public class LiteralCommandNode<S> extends CommandNode<S> {
+ 
+     @Override
+     public boolean isValidInput(final String input) {
+-        return parse(new StringReader(input)) > -1;
++        return parse(new StringReader(input), false) > -1; // Paper - prioritize mc commands in function parsing
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 62704cbfe3a232809b3e62d1f1d8beb3bea6496e..56d6bbd37556f11a603aa3c8647217cc9a2dc5da 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -315,10 +315,7 @@ public class Commands {
+ 
+         // Paper - Fix permission levels for command blocks
+ 
+-        // Handle vanilla commands;
+-        if (sender.getLevel().getCraftServer().getCommandBlockOverride(args[0])) {
+-            args[0] = "minecraft:" + args[0];
+-        }
++        // Handle vanilla commands; // Paper - handled in CommandNode/CommandDispatcher
+ 
+         String newCommand = joiner.join(args);
+         this.performPrefixedCommand(sender, newCommand, newCommand);

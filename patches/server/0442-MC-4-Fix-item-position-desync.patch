@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: BillyGalbreath <blake.galbreath@gmail.com>
+Date: Tue, 8 Dec 2020 20:24:52 -0600
+Subject: [PATCH] MC-4: Fix item position desync
+
+This fixes item position desync (MC-4) by running the item coordinates
+through the encode/decode methods of the packet that causes the precision
+loss, which forces the server to lose the same precision as the client
+keeping them in sync.
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java b/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
+index 488ebd443903af812913437f1ade3002093f2470..a043ac10834562d357ef0b5aded2e916e2a0d056 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
++++ b/src/main/java/net/minecraft/network/protocol/game/VecDeltaCodec.java
+@@ -9,12 +9,12 @@ public class VecDeltaCodec {
+ 
+     @VisibleForTesting
+     static long encode(double value) {
+-        return Math.round(value * 4096.0);
++        return Math.round(value * 4096.0); // Paper - Fix MC-4; diff on change
+     }
+ 
+     @VisibleForTesting
+     static double decode(long value) {
+-        return (double)value / 4096.0;
++        return value / 4096.0; // Paper - Fix MC-4; diff on change
+     }
+ 
+     public Vec3 decode(long x, long y, long z) {
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 20e6b199758130d5c758c79488031c40849cc51d..0d99d310746cc584b2d89d0c1b7083049f4d1593 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -4505,6 +4505,16 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             return;
+         }
+         // Paper end - Block invalid positions and bounding box
++        // Paper start - Fix MC-4
++        if (this instanceof ItemEntity) {
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.fixEntityPositionDesync) {
++                // encode/decode from ClientboundMoveEntityPacket
++                x = Mth.lfloor(x * 4096.0) * (1 / 4096.0);
++                y = Mth.lfloor(y * 4096.0) * (1 / 4096.0);
++                z = Mth.lfloor(z * 4096.0) * (1 / 4096.0);
++            }
++        }
++        // Paper end - Fix MC-4
+         if (this.position.x != x || this.position.y != y || this.position.z != z) {
+             this.position = new Vec3(x, y, z);
+             int i = Mth.floor(x);

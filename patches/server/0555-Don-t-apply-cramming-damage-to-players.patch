@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Phoenix616 <max@themoep.de>
+Date: Sun, 20 Jun 2021 16:35:42 +0100
+Subject: [PATCH] Don't apply cramming damage to players
+
+It does not make a lot of sense to damage players if they get crammed,
+ especially as the usecase of teleporting lots of players to the same
+ location isn't too uncommon and killing all those players isn't
+ really what one would expect to happen.
+
+For those who really want it a config option is provided.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 2d8760216b63e0858088cc5f505406fca48e0151..ff678000823fef5f7b04b0023468a17ef1477758 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1805,7 +1805,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+ 
+     @Override
+     public boolean isInvulnerableTo(ServerLevel world, DamageSource source) {
+-        return super.isInvulnerableTo(world, source) || this.isChangingDimension() && !source.is(DamageTypes.ENDER_PEARL) || !this.hasClientLoaded();
++        return (super.isInvulnerableTo(world, source) || this.isChangingDimension() && !source.is(DamageTypes.ENDER_PEARL) || !this.hasClientLoaded()) || (!this.level().paperConfig().collisions.allowPlayerCrammingDamage && source.is(DamageTypes.CRAMMING)); // Paper - disable player cramming
+     }
+ 
+     @Override

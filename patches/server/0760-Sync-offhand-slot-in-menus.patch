@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 14 Jan 2022 10:20:40 -0800
+Subject: [PATCH] Sync offhand slot in menus
+
+Menus don't add slots for the offhand, so on sendAllDataToRemote calls the
+offhand slot isn't sent. This is not correct because you *can* put stuff into the offhand
+by pressing the offhand swap item
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 1dd593b7d90b29f238ef077753271b0d199c066c..3a96eb35787ac4b45e4b212c221593516a32ea4d 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -348,6 +348,13 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+ 
+             }
+ 
++            // Paper start - Sync offhand slot in menus
++            @Override
++            public void sendOffHandSlotChange() {
++                ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(ServerPlayer.this.inventoryMenu.containerId, ServerPlayer.this.inventoryMenu.incrementStateId(), net.minecraft.world.inventory.InventoryMenu.SHIELD_SLOT, ServerPlayer.this.inventoryMenu.getSlot(net.minecraft.world.inventory.InventoryMenu.SHIELD_SLOT).getItem().copy()));
++            }
++            // Paper end - Sync offhand slot in menus
++
+             @Override
+             public void sendSlotChange(AbstractContainerMenu handler, int slot, ItemStack stack) {
+                 ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(handler.containerId, handler.incrementStateId(), slot, stack));
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index d830504d08c9de92797c432a868c1ee9dfc46a91..fc23e2dc42e907d5f8dc134a06102cc3e7fde515 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -228,6 +228,7 @@ public abstract class AbstractContainerMenu {
+ 
+         if (this.synchronizer != null) {
+             this.synchronizer.sendInitialData(this, this.remoteSlots, this.remoteCarried, this.remoteDataSlots.toIntArray());
++            this.synchronizer.sendOffHandSlotChange(); // Paper - Sync offhand slot in menus; update player's offhand since the offhand slot is not added to the slots for menus but can be changed by swapping from a menu slot
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/inventory/ContainerSynchronizer.java b/src/main/java/net/minecraft/world/inventory/ContainerSynchronizer.java
+index ff4fa86f9408e83e505f7e27692d3423f8570c48..a45ef5fcffc05e4e30801b73e82d29c6dbf5b8fd 100644
+--- a/src/main/java/net/minecraft/world/inventory/ContainerSynchronizer.java
++++ b/src/main/java/net/minecraft/world/inventory/ContainerSynchronizer.java
+@@ -6,6 +6,7 @@ import net.minecraft.world.item.ItemStack;
+ public interface ContainerSynchronizer {
+     void sendInitialData(AbstractContainerMenu handler, NonNullList<ItemStack> stacks, ItemStack cursorStack, int[] properties);
+ 
++    default void sendOffHandSlotChange() {} // Paper - Sync offhand slot in menus
+     void sendSlotChange(AbstractContainerMenu handler, int slot, ItemStack stack);
+ 
+     void sendCarriedChange(AbstractContainerMenu handler, ItemStack stack);

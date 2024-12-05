@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 30 May 2023 12:59:10 -0700
+Subject: [PATCH] Refresh ProjectileSource for projectiles
+
+Makes sure the value returned by Projectile#getShooter in
+the API matches the owner UUID specified in the entity nbt.
+Previously, after the entity reloaded, Projectile#getShooter
+would return null, while the entity still had an owner.
+
+Also fixes setting the shooter/owner to null actually
+clearing the owner.
+
+Co-authored-by: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 7897bec4aa04c93793af819cfaf8a7a751c4f1e4..777b6a5d63138c9332c1d32f1df6d0cc2e3b2844 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -394,6 +394,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     public boolean inWorld = false;
+     public boolean generation;
+     public int maxAirTicks = this.getDefaultMaxAirSupply(); // CraftBukkit - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
++    @Nullable // Paper - Refresh ProjectileSource for projectiles
+     public org.bukkit.projectiles.ProjectileSource projectileSource; // For projectiles only
+     public boolean lastDamageCancelled; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
+     public boolean persistentInvisibility = false;
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+index 92bf8a3bac1146ed2393faa0f31e219288b466ca..c1b39e6fda0b2003e5e28ef94d13546497cbb79f 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
+@@ -63,17 +63,35 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+             this.ownerUUID = entity.getUUID();
+             this.cachedOwner = entity;
+         }
+-        this.projectileSource = (entity != null && entity.getBukkitEntity() instanceof ProjectileSource) ? (ProjectileSource) entity.getBukkitEntity() : null; // CraftBukkit
+-
++        // Paper start - Refresh ProjectileSource for projectiles
++        else {
++            this.ownerUUID = null;
++            this.cachedOwner = null;
++            this.projectileSource = null;
++        }
++        // Paper end - Refresh ProjectileSource for projectiles
++        this.refreshProjectileSource(false); // Paper
++    }
++    // Paper start - Refresh ProjectileSource for projectiles
++    public void refreshProjectileSource(boolean fillCache) {
++        if (fillCache) {
++            this.getOwner();
++        }
++        if (this.cachedOwner != null && !this.cachedOwner.isRemoved() && this.projectileSource == null && this.cachedOwner.getBukkitEntity() instanceof ProjectileSource projSource) {
++            this.projectileSource = projSource;
++        }
+     }
++    // Paper end - Refresh ProjectileSource for projectiles
+ 
+     @Nullable
+     @Override
+     public Entity getOwner() {
+         if (this.cachedOwner != null && !this.cachedOwner.isRemoved()) {
++            this.refreshProjectileSource(false); // Paper - Refresh ProjectileSource for projectiles
+             return this.cachedOwner;
+         } else if (this.ownerUUID != null) {
+             this.cachedOwner = this.findOwner(this.ownerUUID);
++            this.refreshProjectileSource(false); // Paper - Refresh ProjectileSource for projectiles
+             return this.cachedOwner;
+         } else {
+             return null;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
+index de4fb2654c7895cfd83ad694455ee56cb708c2f2..591af9d0d2fdc9953415979fc97a4a00afd85885 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/AbstractProjectile.java
+@@ -60,6 +60,7 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
+ 
+     @Override
+     public final org.bukkit.projectiles.ProjectileSource getShooter() {
++        this.getHandle().refreshProjectileSource(true); // Paper - Refresh ProjectileSource for projectiles
+         return this.getHandle().projectileSource;
+     }
+ 

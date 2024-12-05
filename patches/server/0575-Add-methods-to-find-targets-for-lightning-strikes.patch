@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jakub Zacek <dawon@dawon.eu>
+Date: Mon, 4 Oct 2021 10:16:44 +0200
+Subject: [PATCH] Add methods to find targets for lightning strikes
+
+== AT ==
+public net.minecraft.server.level.ServerLevel findLightningRod(Lnet/minecraft/core/BlockPos;)Ljava/util/Optional;
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index dc3d6bbbd79a0decc134f792d884962534717c0e..75d0143556dad6e830d3defdd9afecfd7587cdfa 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -741,6 +741,11 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+     }
+ 
+     protected BlockPos findLightningTargetAround(BlockPos pos) {
++        // Paper start - Add methods to find targets for lightning strikes
++        return this.findLightningTargetAround(pos, false);
++    }
++    public BlockPos findLightningTargetAround(BlockPos pos, boolean returnNullWhenNoTarget) {
++        // Paper end - Add methods to find targets for lightning strikes
+         BlockPos blockposition1 = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
+         Optional<BlockPos> optional = this.findLightningRod(blockposition1);
+ 
+@@ -755,6 +760,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+             if (!list.isEmpty()) {
+                 return ((LivingEntity) list.get(this.random.nextInt(list.size()))).blockPosition();
+             } else {
++                if (returnNullWhenNoTarget) return null; // Paper - Add methods to find targets for lightning strikes
+                 if (blockposition1.getY() == this.getMinY() - 1) {
+                     blockposition1 = blockposition1.above(2);
+                 }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index d72ceb866f8632a8daa7dc19acdc57b6b78fd906..d650822155f4628ea9d61ecbd4208520746aa59f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -676,6 +676,23 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+         return (LightningStrike) lightning.getBukkitEntity();
+     }
+ 
++    // Paper start - Add methods to find targets for lightning strikes
++    @Override
++    public Location findLightningRod(Location location) {
++        return this.world.findLightningRod(io.papermc.paper.util.MCUtil.toBlockPosition(location))
++            .map(blockPos -> io.papermc.paper.util.MCUtil.toLocation(this.world, blockPos)
++                // get the actual rod pos
++                .subtract(0, 1, 0))
++            .orElse(null);
++    }
++
++    @Override
++    public Location findLightningTarget(Location location) {
++        final BlockPos pos = this.world.findLightningTargetAround(io.papermc.paper.util.MCUtil.toBlockPosition(location), true);
++        return pos == null ? null : io.papermc.paper.util.MCUtil.toLocation(this.world, pos);
++    }
++    // Paper end - Add methods to find targets for lightning strikes
++
+     @Override
+     public boolean generateTree(Location loc, TreeType type) {
+         return this.generateTree(loc, CraftWorld.rand, type);

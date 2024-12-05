@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: William Blake Galbreath <Blake.Galbreath@GMail.com>
+Date: Fri, 7 Feb 2020 14:36:56 -0600
+Subject: [PATCH] Add option to nerf pigmen from nether portals
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 2179f631bf410297db2438e587f4b5ecb7ebc218..dcc6543f895c9bbf09301e64164873aa54c7b8b5 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -407,6 +407,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     public void inactiveTick() { }
+     // Spigot end
+     protected int numCollisions = 0; // Paper - Cap entity collisions
++    public boolean fromNetherPortal; // Paper - Add option to nerf pigmen from nether portals
+     public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
+     // Paper start - Entity origin API
+     @javax.annotation.Nullable
+@@ -2422,6 +2423,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             if (spawnedViaMobSpawner) {
+                 nbttagcompound.putBoolean("Paper.FromMobSpawner", true);
+             }
++            if (fromNetherPortal) {
++                nbttagcompound.putBoolean("Paper.FromNetherPortal", true);
++            }
+             // Paper end
+             return nbttagcompound;
+         } catch (Throwable throwable) {
+@@ -2567,6 +2571,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             }
+ 
+             spawnedViaMobSpawner = nbt.getBoolean("Paper.FromMobSpawner"); // Restore entity's from mob spawner status
++            fromNetherPortal = nbt.getBoolean("Paper.FromNetherPortal");
+             if (nbt.contains("Paper.SpawnReason")) {
+                 String spawnReasonName = nbt.getString("Paper.SpawnReason");
+                 try {
+diff --git a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
+index a8cb0d5019d06de64b2cc30e6830bbd6ad43a155..e404722c119631e31c0519111ccd5f1682c2638d 100644
+--- a/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/NetherPortalBlock.java
+@@ -89,6 +89,10 @@ public class NetherPortalBlock extends Block implements Portal {
+ 
+                 if (entity != null) {
+                     entity.setPortalCooldown();
++                    // Paper start - Add option to nerf pigmen from nether portals
++                    entity.fromNetherPortal = true;
++                    if (world.paperConfig().entities.behavior.nerfPigmenFromNetherPortals) ((net.minecraft.world.entity.Mob) entity).aware = false;
++                    // Paper end - Add option to nerf pigmen from nether portals
+                     Entity entity1 = entity.getVehicle();
+ 
+                     if (entity1 != null) {

@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Gegy <gegy.dev@gmail.com>
+Date: Mon, 26 Aug 2024 19:45:07 +0200
+Subject: [PATCH] Fix: synchronise sending chat to client with updating message
+ signature cache
+
+In the case where multiple messages from different players are being processed in parallel, there was a potential race condition where the messages would be sent to the client in a different order than the message signature cache was updated. However, the cache relies on the fact that the client and server get the exact same updates in the same order. This race condition would cause the caches to become corrupted, and any future message received by the client would fail to validate.
+
+This also applies to the last seen state of the server, which becomes inconsistent in the same way as the message signature cache and would cause any messages sent to be rejected by the server too.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 999342b938af72cdf6023a4e399461ba18a90522..accf3e43f58fe3588578cb15f53695d825e58670 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2728,8 +2728,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             return;
+         }
+         // CraftBukkit end
++        // Paper start - Ensure that client receives chat packets in the same order that we add into the message signature cache
++        synchronized (this.messageSignatureCache) {
+         this.send(new ClientboundPlayerChatPacket(message.link().sender(), message.link().index(), message.signature(), message.signedBody().pack(this.messageSignatureCache), message.unsignedContent(), message.filterMask(), params));
+         this.addPendingMessage(message);
++        }
++        // Paper end - Ensure that client receives chat packets in the same order that we add into the message signature cache
+     }
+ 
+     public void sendDisguisedChatMessage(Component message, ChatType.Bound params) {

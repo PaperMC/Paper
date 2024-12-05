@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Sun, 27 Oct 2024 14:18:28 -0700
+Subject: [PATCH] Avoid issues with certain tasks not processing during sleep
+
+Execute processQueue tasks during sleep: needed for console tab completions, pre join event, etc.
+
+Upstream has set precedent that the bukkit scheduler will still tick during sleep, which avoids some problems
+with plugins not accounting for the new sleep feature, but can still lead to others. Because of this we have disabled
+sleep by default, which avoids the problem and makes it more obvious to check if this is the cause of issues when
+enabled. We also unload chunks during sleep to prevent memory leaks caused by plugin chunk loads.
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 1532129320859dc6b5749cd44c0c304eea14befc..b3980a33470646f530e289f9b83509d3aa952720 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1515,6 +1515,16 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 }
+ 
+                 this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
++                // Paper start - avoid issues with certain tasks not processing during sleep
++                Runnable task;
++                while ((task = this.processQueue.poll()) != null) {
++                    task.run();
++                }
++                for (final ServerLevel level : this.levels.values()) {
++                    // process unloads
++                    level.getChunkSource().tick(() -> true, false);
++                }
++                // Paper end - avoid issues with certain tasks not processing during sleep
+                 this.server.spark.executeMainThreadTasks(); // Paper - spark
+                 this.tickConnection();
+                 this.server.spark.tickEnd(((double)(System.nanoTime() - lastTick) / 1000000D)); // Paper - spark
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index a2633780619d73c29a23cb8b6a208ca9ba549fb0..c3ec370b83b895be0f03662e3884fa4a2442a2a6 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -160,7 +160,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+         this.whiteList = this.getMutable("white-list", false);
+         this.enforceSecureProfile = this.get("enforce-secure-profile", true);
+         this.logIPs = this.get("log-ips", true);
+-        this.pauseWhenEmptySeconds = this.get("pause-when-empty-seconds", 60);
++        this.pauseWhenEmptySeconds = this.get("pause-when-empty-seconds", -1); // Paper - disable tick sleeping by default
+         this.acceptsTransfers = this.get("accepts-transfers", false);
+         String s = this.get("level-seed", "");
+         boolean flag = this.get("generate-structures", true);

@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Badbird5907 <50347938+Badbird5907@users.noreply.github.com>
+Date: Mon, 4 Mar 2024 22:18:28 -0500
+Subject: [PATCH] Add BlockBreakProgressUpdateEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 48566fa87db695517214e17b560c84d78f0130bf..2b934a8212b71d60303f3f24b3ce4a5074a9ebab 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1291,6 +1291,17 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         if (entity instanceof Player) entityhuman = (Player) entity;
+         // CraftBukkit end
+ 
++        // Paper start - Add BlockBreakProgressUpdateEvent
++        // If a plugin is using this method to send destroy packets for a client-side only entity id, no block progress occurred on the server.
++        // Hence, do not call the event.
++        if (entity != null) {
++            float progressFloat = Mth.clamp(progress, 0, 10) / 10.0f;
++            org.bukkit.craftbukkit.block.CraftBlock bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this, pos);
++            new io.papermc.paper.event.block.BlockBreakProgressUpdateEvent(bukkitBlock, progressFloat, entity.getBukkitEntity())
++                .callEvent();
++        }
++        // Paper end - Add BlockBreakProgressUpdateEvent
++
+         while (iterator.hasNext()) {
+             ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+ 

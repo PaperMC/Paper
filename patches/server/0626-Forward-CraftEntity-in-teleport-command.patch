@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 4 Dec 2021 17:04:47 -0800
+Subject: [PATCH] Forward CraftEntity in teleport command
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index b60807aea433ddf35def3a97d7d3808c62f1b5ac..46884e4d6b7c434d58bd2f7e7e27cfcdcd0e2065 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3511,6 +3511,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public void restoreFrom(Entity original) {
++        // Paper start - Forward CraftEntity in teleport command
++        CraftEntity bukkitEntity = original.bukkitEntity;
++        if (bukkitEntity != null) {
++            bukkitEntity.setHandle(this);
++            this.bukkitEntity = bukkitEntity;
++        }
++        // Paper end - Forward CraftEntity in teleport command
+         CompoundTag nbttagcompound = original.saveWithoutId(new CompoundTag());
+ 
+         nbttagcompound.remove("Dimension");
+@@ -3648,8 +3655,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             entity.restoreFrom(this);
+             this.removeAfterChangingDimensions();
+             // CraftBukkit start - Forward the CraftEntity to the new entity
+-            this.getBukkitEntity().setHandle(entity);
+-            entity.bukkitEntity = this.getBukkitEntity();
++            //this.getBukkitEntity().setHandle(entity);
++            //entity.bukkitEntity = this.getBukkitEntity(); // Paper - forward CraftEntity in teleport command; moved to Entity#restoreFrom
+             // CraftBukkit end
+             entity.teleportSetPosition(PositionMoveRotation.of(teleportTarget), teleportTarget.relatives());
+             if (this.inWorld) world.addDuringTeleport(entity); // CraftBukkit - Don't spawn the new entity if the current entity isn't spawned

@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Denery <dorofeevij@gmail.com>
+Date: Mon, 31 Oct 2022 14:20:52 +0300
+Subject: [PATCH] Fix EntityCombustEvent cancellation cant fully prevent
+ entities from being set on fire
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 41026637304430f1cbf4ed5dc1d44b807afa90af..584d658694ad23c0d047ca40208f766b9f44f8d6 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3351,6 +3351,10 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             pluginManager.callEvent(entityCombustEvent);
+             if (!entityCombustEvent.isCancelled()) {
+                 this.igniteForSeconds(entityCombustEvent.getDuration(), false);
++            // Paper start - fix EntityCombustEvent cancellation
++            } else {
++                this.setRemainingFireTicks(this.remainingFireTicks - 1);
++            // Paper end - fix EntityCombustEvent cancellation
+             }
+             // CraftBukkit end
+         }
+diff --git a/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java b/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
+index c8ca41cd81a72f9bff40f5c1b3bfc1189bf51f98..0cf4133849ed8ff6d4038cc41ede9d3645b31da1 100644
+--- a/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BaseFireBlock.java
+@@ -145,6 +145,10 @@ public abstract class BaseFireBlock extends Block {
+ 
+                 if (!event.isCancelled()) {
+                     entity.igniteForSeconds(event.getDuration(), false);
++                    // Paper start - fix EntityCombustEvent cancellation
++                } else {
++                    entity.setRemainingFireTicks(entity.getRemainingFireTicks() - 1);
++                    // Paper end - fix EntityCombustEvent cancellation
+                 }
+                 // CraftBukkit end
+             }

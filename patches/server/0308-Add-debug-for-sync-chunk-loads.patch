@@ -1,0 +1,333 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Fri, 19 Jul 2019 03:29:14 -0700
+Subject: [PATCH] Add debug for sync chunk loads
+
+This patch adds a tool to find calls to getChunkAt which would load
+chunks, however it must be enabled by setting the startup flag
+-Dpaper.debug-sync-loads=true
+
+- To get a debug log for sync loads, the command is
+  /paper syncloadinfo
+- To clear clear the currently stored sync load info, use
+  /paper syncloadinfo clear
+
+diff --git a/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..605a4a83d0a098a9977da00c710e798396dc5256
+--- /dev/null
++++ b/src/main/java/com/destroystokyo/paper/io/SyncLoadFinder.java
+@@ -0,0 +1,177 @@
++package com.destroystokyo.paper.io;
++
++import com.google.gson.JsonArray;
++import com.google.gson.JsonObject;
++import com.mojang.datafixers.util.Pair;
++import it.unimi.dsi.fastutil.longs.Long2IntMap;
++import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
++import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
++
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Map;
++import java.util.WeakHashMap;
++import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.Level;
++
++public class SyncLoadFinder {
++
++    public static final boolean ENABLED = Boolean.getBoolean("paper.debug-sync-loads");
++
++    private static final WeakHashMap<Level, Object2ObjectOpenHashMap<ThrowableWithEquals, SyncLoadInformation>> SYNC_LOADS = new WeakHashMap<>();
++
++    private static final class SyncLoadInformation {
++
++        public int times;
++
++        public final Long2IntOpenHashMap coordinateTimes = new Long2IntOpenHashMap();
++    }
++
++    public static void clear() {
++        SYNC_LOADS.clear();
++    }
++
++    public static void logSyncLoad(final Level world, final int chunkX, final int chunkZ) {
++        if (!ENABLED) {
++            return;
++        }
++
++        final ThrowableWithEquals stacktrace = new ThrowableWithEquals(Thread.currentThread().getStackTrace());
++
++        SYNC_LOADS.compute(world, (final Level keyInMap, Object2ObjectOpenHashMap<ThrowableWithEquals, SyncLoadInformation> map) -> {
++            if (map == null) {
++                map = new Object2ObjectOpenHashMap<>();
++            }
++
++            map.compute(stacktrace, (ThrowableWithEquals keyInMap0, SyncLoadInformation valueInMap) -> {
++                if (valueInMap == null) {
++                    valueInMap = new SyncLoadInformation();
++                }
++
++                ++valueInMap.times;
++
++                valueInMap.coordinateTimes.compute(ChunkPos.asLong(chunkX, chunkZ), (Long keyInMap1, Integer valueInMap1) -> {
++                    return valueInMap1 == null ? Integer.valueOf(1) : Integer.valueOf(valueInMap1.intValue() + 1);
++                });
++
++                return valueInMap;
++            });
++
++            return map;
++        });
++    }
++
++    public static JsonObject serialize() {
++        final JsonObject ret = new JsonObject();
++
++        final JsonArray worldsData = new JsonArray();
++
++        for (final Map.Entry<Level, Object2ObjectOpenHashMap<ThrowableWithEquals, SyncLoadInformation>> entry : SYNC_LOADS.entrySet()) {
++            final Level world = entry.getKey();
++
++            final JsonObject worldData = new JsonObject();
++
++            worldData.addProperty("name", world.getWorld().getName());
++
++            final List<Pair<ThrowableWithEquals, SyncLoadInformation>> data = new ArrayList<>();
++
++            entry.getValue().forEach((ThrowableWithEquals stacktrace, SyncLoadInformation times) -> {
++                data.add(new Pair<>(stacktrace, times));
++            });
++
++            data.sort((Pair<ThrowableWithEquals, SyncLoadInformation> pair1, Pair<ThrowableWithEquals, SyncLoadInformation> pair2) -> {
++                return Integer.compare(pair2.getSecond().times, pair1.getSecond().times); // reverse order
++            });
++
++            final JsonArray stacktraces = new JsonArray();
++
++            for (Pair<ThrowableWithEquals, SyncLoadInformation> pair : data) {
++                final JsonObject stacktrace = new JsonObject();
++
++                stacktrace.addProperty("times", pair.getSecond().times);
++
++                final JsonArray traces = new JsonArray();
++
++                for (StackTraceElement element : pair.getFirst().stacktrace) {
++                    traces.add(String.valueOf(element));
++                }
++
++                stacktrace.add("stacktrace", traces);
++
++                final JsonArray coordinates = new JsonArray();
++
++                for (Long2IntMap.Entry coordinate : pair.getSecond().coordinateTimes.long2IntEntrySet()) {
++                    final long key = coordinate.getLongKey();
++                    final int times = coordinate.getIntValue();
++                    final ChunkPos chunkPos = new ChunkPos(key);
++                    coordinates.add("(" + chunkPos.x + "," + chunkPos.z + "): " + times);
++                }
++
++                stacktrace.add("coordinates", coordinates);
++
++                stacktraces.add(stacktrace);
++            }
++
++
++            worldData.add("stacktraces", stacktraces);
++            worldsData.add(worldData);
++        }
++
++        ret.add("worlds", worldsData);
++
++        return ret;
++    }
++
++    static final class ThrowableWithEquals {
++
++        private final StackTraceElement[] stacktrace;
++        private final int hash;
++
++        public ThrowableWithEquals(final StackTraceElement[] stacktrace) {
++            this.stacktrace = stacktrace;
++            this.hash = ThrowableWithEquals.hash(stacktrace);
++        }
++
++        public static int hash(final StackTraceElement[] stacktrace) {
++            int hash = 0;
++
++            for (int i = 0; i < stacktrace.length; ++i) {
++                hash *= 31;
++                hash += stacktrace[i].hashCode();
++            }
++
++            return hash;
++        }
++
++        @Override
++        public int hashCode() {
++            return this.hash;
++        }
++
++        @Override
++        public boolean equals(final Object obj) {
++            if (obj == null || obj.getClass() != this.getClass()) {
++                return false;
++            }
++
++            final ThrowableWithEquals other = (ThrowableWithEquals)obj;
++            final StackTraceElement[] otherStackTrace = other.stacktrace;
++
++            if (this.stacktrace.length != otherStackTrace.length || this.hash != other.hash) {
++                return false;
++            }
++
++            if (this == obj) {
++                return true;
++            }
++
++            for (int i = 0; i < this.stacktrace.length; ++i) {
++                if (!this.stacktrace[i].equals(otherStackTrace[i])) {
++                    return false;
++                }
++            }
++
++            return true;
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
+index e1820a339452cd3388dd7cbb928c5f58779a77b6..3010d57efcc97fb409bfe43b1fc9af198c099a67 100644
+--- a/src/main/java/io/papermc/paper/command/PaperCommand.java
++++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
+@@ -38,6 +38,7 @@ public final class PaperCommand extends Command {
+         commands.put(Set.of("reload"), new ReloadCommand());
+         commands.put(Set.of("version"), new VersionCommand());
+         commands.put(Set.of("dumpplugins"), new DumpPluginsCommand());
++        commands.put(Set.of("syncloadinfo"), new SyncLoadInfoCommand());
+ 
+         return commands.entrySet().stream()
+             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/SyncLoadInfoCommand.java b/src/main/java/io/papermc/paper/command/subcommands/SyncLoadInfoCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..95d6022c9cfb2e36ec5a71be6e34354027c2ec08
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/command/subcommands/SyncLoadInfoCommand.java
+@@ -0,0 +1,88 @@
++package io.papermc.paper.command.subcommands;
++
++import com.destroystokyo.paper.io.SyncLoadFinder;
++import com.google.gson.JsonObject;
++import com.google.gson.internal.Streams;
++import com.google.gson.stream.JsonWriter;
++import io.papermc.paper.command.CommandUtil;
++import io.papermc.paper.command.PaperSubcommand;
++import java.io.File;
++import java.io.FileOutputStream;
++import java.io.PrintStream;
++import java.io.StringWriter;
++import java.nio.charset.StandardCharsets;
++import java.time.LocalDateTime;
++import java.time.format.DateTimeFormatter;
++import java.util.List;
++
++import net.kyori.adventure.text.event.ClickEvent;
++import net.kyori.adventure.text.event.HoverEvent;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.command.CommandSender;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GRAY;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
++import static net.kyori.adventure.text.format.NamedTextColor.WHITE;
++
++@DefaultQualifier(NonNull.class)
++public final class SyncLoadInfoCommand implements PaperSubcommand {
++    @Override
++    public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
++        this.doSyncLoadInfo(sender, args);
++        return true;
++    }
++
++    @Override
++    public List<String> tabComplete(final CommandSender sender, final String subCommand, final String[] args) {
++        return CommandUtil.getListMatchingLast(sender, args, "clear");
++    }
++
++    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss");
++
++    private void doSyncLoadInfo(final CommandSender sender, final String[] args) {
++        if (!SyncLoadFinder.ENABLED) {
++            String systemFlag = "-Dpaper.debug-sync-loads=true";
++            sender.sendMessage(text().color(RED).append(text("This command requires the server startup flag '")).append(
++                text(systemFlag, WHITE).clickEvent(ClickEvent.copyToClipboard(systemFlag))
++                                       .hoverEvent(HoverEvent.showText(text("Click to copy the system flag")))).append(
++                text("' to be set.")));
++            return;
++        }
++
++        if (args.length > 0 && args[0].equals("clear")) {
++            SyncLoadFinder.clear();
++            sender.sendMessage(text("Sync load data cleared.", GRAY));
++            return;
++        }
++
++        File file = new File(new File(new File("."), "debug"),
++            "sync-load-info-" + FORMATTER.format(LocalDateTime.now()) + ".txt");
++        file.getParentFile().mkdirs();
++        sender.sendMessage(text("Writing sync load info to " + file, GREEN));
++
++
++        try {
++            final JsonObject data = SyncLoadFinder.serialize();
++
++            StringWriter stringWriter = new StringWriter();
++            JsonWriter jsonWriter = new JsonWriter(stringWriter);
++            jsonWriter.setIndent(" ");
++            jsonWriter.setLenient(false);
++            Streams.write(data, jsonWriter);
++
++            try (
++                PrintStream out = new PrintStream(new FileOutputStream(file), false, StandardCharsets.UTF_8)
++            ) {
++                out.print(stringWriter);
++            }
++            sender.sendMessage(text("Successfully written sync load information!", GREEN));
++        } catch (Throwable thr) {
++            sender.sendMessage(text("Failed to write sync load information! See the console for more info.", RED));
++            MinecraftServer.LOGGER.warn("Error occurred while dumping sync chunk load info", thr);
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index f4fa64ab18573cb9a22a9bfb79a351c388d1aaa5..df51c80b73e9922e4b0a1f2291ebabbb74d809ff 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -215,6 +215,7 @@ public class ServerChunkCache extends ChunkSource {
+ 
+             Objects.requireNonNull(completablefuture);
+             chunkproviderserver_b.managedBlock(completablefuture::isDone);
++            // com.destroystokyo.paper.io.SyncLoadFinder.logSyncLoad(this.level, x, z); // Paper - Add debug for sync chunk loads
+             ChunkResult<ChunkAccess> chunkresult = (ChunkResult) completablefuture.join();
+             ChunkAccess ichunkaccess1 = (ChunkAccess) chunkresult.orElse(null); // CraftBukkit - decompile error
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 6b97e29b0102b5521cba424f008478245c67d85f..5b47505353bf96bcb555910d1ebf645d14052f46 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -416,6 +416,13 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
+     }
+ 
++    // Paper start
++    @Override
++    public boolean hasChunk(int chunkX, int chunkZ) {
++        return this.getChunkSource().getChunkAtIfLoadedImmediately(chunkX, chunkZ) != null;
++    }
++    // Paper end
++
+     /** @deprecated */
+     @Deprecated
+     @VisibleForTesting

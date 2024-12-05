@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Sun, 26 May 2024 22:20:21 +0200
+Subject: [PATCH] Fix CraftBukkit drag system
+
+== AT ==
+public net.minecraft.world.inventory.AbstractContainerMenu quickcraftSlots
+public net.minecraft.world.inventory.AbstractContainerMenu quickcraftStatus
+public net.minecraft.world.inventory.AbstractContainerMenu quickcraftType
+public net.minecraft.world.inventory.AbstractContainerMenu resetQuickCraft()V
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index bb91b3c167d83548c4684d54851840dea183a937..999342b938af72cdf6023a4e399461ba18a90522 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3147,6 +3147,25 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                             }
+                             break;
+                         case QUICK_CRAFT:
++                            // Paper start - Fix CraftBukkit drag system
++                            AbstractContainerMenu containerMenu = this.player.containerMenu;
++                            int currentStatus = this.player.containerMenu.quickcraftStatus;
++                            int newStatus = AbstractContainerMenu.getQuickcraftHeader(packet.getButtonNum());
++                            if ((currentStatus != 1 || newStatus != 2 && currentStatus != newStatus)) {
++                            } else if (containerMenu.getCarried().isEmpty()) {
++                            } else if (newStatus == 0) {
++                            } else if (newStatus == 1) {
++                            } else if (newStatus == 2) {
++                                if (!this.player.containerMenu.quickcraftSlots.isEmpty()) {
++                                    if (this.player.containerMenu.quickcraftSlots.size() == 1) {
++                                        int index = containerMenu.quickcraftSlots.iterator().next().index;
++                                        containerMenu.resetQuickCraft();
++                                        this.handleContainerClick(new ServerboundContainerClickPacket(packet.getContainerId(), packet.getStateId(), index, containerMenu.quickcraftType, net.minecraft.world.inventory.ClickType.PICKUP, packet.getCarriedItem(), packet.getChangedSlots()));
++                                        return;
++                                    }
++                                }
++                            }
++                            // Paper end - Fix CraftBukkit drag system
+                             this.player.containerMenu.clicked(packet.getSlotNum(), packet.getButtonNum(), packet.getClickType(), this.player);
+                             break;
+                         case PICKUP_ALL:
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index 78d0ff45c016e900d87010e8b26b0bb10e63f445..4680f77a275d8d2b226018db89a571ac25998dd8 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -468,7 +468,7 @@ public abstract class AbstractContainerMenu {
+                 }
+             } else if (this.quickcraftStatus == 2) {
+                 if (!this.quickcraftSlots.isEmpty()) {
+-                    if (false && this.quickcraftSlots.size() == 1) { // CraftBukkit - treat everything as a drag since we are unable to easily call InventoryClickEvent instead
++                    if (this.quickcraftSlots.size() == 1) { // Paper - Fix CraftBukkit drag system
+                         k = ((Slot) this.quickcraftSlots.iterator().next()).index;
+                         this.resetQuickCraft();
+                         this.doClick(k, this.quickcraftType, ClickType.PICKUP, player);

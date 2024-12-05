@@ -1,0 +1,20 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Owen1212055 <23108066+Owen1212055@users.noreply.github.com>
+Date: Wed, 15 Jun 2022 21:52:57 -0400
+Subject: [PATCH] Prevent empty items from being added to world
+
+The previous solution caused a bunch of bandaid fixes inorder to resolve edge cases where minecraft/the api might spawn items that are air.
+Just simply prevent them from being added to the world instead.
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index ee0459e37b817648e37b1ea84a3edf7c52d00855..528c2a0aff23255275982ce3e42ce16087992f57 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1206,6 +1206,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+             // WorldServer.LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityTypes.getKey(entity.getType())); // CraftBukkit
+             return false;
+         } else {
++            if (entity instanceof net.minecraft.world.entity.item.ItemEntity itemEntity && itemEntity.getItem().isEmpty()) return false; // Paper - Prevent empty items from being added
+             // Paper start - capture all item additions to the world
+             if (captureDrops != null && entity instanceof net.minecraft.world.entity.item.ItemEntity) {
+                 captureDrops.add((net.minecraft.world.entity.item.ItemEntity) entity);

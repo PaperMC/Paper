@@ -1,0 +1,385 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 11 Jul 2022 11:56:41 -0700
+Subject: [PATCH] Fix a bunch of vanilla bugs
+
+https://bugs.mojang.com/browse/MC-253721
+  wrong msg for opping multiple players
+
+https://bugs.mojang.com/browse/MC-248588
+  respect mob griefing gamerule for draining water cauldrons
+
+https://bugs.mojang.com/browse/MC-244739
+  play goat eating sound for last item in stack
+
+https://bugs.mojang.com/browse/MC-243057
+  ignore furnace fuel slot in recipe book click
+
+https://bugs.mojang.com/browse/MC-147659
+  Some witch huts spawn the incorrect cat
+  Note: Marked as Won't Fix, makes 0 sense
+
+https://bugs.mojang.com/browse/MC-179072
+  Creepers do not defuse when switching from Survival to Creative/Spectator
+
+https://bugs.mojang.com/browse/MC-259571
+  Fix changeGameModeForPlayer to use gameModeForPlayer
+
+https://bugs.mojang.com/browse/MC-262422
+  Fix lightning being able to hit spectators
+
+https://bugs.mojang.com/browse/MC-263999
+  Fix mobs breaking doors not spawning block break particles
+
+https://bugs.mojang.com/browse/MC-210802
+  Fixes sheep eating blocks outside of ticking range
+
+https://bugs.mojang.com/browse/MC-123848
+  Fixes item frames dropping items above when pointing down
+
+https://bugs.mojang.com/browse/MC-174630
+  Fix secondary beacon effect remaining after switching effect
+
+https://bugs.mojang.com/browse/MC-153086
+  Fix the beacon deactivation sound always playing when broken
+
+https://bugs.mojang.com/browse/MC-200092
+  Fix yaw being ignored for a player's first spawn pos
+
+https://bugs.mojang.com/browse/MC-158900
+  Fix error when joining after tempban expired
+
+https://bugs.mojang.com/browse/MC-99075
+  Fix inventory desync within spawn protected area
+
+https://bugs.mojang.com/browse/MC-273635
+  Fix TrialSpawner forgets assigned mob when placed by player
+
+== AT ==
+public net/minecraft/world/entity/Mob leashInfoTag
+public net/minecraft/server/level/ChunkMap anyPlayerCloseEnoughForSpawning(Lnet/minecraft/world/level/ChunkPos;)Z
+
+Co-authored-by: William Blake Galbreath <blake.galbreath@gmail.com>
+Co-authored-by: Spottedleaf <Spottedleaf@users.noreply.github.com>
+
+diff --git a/src/main/java/net/minecraft/server/commands/DeOpCommands.java b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
+index 0283f26151488d715dc823a0008c9a37ef6740fb..d98447e58233745665f0833196226077d972cc2a 100644
+--- a/src/main/java/net/minecraft/server/commands/DeOpCommands.java
++++ b/src/main/java/net/minecraft/server/commands/DeOpCommands.java
+@@ -35,7 +35,7 @@ public class DeOpCommands {
+             if (playerList.isOp(gameProfile)) {
+                 playerList.deop(gameProfile);
+                 i++;
+-                source.sendSuccess(() -> Component.translatable("commands.deop.success", targets.iterator().next().getName()), true);
++                source.sendSuccess(() -> Component.translatable("commands.deop.success", gameProfile.getName()), true); // Paper - fixes MC-253721
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/commands/OpCommand.java b/src/main/java/net/minecraft/server/commands/OpCommand.java
+index 6854ca4d4fec2b4fa541c3fabf63787665572609..e7b444a10b244828827b3c66c53465206ea8e0ec 100644
+--- a/src/main/java/net/minecraft/server/commands/OpCommand.java
++++ b/src/main/java/net/minecraft/server/commands/OpCommand.java
+@@ -46,7 +46,7 @@ public class OpCommand {
+             if (!playerList.isOp(gameProfile)) {
+                 playerList.op(gameProfile);
+                 i++;
+-                source.sendSuccess(() -> Component.translatable("commands.op.success", targets.iterator().next().getName()), true);
++                source.sendSuccess(() -> Component.translatable("commands.op.success", gameProfile.getName()), true); // Paper - fixes MC-253721
+             }
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 528c2a0aff23255275982ce3e42ce16087992f57..d778f3dbe84b57f42703042ddd161e5c4bd4f14d 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -754,7 +754,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         } else {
+             AABB axisalignedbb = AABB.encapsulatingFullBlocks(blockposition1, blockposition1.atY(this.getMaxY() + 1)).inflate(3.0D);
+             List<LivingEntity> list = this.getEntitiesOfClass(LivingEntity.class, axisalignedbb, (entityliving) -> {
+-                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition());
++                return entityliving != null && entityliving.isAlive() && this.canSeeSky(entityliving.blockPosition()) && !entityliving.isSpectator(); // Paper - Fix lightning being able to hit spectators (MC-262422)
+             });
+ 
+             if (!list.isEmpty()) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 064a7a3e1c4d192010e072a5e985a54135748d87..a706f0855fdf88cc9aece3ba00ef574b9cd8bd11 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -91,7 +91,7 @@ public class ServerPlayerGameMode {
+                 return event; // Paper - Expand PlayerGameModeChangeEvent
+             }
+             // CraftBukkit end
+-            this.setGameModeForPlayer(gameMode, this.previousGameModeForPlayer);
++            this.setGameModeForPlayer(gameMode, this.gameModeForPlayer); // Paper - Fix MC-259571
+             this.player.onUpdateAbilities();
+             this.player.server.getPlayerList().broadcastAll(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_GAME_MODE, this.player), this.player); // CraftBukkit
+             this.level.updateSleepingPlayerList();
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index aeaf2d4f7a0ad0621c210cd479c610104ec7a83b..c078b3bc75e52456f458c7febc51ea6f8b29f737 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1889,7 +1889,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                         this.player.swing(enumhand, true);
+                                     }
+                                 }
+-                            }
++                            } else { this.player.containerMenu.sendAllDataToRemote(); } // Paper - Fix inventory desync; MC-99075
+                         } else {
+                             MutableComponent ichatmutablecomponent1 = Component.translatable("build.tooHigh", i).withStyle(ChatFormatting.RED);
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 91a3b9866e02414d2d71aa53ef1fb5fdecd8cd89..23929b165ff4ca153617c54d022ae43ef5fa258c 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -260,7 +260,7 @@ public abstract class PlayerList {
+         }
+         if (optional.isEmpty() || invalidPlayerWorld[0]) {
+             // Paper end - reset to main world spawn if first spawn or invalid world
+-            player.moveTo(player.adjustSpawnLocation(worldserver1, worldserver1.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F);
++            player.moveTo(player.adjustSpawnLocation(worldserver1, worldserver1.getSharedSpawnPos()).getBottomCenter(), worldserver1.getSharedSpawnAngle(), 0.0F); // Paper - MC-200092 - fix first spawn pos yaw being ignored
+         }
+         // Paper end - Entity#getEntitySpawnReason
+         player.setServerLevel(worldserver1);
+@@ -660,8 +660,10 @@ public abstract class PlayerList {
+         Player player = entity.getBukkitEntity();
+         PlayerLoginEvent event = new PlayerLoginEvent(player, loginlistener.connection.hostname, ((java.net.InetSocketAddress) socketaddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.connection.channel.remoteAddress()).getAddress());
+ 
+-        if (this.bans.isBanned(gameprofile)) {
+-            UserBanListEntry gameprofilebanentry = (UserBanListEntry) this.bans.get(gameprofile);
++        // Paper start - Fix MC-158900
++        UserBanListEntry gameprofilebanentry;
++        if (this.bans.isBanned(gameprofile) && (gameprofilebanentry = this.bans.get(gameprofile)) != null) {
++            // Paper end - Fix MC-158900
+ 
+             ichatmutablecomponent = Component.translatable("multiplayer.disconnect.banned.reason", gameprofilebanentry.getReason());
+             if (gameprofilebanentry.getExpires() != null) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
+index 6827426e6e9706909265f84bf97b5fa7105a7fea..7324da6b7dd2623ce394e3827ff77ef684a3b98b 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/BreakDoorGoal.java
+@@ -78,9 +78,10 @@ public class BreakDoorGoal extends DoorInteractGoal {
+                 return;
+             }
+             // CraftBukkit end
++            final net.minecraft.world.level.block.state.BlockState oldState = this.mob.level().getBlockState(this.doorPos); // Paper - fix MC-263999
+             this.mob.level().removeBlock(this.doorPos, false);
+             this.mob.level().levelEvent(1021, this.doorPos, 0);
+-            this.mob.level().levelEvent(2001, this.doorPos, Block.getId(this.mob.level().getBlockState(this.doorPos)));
++            this.mob.level().levelEvent(2001, this.doorPos, Block.getId(oldState)); // Paper - fix MC-263999
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+index 9e6f946e6d2878aa3fa8abe0f6fa4770d18676d3..32bb591371fe78ba10a2bc52389ef33978cbc0eb 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/EatBlockGoal.java
+@@ -31,6 +31,11 @@ public class EatBlockGoal extends Goal {
+ 
+     @Override
+     public boolean canUse() {
++        // Paper start - Fix MC-210802
++        if (!((net.minecraft.server.level.ServerLevel) this.level).chunkSource.chunkMap.anyPlayerCloseEnoughForSpawning(this.mob.chunkPosition())) {
++            return false;
++        }
++        // Paper end
+         if (this.mob.getRandom().nextInt(this.mob.isBaby() ? 50 : 1000) != 0) {
+             return false;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
+index ef71b3ef4444c05b4211de87e1c8ec52cbe3e72a..137ec75ee803789deb7b1ca93dd9369c9af362b9 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/SwellGoal.java
+@@ -21,6 +21,13 @@ public class SwellGoal extends Goal {
+         return this.creeper.getSwellDir() > 0 || livingEntity != null && this.creeper.distanceToSqr(livingEntity) < 9.0;
+     }
+ 
++    // Paper start - Fix MC-179072
++    @Override
++    public boolean canContinueToUse() {
++        return !net.minecraft.world.entity.EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(this.creeper.getTarget()) && canUse();
++    }
++    // Paper end
++
+     @Override
+     public void start() {
+         this.creeper.getNavigation().stop();
+diff --git a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+index 14b47d6fa189f2a666b12ef7e7708d204c2b0452..4c6dc427b90012b0945e073dd905dc7e8d1bec82 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -247,9 +247,10 @@ public class Goat extends Animal {
+             player.setItemInHand(hand, itemstack1);
+             return InteractionResult.SUCCESS;
+         } else {
++            boolean isFood = this.isFood(itemstack); // Paper - track before stack is possibly decreased to 0 (Fixes MC-244739)
+             InteractionResult enuminteractionresult = super.mobInteract(player, hand);
+ 
+-            if (enuminteractionresult.consumesAction() && this.isFood(itemstack)) {
++            if (enuminteractionresult.consumesAction() && isFood) { // Paper
+                 this.playEatingSound();
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index 916017571ecde95721df9bdc07c5e7b5dc60c957..3ef9be2b076160783adce2f1d74b3118544e66da 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -272,6 +272,14 @@ public class ItemFrame extends HangingEntity {
+         return (ItemStack) this.getEntityData().get(ItemFrame.DATA_ITEM);
+     }
+ 
++    // Paper start - Fix MC-123848 (spawn item frame drops above block)
++    @Nullable
++    @Override
++    public net.minecraft.world.entity.item.ItemEntity spawnAtLocation(ServerLevel serverLevel, ItemStack stack) {
++        return this.spawnAtLocation(serverLevel, stack, this.getDirection() == Direction.DOWN ? -0.6F : 0.0F);
++    }
++    // Paper end
++
+     @Nullable
+     public MapId getFramedMapId(ItemStack stack) {
+         return (MapId) stack.get(DataComponents.MAP_ID);
+diff --git a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
+index 15a1ea01917ce57c2457094186dde937c21ffb22..b0236c7bf9441aa84d3795ffed05dd6099f29636 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
++++ b/src/main/java/net/minecraft/world/entity/npc/CatSpawner.java
+@@ -82,8 +82,8 @@ public class CatSpawner implements CustomSpawner {
+         if (cat == null) {
+             return 0;
+         } else {
++            cat.moveTo(pos, 0.0F, 0.0F); // Paper - move up - Fix MC-147659
+             cat.finalizeSpawn(world, world.getCurrentDifficultyAt(pos), EntitySpawnReason.NATURAL, null);
+-            cat.moveTo(pos, 0.0F, 0.0F);
+             world.addFreshEntityWithPassengers(cat);
+             return 1;
+         }
+diff --git a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+index c257660c79516a5919032b771fc3ac9575e9db9d..5d7f4e4f420c7e0a3467b7ec3859cae2eb63870f 100644
+--- a/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/BeaconMenu.java
+@@ -164,6 +164,11 @@ public class BeaconMenu extends AbstractContainerMenu {
+     // Paper end - Add PlayerChangeBeaconEffectEvent
+ 
+     public void updateEffects(Optional<Holder<MobEffect>> primary, Optional<Holder<MobEffect>> secondary) {
++        // Paper start - fix MC-174630 - validate secondary power
++        if (secondary.isPresent() && secondary.get() != net.minecraft.world.effect.MobEffects.REGENERATION && (primary.isPresent() && secondary.get() != primary.get())) {
++            secondary = Optional.empty();
++        }
++        // Paper end
+         if (this.paymentSlot.hasItem()) {
+             // Paper start - Add PlayerChangeBeaconEffectEvent
+             io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent event = new io.papermc.paper.event.player.PlayerChangeBeaconEffectEvent((org.bukkit.entity.Player) this.player.player.getBukkitEntity(), convert(primary), convert(secondary), this.access.getLocation().getBlock());
+diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+index 7dd6b7c0ea472cfbc7ece55bc64bc5d85be4a6c0..6dcb571e9f35fbae724be69dc113b0c33eca63b3 100644
+--- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+@@ -72,7 +72,7 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+             if (entity.isOnFire() && this.isEntityInsideContent(state, pos, entity)) {
+                 // CraftBukkit start - moved down
+                 // entity.clearFire();
+-                if (entity.mayInteract(worldserver, pos)) {
++                if ((entity instanceof net.minecraft.world.entity.player.Player || worldserver.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_MOBGRIEFING)) && entity.mayInteract(worldserver, pos)) { // Paper - Fixes MC-248588
+                     if (this.handleEntityOnFireInsideWithEvent(state, world, pos, entity)) { // Paper - fix powdered snow cauldron extinguishing entities
+                         entity.clearFire();
+                     }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+index 7b63e2fd004ae452c7350f0b2d8d7c57a42891ea..5b2c7b8fb780e837d9d735ac86dcac949732ec69 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
+@@ -526,13 +526,10 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+ 
+     @Override
+     public void fillStackedContents(StackedItemContents finder) {
+-        Iterator iterator = this.items.iterator();
+-
+-        while (iterator.hasNext()) {
+-            ItemStack itemstack = (ItemStack) iterator.next();
+-
+-            finder.accountStack(itemstack);
+-        }
++        // Paper start - don't account fuel stack (fixes MC-243057)
++        finder.accountStack(this.items.get(SLOT_INPUT));
++        finder.accountStack(this.items.get(SLOT_RESULT));
++        // Paper end
+ 
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+index 8aab6f68f576fb022eb59798585e264f5aafbc69..edd6017937a7f20a1b43fa15204ec130b524b52b 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+@@ -295,7 +295,11 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+         org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, worldPosition);
+         new io.papermc.paper.event.block.BeaconDeactivatedEvent(block).callEvent();
+         // Paper end - beacon activation/deactivation events
++        // Paper start - fix MC-153086
++        if (this.levels > 0 && !this.beamSections.isEmpty()) {
+         BeaconBlockEntity.playSound(this.level, this.worldPosition, SoundEvents.BEACON_DEACTIVATE);
++        }
++        // Paper end
+         super.setRemoved();
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
+index 476caf7fb4f0124daa35822f2161e11620f18621..b6f9aca593a66fd1e18ab2c4d1989c08824fa6b4 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
+@@ -391,7 +391,7 @@ public final class TrialSpawner {
+     }
+ 
+     public void overrideEntityToSpawn(EntityType<?> entityType, Level world) {
+-        this.data.reset();
++        this.data.reset(this); // Paper
+         this.normalConfig = Holder.direct(((TrialSpawnerConfig) this.normalConfig.value()).withSpawning(entityType));
+         this.ominousConfig = Holder.direct(((TrialSpawnerConfig) this.ominousConfig.value()).withSpawning(entityType));
+         this.setState(world, TrialSpawnerState.INACTIVE);
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
+index 2f808e5f3a5fb2b63f273f6da47292cfd9719bcc..f4ba1afe2f4dc528fc154258d8bc9e144794980f 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerData.java
+@@ -100,9 +100,9 @@ public class TrialSpawnerData {
+         this.ejectingLootTable = rewardLootTable;
+     }
+ 
+-    public void reset() {
++    public void reset(TrialSpawner logic) { // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+         this.currentMobs.clear();
+-        this.nextSpawnData = Optional.empty();
++        if (!logic.getConfig().spawnPotentialsDefinition().isEmpty()) this.nextSpawnData = Optional.empty(); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+         this.resetStatistics();
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
+index 83cdeee5e2ce115ff696a5afc5465dc4301779b9..192ee216b617d3533f592e62719b6d75d20b5a96 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/trialspawner/TrialSpawnerState.java
+@@ -145,7 +145,7 @@ public enum TrialSpawnerState implements StringRepresentable {
+                     yield ACTIVE;
+                 } else if (trialSpawnerData.isCooldownFinished(world)) {
+                     logic.removeOminous(world, pos);
+-                    trialSpawnerData.reset();
++                    trialSpawnerData.reset(logic); // Paper - Fix TrialSpawner forgets assigned mob; MC-273635
+                     yield WAITING_FOR_PLAYERS;
+                 } else {
+                     yield this;
+diff --git a/src/main/java/net/minecraft/world/level/portal/TeleportTransition.java b/src/main/java/net/minecraft/world/level/portal/TeleportTransition.java
+index cf27b0d6a9fe53b9f91090db4740776b335a2e9b..7d5909431f98f7e8b84d740bba9c044fec6d8e96 100644
+--- a/src/main/java/net/minecraft/world/level/portal/TeleportTransition.java
++++ b/src/main/java/net/minecraft/world/level/portal/TeleportTransition.java
+@@ -53,7 +53,7 @@ public record TeleportTransition(ServerLevel newLevel, Vec3 position, Vec3 delta
+     }
+ 
+     public TeleportTransition(ServerLevel worldserver, Entity entity, TeleportTransition.PostTeleportTransition teleporttransition_a, PlayerTeleportEvent.TeleportCause cause) {
+-        this(worldserver, findAdjustedSharedSpawnPos(worldserver, entity), Vec3.ZERO, 0.0F, 0.0F, false, false, Set.of(), teleporttransition_a, cause);
++        this(worldserver, findAdjustedSharedSpawnPos(worldserver, entity), Vec3.ZERO, worldserver.getSharedSpawnAngle(), 0.0F, false, false, Set.of(), teleporttransition_a, cause); // Paper - MC-200092 - fix first spawn pos yaw being ignored
+         // CraftBukkit end
+     }
+ 
+@@ -69,7 +69,7 @@ public record TeleportTransition(ServerLevel newLevel, Vec3 position, Vec3 delta
+     }
+ 
+     public static TeleportTransition missingRespawnBlock(ServerLevel world, Entity entity, TeleportTransition.PostTeleportTransition postDimensionTransition) {
+-        return new TeleportTransition(world, findAdjustedSharedSpawnPos(world, entity), Vec3.ZERO, 0.0F, 0.0F, true, false, Set.of(), postDimensionTransition);
++        return new TeleportTransition(world, findAdjustedSharedSpawnPos(world, entity), Vec3.ZERO, world.getSharedSpawnAngle(), 0.0F, true, false, Set.of(), postDimensionTransition); // Paper - MC-200092 - fix spawn pos yaw being ignored
+     }
+ 
+     private static Vec3 findAdjustedSharedSpawnPos(ServerLevel world, Entity entity) {

@@ -1,0 +1,120 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Fri, 4 Mar 2022 12:45:03 -0800
+Subject: [PATCH] Add titleOverride to InventoryOpenEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 9eb5848b02fed596af8d5d99d9e5aaf1f1a34a76..0df899728a65db072afd40054ecb86ba72fd5745 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1907,12 +1907,17 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+             this.nextContainerCounter();
+             AbstractContainerMenu container = factory.createMenu(this.containerCounter, this.getInventory(), this);
+ 
++            Component title = null; // Paper - Add titleOverride to InventoryOpenEvent
+             // CraftBukkit start - Inventory open hook
+             if (container != null) {
+                 container.setTitle(factory.getDisplayName());
+ 
+                 boolean cancelled = false;
+-                container = CraftEventFactory.callInventoryOpenEvent(this, container, cancelled);
++                // Paper start - Add titleOverride to InventoryOpenEvent
++                final com.mojang.datafixers.util.Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(this, container, cancelled);
++                container = result.getSecond();
++                title = PaperAdventure.asVanilla(result.getFirst());
++                // Paper end - Add titleOverride to InventoryOpenEvent
+                 if (container == null && !cancelled) { // Let pre-cancelled events fall through
+                     // SPIGOT-5263 - close chest if cancelled
+                     if (factory instanceof Container) {
+@@ -1934,7 +1939,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+             } else {
+                 // CraftBukkit start
+                 this.containerMenu = container;
+-                if (!this.isImmobile()) this.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(), container.getTitle())); // Paper - Prevent opening inventories when frozen
++                if (!this.isImmobile()) this.connection.send(new ClientboundOpenScreenPacket(container.containerId, container.getType(), Objects.requireNonNullElseGet(title, container::getTitle))); // Paper - Add titleOverride to InventoryOpenEvent
+                 // CraftBukkit end
+                 this.initMenu(container);
+                 return OptionalInt.of(this.containerCounter);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index db99af60c8145cc62f368b06bbc283f24d4dbfb2..e345cdbfab44a0f5da80d738798dbb4424b7ab5c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -366,12 +366,16 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         Preconditions.checkArgument(windowType != null, "Unknown windowType");
+         AbstractContainerMenu container = new CraftContainer(inventory, player, player.nextContainerCounter());
+ 
+-        container = CraftEventFactory.callInventoryOpenEvent(player, container);
++        // Paper start - Add titleOverride to InventoryOpenEvent
++        final com.mojang.datafixers.util.Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(player, container);
++        container = result.getSecond();
++        // Paper end - Add titleOverride to InventoryOpenEvent
+         if (container == null) return;
+ 
+         //String title = container.getBukkitView().getTitle(); // Paper - comment
+         net.kyori.adventure.text.Component adventure$title = container.getBukkitView().title(); // Paper
+         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(container.getBukkitView().getTitle()); // Paper
++        if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
+ 
+         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+         if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
+@@ -448,7 +452,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         }
+ 
+         // Trigger an INVENTORY_OPEN event
+-        container = CraftEventFactory.callInventoryOpenEvent(player, container);
++        // Paper start - Add titleOverride to InventoryOpenEvent
++        final com.mojang.datafixers.util.Pair<net.kyori.adventure.text.Component, AbstractContainerMenu> result = CraftEventFactory.callInventoryOpenEventWithTitle(player, container);
++        container = result.getSecond();
++        // Paper end - Add titleOverride to InventoryOpenEvent
+         if (container == null) {
+             return;
+         }
+@@ -459,6 +466,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         //String title = inventory.getTitle(); // Paper - comment
+         net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
+         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
++        if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
+         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+         if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
+         player.containerMenu = container;
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 8853f0cfebfe56fd2aa3ec975701b5ffaad46257..b6c30bb70fb4746da024bc4d80b71aeb3558f101 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1401,10 +1401,21 @@ public class CraftEventFactory {
+     }
+ 
+     public static AbstractContainerMenu callInventoryOpenEvent(ServerPlayer player, AbstractContainerMenu container) {
+-        return CraftEventFactory.callInventoryOpenEvent(player, container, false);
++        // Paper start - Add titleOverride to InventoryOpenEvent
++        return callInventoryOpenEventWithTitle(player, container).getSecond();
++    }
++    public static com.mojang.datafixers.util.Pair<net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component, @org.jetbrains.annotations.Nullable AbstractContainerMenu> callInventoryOpenEventWithTitle(ServerPlayer player, AbstractContainerMenu container) {
++        return CraftEventFactory.callInventoryOpenEventWithTitle(player, container, false);
++        // Paper end - Add titleOverride to InventoryOpenEvent
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - use method that acknowledges title overrides
+     public static AbstractContainerMenu callInventoryOpenEvent(ServerPlayer player, AbstractContainerMenu container, boolean cancelled) {
++        // Paper start - Add titleOverride to InventoryOpenEvent
++        return callInventoryOpenEventWithTitle(player, container, cancelled).getSecond();
++    }
++    public static com.mojang.datafixers.util.Pair<net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component, @org.jetbrains.annotations.Nullable AbstractContainerMenu> callInventoryOpenEventWithTitle(ServerPlayer player, AbstractContainerMenu container, boolean cancelled) {
++        // Paper end - Add titleOverride to InventoryOpenEvent
+         if (player.containerMenu != player.inventoryMenu) { // fire INVENTORY_CLOSE if one already open
+             player.connection.handleContainerClose(new ServerboundContainerClosePacket(player.containerMenu.containerId), InventoryCloseEvent.Reason.OPEN_NEW); // Paper - Inventory close reason
+         }
+@@ -1419,10 +1430,10 @@ public class CraftEventFactory {
+ 
+         if (event.isCancelled()) {
+             container.transferTo(player.containerMenu, craftPlayer);
+-            return null;
++            return com.mojang.datafixers.util.Pair.of(null, null); // Paper - Add titleOverride to InventoryOpenEvent
+         }
+ 
+-        return container;
++        return com.mojang.datafixers.util.Pair.of(event.titleOverride(), container); // Paper - Add titleOverride to InventoryOpenEvent
+     }
+ 
+     public static ItemStack callPreCraftEvent(CraftingContainer matrix, Container resultInventory, ItemStack result, InventoryView lastCraftView, boolean isRepair) {

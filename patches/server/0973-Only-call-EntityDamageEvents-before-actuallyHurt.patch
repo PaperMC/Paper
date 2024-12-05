@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Bjarne Koll <git@lynxplay.dev>
+Date: Mon, 8 Jul 2024 22:01:08 +0200
+Subject: [PATCH] Only call EntityDamageEvents before actuallyHurt
+
+The recent upstream update moved around the event logic for
+EntiyDamageEvent and its derivatives.
+However, the event was called on every call to #hurt as it was moved out
+of actuallyHurt.
+
+This patch moves the invocation directly before the #actuallyHurt calls,
+respective invulnerable timings.
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 4eed8d90a8879e731ac9d7ae80d9b650fdcf4408..d80b6bf55f08bbe93be45d48a0a35b542a719f85 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1489,12 +1489,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             }
+ 
+             // CraftBukkit start
+-            EntityDamageEvent event = this.handleEntityDamage(source, amount);
+-            amount = 0;
+-            amount += (float) event.getDamage(DamageModifier.BASE);
+-            amount += (float) event.getDamage(DamageModifier.BLOCKING);
+-            amount += (float) event.getDamage(DamageModifier.FREEZING);
+-            amount += (float) event.getDamage(DamageModifier.HARD_HAT);
++            EntityDamageEvent event; // Paper - move this into the actual invuln check....
+             // CraftBukkit end
+ 
+             this.walkAnimation.setSpeed(1.5F);
+@@ -1509,6 +1504,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                     return false;
+                 }
+ 
++                // Paper start - only call damage event when actuallyHurt will be called - move call logic down
++                event = this.handleEntityDamage(source, amount);
++                amount = computeAmountFromEntityDamageEvent(event);
++                // Paper end - only call damage event when actuallyHurt will be called - move call logic down
++
+                 // CraftBukkit start
+                 if (!this.actuallyHurt(world, source, (float) event.getFinalDamage() - this.lastHurt, event)) {
+                     return false;
+@@ -1518,6 +1518,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 this.lastHurt = amount;
+                 flag1 = false;
+             } else {
++                // Paper start - only call damage event when actuallyHurt will be called - move call logic down
++                event = this.handleEntityDamage(source, amount);
++                amount = computeAmountFromEntityDamageEvent(event);
++                // Paper end - only call damage event when actuallyHurt will be called - move call logic down
+                 // CraftBukkit start
+                 if (!this.actuallyHurt(world, source, (float) event.getFinalDamage(), event)) {
+                     return false;
+@@ -1656,6 +1660,18 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         }
+     }
+ 
++    // Paper start - only call damage event when actuallyHurt will be called - move out amount computation logic
++    private float computeAmountFromEntityDamageEvent(final EntityDamageEvent event) {
++        // Taken from hurt()'s craftbukkit diff.
++        float amount = 0;
++        amount += (float) event.getDamage(DamageModifier.BASE);
++        amount += (float) event.getDamage(DamageModifier.BLOCKING);
++        amount += (float) event.getDamage(DamageModifier.FREEZING);
++        amount += (float) event.getDamage(DamageModifier.HARD_HAT);
++        return amount;
++    }
++    // Paper end - only call damage event when actuallyHurt will be called - move out amount computation logic
++
+     protected void blockUsingShield(LivingEntity attacker) {
+         attacker.blockedByShield(this);
+     }

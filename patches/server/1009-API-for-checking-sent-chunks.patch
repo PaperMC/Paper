@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Flo0 <flo.roma@web.de>
+Date: Mon, 8 Apr 2024 16:43:16 +0200
+Subject: [PATCH] API for checking sent chunks
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index a51115038962f322f45f0de2bbe52d7c1c6f7529..58b485c4cfd2ced26a7178aa4380d66c0250b014 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -3485,6 +3485,34 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+     // Paper end
+ 
++    // Paper start - Add chunk view API
++    @Override
++    public Set<java.lang.Long> getSentChunkKeys() {
++        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
++        final it.unimi.dsi.fastutil.longs.LongOpenHashSet keys = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
++        this.getHandle().getChunkTrackingView().forEach(pos -> keys.add(pos.longKey));
++        return it.unimi.dsi.fastutil.longs.LongSets.unmodifiable(keys);
++    }
++
++    @Override
++    public Set<org.bukkit.Chunk> getSentChunks() {
++        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
++        final it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<org.bukkit.Chunk> chunks = new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>();
++        final org.bukkit.World world = this.getWorld();
++        this.getHandle().getChunkTrackingView().forEach(pos -> {
++            final org.bukkit.Chunk chunk = world.getChunkAt(pos.longKey);
++            chunks.add(chunk);
++        });
++        return it.unimi.dsi.fastutil.objects.ObjectSets.unmodifiable(chunks);
++    }
++
++    @Override
++    public boolean isChunkSent(final long chunkKey) {
++        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
++        return this.getHandle().getChunkTrackingView().contains(new net.minecraft.world.level.ChunkPos(chunkKey));
++    }
++    // Paper end
++
+     public Player.Spigot spigot()
+     {
+         return this.spigot;
