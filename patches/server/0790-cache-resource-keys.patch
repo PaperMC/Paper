@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 20 Mar 2022 22:06:47 -0700
+Subject: [PATCH] cache resource keys
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBiome.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBiome.java
+index 95b956802f83b583a823fcd24808363775a56842..33d2e89ac40465b0c4633f9c51378b80f7c397a9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBiome.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBiome.java
+@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
+ import com.google.common.base.Preconditions;
+ import net.minecraft.core.Holder;
+ import net.minecraft.core.registries.Registries;
++import net.minecraft.resources.ResourceKey;
+ import org.bukkit.Registry;
+ import org.bukkit.block.Biome;
+ import org.bukkit.craftbukkit.CraftRegistry;
+@@ -27,13 +28,14 @@ public class CraftBiome {
+         return CraftBiome.minecraftToBukkit(minecraft.value());
+     }
+ 
++    private static final java.util.Map<org.bukkit.block.Biome, ResourceKey<net.minecraft.world.level.biome.Biome>> BIOME_KEY_CACHE = java.util.Collections.synchronizedMap(new java.util.EnumMap<>(Biome.class)); // Paper
+     public static net.minecraft.world.level.biome.Biome bukkitToMinecraft(Biome bukkit) {
+         if (bukkit == null || bukkit == Biome.CUSTOM) {
+             return null;
+         }
+ 
+         return CraftRegistry.getMinecraftRegistry(Registries.BIOME)
+-                .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
++                .getOptional(BIOME_KEY_CACHE.computeIfAbsent(bukkit, b -> ResourceKey.create(Registries.BIOME, CraftNamespacedKey.toMinecraft(b.getKey())))).orElseThrow();
+     }
+ 
+     public static Holder<net.minecraft.world.level.biome.Biome> bukkitToMinecraftHolder(Biome bukkit) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java
+index 198f51b297aa65dad665a637b4a71036491406bc..18ef90b574dca82c1729868a83612ca06a6ccdce 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntityType.java
+@@ -20,10 +20,10 @@ public class CraftEntityType {
+         return bukkit;
+     }
+ 
++    private static final java.util.Map<EntityType, net.minecraft.resources.ResourceKey<net.minecraft.world.entity.EntityType<?>>> KEY_CACHE = java.util.Collections.synchronizedMap(new java.util.EnumMap<>(EntityType.class)); // Paper
+     public static net.minecraft.world.entity.EntityType<?> bukkitToMinecraft(EntityType bukkit) {
+         Preconditions.checkArgument(bukkit != null);
+-
+         return CraftRegistry.getMinecraftRegistry(Registries.ENTITY_TYPE)
+-                .getOptional(CraftNamespacedKey.toMinecraft(bukkit.getKey())).orElseThrow();
++                .getOptional(KEY_CACHE.computeIfAbsent(bukkit, type -> net.minecraft.resources.ResourceKey.create(Registries.ENTITY_TYPE, CraftNamespacedKey.toMinecraft(type.getKey())))).orElseThrow();
+     }
+ }
