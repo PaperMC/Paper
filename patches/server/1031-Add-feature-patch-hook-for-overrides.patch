@@ -1,0 +1,290 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Thu, 5 Dec 2024 13:00:22 +0100
+Subject: [PATCH] Add feature patch hook for overrides
+
+
+diff --git a/src/main/java/io/papermc/paper/FeatureHooks.java b/src/main/java/io/papermc/paper/FeatureHooks.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cfd47bcdcdaae3829563fdb6fd80ad3c01c3115d
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/FeatureHooks.java
+@@ -0,0 +1,72 @@
++package io.papermc.paper;
++
++import io.papermc.paper.command.PaperSubcommand;
++import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
++import it.unimi.dsi.fastutil.longs.LongSet;
++import it.unimi.dsi.fastutil.longs.LongSets;
++import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
++import it.unimi.dsi.fastutil.objects.ObjectSet;
++import it.unimi.dsi.fastutil.objects.ObjectSets;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++import net.minecraft.core.Registry;
++import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.biome.Biome;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.chunk.LevelChunk;
++import net.minecraft.world.level.chunk.LevelChunkSection;
++import net.minecraft.world.level.chunk.PalettedContainer;
++import org.bukkit.Chunk;
++import org.bukkit.World;
++
++public final class FeatureHooks {
++
++    public static void initChunkTaskScheduler(final boolean useParallelGen) {
++    }
++
++    public static void registerPaperCommands(final Map<Set<String>, PaperSubcommand> commands) {
++    }
++
++    public static LevelChunkSection createSection(final Registry<Biome> biomeRegistry, final Level level, final ChunkPos chunkPos, final int chunkSection) {
++        return new LevelChunkSection(biomeRegistry);
++    }
++
++    public static void sendChunkRefreshPackets(final List<ServerPlayer> playersInRange, final LevelChunk chunk) {
++        final ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, chunk.level.getLightEngine(), null, null);
++        for (final ServerPlayer player : playersInRange) {
++            if (player.connection == null) continue;
++
++            player.connection.send(refreshPacket);
++        }
++    }
++
++    public static PalettedContainer<BlockState> emptyPalettedBlockContainer() {
++        return new PalettedContainer<>(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
++    }
++
++    public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
++        final LongSet keys = new LongOpenHashSet();
++        player.getChunkTrackingView().forEach(pos -> keys.add(pos.longKey));
++        return LongSets.unmodifiable(keys);
++    }
++
++    public static Set<Chunk> getSentChunks(final ServerPlayer player) {
++        final ObjectSet<Chunk> chunks = new ObjectOpenHashSet<>();
++        final World world = player.serverLevel().getWorld();
++        player.getChunkTrackingView().forEach(pos -> {
++            final org.bukkit.Chunk chunk = world.getChunkAt(pos.longKey);
++            chunks.add(chunk);
++        });
++        return ObjectSets.unmodifiable(chunks);
++    }
++
++    public static boolean isChunkSent(final ServerPlayer player, final long chunkKey) {
++        return player.getChunkTrackingView().contains(new ChunkPos(chunkKey));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
+index 46bf42d5ea9e7b046f962531c5962d287cf44a41..8d0471153893ad3a82eb5aa03713b8bd9d8da43d 100644
+--- a/src/main/java/io/papermc/paper/command/PaperCommand.java
++++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
+@@ -1,5 +1,6 @@
+ package io.papermc.paper.command;
+ 
++import io.papermc.paper.FeatureHooks;
+ import io.papermc.paper.command.subcommands.*;
+ import it.unimi.dsi.fastutil.Pair;
+ import java.util.ArrayList;
+@@ -42,6 +43,7 @@ public final class PaperCommand extends Command {
+         commands.put(Set.of("dumpitem"), new DumpItemCommand());
+         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
+         commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
++        FeatureHooks.registerPaperCommands(commands);
+ 
+         return commands.entrySet().stream()
+             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
+diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+index 2d2ff826354670fef356e241d939080c9ed3fd4a..088b8fe5d144807f4da1e85b2fa34dfd21286f8c 100644
+--- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+@@ -1,6 +1,7 @@
+ package io.papermc.paper.configuration;
+ 
+ import com.mojang.logging.LogUtils;
++import io.papermc.paper.FeatureHooks;
+ import io.papermc.paper.configuration.constraint.Constraints;
+ import io.papermc.paper.configuration.type.number.DoubleOr;
+ import io.papermc.paper.configuration.type.number.IntOr;
+@@ -217,6 +218,22 @@ public class GlobalConfiguration extends ConfigurationPart {
+         @PostProcess
+         private void postProcess() {
+             ca.spottedleaf.moonrise.common.util.MoonriseCommon.adjustWorkerThreads(this.workerThreads, this.ioThreads);
++            String newChunkSystemGenParallelism = this.genParallelism;
++            if (newChunkSystemGenParallelism.equalsIgnoreCase("default")) {
++                newChunkSystemGenParallelism = "true";
++            }
++
++            final boolean useParallelGen;
++            if (newChunkSystemGenParallelism.equalsIgnoreCase("on") || newChunkSystemGenParallelism.equalsIgnoreCase("enabled")
++                || newChunkSystemGenParallelism.equalsIgnoreCase("true")) {
++                useParallelGen = true;
++            } else if (newChunkSystemGenParallelism.equalsIgnoreCase("off") || newChunkSystemGenParallelism.equalsIgnoreCase("disabled")
++                || newChunkSystemGenParallelism.equalsIgnoreCase("false")) {
++                useParallelGen = false;
++            } else {
++                throw new IllegalStateException("Invalid option for gen-parallelism: must be one of [on, off, enabled, disabled, true, false, default]");
++            }
++            FeatureHooks.initChunkTaskScheduler(useParallelGen);
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+index bfc8b87941578e8f52f7cd9035776b7db5ab2221..f3ab07e44e2e912ea66c6148cfdb2a4a528741b2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
+@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit;
+ import com.google.common.base.Preconditions;
+ import com.google.common.base.Predicates;
+ import com.mojang.serialization.Codec;
++import io.papermc.paper.FeatureHooks;
+ import java.util.Arrays;
+ import java.util.Collection;
+ import java.util.Objects;
+@@ -56,7 +57,7 @@ public class CraftChunk implements Chunk {
+     private final ServerLevel worldServer;
+     private final int x;
+     private final int z;
+-    private static final PalettedContainer<net.minecraft.world.level.block.state.BlockState> emptyBlockIDs = new PalettedContainer<>(net.minecraft.world.level.block.Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
++    private static final PalettedContainer<net.minecraft.world.level.block.state.BlockState> emptyBlockIDs = FeatureHooks.emptyPalettedBlockContainer();
+     private static final byte[] FULL_LIGHT = new byte[2048];
+     private static final byte[] EMPTY_LIGHT = new byte[2048];
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 6370b780af5043f32d07346ea4dd7f23c819f7a0..5b64111bc8baca45ecc7bfa384e5f8a004163a0b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -2718,7 +2718,7 @@ public final class CraftServer implements Server {
+     public ChunkGenerator.ChunkData createChunkData(World world) {
+         Preconditions.checkArgument(world != null, "World cannot be null");
+         ServerLevel handle = ((CraftWorld) world).getHandle();
+-        return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().lookupOrThrow(Registries.BIOME));
++        return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().lookupOrThrow(Registries.BIOME), world);
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 73b0438908894bdd64835f21290250c88625a41a..ca62105a0ff0aa69385cbf2018f8fe6a4bb69fd4 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -5,6 +5,7 @@ import com.google.common.base.Predicates;
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableMap;
+ import com.mojang.datafixers.util.Pair;
++import io.papermc.paper.FeatureHooks;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
+ import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+@@ -511,12 +512,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+                 List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
+                 if (playersInRange.isEmpty()) return;
+ 
+-                ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null);
+-                for (ServerPlayer player : playersInRange) {
+-                    if (player.connection == null) continue;
+-
+-                    player.connection.send(refreshPacket);
+-                }
++                FeatureHooks.sendChunkRefreshPackets(playersInRange, chunk);
+             });
+         });
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 58b485c4cfd2ced26a7178aa4380d66c0250b014..d5dc10cf9440f2394e6548c6a3e0160df13c9cae 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -6,6 +6,7 @@ import com.google.common.io.BaseEncoding;
+ import com.mojang.authlib.GameProfile;
+ import com.mojang.datafixers.util.Pair;
+ import io.netty.buffer.Unpooled;
++import io.papermc.paper.FeatureHooks;
+ import it.unimi.dsi.fastutil.shorts.ShortArraySet;
+ import it.unimi.dsi.fastutil.shorts.ShortSet;
+ import java.io.ByteArrayOutputStream;
+@@ -3489,27 +3490,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     @Override
+     public Set<java.lang.Long> getSentChunkKeys() {
+         org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
+-        final it.unimi.dsi.fastutil.longs.LongOpenHashSet keys = new it.unimi.dsi.fastutil.longs.LongOpenHashSet();
+-        this.getHandle().getChunkTrackingView().forEach(pos -> keys.add(pos.longKey));
+-        return it.unimi.dsi.fastutil.longs.LongSets.unmodifiable(keys);
++        return FeatureHooks.getSentChunkKeys(this.getHandle());
+     }
+ 
+     @Override
+     public Set<org.bukkit.Chunk> getSentChunks() {
+         org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
+-        final it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<org.bukkit.Chunk> chunks = new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>();
+-        final org.bukkit.World world = this.getWorld();
+-        this.getHandle().getChunkTrackingView().forEach(pos -> {
+-            final org.bukkit.Chunk chunk = world.getChunkAt(pos.longKey);
+-            chunks.add(chunk);
+-        });
+-        return it.unimi.dsi.fastutil.objects.ObjectSets.unmodifiable(chunks);
++        return FeatureHooks.getSentChunks(this.getHandle());
+     }
+ 
+     @Override
+     public boolean isChunkSent(final long chunkKey) {
+         org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
+-        return this.getHandle().getChunkTrackingView().contains(new net.minecraft.world.level.ChunkPos(chunkKey));
++        return FeatureHooks.isChunkSent(this.getHandle(), chunkKey);
+     }
+     // Paper end
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
+index e7f7a246e9c03e676dadfee59de87b8b2ac55ba3..719fe4cbe96c12c281bcbc7909b35310bbf650a5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
+@@ -1,5 +1,6 @@
+ package org.bukkit.craftbukkit.generator;
+ 
++import io.papermc.paper.FeatureHooks;
+ import java.util.HashSet;
+ import java.util.Set;
+ import net.minecraft.core.BlockPos;
+@@ -27,8 +28,15 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
+     private final Registry<net.minecraft.world.level.biome.Biome> biomes;
+     private Set<BlockPos> tiles;
+     private final Set<BlockPos> lights = new HashSet<>();
++    private final org.bukkit.World world;
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse
+     public OldCraftChunkData(int minHeight, int maxHeight, Registry<net.minecraft.world.level.biome.Biome> biomes) {
++        this(minHeight, maxHeight, biomes, null);
++    }
++
++    public OldCraftChunkData(int minHeight, int maxHeight, Registry<net.minecraft.world.level.biome.Biome> biomes, org.bukkit.World world) {
++        this.world = world;
+         this.minHeight = minHeight;
+         this.maxHeight = maxHeight;
+         this.biomes = biomes;
+@@ -176,7 +184,7 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
+         int offset = (y - this.minHeight) >> 4;
+         LevelChunkSection section = this.sections[offset];
+         if (create && section == null) {
+-            this.sections[offset] = section = new LevelChunkSection(this.biomes);
++            this.sections[offset] = section = FeatureHooks.createSection(this.biomes, this.world instanceof org.bukkit.craftbukkit.CraftWorld ? ((org.bukkit.craftbukkit.CraftWorld) this.world).getHandle() : null, null, offset + (this.minHeight >> 4)); // Paper - Anti-Xray - Add parameters
+         }
+         return section;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/map/RenderData.java b/src/main/java/org/bukkit/craftbukkit/map/RenderData.java
+index 256a131781721c86dd6cdbc329335964570cbe8c..503a31b4efc8920a11bc1db03f81aab6439ceb23 100644
+--- a/src/main/java/org/bukkit/craftbukkit/map/RenderData.java
++++ b/src/main/java/org/bukkit/craftbukkit/map/RenderData.java
+@@ -5,7 +5,7 @@ import org.bukkit.map.MapCursor;
+ 
+ public class RenderData {
+ 
+-    public final byte[] buffer;
++    public byte[] buffer;
+     public final ArrayList<MapCursor> cursors;
+ 
+     public RenderData() {

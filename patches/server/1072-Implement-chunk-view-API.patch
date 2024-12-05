@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Flo0 <flo.roma@web.de>
+Date: Thu, 5 Dec 2024 12:15:07 +0100
+Subject: [PATCH] Implement chunk view API
+
+
+diff --git a/src/main/java/io/papermc/paper/FeatureHooks.java b/src/main/java/io/papermc/paper/FeatureHooks.java
+index efc7f4071655201c59c912e9c84e35a8da66e34c..e41ceed2b11e24ae512c162f0f4465278ce207bc 100644
+--- a/src/main/java/io/papermc/paper/FeatureHooks.java
++++ b/src/main/java/io/papermc/paper/FeatureHooks.java
+@@ -3,8 +3,8 @@ package io.papermc.paper;
+ import io.papermc.paper.command.PaperSubcommand;
+ import io.papermc.paper.command.subcommands.ChunkDebugCommand;
+ import io.papermc.paper.command.subcommands.FixLightCommand;
++import it.unimi.dsi.fastutil.longs.LongIterator;
+ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+-import it.unimi.dsi.fastutil.longs.LongSet;
+ import it.unimi.dsi.fastutil.longs.LongSets;
+ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+ import it.unimi.dsi.fastutil.objects.ObjectSet;
+@@ -62,22 +62,21 @@ public final class FeatureHooks {
+     }
+ 
+     public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
+-        final LongSet keys = new LongOpenHashSet();
+-        player.getChunkTrackingView().forEach(pos -> keys.add(pos.longKey));
+-        return LongSets.unmodifiable(keys);
++        return LongSets.unmodifiable(player.moonrise$getChunkLoader().getSentChunksRaw().clone());
+     }
+ 
+     public static Set<Chunk> getSentChunks(final ServerPlayer player) {
+-        final ObjectSet<Chunk> chunks = new ObjectOpenHashSet<>();
++        final LongOpenHashSet rawChunkKeys = player.moonrise$getChunkLoader().getSentChunksRaw();
++        final ObjectSet<org.bukkit.Chunk> chunks = new ObjectOpenHashSet<>(rawChunkKeys.size());
+         final World world = player.serverLevel().getWorld();
+-        player.getChunkTrackingView().forEach(pos -> {
+-            final org.bukkit.Chunk chunk = world.getChunkAt(pos.longKey);
+-            chunks.add(chunk);
+-        });
++        final LongIterator iter = player.moonrise$getChunkLoader().getSentChunksRaw().longIterator();
++        while (iter.hasNext()) {
++            chunks.add(world.getChunkAt(iter.nextLong(), false));
++        }
+         return ObjectSets.unmodifiable(chunks);
+     }
+ 
+     public static boolean isChunkSent(final ServerPlayer player, final long chunkKey) {
+-        return player.getChunkTrackingView().contains(new ChunkPos(chunkKey));
++        return player.moonrise$getChunkLoader().getSentChunksRaw().contains(chunkKey);
+     }
+ }

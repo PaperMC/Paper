@@ -22763,19 +22763,32 @@ index 0000000000000000000000000000000000000000..689ce367164e79e0426eeecb81dbbc52
 +
 +    private SaveUtil() {}
 +}
-diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
-index 46bf42d5ea9e7b046f962531c5962d287cf44a41..362765d977aaa1996f9cef3404c0676d7bbddf38 100644
---- a/src/main/java/io/papermc/paper/command/PaperCommand.java
-+++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -42,6 +42,8 @@ public final class PaperCommand extends Command {
-         commands.put(Set.of("dumpitem"), new DumpItemCommand());
-         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
-         commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
+diff --git a/src/main/java/io/papermc/paper/FeatureHooks.java b/src/main/java/io/papermc/paper/FeatureHooks.java
+index a6779295bff446ee79e7c9d41e405447becc2966..efc7f4071655201c59c912e9c84e35a8da66e34c 100644
+--- a/src/main/java/io/papermc/paper/FeatureHooks.java
++++ b/src/main/java/io/papermc/paper/FeatureHooks.java
+@@ -1,6 +1,8 @@
+ package io.papermc.paper;
+ 
+ import io.papermc.paper.command.PaperSubcommand;
++import io.papermc.paper.command.subcommands.ChunkDebugCommand;
++import io.papermc.paper.command.subcommands.FixLightCommand;
+ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+ import it.unimi.dsi.fastutil.longs.LongSet;
+ import it.unimi.dsi.fastutil.longs.LongSets;
+@@ -29,9 +31,12 @@ import org.bukkit.World;
+ public final class FeatureHooks {
+ 
+     public static void initChunkTaskScheduler(final boolean useParallelGen) {
++        ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.init(useParallelGen); // Paper - Chunk system
+     }
+ 
+     public static void registerPaperCommands(final Map<Set<String>, PaperSubcommand> commands) {
 +        commands.put(Set.of("fixlight"), new FixLightCommand()); // Paper - rewrite chunk system
 +        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());  // Paper - rewrite chunk system
+     }
  
-         return commands.entrySet().stream()
-             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
+     public static LevelChunkSection createSection(final Registry<Biome> biomeRegistry, final Level level, final ChunkPos chunkPos, final int chunkSection) {
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..2dca7afbd93cfbb8686f336fcd3b45dd01fba0fc
@@ -23181,34 +23194,6 @@ index 0000000000000000000000000000000000000000..85950a1aa732ab8c01ad28bec9e0de14
 +        sender.getBukkitEntity().sendMessage(text().color(BLUE).append(text("Relighting "), text(pending[0], DARK_AQUA), text(" chunks")));
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index 2d2ff826354670fef356e241d939080c9ed3fd4a..17e23ca4dd2bbfba49ea00aa2b719a95feb931be 100644
---- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-+++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -217,6 +217,23 @@ public class GlobalConfiguration extends ConfigurationPart {
-         @PostProcess
-         private void postProcess() {
-             ca.spottedleaf.moonrise.common.util.MoonriseCommon.adjustWorkerThreads(this.workerThreads, this.ioThreads);
-+
-+            String newChunkSystemGenParallelism = this.genParallelism;
-+            if (newChunkSystemGenParallelism.equalsIgnoreCase("default")) {
-+                newChunkSystemGenParallelism = "true";
-+            }
-+
-+            boolean useParallelGen;
-+            if (newChunkSystemGenParallelism.equalsIgnoreCase("on") || newChunkSystemGenParallelism.equalsIgnoreCase("enabled")
-+                || newChunkSystemGenParallelism.equalsIgnoreCase("true")) {
-+                useParallelGen = true;
-+            } else if (newChunkSystemGenParallelism.equalsIgnoreCase("off") || newChunkSystemGenParallelism.equalsIgnoreCase("disabled")
-+                || newChunkSystemGenParallelism.equalsIgnoreCase("false")) {
-+                useParallelGen = false;
-+            } else {
-+                throw new IllegalStateException("Invalid option for gen-parallelism: must be one of [on, off, enabled, disabled, true, false, default]");
-+            }
-+            ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.init(useParallelGen);
-         }
-     }
- 
 diff --git a/src/main/java/io/papermc/paper/threadedregions/TickRegions.java b/src/main/java/io/papermc/paper/threadedregions/TickRegions.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..8424cf9d4617b4732d44cc460d25b04481068989
@@ -36033,10 +36018,10 @@ index 26620c06d26a2c0eb957fbadc6ac3d7a309bff46..3858c83c58e78435a6e29de84c33faa2
  
              for (SavedTick<T> savedTick : this.pendingTicks) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index 028174f712ea9605f22243b76c3f5dd6da76b57f..2dd38f40c8c0b48b12ffe557ceeed69213066a6a 100644
+index f3ab07e44e2e912ea66c6148cfdb2a4a528741b2..c2bffe3450ee9f768e00a23ec09df74d7a06d49b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-@@ -82,6 +82,12 @@ public class CraftChunk implements Chunk {
+@@ -83,6 +83,12 @@ public class CraftChunk implements Chunk {
      }
  
      public ChunkAccess getHandle(ChunkStatus chunkStatus) {
@@ -36049,7 +36034,7 @@ index 028174f712ea9605f22243b76c3f5dd6da76b57f..2dd38f40c8c0b48b12ffe557ceeed692
          ChunkAccess chunkAccess = this.worldServer.getChunk(this.x, this.z, chunkStatus);
  
          // SPIGOT-7332: Get unwrapped extension
-@@ -116,60 +122,12 @@ public class CraftChunk implements Chunk {
+@@ -117,60 +123,12 @@ public class CraftChunk implements Chunk {
  
      @Override
      public boolean isEntitiesLoaded() {
@@ -36113,7 +36098,7 @@ index 028174f712ea9605f22243b76c3f5dd6da76b57f..2dd38f40c8c0b48b12ffe557ceeed692
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index ef836e1a6481775263bdbe3668febd577ac96aec..ac8af406180bc680d46e8edc3da0fc2e5211345a 100644
+index 5b64111bc8baca45ecc7bfa384e5f8a004163a0b..97b5d6ba2b19a7c730730c74175a29157aed1840 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1448,7 +1448,7 @@ public final class CraftServer implements Server {
@@ -36144,10 +36129,10 @@ index ef836e1a6481775263bdbe3668febd577ac96aec..ac8af406180bc680d46e8edc3da0fc2e
  
      // Paper start - Adventure
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 2ead4edd2e6298ea3c22490e91319c64752815fc..a9f7ac8d1f5e184687d53ab3e8b348bb7f4f2ba0 100644
+index ca62105a0ff0aa69385cbf2018f8fe6a4bb69fd4..92d9f0ea8f7810ae20d3996f49aefa539b4bcb69 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -506,10 +506,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -507,15 +507,17 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
          if (playerChunk == null) return false;
  
@@ -36163,19 +36148,15 @@ index 2ead4edd2e6298ea3c22490e91319c64752815fc..a9f7ac8d1f5e184687d53ab3e8b348bb
 -                if (playersInRange.isEmpty()) return;
 +                if (playersInRange.isEmpty()) return true; // Paper - chunk system
  
-                 // Paper start - Anti-Xray bypass
-                 final Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
-@@ -522,8 +526,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-                     }));
-                     // Paper end - Anti-Xray bypass
-                 }
+                 FeatureHooks.sendChunkRefreshPackets(playersInRange, chunk);
 -            });
 -        });
+-
 +        // Paper - chunk system
- 
          return true;
      }
-@@ -627,20 +630,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+@@ -618,20 +620,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public Collection<Plugin> getPluginChunkTickets(int x, int z) {
          DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
@@ -36197,7 +36178,7 @@ index 2ead4edd2e6298ea3c22490e91319c64752815fc..a9f7ac8d1f5e184687d53ab3e8b348bb
      }
  
      @Override
-@@ -648,7 +639,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -639,7 +629,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          Map<Plugin, ImmutableList.Builder<Chunk>> ret = new HashMap<>();
          DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
  
@@ -36206,7 +36187,7 @@ index 2ead4edd2e6298ea3c22490e91319c64752815fc..a9f7ac8d1f5e184687d53ab3e8b348bb
              long chunkKey = chunkTickets.getLongKey();
              SortedArraySet<Ticket<?>> tickets = chunkTickets.getValue();
  
-@@ -1351,12 +1342,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -1342,12 +1332,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public int getViewDistance() {
@@ -36221,7 +36202,7 @@ index 2ead4edd2e6298ea3c22490e91319c64752815fc..a9f7ac8d1f5e184687d53ab3e8b348bb
      }
  
      public BlockMetadataStore getBlockMetadata() {
-@@ -2495,17 +2486,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2486,17 +2476,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
  
      @Override
      public void setSimulationDistance(final int simulationDistance) {
@@ -36246,10 +36227,10 @@ index 2ead4edd2e6298ea3c22490e91319c64752815fc..a9f7ac8d1f5e184687d53ab3e8b348bb
  
      // Paper start - implement pointers
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 58b485c4cfd2ced26a7178aa4380d66c0250b014..4365fd116767b9aba8759d8b3083995fd0c460de 100644
+index d5dc10cf9440f2394e6548c6a3e0160df13c9cae..20f64850cb42d986358f01ffcdb42187e1684bca 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -3526,7 +3526,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -3519,7 +3519,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setViewDistance(final int viewDistance) {
@@ -36260,7 +36241,7 @@ index 58b485c4cfd2ced26a7178aa4380d66c0250b014..4365fd116767b9aba8759d8b3083995f
      }
  
      @Override
-@@ -3536,7 +3538,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -3529,7 +3531,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setSimulationDistance(final int simulationDistance) {
@@ -36271,7 +36252,7 @@ index 58b485c4cfd2ced26a7178aa4380d66c0250b014..4365fd116767b9aba8759d8b3083995f
      }
  
      @Override
-@@ -3546,7 +3550,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -3539,7 +3543,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setSendViewDistance(final int viewDistance) {
