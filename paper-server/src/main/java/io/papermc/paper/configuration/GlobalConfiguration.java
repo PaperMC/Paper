@@ -1,6 +1,7 @@
 package io.papermc.paper.configuration;
 
 import com.mojang.logging.LogUtils;
+import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
@@ -217,6 +218,22 @@ public class GlobalConfiguration extends ConfigurationPart {
         @PostProcess
         private void postProcess() {
             ca.spottedleaf.moonrise.common.util.MoonriseCommon.adjustWorkerThreads(this.workerThreads, this.ioThreads);
+            String newChunkSystemGenParallelism = this.genParallelism;
+            if (newChunkSystemGenParallelism.equalsIgnoreCase("default")) {
+                newChunkSystemGenParallelism = "true";
+            }
+
+            final boolean useParallelGen;
+            if (newChunkSystemGenParallelism.equalsIgnoreCase("on") || newChunkSystemGenParallelism.equalsIgnoreCase("enabled")
+                || newChunkSystemGenParallelism.equalsIgnoreCase("true")) {
+                useParallelGen = true;
+            } else if (newChunkSystemGenParallelism.equalsIgnoreCase("off") || newChunkSystemGenParallelism.equalsIgnoreCase("disabled")
+                || newChunkSystemGenParallelism.equalsIgnoreCase("false")) {
+                useParallelGen = false;
+            } else {
+                throw new IllegalStateException("Invalid option for gen-parallelism: must be one of [on, off, enabled, disabled, true, false, default]");
+            }
+            FeatureHooks.initChunkTaskScheduler(useParallelGen);
         }
     }
 

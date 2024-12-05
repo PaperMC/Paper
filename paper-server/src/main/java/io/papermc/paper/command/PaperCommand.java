@@ -1,5 +1,6 @@
 package io.papermc.paper.command;
 
+import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.command.subcommands.*;
 import it.unimi.dsi.fastutil.Pair;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ public final class PaperCommand extends Command {
         commands.put(Set.of("dumpitem"), new DumpItemCommand());
         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
         commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
+        FeatureHooks.registerPaperCommands(commands);
 
         return commands.entrySet().stream()
             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))

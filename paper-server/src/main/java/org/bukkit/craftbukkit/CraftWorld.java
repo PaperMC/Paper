@@ -5,6 +5,7 @@ import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
+import io.papermc.paper.FeatureHooks;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -511,12 +512,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                 List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
                 if (playersInRange.isEmpty()) return;
 
-                ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null);
-                for (ServerPlayer player : playersInRange) {
-                    if (player.connection == null) continue;
-
-                    player.connection.send(refreshPacket);
-                }
+                FeatureHooks.sendChunkRefreshPackets(playersInRange, chunk);
             });
         });
 
