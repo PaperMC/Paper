@@ -22763,19 +22763,32 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +
 +    private SaveUtil() {}
 +}
-diff --git a/src/main/java/io/papermc/paper/command/PaperCommand.java b/src/main/java/io/papermc/paper/command/PaperCommand.java
+diff --git a/src/main/java/io/papermc/paper/FeatureHooks.java b/src/main/java/io/papermc/paper/FeatureHooks.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/io/papermc/paper/command/PaperCommand.java
-+++ b/src/main/java/io/papermc/paper/command/PaperCommand.java
-@@ -0,0 +0,0 @@ public final class PaperCommand extends Command {
-         commands.put(Set.of("dumpitem"), new DumpItemCommand());
-         commands.put(Set.of("mobcaps", "playermobcaps"), new MobcapsCommand());
-         commands.put(Set.of("dumplisteners"), new DumpListenersCommand());
+--- a/src/main/java/io/papermc/paper/FeatureHooks.java
++++ b/src/main/java/io/papermc/paper/FeatureHooks.java
+@@ -0,0 +0,0 @@
+ package io.papermc.paper;
+ 
+ import io.papermc.paper.command.PaperSubcommand;
++import io.papermc.paper.command.subcommands.ChunkDebugCommand;
++import io.papermc.paper.command.subcommands.FixLightCommand;
+ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
+ import it.unimi.dsi.fastutil.longs.LongSet;
+ import it.unimi.dsi.fastutil.longs.LongSets;
+@@ -0,0 +0,0 @@ import org.bukkit.World;
+ public final class FeatureHooks {
+ 
+     public static void initChunkTaskScheduler(final boolean useParallelGen) {
++        ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.init(useParallelGen); // Paper - Chunk system
+     }
+ 
+     public static void registerPaperCommands(final Map<Set<String>, PaperSubcommand> commands) {
 +        commands.put(Set.of("fixlight"), new FixLightCommand()); // Paper - rewrite chunk system
 +        commands.put(Set.of("debug", "chunkinfo", "holderinfo"), new ChunkDebugCommand());  // Paper - rewrite chunk system
+     }
  
-         return commands.entrySet().stream()
-             .flatMap(entry -> entry.getKey().stream().map(s -> Map.entry(s, entry.getValue())))
+     public static LevelChunkSection createSection(final Registry<Biome> biomeRegistry, final Level level, final ChunkPos chunkPos, final int chunkSection) {
 diff --git a/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/src/main/java/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -23181,34 +23194,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        sender.getBukkitEntity().sendMessage(text().color(BLUE).append(text("Relighting "), text(pending[0], DARK_AQUA), text(" chunks")));
 +    }
 +}
-diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-+++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -0,0 +0,0 @@ public class GlobalConfiguration extends ConfigurationPart {
-         @PostProcess
-         private void postProcess() {
-             ca.spottedleaf.moonrise.common.util.MoonriseCommon.adjustWorkerThreads(this.workerThreads, this.ioThreads);
-+
-+            String newChunkSystemGenParallelism = this.genParallelism;
-+            if (newChunkSystemGenParallelism.equalsIgnoreCase("default")) {
-+                newChunkSystemGenParallelism = "true";
-+            }
-+
-+            boolean useParallelGen;
-+            if (newChunkSystemGenParallelism.equalsIgnoreCase("on") || newChunkSystemGenParallelism.equalsIgnoreCase("enabled")
-+                || newChunkSystemGenParallelism.equalsIgnoreCase("true")) {
-+                useParallelGen = true;
-+            } else if (newChunkSystemGenParallelism.equalsIgnoreCase("off") || newChunkSystemGenParallelism.equalsIgnoreCase("disabled")
-+                || newChunkSystemGenParallelism.equalsIgnoreCase("false")) {
-+                useParallelGen = false;
-+            } else {
-+                throw new IllegalStateException("Invalid option for gen-parallelism: must be one of [on, off, enabled, disabled, true, false, default]");
-+            }
-+            ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.init(useParallelGen);
-         }
-     }
- 
 diff --git a/src/main/java/io/papermc/paper/threadedregions/TickRegions.java b/src/main/java/io/papermc/paper/threadedregions/TickRegions.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
@@ -36163,18 +36148,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 -                if (playersInRange.isEmpty()) return;
 +                if (playersInRange.isEmpty()) return true; // Paper - chunk system
  
-                 // Paper start - Anti-Xray bypass
-                 final Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
-@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-                     }));
-                     // Paper end - Anti-Xray bypass
-                 }
+                 FeatureHooks.sendChunkRefreshPackets(playersInRange, chunk);
 -            });
 -        });
+-
 +        // Paper - chunk system
- 
          return true;
      }
+ 
 @@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      @Override
      public Collection<Plugin> getPluginChunkTickets(int x, int z) {

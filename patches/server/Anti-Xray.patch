@@ -1000,6 +1000,48 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        chunkPacketBlockControllerAntiXray.obfuscate(this);
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/FeatureHooks.java b/src/main/java/io/papermc/paper/FeatureHooks.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/io/papermc/paper/FeatureHooks.java
++++ b/src/main/java/io/papermc/paper/FeatureHooks.java
+@@ -0,0 +0,0 @@ import it.unimi.dsi.fastutil.longs.LongSets;
+ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+ import it.unimi.dsi.fastutil.objects.ObjectSet;
+ import it.unimi.dsi.fastutil.objects.ObjectSets;
++import java.util.HashMap;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Set;
+@@ -0,0 +0,0 @@ public final class FeatureHooks {
+     }
+ 
+     public static LevelChunkSection createSection(final Registry<Biome> biomeRegistry, final Level level, final ChunkPos chunkPos, final int chunkSection) {
+-        return new LevelChunkSection(biomeRegistry);
++        return new LevelChunkSection(biomeRegistry, level, chunkPos, chunkSection); // Paper - Anti-Xray - Add parameters
+     }
+ 
+     public static void sendChunkRefreshPackets(final List<ServerPlayer> playersInRange, final LevelChunk chunk) {
+-        final ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, chunk.level.getLightEngine(), null, null);
++        // Paper start - Anti-Xray
++        final Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
+         for (final ServerPlayer player : playersInRange) {
+             if (player.connection == null) continue;
+ 
+-            player.connection.send(refreshPacket);
++            final Boolean shouldModify = chunk.getLevel().chunkPacketBlockController.shouldModify(player, chunk);
++            player.connection.send(refreshPackets.computeIfAbsent(shouldModify, s -> { // Use connection to prevent creating firing event
++                return new ClientboundLevelChunkWithLightPacket(chunk, chunk.level.getLightEngine(), null, null, (Boolean) s);
++            }));
+         }
++        // Paper end - Anti-Xray
+     }
+ 
+     public static PalettedContainer<BlockState> emptyPalettedBlockContainer() {
+-        return new PalettedContainer<>(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
++        return new PalettedContainer<>(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES, null); // Paper - Anti-Xray - Add preset block states
+     }
+ 
+     public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundChunksBiomesPacket.java
@@ -1584,80 +1626,3 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
      // CraftBukkit end
  
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftChunk.java
-@@ -0,0 +0,0 @@ public class CraftChunk implements Chunk {
-     private final ServerLevel worldServer;
-     private final int x;
-     private final int z;
--    private static final PalettedContainer<net.minecraft.world.level.block.state.BlockState> emptyBlockIDs = new PalettedContainer<>(net.minecraft.world.level.block.Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
-+    private static final PalettedContainer<net.minecraft.world.level.block.state.BlockState> emptyBlockIDs = new PalettedContainer<>(net.minecraft.world.level.block.Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES, null); // Paper - Anti-Xray - Add preset block states
-     private static final byte[] FULL_LIGHT = new byte[2048];
-     private static final byte[] EMPTY_LIGHT = new byte[2048];
- 
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -0,0 +0,0 @@ public final class CraftServer implements Server {
-     public ChunkGenerator.ChunkData createChunkData(World world) {
-         Preconditions.checkArgument(world != null, "World cannot be null");
-         ServerLevel handle = ((CraftWorld) world).getHandle();
--        return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().lookupOrThrow(Registries.BIOME));
-+        return new OldCraftChunkData(world.getMinHeight(), world.getMaxHeight(), handle.registryAccess().lookupOrThrow(Registries.BIOME), world); // Paper - Anti-Xray - Add parameters
-     }
- 
-     @Override
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -0,0 +0,0 @@ public class CraftWorld extends CraftRegionAccessor implements World {
-                 List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
-                 if (playersInRange.isEmpty()) return;
- 
--                ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null);
-+                // Paper start - Anti-Xray bypass
-+                final Map<Object, ClientboundLevelChunkWithLightPacket> refreshPackets = new HashMap<>();
-                 for (ServerPlayer player : playersInRange) {
-                     if (player.connection == null) continue;
- 
--                    player.connection.send(refreshPacket);
-+                    Boolean shouldModify = chunk.getLevel().chunkPacketBlockController.shouldModify(player, chunk);
-+                    player.connection.send(refreshPackets.computeIfAbsent(shouldModify, s -> { // Use connection to prevent creating firing event
-+                        return new ClientboundLevelChunkWithLightPacket(chunk, this.world.getLightEngine(), null, null, (Boolean) s);
-+                    }));
-+                    // Paper end - Anti-Xray bypass
-                 }
-             });
-         });
-diff --git a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
-+++ b/src/main/java/org/bukkit/craftbukkit/generator/OldCraftChunkData.java
-@@ -0,0 +0,0 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
-     private final Registry<net.minecraft.world.level.biome.Biome> biomes;
-     private Set<BlockPos> tiles;
-     private final Set<BlockPos> lights = new HashSet<>();
-+    // Paper start - Anti-Xray - Add parameters
-+    private final org.bukkit.World world;
- 
--    public OldCraftChunkData(int minHeight, int maxHeight, Registry<net.minecraft.world.level.biome.Biome> biomes) {
-+    @Deprecated @io.papermc.paper.annotation.DoNotUse public OldCraftChunkData(int minHeight, int maxHeight, Registry<net.minecraft.world.level.biome.Biome> biomes) { this(minHeight, maxHeight, biomes, null); }
-+    public OldCraftChunkData(int minHeight, int maxHeight, Registry<net.minecraft.world.level.biome.Biome> biomes, org.bukkit.World world) {
-+        this.world = world;
-+        // Paper end
-         this.minHeight = minHeight;
-         this.maxHeight = maxHeight;
-         this.biomes = biomes;
-@@ -0,0 +0,0 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
-         int offset = (y - this.minHeight) >> 4;
-         LevelChunkSection section = this.sections[offset];
-         if (create && section == null) {
--            this.sections[offset] = section = new LevelChunkSection(this.biomes);
-+            this.sections[offset] = section = new LevelChunkSection(this.biomes, this.world instanceof org.bukkit.craftbukkit.CraftWorld ? ((org.bukkit.craftbukkit.CraftWorld) this.world).getHandle() : null, null, offset + (this.minHeight >> 4)); // Paper - Anti-Xray - Add parameters
-         }
-         return section;
-     }
