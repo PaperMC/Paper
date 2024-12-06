@@ -2,8 +2,46 @@ import io.papermc.paperweight.util.*
 import java.time.Instant
 
 plugins {
-    java
+    `java-library`
     `maven-publish`
+    id("io.papermc.paperweight.core")
+}
+
+val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
+
+dependencies {
+    mache("io.papermc:mache:1.21.4+build.5")
+}
+
+paperweight {
+    softSpoon = true
+    minecraftVersion = "1.21.4"
+    // macheOldPath = file("F:\\Projects\\PaperTooling\\mache\\versions\\1.21.4\\src\\main\\java")
+    // gitFilePatches = true
+
+    paper {
+        paperServerDir = file("./")
+    }
+
+    serverProject = project(":paper-server")
+}
+
+tasks.generateDevelopmentBundle {
+    apiCoordinates = "io.papermc.paper:paper-api"
+    libraryRepositories.addAll(
+        "https://repo.maven.apache.org/maven2/",
+        paperMavenPublicUrl,
+    )
+}
+
+publishing {
+    if (project.providers.gradleProperty("publishDevBundle").isPresent) {
+        publications.create<MavenPublication>("devBundle") {
+            artifact(tasks.generateDevelopmentBundle) {
+                artifactId = "dev-bundle"
+            }
+        }
+    }
 }
 
 val log4jPlugins = sourceSets.create("log4jPlugins")
@@ -225,7 +263,7 @@ tasks.registerRunTask("runDevServer") {
 
 tasks.registerRunTask("runBundler") {
     description = "Spin up a test server from the Mojang mapped bundler jar"
-    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createMojmapBundlerJar").flatMap { it.outputZip })
+    classpath(tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createMojmapBundlerJar").flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
 // tasks.registerRunTask("runReobfBundler") {
@@ -235,7 +273,7 @@ tasks.registerRunTask("runBundler") {
 // }
 tasks.registerRunTask("runPaperclip") {
     description = "Spin up a test server from the Mojang mapped Paperclip jar"
-    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createMojmapPaperclipJar").flatMap { it.outputZip })
+    classpath(tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createMojmapPaperclipJar").flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
 // tasks.registerRunTask("runReobfPaperclip") {

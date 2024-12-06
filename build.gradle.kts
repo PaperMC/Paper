@@ -9,16 +9,14 @@ import java.util.regex.Pattern
 import kotlin.io.path.*
 
 plugins {
-    java
-    `maven-publish`
-    id("io.papermc.paperweight.core") version "2.0.0-SNAPSHOT"
+    id("io.papermc.paperweight.core") version "2.0.0-SNAPSHOT" apply false
 }
 
-allprojects {
-    apply(plugin = "java")
+subprojects {
+    apply(plugin = "java-library")
     apply(plugin = "maven-publish")
 
-    java {
+    extensions.configure<JavaPluginExtension> {
         toolchain {
             languageVersion = JavaLanguageVersion.of(21)
         }
@@ -51,45 +49,8 @@ subprojects {
         mavenCentral()
         maven(paperMavenPublicUrl)
     }
-}
 
-dependencies {
-    mache("io.papermc:mache:1.21.4+build.3")
-}
-
-paperweight {
-    softSpoon = true
-    minecraftVersion = "1.21.4"
-    // macheOldPath = file("F:\\Projects\\PaperTooling\\mache\\versions\\1.21.4\\src\\main\\java")
-    // gitFilePatches = true
-
-    paper {
-        paperServerDir = file("paper-server")
-    }
-
-    serverProject = project(":paper-server")
-}
-
-tasks.generateDevelopmentBundle {
-    apiCoordinates = "io.papermc.paper:paper-api"
-    libraryRepositories.addAll(
-        "https://repo.maven.apache.org/maven2/",
-        paperMavenPublicUrl,
-    )
-}
-
-publishing {
-    if (project.providers.gradleProperty("publishDevBundle").isPresent) {
-        publications.create<MavenPublication>("devBundle") {
-            artifact(tasks.generateDevelopmentBundle) {
-                artifactId = "dev-bundle"
-            }
-        }
-    }
-}
-
-allprojects {
-    publishing {
+    extensions.configure<PublishingExtension> {
         repositories {
             maven("https://repo.papermc.io/repository/maven-snapshots/") {
                 name = "paperSnapshots"
@@ -112,6 +73,7 @@ tasks.register("printPaperVersion") {
 }
 
 // see gradle.properties
+/*
 if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
     tasks.collectAtsFromPatches {
         val dir = layout.projectDirectory.dir("patches/unapplied/server")
@@ -256,3 +218,4 @@ abstract class RebasePatches : BaseTask() {
         git("add", unappliedPatches.path.toString() + "/*").runSilently()
     }
 }
+ */
