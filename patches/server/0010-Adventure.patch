@@ -5228,7 +5228,7 @@ index c71a4971f127fdfc753306019313ce1a31201120..fd3b12477c30d1eabdbe57ea77902793
 +    // Paper end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
-index 92dcf22ee3b9cceb742b77c4cc58645eb25d9e67..aa14b5c363824761e81a9a29ae88820841df0166 100644
+index 92dcf22ee3b9cceb742b77c4cc58645eb25d9e67..f97a8aa44ac556cff9925eeffbb8ea3035df64f4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaItem.java
 @@ -1103,6 +1103,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
@@ -5237,19 +5237,28 @@ index 92dcf22ee3b9cceb742b77c4cc58645eb25d9e67..aa14b5c363824761e81a9a29ae888208
  
 +    // Paper start
 +    @Override
-+    public net.kyori.adventure.text.Component displayName() {
++    public net.kyori.adventure.text.Component customName() {
 +        return displayName == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(displayName);
 +    }
 +
 +    @Override
-+    public void displayName(final net.kyori.adventure.text.Component displayName) {
-+        this.displayName = displayName == null ? null : io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName);
++    public void customName(final net.kyori.adventure.text.Component customName) {
++        this.displayName = customName == null ? null : io.papermc.paper.adventure.PaperAdventure.asVanilla(customName);
 +    }
 +    // Paper end
 +
      @Override
      public String getDisplayName() {
          return CraftChatMessage.fromComponent(this.displayName);
+@@ -1114,7 +1126,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
+     }
+ 
+     @Override
+-    public boolean hasDisplayName() {
++    public boolean hasCustomName() {
+         return this.displayName != null;
+     }
+ 
 @@ -1133,6 +1145,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
          return this.itemName != null;
      }
@@ -5288,6 +5297,78 @@ index 92dcf22ee3b9cceb742b77c4cc58645eb25d9e67..aa14b5c363824761e81a9a29ae888208
      @Override
      public boolean hasRepairCost() {
          return this.repairCost > 0;
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
+index 533c600d632eb733c121f5d8189142726b091713..96ad0f53d39338f310f994e3352c8d2168fc39e8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
+@@ -109,7 +109,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+ 
+         String name = SerializableMeta.getString(map, CraftMetaPotion.CUSTOM_NAME.BUKKIT, true);
+         if (name != null) {
+-            this.setCustomName(name);
++            this.setCustomPotionName(name);
+         }
+ 
+         Iterable<?> rawEffectList = SerializableMeta.getObject(Iterable.class, map, CraftMetaPotion.POTION_EFFECTS.BUKKIT, true);
+@@ -151,7 +151,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+     }
+ 
+     boolean isPotionEmpty() {
+-        return (this.type == null) && !(this.hasCustomEffects() || this.hasColor() || this.hasCustomName());
++        return (this.type == null) && !(this.hasCustomEffects() || this.hasColor() || this.hasCustomPotionName());
+     }
+ 
+     @Override
+@@ -306,17 +306,17 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+     }
+ 
+     @Override
+-    public boolean hasCustomName() {
++    public boolean hasCustomPotionName() {
+         return this.customName != null;
+     }
+ 
+     @Override
+-    public String getCustomName() {
++    public String getCustomPotionName() {
+         return this.customName;
+     }
+ 
+     @Override
+-    public void setCustomName(String customName) {
++    public void setCustomPotionName(String customName) {
+         this.customName = customName;
+     }
+ 
+@@ -330,7 +330,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+         if (this.hasColor()) {
+             hash = 73 * hash + this.color.hashCode();
+         }
+-        if (this.hasCustomName()) {
++        if (this.hasCustomPotionName()) {
+             hash = 73 * hash + this.customName.hashCode();
+         }
+         if (this.hasCustomEffects()) {
+@@ -350,7 +350,7 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+             return Objects.equals(this.type, that.type)
+                     && (this.hasCustomEffects() ? that.hasCustomEffects() && this.customEffects.equals(that.customEffects) : !that.hasCustomEffects())
+                     && (this.hasColor() ? that.hasColor() && this.color.equals(that.color) : !that.hasColor())
+-                    && (this.hasCustomName() ? that.hasCustomName() && this.customName.equals(that.customName) : !that.hasCustomName());
++                    && (this.hasCustomPotionName() ? that.hasCustomPotionName() && this.customName.equals(that.customName) : !that.hasCustomPotionName());
+         }
+         return true;
+     }
+@@ -371,8 +371,8 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
+             builder.put(CraftMetaPotion.POTION_COLOR.BUKKIT, this.getColor());
+         }
+ 
+-        if (this.hasCustomName()) {
+-            builder.put(CraftMetaPotion.CUSTOM_NAME.BUKKIT, this.getCustomName());
++        if (this.hasCustomPotionName()) {
++            builder.put(CraftMetaPotion.CUSTOM_NAME.BUKKIT, this.getCustomPotionName());
+         }
+ 
+         if (this.hasCustomEffects()) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimMaterial.java b/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimMaterial.java
 index 38fb47bbfcec739be795b46cfb7c2c41a8379fea..caf7e4312e95e90dd0822355c8832006e69a2700 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimMaterial.java
