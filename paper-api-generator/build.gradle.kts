@@ -1,18 +1,18 @@
-import io.papermc.paperweight.PaperweightSourceGeneratorHelper
-import io.papermc.paperweight.extension.PaperweightSourceGeneratorExt
 import io.papermc.paperweight.util.defaultJavaLauncher
 
 plugins {
     java
+    id("io.papermc.paperweight.source-generator")
 }
 
-plugins.apply(PaperweightSourceGeneratorHelper::class)
-
-extensions.configure(PaperweightSourceGeneratorExt::class) {
-    atFile.set(projectDir.toPath().resolve("wideners.at").toFile())
+paperweight {
+    atFile.set(layout.projectDirectory.file("wideners.at"))
 }
 
 dependencies {
+    minecraftJar(project(":paper-server", "mappedJarOutgoing"))
+    implementation(project(":paper-server", "macheMinecraftLibraries"))
+
     implementation("com.squareup:javapoet:1.13.0")
     implementation(project(":paper-api"))
     implementation("io.github.classgraph:classgraph:4.8.47")

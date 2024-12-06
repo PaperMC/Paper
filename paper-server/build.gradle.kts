@@ -11,19 +11,33 @@ val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
     mache("io.papermc:mache:1.21.4+build.5")
+    paperclip("io.papermc:paperclip:3.0.3")
 }
 
 paperweight {
-    softSpoon = true
-    minecraftVersion = "1.21.4"
+    minecraftVersion = providers.gradleProperty("mcVersion")
     // macheOldPath = file("F:\\Projects\\PaperTooling\\mache\\versions\\1.21.4\\src\\main\\java")
     // gitFilePatches = true
 
     paper {
-        paperServerDir = file("./")
+        reobfMappingsPatch = layout.projectDirectory.file("../build-data/reobf-mappings-patch.tiny")
+        reobfPackagesToFix.addAll(
+            "co.aikar.timings",
+            "com.destroystokyo.paper",
+            "com.mojang",
+            "io.papermc.paper",
+            "ca.spottedleaf",
+            "net.kyori.adventure.bossbar",
+            "net.minecraft",
+            "org.bukkit.craftbukkit",
+            "org.spigotmc",
+        )
     }
 
-    serverProject = project(":paper-server")
+    spigot {
+        buildDataRef = "3edaf46ec1eed4115ce1b18d2846cded42577e42"
+        packageVersion = "v1_21_R3" // also needs to be updated in MappingEnvironment"
+    }
 }
 
 tasks.generateDevelopmentBundle {
