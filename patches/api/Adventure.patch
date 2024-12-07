@@ -4716,31 +4716,73 @@ diff --git a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java b/src/main/ja
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
 +++ b/src/main/java/org/bukkit/inventory/meta/ItemMeta.java
-@@ -0,0 +0,0 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
-      */
-     boolean hasDisplayName();
+@@ -0,0 +0,0 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public interface ItemMeta extends Cloneable, ConfigurationSerializable, PersistentDataHolder {
  
 +    // Paper start
++    /**
++     * Checks for existence of a custom name.
++     *
++     * @return true if this has a custom name
++     */
++    boolean hasCustomName();
++
++    /**
++     * Gets the custom name.
++     *
++     * <p>Plugins should check that {@link #hasCustomName()} returns {@code true} before calling this method.</p>
++     *
++     * @return the custom name
++     */
++    net.kyori.adventure.text.@Nullable Component customName();
++
++    /**
++     * Sets the custom name.
++     *
++     * @param customName the custom name to set
++     */
++    void customName(final net.kyori.adventure.text.@Nullable Component customName);
++
+     /**
+      * Checks for existence of a display name.
+      *
++     * @apiNote This method is obsolete, use {@link #hasCustomName()} instead.
+      * @return true if this has a display name
+      */
+-    boolean hasDisplayName();
++    @ApiStatus.Obsolete(since = "1.21.4")
++    default boolean hasDisplayName() {
++        return this.hasCustomName();
++    }
++
 +    /**
 +     * Gets the display name.
 +     *
 +     * <p>Plugins should check that {@link #hasDisplayName()} returns <code>true</code> before calling this method.</p>
 +     *
++     * @apiNote This method is obsolete, use {@link #customName()} instead.
 +     * @return the display name
 +     */
-+    net.kyori.adventure.text.@Nullable Component displayName();
++    @ApiStatus.Obsolete(since = "1.21.4")
++    default net.kyori.adventure.text.@Nullable Component displayName() {
++        return this.customName();
++    }
 +
 +    /**
 +     * Sets the display name.
 +     *
 +     * @param displayName the display name to set
++     * @apiNote This method is obsolete, use {@link #customName(Component)} instead.
 +     */
-+    void displayName(final net.kyori.adventure.text.@Nullable Component displayName);
++    @ApiStatus.Obsolete(since = "1.21.4")
++    default void displayName(final net.kyori.adventure.text.@Nullable Component displayName) {
++        this.customName(displayName);
++    }
 +    // Paper end
-+
+ 
      /**
       * Gets the display name that is set.
-      * <p>
 @@ -0,0 +0,0 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
       * before calling this method.
       *
@@ -4859,6 +4901,79 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      void setLore(@Nullable List<String> lore);
  
      /**
+diff --git a/src/main/java/org/bukkit/inventory/meta/PotionMeta.java b/src/main/java/org/bukkit/inventory/meta/PotionMeta.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/org/bukkit/inventory/meta/PotionMeta.java
++++ b/src/main/java/org/bukkit/inventory/meta/PotionMeta.java
+@@ -0,0 +0,0 @@ public interface PotionMeta extends ItemMeta {
+     /**
+      * Checks for existence of a custom potion name translation suffix.
+      *
++     * @deprecated conflicting name, use {@link #hasCustomPotionName()}
+      * @return true if this has a custom potion name
+      */
+-    boolean hasCustomName();
++    @Deprecated(forRemoval = true, since = "1.21.4")
++    default boolean hasCustomName() {
++        return this.hasCustomPotionName();
++    }
+ 
+     /**
+      * Gets the potion name translation suffix that is set.
+      * <p>
+-     * Plugins should check that hasCustomName() returns <code>true</code>
++     * Plugins should check that {@link #hasCustomPotionName()} returns {@code true}
+      * before calling this method.
+      *
++     * @deprecated conflicting name, use {@link #getCustomPotionName()}
+      * @return the potion name that is set
+      */
++    @Deprecated(forRemoval = true, since = "1.21.4")
+     @Nullable
+-    String getCustomName();
++    default String getCustomName() {
++        return this.getCustomPotionName();
++    }
+ 
+     /**
+      * Sets the potion name translation suffix.
+      *
++     * @deprecated conflicting name, use {@link #setCustomPotionName(String)}
+      * @param name the name to set
+      */
+-    void setCustomName(@Nullable String name);
++    @Deprecated(forRemoval = true, since = "1.21.4")
++    default void setCustomName(@Nullable String name) {
++        this.setCustomPotionName(name);
++    }
++
++    /**
++     * Checks for existence of a custom potion name translation suffix.
++     *
++     * @return true if this has a custom potion name
++     */
++    boolean hasCustomPotionName();
++
++    /**
++     * Gets the potion name translation suffix that is set.
++     * <p>
++     * Plugins should check that {@link #hasCustomPotionName()} returns {@code true}
++     * before calling this method.
++     *
++     * @return the potion name that is set
++     */
++    @Nullable
++    String getCustomPotionName();
++
++    /**
++     * Sets the potion name translation suffix.
++     *
++     * @param name the name to set
++     */
++    void setCustomPotionName(@Nullable String name);
+ 
+     @Override
+     PotionMeta clone();
 diff --git a/src/main/java/org/bukkit/inventory/meta/WritableBookMeta.java b/src/main/java/org/bukkit/inventory/meta/WritableBookMeta.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/inventory/meta/WritableBookMeta.java
