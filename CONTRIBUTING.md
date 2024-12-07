@@ -17,9 +17,6 @@ closing the PR instead of marking it as merged.
 We much prefer to have PRs show as merged, so please do not use repositories
 on organizations for PRs.
 
-See <https://github.com/isaacs/github/issues/1681> for more information on the
-issue.
-
 ## Requirements
 
 To get started with PRing changes, you'll need the following software, most of
@@ -51,14 +48,15 @@ javac 21.0.3
 
 ## Understanding Patches
 
-Paper is mostly patches and extensions to Spigot. These patches/extensions are
-split into different directories which target certain parts of the code. These
-directories are:
+Unlike the API and its implementation, modifications to Vanilla source files
+are done through patches. These patches/extensions are split into different
+three different sets, which are:
 
-- `Paper-API` - Modifications to `Spigot-API`/`Bukkit`;
-- `Paper-Server` - Modifications to `Spigot`/`CraftBukkit`.
+- `sources` - Per-file patches to individual Minecraft classes;
+- `resources` - Per-file patches to Minecraft data files;
+- `features` - Larger feature patches that modify multiple Minecraft classes.
 
-Because the entire structure is based on patches and git, a basic understanding
+Because this entire structure is based on patches and git, a basic understanding
 of how to use git is required. A basic tutorial can be found here:
 <https://git-scm.com/docs/gittutorial>.
 
@@ -67,22 +65,32 @@ Assuming you have already forked the repository:
 1. Clone your fork to your local machine;
 2. Type `./gradlew applyPatches` in a terminal to apply the changes from upstream.
 On Windows, replace the `./` with `.\` at the beginning for all `gradlew` commands;
-3. cd into `Paper-Server` for server changes, and `Paper-API` for API changes.  
-<!--You can also run `./paper server` or `./paper api` for these same directories
-respectively.
-1. You can also run `./paper setup`, which allows you to type `paper <command>`
-from anywhere in the Paper structure in most cases.-->
+3. cd into `paper-server` for server changes, and `paper-api` for API changes.
+**Only changes made in `paper-server/src/vanilla` have to deal with the patch system.**
 
-`Paper-Server` and `Paper-API` aren't git repositories in the traditional sense:
+`paper-server/src/vanilla` is not a git repositories in the traditional sense. Its
+initial commits are the decompiled and deobfuscated Vanilla source files. The per-file
+patches are applied on top of these files as a single, large commit, which is then followed
+by the individual feature-patch commits.
 
-- `base` points to the unmodified source before Paper patches have been applied.
-- Each commit after `base` is a patch.
+### Modifying (per-file) Vanilla patches
 
-## Adding Patches
+This is generally what you need to do when editing Vanilla files. Updating our
+per-file patches is as easy as making your changes and then running
+# TODO
+in the root directory. If nothing went wrong, you can rebuild patches with
+`./gradlew rebuildPatches` and finally commit and PR the patch changes.
 
-Adding patches to Paper is very simple:
+### Adding larger feature patches
 
-1. Modify `Paper-Server` and/or `Paper-API` with the appropriate changes;
+Feature patches are exclusively used for large-scale changes that are hard to
+track and maintain, and that can be optionally dropped, such as the more involved
+optimizations we have. This makes it easier to update Paper during Minecraft updates,
+since we can temporarily drop these patches and reapply them later.
+
+Adding such patches is very simple:
+
+1. Modify `paper-server/src/vanilla` with the appropriate changes;
 1. Type `git add .` inside these directories to add your changes;
 1. Run `git commit` with the desired patch message;
 1. Run `./gradlew rebuildPatches` in the main directory to convert your commit into a new
@@ -94,13 +102,11 @@ Your commit will be converted into a patch that you can then PR into Paper.
 > ❗ Please note that if you have some specific implementation detail you'd like
 > to document, you should do so in the patch message *or* in comments.
 
-## Modifying Patches
+### Modifying larger feature patches
 
-Modifying previous patches is a bit more complex.
-Similar to adding patches, the methods to modify a patch are applied inside
-the `Paper-Server` and/or `Paper-API` folders.
+Modifying existing feature patches is slightly more complex.
 
-### Method 1
+#### Method 1
 
 This method works by temporarily resetting your `HEAD` to the desired commit to
 edit it using `git rebase`.
@@ -135,7 +141,7 @@ later;
    - This will modify the appropriate patches based on your commits.
 1. PR your modified patch file(s) back to this repository.
 
-### Method 2 - Fixup commits
+#### Method 2 - Fixup commits
 
 If you are simply editing a more recent commit or your change is small, simply
 making the change at HEAD and then moving the commit after you have tested it
@@ -144,7 +150,7 @@ may be easier.
 This method has the benefit of being able to compile to test your change without
 messing with your HEADs.
 
-#### Manual method
+##### Manual method
 
 1. Make your change while at HEAD;
 1. Make a temporary commit. You don't need to make a message for this;
@@ -159,7 +165,7 @@ move it under the line of the patch you wish to modify;
    - This will modify the appropriate patches based on your commits.
 1. PR your modified patch file(s) back to this repository.
 
-#### Automatic method
+##### Automatic method
 
 1. Make your change while at HEAD;
 1. Make a fixup commit. `git commit -a --fixup <hashOfPatchToFix>`;
@@ -181,13 +187,11 @@ need to "save" the changes.
 Steps to rebase a PR to include the latest changes from `master`.  
 These steps assume the `origin` remote is your fork of this repository and `upstream` is the official PaperMC repository.
 
-1. Pull the latest changes from upstreams master: `git checkout master && git pull upstream master`.
-1. Checkout feature/fix branch and rebase on master: `git checkout patch-branch && git rebase master`.
+1. Pull the latest changes from upstreams master: `git switch main && git pull upstream main`.
+1. Checkout feature/fix branch and rebase on master: `git checkout patch-branch && git rebase main`.
 1. Apply updated patches: `./gradlew applyPatches`.
 1. If there are conflicts, fix them.
-   * If there are conflicts within `Paper-API`, after fixing them run `./gradlew rebuildApiPatches` before re-running `./gradlew applyPatches`.
-   * The API patches are applied first, so if there are conflicts in the API patches, the server patches will not be applied.
-1. If your PR creates new patches instead of modifying existing ones, in both the `Paper-Server` and `Paper-API` directories, ensure your newly-created patch is the last commit by either:
+1. If your PR creates new feature patches instead of modifying existing ones, ensure your newly-created patch is the last commit by either:
     * Renaming the patch file with a large 4-digit number in front (e.g. 9999-Patch-to-add-some-new-stuff.patch), and re-applying patches.
     * Running `git rebase --interactive base` and moving the commits to the end.
 1. Rebuild patches: `./gradlew rebuildPatches`.
@@ -207,8 +211,7 @@ when making and submitting changes.
 
 ## Formatting
 
-All modifications to non-Paper files should be marked. The one exception to this is
-when modifying javadoc comments, which should not have these markers.
+All modifications to Vanilla files should be marked.
 
 - You need to add a comment with a short and identifiable description of the patch:
   `// Paper start - <COMMIT DESCRIPTION>`
@@ -246,10 +249,19 @@ The only exception to this is if a line would otherwise be way too long/filled w
 hard to parse generics in a case where the base type itself is already obvious
 
 ### Imports
-When adding new imports to a class in a file not created by the current patch, use the fully qualified class name
+When adding new imports to a Vanilla class (or if you're editing feature patches), use the fully qualified class name
 instead of adding a new import to the top of the file. If you are using a type a significant number of times, you
 can add an import with a comment. However, if its only used a couple of times, the FQN is preferred to prevent future
 patch conflicts in the import section of the file.
+
+```java
+import net.minecraft.server.MinecraftServer;
+// don't add import here, use FQN like below
+
+public class SomeVanillaClass {
+    public final org.bukkit.Location newLocation; // Paper - add location
+}
+```
 
 ### Nullability annotations
 
@@ -262,17 +274,8 @@ are assumed to be non-null by default. For less obvious placing such as on gener
 **For classes added by upstream**: Keep using both `@Nullable` and `@NotNull` from `org.jetbrains.annotations`. These
 will be replaced later.
 
-```java
-import org.bukkit.event.Event;
-// don't add import here, use FQN like below
-
-public class SomeEvent extends Event {
-    public final org.bukkit.Location newLocation; // Paper - add location
-}
-```
-
 ## Access Transformers
-Sometimes, vanilla or CraftBukkit code already contains a field, method, or type you want to access
+Sometimes, Vanilla code already contains a field, method, or type you want to access
 but the visibility is too low (e.g. a private field in an entity class). Paper can use access transformers
 to change the visibility or remove the final modifier from fields, methods, and classes. Inside the `build-data/paper.at`
 file, you can add ATs that are applied when you `./gradlew applyPatches`. You can read about the format of ATs 
@@ -304,7 +307,7 @@ diff --git a/build.gradle.kts b/build.gradle.kts
 
 ## Patch Notes
 
-When submitting patches to Paper, we may ask you to add notes to the patch
+When submitting feature patches to Paper, we may ask you to add notes to the patch
 header. While we do not require it for all changes, you should add patch notes
 when the changes you're making are technical, complex, or require an explanation
 of some kind. It is very likely that your patch will remain long after we've all
@@ -315,8 +318,8 @@ These notes should express the intent of your patch, as well as any pertinent
 technical details we should keep in mind long-term. Ultimately, they exist to
 make it easier for us to maintain the patch across major version changes.
 
-If you add a message to your commit in the `Paper-Server`/`Paper-API`
-directories, the rebuild patches script will handle these patch notes
+If you add a message to your commit in the Vanilla source directory,
+the rebuild patches script will handle these patch notes
 automatically as part of generating the patch file. If you are not
 extremely careful, you should always just `squash` or `amend` a patch (see the
 above sections on modifying patches) and rebuild.
@@ -455,33 +458,6 @@ If you use Maven to build your plugin:
 
 ## Frequently Asked Questions
 
-### I can't find the NMS file I need!
-
-By default, Paper (and upstream) only import files we make changes to. If you
-would like to make changes to a file that isn't present in `Paper-Server`'s
-source directory, you just need to add it to our import script ran during the
-patching process.
-
-1. Save (rebuild) any patches you are in the middle of working on! Their
-progress will be lost if you do not;
-1. Identify the name(s) of the file(s) you want to import.
-   - A complete list of all possible file names can be found at
-   `./Paper-Server/.gradle/caches/paperweight/mc-dev-sources/net/minecraft/`. You might find
-   [MappingViewer] useful if you need to translate between Mojang and Spigot mapped names.
-1. Open the file at `./build-data/dev-imports.txt` and add the name of your file to
-the script. Follow the instructions there;
-1. Re-patch the server `./gradlew applyPatches`;
-1. Edit away!
-
-> ❗ This change is temporary! **DO NOT COMMIT CHANGES TO THIS FILE!**  
-> Once you have made your changes to the new file, and rebuilt patches, you may
-> undo your changes to `dev-imports.txt`.
-
-Any file modified in a patch file gets automatically imported, so you only need
-this temporarily to import it to create the first patch.
-
-To undo your changes to the file, type `git checkout build-data/dev-imports.txt`.
-
 ### My commit doesn't need a build, what do I do?
 
 Well, quite simple: You add `[ci skip]` to the start of your commit subject.
@@ -512,5 +488,3 @@ everything like usual.
 > ❗ Do not use the `/mnt/` directory in WSL! Instead, mount the WSL directories
 > in Windows like described here:
 > <https://docs.microsoft.com/en-us/windows/wsl/filesystems#view-your-current-directory-in-windows-file-explorer>
-
-[MappingViewer]: https://mappings.cephx.dev/
