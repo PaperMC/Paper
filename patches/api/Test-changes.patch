@@ -223,6 +223,25 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      private static void collectClasses(@NotNull File from, @NotNull Map<String, ClassNode> to) throws IOException {
+         if (from.isDirectory()) {
++            // Paper start - skip packages with @NullMarked
++            final File packageInfo = new File(from, "package-info.class");
++            if (packageInfo.exists()) {
++                try (final FileInputStream in = new FileInputStream(packageInfo)) {
++                    final ClassReader cr = new ClassReader(in);
++
++                    final ClassNode node = new ClassNode();
++                    cr.accept(node, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
++
++                    if (isClassNullMarked0(node)) {
++                        return; // skip packages with @NullMarked
++                    }
++                }
++            }
++            // Paper end - skip packages with @NullMarked
+             final File[] files = from.listFiles();
+             assert files != null;
+ 
 @@ -0,0 +0,0 @@ public class AnnotationTest {
          }
      }

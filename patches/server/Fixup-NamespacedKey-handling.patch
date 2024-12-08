@@ -31,6 +31,9 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    public static <T extends org.bukkit.Keyed, M> java.util.Optional<T> unwrapAndConvertHolder(final Registry<T> registry, final Holder<M> value) {
++        if (registry instanceof CraftRegistry<?,?> craftRegistry && craftRegistry.supportsDirectHolders() && value.kind() == Holder.Kind.DIRECT) {
++            return java.util.Optional.of(((CraftRegistry<T, M>) registry).convertDirectHolder(value));
++        }
 +        return value.unwrapKey().map(key -> registry.get(CraftNamespacedKey.fromMinecraft(key.location())));
 +    }
 +    // Paper end - fixup upstream being dum
@@ -80,22 +83,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      @Override
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
-@@ -0,0 +0,0 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
-         super(tag);
- 
-         getOrEmpty(tag, CraftMetaArmor.TRIM).ifPresent((trimCompound) -> {
--            TrimMaterial trimMaterial = CraftTrimMaterial.minecraftHolderToBukkit(trimCompound.material());
--            TrimPattern trimPattern = CraftTrimPattern.minecraftHolderToBukkit(trimCompound.pattern());
-+            TrimMaterial trimMaterial = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(io.papermc.paper.registry.RegistryKey.TRIM_MATERIAL, trimCompound.material()).orElse(null); // Paper - fix upstream not being correct
-+            TrimPattern trimPattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(io.papermc.paper.registry.RegistryKey.TRIM_PATTERN, trimCompound.pattern()).orElse(null); // Paper - fix upstream not being correct
-+            if (trimMaterial == null || trimPattern == null) return; // Paper - just delete the trim because upstream is not doing this right
- 
-             this.trim = new ArmorTrim(trimMaterial, trimPattern);
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
@@ -109,19 +96,6 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
                  if (color != null && pattern != null) {
                      this.patterns.add(new Pattern(color, pattern));
-diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
-+++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
-@@ -0,0 +0,0 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
-         super(tag);
- 
-         getOrEmpty(tag, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((instrument) -> {
--            this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(instrument);
-+            this.instrument = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.INSTRUMENT, instrument).orElse(null); // Paper - fix upstream not handling inlined instrument
-         });
-     }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
 index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
