@@ -1,12 +1,13 @@
-import io.papermc.paperweight.PaperweightException
-import io.papermc.paperweight.tasks.BaseTask
 import io.papermc.paperweight.util.*
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import java.io.ByteArrayOutputStream
-import java.nio.file.Path
-import java.util.regex.Pattern
+import java.io.IOException
+import java.net.URI
+import java.nio.file.FileVisitResult
+import java.nio.file.Files
+import java.nio.file.SimpleFileVisitor
 import kotlin.io.path.*
+import java.nio.file.Path
 
 plugins {
     id("io.papermc.paperweight.core") version "2.0.0-SNAPSHOT" apply false
@@ -78,6 +79,61 @@ tasks.register("printMinecraftVersion") {
 tasks.register("printPaperVersion") {
     doLast {
         println(project.version)
+    }
+}
+
+tasks.register("gibWork") {
+    @OptIn(ExperimentalPathApi::class)
+    doLast {
+        val issue = providers.gradleProperty("updateTaskListIssue").get()
+        val html = URI(issue).toURL().readText()
+
+        val beginMarker = "```[tasklist]"
+        val start = html.indexOf(beginMarker)
+        val end = html.indexOf("```", start + beginMarker.length)
+        val taskList = html.substring(start + beginMarker.length, end)
+
+        val next = taskList.split("\\n").first { it.startsWith("- [ ]") }.replace("- [ ] ", "")
+
+        println("checking out $next...")
+        val dir = layout.projectDirectory.dir("paper-server/patches/unapplied/").convertToPath().resolve(next)
+        dir.copyToRecursively(
+            layout.projectDirectory.dir("paper-server/patches/sources").convertToPath().resolve(next)
+                .also { it.createDirectories() }, overwrite = true, followLinks = false
+        )
+        dir.deleteRecursively()
+
+        println("please tick the box in the issue: $issue")
+        println("if you don't finish it, uncheck the task again after you commited")
+    }
+}
+
+tasks.register("showWork") {
+    doLast {
+        val parent = layout.projectDirectory.dir("paper-server/patches/unapplied/").convertToPath()
+        Files.walkFileTree(parent, object : SimpleFileVisitor<Path>() {
+            override fun postVisitDirectory(dir: Path?, exc: IOException?): FileVisitResult {
+                dir?.takeIf { it.listDirectoryEntries("*.patch").isNotEmpty() }?.let {
+                    println("- [ ] ${parent.relativize(it).pathString.replace("\\", "/")}")
+                }
+                return FileVisitResult.CONTINUE
+            }
+        })
+    }
+}
+
+tasks.register("checkWork") {
+    doLast {
+        val input = project.findProperty("input") as String?
+            ?: error("Input property is required. Use gradlew checkWork -Pinput=net/minecraft/server/MinecraftServer.java")
+        val file = layout.projectDirectory.file("paper-server/src/vanilla/java/").convertToPath().resolve(input)
+        val target = Path.of(providers.gradleProperty("cleanPaperRepo").get()).resolve(input)
+        file.copyTo(target, overwrite = true)
+        println("Copied $file to $target")
+        println("Make it compile, then press enter to copy it back!")
+        System.`in`.read()
+        target.copyTo(file, overwrite = true)
+        println("copied back!")
     }
 }
 
