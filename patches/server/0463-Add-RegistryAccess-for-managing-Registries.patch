@@ -459,7 +459,7 @@ index 0000000000000000000000000000000000000000..ceb217dbbb84e8bd51365dd47bf91971
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fbc80d89dbbac9b776f970813b04f6384a685f6e
+index 0000000000000000000000000000000000000000..d8b28e823adb98061dd126a79df2fdf75c3f374d
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
 @@ -0,0 +1,51 @@
@@ -484,14 +484,14 @@ index 0000000000000000000000000000000000000000..fbc80d89dbbac9b776f970813b04f638
 +    private static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> EMPTY = (namespacedKey, apiVersion) -> namespacedKey;
 +
 +    protected final Class<?> classToPreload;
-+    protected final Either<BiFunction<? super NamespacedKey, M, ? extends B>, Function<Holder<M>, ? extends B>> minecraftToBukkit;
++    protected final RegistryTypeMapper<M, B> minecraftToBukkit;
 +    protected BiFunction<NamespacedKey, ApiVersion, NamespacedKey> updater = EMPTY;
 +
 +    protected CraftRegistryEntry(
 +        final ResourceKey<? extends Registry<M>> mcKey,
 +        final RegistryKey<B> apiKey,
 +        final Class<?> classToPreload,
-+        final Either<BiFunction<? super NamespacedKey, M, ? extends B>, Function<Holder<M>, ? extends B>> minecraftToBukkit
++        final RegistryTypeMapper<M, B> minecraftToBukkit
 +    ) {
 +        super(mcKey, apiKey);
 +        Preconditions.checkArgument(!classToPreload.getPackageName().startsWith("net.minecraft"), classToPreload + " should not be in the net.minecraft package as the class-to-preload");
@@ -551,7 +551,7 @@ index 0000000000000000000000000000000000000000..f0a81a8b88d31139390e952a0eb8a526
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/RegistryEntryBuilder.java b/src/main/java/io/papermc/paper/registry/entry/RegistryEntryBuilder.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c3d783e1a037c0797995713728ff43b2838f6591
+index 0000000000000000000000000000000000000000..6d8f08d6113c82cbe4207d4b69fce32a68d79620
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/RegistryEntryBuilder.java
 @@ -0,0 +1,63 @@
@@ -590,23 +590,23 @@ index 0000000000000000000000000000000000000000..c3d783e1a037c0797995713728ff43b2
 +    }
 +
 +    public CraftStage<M, A> craft(final Class<?> classToPreload, final BiFunction<? super NamespacedKey, M, ? extends A> minecraftToBukkit) {
-+        return new CraftStage<>(this.mcKey, this.apiKey, classToPreload, Either.left(minecraftToBukkit));
++        return new CraftStage<>(this.mcKey, this.apiKey, classToPreload, new RegistryTypeMapper<>(minecraftToBukkit));
 +    }
 +
 +    public CraftStage<M, A> craft(final Class<?> classToPreload, final Function<Holder<M>, ? extends A> minecraftToBukkit) {
-+        return new CraftStage<>(this.mcKey, this.apiKey, classToPreload, Either.right(minecraftToBukkit));
++        return new CraftStage<>(this.mcKey, this.apiKey, classToPreload, new RegistryTypeMapper<>(minecraftToBukkit));
 +    }
 +
 +    public static final class CraftStage<M, A extends Keyed> extends RegistryEntryBuilder<M, A> { // TODO remove Keyed
 +
 +        private final Class<?> classToPreload;
-+        private final Either<BiFunction<? super NamespacedKey, M, ? extends A>, Function<Holder<M>, ? extends A>> minecraftToBukkit;
++        private final RegistryTypeMapper<M, A> minecraftToBukkit;
 +
 +        private CraftStage(
 +            final ResourceKey<? extends Registry<M>> mcKey,
 +            final RegistryKey<A> apiKey,
 +            final Class<?> classToPreload,
-+            final Either<BiFunction<? super NamespacedKey, M, ? extends A>, Function<Holder<M>, ? extends A>> minecraftToBukkit
++            final RegistryTypeMapper<M, A> minecraftToBukkit
 +        ) {
 +            super(mcKey, apiKey);
 +            this.classToPreload = classToPreload;
@@ -635,6 +635,49 @@ index 0000000000000000000000000000000000000000..0ae855e80fc9fddfc1feb33c7a974820
 +    ResourceKey<? extends Registry<M>> mcKey();
 +
 +    RegistryKey<B> apiKey();
++}
+diff --git a/src/main/java/io/papermc/paper/registry/entry/RegistryTypeMapper.java b/src/main/java/io/papermc/paper/registry/entry/RegistryTypeMapper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c950524f7928c03fb8e4f89521f98ad38e6bd892
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/entry/RegistryTypeMapper.java
+@@ -0,0 +1,37 @@
++package io.papermc.paper.registry.entry;
++
++import com.google.common.base.Preconditions;
++import com.mojang.datafixers.util.Either;
++import java.util.function.BiFunction;
++import java.util.function.Function;
++import net.minecraft.core.Holder;
++import org.bukkit.NamespacedKey;
++
++public final class RegistryTypeMapper<M, A> {
++
++    final Either<BiFunction<? super NamespacedKey, M, ? extends A>, Function<Holder<M>, ? extends A>> minecraftToBukkit;
++
++    public RegistryTypeMapper(final BiFunction<? super NamespacedKey, M, ? extends A> byValueCreator) {
++        this.minecraftToBukkit = Either.left(byValueCreator);
++    }
++
++    public RegistryTypeMapper(final Function<Holder<M>, ? extends A> byHolderCreator) {
++        this.minecraftToBukkit = Either.right(byHolderCreator);
++    }
++
++    public A createBukkit(final NamespacedKey key, final Holder<M> minecraft) {
++        return this.minecraftToBukkit.map(
++            minecraftToBukkit -> minecraftToBukkit.apply(key, minecraft.value()),
++            minecraftToBukkit -> minecraftToBukkit.apply(minecraft)
++        );
++    }
++
++    public boolean supportsDirectHolders() {
++        return this.minecraftToBukkit.right().isPresent();
++    }
++
++    public A convertDirectHolder(final Holder<M> directHolder) {
++        Preconditions.checkArgument(this.supportsDirectHolders() && directHolder.kind() == Holder.Kind.DIRECT);
++        return this.minecraftToBukkit.right().orElseThrow().apply(directHolder);
++    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/package-info.java b/src/main/java/io/papermc/paper/registry/entry/package-info.java
 new file mode 100644
@@ -857,33 +900,25 @@ index 257cfce009fb6fcd24d1fddfd8001e9b2a8ae1ae..185752185549ebd5f431932b63d8e5fe
              SimpleJsonResourceReloadListener.scanDirectory(resourceManager, type.registryKey(), ops, type.codec(), map);
              map.forEach((id, value) -> writableRegistry.register(ResourceKey.create(type.registryKey(), id), (T)value, DEFAULT_REGISTRATION_INFO));
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftParticle.java b/src/main/java/org/bukkit/craftbukkit/CraftParticle.java
-index 0be9c773a636b6d19668a3509baa7f37d60eb3b7..508129cd23e89b65d1e2764f495a60bb4a8bd575 100644
+index 73d8814ee2424a8336a09536f9ea8f5cf23ef85a..f9e33ec8ba7adaf729fecabc093aece201accf8f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftParticle.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftParticle.java
-@@ -216,18 +216,18 @@ public abstract class CraftParticle<D> implements Keyed {
+@@ -216,11 +216,10 @@ public abstract class CraftParticle<D> implements Keyed {
          }
  
          public CraftParticleRegistry(net.minecraft.core.Registry<net.minecraft.core.particles.ParticleType<?>> minecraftRegistry) {
 -            super(CraftParticle.class, minecraftRegistry, null, FieldRename.PARTICLE_TYPE_RENAME);
-+            super(CraftParticle.class, minecraftRegistry, (com.mojang.datafixers.util.Either<java.util.function.BiFunction<? super org.bukkit.NamespacedKey,net.minecraft.core.particles.ParticleType<?>,? extends CraftParticle<?>>, java.util.function.Function<net.minecraft.core.Holder<net.minecraft.core.particles.ParticleType<?>>,? extends CraftParticle<?>>>) null, FieldRename.PARTICLE_TYPE_RENAME); // Paper - switch to Holder
++            super(CraftParticle.class, minecraftRegistry, CraftParticleRegistry::createBukkit, FieldRename.PARTICLE_TYPE_RENAME); // Paper - switch to Holder
          }
  
-         @Override
+-        @Override
 -        public CraftParticle<?> createBukkit(NamespacedKey namespacedKey, net.minecraft.core.particles.ParticleType<?> particle) {
-+        public CraftParticle<?> createBukkit(NamespacedKey namespacedKey, net.minecraft.core.Holder<net.minecraft.core.particles.ParticleType<?>> particle) { // Paper - switch to Holder
++        public static CraftParticle<?> createBukkit(NamespacedKey namespacedKey, net.minecraft.core.particles.ParticleType<?> particle) { // Paper - idk why this is a separate implementation, just wrap the function
              if (particle == null) {
                  return null;
              }
- 
-             BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> function = CraftParticleRegistry.PARTICLE_MAP.getOrDefault(namespacedKey, CraftParticleRegistry.VOID_FUNCTION);
- 
--            return function.apply(namespacedKey, particle);
-+            return function.apply(namespacedKey, particle.value()); // Paper - switch to Holder
-         }
-     }
- }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index 0d091c7b328fb70a82f5b5ded7dec61b7cd3d59a..459ad788f4dadb72d0dc519125ba1e7a0d6e2530 100644
+index 0d091c7b328fb70a82f5b5ded7dec61b7cd3d59a..7df1ce34c60ce14beb6acf8135a587e7b4e959b1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 @@ -93,13 +93,40 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
@@ -1051,16 +1086,16 @@ index 0d091c7b328fb70a82f5b5ded7dec61b7cd3d59a..459ad788f4dadb72d0dc519125ba1e7a
      private final net.minecraft.core.Registry<M> minecraftRegistry;
 -    private final BiFunction<NamespacedKey, M, B> minecraftToBukkit;
 -    private final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> updater;
-+    private final com.mojang.datafixers.util.Either<BiFunction<? super NamespacedKey, M, ? extends B>,java.util.function.Function<Holder<M>, ? extends B>> minecraftToBukkit; // Paper - switch to Holder
++    private final io.papermc.paper.registry.entry.RegistryTypeMapper<M, B> minecraftToBukkit; // Paper - switch to Holder
 +    private final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater; // Paper - rename to make it *clear* what it is *only* for
      private boolean init;
  
 -    public CraftRegistry(Class<? super B> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, BiFunction<NamespacedKey, M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> updater) {
 +    public CraftRegistry(Class<?> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, BiFunction<? super NamespacedKey, M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater) { // Paper - relax preload class
 +        // Paper start - switch to Holder
-+        this(bukkitClass, minecraftRegistry, com.mojang.datafixers.util.Either.left(minecraftToBukkit), serializationUpdater);
++        this(bukkitClass, minecraftRegistry, new io.papermc.paper.registry.entry.RegistryTypeMapper<>(minecraftToBukkit), serializationUpdater);
 +    }
-+    public CraftRegistry(Class<?> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, com.mojang.datafixers.util.Either<BiFunction<? super NamespacedKey, M, ? extends B>, java.util.function.Function<Holder<M>, ? extends B>> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater) { // Paper - relax preload class
++    public CraftRegistry(Class<?> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, io.papermc.paper.registry.entry.RegistryTypeMapper<M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater) { // Paper - relax preload class
 +        // Paper end - support Holders
          this.bukkitClass = bukkitClass;
          this.minecraftRegistry = minecraftRegistry;
@@ -1085,7 +1120,7 @@ index 0d091c7b328fb70a82f5b5ded7dec61b7cd3d59a..459ad788f4dadb72d0dc519125ba1e7a
          if (bukkit == null) {
              return null;
          }
-@@ -311,11 +262,27 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+@@ -311,11 +262,21 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
          return this.stream().iterator();
      }
  
@@ -1096,22 +1131,16 @@ index 0d091c7b328fb70a82f5b5ded7dec61b7cd3d59a..459ad788f4dadb72d0dc519125ba1e7a
          }
  
 -        return this.minecraftToBukkit.apply(namespacedKey, minecraft);
-+        // Paper start - switch to Holder
-+        return this.minecraftToBukkit.map(
-+            minecraftToBukkit -> minecraftToBukkit.apply(namespacedKey, minecraft.value()),
-+            minecraftToBukkit -> minecraftToBukkit.apply(minecraft)
-+        );
-+        // Paper end - switch to Holder
++        return this.minecraftToBukkit.createBukkit(namespacedKey, minecraft); // Paper - switch to Holder
 +    }
 +
 +    // Paper start - support Direct Holders
 +    public boolean supportsDirectHolders() {
-+        return this.minecraftToBukkit.right().isPresent();
++        return this.minecraftToBukkit.supportsDirectHolders();
 +    }
 +
 +    public B convertDirectHolder(Holder<M> holder) {
-+        Preconditions.checkArgument( this.supportsDirectHolders() && holder.kind() == Holder.Kind.DIRECT);
-+        return this.minecraftToBukkit.right().orElseThrow().apply(holder);
++        return this.minecraftToBukkit.convertDirectHolder(holder);
      }
 +    // Paper end - support Direct Holders
  }

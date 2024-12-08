@@ -5,15 +5,14 @@ Subject: [PATCH] Switch Impl types to Holderable
 
 
 diff --git a/src/main/java/io/papermc/paper/util/Holderable.java b/src/main/java/io/papermc/paper/util/Holderable.java
-index 404ab0df12bc8182520c77328017c128d22993eb..1aabc85bcba3f486645d5bd7011f3f398b120d18 100644
+index 404ab0df12bc8182520c77328017c128d22993eb..3401d0073f1a98360495c1e73ae2de0146601604 100644
 --- a/src/main/java/io/papermc/paper/util/Holderable.java
 +++ b/src/main/java/io/papermc/paper/util/Holderable.java
-@@ -1,8 +1,22 @@
+@@ -1,8 +1,21 @@
  package io.papermc.paper.util;
  
 +import com.google.gson.JsonElement;
-+import com.google.gson.JsonParser;
-+import com.google.gson.JsonSyntaxException;
++import com.google.gson.JsonObject;
 +import com.mojang.serialization.Codec;
 +import com.mojang.serialization.JsonOps;
 +import net.kyori.adventure.key.Key;
@@ -31,32 +30,40 @@ index 404ab0df12bc8182520c77328017c128d22993eb..1aabc85bcba3f486645d5bd7011f3f39
  public interface Holderable<M> extends Handleable<M> {
  
      Holder<M> getHolder();
-@@ -11,4 +25,43 @@ public interface Holderable<M> extends Handleable<M> {
+@@ -11,4 +24,55 @@ public interface Holderable<M> extends Handleable<M> {
      default M getHandle() {
          return this.getHolder().value();
      }
 +
-+    @SuppressWarnings({"unchecked", "rawtypes"})
-+    static <T extends Keyed, M> @Nullable T fromBukkitSerializationString(@Subst("test:key") String string, Codec<? extends Holder<M>> codec, Registry<T> registry) {
-+        if (registry instanceof final CraftRegistry craftRegistryRaw && craftRegistryRaw.supportsDirectHolders()) {
-+            try {
-+                JsonElement element = JsonParser.parseString(string);
-+                final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
-+                Holder<M> holder = codec.decode(ops, element).getOrThrow().getFirst();
-+                return ((CraftRegistry<T, M>) craftRegistryRaw).convertDirectHolder(holder);
-+            } catch (JsonSyntaxException ex) {
-+                // ignore, try to parse as a key
++    static <T extends Keyed, M> @Nullable T fromBukkitSerializationObject(final Object deserialized, final Codec<? extends Holder<M>> codec, final Registry<T> registry) { // TODO remove Keyed
++        return switch (deserialized) {
++            case @Subst("key:value") final String string -> {
++                if (!(Key.parseable(string))) {
++                    yield null;
++                }
++                yield registry.get(Key.key(string));
 +            }
-+        }
-+        if (!Key.parseable(string)) {
-+            return null;
-+        }
-+        return registry.get(Key.key(string));
++            case JsonObjectWrapper(final JsonObject element) -> {
++                if (!(registry instanceof final CraftRegistry<?, ?> craftRegistry) || !craftRegistry.supportsDirectHolders()) {
++                    throw new IllegalArgumentException("Cannot deserialize direct holders for " + registry);
++                }
++                final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
++                final Holder<M> holder = codec.decode(ops, element).getOrThrow().getFirst();
++                yield ((CraftRegistry<T, M>) registry).convertDirectHolder(holder);
++            }
++            default -> throw new IllegalArgumentException("Cannot deserialize " + deserialized);
++        };
 +    }
 +
-+    default String toBukkitSerializationString(Codec<? super Holder<M>> codec) {
-+        final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
-+        return codec.encodeStart(ops, this.getHolder()).getOrThrow().getAsString();
++    default Object toBukkitSerializationObject(final Codec<? super Holder<M>> codec) {
++        return switch (this.getHolder()) {
++            case final Holder.Direct<M> direct -> {
++                final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
++                yield new JsonObjectWrapper(codec.encodeStart(ops, direct).getOrThrow().getAsJsonObject());
++            }
++            case final Holder.Reference<M> reference -> reference.key().location().toString();
++            default -> throw new IllegalArgumentException("Cannot serialize " + this.getHolder());
++        };
 +    }
 +
 +    /**
@@ -69,14 +76,58 @@ index 404ab0df12bc8182520c77328017c128d22993eb..1aabc85bcba3f486645d5bd7011f3f39
 +    /**
 +     * All implementations should use this as their equals implementation
 +     */
-+    default boolean implEquals(final Object o) {
++    default boolean implEquals(final @Nullable Object o) {
 +        if (o == null || this.getClass() != o.getClass()) return false;
 +        final Holderable<?> that = (Holderable<?>) o;
 +        return this.getHolder().equals(that.getHolder());
 +    }
++
++    default String implToString() {
++        return "%s{holder=%s}".formatted(this.getClass().getSimpleName(), this.getHolder().toString());
++    }
  }
+diff --git a/src/main/java/io/papermc/paper/util/JsonObjectWrapper.java b/src/main/java/io/papermc/paper/util/JsonObjectWrapper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4522eb172b2894a950b2a32ac5af602991daa2e9
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/JsonObjectWrapper.java
+@@ -0,0 +1,34 @@
++package io.papermc.paper.util;
++
++import com.google.gson.Gson;
++import com.google.gson.JsonElement;
++import com.google.gson.JsonObject;
++import com.google.gson.JsonParser;
++import java.util.Map;
++import org.bukkit.configuration.serialization.ConfigurationSerializable;
++import org.bukkit.configuration.serialization.ConfigurationSerialization;
++import org.jspecify.annotations.NullMarked;
++
++@NullMarked
++public record JsonObjectWrapper(JsonObject element) implements ConfigurationSerializable {
++
++    private static final String KEY = "value";
++    private static final Gson GSON = new Gson();
++
++    static {
++        ConfigurationSerialization.registerClass(JsonObjectWrapper.class);
++    }
++
++    public JsonObjectWrapper(final JsonElement element) {
++        this(element.getAsJsonObject());
++    }
++
++    public JsonObjectWrapper(final Map<String, Object> input) {
++        this(JsonParser.parseString((String) input.get(KEY)).getAsJsonObject());
++    }
++
++    @Override
++    public Map<String, Object> serialize() {
++        return Map.of(KEY, GSON.toJson(this.element));
++    }
++}
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/CraftMusicInstrument.java
-index 2838ef9d89ec8d7bd8981eff4a2ffe2c11ee9271..d4df11c3f4eadfb5635b4a5c2461955c7a48df19 100644
+index 2838ef9d89ec8d7bd8981eff4a2ffe2c11ee9271..aa19ac75135893b81000d1bd63795457a777e9eb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftMusicInstrument.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftMusicInstrument.java
 @@ -10,14 +10,14 @@ import org.bukkit.Registry;
@@ -96,7 +147,7 @@ index 2838ef9d89ec8d7bd8981eff4a2ffe2c11ee9271..d4df11c3f4eadfb5635b4a5c2461955c
      }
  
      public static Instrument bukkitToMinecraft(MusicInstrument bukkit) {
-@@ -25,41 +25,46 @@ public class CraftMusicInstrument extends MusicInstrument implements Handleable<
+@@ -25,41 +25,51 @@ public class CraftMusicInstrument extends MusicInstrument implements Handleable<
      }
  
      public static Holder<Instrument> bukkitToMinecraftHolder(MusicInstrument bukkit) {
@@ -113,18 +164,20 @@ index 2838ef9d89ec8d7bd8981eff4a2ffe2c11ee9271..d4df11c3f4eadfb5635b4a5c2461955c
 +        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.INSTRUMENT); // Paper - switch to Holder
      }
  
-     public static String bukkitToString(MusicInstrument bukkit) {
+-    public static String bukkitToString(MusicInstrument bukkit) {
++    public static Object bukkitToString(MusicInstrument bukkit) { // Paper - switch to Holder
          Preconditions.checkArgument(bukkit != null);
  
 -        return bukkit.getKey().toString();
-+        return ((CraftMusicInstrument) bukkit).toBukkitSerializationString(Instrument.CODEC); // Paper - switch to Holder
++        return ((CraftMusicInstrument) bukkit).toBukkitSerializationObject(Instrument.CODEC); // Paper - switch to Holder
      }
  
-     public static MusicInstrument stringToBukkit(String string) {
+-    public static MusicInstrument stringToBukkit(String string) {
++    public static MusicInstrument stringToBukkit(Object string) { // Paper - switch to Holder
          Preconditions.checkArgument(string != null);
  
 -        return Registry.INSTRUMENT.get(NamespacedKey.fromString(string));
-+        return io.papermc.paper.util.Holderable.fromBukkitSerializationString(string, Instrument.CODEC, Registry.INSTRUMENT); // Paper - switch to Holder
++        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(string, Instrument.CODEC, Registry.INSTRUMENT); // Paper - switch to Holder
      }
  
      private final NamespacedKey key;
@@ -144,6 +197,11 @@ index 2838ef9d89ec8d7bd8981eff4a2ffe2c11ee9271..d4df11c3f4eadfb5635b4a5c2461955c
 +        return this.implHashCode();
 +    }
 +
++    @Override
++    public String toString() {
++        return this.implToString();
++    }
++
 +    private final Holder<Instrument> holder;
 +    public CraftMusicInstrument(Holder<Instrument> holder) {
 +        this.holder = holder;
@@ -160,7 +218,7 @@ index 2838ef9d89ec8d7bd8981eff4a2ffe2c11ee9271..d4df11c3f4eadfb5635b4a5c2461955c
      }
  
      @NotNull
-@@ -79,26 +84,10 @@ public class CraftMusicInstrument extends MusicInstrument implements Handleable<
+@@ -79,26 +89,5 @@ public class CraftMusicInstrument extends MusicInstrument implements Handleable<
      }
      // Paper end - add translationKey methods
  
@@ -181,20 +239,25 @@ index 2838ef9d89ec8d7bd8981eff4a2ffe2c11ee9271..d4df11c3f4eadfb5635b4a5c2461955c
 -    public int hashCode() {
 -        return this.getKey().hashCode();
 -    }
-+    // Paper - switch to Holder
- 
-     @Override
-     public String toString() {
+-
+-    @Override
+-    public String toString() {
 -        return "CraftMusicInstrument{key=" + this.key + "}";
-+        return "CraftMusicInstrument{key=" + this.holder + "}"; // Paper
-     }
+-    }
++    // Paper - switch to Holder
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
-index 6532bdaf6cbd10ecc5ace1b89899ad82e7bca206..5a12073e158a8b96d6192fdf8b2921e58e2c5522 100644
+index 6532bdaf6cbd10ecc5ace1b89899ad82e7bca206..8f2276fcd20d2ececbda3ad1460e78aeed914707 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
-@@ -58,17 +58,13 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
-             String patternKeyString = SerializableMeta.getString(trimData, CraftMetaArmor.TRIM_PATTERN.BUKKIT, true);
+@@ -54,21 +54,17 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
+ 
+         Map<?, ?> trimData = SerializableMeta.getObject(Map.class, map, CraftMetaArmor.TRIM.BUKKIT, true);
+         if (trimData != null) {
+-            String materialKeyString = SerializableMeta.getString(trimData, CraftMetaArmor.TRIM_MATERIAL.BUKKIT, true);
+-            String patternKeyString = SerializableMeta.getString(trimData, CraftMetaArmor.TRIM_PATTERN.BUKKIT, true);
++            Object materialKeyString = SerializableMeta.getObject(Object.class, trimData, CraftMetaArmor.TRIM_MATERIAL.BUKKIT, true); // Paper - switch to Holder
++            Object patternKeyString = SerializableMeta.getObject(Object.class, trimData, CraftMetaArmor.TRIM_PATTERN.BUKKIT, true); // Paper - switch to Holder
  
              if (materialKeyString != null && patternKeyString != null) {
 -                NamespacedKey materialKey = NamespacedKey.fromString(materialKeyString);
@@ -208,8 +271,8 @@ index 6532bdaf6cbd10ecc5ace1b89899ad82e7bca206..5a12073e158a8b96d6192fdf8b2921e5
 -                        this.trim = new ArmorTrim(trimMaterial, trimPattern);
 -                    }
 +                // Paper start - switch to Holder
-+                TrimMaterial trimMaterial = CraftTrimMaterial.stringToBukkit(materialKeyString);
-+                TrimPattern trimPattern = CraftTrimPattern.stringToBukkit(patternKeyString);
++                TrimMaterial trimMaterial = CraftTrimMaterial.objectToBukkit(materialKeyString);
++                TrimPattern trimPattern = CraftTrimPattern.objectToBukkit(patternKeyString);
 +                if (trimMaterial != null && trimPattern != null) {
 +                    this.trim = new ArmorTrim(trimMaterial, trimPattern);
                  }
@@ -217,19 +280,34 @@ index 6532bdaf6cbd10ecc5ace1b89899ad82e7bca206..5a12073e158a8b96d6192fdf8b2921e5
              }
          }
      }
-@@ -134,8 +130,8 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
+@@ -133,9 +129,9 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
+         super.serialize(builder);
  
          if (this.hasTrim()) {
-             Map<String, String> trimData = new HashMap<>();
+-            Map<String, String> trimData = new HashMap<>();
 -            trimData.put(CraftMetaArmor.TRIM_MATERIAL.BUKKIT, this.trim.getMaterial().getKey().toString());
 -            trimData.put(CraftMetaArmor.TRIM_PATTERN.BUKKIT, this.trim.getPattern().getKey().toString());
-+            trimData.put(CraftMetaArmor.TRIM_MATERIAL.BUKKIT, CraftTrimMaterial.bukkitToString(this.trim.getMaterial())); // Paper - switch to Holder
-+            trimData.put(CraftMetaArmor.TRIM_PATTERN.BUKKIT, CraftTrimPattern.bukkitToString(this.trim.getPattern())); // Paper - switch to Holder
++            Map<String, Object> trimData = new HashMap<>(); // Paper - switch to Holder
++            trimData.put(CraftMetaArmor.TRIM_MATERIAL.BUKKIT, CraftTrimMaterial.bukkitToObject(this.trim.getMaterial())); // Paper - switch to Holder
++            trimData.put(CraftMetaArmor.TRIM_PATTERN.BUKKIT, CraftTrimPattern.bukkitToObject(this.trim.getPattern())); // Paper - switch to Holder
              builder.put(CraftMetaArmor.TRIM.BUKKIT, trimData);
          }
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
+index a80b9b142ca99c7c0257b1bdeb059dce5f92ae93..9ae6bdc4412c466fb53abb3722e9a9533df6f888 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
+@@ -37,7 +37,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
+     CraftMetaMusicInstrument(Map<String, Object> map) {
+         super(map);
+ 
+-        String instrumentString = SerializableMeta.getString(map, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.BUKKIT, true);
++        Object instrumentString = SerializableMeta.getObject(Object.class, map, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT.BUKKIT, true); // Paper - switch to Holder
+         if (instrumentString != null) {
+             this.instrument = CraftMusicInstrument.stringToBukkit(instrumentString);
+         }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimMaterial.java b/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimMaterial.java
-index 38578ef887227ecc8e8bba281eae17a849b4fbe6..b729ee4fadc78248e2c772c80915f778e1560dd7 100644
+index 38578ef887227ecc8e8bba281eae17a849b4fbe6..afee459c4d2d0945bdc99c2ab46f9dcf6dac8798 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimMaterial.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimMaterial.java
 @@ -11,14 +11,14 @@ import org.bukkit.craftbukkit.util.Handleable;
@@ -249,7 +327,7 @@ index 38578ef887227ecc8e8bba281eae17a849b4fbe6..b729ee4fadc78248e2c772c80915f778
      }
  
      public static net.minecraft.world.item.equipment.trim.TrimMaterial bukkitToMinecraft(TrimMaterial bukkit) {
-@@ -26,29 +26,47 @@ public class CraftTrimMaterial implements TrimMaterial, Handleable<net.minecraft
+@@ -26,29 +26,52 @@ public class CraftTrimMaterial implements TrimMaterial, Handleable<net.minecraft
      }
  
      public static Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> bukkitToMinecraftHolder(TrimMaterial bukkit) {
@@ -262,34 +340,39 @@ index 38578ef887227ecc8e8bba281eae17a849b4fbe6..b729ee4fadc78248e2c772c80915f778
 +    // Paper start - switch to Holder
 +    private final Holder<net.minecraft.world.item.equipment.trim.TrimMaterial> holder;
 +
-+    public static String bukkitToString(TrimMaterial bukkit) {
++    public static Object bukkitToObject(TrimMaterial bukkit) {
          Preconditions.checkArgument(bukkit != null);
  
 -        net.minecraft.core.Registry<net.minecraft.world.item.equipment.trim.TrimMaterial> registry = CraftRegistry.getMinecraftRegistry(Registries.TRIM_MATERIAL);
-+        return ((CraftTrimMaterial) bukkit).toBukkitSerializationString(net.minecraft.world.item.equipment.trim.TrimMaterial.CODEC); // Paper - switch to Holder
++        return ((CraftTrimMaterial) bukkit).toBukkitSerializationObject(net.minecraft.world.item.equipment.trim.TrimMaterial.CODEC); // Paper - switch to Holder
 +    }
-+
-+    public static TrimMaterial stringToBukkit(String string) {
-+        Preconditions.checkArgument(string != null);
  
 -        if (registry.wrapAsHolder(CraftTrimMaterial.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<net.minecraft.world.item.equipment.trim.TrimMaterial> holder) {
 -            return holder;
 -        }
-+        return io.papermc.paper.util.Holderable.fromBukkitSerializationString(string, net.minecraft.world.item.equipment.trim.TrimMaterial.CODEC, Registry.TRIM_MATERIAL); // Paper - switch to Holder
-+    }
++    public static TrimMaterial objectToBukkit(Object object) {
++        Preconditions.checkArgument(object != null);
  
 -        throw new IllegalArgumentException("No Reference holder found for " + bukkit
 -                + ", this can happen if a plugin creates its own trim material without properly registering it.");
-+    @Override
-+    public boolean equals(final Object o) {
-+        return this.implEquals(o);
++        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(object, net.minecraft.world.item.equipment.trim.TrimMaterial.CODEC, Registry.TRIM_MATERIAL); // Paper - switch to Holder
      }
  
 -    private final NamespacedKey key;
 -    private final net.minecraft.world.item.equipment.trim.TrimMaterial handle;
 +    @Override
++    public boolean equals(final Object o) {
++        return this.implEquals(o);
++    }
++
++    @Override
 +    public int hashCode() {
 +        return this.implHashCode();
++    }
++
++    @Override
++    public String toString() {
++        return this.implToString();
 +    }
  
 -    public CraftTrimMaterial(NamespacedKey key, net.minecraft.world.item.equipment.trim.TrimMaterial handle) {
@@ -311,7 +394,7 @@ index 38578ef887227ecc8e8bba281eae17a849b4fbe6..b729ee4fadc78248e2c772c80915f778
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimPattern.java b/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimPattern.java
-index 36df80a8be8a2485823f699e45c99674dbe71507..c4be5c785e50be925171c8083774b736d99361b2 100644
+index 36df80a8be8a2485823f699e45c99674dbe71507..da951bd7e470d8b2bc69eea9b66815fa4fa445aa 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimPattern.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/trim/CraftTrimPattern.java
 @@ -11,14 +11,14 @@ import org.bukkit.craftbukkit.util.Handleable;
@@ -331,7 +414,7 @@ index 36df80a8be8a2485823f699e45c99674dbe71507..c4be5c785e50be925171c8083774b736
      }
  
      public static net.minecraft.world.item.equipment.trim.TrimPattern bukkitToMinecraft(TrimPattern bukkit) {
-@@ -26,29 +26,47 @@ public class CraftTrimPattern implements TrimPattern, Handleable<net.minecraft.w
+@@ -26,29 +26,52 @@ public class CraftTrimPattern implements TrimPattern, Handleable<net.minecraft.w
      }
  
      public static Holder<net.minecraft.world.item.equipment.trim.TrimPattern> bukkitToMinecraftHolder(TrimPattern bukkit) {
@@ -344,34 +427,39 @@ index 36df80a8be8a2485823f699e45c99674dbe71507..c4be5c785e50be925171c8083774b736
 +    // Paper start - switch to Holder
 +    private final Holder<net.minecraft.world.item.equipment.trim.TrimPattern> holder; // Paper - switch to Holder
 +
-+    public static String bukkitToString(TrimPattern bukkit) {
++    public static Object bukkitToObject(TrimPattern bukkit) {
          Preconditions.checkArgument(bukkit != null);
  
 -        net.minecraft.core.Registry<net.minecraft.world.item.equipment.trim.TrimPattern> registry = CraftRegistry.getMinecraftRegistry(Registries.TRIM_PATTERN);
-+        return ((CraftTrimPattern) bukkit).toBukkitSerializationString(net.minecraft.world.item.equipment.trim.TrimPattern.CODEC); // Paper - switch to Holder
++        return ((CraftTrimPattern) bukkit).toBukkitSerializationObject(net.minecraft.world.item.equipment.trim.TrimPattern.CODEC); // Paper - switch to Holder
 +    }
-+
-+    public static TrimPattern stringToBukkit(String string) {
-+        Preconditions.checkArgument(string != null);
  
 -        if (registry.wrapAsHolder(CraftTrimPattern.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<net.minecraft.world.item.equipment.trim.TrimPattern> holder) {
 -            return holder;
 -        }
-+        return io.papermc.paper.util.Holderable.fromBukkitSerializationString(string, net.minecraft.world.item.equipment.trim.TrimPattern.CODEC, Registry.TRIM_PATTERN); // Paper - switch to Holder
-+    }
++    public static TrimPattern objectToBukkit(Object object) {
++        Preconditions.checkArgument(object != null);
  
 -        throw new IllegalArgumentException("No Reference holder found for " + bukkit
 -                + ", this can happen if a plugin creates its own trim pattern without properly registering it.");
-+    @Override
-+    public boolean equals(final Object o) {
-+        return this.implEquals(o);
++        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(object, net.minecraft.world.item.equipment.trim.TrimPattern.CODEC, Registry.TRIM_PATTERN); // Paper - switch to Holder
      }
  
 -    private final NamespacedKey key;
 -    private final net.minecraft.world.item.equipment.trim.TrimPattern handle;
 +    @Override
++    public boolean equals(final Object o) {
++        return this.implEquals(o);
++    }
++
++    @Override
 +    public int hashCode() {
 +        return this.implHashCode();
++    }
++
++    @Override
++    public String toString() {
++        return this.implToString();
 +    }
  
 -    public CraftTrimPattern(NamespacedKey key, net.minecraft.world.item.equipment.trim.TrimPattern handle) {
