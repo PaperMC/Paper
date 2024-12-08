@@ -1,0 +1,183 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <newwindserver@gmail.com>
+Date: Sat, 30 Nov 2024 16:03:37 +0200
+Subject: [PATCH] Add cancel on error option for event listeners
+
+Add the option to cancel an event if an error is thrown inside its handler
+useful for mission critical listeners, for example, preventing players from breaking blocks in an area
+or preventing players from modifying certain items inside an anvil
+
+diff --git a/src/main/java/org/bukkit/event/EventHandler.java b/src/main/java/org/bukkit/event/EventHandler.java
+index cc06f480..dd0ac8a5 100644
+--- a/src/main/java/org/bukkit/event/EventHandler.java
++++ b/src/main/java/org/bukkit/event/EventHandler.java
+@@ -38,4 +38,16 @@ public @interface EventHandler {
+      * @return whether cancelled events should be ignored
+      */
+     boolean ignoreCancelled() default false;
++
++    // Paper start - Add cancel on error
++    /**
++     * Define if the event should be cancelled when an error is thrown inside the handler.
++     * <p>
++     * If cancelOnError is true and the event runs into an error, it will be cancelled.
++     * Can still be uncancelled if an event with higher priority runs setCancelled(false)
++     *
++     * @return whether thrown errors should cancel the event
++     */
++    boolean cancelOnError() default false;
++    // Paper end
+ }
+diff --git a/src/main/java/org/bukkit/plugin/PluginManager.java b/src/main/java/org/bukkit/plugin/PluginManager.java
+index 47153dee..fdbff1f7 100644
+--- a/src/main/java/org/bukkit/plugin/PluginManager.java
++++ b/src/main/java/org/bukkit/plugin/PluginManager.java
+@@ -152,6 +152,21 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
+      */
+     public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled);
+ 
++    // Paper start - Add cancel on error
++    /**
++     * Registers the specified executor to the given event class
++     *
++     * @param event Event type to register
++     * @param listener Listener to register
++     * @param priority Priority to register this event at
++     * @param executor EventExecutor to register
++     * @param plugin Plugin to register
++     * @param ignoreCancelled Whether to pass cancelled events or not
++     * @param cancelOnError Whether the event should be cancelled when an error is thrown inside the handler.
++     */
++    public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled, boolean cancelOnError);
++    // Paper end
++
+     /**
+      * Enables the specified plugin
+      * <p>
+diff --git a/src/main/java/org/bukkit/plugin/RegisteredListener.java b/src/main/java/org/bukkit/plugin/RegisteredListener.java
+index 3b3d9642..39155687 100644
+--- a/src/main/java/org/bukkit/plugin/RegisteredListener.java
++++ b/src/main/java/org/bukkit/plugin/RegisteredListener.java
+@@ -16,6 +16,7 @@ public class RegisteredListener {
+     private final Plugin plugin;
+     private final EventExecutor executor;
+     private final boolean ignoreCancelled;
++    private final boolean cancelOnError; // Paper - Add cancel on error
+ 
+     public RegisteredListener(@NotNull final Listener listener, @NotNull final EventExecutor executor, @NotNull final EventPriority priority, @NotNull final Plugin plugin, final boolean ignoreCancelled) {
+         this.listener = listener;
+@@ -23,8 +24,20 @@ public class RegisteredListener {
+         this.plugin = plugin;
+         this.executor = executor;
+         this.ignoreCancelled = ignoreCancelled;
++        this.cancelOnError = false; // Paper - Add cancel on error
+     }
+ 
++    // Paper start - Add cancel on error
++    public RegisteredListener(@NotNull final Listener listener, @NotNull final EventExecutor executor, @NotNull final EventPriority priority, @NotNull final Plugin plugin, final boolean ignoreCancelled, final boolean cancelOnError) {
++        this.listener = listener;
++        this.priority = priority;
++        this.plugin = plugin;
++        this.executor = executor;
++        this.ignoreCancelled = ignoreCancelled;
++        this.cancelOnError = cancelOnError;
++    }
++    // Paper end
++
+     /**
+      * Gets the listener for this registration
+      *
+@@ -79,6 +92,17 @@ public class RegisteredListener {
+         return ignoreCancelled;
+     }
+ 
++    // Paper start - Add cancel on error
++    /**
++     * Whether this listener cancels events on error
++     *
++     * @return whether thrown errors should cancel the event
++     */
++    public boolean willCancelOnError() {
++        return cancelOnError;
++    }
++    // Paper end
++
+     // Paper start
+     /**
+      * Get the executor for this registration.
+@@ -98,6 +122,7 @@ public class RegisteredListener {
+             + "\", executor=\"" + this.executor
+             + "\", priority=\"" + this.priority.name() + " (" + this.priority.getSlot() + ")"
+             + "\", ignoringCancelled=" + this.ignoreCancelled
++            + "\", cancelOnError=" + this.cancelOnError
+             + "}";
+     }
+     // Paper end
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index b878e716..42b434ff 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -667,6 +667,12 @@ public final class SimplePluginManager implements PluginManager {
+                             ));
+                 }
+             } catch (Throwable ex) {
++                // Paper start - Add cancel on error
++                if (registration.willCancelOnError() && event instanceof org.bukkit.event.Cancellable cancellable) {
++                    cancellable.setCancelled(true);
++                }
++                // Paper end
++
+                 // Paper start - error reporting
+                 String msg = "Could not pass event " + event.getEventName() + " to " + registration.getPlugin().getDescription().getFullName();
+                 server.getLogger().log(Level.SEVERE, msg, ex);
+@@ -696,6 +702,13 @@ public final class SimplePluginManager implements PluginManager {
+         registerEvent(event, listener, priority, executor, plugin, false);
+     }
+ 
++    // Paper start - Add cancel on error
++    @Override
++    public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled) {
++        registerEvent(event, listener, priority, executor, plugin, false, false);
++    }
++    // Paper end
++
+     /**
+      * Registers the given event to the specified listener using a directly
+      * passed EventExecutor
+@@ -705,11 +718,11 @@ public final class SimplePluginManager implements PluginManager {
+      * @param priority Priority of this event
+      * @param executor EventExecutor to register
+      * @param plugin Plugin to register
+-     * @param ignoreCancelled Do not call executor if event was already
+-     *     cancelled
++     * @param ignoreCancelled Do not call executor if event was already cancelled
++     * @param cancelOnError Whether the event should be cancelled when an error is thrown inside the handler.
+      */
+     @Override
+-    public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled) {
++    public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled, boolean cancelOnError) { // Paper - Add cancel on error
+         Preconditions.checkArgument(listener != null, "Listener cannot be null");
+         Preconditions.checkArgument(priority != null, "Priority cannot be null");
+         Preconditions.checkArgument(executor != null, "Executor cannot be null");
+@@ -724,7 +737,7 @@ public final class SimplePluginManager implements PluginManager {
+         if (false) { // Spigot - RL handles useTimings check now // Paper
+             getEventListeners(event).register(new TimedRegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
+         } else {
+-            getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
++            getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled, cancelOnError)); // Paper - Add cancel on error
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index eaefbb00..b1431102 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -311,7 +311,7 @@ public final class JavaPluginLoader implements PluginLoader {
+             if (false) { // Spigot - RL handles useTimings check now
+                 eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
+             } else {
+-                eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
++                eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled(), eh.cancelOnError())); // Paper - Add cancel on error
+             }
+         }
+         return ret;
