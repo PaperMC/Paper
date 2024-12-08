@@ -5,7 +5,7 @@ Subject: [PATCH] Switch Impl types to Holderable
 
 
 diff --git a/src/main/java/io/papermc/paper/util/Holderable.java b/src/main/java/io/papermc/paper/util/Holderable.java
-index 404ab0df12bc8182520c77328017c128d22993eb..0d2496168efe69bd82d3b73b41f798e9ac03ffa4 100644
+index 404ab0df12bc8182520c77328017c128d22993eb..1aabc85bcba3f486645d5bd7011f3f398b120d18 100644
 --- a/src/main/java/io/papermc/paper/util/Holderable.java
 +++ b/src/main/java/io/papermc/paper/util/Holderable.java
 @@ -1,8 +1,22 @@
@@ -31,18 +31,19 @@ index 404ab0df12bc8182520c77328017c128d22993eb..0d2496168efe69bd82d3b73b41f798e9
  public interface Holderable<M> extends Handleable<M> {
  
      Holder<M> getHolder();
-@@ -11,4 +25,42 @@ public interface Holderable<M> extends Handleable<M> {
+@@ -11,4 +25,43 @@ public interface Holderable<M> extends Handleable<M> {
      default M getHandle() {
          return this.getHolder().value();
      }
 +
++    @SuppressWarnings({"unchecked", "rawtypes"})
 +    static <T extends Keyed, M> @Nullable T fromBukkitSerializationString(@Subst("test:key") String string, Codec<? extends Holder<M>> codec, Registry<T> registry) {
-+        if (registry instanceof CraftRegistry<T, M> craftRegistry && craftRegistry.supportsDirectHolders()) {
++        if (registry instanceof final CraftRegistry craftRegistryRaw && craftRegistryRaw.supportsDirectHolders()) {
 +            try {
 +                JsonElement element = JsonParser.parseString(string);
 +                final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
 +                Holder<M> holder = codec.decode(ops, element).getOrThrow().getFirst();
-+                return craftRegistry.convertDirectHolder(holder);
++                return ((CraftRegistry<T, M>) craftRegistryRaw).convertDirectHolder(holder);
 +            } catch (JsonSyntaxException ex) {
 +                // ignore, try to parse as a key
 +            }
