@@ -126,6 +126,208 @@ index 0000000000000000000000000000000000000000..4522eb172b2894a950b2a32ac5af6029
 +        return Map.of(KEY, GSON.toJson(this.element));
 +    }
 +}
+diff --git a/src/main/java/io/papermc/paper/util/OldEnumHolderable.java b/src/main/java/io/papermc/paper/util/OldEnumHolderable.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..961ac41c64de86e21f7c38de3a16b8cd409640a7
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/util/OldEnumHolderable.java
+@@ -0,0 +1,81 @@
++package io.papermc.paper.util;
++
++import com.google.common.base.Preconditions;
++import java.util.Locale;
++import net.minecraft.core.Holder;
++import org.bukkit.NamespacedKey;
++import org.bukkit.util.OldEnum;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
++
++@Deprecated
++@NullMarked
++public abstract class OldEnumHolderable<A extends OldEnum<A>, M> implements Holderable<M>, OldEnum<A> {
++
++    private final Holder<M> holder;
++    private final int ordinal;
++    private final @Nullable String name;
++
++    protected OldEnumHolderable(final Holder<M> holder, final int ordinal) {
++        this.holder = holder;
++        this.ordinal = ordinal;
++        if (holder instanceof final Holder.Reference<M> reference) {
++            // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
++            // in case plugins use for example the name as key in a config file to receive registry item specific values.
++            // Custom registry items will return the key with namespace. For a plugin this should look than like a new registry item
++            // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
++            if (NamespacedKey.MINECRAFT.equals(reference.key().location().getNamespace())) {
++                this.name = reference.key().location().getPath().toUpperCase(Locale.ROOT);
++            } else {
++                this.name = reference.key().location().toString();
++            }
++        } else {
++            this.name = null;
++        }
++    }
++
++    @Override
++    public Holder<M> getHolder() {
++        return this.holder;
++    }
++
++    @Override
++    @Deprecated
++    public int compareTo(A other) {
++        this.checkIsReference();
++        return this.ordinal - other.ordinal();
++    }
++
++    @Override
++    @Deprecated
++    public String name() {
++        this.checkIsReference();
++        return this.name;
++    }
++
++    @Override
++    @Deprecated
++    public int ordinal() {
++        this.checkIsReference();
++        return this.ordinal;
++    }
++
++    private void checkIsReference() {
++        Preconditions.checkState(this.holder.kind() == Holder.Kind.REFERENCE, "Cannot call method for this registry item, because it is not registered.");
++    }
++
++    @Override
++    public boolean equals(final Object obj) {
++        return this.implEquals(obj);
++    }
++
++    @Override
++    public int hashCode() {
++        return this.implHashCode();
++    }
++
++    @Override
++    public String toString() {
++        return this.implToString();
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftArt.java b/src/main/java/org/bukkit/craftbukkit/CraftArt.java
+index 0207c7c50706cf490d652f4f519d059f7453180f..51e8f5df24b347defae108ad7f9dde295d814880 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftArt.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftArt.java
+@@ -11,7 +11,7 @@ import org.bukkit.Registry;
+ import org.bukkit.craftbukkit.util.Handleable;
+ import org.jetbrains.annotations.NotNull;
+ 
+-public class CraftArt implements Art, Handleable<PaintingVariant> {
++public class CraftArt extends io.papermc.paper.util.OldEnumHolderable<Art, PaintingVariant> implements Art { // Paper - switch to Holder
+ 
+     private static int count = 0;
+ 
+@@ -20,7 +20,7 @@ public class CraftArt implements Art, Handleable<PaintingVariant> {
+     }
+ 
+     public static Art minecraftHolderToBukkit(Holder<PaintingVariant> minecraft) {
+-        return CraftArt.minecraftToBukkit(minecraft.value());
++        return CraftArt.minecraftHolderToBukkit(minecraft); // Paper - switch to Holder
+     }
+ 
+     public static PaintingVariant bukkitToMinecraft(Art bukkit) {
+@@ -28,36 +28,15 @@ public class CraftArt implements Art, Handleable<PaintingVariant> {
+     }
+ 
+     public static Holder<PaintingVariant> bukkitToMinecraftHolder(Art bukkit) {
+-        Preconditions.checkArgument(bukkit != null);
+-
+-        net.minecraft.core.Registry<PaintingVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT);
+-
+-        if (registry.wrapAsHolder(CraftArt.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<PaintingVariant> holder) {
+-            return holder;
+-        }
+-
+-        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+-                + ", this can happen if a plugin creates its own painting variant with out properly registering it.");
++        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.PAINTING_VARIANT); // Paper - switch to Holder
+     }
+ 
+-    private final NamespacedKey key;
++    // Paper start - switch to Holder
+     private final PaintingVariant paintingVariant;
+-    private final String name;
+-    private final int ordinal;
+-
+-    public CraftArt(NamespacedKey key, PaintingVariant paintingVariant) {
+-        this.key = key;
+-        this.paintingVariant = paintingVariant;
+-        // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
+-        // in case plugins use for example the name as key in a config file to receive art specific values.
+-        // Custom arts will return the key with namespace. For a plugin this should look than like a new art
+-        // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
+-        if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
+-            this.name = key.getKey().toUpperCase(Locale.ROOT);
+-        } else {
+-            this.name = key.toString();
+-        }
+-        this.ordinal = CraftArt.count++;
++    public CraftArt(Holder<PaintingVariant> paintingVariant) {
++        super(paintingVariant, count++);
++        this.paintingVariant = paintingVariant.value();
++        // Paper end - switch to Holder
+     }
+ 
+     @Override
+@@ -99,47 +78,8 @@ public class CraftArt implements Art, Handleable<PaintingVariant> {
+     @NotNull
+     @Override
+     public NamespacedKey getKey() {
+-        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.ART.getKey(this), () -> this + " doesn't have a key"); // Paper
+-        return this.key;
+-    }
+-
+-    @Override
+-    public int compareTo(@NotNull Art art) {
+-        return this.ordinal - art.ordinal();
++        return java.util.Objects.requireNonNull(org.bukkit.Registry.ART.getKey(this), () -> this + " doesn't have a key"); // Paper
+     }
+ 
+-    @NotNull
+-    @Override
+-    public String name() {
+-        return this.name;
+-    }
+-
+-    @Override
+-    public int ordinal() {
+-        return this.ordinal;
+-    }
+-
+-    @Override
+-    public String toString() {
+-        // For backwards compatibility
+-        return this.name();
+-    }
+-
+-    @Override
+-    public boolean equals(Object other) {
+-        if (this == other) {
+-            return true;
+-        }
+-
+-        if (!(other instanceof CraftArt otherArt)) {
+-            return false;
+-        }
+-
+-        return this.getKey().equals(otherArt.getKey());
+-    }
+-
+-    @Override
+-    public int hashCode() {
+-        return this.getKey().hashCode();
+-    }
++    // Paper - switch to Holder
+ }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/CraftMusicInstrument.java
 index 2838ef9d89ec8d7bd8981eff4a2ffe2c11ee9271..aa19ac75135893b81000d1bd63795457a777e9eb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftMusicInstrument.java
@@ -246,6 +448,230 @@ index 2838ef9d89ec8d7bd8981eff4a2ffe2c11ee9271..aa19ac75135893b81000d1bd63795457
 -    }
 +    // Paper - switch to Holder
  }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftSound.java b/src/main/java/org/bukkit/craftbukkit/CraftSound.java
+index e24d784674f99bbcd0d9c21bc2629a9a97f5ea9b..1a6b9c9a7cc2844ada5c7145a3a0032a168713a1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftSound.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftSound.java
+@@ -11,7 +11,7 @@ import org.bukkit.Sound;
+ import org.bukkit.craftbukkit.util.Handleable;
+ import org.jetbrains.annotations.NotNull;
+ 
+-public class CraftSound implements Sound, Handleable<SoundEvent> {
++public class CraftSound extends io.papermc.paper.util.OldEnumHolderable<Sound, SoundEvent> implements Sound { // Paper - switch to Holder
+ 
+     private static int count = 0;
+ 
+@@ -24,36 +24,15 @@ public class CraftSound implements Sound, Handleable<SoundEvent> {
+     }
+ 
+     public static Holder<SoundEvent> bukkitToMinecraftHolder(Sound bukkit) {
+-        Preconditions.checkArgument(bukkit != null);
+-
+-        net.minecraft.core.Registry<SoundEvent> registry = CraftRegistry.getMinecraftRegistry(Registries.SOUND_EVENT);
+-
+-        if (registry.wrapAsHolder(CraftSound.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<SoundEvent> holder) {
+-            return holder;
+-        }
+-
+-        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+-                + ", this can happen if a plugin creates its own sound effect with out properly registering it.");
++        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.SOUND_EVENT); // Paper - switch to Holder
+     }
+ 
+-    private final NamespacedKey key;
++    // Paper start - switch to Holder
+     private final SoundEvent soundEffect;
+-    private final String name;
+-    private final int ordinal;
+-
+-    public CraftSound(NamespacedKey key, SoundEvent soundEffect) {
+-        this.key = key;
+-        this.soundEffect = soundEffect;
+-        // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
+-        // in case plugins use for example the name as key in a config file to receive sound specific values.
+-        // Custom sounds will return the key with namespace. For a plugin this should look than like a new sound
+-        // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
+-        if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
+-            this.name = key.getKey().toUpperCase(Locale.ROOT).replace('.', '_');
+-        } else {
+-            this.name = key.toString();
+-        }
+-        this.ordinal = CraftSound.count++;
++    public CraftSound(Holder<SoundEvent> soundEffect) {
++        super(soundEffect, count++);
++        this.soundEffect = soundEffect.value();
++        // Paper end - switch to Holder
+     }
+ 
+     @Override
+@@ -64,49 +43,10 @@ public class CraftSound implements Sound, Handleable<SoundEvent> {
+     @NotNull
+     @Override
+     public NamespacedKey getKey() {
+-        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.SOUNDS.getKey(this), () -> this + " doesn't have a key"); // Paper
+-        return this.key;
+-    }
+-
+-    @Override
+-    public int compareTo(@NotNull Sound sound) {
+-        return this.ordinal - sound.ordinal();
+-    }
+-
+-    @NotNull
+-    @Override
+-    public String name() {
+-        return this.name;
+-    }
+-
+-    @Override
+-    public int ordinal() {
+-        return this.ordinal;
+-    }
+-
+-    @Override
+-    public String toString() {
+-        // For backwards compatibility
+-        return this.name();
+-    }
+-
+-    @Override
+-    public boolean equals(Object other) {
+-        if (this == other) {
+-            return true;
+-        }
+-
+-        if (!(other instanceof CraftSound otherSound)) {
+-            return false;
+-        }
+-
+-        return this.getKey().equals(otherSound.getKey());
++        return java.util.Objects.requireNonNull(org.bukkit.Registry.SOUNDS.getKey(this), () -> this + " doesn't have a key"); // Paper
+     }
+ 
+-    @Override
+-    public int hashCode() {
+-        return this.getKey().hashCode();
+-    }
++    // Paper - switch to Holder
+ 
+     // Paper start
+     public static String getSound(Sound sound) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/banner/CraftPatternType.java b/src/main/java/org/bukkit/craftbukkit/block/banner/CraftPatternType.java
+index 3addb382d00434bab9151c9edddc8999b986653c..0ab76ad6abc1afc768c4c970c4f8ec5a6b369044 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/banner/CraftPatternType.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/banner/CraftPatternType.java
+@@ -11,7 +11,7 @@ import org.bukkit.block.banner.PatternType;
+ import org.bukkit.craftbukkit.CraftRegistry;
+ import org.bukkit.craftbukkit.util.Handleable;
+ 
+-public class CraftPatternType implements PatternType, Handleable<BannerPattern> {
++public class CraftPatternType extends io.papermc.paper.util.OldEnumHolderable<PatternType, BannerPattern> implements PatternType { // Paper - switch to Holder
+ 
+     private static int count = 0;
+ 
+@@ -20,7 +20,7 @@ public class CraftPatternType implements PatternType, Handleable<BannerPattern>
+     }
+ 
+     public static PatternType minecraftHolderToBukkit(Holder<BannerPattern> minecraft) {
+-        return CraftPatternType.minecraftToBukkit(minecraft.value());
++        return CraftPatternType.minecraftHolderToBukkit(minecraft); // Paper - switch to Holder
+     }
+ 
+     public static BannerPattern bukkitToMinecraft(PatternType bukkit) {
+@@ -28,36 +28,15 @@ public class CraftPatternType implements PatternType, Handleable<BannerPattern>
+     }
+ 
+     public static Holder<BannerPattern> bukkitToMinecraftHolder(PatternType bukkit) {
+-        Preconditions.checkArgument(bukkit != null);
+-
+-        net.minecraft.core.Registry<BannerPattern> registry = CraftRegistry.getMinecraftRegistry(Registries.BANNER_PATTERN);
+-
+-        if (registry.wrapAsHolder(CraftPatternType.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<BannerPattern> holder) {
+-            return holder;
+-        }
+-
+-        throw new IllegalArgumentException("No Reference holder found for " + bukkit
+-                + ", this can happen if a plugin creates its own banner pattern without properly registering it.");
++        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.BANNER_PATTERN); // Paper - switch to Holder
+     }
+ 
+-    private final NamespacedKey key;
++    // Paper start - switch to Holder
+     private final BannerPattern bannerPatternType;
+-    private final String name;
+-    private final int ordinal;
+-
+-    public CraftPatternType(NamespacedKey key, BannerPattern bannerPatternType) {
+-        this.key = key;
+-        this.bannerPatternType = bannerPatternType;
+-        // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
+-        // in case plugins use for example the name as key in a config file to receive pattern type specific values.
+-        // Custom pattern types will return the key with namespace. For a plugin this should look than like a new pattern type
+-        // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
+-        if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
+-            this.name = key.getKey().toUpperCase(Locale.ROOT);
+-        } else {
+-            this.name = key.toString();
+-        }
+-        this.ordinal = CraftPatternType.count++;
++    public CraftPatternType(Holder<BannerPattern> bannerPatternType) {
++        super(bannerPatternType, count++);
++        this.bannerPatternType = bannerPatternType.value();
++        // Paper end - switch to Holder
+     }
+ 
+     @Override
+@@ -67,48 +46,10 @@ public class CraftPatternType implements PatternType, Handleable<BannerPattern>
+ 
+     @Override
+     public NamespacedKey getKey() {
+-        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.BANNER_PATTERN.getKey(this), () -> this + " doesn't have a key"); // Paper
+-        return this.key;
+-    }
+-
+-    @Override
+-    public int compareTo(PatternType patternType) {
+-        return this.ordinal - patternType.ordinal();
+-    }
+-
+-    @Override
+-    public String name() {
+-        return this.name;
++        return java.util.Objects.requireNonNull(org.bukkit.Registry.BANNER_PATTERN.getKey(this), () -> this + " doesn't have a key"); // Paper
+     }
+ 
+-    @Override
+-    public int ordinal() {
+-        return this.ordinal;
+-    }
+-
+-    @Override
+-    public String toString() {
+-        // For backwards compatibility
+-        return this.name();
+-    }
+-
+-    @Override
+-    public boolean equals(Object other) {
+-        if (this == other) {
+-            return true;
+-        }
+-
+-        if (!(other instanceof CraftPatternType)) {
+-            return false;
+-        }
+-
+-        return this.getKey().equals(((PatternType) other).getKey());
+-    }
+-
+-    @Override
+-    public int hashCode() {
+-        return this.getKey().hashCode();
+-    }
++    // Paper - switch to Holder
+ 
+     @Override
+     public String getIdentifier() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
 index 6532bdaf6cbd10ecc5ace1b89899ad82e7bca206..8f2276fcd20d2ececbda3ad1460e78aeed914707 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
@@ -294,7 +720,7 @@ index 6532bdaf6cbd10ecc5ace1b89899ad82e7bca206..8f2276fcd20d2ececbda3ad1460e78ae
          }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
-index a80b9b142ca99c7c0257b1bdeb059dce5f92ae93..9ae6bdc4412c466fb53abb3722e9a9533df6f888 100644
+index 8423c6b67a83d99ef4356674f64d6e52fda3d36f..e6c4a08c9199c7f45effc33e818ac3d9023ab7bc 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
 @@ -37,7 +37,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
@@ -481,14 +907,22 @@ index 36df80a8be8a2485823f699e45c99674dbe71507..da951bd7e470d8b2bc69eea9b66815fa
  
      @Override
 diff --git a/src/test/java/org/bukkit/registry/RegistryConversionTest.java b/src/test/java/org/bukkit/registry/RegistryConversionTest.java
-index 01e351f4e292efe78fc1a1db0f31b2c0a313b101..092b88e0ac3ba37322fbe86bab98dc6f91a9c866 100644
+index 01e351f4e292efe78fc1a1db0f31b2c0a313b101..8b9be7033292c751d75bd123d5e3ab3d3c0a5765 100644
 --- a/src/test/java/org/bukkit/registry/RegistryConversionTest.java
 +++ b/src/test/java/org/bukkit/registry/RegistryConversionTest.java
-@@ -269,6 +269,7 @@ public class RegistryConversionTest {
+@@ -258,6 +258,7 @@ public class RegistryConversionTest {
+                         %s""", RegistryConversionTest.BUKKIT_TO_MINECRAFT, clazz.getName(),
+                 Joiner.on('\n').withKeyValueSeparator(" got: ").join(notMatching)));
+     }
++    static final Set<io.papermc.paper.registry.RegistryKey<?>> IGNORE_FOR_DIRECT_HOLDER = Set.of(io.papermc.paper.registry.RegistryKey.TRIM_MATERIAL, io.papermc.paper.registry.RegistryKey.TRIM_PATTERN, io.papermc.paper.registry.RegistryKey.INSTRUMENT, io.papermc.paper.registry.RegistryKey.PAINTING_VARIANT, io.papermc.paper.registry.RegistryKey.BANNER_PATTERN, io.papermc.paper.registry.RegistryKey.SOUND_EVENT); // Paper
+ 
+     /**
+      * Minecraft registry can return a default key / value
+@@ -269,6 +270,7 @@ public class RegistryConversionTest {
                                                        Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) throws IllegalAccessException {
          this.checkValidMinecraftToBukkit(clazz);
  
-+        if (type == io.papermc.paper.registry.RegistryKey.TRIM_MATERIAL || type == io.papermc.paper.registry.RegistryKey.TRIM_PATTERN || type == io.papermc.paper.registry.RegistryKey.INSTRUMENT) return; // Paper - manually skip for now
++        assumeFalse(IGNORE_FOR_DIRECT_HOLDER.contains(type), "skipped because these types support direct holders"); // Paper - manually skip for now
          try {
  
              Object minecraft = mock(minecraftClazz);
