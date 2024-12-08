@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bridge <ctibeheerder@gmail.com>
+Date: Sun, 1 Dec 2024 15:43:12 +0100
+Subject: [PATCH] Ensure the player hasn't disconnected
+ HumanEntity#closeInventory
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 5a8f396d47577f087abb415c972fd4f51e50faba..976de97751bb69cbf4fa18527f9ee03c4a0e293e 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -177,6 +177,7 @@ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.scores.PlayerTeam;
+ import net.minecraft.world.scores.ScoreAccess;
+ import net.minecraft.world.scores.ScoreHolder;
++import org.bukkit.event.inventory.InventoryCloseEvent;
+ import org.slf4j.Logger;
+ import net.minecraft.world.Container;
+ import net.minecraft.world.Difficulty;
+@@ -2059,6 +2060,10 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+     }
+     @Override
+     public void closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
++        if (reason == InventoryCloseEvent.Reason.PLUGIN && !this.server.getPlayerList().players.contains(this)) {
++            return;
++        }
++
+         CraftEventFactory.handleInventoryCloseEvent(this, reason); // CraftBukkit
+         // Paper end - Inventory close reason
+         this.connection.send(new ClientboundContainerClosePacket(this.containerMenu.containerId));
