@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bridge <ctibeheerder@gmail.com>
+Date: Mon, 4 Nov 2024 13:19:43 +0100
+Subject: [PATCH] Add player weather support to Entity#isInRain()
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 2e8ecf3bbb9f9ceba6f896738fa1ab8e2bd0fed6..dfc8de1c6e3f4cd12980afda638d2c2069858545 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -3308,4 +3308,17 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+         return (CraftPlayer) super.getBukkitEntity();
+     }
+     // CraftBukkit end
++
++
++    // Paper start - Add player weather support
++    @Override
++    public boolean isInRain() {
++        if (weather == WeatherType.DOWNFALL) {
++            BlockPos blockposition = this.blockPosition();
++            return this.level().canRainAt(blockposition) || this.level().canRainAt(BlockPos.containing(blockposition.getX(), this.getBoundingBox().maxY, blockposition.getZ()));
++        }
++
++        return super.isInRain();
++    }
++    // Paper end
+ }
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 2cc264f577fdd81d02783e0d6146bea9728789c7..f35fe7a74eb14feb3cc410aedb443f72825a7f98 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -1841,16 +1841,28 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     public boolean isRainingAt(BlockPos pos) {
+         if (!this.isRaining()) {
+             return false;
++        }
++
++        // Paper start - Add player weather support
++        return this.canRainAt(pos);
++        // Paper end
++    }
++
++    // Paper start - Add player weather support
++    public boolean canRainAt(BlockPos pos) {
++        if (!this.canHaveWeather()) {
++            return false;
+         } else if (!this.canSeeSky(pos)) {
+             return false;
+         } else if (this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos).getY() > pos.getY()) {
+             return false;
+         } else {
+-            Biome biomebase = (Biome) this.getBiome(pos).value();
++            Biome biomebase = this.getBiome(pos).value();
+ 
+             return biomebase.getPrecipitationAt(pos, this.getSeaLevel()) == Biome.Precipitation.RAIN;
+         }
+     }
++    // Paper end
+ 
+     @Nullable
+     public abstract MapItemSavedData getMapData(MapId id);
