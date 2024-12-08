@@ -918,7 +918,7 @@ index 73d8814ee2424a8336a09536f9ea8f5cf23ef85a..f9e33ec8ba7adaf729fecabc093aece2
                  return null;
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
-index 0d091c7b328fb70a82f5b5ded7dec61b7cd3d59a..7df1ce34c60ce14beb6acf8135a587e7b4e959b1 100644
+index 0d091c7b328fb70a82f5b5ded7dec61b7cd3d59a..f3b971d50542f925da54aedd0a2abc0754158a3e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
 @@ -93,13 +93,40 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
@@ -946,16 +946,16 @@ index 0d091c7b328fb70a82f5b5ded7dec61b7cd3d59a..7df1ce34c60ce14beb6acf8135a587e7
 +    public static <B extends Keyed, M> B minecraftHolderToBukkit(final Holder<M> minecraft, final Registry<B> bukkitRegistry) {
 +        Preconditions.checkArgument(minecraft != null);
 +
-+        final B bukkit;
-+        if (bukkitRegistry instanceof final CraftRegistry<?, ?> craftRegistry && craftRegistry.supportsDirectHolders()) {
-+            bukkit = minecraft.unwrap().map(
-+                key -> bukkitRegistry.get(io.papermc.paper.util.MCUtil.fromResourceKey(key)),
-+                value -> ((CraftRegistry<B, M>) bukkitRegistry).convertDirectHolder(minecraft)
-+            );
-+        } else {
-+            Preconditions.checkArgument(minecraft.kind() == Holder.Kind.REFERENCE, "Cannot convert direct holder to bukkit representation");
-+            bukkit = bukkitRegistry.get(io.papermc.paper.util.MCUtil.fromResourceKey(minecraft.unwrapKey().orElseThrow()));
-+        }
++        final B bukkit = switch (minecraft) {
++            case final Holder.Direct<M> direct -> {
++                if (!(bukkitRegistry instanceof final CraftRegistry<?, ?> craftRegistry) || !craftRegistry.supportsDirectHolders()) {
++                    throw new IllegalArgumentException("Cannot convert direct holder to bukkit representation");
++                }
++                yield ((CraftRegistry<B, M>) bukkitRegistry).convertDirectHolder(direct);
++            }
++            case final Holder.Reference<M> reference -> bukkitRegistry.get(io.papermc.paper.util.MCUtil.fromResourceKey(reference.key()));
++            default -> throw new IllegalArgumentException("Unknown holder: " + minecraft);
++        };
          Preconditions.checkArgument(bukkit != null);
  
          return bukkit;
