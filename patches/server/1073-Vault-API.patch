@@ -1,0 +1,237 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Boy <sivertpaulsen2@gmail.com>
+Date: Wed, 24 Jul 2024 13:53:58 +0200
+Subject: [PATCH] Vault API
+
+== AT ==
+public net.minecraft.world.level.block.entity.vault.VaultServerData markChanged()V
+public net.minecraft.world.level.block.entity.vault.VaultServerData getItemsToEject()Ljava/util/List;
+public net.minecraft.world.level.block.entity.vault.VaultServerData getRewardedPlayers()Ljava/util/Set;
+public net.minecraft.world.level.block.entity.vault.VaultServerData setItemsToEject(Ljava/util/List;)V
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/vault/VaultServerData.java b/src/main/java/net/minecraft/world/level/block/entity/vault/VaultServerData.java
+index 85527fa85fa2d172ec7f142ce042c87bd2533029..4dd001d1ec9e178f348753fc08991455020a6b38 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/vault/VaultServerData.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/vault/VaultServerData.java
+@@ -60,10 +60,19 @@ public class VaultServerData {
+         return this.rewardedPlayers.contains(player.getUUID());
+     }
+ 
++    // Paper start - Vault API
++    public boolean hasRewardedPlayer(UUID uniqueId) {
++        return this.rewardedPlayers.contains(uniqueId);
++    }
++
+     @VisibleForTesting
+     public void addToRewardedPlayers(Player player) {
+-        this.rewardedPlayers.add(player.getUUID());
+-        if (this.rewardedPlayers.size() > 128) {
++        addToRewardedPlayers(player.getUUID());
++    }
++
++    public void addToRewardedPlayers(UUID uniqueId) {
++        this.rewardedPlayers.add(uniqueId);
++        if (this.rewardedPlayers.size() > MAX_REWARD_PLAYERS) {
+             Iterator<UUID> iterator = this.rewardedPlayers.iterator();
+             if (iterator.hasNext()) {
+                 iterator.next();
+@@ -74,6 +83,12 @@ public class VaultServerData {
+         this.markChanged();
+     }
+ 
++    public void removeFromRewardedPlayers(UUID uniqueId) {
++        this.rewardedPlayers.remove(uniqueId);
++        this.markChanged();
++    }
++    // Paper end - Vault API
++
+     long stateUpdatingResumesAt() {
+         return this.stateUpdatingResumesAt;
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java b/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
+index bfee498287c8358cbc8c9c2b7289d861cb90f0ad..d6fecfee5ce3245e6ae4b2cfd05083ad76d82cab 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftVault.java
+@@ -1,9 +1,27 @@
+ package org.bukkit.craftbukkit.block;
+ 
++import com.google.common.base.Preconditions;
++import com.google.common.collect.ImmutableSet;
++import java.util.List;
++import java.util.Objects;
++import java.util.Optional;
++import java.util.Set;
++import java.util.UUID;
++import net.minecraft.resources.ResourceKey;
+ import net.minecraft.world.level.block.entity.vault.VaultBlockEntity;
++import net.minecraft.world.level.block.entity.vault.VaultConfig;
++import org.bukkit.Bukkit;
+ import org.bukkit.Location;
+ import org.bukkit.World;
+ import org.bukkit.block.Vault;
++import org.bukkit.craftbukkit.CraftLootTable;
++import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.entity.Player;
++import org.bukkit.inventory.ItemStack;
++import org.bukkit.loot.LootTable;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
+ 
+ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implements Vault {
+ 
+@@ -15,6 +33,154 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
+         super(state, location);
+     }
+ 
++    // Paper start - Vault API
++    @Override
++    public LootTable getLootTable() {
++        return CraftLootTable.minecraftToBukkit(getSnapshot().getConfig().lootTable());
++    }
++
++    @Override
++    public void setLootTable(final LootTable lootTable) {
++        ResourceKey<net.minecraft.world.level.storage.loot.LootTable> lootTableKey = CraftLootTable.bukkitToMinecraft(lootTable);
++        Preconditions.checkArgument(lootTableKey != null, "LootTable cannot be null");
++
++        VaultConfig config = this.getSnapshot().getConfig();
++        config = new VaultConfig(lootTableKey, config.activationRange(), config.deactivationRange(), config.keyItem(), config.overrideLootTableToDisplay());
++        this.getSnapshot().setConfig(config);
++    }
++
++    @Override
++    public @Nullable LootTable getOverrideDisplayLootTable() {
++        return getSnapshot().getConfig().overrideLootTableToDisplay().map(CraftLootTable::minecraftToBukkit).orElse(null);
++    }
++
++    @Override
++    public void setOverrideDisplayLootTable(@Nullable final LootTable lootTable) {
++        VaultConfig config = this.getSnapshot().getConfig();
++        config = new VaultConfig(config.lootTable(), config.activationRange(), config.deactivationRange(), config.keyItem(), Optional.ofNullable(CraftLootTable.bukkitToMinecraft(lootTable)));
++        this.getSnapshot().setConfig(config);
++    }
++
++    @Override
++    public ItemStack getKeyItem() {
++        return this.getSnapshot().getConfig().keyItem().asBukkitCopy();
++    }
++
++    @Override
++    public void setKeyItem(ItemStack keyItem) {
++        VaultConfig config = this.getSnapshot().getConfig();
++        config = new VaultConfig(config.lootTable(), config.activationRange(), config.deactivationRange(), CraftItemStack.asNMSCopy(keyItem), config.overrideLootTableToDisplay());
++        this.getSnapshot().setConfig(config);
++    }
++
++    @Override
++    public double getActivationRange() {
++        return this.getSnapshot().getConfig().activationRange();
++    }
++
++    @Override
++    public void setActivationRange(double activationRange) {
++        VaultConfig config = this.getSnapshot().getConfig();
++        Preconditions.checkArgument(activationRange <= config.activationRange(), "ActivationRange must be greater or equal to DeactivationRange");
++
++        config = new VaultConfig(config.lootTable(), activationRange, config.deactivationRange(), config.keyItem(), config.overrideLootTableToDisplay());
++        this.getSnapshot().setConfig(config);
++    }
++
++    @Override
++    public double getDeactivationRange() {
++        return this.getSnapshot().getConfig().deactivationRange();
++    }
++
++    @Override
++    public void setDeactivationRange(final double deactivationRange) {
++        VaultConfig config = this.getSnapshot().getConfig();
++        Preconditions.checkArgument(deactivationRange >= config.activationRange(), "DeactivationRange must be greater or equal to ActivationRange");
++
++        config = new VaultConfig(config.lootTable(), config.activationRange(), deactivationRange, config.keyItem(), config.overrideLootTableToDisplay());
++        this.getSnapshot().setConfig(config);
++    }
++
++    @Override
++    public Set<Player> getRewardedPlayers() {
++        ImmutableSet.Builder<Player> players = ImmutableSet.builder();
++
++        for (UUID uuid : getRewardedPlayerUUIDs()) {
++            Player player = Bukkit.getPlayer(uuid);
++            if (player != null) {
++                players.add(player);
++            }
++        }
++        return players.build();
++    }
++
++    @Override
++    public Set<UUID> getRewardedPlayerUUIDs() {
++        requirePlaced();
++
++        return ImmutableSet.copyOf(this.getTileEntity().getServerData().getRewardedPlayers());
++    }
++
++    @Override
++    public boolean hasRewardedPlayer(final Player player) {
++        Preconditions.checkArgument(player != null, "Player cannot be null");
++
++        return hasRewardedPlayer(player.getUniqueId());
++    }
++
++    @Override
++    public boolean hasRewardedPlayer(final UUID uniqueId) {
++        Preconditions.checkArgument(uniqueId != null, "UUID cannot be null");
++
++        return this.getTileEntity().getServerData().hasRewardedPlayer(uniqueId);
++    }
++
++    @Override
++    public void addToRewardedPlayers(Player player) {
++        Preconditions.checkArgument(player != null, "Player cannot be null");
++
++        addToRewardedPlayers(player.getUniqueId());
++    }
++
++    @Override
++    public void addToRewardedPlayers(final UUID uniqueId) {
++        Preconditions.checkArgument(uniqueId != null, "UUID cannot be null");
++        requirePlaced();
++
++        this.getTileEntity().getServerData().addToRewardedPlayers(uniqueId);
++    }
++
++    @Override
++    public void removeFromRewardedPlayers(Player player) {
++        Preconditions.checkArgument(player != null, "Player cannot be null");
++
++        removeFromRewardedPlayers(player.getUniqueId());
++    }
++
++    @Override
++    public void removeFromRewardedPlayers(final UUID uniqueId) {
++        Preconditions.checkArgument(uniqueId != null, "UUID cannot be null");
++        requirePlaced();
++
++        this.getTileEntity().getServerData().removeFromRewardedPlayers(uniqueId);
++    }
++
++    @Override
++    public List<ItemStack> getItemsToEject() {
++        requirePlaced();
++
++        return this.getTileEntity().getServerData().getItemsToEject().stream().map(net.minecraft.world.item.ItemStack::asBukkitCopy).toList();
++    }
++
++    @Override
++    public void setItemsToEject(final List<@NotNull ItemStack> itemsToEject) {
++        Preconditions.checkArgument(itemsToEject != null, "ItemsToEject cannot be null");
++        requirePlaced();
++
++        this.getTileEntity().getServerData().setItemsToEject(itemsToEject.stream().filter(i -> !i.isEmpty()).map(CraftItemStack::asNMSCopy).toList());
++    }
++    // Paper end - Vault API
++
+     @Override
+     public CraftVault copy() {
+         return new CraftVault(this, null);
