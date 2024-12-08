@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: LoliColleen <76620594+LoliColleen@users.noreply.github.com>
+Date: Wed, 6 Nov 2024 23:35:45 +0800
+Subject: [PATCH] Configurable-update-player-attribute-on-held-item-change
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+index dad3fcc689ec806f985122a7cbd501a7d0fd0d36..d917de14734adb421d40f54bbeccc62d27f145f7 100644
+--- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
+@@ -463,6 +463,7 @@ public class WorldConfiguration extends ConfigurationPart {
+         public boolean disableUnloadedChunkEnderpearlExploit = false;
+         public boolean preventTntFromMovingInWater = false;
+         public boolean splitOverstackedLoot = true;
++        public boolean updatePlayerAttributeOnHeldItemChange = false;
+         public IntOr.Disabled fallingBlockHeightNerf = IntOr.Disabled.DISABLED;
+         public IntOr.Disabled tntEntityHeightNerf = IntOr.Disabled.DISABLED;
+     }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index b5d5dbc50a7b8c40739a15f164ffd08fdc534f9c..52515040820e036d004c92f376c07111e951a95a 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2165,6 +2165,11 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+             this.player.getInventory().selected = packet.getSlot();
+             this.player.resetLastActionTime();
++
++            if (this.player.level().paperConfig().fixes.updatePlayerAttributeOnHeldItemChange) {
++                this.player.detectEquipmentUpdatesPublic();
++                this.player.resetAttackStrengthTicker();
++            }
+         } else {
+             ServerGamePacketListenerImpl.LOGGER.warn("{} tried to set an invalid carried item", this.player.getName().getString());
+             this.disconnect(Component.literal("Invalid hotbar selection (Hacking?)"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // CraftBukkit // Paper - kick event cause
