@@ -1,0 +1,181 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Tamion <70228790+notTamion@users.noreply.github.com>
+Date: Sun, 15 Sep 2024 19:17:12 +0200
+Subject: [PATCH] Add recipeBrewTime
+
+== AT ==
+public net.minecraft.world.inventory.BrewingStandMenu brewingStandData
+
+diff --git a/src/main/java/io/papermc/paper/inventory/BrewingSimpleContainerData.java b/src/main/java/io/papermc/paper/inventory/BrewingSimpleContainerData.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..84dead75191634c3aa6031781a2ff3087171793b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/BrewingSimpleContainerData.java
+@@ -0,0 +1,11 @@
++package io.papermc.paper.inventory;
++
++import net.minecraft.world.inventory.SimpleContainerData;
++
++public class BrewingSimpleContainerData extends SimpleContainerData {
++
++    public BrewingSimpleContainerData() {
++        super(3);
++        this.set(2, 400);
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java b/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
+index 68c529cb38d61cd3a0f39bef0f666057fc219c9b..6ec207e91f93b3ab625515dc75367ba399818876 100644
+--- a/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/BrewingStandMenu.java
+@@ -41,14 +41,14 @@ public class BrewingStandMenu extends AbstractContainerMenu {
+     // CraftBukkit end
+ 
+     public BrewingStandMenu(int syncId, Inventory playerInventory) {
+-        this(syncId, playerInventory, new SimpleContainer(5), new SimpleContainerData(2));
++        this(syncId, playerInventory, new SimpleContainer(5), new io.papermc.paper.inventory.BrewingSimpleContainerData()); // Paper - Add totalBrewTime
+     }
+ 
+     public BrewingStandMenu(int syncId, Inventory playerInventory, Container inventory, ContainerData propertyDelegate) {
+         super(MenuType.BREWING_STAND, syncId);
+         this.player = playerInventory; // CraftBukkit
+         checkContainerSize(inventory, 5);
+-        checkContainerDataCount(propertyDelegate, 2);
++        checkContainerDataCount(propertyDelegate, 3); // Paper - Add recipeBrewTime
+         this.brewingStand = inventory;
+         this.brewingStandData = propertyDelegate;
+         PotionBrewing potionbrewer = playerInventory.player.level().potionBrewing();
+@@ -60,7 +60,20 @@ public class BrewingStandMenu extends AbstractContainerMenu {
+         // Paper end - custom potion mixes
+         this.ingredientSlot = this.addSlot(new BrewingStandMenu.IngredientsSlot(potionbrewer, inventory, 3, 79, 17));
+         this.addSlot(new BrewingStandMenu.FuelSlot(inventory, 4, 17, 17));
+-        this.addDataSlots(propertyDelegate);
++        // Paper start - Add recipeBrewTime
++        this.addDataSlots(new SimpleContainerData(2) {
++            @Override
++            public int get(final int index) {
++                if (index == 0) return 400 * propertyDelegate.get(index) / propertyDelegate.get(2);
++                return propertyDelegate.get(index);
++            }
++
++            @Override
++            public void set(final int index, final int value) {
++                propertyDelegate.set(index, value);
++            }
++        });
++        // Paper end - Add recipeBrewTime
+ 
+         int j;
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+index bf2c303a314205590a2839e0f729af3a9ff40a86..0a93bacd62249bae1800ff306b8a7c765b0e5a8b 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
+@@ -49,6 +49,7 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+     public static final int NUM_DATA_VALUES = 2;
+     private NonNullList<ItemStack> items;
+     public int brewTime;
++    public int recipeBrewTime = 400; // Paper - Add recipeBrewTime
+     private boolean[] lastPotionCount;
+     private Item ingredient;
+     public int fuel;
+@@ -99,6 +100,11 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+                     case 1:
+                         j = BrewingStandBlockEntity.this.fuel;
+                         break;
++                    // Paper start - Add recipeBrewTime
++                    case 2:
++                        j = BrewingStandBlockEntity.this.recipeBrewTime;
++                        break;
++                    // Paper end - Add recipeBrewTime
+                     default:
+                         j = 0;
+                 }
+@@ -114,13 +120,18 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+                         break;
+                     case 1:
+                         BrewingStandBlockEntity.this.fuel = value;
++                        // Paper start - Add recipeBrewTime
++                    case 2:
++                        BrewingStandBlockEntity.this.recipeBrewTime = value;
++                        break;
++                    // Paper end - Add recipeBrewTime
+                 }
+ 
+             }
+ 
+             @Override
+             public int getCount() {
+-                return 2;
++                return 3; // Paper - Add recipeBrewTime
+             }
+         };
+     }
+@@ -188,7 +199,8 @@ public class BrewingStandBlockEntity extends BaseContainerBlockEntity implements
+             // CraftBukkit start
+             BrewingStartEvent event = new BrewingStartEvent(CraftBlock.at(world, pos), CraftItemStack.asCraftMirror(itemstack1), 400);
+             world.getCraftServer().getPluginManager().callEvent(event);
+-            blockEntity.brewTime = event.getTotalBrewTime(); // 400 -> event.getTotalBrewTime()
++            blockEntity.recipeBrewTime = event.getRecipeBrewTime(); // Paper - use recipe brew time from event
++            blockEntity.brewTime = event.getBrewingTime(); // 400 -> event.getTotalBrewTime() // Paper - use brewing time from event
+             // CraftBukkit end
+             blockEntity.ingredient = itemstack1.getItem();
+             setChanged(world, pos, state);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBrewingStand.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBrewingStand.java
+index e9f55c898de827afe6c9f951cbe1b46eea5f4149..f330c17b11566102b4db430fef013101b3275bda 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBrewingStand.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBrewingStand.java
+@@ -41,6 +41,19 @@ public class CraftBrewingStand extends CraftContainer<BrewingStandBlockEntity> i
+         this.getSnapshot().brewTime = brewTime;
+     }
+ 
++    // Paper start - Add recipeBrewTime
++    @Override
++    public void setRecipeBrewTime(int recipeBrewTime) {
++        com.google.common.base.Preconditions.checkArgument(recipeBrewTime > 0, "recipeBrewTime must be positive");
++        this.getSnapshot().recipeBrewTime = recipeBrewTime;
++    }
++
++    @Override
++    public int getRecipeBrewTime() {
++        return this.getSnapshot().recipeBrewTime;
++    }
++    // Paper end - Add recipeBrewTime
++
+     @Override
+     public int getFuelLevel() {
+         return this.getSnapshot().fuel;
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+index 674e3a827f8fb64e5c0beefb3c1874d6e8aee4e5..6d3f9d5dab6c9a2860ae31cae24310aa2d62da7c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+@@ -163,7 +163,7 @@ public class CraftContainer extends AbstractContainerMenu {
+                 this.delegate = new EnchantmentMenu(windowId, bottom);
+                 break;
+             case BREWING:
+-                this.delegate = new BrewingStandMenu(windowId, bottom, top, new SimpleContainerData(2));
++                this.delegate = new BrewingStandMenu(windowId, bottom, top, new io.papermc.paper.inventory.BrewingSimpleContainerData()); // Paper - Add recipeBrewTime
+                 break;
+             case HOPPER:
+                 this.delegate = new HopperMenu(windowId, bottom, top);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftBrewingStandView.java b/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftBrewingStandView.java
+index c92e51227cf2c0046a558b012c078c46582aed44..4f60ff23422ed268ee1e76190e5bac1fc2f7cdc1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftBrewingStandView.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/view/CraftBrewingStandView.java
+@@ -35,4 +35,17 @@ public class CraftBrewingStandView extends CraftInventoryView<BrewingStandMenu>
+         Preconditions.checkArgument(brewingTicks > 0, "The given brewing ticks must be greater than 0");
+         this.container.setData(BrewingStandBlockEntity.DATA_BREW_TIME, brewingTicks);
+     }
++
++    // Paper start - Add recipeBrewTime
++    @Override
++    public void setRecipeBrewTime(int recipeBrewTime) {
++        com.google.common.base.Preconditions.checkArgument(recipeBrewTime > 0, "recipeBrewTime must be positive");
++        this.container.brewingStandData.set(2, recipeBrewTime);
++    }
++
++    @Override
++    public int getRecipeBrewTime() {
++        return this.container.brewingStandData.get(2);
++    }
++    // Paper end - Add recipeBrewTime
+ }

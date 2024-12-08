@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Warrior <50800980+Warriorrrr@users.noreply.github.com>
+Date: Sun, 7 May 2023 22:33:50 +0200
+Subject: [PATCH] More accurate isInOpenWater impl
+
+For fishing hooks, the openWater field is true by default, and only calculated when a "fish" is approaching the bobber.
+This patch changes the API impl to calculate the open water state itself instead of returning this field.
+
+Relevant link: https://github.com/PaperMC/Paper/issues/9131
+
+== AT ==
+public net.minecraft.world.entity.projectile.FishingHook calculateOpenWater(Lnet/minecraft/core/BlockPos;)Z
+public net.minecraft.world.entity.projectile.FishingHook outOfWaterTime
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
+index 9d8f4b7176e60180565e3134a14ecf19060f2621..e0d65df2e5b4c14abeb89a5f72cc2d9fa034dcf5 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFishHook.java
+@@ -164,7 +164,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
+ 
+     @Override
+     public boolean isInOpenWater() {
+-        return this.getHandle().isOpenWaterFishing();
++        return this.getHandle().outOfWaterTime < 10 && this.getHandle().calculateOpenWater(this.getHandle().blockPosition()); // Paper - isOpenWaterFishing is only calculated when a "fish" is approaching the hook
+     }
+ 
+     @Override

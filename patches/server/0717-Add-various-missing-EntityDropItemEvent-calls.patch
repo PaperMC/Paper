@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 20 Jul 2021 21:35:47 -0700
+Subject: [PATCH] Add various missing EntityDropItemEvent calls
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 8b0959050cd5e0ef24347632c3b4184eadf565e6..73a69c35bca89ab82da39149a2a7cb86d4878e3c 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2557,6 +2557,14 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+             stack.setCount(0); // Paper - destroy this item - if this ever leaks due to game bugs, ensure it doesn't dupe
+ 
+             entityitem.setDefaultPickUpDelay();
++            // Paper start - Call EntityDropItemEvent
++            return this.spawnAtLocation(entityitem);
++        }
++    }
++    @Nullable
++    public ItemEntity spawnAtLocation(ItemEntity entityitem) {
++        {
++            // Paper end - Call EntityDropItemEvent
+             // CraftBukkit start
+             EntityDropItemEvent event = new EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
+             Bukkit.getPluginManager().callEvent(event);
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Dolphin.java b/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
+index 08823651b0a81b15bc33f86c96d6cc1dc72770f4..da45cc62985f8b67cdfeffc21cb33837db673555 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Dolphin.java
+@@ -576,7 +576,7 @@ public class Dolphin extends WaterAnimal {
+                 float f2 = 0.02F * Dolphin.this.random.nextFloat();
+ 
+                 entityitem.setDeltaMovement((double) (0.3F * -Mth.sin(Dolphin.this.getYRot() * 0.017453292F) * Mth.cos(Dolphin.this.getXRot() * 0.017453292F) + Mth.cos(f1) * f2), (double) (0.3F * Mth.sin(Dolphin.this.getXRot() * 0.017453292F) * 1.5F), (double) (0.3F * Mth.cos(Dolphin.this.getYRot() * 0.017453292F) * Mth.cos(Dolphin.this.getXRot() * 0.017453292F) + Mth.sin(f1) * f2));
+-                Dolphin.this.level().addFreshEntity(entityitem);
++                Dolphin.this.spawnAtLocation(entityitem); // Paper - Call EntityDropItemEvent
+             }
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Fox.java b/src/main/java/net/minecraft/world/entity/animal/Fox.java
+index e46c8231ee318eda0512afbb6343b426b4838643..3265b3b5aede517b6fd8bb836947795bf8881350 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Fox.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Fox.java
+@@ -507,14 +507,14 @@ public class Fox extends Animal implements VariantHolder<Fox.Type> {
+             entityitem.setPickUpDelay(40);
+             entityitem.setThrower(this);
+             this.playSound(SoundEvents.FOX_SPIT, 1.0F, 1.0F);
+-            this.level().addFreshEntity(entityitem);
++            this.spawnAtLocation(entityitem); // Paper - Call EntityDropItemEvent
+         }
+     }
+ 
+     private void dropItemStack(ItemStack stack) {
+         ItemEntity entityitem = new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), stack);
+ 
+-        this.level().addFreshEntity(entityitem);
++        this.spawnAtLocation(entityitem); // Paper - Call EntityDropItemEvent
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+index 3b2cf9ca8447321d64ffdb4fdb9569d736d63dbb..923806900ef6248576e71260d40e9caf2c8943e8 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/src/main/java/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -361,8 +361,7 @@ public class Goat extends Animal {
+             double d2 = (double) Mth.randomBetween(this.random, -0.2F, 0.2F);
+             ItemEntity entityitem = new ItemEntity(this.level(), vec3d.x(), vec3d.y(), vec3d.z(), itemstack, d0, d1, d2);
+ 
+-            this.level().addFreshEntity(entityitem);
+-            return true;
++            return this.spawnAtLocation(entityitem) != null; // Paper - Call EntityDropItemEvent
+         }
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+index 94df94f7acc121201966955a09fb336b0a98e599..d34d8fe70379dcad9540739ec0ae1c94f01fc46b 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
++++ b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+@@ -350,8 +350,9 @@ public class Sniffer extends Animal {
+ 
+         entityitem.setDefaultPickUpDelay();
+         this.finalizeSpawnChildFromBreeding(world, other, (AgeableMob) null);
++        if (this.spawnAtLocation(entityitem) != null) { // Paper - Call EntityDropItemEvent
+         this.playSound(SoundEvents.SNIFFER_EGG_PLOP, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 0.5F);
+-        world.addFreshEntity(entityitem);
++        } // Paper - Call EntityDropItemEvent
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/item/ItemUtils.java b/src/main/java/net/minecraft/world/item/ItemUtils.java
+index 66f88f44eb74dfbdafe0d6257dc1ef46238aaa92..4901f0d89ae2472bce7f242d9529236674f5d134 100644
+--- a/src/main/java/net/minecraft/world/item/ItemUtils.java
++++ b/src/main/java/net/minecraft/world/item/ItemUtils.java
+@@ -41,7 +41,15 @@ public class ItemUtils {
+     public static void onContainerDestroyed(ItemEntity itemEntity, Iterable<ItemStack> contents) {
+         Level level = itemEntity.level();
+         if (!level.isClientSide) {
+-            contents.forEach(stack -> level.addFreshEntity(new ItemEntity(level, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), stack)));
++            // Paper start - call EntityDropItemEvent
++            contents.forEach(stack -> {
++                ItemEntity droppedItem = new ItemEntity(level, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), stack);
++                org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(itemEntity.getBukkitEntity(), (org.bukkit.entity.Item) droppedItem.getBukkitEntity());
++                if (event.callEvent()) {
++                    level.addFreshEntity(droppedItem);
++                }
++            });
++            // Paper end - call EntityDropItemEvent
+         }
+     }
+ }

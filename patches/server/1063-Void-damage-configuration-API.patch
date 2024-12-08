@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Axionize <154778082+Axionize@users.noreply.github.com>
+Date: Sun, 29 Sep 2024 14:20:42 -0700
+Subject: [PATCH] Void damage configuration API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index bc45c74987974b4828201e06fc8b1f3fbc0af8b4..4b54d0ea31062972e68ee8fafe3cfaf68f65a5cd 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -931,8 +931,10 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     }
+ 
+     public void checkBelowWorld() {
++        if (!this.level.getWorld().isVoidDamageEnabled()) return; // Paper - check if void damage is enabled on the world
++
+         // Paper start - Configurable nether ceiling damage
+-        if (this.getY() < (double) (this.level.getMinBuildHeight() - 64) || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER
++        if (this.getY() < (double) (this.level.getMinBuildHeight() + this.level.getWorld().getVoidDamageMinBuildHeightOffset())  || (this.level.getWorld().getEnvironment() == org.bukkit.World.Environment.NETHER // Paper - use configured min build height offset
+             && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> this.getY() >= v)
+             && (!(this instanceof Player player) || !player.getAbilities().invulnerable))) {
+             // Paper end - Configurable nether ceiling damage
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 30f4f1254fc295442d72d50479e8af635f2fe983..2aa6374cd4a96efd85899be8cd3172a8257bfe6b 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -2625,7 +2625,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+     @Override
+     protected void onBelowWorld() {
+-        this.hurt(this.damageSources().fellOutOfWorld(), 4.0F);
++        this.hurt(this.damageSources().fellOutOfWorld(), this.level().getWorld().getVoidDamageAmount()); // Paper - use configured void damage amount
+     }
+ 
+     protected void updateSwingTime() {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 38b046da5acac8633db8618a2957187d291f5e73..33e4818ba5a90d78d69baad9f6b1be1b1382e9f3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -163,6 +163,41 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
+     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
+     private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
++    // Paper start - void damage configuration
++    private boolean voidDamageEnabled;
++    private float voidDamageAmount;
++    private double voidDamageMinBuildHeightOffset;
++
++    @Override
++    public boolean isVoidDamageEnabled() {
++        return this.voidDamageEnabled;
++    }
++
++    @Override
++    public void setVoidDamageEnabled(final boolean enabled) {
++        this.voidDamageEnabled = enabled;
++    }
++
++    @Override
++    public float getVoidDamageAmount() {
++        return this.voidDamageAmount;
++    }
++
++    @Override
++    public void setVoidDamageAmount(float voidDamageAmount) {
++        this.voidDamageAmount = voidDamageAmount;
++    }
++
++    @Override
++    public double getVoidDamageMinBuildHeightOffset() {
++        return this.voidDamageMinBuildHeightOffset;
++    }
++
++    @Override
++    public void setVoidDamageMinBuildHeightOffset(double minBuildHeightOffset) {
++        this.voidDamageMinBuildHeightOffset = minBuildHeightOffset;
++    }
++    // Paper end - void damage configuration
+ 
+     // Paper start - Provide fast information methods
+     @Override
+@@ -271,6 +306,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+             }
+         }
+         // Paper end - per world spawn limits
++
++        // Paper start - per world void damage height
++        this.voidDamageEnabled = this.world.paperConfig().environment.voidDamageAmount.enabled();
++        this.voidDamageMinBuildHeightOffset = this.world.paperConfig().environment.voidDamageMinBuildHeightOffset;
++        this.voidDamageAmount = (float) this.world.paperConfig().environment.voidDamageAmount.or(0);
++        // Paper end - per world void damage height
+     }
+ 
+     @Override

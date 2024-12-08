@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake <jake.m.potrebic@gmail.com>
+Date: Sat, 15 Jun 2024 18:50:18 +0100
+Subject: [PATCH] Fix removing recipes from RecipeIterator
+
+== AT ==
+public net.minecraft.world.item.crafting.RecipeManager byName
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/RecipeIterator.java b/src/main/java/org/bukkit/craftbukkit/inventory/RecipeIterator.java
+index 78a2afa981407de793ac940d6eb7315c5cd53b8f..33cd12d55786356dc89ab9d3872b2f7d266c3de2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/RecipeIterator.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/RecipeIterator.java
+@@ -9,6 +9,7 @@ import org.bukkit.inventory.Recipe;
+ 
+ public class RecipeIterator implements Iterator<Recipe> {
+     private final Iterator<Map.Entry<RecipeType<?>, RecipeHolder<?>>> recipes;
++    private Recipe currentRecipe; // Paper - fix removing recipes from RecipeIterator
+ 
+     public RecipeIterator() {
+         this.recipes = MinecraftServer.getServer().getRecipeManager().byType.entries().iterator();
+@@ -21,11 +22,19 @@ public class RecipeIterator implements Iterator<Recipe> {
+ 
+     @Override
+     public Recipe next() {
+-        return this.recipes.next().getValue().toBukkitRecipe();
++        // Paper start - fix removing recipes from RecipeIterator
++        this.currentRecipe = this.recipes.next().getValue().toBukkitRecipe();
++        return this.currentRecipe;
++        // Paper end - fix removing recipes from RecipeIterator
+     }
+ 
+     @Override
+     public void remove() {
++        // Paper start - fix removing recipes from RecipeIterator
++        if (this.currentRecipe instanceof org.bukkit.Keyed keyed) {
++            MinecraftServer.getServer().getRecipeManager().byName.remove(org.bukkit.craftbukkit.util.CraftNamespacedKey.toMinecraft(keyed.getKey()));
++        }
++        // Paper end - fix removing recipes from RecipeIterator
+         this.recipes.remove();
+     }
+ }

@@ -1,0 +1,170 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Nassim Jahnke <nassim@njahnke.dev>
+Date: Sat, 6 Jan 2024 14:31:00 +0100
+Subject: [PATCH] Fixup NamespacedKey handling
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
+index e34deaf398dc6722c3128bdd6b9bc16da2d33bf7..f028daa4f23a1f1868c9922991259739cadc5da2 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftLootTable.java
+@@ -38,7 +38,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
+     }
+ 
+     public static org.bukkit.loot.LootTable minecraftToBukkit(ResourceKey<LootTable> minecraft) {
+-        return (minecraft == null) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft));
++        return (minecraft == null || minecraft.location().getPath().isEmpty()) ? null : Bukkit.getLootTable(CraftLootTable.minecraftToBukkitKey(minecraft)); // Paper - fix some NamespacedKey parsing
+     }
+ 
+     public static NamespacedKey minecraftToBukkitKey(ResourceKey<LootTable> minecraft) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+index 9b78bfd187a1bd5f99af5690f194441904956c7d..bd16933a5341908b21e549f66080c33466ad1079 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegistry.java
+@@ -122,6 +122,16 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
+                 + ", this can happen if a plugin creates its own registry entry with out properly registering it.");
+     }
+ 
++    // Paper start - fixup upstream being dum
++    public static <T extends org.bukkit.Keyed, M> java.util.Optional<T> unwrapAndConvertHolder(final io.papermc.paper.registry.RegistryKey<T> registryKey, final Holder<M> value) {
++        return unwrapAndConvertHolder(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(registryKey), value);
++    }
++
++    public static <T extends org.bukkit.Keyed, M> java.util.Optional<T> unwrapAndConvertHolder(final Registry<T> registry, final Holder<M> value) {
++        return value.unwrapKey().map(key -> registry.get(CraftNamespacedKey.fromMinecraft(key.location())));
++    }
++    // Paper end - fixup upstream being dum
++
+     // Paper - move to PaperRegistries
+ 
+     // Paper - NOTE: As long as all uses of the method below relate to *serialization* via ConfigurationSerializable, it's fine
+diff --git a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
+index cc97638e038ea64ad180ebfded2528aa07d1809e..10e4318782107644f67818109784fff60d017e0a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
++++ b/src/main/java/org/bukkit/craftbukkit/attribute/CraftAttribute.java
+@@ -37,6 +37,7 @@ public class CraftAttribute {
+         string = FieldRename.convertAttributeName(ApiVersion.CURRENT, string);
+         string = string.toLowerCase(Locale.ROOT);
+         NamespacedKey key = NamespacedKey.fromString(string);
++        if (key == null) return null; // Paper - Fixup NamespacedKey handling
+ 
+         // Now also convert from when keys where saved
+         return CraftRegistry.get(Registry.ATTRIBUTE, key, ApiVersion.CURRENT);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java
+index afed8bdb9bd6a135e9b5f7bd9bfc61964cb240f7..bb2d1dddca6bfe719b28df136e80a7c5a339a5ce 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBanner.java
+@@ -38,7 +38,11 @@ public class CraftBanner extends CraftBlockEntityState<BannerBlockEntity> implem
+         if (banner.getPatterns() != null) {
+             for (int i = 0; i < banner.getPatterns().layers().size(); i++) {
+                 BannerPatternLayers.Layer p = banner.getPatterns().layers().get(i);
+-                this.patterns.add(new Pattern(DyeColor.getByWoolData((byte) p.color().getId()), CraftPatternType.minecraftHolderToBukkit(p.pattern())));
++                // Paper start - fix upstream not handling inlined banner pattern
++                java.util.Optional<org.bukkit.block.banner.PatternType> type = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern());
++                if (type.isEmpty()) continue;
++                this.patterns.add(new Pattern(DyeColor.getByWoolData((byte) p.color().getId()), type.get()));
++                // Paper end - fix upstream not handling inlined banner pattern
+             }
+         }
+     }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java
+index bcac1359c667ef1ee46384f9c7a5adf4010d2b08..98a4463c9f194f33f4f85d95a0b9fa061cf6faaf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPainting.java
+@@ -16,7 +16,7 @@ public class CraftPainting extends CraftHanging implements Painting {
+ 
+     @Override
+     public Art getArt() {
+-        return CraftArt.minecraftHolderToBukkit(this.getHandle().getVariant());
++        return org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.ART, this.getHandle().getVariant()).orElseThrow(() -> new IllegalStateException("Inlined/custom painting variants are not supported yet in the API!")); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
+index 2c57fd269484ed79814d974877585f9f7e6393d3..865977ce17fbb8793a1eefd71079729e83f5cfaf 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaArmor.java
+@@ -38,8 +38,9 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
+         super(tag);
+ 
+         getOrEmpty(tag, CraftMetaArmor.TRIM).ifPresent((trimCompound) -> {
+-            TrimMaterial trimMaterial = CraftTrimMaterial.minecraftHolderToBukkit(trimCompound.material());
+-            TrimPattern trimPattern = CraftTrimPattern.minecraftHolderToBukkit(trimCompound.pattern());
++            TrimMaterial trimMaterial = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(io.papermc.paper.registry.RegistryKey.TRIM_MATERIAL, trimCompound.material()).orElse(null); // Paper - fix upstream not being correct
++            TrimPattern trimPattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(io.papermc.paper.registry.RegistryKey.TRIM_PATTERN, trimCompound.pattern()).orElse(null); // Paper - fix upstream not being correct
++            if (trimMaterial == null || trimPattern == null) return; // Paper - just delete the trim because upstream is not doing this right
+ 
+             this.trim = new ArmorTrim(trimMaterial, trimPattern);
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
+index 1c1a2d66d1ebcbe2ded732e759d0f9d471d43b56..eb44c19f6af624df458981e46c73a64358d6e1ce 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBanner.java
+@@ -42,7 +42,7 @@ public class CraftMetaBanner extends CraftMetaItem implements BannerMeta {
+             for (int i = 0; i < Math.min(patterns.size(), 20); i++) {
+                 BannerPatternLayers.Layer p = patterns.get(i);
+                 DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
+-                PatternType pattern = CraftPatternType.minecraftHolderToBukkit(p.pattern());
++                PatternType pattern = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not handling inlined banner pattern
+ 
+                 if (color != null && pattern != null) {
+                     this.patterns.add(new Pattern(color, pattern));
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
+index 478059eb3ad76b41e6a20e9b489a2a4fb19e7c7c..76a3e4893cbdba903a712d6db1d30b9c644795be 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaMusicInstrument.java
+@@ -30,7 +30,7 @@ public class CraftMetaMusicInstrument extends CraftMetaItem implements MusicInst
+         super(tag);
+ 
+         getOrEmpty(tag, CraftMetaMusicInstrument.GOAT_HORN_INSTRUMENT).ifPresent((instrument) -> {
+-            this.instrument = CraftMusicInstrument.minecraftHolderToBukkit(instrument);
++            this.instrument = org.bukkit.craftbukkit.CraftRegistry.unwrapAndConvertHolder(org.bukkit.Registry.INSTRUMENT, instrument).orElse(null); // Paper - fix upstream not handling inlined instrument
+         });
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
+index c8eec04685456d89cb41466cddcc3975d0ceeb29..bcd6cc29e4e621805cbd923d747f652ced240c6d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaShield.java
+@@ -17,6 +17,7 @@ import org.bukkit.block.BlockState;
+ import org.bukkit.block.banner.Pattern;
+ import org.bukkit.block.banner.PatternType;
+ import org.bukkit.configuration.serialization.DelegateDeserialization;
++import org.bukkit.craftbukkit.CraftRegistry;
+ import org.bukkit.craftbukkit.block.CraftBlockStates;
+ import org.bukkit.craftbukkit.block.banner.CraftPatternType;
+ import org.bukkit.inventory.meta.BlockStateMeta;
+@@ -53,7 +54,7 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
+             for (int i = 0; i < Math.min(patterns.size(), 20); i++) {
+                 BannerPatternLayers.Layer p = patterns.get(i);
+                 DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
+-                PatternType pattern = CraftPatternType.minecraftHolderToBukkit(p.pattern());
++                PatternType pattern = CraftRegistry.unwrapAndConvertHolder(io.papermc.paper.registry.RegistryKey.BANNER_PATTERN, p.pattern()).orElse(null); // Paper - fix upstream not being correct
+ 
+                 if (color != null && pattern != null) {
+                     this.addPattern(new Pattern(color, pattern));
+diff --git a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
+index 82a50b06c08b632f77d73745e1fa9bd22dfd950a..f1d8ed4a2b8959873b02d57f6a40323a841f3d7f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
++++ b/src/main/java/org/bukkit/craftbukkit/potion/CraftPotionType.java
+@@ -69,6 +69,7 @@ public class CraftPotionType implements PotionType.InternalPotionData {
+         string = FieldRename.convertPotionTypeName(ApiVersion.CURRENT, string);
+         string = string.toLowerCase(Locale.ROOT);
+         NamespacedKey key = NamespacedKey.fromString(string);
++        if (key == null) return null; // Paper - Fixup NamespacedKey handling
+ 
+         // Now also convert from when keys where saved
+         return CraftRegistry.get(Registry.POTION, key, ApiVersion.CURRENT);
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftNamespacedKey.java b/src/main/java/org/bukkit/craftbukkit/util/CraftNamespacedKey.java
+index dc88ba24ed3b0024c39a30c2d90628fc708d63cf..944bed9b6c803df1a312383fed9de7d61e7d2c70 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftNamespacedKey.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftNamespacedKey.java
+@@ -13,7 +13,7 @@ public final class CraftNamespacedKey {
+             return null;
+         }
+         ResourceLocation minecraft = ResourceLocation.tryParse(string);
+-        return (minecraft == null) ? null : CraftNamespacedKey.fromMinecraft(minecraft);
++        return (minecraft == null || minecraft.getPath().isEmpty()) ? null : CraftNamespacedKey.fromMinecraft(minecraft); // Paper - Bukkit's parser does not match Vanilla for empty paths
+     }
+ 
+     public static NamespacedKey fromString(String string) {

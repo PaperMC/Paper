@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Flo0 <flo.roma@web.de>
+Date: Mon, 8 Apr 2024 16:43:16 +0200
+Subject: [PATCH] API for checking sent chunks
+
+
+diff --git a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
+index 852d75a73dae7448cbe1e2f5e164b235efa8a969..a608f57ebca98eda88ad749d0aad021678be54f9 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
++++ b/src/main/java/ca/spottedleaf/moonrise/patches/chunk_system/player/RegionizedPlayerChunkLoader.java
+@@ -1078,5 +1078,10 @@ public final class RegionizedPlayerChunkLoader {
+ 
+             // now all tickets should be removed, which is all of our external state
+         }
++
++        // For external checks
++        public it.unimi.dsi.fastutil.longs.LongOpenHashSet getSentChunksRaw() {
++            return this.sentChunks;
++        }
+     }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index e02fa642f11809607e30e22b51c65373edd70842..ad740739437be632fc7fedec488a7d0c49534688 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -3483,6 +3483,35 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     }
+     // Paper end
+ 
++    // Paper start - Add chunk view API
++    @Override
++    public Set<java.lang.Long> getSentChunkKeys() {
++        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
++        return it.unimi.dsi.fastutil.longs.LongSets.unmodifiable(
++            this.getHandle().moonrise$getChunkLoader().getSentChunksRaw().clone()
++        );
++    }
++
++    @Override
++    public Set<org.bukkit.Chunk> getSentChunks() {
++        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
++        final it.unimi.dsi.fastutil.longs.LongOpenHashSet rawChunkKeys = this.getHandle().moonrise$getChunkLoader().getSentChunksRaw();
++        final it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<org.bukkit.Chunk> chunks = new it.unimi.dsi.fastutil.objects.ObjectOpenHashSet<>(rawChunkKeys.size());
++        final org.bukkit.World world = this.getWorld();
++
++        final it.unimi.dsi.fastutil.longs.LongIterator iter = this.getHandle().moonrise$getChunkLoader().getSentChunksRaw().longIterator();
++        while (iter.hasNext()) chunks.add(world.getChunkAt(iter.nextLong(), false));
++
++        return it.unimi.dsi.fastutil.objects.ObjectSets.unmodifiable(chunks);
++    }
++
++    @Override
++    public boolean isChunkSent(final long chunkKey) {
++        org.spigotmc.AsyncCatcher.catchOp("accessing sent chunks");
++        return this.getHandle().moonrise$getChunkLoader().getSentChunksRaw().contains(chunkKey);
++    }
++    // Paper end
++
+     public Player.Spigot spigot()
+     {
+         return this.spigot;

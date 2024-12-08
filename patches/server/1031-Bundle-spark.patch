@@ -1,0 +1,371 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Riley Park <rileysebastianpark@gmail.com>
+Date: Tue, 16 Jul 2024 14:55:23 -0700
+Subject: [PATCH] Bundle spark
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 4f6136ae3ac4890b21a5fb3f69f9c1474a0773d1..648281575eb8d45a5c06549eb3d0f517c086fe64 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -61,6 +61,10 @@ dependencies {
+     implementation("io.papermc:reflection-rewriter-runtime:$reflectionRewriterVersion")
+     implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
+     // Paper end - Remap reflection
++    // Paper start - spark
++    implementation("me.lucko:spark-api:0.1-20240720.200737-2")
++    implementation("me.lucko:spark-paper:1.10.105-SNAPSHOT")
++    // Paper end - spark
+ }
+ 
+ paperweight {
+diff --git a/src/main/java/io/papermc/paper/SparksFly.java b/src/main/java/io/papermc/paper/SparksFly.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2955b7ec9832a5752ea4aff9fc9d34ae2f9ee83e
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/SparksFly.java
+@@ -0,0 +1,201 @@
++package io.papermc.paper;
++
++import io.papermc.paper.configuration.GlobalConfiguration;
++import io.papermc.paper.plugin.entrypoint.classloader.group.PaperPluginClassLoaderStorage;
++import io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader;
++import io.papermc.paper.plugin.provider.classloader.PaperClassLoaderStorage;
++import io.papermc.paper.util.MCUtil;
++import java.util.Collection;
++import java.util.List;
++import java.util.logging.Level;
++import java.util.logging.Logger;
++import me.lucko.spark.paper.api.Compatibility;
++import me.lucko.spark.paper.api.PaperClassLookup;
++import me.lucko.spark.paper.api.PaperScheduler;
++import me.lucko.spark.paper.api.PaperSparkModule;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.format.TextColor;
++import net.minecraft.util.ExceptionCollector;
++import org.bukkit.Server;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.craftbukkit.CraftServer;
++
++// It's like electricity.
++public final class SparksFly {
++    public static final String ID = "spark";
++    public static final String COMMAND_NAME = "spark";
++
++    private static final String PREFER_SPARK_PLUGIN_PROPERTY = "paper.preferSparkPlugin";
++
++    private static final int SPARK_YELLOW = 0xffc93a;
++
++    private final Logger logger;
++    private final PaperSparkModule spark;
++
++    private boolean enabled;
++    private boolean disabledInConfigurationWarningLogged;
++
++    public SparksFly(final Server server) {
++        this.logger = Logger.getLogger(ID);
++        this.logger.log(Level.INFO, "This server bundles the spark profiler. For more information please visit https://docs.papermc.io/paper/profiling");
++        this.spark = PaperSparkModule.create(Compatibility.VERSION_1_0, server, this.logger, new PaperScheduler() {
++            @Override
++            public void executeAsync(final Runnable runnable) {
++                MCUtil.scheduleAsyncTask(this.catching(runnable, "asynchronous"));
++            }
++
++            @Override
++            public void executeSync(final Runnable runnable) {
++                MCUtil.ensureMain(this.catching(runnable, "synchronous"));
++            }
++
++            private Runnable catching(final Runnable runnable, final String type) {
++                return () -> {
++                    try {
++                        runnable.run();
++                    } catch (final Throwable t) {
++                        SparksFly.this.logger.log(Level.SEVERE, "An exception was encountered while executing a " + type + " spark task", t);
++                    }
++                };
++            }
++        }, new PaperClassLookup() {
++            @Override
++            public Class<?> lookup(final String className) throws Exception {
++                final ExceptionCollector<ClassNotFoundException> exceptions = new ExceptionCollector<>();
++                try {
++                    return Class.forName(className);
++                } catch (final ClassNotFoundException e) {
++                    exceptions.add(e);
++                    for (final ConfiguredPluginClassLoader loader : ((PaperPluginClassLoaderStorage) PaperClassLoaderStorage.instance()).getGlobalGroup().getClassLoaders()) {
++                        try {
++                            final Class<?> loadedClass = loader.loadClass(className, true, false, true);
++                            if (loadedClass != null) {
++                                return loadedClass;
++                            }
++                        } catch (final ClassNotFoundException exception) {
++                            exceptions.add(exception);
++                        }
++                    }
++                    exceptions.throwIfPresent();
++                    return null;
++                }
++            }
++        });
++    }
++
++    public void enableEarlyIfRequested() {
++        if (!isPluginPreferred() && shouldEnableImmediately()) {
++            this.enable();
++        }
++    }
++
++    public void enableBeforePlugins() {
++        if (!isPluginPreferred()) {
++            this.enable();
++        }
++    }
++
++    public void enableAfterPlugins(final Server server) {
++        final boolean isPluginPreferred = isPluginPreferred();
++        final boolean isPluginEnabled = isPluginEnabled(server);
++        if (!isPluginPreferred || !isPluginEnabled) {
++            if (isPluginPreferred && !this.enabled) {
++                this.logger.log(Level.INFO, "The spark plugin has been preferred but was not loaded. The bundled spark profiler will enabled instead.");
++            }
++            this.enable();
++        }
++    }
++
++    private void enable() {
++        if (!this.enabled) {
++            if (GlobalConfiguration.get().spark.enabled) {
++                this.enabled = true;
++                this.spark.enable();
++            } else {
++                if (!this.disabledInConfigurationWarningLogged) {
++                    this.logger.log(Level.INFO, "The spark profiler will not be enabled because it is currently disabled in the configuration.");
++                    this.disabledInConfigurationWarningLogged = true;
++                }
++            }
++        }
++    }
++
++    public void disable() {
++        if (this.enabled) {
++            this.spark.disable();
++            this.enabled = false;
++        }
++    }
++
++    public void registerCommandBeforePlugins(final Server server) {
++        if (!isPluginPreferred()) {
++            this.registerCommand(server);
++        }
++    }
++
++    public void registerCommandAfterPlugins(final Server server) {
++        if ((!isPluginPreferred() || !isPluginEnabled(server)) && server.getCommandMap().getCommand(COMMAND_NAME) == null) {
++            this.registerCommand(server);
++        }
++    }
++
++    private void registerCommand(final Server server) {
++        server.getCommandMap().register(COMMAND_NAME, "paper", new CommandImpl(COMMAND_NAME, this.spark.getPermissions()));
++    }
++
++    public void tickStart() {
++        this.spark.onServerTickStart();
++    }
++
++    public void tickEnd(final double duration) {
++        this.spark.onServerTickEnd(duration);
++    }
++
++    void executeCommand(final CommandSender sender, final String[] args) {
++        this.spark.executeCommand(sender, args);
++    }
++
++    List<String> tabComplete(final CommandSender sender, final String[] args) {
++        return this.spark.tabComplete(sender, args);
++    }
++
++    public static boolean isPluginPreferred() {
++        return Boolean.getBoolean(PREFER_SPARK_PLUGIN_PROPERTY);
++    }
++
++    private static boolean isPluginEnabled(final Server server) {
++        return server.getPluginManager().isPluginEnabled(ID);
++    }
++
++    private static boolean shouldEnableImmediately() {
++        return GlobalConfiguration.get().spark.enableImmediately;
++    }
++
++    public static final class CommandImpl extends Command {
++        CommandImpl(final String name, final Collection<String> permissions) {
++            super(name);
++            this.setPermission(String.join(";", permissions));
++        }
++
++        @Override
++        public boolean execute(final CommandSender sender, final String commandLabel, final String[] args) {
++            final SparksFly spark = ((CraftServer) sender.getServer()).spark;
++            if (spark.enabled) {
++                spark.executeCommand(sender, args);
++            } else {
++                sender.sendMessage(Component.text("The spark profiler is currently disabled.", TextColor.color(SPARK_YELLOW)));
++            }
++            return true;
++        }
++
++        @Override
++        public List<String> tabComplete(final CommandSender sender, final String alias, final String[] args) throws IllegalArgumentException {
++            final SparksFly spark = ((CraftServer) sender.getServer()).spark;
++            if (spark.enabled) {
++                return spark.tabComplete(sender, args);
++            }
++            return List.of();
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
+index 6b8ed8a0baaf4a57d20e57cec3400af5561ddd79..48604e7f96adc9e226e034054c5e2bad0b024eb5 100644
+--- a/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
++++ b/src/main/java/io/papermc/paper/plugin/provider/source/FileProviderSource.java
+@@ -1,6 +1,9 @@
+ package io.papermc.paper.plugin.provider.source;
+ 
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.SparksFly;
+ import io.papermc.paper.plugin.PluginInitializerManager;
++import io.papermc.paper.plugin.configuration.PluginMeta;
+ import io.papermc.paper.plugin.entrypoint.EntrypointHandler;
+ import io.papermc.paper.plugin.provider.type.PluginFileType;
+ import org.bukkit.plugin.InvalidPluginException;
+@@ -17,12 +20,14 @@ import java.nio.file.attribute.BasicFileAttributes;
+ import java.util.Set;
+ import java.util.function.Function;
+ import java.util.jar.JarFile;
++import org.slf4j.Logger;
+ 
+ /**
+  * Loads a plugin provider at the given plugin jar file path.
+  */
+ public class FileProviderSource implements ProviderSource<Path, Path> {
+ 
++    private static final Logger LOGGER = LogUtils.getClassLogger();
+     private final Function<Path, String> contextChecker;
+     private final boolean applyRemap;
+ 
+@@ -82,6 +87,12 @@ public class FileProviderSource implements ProviderSource<Path, Path> {
+             );
+         }
+ 
++        final PluginMeta config = type.getConfig(file);
++        if ((config.getName().equals("spark") && config.getMainClass().equals("me.lucko.spark.bukkit.BukkitSparkPlugin")) && !SparksFly.isPluginPreferred()) {
++            LOGGER.info("The spark plugin will not be loaded as this server bundles the spark profiler.");
++            return;
++        }
++
+         type.register(entrypointHandler, file, context);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index aa38e3b297209cc121e7dc7a6ac9588c18bf9357..696d075ca2883f3c37e35f983c4d020e5db89d16 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -751,6 +751,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // Paper end - Configurable player collision
+ 
+         this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.POSTWORLD);
++        this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
++        this.server.spark.enableAfterPlugins(this.server); // Paper - spark
+         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
+         io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // Paper - reset invalid state for event fire below
+         io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS, io.papermc.paper.command.brigadier.PaperCommands.INSTANCE, org.bukkit.plugin.Plugin.class, io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL); // Paper - call commands event for regular plugins
+@@ -1037,6 +1039,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         MinecraftServer.LOGGER.info("Stopping server");
+         Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
+         MinecraftTimings.stopServer(); // Paper
++        this.server.spark.disable(); // Paper - spark
+         // CraftBukkit start
+         if (this.server != null) {
+             this.server.disablePlugins();
+@@ -1226,6 +1229,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             // tasks are default scheduled at -1 + delay, and first tick will tick at 1
+             final long actualDoneTimeMs = System.currentTimeMillis() - org.bukkit.craftbukkit.Main.BOOT_TIME.toEpochMilli(); // Paper - Add total time
+             LOGGER.info("Done ({})! For help, type \"help\"", String.format(java.util.Locale.ROOT, "%.3fs", actualDoneTimeMs / 1000.00D)); // Paper - Add total time
++            this.server.spark.enableBeforePlugins(); // Paper - spark
+             org.spigotmc.WatchdogThread.tick();
+             // Paper end - Improved Watchdog Support
+             org.spigotmc.WatchdogThread.hasStarted = true; // Paper
+@@ -1584,6 +1588,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         });
+         isOversleep = false;MinecraftTimings.serverOversleep.stopTiming();
+         // Paper end
++        this.server.spark.tickStart(); // Paper - spark
+         new com.destroystokyo.paper.event.server.ServerTickStartEvent(this.tickCount+1).callEvent(); // Paper - Server Tick Events
+ 
+         ++this.tickCount;
+@@ -1626,6 +1631,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         long endTime = System.nanoTime();
+         long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
+         new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.tickCount, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
++        this.server.spark.tickEnd(((double)(endTime - lastTick) / 1000000D)); // Paper - spark
+         // Paper end - Server Tick Events
+         this.profiler.push("tallying");
+         long j = Util.getNanos() - i;
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index d43b98bdfcb00603737a309c0fb7793d42289b8c..dd56c8e041116ef3602a9f89c998c8208ab89b51 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -226,6 +226,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
+         this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
+         // Paper end - initialize global and world-defaults configuration
++        this.server.spark.enableEarlyIfRequested(); // Paper - spark
+         // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
+         if (this.convertOldUsers()) {
+             this.getProfileCache().save(false); // Paper
+@@ -235,6 +236,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
+         thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
+         io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
++        this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
+         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
+         com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 5ef080406d8954ecaa65cf60569cc05dbad649ea..b7af2d4300facf41a025c8ca322bf6541949b3ab 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -309,6 +309,7 @@ public final class CraftServer implements Server {
+     public static Exception excessiveVelEx; // Paper - Velocity warnings
+     private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
+     private final io.papermc.paper.potion.PaperPotionBrewer potionBrewer; // Paper - Custom Potion Mixes
++    public final io.papermc.paper.SparksFly spark; // Paper - spark
+ 
+     // Paper start - Folia region threading API
+     private final io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler regionizedScheduler = new io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler();
+@@ -474,6 +475,7 @@ public final class CraftServer implements Server {
+         }
+         this.potionBrewer = new io.papermc.paper.potion.PaperPotionBrewer(console); // Paper - custom potion mixes
+         datapackManager = new io.papermc.paper.datapack.PaperDatapackManager(console.getPackRepository()); // Paper
++        this.spark = new io.papermc.paper.SparksFly(this); // Paper - spark
+     }
+ 
+     public boolean getCommandBlockOverride(String command) {
+@@ -1099,6 +1101,7 @@ public final class CraftServer implements Server {
+         this.reloadData();
+         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
+         io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
++        this.spark.registerCommandBeforePlugins(this); // Paper - spark
+         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
+         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+ 
+@@ -1127,6 +1130,7 @@ public final class CraftServer implements Server {
+         this.loadPlugins();
+         this.enablePlugins(PluginLoadOrder.STARTUP);
+         this.enablePlugins(PluginLoadOrder.POSTWORLD);
++        this.spark.registerCommandAfterPlugins(this); // Paper - spark
+         if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.pluginsEnabled(); // Paper - Remap plugins
+         // Paper start - brigadier command API
+         io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setValid(); // to clear invalid state for event fire below
