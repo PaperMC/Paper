@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Wed, 3 Jan 2024 15:31:26 -0800
+Subject: [PATCH] Fix CraftStructureTransformer from deleting generated
+ entities
+
+CraftLimitedRegion loads and stores entities in the protochunk and doesn't
+parse the entities from NBT each time. This *requires* that a new
+instance of CraftLimitedRegion is created each time before passing it
+to an api consumer and then saving/clearing it afterwards.
+
+CraftStructureTransformer was creating a single instance for an entire
+structure place which was causing entities to be deleted so no structures
+would spawn entities.
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftStructureTransformer.java b/src/main/java/org/bukkit/craftbukkit/util/CraftStructureTransformer.java
+index b4d569b3f43c9c34f2235b08488fe3722af1b15c..e3dc4aa47c4cc80f3c062ac9b4263827c693b2ac 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftStructureTransformer.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftStructureTransformer.java
+@@ -60,6 +60,7 @@ public class CraftStructureTransformer {
+     }
+ 
+     private CraftLimitedRegion limitedRegion;
++    private final java.util.function.Supplier<CraftLimitedRegion> regionFactory; // Paper - create new CraftLimitedRegion for each entity transform
+     private BlockTransformer[] blockTransformers;
+     private EntityTransformer[] entityTransformers;
+ 
+@@ -69,12 +70,14 @@ public class CraftStructureTransformer {
+         this.blockTransformers = event.getBlockTransformers().values().toArray(BlockTransformer[]::new);
+         this.entityTransformers = event.getEntityTransformers().values().toArray(EntityTransformer[]::new);
+         this.limitedRegion = new CraftLimitedRegion(generatoraccessseed, chunkcoordintpair);
++        this.regionFactory = () -> new CraftLimitedRegion(generatoraccessseed, chunkcoordintpair); // Paper - create new CraftLimitedRegion for each entity transform
+     }
+ 
+     public CraftStructureTransformer(WorldGenLevel generatoraccessseed, ChunkPos chunkcoordintpair, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
+         this.blockTransformers = blockTransformers.toArray(BlockTransformer[]::new);
+         this.entityTransformers = entityTransformers.toArray(EntityTransformer[]::new);
+         this.limitedRegion = new CraftLimitedRegion(generatoraccessseed, chunkcoordintpair);
++        this.regionFactory = () -> new CraftLimitedRegion(generatoraccessseed, chunkcoordintpair); // Paper - create new CraftLimitedRegion for each entity transform
+     }
+ 
+     public boolean transformEntity(Entity entity) {
+@@ -82,7 +85,7 @@ public class CraftStructureTransformer {
+         if (transformers == null || transformers.length == 0) {
+             return true;
+         }
+-        CraftLimitedRegion region = this.limitedRegion;
++        final CraftLimitedRegion region = this.regionFactory.get(); // Paper - create new CraftLimitedRegion for each transform
+         if (region == null) {
+             return true;
+         }
+@@ -95,6 +98,10 @@ public class CraftStructureTransformer {
+         for (EntityTransformer transformer : transformers) {
+             allowedToSpawn = transformer.transform(region, x, y, z, craftEntity, allowedToSpawn);
+         }
++        // Paper start - clean up CraftLimitedRegion
++        region.saveEntities();
++        region.breakLink();
++        // Paper end - clean up CraftLimitedRegion
+         return allowedToSpawn;
+     }
+ 
