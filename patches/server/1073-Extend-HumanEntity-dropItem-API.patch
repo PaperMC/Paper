@@ -1,0 +1,95 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Strokkur24 <strokkur24@gmail.com>
+Date: Sat, 30 Nov 2024 11:54:38 +0100
+Subject: [PATCH] Extend HumanEntity#dropItem API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index e345cdbfab44a0f5da80d738798dbb4424b7ab5c..6c7142decc6114c1ae216e69e352d2e08485a631 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -801,6 +801,84 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+         // Paper end - Fix HumanEntity#drop not updating the client inv
+     }
+ 
++    // Paper start - Extend HumanEntity#dropItem API
++    @Override
++    public @org.jetbrains.annotations.Nullable org.bukkit.entity.Item dropItem(final @org.jetbrains.annotations.NotNull ItemStack itemStack) {
++        return this.dropItem(itemStack, false, false);
++    }
++
++    @Override
++    public @org.jetbrains.annotations.Nullable org.bukkit.entity.Item dropItem(final @org.jetbrains.annotations.NotNull ItemStack itemStack, final boolean persistThrower) {
++        return this.dropItem(itemStack, persistThrower, false);
++    }
++
++    @Override
++    public @org.jetbrains.annotations.Nullable org.bukkit.entity.Item dropItem(final @org.jetbrains.annotations.NotNull ItemStack itemStack, final boolean persistThrower, final boolean throwRandomly) {
++        final int slot = this.inventory.first(itemStack);
++        if (slot == -1) {
++            return null;
++        }
++        
++        return this.dropItem(slot, persistThrower, throwRandomly);
++    }
++
++    @Override
++    public @org.jetbrains.annotations.Nullable org.bukkit.entity.Item dropItem(final int slot) {
++        return this.dropItem(slot, false, false);
++    }
++
++    @Override
++    public @org.jetbrains.annotations.Nullable org.bukkit.entity.Item dropItem(final int slot, final boolean persistThrower) {
++        return this.dropItem(slot, persistThrower, false);
++    }
++
++    @Override
++    public @org.jetbrains.annotations.Nullable org.bukkit.entity.Item dropItem(final int slot, final boolean persistThrower, final boolean throwRandomly) {
++        // Make sure the slot is in bounds
++        if (slot < 0 || this.inventory.getSize() <= slot) {
++            throw new IndexOutOfBoundsException("Slot " + slot + " out of range for inventory of size " + this.inventory.getSize());
++        }
++
++        final ItemStack stack = this.inventory.getItem(slot);
++        final org.bukkit.entity.Item itemEntity = dropItemRaw(stack, persistThrower, throwRandomly);
++
++        this.inventory.setItem(slot, null);
++        return itemEntity;
++    }
++
++    @Override
++    public @org.jetbrains.annotations.Nullable org.bukkit.entity.Item dropItem(final @org.jetbrains.annotations.NotNull org.bukkit.inventory.EquipmentSlot slot) {
++        return dropItem(slot, false, false);
++    }
++
++    @Override
++    public @org.jetbrains.annotations.Nullable org.bukkit.entity.Item dropItem(final @org.jetbrains.annotations.NotNull org.bukkit.inventory.EquipmentSlot slot, final boolean persistThrower) {
++        return dropItem(slot, persistThrower, false);
++    }
++
++    @Override
++    public @org.jetbrains.annotations.Nullable org.bukkit.entity.Item dropItem(final @org.jetbrains.annotations.NotNull org.bukkit.inventory.EquipmentSlot slot, final boolean persistThrower, final boolean throwRandomly) {
++        final ItemStack stack = this.inventory.getItem(slot);
++        final org.bukkit.entity.Item itemEntity = dropItemRaw(stack, persistThrower, throwRandomly);
++
++        this.inventory.setItem(slot, null);
++        return itemEntity;
++    }
++
++    private org.bukkit.entity.Item dropItemRaw(final ItemStack is, final boolean persistThrower, final boolean throwRandomly) {
++        if (is == null || is.getType() == Material.AIR) {
++            return null;
++        }
++
++        final net.minecraft.world.entity.item.ItemEntity droppedEntity = this.getHandle().drop(CraftItemStack.asNMSCopy(is), throwRandomly, persistThrower);
++        if (droppedEntity == null) {
++            return null;
++        }
++
++        return (org.bukkit.entity.Item) droppedEntity.getBukkitEntity();
++    }
++    // Paper end
++
+     @Override
+     public float getExhaustion() {
+         return this.getHandle().getFoodData().exhaustionLevel;
