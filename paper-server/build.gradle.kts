@@ -1,3 +1,4 @@
+import io.papermc.paperweight.attribute.DevBundleOutput
 import io.papermc.paperweight.util.*
 import java.time.Instant
 
@@ -37,24 +38,65 @@ paperweight {
 
     spigot {
         buildDataRef = "3edaf46ec1eed4115ce1b18d2846cded42577e42"
-        packageVersion = "v1_21_R3" // also needs to be updated in MappingEnvironment"
+        packageVersion = "v1_21_R3" // also needs to be updated in MappingEnvironment
     }
 }
 
 tasks.generateDevelopmentBundle {
-    apiCoordinates = "io.papermc.paper:paper-api"
     libraryRepositories.addAll(
         "https://repo.maven.apache.org/maven2/",
         paperMavenPublicUrl,
     )
 }
 
+abstract class SoftwareComponentFactoryProvider {
+    @get:Inject
+    abstract val factory: SoftwareComponentFactory
+}
+val provider = objects.newInstance<SoftwareComponentFactoryProvider>()
+
 publishing {
     if (project.providers.gradleProperty("publishDevBundle").isPresent) {
-        publications.create<MavenPublication>("devBundle") {
-            artifact(tasks.generateDevelopmentBundle) {
-                artifactId = "dev-bundle"
+        val devBundleComponent = provider.factory.adhoc("devBundle")
+        components.add(devBundleComponent)
+
+        val devBundle = configurations.consumable("devBundle") {
+            attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.ZIP))
+            outgoing.artifact(tasks.generateDevelopmentBundle.flatMap { it.devBundleFile })
+        }
+        devBundleComponent.addVariantsFromConfiguration(devBundle.get()) {}
+
+        val runtime = configurations.consumable("serverRuntimeClasspath") {
+            attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
+            attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+            extendsFrom(configurations.runtimeClasspath.get())
+        }
+        devBundleComponent.addVariantsFromConfiguration(runtime.get()) {
+            mapToMavenScope("runtime")
+        }
+
+        val compile = configurations.consumable("serverCompileClasspath") {
+            attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
+            attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_API))
+            extendsFrom(configurations.compileClasspath.get())
+        }
+        devBundleComponent.addVariantsFromConfiguration(compile.get()) {
+            mapToMavenScope("compile")
+        }
+
+        tasks.withType(GenerateMavenPom::class).configureEach {
+            doLast {
+                val text = destination.readText()
+                // Remove dependencies from pom, dev bundle is designed for gradle module metadata consumers
+                destination.writeText(
+                    text.substringBefore("<dependencies>") + text.substringAfter("</dependencies>")
+                )
             }
+        }
+
+        publications.create<MavenPublication>("devBundle") {
+            artifactId = "dev-bundle"
+            from(devBundleComponent)
         }
     }
 }
@@ -167,11 +209,6 @@ tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
 }
 // Paper end
-
-publishing {
-    publications.create<MavenPublication>("maven") {
-    }
-}
 
 // Paper start
 val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
