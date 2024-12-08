@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: MrPowerGamerBR <git@mrpowergamerbr.com>
+Date: Sun, 1 Dec 2024 01:23:17 -0300
+Subject: [PATCH] Only attempt to resync display entities' position when it has
+ actually changed to fix teleport interpolation issues
+
+On display entities, any new Pos/Rot packet causes the teleport duration interpolation to reset
+
+While this does not cause issues when you spawn a display entity -> set the interpolation -> teleport after the data has been sent to the client, this DOES cause issues on entities that have lived for >60 ticks, where if you spawn a display with interpolation -> wait ~8 ticks -> teleport it, the end of the teleport will look slow due to the server resyncing the display entity position/rotation
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 90eb4927fa51ce3df86aa7b6c71f49150a03e337..cb8f9a0182000fbf671f9ddccfd6b4999abf184b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -208,6 +208,7 @@ public class ServerEntity {
+ 
+                     if (!this.forceStateResync && !flag5 && this.teleportDelay <= 400 && !this.wasRiding && this.wasOnGround == this.entity.onGround()) { // Paper - fix desync when a player is added to the tracker
+                         if ((!flag2 || !flag) && !(this.entity instanceof AbstractArrow)) {
++                            if (!(this.entity instanceof net.minecraft.world.entity.Display) || (flag || flag1)) { // Paper start - Only attempt to resync display entities' position when it has actually changed to fix teleport interpolation issues
+                             if (flag2) {
+                                 packet1 = new ClientboundMoveEntityPacket.Pos(this.entity.getId(), (short) ((int) i), (short) ((int) j), (short) ((int) k), this.entity.onGround());
+                                 flag3 = true;
+@@ -215,6 +216,7 @@ public class ServerEntity {
+                                 packet1 = new ClientboundMoveEntityPacket.Rot(this.entity.getId(), b0, b1, this.entity.onGround());
+                                 flag4 = true;
+                             }
++                            } // Paper end
+                         } else {
+                             packet1 = new ClientboundMoveEntityPacket.PosRot(this.entity.getId(), (short) ((int) i), (short) ((int) j), (short) ((int) k), b0, b1, this.entity.onGround());
+                             flag3 = true;
