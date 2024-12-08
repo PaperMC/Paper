@@ -1,0 +1,196 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 22 Sep 2024 11:42:51 -0700
+Subject: [PATCH] use vanilla logic for teleporting non-player entities
+
+will be squashed into various patches before merge
+
+diff --git a/src/main/java/net/minecraft/server/commands/TeleportCommand.java b/src/main/java/net/minecraft/server/commands/TeleportCommand.java
+index 54851f6cc0d5fddb32a9a1e84a4f5ae41af18758..fa91f56d65c8c85256461506cd7e46e4cfd47021 100644
+--- a/src/main/java/net/minecraft/server/commands/TeleportCommand.java
++++ b/src/main/java/net/minecraft/server/commands/TeleportCommand.java
+@@ -161,31 +161,7 @@ public class TeleportCommand {
+             float f2 = Mth.wrapDegrees(yaw);
+             float f3 = Mth.wrapDegrees(pitch);
+ 
+-            // CraftBukkit start - Teleport event
+-            boolean result;
+-            if (target instanceof ServerPlayer player) {
+-                result = player.teleportTo(world, x, y, z, movementFlags, f2, f3, PlayerTeleportEvent.TeleportCause.COMMAND);
+-            } else {
+-                Location to = new Location(world.getWorld(), x, y, z, f2, f3);
+-                EntityTeleportEvent event = new EntityTeleportEvent(target.getBukkitEntity(), target.getBukkitEntity().getLocation(), to);
+-                world.getCraftServer().getPluginManager().callEvent(event);
+-                if (event.isCancelled() || event.getTo() == null) { // Paper
+-                    return;
+-                }
+-                to = event.getTo(); // Paper - actually track new location
+-
+-                x = to.getX();
+-                y = to.getY();
+-                z = to.getZ();
+-                f2 = to.getYaw();
+-                f3 = to.getPitch();
+-                world = ((CraftWorld) to.getWorld()).getHandle();
+-
+-                result = target.teleportTo(world, x, y, z, movementFlags, f2, f3);
+-            }
+-
+-            if (result) {
+-                // CraftBukkit end
++            if (target.teleportTo(world, x, y, z, movementFlags, f2, f3, PlayerTeleportEvent.TeleportCause.COMMAND)) { // Paper - restore vanilla logic
+                 if (facingLocation != null) {
+                     facingLocation.perform(source, target);
+                 }
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index c396580a9cfd86ff261bed439bb4662ae88010b5..d3b6b609d856d5f1d6885946fc0ea6a8cca4992e 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -2127,6 +2127,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+         return this.teleportTo(world, destX, destY, destZ, flags, yaw, pitch, TeleportCause.UNKNOWN);
+     }
+ 
++    @Override // Paper
+     public boolean teleportTo(ServerLevel worldserver, double d0, double d1, double d2, Set<RelativeMovement> set, float f, float f1, TeleportCause cause) {
+         // CraftBukkit end
+         ChunkPos chunkcoordintpair = new ChunkPos(BlockPos.containing(d0, d1, d2));
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 9f68c0fda7f5526eb97619f1a35ed3b78d1b3751..3ccecc60d8c57a429d70fcb6a17c7c40220f4767 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3758,6 +3758,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+                 // Paper end - Call EntityPortalExitEvent
+                 // CraftBukkit end
+                 ServerLevel worldserver1 = teleportTarget.newLevel();
++                if (teleportTarget.postDimensionTransition() == DimensionTransition.DONT_KEEP_PASSENGERS) this.ejectPassengers(); // Paper - eject passengers if requested
+                 List<Entity> list = this.getPassengers();
+ 
+                 this.unRide();
+@@ -3985,6 +3986,18 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     // CraftBukkit end
+ 
+     public boolean teleportTo(ServerLevel world, double destX, double destY, double destZ, Set<RelativeMovement> flags, float yaw, float pitch) {
++        // Paper start - call EntityTeleportEvent
++        final org.bukkit.event.entity.EntityTeleportEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(this, destX, destY, destZ, yaw, pitch);
++        if (event.isCancelled() || event.getTo() == null) {
++            return false;
++        }
++        world = ((org.bukkit.craftbukkit.CraftWorld) event.getTo().getWorld()).getHandle();
++        destX = event.getTo().getX();
++        destY = event.getTo().getY();
++        destZ = event.getTo().getZ();
++        yaw = event.getTo().getYaw();
++        pitch = event.getTo().getPitch();
++        // Paper end - call EntityTeleportEvent
+         float f2 = Mth.clamp(pitch, -90.0F, 90.0F);
+ 
+         if (world == this.level()) {
+diff --git a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java b/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
+index 36c8735312c885eb153f4ffdf0f2a5495e9c9f65..4b561d2aed0cf7a58ef5c24640add004c54b77df 100644
+--- a/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
++++ b/src/main/java/net/minecraft/world/level/portal/DimensionTransition.java
+@@ -18,6 +18,7 @@ public record DimensionTransition(ServerLevel newLevel, Vec3 pos, Vec3 speed, fl
+     // Paper - remove unused constructor (for safety)
+     // CraftBukkit end
+ 
++    public static final DimensionTransition.PostDimensionTransition DONT_KEEP_PASSENGERS = entity -> {}; // Paper - marker for dropping passengers
+     public static final DimensionTransition.PostDimensionTransition DO_NOTHING = (entity) -> {
+     };
+     public static final DimensionTransition.PostDimensionTransition PLAY_PORTAL_SOUND = DimensionTransition::playPortalSound;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+index c9ecec5da937bc5458f69736b68ff6ae50aa5ebc..88b01ca62e788357f00be0a919110c063070161b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftRegionAccessor.java
+@@ -430,7 +430,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
+         Preconditions.checkArgument(!entity.isInWorld(), "Entity has already been added to a world");
+         net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
+         if (nmsEntity.level() != this.getHandle().getLevel()) {
+-            nmsEntity = nmsEntity.changeDimension(new DimensionTransition(this.getHandle().getLevel(), nmsEntity, DimensionTransition.DO_NOTHING));
++            throw new IllegalArgumentException(entity + " wasn't created with this world, you must create the entity with the world you want to add it to."); // Paper - throw instead of teleporting
+         }
+ 
+         this.addEntityWithPassengers(nmsEntity, CreatureSpawnEvent.SpawnReason.CUSTOM);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index cd789c235acf740ec29c30b180e7fbe1a140caa9..9b7e0ececf02388a014be4cb5b6524810f417e27 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -241,51 +241,26 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         location.checkFinite();
+         // Paper start - Teleport passenger API
+         Set<io.papermc.paper.entity.TeleportFlag> flagSet = Set.of(flags);
+-        boolean dismount = !flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
+-        boolean ignorePassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
+-        // Don't allow teleporting between worlds while keeping passengers
+-        if (flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS) && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
+-            return false;
+-        }
++        final boolean retainVehicle = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
++        final boolean retainPassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
++        final boolean sameWorld = location.getWorld() == this.getWorld();
+ 
+-        // Don't allow to teleport between worlds if remaining on vehicle
+-        if (!dismount && this.entity.isPassenger() && location.getWorld() != this.getWorld()) {
+-            return false;
++        if (this.entity.isPassenger() && retainVehicle) {
++            return false; // You can't teleport a passenger and keep the vehicle
+         }
+         // Paper end
+ 
+-        if ((!ignorePassengers && this.entity.isVehicle()) || this.entity.isRemoved()) { // Paper - Teleport passenger API
++        if (this.entity.isRemoved()) { // Paper - don't teleport if removed
+             return false;
+         }
+ 
+-        // Paper start - fix teleport event not being called
+-        org.bukkit.event.entity.EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(
+-            this, this.getLocation(), location);
+-        // cancelling the event is handled differently for players and entities,
+-        // entities just stop teleporting, players will still teleport to the "from" location of the event
+-        if (!event.callEvent() || event.getTo() == null) {
+-            return false;
+-        }
+-        location = event.getTo();
+-        // Paper end
+-
+-        // If this entity is riding another entity, we must dismount before teleporting.
+-        if (dismount) this.entity.stopRiding(); // Paper - Teleport passenger API
+-
+-        // Let the server handle cross world teleports
+-        if (location.getWorld() != null && !location.getWorld().equals(this.getWorld())) {
++        if (!sameWorld) { // Paper - simplify teleportation logic
+             // Prevent teleportation to an other world during world generation
+             Preconditions.checkState(!this.entity.generation, "Cannot teleport entity to an other world during world generation");
+-            this.entity.changeDimension(new DimensionTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3D(location), Vec3.ZERO, location.getPitch(), location.getYaw(), DimensionTransition.DO_NOTHING, TeleportCause.PLUGIN));
+-            return true;
++            // Paper - use same teleportation logic regardless of origin/destination worlds (below)
+         }
+ 
+-        // entity.setLocation() throws no event, and so cannot be cancelled
+-        entity.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
+-        // SPIGOT-619: Force sync head rotation also
+-        this.entity.setYHeadRot(location.getYaw());
+-
+-        return true;
++        return this.entity.changeDimension(new DimensionTransition(((CraftWorld) location.getWorld()).getHandle(), CraftLocation.toVec3D(location), Vec3.ZERO, location.getPitch(), location.getYaw(), !retainPassengers ? DimensionTransition.DONT_KEEP_PASSENGERS : DimensionTransition.DO_NOTHING, cause)) != null; // Paper - simplify teleportation logic
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 4632eb883e9f5efde520ee543bcad25827c0da2c..5e9a42d6cf9958653cff57ee62e4bc20eb2381ba 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -2096,8 +2096,13 @@ public class CraftEventFactory {
+     }
+ 
+     public static EntityTeleportEvent callEntityTeleportEvent(Entity nmsEntity, double x, double y, double z) {
++        // Paper start
++        return callEntityTeleportEvent(nmsEntity, x, y, z, nmsEntity.getYRot(), nmsEntity.getXRot());
++    }
++    public static EntityTeleportEvent callEntityTeleportEvent(Entity nmsEntity, double x, double y, double z, float yaw, float pitch) {
++        // Paper end
+         CraftEntity entity = nmsEntity.getBukkitEntity();
+-        Location to = new Location(entity.getWorld(), x, y, z, nmsEntity.getYRot(), nmsEntity.getXRot());
++        Location to = new Location(entity.getWorld(), x, y, z, yaw, pitch); // Paper
+         return CraftEventFactory.callEntityTeleportEvent(nmsEntity, to);
+     }
+ 
