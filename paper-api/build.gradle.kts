@@ -161,6 +161,12 @@ tasks.jar {
     }
 }
 
+abstract class Services {
+    @get:Inject
+    abstract val fileSystemOperations: FileSystemOperations
+}
+val services = objects.newInstance<Services>()
+
 tasks.withType<Javadoc> {
     val options = options as StandardJavadocDocletOptions
     options.overview = "src/main/javadoc/overview.html"
@@ -192,17 +198,19 @@ tasks.withType<Javadoc> {
     options.tags("apiNote:a:API Note:")
 
     inputs.files(apiAndDocs).ignoreEmptyDirectories().withPropertyName(apiAndDocs.name + "-configuration")
+    val apiAndDocsElements = apiAndDocs.elements
     doFirst {
         options.addStringOption(
             "sourcepath",
-            apiAndDocs.elements.get().map { it.asFile }.joinToString(separator = File.pathSeparator, transform = File::getPath)
+            apiAndDocsElements.get().map { it.asFile }.joinToString(separator = File.pathSeparator, transform = File::getPath)
         )
     }
 
     // workaround for https://github.com/gradle/gradle/issues/4046
     inputs.dir("src/main/javadoc").withPropertyName("javadoc-sourceset")
+    val fsOps = services.fileSystemOperations
     doLast {
-        copy {
+        fsOps.copy {
             from("src/main/javadoc") {
                 include("**/doc-files/**")
             }

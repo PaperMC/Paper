@@ -49,15 +49,18 @@ tasks.generateDevelopmentBundle {
     )
 }
 
-abstract class SoftwareComponentFactoryProvider {
+abstract class Services {
     @get:Inject
-    abstract val factory: SoftwareComponentFactory
+    abstract val softwareComponentFactory: SoftwareComponentFactory
+
+    @get:Inject
+    abstract val archiveOperations: ArchiveOperations
 }
-val provider = objects.newInstance<SoftwareComponentFactoryProvider>()
+val services = objects.newInstance<Services>()
 
 publishing {
     if (project.providers.gradleProperty("publishDevBundle").isPresent) {
-        val devBundleComponent = provider.factory.adhoc("devBundle")
+        val devBundleComponent = services.softwareComponentFactory.adhoc("devBundle")
         components.add(devBundleComponent)
 
         val devBundle = configurations.consumable("devBundle") {
@@ -179,10 +182,10 @@ tasks.jar {
         val git = Git(rootProject.layout.projectDirectory.path)
         val mcVersion = rootProject.providers.gradleProperty("mcVersion").get()
         val build = System.getenv("BUILD_NUMBER") ?: null
-        val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
+        val gitHash = git.exec(providers, "rev-parse", "--short=7", "HEAD").get().trim()
         val implementationVersion = "$mcVersion-${build ?: "DEV"}-$gitHash"
-        val date = git("show", "-s", "--format=%ci", gitHash).getText().trim() // Paper
-        val gitBranch = git("rev-parse", "--abbrev-ref", "HEAD").getText().trim() // Paper
+        val date = git.exec(providers, "show", "-s", "--format=%ci", gitHash).get().trim() // Paper
+        val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim() // Paper
         attributes(
             "Main-Class" to "org.bukkit.craftbukkit.Main",
             "Implementation-Title" to "Paper",
@@ -222,10 +225,11 @@ tasks.check {
 // Paper end
 // Paper start - use TCA for console improvements
 tasks.jar {
+    val archiveOperations = services.archiveOperations
     from(alsoShade.elements.map {
         it.map { f ->
             if (f.asFile.isFile) {
-                zipTree(f.asFile)
+                archiveOperations.zipTree(f.asFile)
             } else {
                 f.asFile
             }
