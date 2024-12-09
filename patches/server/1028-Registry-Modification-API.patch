@@ -472,7 +472,7 @@ index 0000000000000000000000000000000000000000..5b88be976c7773459ce1b6daf58d7ea7
 +import org.jspecify.annotations.NullMarked;
 diff --git a/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..765eb02e6480a9f56f10b2fd222d40e1bbfdab87
+index 0000000000000000000000000000000000000000..a84a6adb4692f23f8e5868295d9c6af8f68663d0
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/AddableRegistryEntry.java
 @@ -0,0 +1,41 @@
@@ -513,13 +513,13 @@ index 0000000000000000000000000000000000000000..765eb02e6480a9f56f10b2fd222d40e1
 +    }
 +
 +    @Override
-+    public B fillBuilder(final Conversions conversions, final M nms) {
-+        return this.builderFiller.fill(conversions, nms);
++    public PaperRegistryBuilder.Filler<M, T, B> filler() {
++        return this.builderFiller;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/ModifiableRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/ModifiableRegistryEntry.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..4254335e55010086d66a6c7a5afca0f503ebef5b
+index 0000000000000000000000000000000000000000..04ec0678d3a1132f7a580c1def5b1932b77cc527
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/registry/entry/ModifiableRegistryEntry.java
 @@ -0,0 +1,29 @@
@@ -548,12 +548,12 @@ index 0000000000000000000000000000000000000000..4254335e55010086d66a6c7a5afca0f5
 +    }
 +
 +    @Override
-+    public B fillBuilder(final Conversions conversions, final M nms) {
-+        return this.builderFiller.fill(conversions, nms);
++    public PaperRegistryBuilder.Filler<M, T, B> filler() {
++        return this.builderFiller;
 +    }
 +}
 diff --git a/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
-index f0a81a8b88d31139390e952a0eb8a526e6851c5f..32089721edfd806d082bd267bba040e249dbf75b 100644
+index f0a81a8b88d31139390e952a0eb8a526e6851c5f..4e8303bd7b5d40e4cdecef7ce673dce5fb213544 100644
 --- a/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
 +++ b/src/main/java/io/papermc/paper/registry/entry/RegistryEntry.java
 @@ -1,13 +1,20 @@
@@ -577,14 +577,22 @@ index f0a81a8b88d31139390e952a0eb8a526e6851c5f..32089721edfd806d082bd267bba040e2
  
  public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M, B> { // TODO remove Keyed
  
-@@ -26,4 +33,63 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
+@@ -26,4 +33,71 @@ public interface RegistryEntry<M, B extends Keyed> extends RegistryEntryInfo<M,
      default RegistryEntry<M, B> delayed() {
          return new DelayedRegistryEntry<>(this);
      }
 +
 +    interface BuilderHolder<M, T, B extends PaperRegistryBuilder<M, T>> extends RegistryEntryInfo<M, T> {
 +
-+        B fillBuilder(Conversions conversions, M nms);
++        PaperRegistryBuilder.Filler<M, T, B> filler();
++
++        default B fillBuilder(final Conversions conversions, final M nms) {
++            return this.filler().fill(conversions, nms);
++        }
++
++        default B create(final Conversions conversions) {
++            return this.filler().create(conversions);
++        }
 +    }
 +
 +    /**
