@@ -606,6 +606,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Preconditions.checkArgument(order >= 0, "order cannot be negative");
 
         this.getHandle().listOrder = order;
+        // Paper start - Send update packet
+        if (getHandle().connection == null) return; // Updates are possible before the player has fully joined
+        for (ServerPlayer player : server.getHandle().players) {
+            if (player.getBukkitEntity().canSee(this)) {
+                player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LIST_ORDER, getHandle()));
+            }
+        }
+        // Paper end - Send update packet
     }
 
     private net.kyori.adventure.text.Component playerListHeader; // Paper - Adventure
