@@ -1,0 +1,132 @@
+--- a/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
++++ b/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
+@@ -32,6 +32,9 @@
+ import net.minecraft.world.phys.EntityHitResult;
+ import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
+ 
+ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+ 
+@@ -42,6 +45,7 @@
+     public int lifetime;
+     @Nullable
+     public LivingEntity attachedToEntity;
++    @Nullable public java.util.UUID spawningEntity; // Paper
+ 
+     public FireworkRocketEntity(EntityType<? extends FireworkRocketEntity> type, Level world) {
+         super(type, world);
+@@ -84,7 +88,29 @@
+         this.setOwner(entity);
+     }
+ 
++    // Spigot Start - copied from tick
+     @Override
++    public void inactiveTick() {
++        this.life += 1;
++
++        if (this.life > this.lifetime) {
++            Level world = this.level();
++
++            if (world instanceof ServerLevel) {
++                ServerLevel worldserver = (ServerLevel) world;
++
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                    this.explode(worldserver);
++                }
++                // CraftBukkit end
++            }
++        }
++        super.inactiveTick();
++    }
++    // Spigot End
++
++    @Override
+     protected void defineSynchedData(SynchedEntityData.Builder builder) {
+         builder.define(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, FireworkRocketEntity.getDefaultItem());
+         builder.define(FireworkRocketEntity.DATA_ATTACHED_TO_TARGET, OptionalInt.empty());
+@@ -152,7 +178,7 @@
+         }
+ 
+         if (!this.noPhysics && this.isAlive() && movingobjectposition.getType() != HitResult.Type.MISS) {
+-            this.hitTargetOrDeflectSelf(movingobjectposition);
++            this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
+             this.hasImpulse = true;
+         }
+ 
+@@ -172,7 +198,11 @@
+             if (world instanceof ServerLevel) {
+                 ServerLevel worldserver = (ServerLevel) world;
+ 
+-                this.explode(worldserver);
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                    this.explode(worldserver);
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -182,7 +212,7 @@
+         world.broadcastEntityEvent(this, (byte) 17);
+         this.gameEvent(GameEvent.EXPLODE, this.getOwner());
+         this.dealExplosionDamage(world);
+-        this.discard();
++        this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     @Override
+@@ -191,7 +221,11 @@
+         Level world = this.level();
+ 
+         if (world instanceof ServerLevel worldserver) {
+-            this.explode(worldserver);
++            // CraftBukkit start
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                this.explode(worldserver);
++            }
++            // CraftBukkit end
+         }
+ 
+     }
+@@ -205,7 +239,11 @@
+ 
+         if (world instanceof ServerLevel worldserver) {
+             if (this.hasExplosion()) {
+-                this.explode(worldserver);
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                    this.explode(worldserver);
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -287,6 +325,11 @@
+         nbt.putInt("LifeTime", this.lifetime);
+         nbt.put("FireworksItem", this.getItem().save(this.registryAccess()));
+         nbt.putBoolean("ShotAtAngle", (Boolean) this.entityData.get(FireworkRocketEntity.DATA_SHOT_AT_ANGLE));
++        // Paper start
++        if (this.spawningEntity != null) {
++            nbt.putUUID("SpawningEntity", this.spawningEntity);
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -303,7 +346,11 @@
+         if (nbt.contains("ShotAtAngle")) {
+             this.entityData.set(FireworkRocketEntity.DATA_SHOT_AT_ANGLE, nbt.getBoolean("ShotAtAngle"));
+         }
+-
++        // Paper start
++        if (nbt.hasUUID("SpawningEntity")) {
++            this.spawningEntity = nbt.getUUID("SpawningEntity");
++        }
++        // Paper end
+     }
+ 
+     private List<FireworkExplosion> getExplosions() {

@@ -1,0 +1,157 @@
+--- a/net/minecraft/world/entity/monster/EnderMan.java
++++ b/net/minecraft/world/entity/monster/EnderMan.java
+@@ -68,6 +68,10 @@
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.BlockHitResult;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityTargetEvent;
++// CraftBukkit end
+ 
+ public class EnderMan extends Monster implements NeutralMob {
+ 
+@@ -112,10 +116,26 @@
+ 
+     @Override
+     public void setTarget(@Nullable LivingEntity target) {
+-        super.setTarget(target);
++        // CraftBukkit start - fire event
++        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);
++    }
++
++    // Paper start - EndermanEscapeEvent
++    private boolean tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason reason) {
++        return new com.destroystokyo.paper.event.entity.EndermanEscapeEvent((org.bukkit.craftbukkit.entity.CraftEnderman) this.getBukkitEntity(), reason).callEvent();
++    }
++    // Paper end - EndermanEscapeEvent
++
++    @Override
++    public boolean setTarget(LivingEntity entityliving, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
++        if (!super.setTarget(entityliving, reason, fireEvent)) {
++            return false;
++        }
++        entityliving = this.getTarget();
++        // CraftBukkit end
+         AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
+ 
+-        if (target == null) {
++        if (entityliving == null) {
+             this.targetChangeTime = 0;
+             this.entityData.set(EnderMan.DATA_CREEPY, false);
+             this.entityData.set(EnderMan.DATA_STARED_AT, false);
+@@ -127,6 +147,7 @@
+                 attributemodifiable.addTransientModifier(EnderMan.SPEED_MODIFIER_ATTACKING);
+             }
+         }
++        return true;
+ 
+     }
+ 
+@@ -212,6 +233,14 @@
+     }
+ 
+     boolean isBeingStaredBy(Player player) {
++        // Paper start - EndermanAttackPlayerEvent
++        final boolean shouldAttack = isBeingStaredBy0(player);
++        final com.destroystokyo.paper.event.entity.EndermanAttackPlayerEvent event = new com.destroystokyo.paper.event.entity.EndermanAttackPlayerEvent((org.bukkit.entity.Enderman) getBukkitEntity(), (org.bukkit.entity.Player) player.getBukkitEntity());
++        event.setCancelled(!shouldAttack);
++        return event.callEvent();
++    }
++    private boolean isBeingStaredBy0(Player player) {
++        // Paper end - EndermanAttackPlayerEvent
+         return !LivingEntity.PLAYER_NOT_WEARING_DISGUISE_ITEM.test(player) ? false : this.isLookingAtMe(player, 0.025D, true, false, new double[]{this.getEyeY()});
+     }
+ 
+@@ -241,7 +270,7 @@
+         if (world.isDay() && this.tickCount >= this.targetChangeTime + 600) {
+             float f = this.getLightLevelDependentMagicValue();
+ 
+-            if (f > 0.5F && world.canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F) {
++            if (f > 0.5F && world.canSeeSky(this.blockPosition()) && this.random.nextFloat() * 30.0F < (f - 0.4F) * 2.0F && this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.RUNAWAY)) { // Paper - EndermanEscapeEvent
+                 this.setTarget((LivingEntity) null);
+                 this.teleport();
+             }
+@@ -367,11 +396,13 @@
+             } else {
+                 flag1 = flag && this.hurtWithCleanWater(world, source, (ThrownPotion) source.getDirectEntity(), amount);
+ 
++                if (this.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.INDIRECT)) { // Paper - EndermanEscapeEvent
+                 for (int i = 0; i < 64; ++i) {
+                     if (this.teleport()) {
+                         return true;
+                     }
+                 }
++                } // Paper - EndermanEscapeEvent
+ 
+                 return flag1;
+             }
+@@ -397,6 +428,16 @@
+         this.entityData.set(EnderMan.DATA_STARED_AT, true);
+     }
+ 
++    // Paper start
++    public void setCreepy(boolean creepy) {
++        this.entityData.set(EnderMan.DATA_CREEPY, creepy);
++    }
++
++    public void setHasBeenStaredAt(boolean hasBeenStaredAt) {
++        this.entityData.set(EnderMan.DATA_STARED_AT, hasBeenStaredAt);
++    }
++    // Paper end
++
+     @Override
+     public boolean requiresCustomPersistence() {
+         return super.requiresCustomPersistence() || this.getCarriedBlock() != null;
+@@ -457,7 +498,8 @@
+             int j = Mth.floor(this.enderman.getY() + randomsource.nextDouble() * 2.0D);
+             int k = Mth.floor(this.enderman.getZ() - 1.0D + randomsource.nextDouble() * 2.0D);
+             BlockPos blockposition = new BlockPos(i, j, k);
+-            BlockState iblockdata = world.getBlockState(blockposition);
++            BlockState iblockdata = world.getBlockStateIfLoaded(blockposition); // Paper - Prevent endermen from loading chunks
++            if (iblockdata == null) return; // Paper - Prevent endermen from loading chunks
+             BlockPos blockposition1 = blockposition.below();
+             BlockState iblockdata1 = world.getBlockState(blockposition1);
+             BlockState iblockdata2 = this.enderman.getCarriedBlock();
+@@ -465,9 +507,11 @@
+             if (iblockdata2 != null) {
+                 iblockdata2 = Block.updateFromNeighbourShapes(iblockdata2, this.enderman.level(), blockposition);
+                 if (this.canPlaceBlock(world, blockposition, iblockdata2, iblockdata, iblockdata1, blockposition1)) {
++                    if (CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockposition, iblockdata2)) { // CraftBukkit - Place event
+                     world.setBlock(blockposition, iblockdata2, 3);
+                     world.gameEvent((Holder) GameEvent.BLOCK_PLACE, blockposition, GameEvent.Context.of(this.enderman, iblockdata2));
+                     this.enderman.setCarriedBlock((BlockState) null);
++                    } // CraftBukkit
+                 }
+ 
+             }
+@@ -499,16 +543,19 @@
+             int j = Mth.floor(this.enderman.getY() + randomsource.nextDouble() * 3.0D);
+             int k = Mth.floor(this.enderman.getZ() - 2.0D + randomsource.nextDouble() * 4.0D);
+             BlockPos blockposition = new BlockPos(i, j, k);
+-            BlockState iblockdata = world.getBlockState(blockposition);
++            BlockState iblockdata = world.getBlockStateIfLoaded(blockposition); // Paper - Prevent endermen from loading chunks
++            if (iblockdata == null) return; // Paper - Prevent endermen from loading chunks
+             Vec3 vec3d = new Vec3((double) this.enderman.getBlockX() + 0.5D, (double) j + 0.5D, (double) this.enderman.getBlockZ() + 0.5D);
+             Vec3 vec3d1 = new Vec3((double) i + 0.5D, (double) j + 0.5D, (double) k + 0.5D);
+             BlockHitResult movingobjectpositionblock = world.clip(new ClipContext(vec3d, vec3d1, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, this.enderman));
+             boolean flag = movingobjectpositionblock.getBlockPos().equals(blockposition);
+ 
+             if (iblockdata.is(BlockTags.ENDERMAN_HOLDABLE) && flag) {
++                if (CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockposition, iblockdata.getFluidState().createLegacyBlock())) { // CraftBukkit - Place event // Paper - fix wrong block state
+                 world.removeBlock(blockposition, false);
+                 world.gameEvent((Holder) GameEvent.BLOCK_DESTROY, blockposition, GameEvent.Context.of(this.enderman, iblockdata));
+                 this.enderman.setCarriedBlock(iblockdata.getBlock().defaultBlockState());
++                } // CraftBukkit
+             }
+ 
+         }
+@@ -592,7 +639,7 @@
+             } else {
+                 if (this.target != null && !this.enderman.isPassenger()) {
+                     if (this.enderman.isBeingStaredBy((Player) this.target)) {
+-                        if (this.target.distanceToSqr((Entity) this.enderman) < 16.0D) {
++                        if (this.target.distanceToSqr((Entity) this.enderman) < 16.0D && this.enderman.tryEscape(com.destroystokyo.paper.event.entity.EndermanEscapeEvent.Reason.STARE)) { // Paper - EndermanEscapeEvent
+                             this.enderman.teleport();
+                         }
+ 

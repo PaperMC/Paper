@@ -1,0 +1,54 @@
+--- a/net/minecraft/world/entity/decoration/Painting.java
++++ b/net/minecraft/world/entity/decoration/Painting.java
+@@ -72,7 +72,7 @@
+     public static Optional<Painting> create(Level world, BlockPos pos, Direction facing) {
+         Painting entitypainting = new Painting(world, pos);
+         List<Holder<PaintingVariant>> list = new ArrayList();
+-        Iterable iterable = world.registryAccess().lookupOrThrow(Registries.PAINTING_VARIANT).getTagOrEmpty(PaintingVariantTags.PLACEABLE);
++        Iterable<Holder<PaintingVariant>> iterable = world.registryAccess().lookupOrThrow(Registries.PAINTING_VARIANT).getTagOrEmpty(PaintingVariantTags.PLACEABLE); // CraftBukkit - decompile error
+ 
+         Objects.requireNonNull(list);
+         iterable.forEach(list::add);
+@@ -138,22 +138,32 @@
+ 
+     @Override
+     protected AABB calculateBoundingBox(BlockPos pos, Direction side) {
+-        float f = 0.46875F;
+-        Vec3 vec3d = Vec3.atCenterOf(pos).relative(side, -0.46875D);
++        // CraftBukkit start
+         PaintingVariant paintingvariant = (PaintingVariant) this.getVariant().value();
+-        double d0 = this.offsetForPaintingSize(paintingvariant.width());
+-        double d1 = this.offsetForPaintingSize(paintingvariant.height());
+-        Direction enumdirection1 = side.getCounterClockWise();
++        return Painting.calculateBoundingBoxStatic(pos, side, paintingvariant.width(), paintingvariant.height());
++    }
++
++    public static AABB calculateBoundingBoxStatic(BlockPos blockposition, Direction enumdirection, int width, int height) {
++        // CraftBukkit end
++        float f = 0.46875F;
++        Vec3 vec3d = Vec3.atCenterOf(blockposition).relative(enumdirection, -0.46875D);
++        // CraftBukkit start
++        double d0 = Painting.offsetForPaintingSize(width);
++        double d1 = Painting.offsetForPaintingSize(height);
++        // CraftBukkit end
++        Direction enumdirection1 = enumdirection.getCounterClockWise();
+         Vec3 vec3d1 = vec3d.relative(enumdirection1, d0).relative(Direction.UP, d1);
+-        Direction.Axis enumdirection_enumaxis = side.getAxis();
+-        double d2 = enumdirection_enumaxis == Direction.Axis.X ? 0.0625D : (double) paintingvariant.width();
+-        double d3 = (double) paintingvariant.height();
+-        double d4 = enumdirection_enumaxis == Direction.Axis.Z ? 0.0625D : (double) paintingvariant.width();
++        Direction.Axis enumdirection_enumaxis = enumdirection.getAxis();
++        // CraftBukkit start
++        double d2 = enumdirection_enumaxis == Direction.Axis.X ? 0.0625D : (double) width;
++        double d3 = (double) height;
++        double d4 = enumdirection_enumaxis == Direction.Axis.Z ? 0.0625D : (double) width;
++        // CraftBukkit end
+ 
+         return AABB.ofSize(vec3d1, d2, d3, d4);
+     }
+ 
+-    private double offsetForPaintingSize(int length) {
++    private static double offsetForPaintingSize(int length) { // CraftBukkit - static
+         return length % 2 == 0 ? 0.5D : 0.0D;
+     }
+ 

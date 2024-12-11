@@ -1,0 +1,45 @@
+--- a/net/minecraft/world/entity/ai/sensing/TemptingSensor.java
++++ b/net/minecraft/world/entity/ai/sensing/TemptingSensor.java
+@@ -19,6 +19,14 @@
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.event.entity.EntityTargetEvent;
++import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
++// CraftBukkit end
++
+ public class TemptingSensor extends Sensor<PathfinderMob> {
+ 
+     private static final TargetingConditions TEMPT_TARGETING = TargetingConditions.forNonCombat().ignoreLineOfSight();
+@@ -31,7 +39,7 @@
+     protected void doTick(ServerLevel world, PathfinderMob entity) {
+         Brain<?> behaviorcontroller = entity.getBrain();
+         TargetingConditions pathfindertargetcondition = TemptingSensor.TEMPT_TARGETING.copy().range((double) ((float) entity.getAttributeValue(Attributes.TEMPT_RANGE)));
+-        Stream stream = world.players().stream().filter(EntitySelector.NO_SPECTATORS).filter((entityplayer) -> {
++        Stream<net.minecraft.server.level.ServerPlayer> stream = world.players().stream().filter(EntitySelector.NO_SPECTATORS).filter((entityplayer) -> { // CraftBukkit - decompile error
+             return pathfindertargetcondition.test(world, entity, entityplayer);
+         }).filter(this::playerHoldingTemptation).filter((entityplayer) -> {
+             return !entity.hasPassenger((Entity) entityplayer);
+@@ -43,7 +51,17 @@
+         if (!list.isEmpty()) {
+             Player entityhuman = (Player) list.get(0);
+ 
+-            behaviorcontroller.setMemory(MemoryModuleType.TEMPTING_PLAYER, (Object) entityhuman);
++            // CraftBukkit start
++            EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, entityhuman, EntityTargetEvent.TargetReason.TEMPT);
++            if (event.isCancelled()) {
++                return;
++            }
++            if (event.getTarget() instanceof HumanEntity) {
++                behaviorcontroller.setMemory(MemoryModuleType.TEMPTING_PLAYER, ((CraftHumanEntity) event.getTarget()).getHandle());
++            } else {
++                behaviorcontroller.eraseMemory(MemoryModuleType.TEMPTING_PLAYER);
++            }
++            // CraftBukkit end
+         } else {
+             behaviorcontroller.eraseMemory(MemoryModuleType.TEMPTING_PLAYER);
+         }

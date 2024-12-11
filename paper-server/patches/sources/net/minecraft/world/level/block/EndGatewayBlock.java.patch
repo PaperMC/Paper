@@ -1,0 +1,34 @@
+--- a/net/minecraft/world/level/block/EndGatewayBlock.java
++++ b/net/minecraft/world/level/block/EndGatewayBlock.java
+@@ -22,6 +22,9 @@
+ import net.minecraft.world.level.material.Fluid;
+ import net.minecraft.world.level.portal.TeleportTransition;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.event.player.PlayerTeleportEvent;
++// CraftBukkit end
+ 
+ public class EndGatewayBlock extends BaseEntityBlock implements Portal {
+ 
+@@ -89,7 +92,12 @@
+ 
+     @Override
+     protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         if (entity.canUsePortal(false)) {
++            // Paper start - call EntityPortalEnterEvent
++            org.bukkit.event.entity.EntityPortalEnterEvent event = new org.bukkit.event.entity.EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()), org.bukkit.PortalType.END_GATEWAY); // Paper - add portal type
++            if (!event.callEvent()) return;
++            // Paper end - call EntityPortalEnterEvent
+             BlockEntity tileentity = world.getBlockEntity(pos);
+ 
+             if (!world.isClientSide && tileentity instanceof TheEndGatewayBlockEntity) {
+@@ -112,7 +120,7 @@
+         if (tileentity instanceof TheEndGatewayBlockEntity tileentityendgateway) {
+             Vec3 vec3d = tileentityendgateway.getPortalPosition(world, pos);
+ 
+-            return vec3d == null ? null : (entity instanceof ThrownEnderpearl ? new TeleportTransition(world, vec3d, Vec3.ZERO, 0.0F, 0.0F, Set.of(), TeleportTransition.PLACE_PORTAL_TICKET) : new TeleportTransition(world, vec3d, Vec3.ZERO, 0.0F, 0.0F, Relative.union(Relative.DELTA, Relative.ROTATION), TeleportTransition.PLACE_PORTAL_TICKET));
++            return vec3d == null ? null : (entity instanceof ThrownEnderpearl ? new TeleportTransition(world, vec3d, Vec3.ZERO, 0.0F, 0.0F, Set.of(), TeleportTransition.PLACE_PORTAL_TICKET, PlayerTeleportEvent.TeleportCause.END_GATEWAY) : new TeleportTransition(world, vec3d, Vec3.ZERO, 0.0F, 0.0F, Relative.union(Relative.DELTA, Relative.ROTATION), TeleportTransition.PLACE_PORTAL_TICKET, PlayerTeleportEvent.TeleportCause.END_GATEWAY)); // CraftBukkit
+         } else {
+             return null;
+         }

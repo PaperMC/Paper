@@ -1,0 +1,60 @@
+--- a/net/minecraft/world/inventory/AbstractFurnaceMenu.java
++++ b/net/minecraft/world/inventory/AbstractFurnaceMenu.java
+@@ -17,6 +17,10 @@
+ import net.minecraft.world.item.crafting.RecipeType;
+ import net.minecraft.world.item.crafting.SingleRecipeInput;
+ import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
++import org.bukkit.craftbukkit.inventory.CraftInventoryFurnace;
++import org.bukkit.craftbukkit.inventory.view.CraftFurnaceView;
++// CraftBukkit end
+ 
+ public abstract class AbstractFurnaceMenu extends RecipeBookMenu {
+ 
+@@ -36,6 +40,22 @@
+     private final RecipePropertySet acceptedInputs;
+     private final RecipeBookType recipeBookType;
+ 
++    // CraftBukkit start
++    private CraftFurnaceView bukkitEntity = null;
++    private Inventory player;
++
++    @Override
++    public CraftFurnaceView getBukkitView() {
++        if (this.bukkitEntity != null) {
++            return this.bukkitEntity;
++        }
++
++        CraftInventoryFurnace inventory = new CraftInventoryFurnace((AbstractFurnaceBlockEntity) this.container);
++        this.bukkitEntity = new CraftFurnaceView(this.player.player.getBukkitEntity(), inventory, this);
++        return this.bukkitEntity;
++    }
++    // CraftBukkit end
++
+     protected AbstractFurnaceMenu(MenuType<?> type, RecipeType<? extends AbstractCookingRecipe> recipeType, ResourceKey<RecipePropertySet> recipePropertySetKey, RecipeBookType category, int syncId, Inventory platerInventory) {
+         this(type, recipeType, recipePropertySetKey, category, syncId, platerInventory, new SimpleContainer(3), new SimpleContainerData(4));
+     }
+@@ -53,6 +73,7 @@
+         this.addSlot(new Slot(inventory, 0, 56, 17));
+         this.addSlot(new FurnaceFuelSlot(this, inventory, 1, 56, 53));
+         this.addSlot(new FurnaceResultSlot(platerInventory.player, inventory, 2, 116, 35));
++        this.player = platerInventory; // CraftBukkit - save player
+         this.addStandardInventorySlots(platerInventory, 8, 84);
+         this.addDataSlots(propertyDelegate);
+     }
+@@ -71,6 +92,7 @@
+ 
+     @Override
+     public boolean stillValid(Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return this.container.stillValid(player);
+     }
+ 
+@@ -180,6 +202,6 @@
+             public boolean recipeMatches(RecipeHolder<AbstractCookingRecipe> entry) {
+                 return ((AbstractCookingRecipe) entry.value()).matches(new SingleRecipeInput(AbstractFurnaceMenu.this.container.getItem(0)), world);
+             }
+-        }, 1, 1, List.of(this.getSlot(0)), list, inventory, recipe, craftAll, creative);
++        }, 1, 1, List.of(this.getSlot(0)), list, inventory, (RecipeHolder<AbstractCookingRecipe>) recipe, craftAll, creative); // CraftBukkit - decompile error
+     }
+ }

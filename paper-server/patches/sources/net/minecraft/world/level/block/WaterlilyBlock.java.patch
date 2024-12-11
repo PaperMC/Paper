@@ -1,0 +1,27 @@
+--- a/net/minecraft/world/level/block/WaterlilyBlock.java
++++ b/net/minecraft/world/level/block/WaterlilyBlock.java
+@@ -13,6 +13,9 @@
+ import net.minecraft.world.level.material.Fluids;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit end
+ 
+ public class WaterlilyBlock extends BushBlock {
+ 
+@@ -30,8 +33,14 @@
+ 
+     @Override
+     protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(world, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         super.entityInside(state, world, pos, entity);
+         if (world instanceof ServerLevel && entity instanceof AbstractBoat) {
++            // CraftBukkit start
++            if (!CraftEventFactory.callEntityChangeBlockEvent(entity, pos, state.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
++                return;
++            }
++            // CraftBukkit end
+             world.destroyBlock(new BlockPos(pos), true, entity);
+         }
+ 

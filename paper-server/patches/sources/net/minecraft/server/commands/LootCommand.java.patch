@@ -1,0 +1,19 @@
+--- a/net/minecraft/server/commands/LootCommand.java
++++ b/net/minecraft/server/commands/LootCommand.java
+@@ -95,7 +95,7 @@
+     }
+ 
+     private static <T extends ArgumentBuilder<CommandSourceStack, T>> T addTargets(T rootArgument, LootCommand.TailProvider sourceConstructor) {
+-        return rootArgument.then(((LiteralArgumentBuilder) net.minecraft.commands.Commands.literal("replace").then(net.minecraft.commands.Commands.literal("entity").then(net.minecraft.commands.Commands.argument("entities", EntityArgument.entities()).then(sourceConstructor.construct(net.minecraft.commands.Commands.argument("slot", SlotArgument.slot()), (commandcontext, list, commandloot_a) -> {
++        return (T) rootArgument.then(((LiteralArgumentBuilder) net.minecraft.commands.Commands.literal("replace").then(net.minecraft.commands.Commands.literal("entity").then(net.minecraft.commands.Commands.argument("entities", EntityArgument.entities()).then(sourceConstructor.construct(net.minecraft.commands.Commands.argument("slot", SlotArgument.slot()), (commandcontext, list, commandloot_a) -> { // CraftBukkit - decompile error
+             return LootCommand.entityReplace(EntityArgument.getEntities(commandcontext, "entities"), SlotArgument.getSlot(commandcontext, "slot"), list.size(), list, commandloot_a);
+         }).then(sourceConstructor.construct(net.minecraft.commands.Commands.argument("count", IntegerArgumentType.integer(0)), (commandcontext, list, commandloot_a) -> {
+             return LootCommand.entityReplace(EntityArgument.getEntities(commandcontext, "entities"), SlotArgument.getSlot(commandcontext, "slot"), IntegerArgumentType.getInteger(commandcontext, "count"), list, commandloot_a);
+@@ -250,6 +250,7 @@
+     private static int dropInWorld(CommandSourceStack source, Vec3 pos, List<ItemStack> stacks, LootCommand.Callback messageSender) throws CommandSyntaxException {
+         ServerLevel worldserver = source.getLevel();
+ 
++        stacks.removeIf(ItemStack::isEmpty); // CraftBukkit - SPIGOT-6959 Remove empty items for avoid throw an error in new EntityItem
+         stacks.forEach((itemstack) -> {
+             ItemEntity entityitem = new ItemEntity(worldserver, pos.x, pos.y, pos.z, itemstack.copy());
+ 

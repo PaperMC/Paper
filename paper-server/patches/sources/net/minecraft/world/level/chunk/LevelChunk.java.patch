@@ -1,0 +1,409 @@
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -79,7 +79,7 @@
+     };
+     private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel;
+     public boolean loaded;
+-    public final Level level;
++    public final ServerLevel level; // CraftBukkit - type
+     @Nullable
+     private Supplier<FullChunkStatus> fullStatus;
+     @Nullable
+@@ -98,7 +98,7 @@
+         this.tickersInLevel = Maps.newHashMap();
+         this.unsavedListener = (chunkcoordintpair1) -> {
+         };
+-        this.level = world;
++        this.level = (ServerLevel) world; // CraftBukkit - type
+         this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap();
+         Heightmap.Types[] aheightmap_type = Heightmap.Types.values();
+         int j = aheightmap_type.length;
+@@ -116,6 +116,15 @@
+         this.fluidTicks = fluidTickScheduler;
+     }
+ 
++    // CraftBukkit start
++    public boolean mustNotSave;
++    public boolean needsDecoration;
++    // CraftBukkit end
++
++    // Paper start
++    boolean loadedTicketLevel;
++    // Paper end
++
+     public LevelChunk(ServerLevel world, ProtoChunk protoChunk, @Nullable LevelChunk.PostLoadProcessor entityLoader) {
+         this(world, protoChunk.getPos(), protoChunk.getUpgradeData(), protoChunk.unpackBlockTicks(), protoChunk.unpackFluidTicks(), protoChunk.getInhabitedTime(), protoChunk.getSections(), entityLoader, protoChunk.getBlendingData());
+         if (!Collections.disjoint(protoChunk.pendingBlockEntities.keySet(), protoChunk.blockEntities.keySet())) {
+@@ -151,6 +160,10 @@
+         this.skyLightSources = protoChunk.skyLightSources;
+         this.setLightCorrect(protoChunk.isLightCorrect());
+         this.markUnsaved();
++        this.needsDecoration = true; // CraftBukkit
++        // CraftBukkit start
++        this.persistentDataContainer = protoChunk.persistentDataContainer; // SPIGOT-6814: copy PDC to account for 1.17 to 1.18 chunk upgrading.
++        // CraftBukkit end
+     }
+ 
+     public void setUnsavedListener(LevelChunk.UnsavedListener unsavedListener) {
+@@ -187,7 +200,14 @@
+         return new ChunkAccess.PackedTicks(this.blockTicks.pack(time), this.fluidTicks.pack(time));
+     }
+ 
++    // Paper start
+     @Override
++    public long getInhabitedTime() {
++        return this.level.paperConfig().chunks.fixedChunkInhabitedTime < 0 ? super.getInhabitedTime() : this.level.paperConfig().chunks.fixedChunkInhabitedTime;
++    }
++    // Paper end
++
++    @Override
+     public GameEventListenerRegistry getListenerRegistry(int ySectionCoord) {
+         Level world = this.level;
+ 
+@@ -200,8 +220,25 @@
+         }
+     }
+ 
++    // Paper start - Perf: Reduce instructions and provide final method
++    public BlockState getBlockState(final int x, final int y, final int z) {
++        return this.getBlockStateFinal(x, y, z);
++    }
++    public BlockState getBlockStateFinal(final int x, final int y, final int z) {
++        // Copied and modified from below
++        final int sectionIndex = this.getSectionIndex(y);
++        if (sectionIndex < 0 || sectionIndex >= this.sections.length
++            || this.sections[sectionIndex].nonEmptyBlockCount == 0) {
++            return Blocks.AIR.defaultBlockState();
++        }
++        return this.sections[sectionIndex].states.get((y & 15) << 8 | (z & 15) << 4 | x & 15);
++    }
+     @Override
+     public BlockState getBlockState(BlockPos pos) {
++        if (true) {
++            return this.getBlockStateFinal(pos.getX(), pos.getY(), pos.getZ());
++        }
++        // Paper end - Perf: Reduce instructions and provide final method
+         int i = pos.getX();
+         int j = pos.getY();
+         int k = pos.getZ();
+@@ -243,24 +280,38 @@
+         }
+     }
+ 
++    // Paper start - If loaded util
+     @Override
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
++        return this.getFluidState(blockposition);
++    }
++
++    @Override
++    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
++        return this.getBlockState(blockposition);
++    }
++    // Paper end
++
++    @Override
+     public FluidState getFluidState(BlockPos pos) {
+         return this.getFluidState(pos.getX(), pos.getY(), pos.getZ());
+     }
+ 
+     public FluidState getFluidState(int x, int y, int z) {
+-        try {
+-            int l = this.getSectionIndex(y);
++        // Paper start - Perf: Optimise Chunk#getFluid
++        // try {  // Remove try catch
++        int index = this.getSectionIndex(y);
++            if (index >= 0 && index < this.sections.length) {
++                LevelChunkSection chunksection = this.sections[index];
+ 
+-            if (l >= 0 && l < this.sections.length) {
+-                LevelChunkSection chunksection = this.sections[l];
+-
+                 if (!chunksection.hasOnlyAir()) {
+-                    return chunksection.getFluidState(x & 15, y & 15, z & 15);
++                    return chunksection.states.get((y & 15) << 8 | (z & 15) << 4 | x & 15).getFluidState();
++                    // Paper end - Perf: Optimise Chunk#getFluid
+                 }
+             }
+ 
+             return Fluids.EMPTY.defaultFluidState();
++        /* // Paper - Perf: Optimise Chunk#getFluid
+         } catch (Throwable throwable) {
+             CrashReport crashreport = CrashReport.forThrowable(throwable, "Getting fluid state");
+             CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Block being got");
+@@ -270,80 +321,89 @@
+             });
+             throw new ReportedException(crashreport);
+         }
++         */  // Paper - Perf: Optimise Chunk#getFluid
+     }
+ 
++    // CraftBukkit start
+     @Nullable
+     @Override
+     public BlockState setBlockState(BlockPos pos, BlockState state, boolean moved) {
+-        int i = pos.getY();
++        return this.setBlockState(pos, state, moved, true);
++    }
++
++    @Nullable
++    public BlockState setBlockState(BlockPos blockposition, BlockState iblockdata, boolean flag, boolean doPlace) {
++        // CraftBukkit end
++        int i = blockposition.getY();
+         LevelChunkSection chunksection = this.getSection(this.getSectionIndex(i));
+         boolean flag1 = chunksection.hasOnlyAir();
+ 
+-        if (flag1 && state.isAir()) {
++        if (flag1 && iblockdata.isAir()) {
+             return null;
+         } else {
+-            int j = pos.getX() & 15;
++            int j = blockposition.getX() & 15;
+             int k = i & 15;
+-            int l = pos.getZ() & 15;
+-            BlockState iblockdata1 = chunksection.setBlockState(j, k, l, state);
++            int l = blockposition.getZ() & 15;
++            BlockState iblockdata1 = chunksection.setBlockState(j, k, l, iblockdata);
+ 
+-            if (iblockdata1 == state) {
++            if (iblockdata1 == iblockdata) {
+                 return null;
+             } else {
+-                Block block = state.getBlock();
++                Block block = iblockdata.getBlock();
+ 
+-                ((Heightmap) this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING)).update(j, i, l, state);
+-                ((Heightmap) this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES)).update(j, i, l, state);
+-                ((Heightmap) this.heightmaps.get(Heightmap.Types.OCEAN_FLOOR)).update(j, i, l, state);
+-                ((Heightmap) this.heightmaps.get(Heightmap.Types.WORLD_SURFACE)).update(j, i, l, state);
++                ((Heightmap) this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING)).update(j, i, l, iblockdata);
++                ((Heightmap) this.heightmaps.get(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES)).update(j, i, l, iblockdata);
++                ((Heightmap) this.heightmaps.get(Heightmap.Types.OCEAN_FLOOR)).update(j, i, l, iblockdata);
++                ((Heightmap) this.heightmaps.get(Heightmap.Types.WORLD_SURFACE)).update(j, i, l, iblockdata);
+                 boolean flag2 = chunksection.hasOnlyAir();
+ 
+                 if (flag1 != flag2) {
+-                    this.level.getChunkSource().getLightEngine().updateSectionStatus(pos, flag2);
++                    this.level.getChunkSource().getLightEngine().updateSectionStatus(blockposition, flag2);
+                     this.level.getChunkSource().onSectionEmptinessChanged(this.chunkPos.x, SectionPos.blockToSectionCoord(i), this.chunkPos.z, flag2);
+                 }
+ 
+-                if (LightEngine.hasDifferentLightProperties(iblockdata1, state)) {
++                if (LightEngine.hasDifferentLightProperties(iblockdata1, iblockdata)) {
+                     ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
+                     gameprofilerfiller.push("updateSkyLightSources");
+                     this.skyLightSources.update(this, j, i, l);
+                     gameprofilerfiller.popPush("queueCheckLight");
+-                    this.level.getChunkSource().getLightEngine().checkBlock(pos);
++                    this.level.getChunkSource().getLightEngine().checkBlock(blockposition);
+                     gameprofilerfiller.pop();
+                 }
+ 
+                 boolean flag3 = iblockdata1.hasBlockEntity();
+ 
+-                if (!this.level.isClientSide) {
+-                    iblockdata1.onRemove(this.level, pos, state, moved);
++                if (!this.level.isClientSide && !this.level.isBlockPlaceCancelled) { // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
++                    iblockdata1.onRemove(this.level, blockposition, iblockdata, flag);
+                 } else if (!iblockdata1.is(block) && flag3) {
+-                    this.removeBlockEntity(pos);
++                    this.removeBlockEntity(blockposition);
+                 }
+ 
+                 if (!chunksection.getBlockState(j, k, l).is(block)) {
+                     return null;
+                 } else {
+-                    if (!this.level.isClientSide) {
+-                        state.onPlace(this.level, pos, iblockdata1, moved);
++                    // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
++                    if (!this.level.isClientSide && doPlace && (!this.level.captureBlockStates || block instanceof net.minecraft.world.level.block.BaseEntityBlock)) {
++                        iblockdata.onPlace(this.level, blockposition, iblockdata1, flag);
+                     }
+ 
+-                    if (state.hasBlockEntity()) {
+-                        BlockEntity tileentity = this.getBlockEntity(pos, LevelChunk.EntityCreationType.CHECK);
++                    if (iblockdata.hasBlockEntity()) {
++                        BlockEntity tileentity = this.getBlockEntity(blockposition, LevelChunk.EntityCreationType.CHECK);
+ 
+-                        if (tileentity != null && !tileentity.isValidBlockState(state)) {
+-                            LevelChunk.LOGGER.warn("Found mismatched block entity @ {}: type = {}, state = {}", new Object[]{pos, tileentity.getType().builtInRegistryHolder().key().location(), state});
+-                            this.removeBlockEntity(pos);
++                        if (tileentity != null && !tileentity.isValidBlockState(iblockdata)) {
++                            LevelChunk.LOGGER.warn("Found mismatched block entity @ {}: type = {}, state = {}", new Object[]{blockposition, tileentity.getType().builtInRegistryHolder().key().location(), iblockdata});
++                            this.removeBlockEntity(blockposition);
+                             tileentity = null;
+                         }
+ 
+                         if (tileentity == null) {
+-                            tileentity = ((EntityBlock) block).newBlockEntity(pos, state);
++                            tileentity = ((EntityBlock) block).newBlockEntity(blockposition, iblockdata);
+                             if (tileentity != null) {
+                                 this.addAndRegisterBlockEntity(tileentity);
+                             }
+                         } else {
+-                            tileentity.setBlockState(state);
++                            tileentity.setBlockState(iblockdata);
+                             this.updateBlockEntityTicker(tileentity);
+                         }
+                     }
+@@ -375,7 +435,12 @@
+ 
+     @Nullable
+     public BlockEntity getBlockEntity(BlockPos pos, LevelChunk.EntityCreationType creationType) {
+-        BlockEntity tileentity = (BlockEntity) this.blockEntities.get(pos);
++        // CraftBukkit start
++        BlockEntity tileentity = this.level.capturedTileEntities.get(pos);
++        if (tileentity == null) {
++            tileentity = (BlockEntity) this.blockEntities.get(pos);
++        }
++        // CraftBukkit end
+ 
+         if (tileentity == null) {
+             CompoundTag nbttagcompound = (CompoundTag) this.pendingBlockEntities.remove(pos);
+@@ -446,7 +511,13 @@
+         BlockState iblockdata = this.getBlockState(blockposition);
+ 
+         if (!iblockdata.hasBlockEntity()) {
+-            LevelChunk.LOGGER.warn("Trying to set block entity {} at position {}, but state {} does not allow it", new Object[]{blockEntity, blockposition, iblockdata});
++            // Paper start - ServerExceptionEvent
++            com.destroystokyo.paper.exception.ServerInternalException e = new com.destroystokyo.paper.exception.ServerInternalException(
++                "Trying to set block entity %s at position %s, but state %s does not allow it".formatted(blockEntity, blockposition, iblockdata)
++            );
++            e.printStackTrace();
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(e);
++            // Paper end - ServerExceptionEvent
+         } else {
+             BlockState iblockdata1 = blockEntity.getBlockState();
+ 
+@@ -500,6 +571,12 @@
+         if (this.isInLevel()) {
+             BlockEntity tileentity = (BlockEntity) this.blockEntities.remove(pos);
+ 
++            // CraftBukkit start - SPIGOT-5561: Also remove from pending map
++            if (!this.pendingBlockEntities.isEmpty()) {
++                this.pendingBlockEntities.remove(pos);
++            }
++            // CraftBukkit end
++
+             if (tileentity != null) {
+                 Level world = this.level;
+ 
+@@ -553,6 +630,65 @@
+ 
+     }
+ 
++    // CraftBukkit start
++    public void loadCallback() {
++        // Paper start
++        this.loadedTicketLevel = true;
++        // Paper end
++        org.bukkit.Server server = this.level.getCraftServer();
++        this.level.getChunkSource().addLoadedChunk(this); // Paper
++        if (server != null) {
++            /*
++             * If it's a new world, the first few chunks are generated inside
++             * the World constructor. We can't reliably alter that, so we have
++             * no way of creating a CraftWorld/CraftServer at that point.
++             */
++            org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
++            server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkLoadEvent(bukkitChunk, this.needsDecoration));
++
++            if (this.needsDecoration) {
++                this.needsDecoration = false;
++                java.util.Random random = new java.util.Random();
++                random.setSeed(this.level.getSeed());
++                long xRand = random.nextLong() / 2L * 2L + 1L;
++                long zRand = random.nextLong() / 2L * 2L + 1L;
++                random.setSeed((long) this.chunkPos.x * xRand + (long) this.chunkPos.z * zRand ^ this.level.getSeed());
++
++                org.bukkit.World world = this.level.getWorld();
++                if (world != null) {
++                    this.level.populating = true;
++                    try {
++                        for (org.bukkit.generator.BlockPopulator populator : world.getPopulators()) {
++                            populator.populate(world, random, bukkitChunk);
++                        }
++                    } finally {
++                        this.level.populating = false;
++                    }
++                }
++                server.getPluginManager().callEvent(new org.bukkit.event.world.ChunkPopulateEvent(bukkitChunk));
++            }
++        }
++    }
++
++    public void unloadCallback() {
++        org.bukkit.Server server = this.level.getCraftServer();
++        org.bukkit.Chunk bukkitChunk = new org.bukkit.craftbukkit.CraftChunk(this);
++        org.bukkit.event.world.ChunkUnloadEvent unloadEvent = new org.bukkit.event.world.ChunkUnloadEvent(bukkitChunk, this.isUnsaved());
++        server.getPluginManager().callEvent(unloadEvent);
++        // note: saving can be prevented, but not forced if no saving is actually required
++        this.mustNotSave = !unloadEvent.isSaveChunk();
++        this.level.getChunkSource().removeLoadedChunk(this); // Paper
++        // Paper start
++        this.loadedTicketLevel = false;
++        // Paper end
++    }
++
++    @Override
++    public boolean isUnsaved() {
++        return super.isUnsaved() && !this.mustNotSave;
++    }
++    // CraftBukkit end
++
+     public boolean isEmpty() {
+         return false;
+     }
+@@ -750,7 +886,7 @@
+ 
+     private <T extends BlockEntity> void updateBlockEntityTicker(T blockEntity) {
+         BlockState iblockdata = blockEntity.getBlockState();
+-        BlockEntityTicker<T> blockentityticker = iblockdata.getTicker(this.level, blockEntity.getType());
++        BlockEntityTicker<T> blockentityticker = iblockdata.getTicker(this.level, (BlockEntityType<T>) blockEntity.getType()); // CraftBukkit - decompile error
+ 
+         if (blockentityticker == null) {
+             this.removeBlockEntityTicker(blockEntity.getBlockPos());
+@@ -841,7 +977,7 @@
+         private boolean loggedInvalidBlockState;
+ 
+         BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker) {
+-            this.blockEntity = tileentity;
++            this.blockEntity = (T) tileentity; // CraftBukkit - decompile error
+             this.ticker = blockentityticker;
+         }
+ 
+@@ -860,18 +996,25 @@
+                         if (this.blockEntity.getType().isValid(iblockdata)) {
+                             this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), iblockdata, this.blockEntity);
+                             this.loggedInvalidBlockState = false;
+-                        } else if (!this.loggedInvalidBlockState) {
+-                            this.loggedInvalidBlockState = true;
+-                            LevelChunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new Object[]{LogUtils.defer(this::getType), LogUtils.defer(this::getPos), iblockdata});
++                        // Paper start - Remove the Block Entity if it's invalid
++                        } else {
++                            LevelChunk.this.removeBlockEntity(this.getPos());
++                            if (!this.loggedInvalidBlockState) {
++                                this.loggedInvalidBlockState = true;
++                                LevelChunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new Object[]{LogUtils.defer(this::getType), LogUtils.defer(this::getPos), iblockdata});
++                            }
++                            // Paper end - Remove the Block Entity if it's invalid
+                         }
+ 
+                         gameprofilerfiller.pop();
+                     } catch (Throwable throwable) {
+-                        CrashReport crashreport = CrashReport.forThrowable(throwable, "Ticking block entity");
+-                        CrashReportCategory crashreportsystemdetails = crashreport.addCategory("Block entity being ticked");
+-
+-                        this.blockEntity.fillCrashReportCategory(crashreportsystemdetails);
+-                        throw new ReportedException(crashreport);
++                        // Paper start - Prevent block entity and entity crashes
++                        final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
++                        net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
++                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
++                        LevelChunk.this.removeBlockEntity(this.getPos());
++                        // Paper end - Prevent block entity and entity crashes
++                        // Spigot start
+                     }
+                 }
+             }

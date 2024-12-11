@@ -1,0 +1,37 @@
+--- a/net/minecraft/world/level/block/DoorBlock.java
++++ b/net/minecraft/world/level/block/DoorBlock.java
+@@ -38,6 +38,7 @@
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+ 
+ public class DoorBlock extends Block {
+ 
+@@ -222,9 +223,24 @@
+ 
+     @Override
+     protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, @Nullable Orientation wireOrientation, boolean notify) {
+-        boolean flag1 = world.hasNeighborSignal(pos) || world.hasNeighborSignal(pos.relative(state.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER ? Direction.UP : Direction.DOWN));
++        // CraftBukkit start
++        BlockPos otherHalf = pos.relative(state.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER ? Direction.UP : Direction.DOWN);
+ 
+-        if (!this.defaultBlockState().is(sourceBlock) && flag1 != (Boolean) state.getValue(DoorBlock.POWERED)) {
++        org.bukkit.World bworld = world.getWorld();
++        org.bukkit.block.Block bukkitBlock = bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++        org.bukkit.block.Block blockTop = bworld.getBlockAt(otherHalf.getX(), otherHalf.getY(), otherHalf.getZ());
++
++        int power = bukkitBlock.getBlockPower();
++        int powerTop = blockTop.getBlockPower();
++        if (powerTop > power) power = powerTop;
++        int oldPower = (Boolean) state.getValue(DoorBlock.POWERED) ? 15 : 0;
++
++        if (oldPower == 0 ^ power == 0) {
++            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, oldPower, power);
++            world.getCraftServer().getPluginManager().callEvent(eventRedstone);
++
++            boolean flag1 = eventRedstone.getNewCurrent() > 0;
++            // CraftBukkit end
+             if (flag1 != (Boolean) state.getValue(DoorBlock.OPEN)) {
+                 this.playSound((Entity) null, world, pos, flag1);
+                 world.gameEvent((Entity) null, (Holder) (flag1 ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE), pos);

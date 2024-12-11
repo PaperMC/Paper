@@ -1,0 +1,37 @@
+--- a/net/minecraft/world/entity/ai/behavior/BabyFollowAdult.java
++++ b/net/minecraft/world/entity/ai/behavior/BabyFollowAdult.java
+@@ -7,6 +7,12 @@
+ import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
+ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+ import net.minecraft.world.entity.ai.memory.WalkTarget;
++// CraftBukkit start
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityTargetEvent;
++import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
++// CraftBukkit end
+ 
+ public class BabyFollowAdult {
+ 
+@@ -25,9 +31,20 @@
+                     if (!entityageable.isBaby()) {
+                         return false;
+                     } else {
+-                        AgeableMob entityageable1 = (AgeableMob) behaviorbuilder_b.get(memoryaccessor);
++                        LivingEntity entityageable1 = (AgeableMob) behaviorbuilder_b.get(memoryaccessor); // CraftBukkit - type
+ 
+                         if (entityageable.closerThan(entityageable1, (double) (executionRange.getMaxValue() + 1)) && !entityageable.closerThan(entityageable1, (double) executionRange.getMinValue())) {
++                            // CraftBukkit start
++                            EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(entityageable, entityageable1, EntityTargetEvent.TargetReason.FOLLOW_LEADER);
++                            if (event.isCancelled()) {
++                                return false;
++                            }
++                            if (event.getTarget() == null) {
++                                memoryaccessor.erase();
++                                return true;
++                            }
++                            entityageable1 = ((CraftLivingEntity) event.getTarget()).getHandle();
++                            // CraftBukkit end
+                             WalkTarget memorytarget = new WalkTarget(new EntityTracker(entityageable1, false), (Float) speed.apply(entityageable), executionRange.getMinValue() - 1);
+ 
+                             memoryaccessor1.set(new EntityTracker(entityageable1, true));

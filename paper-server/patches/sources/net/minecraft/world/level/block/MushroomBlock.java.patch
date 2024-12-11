@@ -1,0 +1,46 @@
+--- a/net/minecraft/world/level/block/MushroomBlock.java
++++ b/net/minecraft/world/level/block/MushroomBlock.java
+@@ -19,6 +19,9 @@
+ import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++// CraftBukkit start
++import org.bukkit.TreeType;
++// CraftBukkit end
+ 
+ public class MushroomBlock extends BushBlock implements BonemealableBlock {
+ 
+@@ -48,7 +51,7 @@
+ 
+     @Override
+     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        if (random.nextInt(25) == 0) {
++        if (random.nextFloat() < (world.spigotConfig.mushroomModifier / (100.0f * 25))) { // Spigot - SPIGOT-7159: Better modifier resolution
+             int i = 5;
+             boolean flag = true;
+             Iterator iterator = BlockPos.betweenClosed(pos.offset(-4, -1, -4), pos.offset(4, 1, 4)).iterator();
+@@ -65,6 +68,7 @@
+             }
+ 
+             BlockPos blockposition2 = pos.offset(random.nextInt(3) - 1, random.nextInt(2) - random.nextInt(2), random.nextInt(3) - 1);
++            final BlockPos sourcePos = pos; // Paper - Use correct source for mushroom block spread event
+ 
+             for (int j = 0; j < 4; ++j) {
+                 if (world.isEmptyBlock(blockposition2) && state.canSurvive(world, blockposition2)) {
+@@ -75,7 +79,7 @@
+             }
+ 
+             if (world.isEmptyBlock(blockposition2) && state.canSurvive(world, blockposition2)) {
+-                world.setBlock(blockposition2, state, 2);
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, sourcePos, blockposition2, state, 2); // CraftBukkit // Paper - Use correct source for mushroom block spread event
+             }
+         }
+ 
+@@ -101,6 +105,7 @@
+             return false;
+         } else {
+             world.removeBlock(pos, false);
++            SaplingBlock.treeType = (this == Blocks.BROWN_MUSHROOM) ? TreeType.BROWN_MUSHROOM : TreeType.RED_MUSHROOM; // CraftBukkit
+             if (((ConfiguredFeature) ((Holder) optional.get()).value()).place(world, world.getChunkSource().getGenerator(), random, pos)) {
+                 return true;
+             } else {

@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/level/PathNavigationRegion.java
++++ b/net/minecraft/world/level/PathNavigationRegion.java
+@@ -8,6 +8,7 @@
+ import net.minecraft.core.Holder;
+ import net.minecraft.core.SectionPos;
+ import net.minecraft.core.registries.Registries;
++import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.level.biome.Biome;
+ import net.minecraft.world.level.biome.Biomes;
+@@ -66,7 +67,7 @@
+     private ChunkAccess getChunk(int chunkX, int chunkZ) {
+         int i = chunkX - this.centerX;
+         int j = chunkZ - this.centerZ;
+-        if (i >= 0 && i < this.chunks.length && j >= 0 && j < this.chunks[i].length) {
++        if (i >= 0 && i < this.chunks.length && j >= 0 && j < this.chunks[i].length) { // Paper - if this changes, update getChunkIfLoaded below
+             ChunkAccess chunkAccess = this.chunks[i][j];
+             return (ChunkAccess)(chunkAccess != null ? chunkAccess : new EmptyLevelChunk(this.level, new ChunkPos(chunkX, chunkZ), this.plains.get()));
+         } else {
+@@ -74,7 +75,31 @@
+         }
+     }
+ 
++    // Paper start - if loaded util
++    private @Nullable ChunkAccess getChunkIfLoaded(int x, int z) {
++        // Based on getChunk(int, int)
++        int xx = x - this.centerX;
++        int zz = z - this.centerZ;
++
++        if (xx >= 0 && xx < this.chunks.length && zz >= 0 && zz < this.chunks[xx].length) {
++            return this.chunks[xx][zz];
++        }
++        return null;
++    }
+     @Override
++    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
++        ChunkAccess chunk = getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return chunk == null ? null : chunk.getFluidState(blockposition);
++    }
++
++    @Override
++    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
++        ChunkAccess chunk = getChunkIfLoaded(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++        return chunk == null ? null : chunk.getBlockState(blockposition);
++    }
++    // Paper end
++
++    @Override
+     public WorldBorder getWorldBorder() {
+         return this.level.getWorldBorder();
+     }

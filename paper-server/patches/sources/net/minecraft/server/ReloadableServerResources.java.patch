@@ -1,0 +1,25 @@
+--- a/net/minecraft/server/ReloadableServerResources.java
++++ b/net/minecraft/server/ReloadableServerResources.java
+@@ -39,6 +39,7 @@
+         this.postponedTags = pendingTagLoads;
+         this.recipes = new RecipeManager(registries);
+         this.commands = new Commands(environment, CommandBuildContext.simple(registries, enabledFeatures));
++        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setDispatcher(this.commands, CommandBuildContext.simple(registries, enabledFeatures)); // Paper - Brigadier Command API
+         this.advancements = new ServerAdvancementManager(registries);
+         this.functionLibrary = new ServerFunctionLibrary(functionPermissionLevel, this.commands.getDispatcher());
+     }
+@@ -83,6 +84,14 @@
+                     ReloadableServerResources reloadableServerResources = new ReloadableServerResources(
+                         reloadResult.layers(), reloadResult.lookupWithUpdatedTags(), enabledFeatures, environment, pendingTagLoads, functionPermissionLevel
+                     );
++                    // Paper start - call commands event for bootstraps
++                    //noinspection ConstantValue
++                    io.papermc.paper.plugin.lifecycle.event.LifecycleEventRunner.INSTANCE.callReloadableRegistrarEvent(
++                        io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents.COMMANDS,
++                        io.papermc.paper.command.brigadier.PaperCommands.INSTANCE,
++                        io.papermc.paper.plugin.bootstrap.BootstrapContext.class,
++                        MinecraftServer.getServer() == null ? io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.INITIAL : io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD);
++                    // Paper end - call commands event
+                     return SimpleReloadInstance.create(
+                             resourceManager,
+                             reloadableServerResources.listeners(),

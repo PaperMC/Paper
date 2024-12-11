@@ -1,0 +1,162 @@
+--- a/net/minecraft/world/entity/item/FallingBlockEntity.java
++++ b/net/minecraft/world/entity/item/FallingBlockEntity.java
+@@ -52,6 +52,11 @@
+ import net.minecraft.world.phys.Vec3;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
++
+ public class FallingBlockEntity extends Entity {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -66,6 +71,7 @@
+     public CompoundTag blockData;
+     public boolean forceTickAfterTeleportToDuplicate;
+     protected static final EntityDataAccessor<BlockPos> DATA_START_POS = SynchedEntityData.defineId(FallingBlockEntity.class, EntityDataSerializers.BLOCK_POS);
++    public boolean autoExpire = true; // Paper - Expand FallingBlock API
+ 
+     public FallingBlockEntity(EntityType<? extends FallingBlockEntity> type, Level world) {
+         super(type, world);
+@@ -87,10 +93,17 @@
+     }
+ 
+     public static FallingBlockEntity fall(Level world, BlockPos pos, BlockState state) {
+-        FallingBlockEntity entityfallingblock = new FallingBlockEntity(world, (double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D, state.hasProperty(BlockStateProperties.WATERLOGGED) ? (BlockState) state.setValue(BlockStateProperties.WATERLOGGED, false) : state);
++        // CraftBukkit start
++        return FallingBlockEntity.fall(world, pos, state, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
+ 
+-        world.setBlock(pos, state.getFluidState().createLegacyBlock(), 3);
+-        world.addFreshEntity(entityfallingblock);
++    public static FallingBlockEntity fall(Level world, BlockPos blockposition, BlockState iblockdata, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        // CraftBukkit end
++        FallingBlockEntity entityfallingblock = new FallingBlockEntity(world, (double) blockposition.getX() + 0.5D, (double) blockposition.getY(), (double) blockposition.getZ() + 0.5D, iblockdata.hasProperty(BlockStateProperties.WATERLOGGED) ? (BlockState) iblockdata.setValue(BlockStateProperties.WATERLOGGED, false) : iblockdata);
++        if (!CraftEventFactory.callEntityChangeBlockEvent(entityfallingblock, blockposition, iblockdata.getFluidState().createLegacyBlock())) return entityfallingblock; // CraftBukkit
++
++        world.setBlock(blockposition, iblockdata.getFluidState().createLegacyBlock(), 3);
++        world.addFreshEntity(entityfallingblock, spawnReason); // CraftBukkit
+         return entityfallingblock;
+     }
+ 
+@@ -139,7 +152,7 @@
+     @Override
+     public void tick() {
+         if (this.blockState.isAir()) {
+-            this.discard();
++            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         } else {
+             Block block = this.blockState.getBlock();
+ 
+@@ -147,6 +160,16 @@
+             this.applyGravity();
+             this.move(MoverType.SELF, this.getDeltaMovement());
+             this.applyEffectsFromBlocks();
++            // Paper start - Configurable falling blocks height nerf
++            if (this.level().paperConfig().fixes.fallingBlockHeightNerf.test(v -> this.getY() > v)) {
++                if (this.dropItem && this.level() instanceof final ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
++                    this.spawnAtLocation(serverLevel, block);
++                }
++
++                this.discard(EntityRemoveEvent.Cause.OUT_OF_WORLD);
++                return;
++            }
++            // Paper end - Configurable falling blocks height nerf
+             this.handlePortal();
+             Level world = this.level();
+ 
+@@ -169,12 +192,12 @@
+                     }
+ 
+                     if (!this.onGround() && !flag1) {
+-                        if (this.time > 100 && (blockposition.getY() <= this.level().getMinY() || blockposition.getY() > this.level().getMaxY()) || this.time > 600) {
++                        if ((this.time > 100 && autoExpire) && (blockposition.getY() <= this.level().getMinY() || blockposition.getY() > this.level().getMaxY()) || (this.time > 600 && autoExpire)) { // Paper - Expand FallingBlock API
+                             if (this.dropItem && worldserver.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+                                 this.spawnAtLocation(worldserver, (ItemLike) block);
+                             }
+ 
+-                            this.discard();
++                            this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
+                         }
+                     } else {
+                         BlockState iblockdata = this.level().getBlockState(blockposition);
+@@ -191,9 +214,15 @@
+                                         this.blockState = (BlockState) this.blockState.setValue(BlockStateProperties.WATERLOGGED, true);
+                                     }
+ 
++                                    // CraftBukkit start
++                                    if (!CraftEventFactory.callEntityChangeBlockEvent(this, blockposition, this.blockState)) {
++                                        this.discard(EntityRemoveEvent.Cause.DESPAWN); // SPIGOT-6586 called before the event in previous versions
++                                        return;
++                                    }
++                                    // CraftBukkit end
+                                     if (this.level().setBlock(blockposition, this.blockState, 3)) {
+                                         ((ServerLevel) this.level()).getChunkSource().chunkMap.broadcast(this, new ClientboundBlockUpdatePacket(blockposition, this.level().getBlockState(blockposition)));
+-                                        this.discard();
++                                        this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                                         if (block instanceof Fallable) {
+                                             ((Fallable) block).onLand(this.level(), blockposition, this.blockState, iblockdata, this);
+                                         }
+@@ -221,19 +250,19 @@
+                                             }
+                                         }
+                                     } else if (this.dropItem && worldserver.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+-                                        this.discard();
++                                        this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
+                                         this.callOnBrokenAfterFall(block, blockposition);
+                                         this.spawnAtLocation(worldserver, (ItemLike) block);
+                                     }
+                                 } else {
+-                                    this.discard();
++                                    this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
+                                     if (this.dropItem && worldserver.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
+                                         this.callOnBrokenAfterFall(block, blockposition);
+                                         this.spawnAtLocation(worldserver, (ItemLike) block);
+                                     }
+                                 }
+                             } else {
+-                                this.discard();
++                                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                                 this.callOnBrokenAfterFall(block, blockposition);
+                             }
+                         }
+@@ -310,6 +339,7 @@
+         }
+ 
+         nbt.putBoolean("CancelDrop", this.cancelDrop);
++        if (!autoExpire) {nbt.putBoolean("Paper.AutoExpire", false);} // Paper - Expand FallingBlock API
+     }
+ 
+     @Override
+@@ -328,7 +358,7 @@
+             this.dropItem = nbt.getBoolean("DropItem");
+         }
+ 
+-        if (nbt.contains("TileEntityData", 10)) {
++        if (nbt.contains("TileEntityData", 10) && !(this.level().paperConfig().entities.spawning.filterBadTileEntityNbtFromFallingBlocks && this.blockState.getBlock() instanceof net.minecraft.world.level.block.GameMasterBlock)) { // Paper - Filter bad block entity nbt data from falling blocks
+             this.blockData = nbt.getCompound("TileEntityData").copy();
+         }
+ 
+@@ -337,6 +367,11 @@
+             this.blockState = Blocks.SAND.defaultBlockState();
+         }
+ 
++        // Paper start - Expand FallingBlock API
++         if (nbt.contains("Paper.AutoExpire")) {
++            this.autoExpire = nbt.getBoolean("Paper.AutoExpire");
++         }
++        // Paper end - Expand FallingBlock API
+     }
+ 
+     public void setHurtsEntities(float fallHurtAmount, int fallHurtMax) {
+@@ -395,7 +430,7 @@
+         boolean flag = (resourcekey1 == Level.END || resourcekey == Level.END) && resourcekey1 != resourcekey;
+         Entity entity = super.teleport(teleportTarget);
+ 
+-        this.forceTickAfterTeleportToDuplicate = entity != null && flag;
++        this.forceTickAfterTeleportToDuplicate = entity != null && flag && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowUnsafeEndPortalTeleportation; // Paper
+         return entity;
+     }
+ }

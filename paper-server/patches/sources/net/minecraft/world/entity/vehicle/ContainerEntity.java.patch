@@ -1,0 +1,81 @@
+--- a/net/minecraft/world/entity/vehicle/ContainerEntity.java
++++ b/net/minecraft/world/entity/vehicle/ContainerEntity.java
+@@ -62,22 +62,26 @@
+     default void addChestVehicleSaveData(CompoundTag nbt, HolderLookup.Provider registries) {
+         if (this.getContainerLootTable() != null) {
+             nbt.putString("LootTable", this.getContainerLootTable().location().toString());
++            this.lootableData().saveNbt(nbt); // Paper
+             if (this.getContainerLootTableSeed() != 0L) {
+                 nbt.putLong("LootTableSeed", this.getContainerLootTableSeed());
+             }
+-        } else {
+-            ContainerHelper.saveAllItems(nbt, this.getItemStacks(), registries);
+         }
++        ContainerHelper.saveAllItems(nbt, this.getItemStacks(), registries); // Paper - always save the items, table may still remain
+     }
+ 
+     default void readChestVehicleSaveData(CompoundTag nbt, HolderLookup.Provider registries) {
+         this.clearItemStacks();
+         if (nbt.contains("LootTable", 8)) {
+-            this.setContainerLootTable(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(nbt.getString("LootTable"))));
++            this.setContainerLootTable(net.minecraft.Optionull.map(ResourceLocation.tryParse(nbt.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl))); // Paper - Validate ResourceLocation
++            // Paper start - LootTable API
++            if (this.getContainerLootTable() != null) {
++                this.lootableData().loadNbt(nbt);
++            }
++            // Paper end - LootTable API
+             this.setContainerLootTableSeed(nbt.getLong("LootTableSeed"));
+-        } else {
+-            ContainerHelper.loadAllItems(nbt, this.getItemStacks(), registries);
+         }
++        ContainerHelper.loadAllItems(nbt, this.getItemStacks(), registries); // Paper - always save the items, table may still remain
+     }
+ 
+     default void chestVehicleDestroyed(DamageSource source, ServerLevel world, Entity vehicle) {
+@@ -91,19 +95,28 @@
+     }
+ 
+     default InteractionResult interactWithContainerVehicle(Player player) {
+-        player.openMenu(this);
++        // Paper start - Fix InventoryOpenEvent cancellation
++        if (player.openMenu(this).isEmpty()) {
++            return InteractionResult.PASS;
++        }
++        // Paper end - Fix InventoryOpenEvent cancellation
+         return InteractionResult.SUCCESS;
+     }
+ 
+     default void unpackChestVehicleLootTable(@Nullable Player player) {
+         MinecraftServer minecraftServer = this.level().getServer();
+-        if (this.getContainerLootTable() != null && minecraftServer != null) {
++        if (minecraftServer != null && this.lootableData().shouldReplenish(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.ENTITY, player)) { // Paper - LootTable API
+             LootTable lootTable = minecraftServer.reloadableRegistries().getLootTable(this.getContainerLootTable());
+             if (player != null) {
+                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, this.getContainerLootTable());
+             }
+ 
+-            this.setContainerLootTable(null);
++            // Paper start - LootTable API
++            if (this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.ENTITY, player)) {
++                this.setContainerLootTable(null);
++            }
++            // Paper end - LootTable API
++
+             LootParams.Builder builder = new LootParams.Builder((ServerLevel)this.level()).withParameter(LootContextParams.ORIGIN, this.position());
+             if (player != null) {
+                 builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
+@@ -173,4 +186,14 @@
+     default boolean isChestVehicleStillValid(Player player) {
+         return !this.isRemoved() && player.canInteractWithEntity(this.getBoundingBox(), 4.0);
+     }
++
++    // Paper start - LootTable API
++    default com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData() {
++        throw new UnsupportedOperationException("Implement this method");
++    }
++
++    default com.destroystokyo.paper.loottable.PaperLootableInventory getLootableInventory() {
++        return ((com.destroystokyo.paper.loottable.PaperLootableInventory) ((net.minecraft.world.entity.Entity) this).getBukkitEntity());
++    }
++    // Paper end - LootTable API
+ }

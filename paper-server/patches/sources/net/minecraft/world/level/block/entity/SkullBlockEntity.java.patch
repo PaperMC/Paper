@@ -1,0 +1,73 @@
+--- a/net/minecraft/world/level/block/entity/SkullBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/SkullBlockEntity.java
+@@ -41,7 +41,7 @@
+     @Nullable
+     private static LoadingCache<String, CompletableFuture<Optional<GameProfile>>> profileCacheByName;
+     @Nullable
+-    private static LoadingCache<UUID, CompletableFuture<Optional<GameProfile>>> profileCacheById;
++    private static LoadingCache<com.mojang.datafixers.util.Pair<java.util.UUID,  @org.jetbrains.annotations.Nullable GameProfile>, CompletableFuture<Optional<GameProfile>>> profileCacheById; // Paper - player profile events
+     public static final Executor CHECKED_MAIN_THREAD_EXECUTOR = runnable -> {
+         Executor executor = mainThreadExecutor;
+         if (executor != null) {
+@@ -76,9 +76,9 @@
+         profileCacheById = CacheBuilder.newBuilder()
+             .expireAfterAccess(Duration.ofMinutes(10L))
+             .maximumSize(256L)
+-            .build(new CacheLoader<UUID, CompletableFuture<Optional<GameProfile>>>() {
++            .build(new CacheLoader<>() { // Paper - player profile events
+                 @Override
+-                public CompletableFuture<Optional<GameProfile>> load(UUID uUID) {
++                public CompletableFuture<Optional<GameProfile>> load(com.mojang.datafixers.util.Pair<java.util.UUID, @org.jetbrains.annotations.Nullable GameProfile> uUID) { // Paper - player profile events
+                     return SkullBlockEntity.fetchProfileById(uUID, apiServices, booleanSupplier);
+                 }
+             });
+@@ -89,23 +89,29 @@
+             .getAsync(name)
+             .thenCompose(
+                 optional -> {
+-                    LoadingCache<UUID, CompletableFuture<Optional<GameProfile>>> loadingCache = profileCacheById;
++                    LoadingCache<com.mojang.datafixers.util.Pair<java.util.UUID, @org.jetbrains.annotations.Nullable GameProfile>, CompletableFuture<Optional<GameProfile>>> loadingCache = profileCacheById; // Paper - player profile events
+                     return loadingCache != null && !optional.isEmpty()
+-                        ? loadingCache.getUnchecked(optional.get().getId()).thenApply(optional2 -> optional2.or(() -> optional))
++                        ? loadingCache.getUnchecked(new com.mojang.datafixers.util.Pair<>(optional.get().getId(), optional.get())).thenApply(optional2 -> optional2.or(() -> optional)) // Paper - player profile events
+                         : CompletableFuture.completedFuture(Optional.empty());
+                 }
+             );
+     }
+ 
+-    static CompletableFuture<Optional<GameProfile>> fetchProfileById(UUID uuid, Services apiServices, BooleanSupplier booleanSupplier) {
++    static CompletableFuture<Optional<GameProfile>> fetchProfileById(com.mojang.datafixers.util.Pair<java.util.UUID, @org.jetbrains.annotations.Nullable GameProfile> pair, Services apiServices, BooleanSupplier booleanSupplier) { // Paper
+         return CompletableFuture.supplyAsync(() -> {
+             if (booleanSupplier.getAsBoolean()) {
+                 return Optional.empty();
+             } else {
+-                ProfileResult profileResult = apiServices.sessionService().fetchProfile(uuid, true);
++                // Paper start - fill player profile events
++                if (apiServices.sessionService() instanceof com.destroystokyo.paper.profile.PaperMinecraftSessionService paperService) {
++                    final GameProfile profile = pair.getSecond() != null ? pair.getSecond() : new com.mojang.authlib.GameProfile(pair.getFirst(), "");
++                    return Optional.ofNullable(paperService.fetchProfile(profile, true)).map(ProfileResult::profile);
++                }
++                ProfileResult profileResult = apiServices.sessionService().fetchProfile(pair.getFirst(), true);
++                // Paper end - fill player profile events
+                 return Optional.ofNullable(profileResult).map(ProfileResult::profile);
+             }
+-        }, Util.backgroundExecutor().forName("fetchProfile"));
++        }, Util.PROFILE_EXECUTOR); // Paper - don't submit BLOCKING PROFILE LOOKUPS to the world gen thread
+     }
+ 
+     public static void clear() {
+@@ -210,9 +216,11 @@
+             : CompletableFuture.completedFuture(Optional.empty());
+     }
+ 
+-    public static CompletableFuture<Optional<GameProfile>> fetchGameProfile(UUID uuid) {
+-        LoadingCache<UUID, CompletableFuture<Optional<GameProfile>>> loadingCache = profileCacheById;
+-        return loadingCache != null ? loadingCache.getUnchecked(uuid) : CompletableFuture.completedFuture(Optional.empty());
++    // Paper start - player profile events
++    public static CompletableFuture<Optional<GameProfile>> fetchGameProfile(UUID uuid, @Nullable String name) {
++        LoadingCache<com.mojang.datafixers.util.Pair<java.util.UUID,  @org.jetbrains.annotations.Nullable GameProfile>, CompletableFuture<Optional<GameProfile>>> loadingCache = profileCacheById;
++        return loadingCache != null ? loadingCache.getUnchecked(new com.mojang.datafixers.util.Pair<>(uuid, name != null ? new com.mojang.authlib.GameProfile(uuid, name) : null)) : CompletableFuture.completedFuture(Optional.empty());
++        // Paper end - player profile events
+     }
+ 
+     @Override

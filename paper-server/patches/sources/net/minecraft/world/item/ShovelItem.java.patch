@@ -1,0 +1,33 @@
+--- a/net/minecraft/world/item/ShovelItem.java
++++ b/net/minecraft/world/item/ShovelItem.java
+@@ -46,20 +46,29 @@
+             Player player = context.getPlayer();
+             BlockState blockState2 = FLATTENABLES.get(blockState.getBlock());
+             BlockState blockState3 = null;
++            Runnable afterAction = null; // Paper
+             if (blockState2 != null && level.getBlockState(blockPos.above()).isAir()) {
+-                level.playSound(player, blockPos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
++                afterAction = () -> level.playSound(player, blockPos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F); // Paper
+                 blockState3 = blockState2;
+             } else if (blockState.getBlock() instanceof CampfireBlock && blockState.getValue(CampfireBlock.LIT)) {
++                afterAction = () -> { // Paper
+                 if (!level.isClientSide()) {
+                     level.levelEvent(null, 1009, blockPos, 0);
+                 }
+ 
+                 CampfireBlock.dowse(context.getPlayer(), level, blockPos, blockState);
++                }; // Paper
+                 blockState3 = blockState.setValue(CampfireBlock.LIT, Boolean.valueOf(false));
+             }
+ 
+             if (blockState3 != null) {
+                 if (!level.isClientSide) {
++                    // Paper start
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(context.getPlayer(), blockPos, blockState3)) {
++                        return InteractionResult.PASS;
++                    }
++                    afterAction.run();
++                    // Paper end
+                     level.setBlock(blockPos, blockState3, 11);
+                     level.gameEvent(GameEvent.BLOCK_CHANGE, blockPos, GameEvent.Context.of(player, blockState3));
+                     if (player != null) {

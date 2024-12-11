@@ -1,0 +1,52 @@
+--- a/net/minecraft/world/level/block/RailState.java
++++ b/net/minecraft/world/level/block/RailState.java
+@@ -17,6 +17,12 @@
+     private final boolean isStraight;
+     private final List<BlockPos> connections = Lists.newArrayList();
+ 
++    // Paper start - Fix some rails connecting improperly
++    public boolean isValid() {
++        return this.level.getBlockState(this.pos).getBlock() == this.state.getBlock();
++    }
++    // Paper end - Fix some rails connecting improperly
++
+     public RailState(Level world, BlockPos pos, BlockState state) {
+         this.level = world;
+         this.pos = pos;
+@@ -141,6 +147,11 @@
+     }
+ 
+     private void connectTo(RailState placementHelper) {
++        // Paper start - Fix some rails connecting improperly
++        if (!this.isValid() || !placementHelper.isValid()) {
++            return;
++        }
++        // Paper end - Fix some rails connecting improperly
+         this.connections.add(placementHelper.pos);
+         BlockPos blockPos = this.pos.north();
+         BlockPos blockPos2 = this.pos.south();
+@@ -331,10 +342,15 @@
+         this.state = this.state.setValue(this.block.getShapeProperty(), railShape2);
+         if (forceUpdate || this.level.getBlockState(this.pos) != this.state) {
+             this.level.setBlock(this.pos, this.state, 3);
++            // Paper start - Fix some rails connecting improperly
++            if (!this.isValid()) {
++                return this;
++            }
++            // Paper end - Fix some rails connecting improperly
+ 
+             for (int i = 0; i < this.connections.size(); i++) {
+                 RailState railState = this.getRail(this.connections.get(i));
+-                if (railState != null) {
++                if (railState != null && railState.isValid()) { // Paper - Fix some rails connecting improperly
+                     railState.removeSoftConnections();
+                     if (railState.canConnectTo(this)) {
+                         railState.connectTo(this);
+@@ -347,6 +363,6 @@
+     }
+ 
+     public BlockState getState() {
+-        return this.state;
++        return this.level.getBlockState(this.pos); // Paper - Fix some rails connecting improperly
+     }
+ }

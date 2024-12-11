@@ -1,0 +1,179 @@
+--- a/net/minecraft/server/dedicated/Settings.java
++++ b/net/minecraft/server/dedicated/Settings.java
+@@ -20,20 +20,41 @@
+ import java.util.function.Supplier;
+ import java.util.function.UnaryOperator;
+ import javax.annotation.Nullable;
+-import net.minecraft.core.RegistryAccess;
+ import org.slf4j.Logger;
+ 
++import joptsimple.OptionSet; // CraftBukkit
++import net.minecraft.core.RegistryAccess;
++
+ public abstract class Settings<T extends Settings<T>> {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public final Properties properties;
++    private static final boolean skipComments = Boolean.getBoolean("Paper.skipServerPropertiesComments"); // Paper - allow skipping server.properties comments
++    // CraftBukkit start
++    private OptionSet options = null;
+ 
+-    public Settings(Properties properties) {
++    public Settings(Properties properties, final OptionSet options) {
+         this.properties = properties;
++
++        this.options = options;
+     }
+ 
++    private String getOverride(String name, String value) {
++        if ((this.options != null) && (this.options.has(name))) {
++            return String.valueOf(this.options.valueOf(name));
++        }
++
++        return value;
++        // CraftBukkit end
++    }
++
+     public static Properties loadFromFile(Path path) {
+         try {
++            // CraftBukkit start - SPIGOT-7465, MC-264979: Don't load if file doesn't exist
++            if (!path.toFile().exists()) {
++                return new Properties();
++            }
++            // CraftBukkit end
+             Properties properties;
+             Properties properties1;
+ 
+@@ -97,8 +118,53 @@
+ 
+     public void store(Path path) {
+         try {
+-            BufferedWriter bufferedwriter = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
++            // CraftBukkit start - Don't attempt writing to file if it's read only
++            if (path.toFile().exists() && !path.toFile().canWrite()) {
++                Settings.LOGGER.warn("Can not write to file {}, skipping.", path); // Paper - log message file is read-only
++                return;
++            }
++            // CraftBukkit end
++            // Paper start - allow skipping server.properties comments
++            java.io.OutputStream outputstream = Files.newOutputStream(path);
++            java.io.BufferedOutputStream bufferedOutputStream =  !skipComments ? new java.io.BufferedOutputStream(outputstream) : new java.io.BufferedOutputStream(outputstream) {
++                private boolean isRightAfterNewline = true; // If last written char was newline
++                private boolean isComment = false; // Are we writing comment currently?
++
++                @Override
++                public void write(@org.jetbrains.annotations.NotNull byte[] b) throws IOException {
++                    this.write(b, 0, b.length);
++                }
++
++                @Override
++                public void write(@org.jetbrains.annotations.NotNull byte[] bbuf, int off, int len) throws IOException {
++                    int latest_offset = off; // The latest offset, updated when comment ends
++                    for (int index = off; index < off + len; ++index ) {
++                        byte c = bbuf[index];
++                        boolean isNewline = (c == '\n' || c == '\r');
++                        if (isNewline && this.isComment) {
++                            // Comment has ended
++                            this.isComment = false;
++                            latest_offset = index+1;
++                        }
++                        if (c == '#' && this.isRightAfterNewline) {
++                            this.isComment = true;
++                            if (index != latest_offset) {
++                                // We got some non-comment data earlier
++                                super.write(bbuf, latest_offset, index-latest_offset);
++                            }
++                        }
++                        this.isRightAfterNewline = isNewline; // Store for next iteration
+ 
++                    }
++                    if (latest_offset < off+len && !this.isComment) {
++                        // We have some unwritten data, that isn't part of a comment
++                        super.write(bbuf, latest_offset, (off + len) - latest_offset);
++                    }
++                }
++            };
++            BufferedWriter bufferedwriter = new BufferedWriter(new java.io.OutputStreamWriter(bufferedOutputStream, java.nio.charset.StandardCharsets.UTF_8.newEncoder()));
++            // Paper end - allow skipping server.properties comments
++
+             try {
+                 this.properties.store(bufferedwriter, "Minecraft server properties");
+             } catch (Throwable throwable) {
+@@ -125,7 +191,7 @@
+     private static <V extends Number> Function<String, V> wrapNumberDeserializer(Function<String, V> parser) {
+         return (s) -> {
+             try {
+-                return (Number) parser.apply(s);
++                return (V) parser.apply(s); // CraftBukkit - decompile error
+             } catch (NumberFormatException numberformatexception) {
+                 return null;
+             }
+@@ -144,7 +210,7 @@
+ 
+     @Nullable
+     public String getStringRaw(String key) {
+-        return (String) this.properties.get(key);
++        return (String) this.getOverride(key, this.properties.getProperty(key)); // CraftBukkit
+     }
+ 
+     @Nullable
+@@ -160,10 +226,20 @@
+     }
+ 
+     protected <V> V get(String key, Function<String, V> parser, Function<V, String> stringifier, V fallback) {
+-        String s1 = this.getStringRaw(key);
+-        V v1 = MoreObjects.firstNonNull(s1 != null ? parser.apply(s1) : null, fallback);
++        // CraftBukkit start
++        try {
++            return this.get0(key, parser, stringifier, fallback);
++        } catch (Exception ex) {
++            throw new RuntimeException("Could not load invalidly configured property '" + key + "'", ex);
++        }
++    }
+ 
+-        this.properties.put(key, stringifier.apply(v1));
++    private <V> V get0(String s, Function<String, V> function, Function<V, String> function1, V v0) {
++        // CraftBukkit end
++        String s1 = this.getStringRaw(s);
++        V v1 = MoreObjects.firstNonNull(s1 != null ? function.apply(s1) : null, v0);
++
++        this.properties.put(s, function1.apply(v1));
+         return v1;
+     }
+ 
+@@ -172,7 +248,7 @@
+         V v1 = MoreObjects.firstNonNull(s1 != null ? parser.apply(s1) : null, fallback);
+ 
+         this.properties.put(key, stringifier.apply(v1));
+-        return new Settings.MutableValue<>(key, v1, stringifier);
++        return new Settings.MutableValue(key, v1, stringifier); // CraftBukkit - decompile error
+     }
+ 
+     protected <V> V get(String key, Function<String, V> parser, UnaryOperator<V> parsedTransformer, Function<V, String> stringifier, V fallback) {
+@@ -236,7 +312,7 @@
+         return properties;
+     }
+ 
+-    protected abstract T reload(RegistryAccess registryManager, Properties properties);
++    protected abstract T reload(RegistryAccess iregistrycustom, Properties properties, OptionSet optionset); // CraftBukkit
+ 
+     public class MutableValue<V> implements Supplier<V> {
+ 
+@@ -244,7 +320,7 @@
+         private final V value;
+         private final Function<V, String> serializer;
+ 
+-        MutableValue(final String s, final Object object, final Function function) {
++        MutableValue(final String s, final V object, final Function function) { // CraftBukkit - decompile error
+             this.key = s;
+             this.value = object;
+             this.serializer = function;
+@@ -258,7 +334,7 @@
+             Properties properties = Settings.this.cloneProperties();
+ 
+             properties.put(this.key, this.serializer.apply(value));
+-            return Settings.this.reload(registryManager, properties);
++            return Settings.this.reload(registryManager, properties, Settings.this.options); // CraftBukkit
+         }
+     }
+ }

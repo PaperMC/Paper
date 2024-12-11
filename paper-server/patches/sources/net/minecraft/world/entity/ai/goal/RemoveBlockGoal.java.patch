@@ -1,0 +1,55 @@
+--- a/net/minecraft/world/entity/ai/goal/RemoveBlockGoal.java
++++ b/net/minecraft/world/entity/ai/goal/RemoveBlockGoal.java
+@@ -21,6 +21,10 @@
+ import net.minecraft.world.level.chunk.ChunkAccess;
+ import net.minecraft.world.level.chunk.status.ChunkStatus;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit end
+ 
+ public class RemoveBlockGoal extends MoveToBlockGoal {
+ 
+@@ -97,6 +101,11 @@
+             }
+ 
+             if (this.ticksSinceReachedGoal > 60) {
++                // CraftBukkit start - Step on eggs
++                if (!CraftEventFactory.callEntityInteractEvent(this.removerMob, CraftBlock.at(world, blockposition1))) {
++                    return;
++                }
++                // CraftBukkit end
+                 world.removeBlock(blockposition1, false);
+                 if (!world.isClientSide) {
+                     for (int i = 0; i < 20; ++i) {
+@@ -118,7 +127,9 @@
+ 
+     @Nullable
+     private BlockPos getPosWithBlock(BlockPos pos, BlockGetter world) {
+-        if (world.getBlockState(pos).is(this.blockToRemove)) {
++        net.minecraft.world.level.block.state.BlockState block = world.getBlockStateIfLoaded(pos); // Paper - Prevent AI rules from loading chunks
++        if (block == null) return null; // Paper - Prevent AI rules from loading chunks
++        if (block.is(this.blockToRemove)) { // Paper - Prevent AI rules from loading chunks
+             return pos;
+         } else {
+             BlockPos[] ablockposition = new BlockPos[]{pos.below(), pos.west(), pos.east(), pos.north(), pos.south(), pos.below().below()};
+@@ -128,7 +139,8 @@
+             for (int j = 0; j < i; ++j) {
+                 BlockPos blockposition1 = ablockposition1[j];
+ 
+-                if (world.getBlockState(blockposition1).is(this.blockToRemove)) {
++                net.minecraft.world.level.block.state.BlockState block2 = world.getBlockStateIfLoaded(blockposition1); // Paper - Prevent AI rules from loading chunks
++                if (block2 != null && block2.is(this.blockToRemove)) { // Paper - Prevent AI rules from loading chunks
+                     return blockposition1;
+                 }
+             }
+@@ -139,7 +151,7 @@
+ 
+     @Override
+     protected boolean isValidTarget(LevelReader world, BlockPos pos) {
+-        ChunkAccess ichunkaccess = world.getChunk(SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), ChunkStatus.FULL, false);
++        ChunkAccess ichunkaccess = world.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4); // Paper - Prevent AI rules from loading chunks
+ 
+         return ichunkaccess == null ? false : ichunkaccess.getBlockState(pos).is(this.blockToRemove) && ichunkaccess.getBlockState(pos.above()).isAir() && ichunkaccess.getBlockState(pos.above(2)).isAir();
+     }

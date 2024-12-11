@@ -1,0 +1,74 @@
+--- a/net/minecraft/world/entity/AgeableMob.java
++++ b/net/minecraft/world/entity/AgeableMob.java
+@@ -21,12 +21,38 @@
+     protected int age;
+     protected int forcedAge;
+     protected int forcedAgeTimer;
++    public boolean ageLocked; // CraftBukkit
+ 
+     protected AgeableMob(EntityType<? extends AgeableMob> type, Level world) {
+         super(type, world);
+     }
+ 
++    // Spigot start
+     @Override
++    public void inactiveTick()
++    {
++        super.inactiveTick();
++        if ( this.level().isClientSide || this.ageLocked )
++        { // CraftBukkit
++            this.refreshDimensions();
++        } else
++        {
++            int i = this.getAge();
++
++            if ( i < 0 )
++            {
++                ++i;
++                this.setAge( i );
++            } else if ( i > 0 )
++            {
++                --i;
++                this.setAge( i );
++            }
++        }
++    }
++    // Spigot end
++
++    @Override
+     public SpawnGroupData finalizeSpawn(ServerLevelAccessor world, DifficultyInstance difficulty, EntitySpawnReason spawnReason, @Nullable SpawnGroupData entityData) {
+         if (entityData == null) {
+             entityData = new AgeableMob.AgeableMobGroupData(true);
+@@ -60,6 +86,7 @@
+     }
+ 
+     public void ageUp(int age, boolean overGrow) {
++        if (this.ageLocked) return; // Paper - Honor ageLock
+         int j = this.getAge();
+         int k = j;
+ 
+@@ -104,6 +131,7 @@
+         super.addAdditionalSaveData(nbt);
+         nbt.putInt("Age", this.getAge());
+         nbt.putInt("ForcedAge", this.forcedAge);
++        nbt.putBoolean("AgeLocked", this.ageLocked); // CraftBukkit
+     }
+ 
+     @Override
+@@ -111,6 +139,7 @@
+         super.readAdditionalSaveData(nbt);
+         this.setAge(nbt.getInt("Age"));
+         this.forcedAge = nbt.getInt("ForcedAge");
++        this.ageLocked = nbt.getBoolean("AgeLocked"); // CraftBukkit
+     }
+ 
+     @Override
+@@ -125,7 +154,7 @@
+     @Override
+     public void aiStep() {
+         super.aiStep();
+-        if (this.level().isClientSide) {
++        if (this.level().isClientSide || this.ageLocked) { // CraftBukkit
+             if (this.forcedAgeTimer > 0) {
+                 if (this.forcedAgeTimer % 4 == 0) {
+                     this.level().addParticle(ParticleTypes.HAPPY_VILLAGER, this.getRandomX(1.0D), this.getRandomY() + 0.5D, this.getRandomZ(1.0D), 0.0D, 0.0D, 0.0D);

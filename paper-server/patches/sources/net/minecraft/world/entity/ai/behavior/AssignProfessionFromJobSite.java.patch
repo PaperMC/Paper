@@ -1,0 +1,31 @@
+--- a/net/minecraft/world/entity/ai/behavior/AssignProfessionFromJobSite.java
++++ b/net/minecraft/world/entity/ai/behavior/AssignProfessionFromJobSite.java
+@@ -9,6 +9,12 @@
+ import net.minecraft.world.entity.npc.Villager;
+ import net.minecraft.world.entity.npc.VillagerProfession;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.entity.CraftVillager;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.VillagerCareerChangeEvent;
++// CraftBukkit end
++
+ public class AssignProfessionFromJobSite {
+ 
+     public AssignProfessionFromJobSite() {}
+@@ -37,7 +43,14 @@
+                                     return villagerprofession.heldJobSite().test(holder);
+                                 }).findFirst();
+                             }).ifPresent((villagerprofession) -> {
+-                                entityvillager.setVillagerData(entityvillager.getVillagerData().setProfession(villagerprofession));
++                                // CraftBukkit start - Fire VillagerCareerChangeEvent where Villager gets employed
++                                VillagerCareerChangeEvent event = CraftEventFactory.callVillagerCareerChangeEvent(entityvillager, CraftVillager.CraftProfession.minecraftToBukkit(villagerprofession), VillagerCareerChangeEvent.ChangeReason.EMPLOYED);
++                                if (event.isCancelled()) {
++                                    return;
++                                }
++
++                                entityvillager.setVillagerData(entityvillager.getVillagerData().setProfession(CraftVillager.CraftProfession.bukkitToMinecraft(event.getProfession())));
++                                // CraftBukkit end
+                                 entityvillager.refreshBrain(worldserver);
+                             });
+                             return true;

@@ -1,0 +1,31 @@
+--- a/net/minecraft/server/packs/repository/ServerPacksSource.java
++++ b/net/minecraft/server/packs/repository/ServerPacksSource.java
+@@ -48,7 +48,7 @@
+     public static VanillaPackResources createVanillaPackSource() {
+         return new VanillaPackResourcesBuilder()
+             .setMetadata(BUILT_IN_METADATA)
+-            .exposeNamespace("minecraft")
++            .exposeNamespace("minecraft", ResourceLocation.PAPER_NAMESPACE) // Paper
+             .applyDevelopmentConfig()
+             .pushJarResources()
+             .build(VANILLA_PACK_INFO);
+@@ -68,7 +68,18 @@
+     @Nullable
+     @Override
+     protected Pack createBuiltinPack(String fileName, Pack.ResourcesSupplier packFactory, Component displayName) {
+-        return Pack.readMetaAndCreate(createBuiltInPackLocation(fileName, displayName), packFactory, PackType.SERVER_DATA, FEATURE_SELECTION_CONFIG);
++        // Paper start - custom built-in pack
++        final PackLocationInfo info;
++        final PackSelectionConfig packConfig;
++        if ("paper".equals(fileName)) {
++            info = new PackLocationInfo(fileName, displayName, PackSource.BUILT_IN, Optional.empty());
++            packConfig = new PackSelectionConfig(true, Pack.Position.TOP, true);
++        } else {
++            info = createBuiltInPackLocation(fileName, displayName);
++            packConfig = FEATURE_SELECTION_CONFIG;
++        }
++        return Pack.readMetaAndCreate(info, packFactory, PackType.SERVER_DATA, packConfig);
++        // Paper end - custom built-in pack
+     }
+ 
+     public static PackRepository createPackRepository(Path dataPacksPath, DirectoryValidator symlinkFinder) {

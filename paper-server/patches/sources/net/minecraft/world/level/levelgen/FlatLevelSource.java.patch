@@ -1,0 +1,38 @@
+--- a/net/minecraft/world/level/levelgen/FlatLevelSource.java
++++ b/net/minecraft/world/level/levelgen/FlatLevelSource.java
+@@ -34,22 +34,28 @@
+     private final FlatLevelGeneratorSettings settings;
+ 
+     public FlatLevelSource(FlatLevelGeneratorSettings config) {
+-        FixedBiomeSource worldchunkmanagerhell = new FixedBiomeSource(config.getBiome());
++        // CraftBukkit start
++        // WorldChunkManagerHell worldchunkmanagerhell = new WorldChunkManagerHell(generatorsettingsflat.getBiome());
+ 
+-        Objects.requireNonNull(config);
+-        super(worldchunkmanagerhell, Util.memoize(config::adjustGenerationSettings));
+-        this.settings = config;
++        // Objects.requireNonNull(generatorsettingsflat);
++        this(config, new FixedBiomeSource(config.getBiome()));
+     }
+ 
++    public FlatLevelSource(FlatLevelGeneratorSettings generatorsettingsflat, net.minecraft.world.level.biome.BiomeSource worldchunkmanager) {
++        super(worldchunkmanager, Util.memoize(generatorsettingsflat::adjustGenerationSettings));
++        // CraftBukkit end
++        this.settings = generatorsettingsflat;
++    }
++
+     @Override
+-    public ChunkGeneratorStructureState createState(HolderLookup<StructureSet> structureSetRegistry, RandomState noiseConfig, long seed) {
++    public ChunkGeneratorStructureState createState(HolderLookup<StructureSet> holderlookup, RandomState randomstate, long i, org.spigotmc.SpigotWorldConfig conf) { // Spigot
+         Stream<Holder<StructureSet>> stream = (Stream) this.settings.structureOverrides().map(HolderSet::stream).orElseGet(() -> {
+-            return structureSetRegistry.listElements().map((holder_c) -> {
++            return holderlookup.listElements().map((holder_c) -> {
+                 return holder_c;
+             });
+         });
+ 
+-        return ChunkGeneratorStructureState.createForFlat(noiseConfig, seed, this.biomeSource, stream);
++        return ChunkGeneratorStructureState.createForFlat(randomstate, i, this.biomeSource, stream, conf); // Spigot
+     }
+ 
+     @Override

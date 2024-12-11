@@ -1,0 +1,42 @@
+--- a/net/minecraft/world/level/block/CaveVines.java
++++ b/net/minecraft/world/level/block/CaveVines.java
+@@ -19,6 +19,13 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+ 
++// CraftBukkit start
++import java.util.Collections;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.player.PlayerHarvestBlockEvent;
++// CraftBukkit end
++
+ public interface CaveVines {
+ 
+     VoxelShape SHAPE = Block.box(1.0D, 0.0D, 1.0D, 15.0D, 16.0D, 15.0D);
+@@ -26,7 +33,24 @@
+ 
+     static InteractionResult use(@Nullable Entity picker, BlockState state, Level world, BlockPos pos) {
+         if ((Boolean) state.getValue(CaveVines.BERRIES)) {
+-            Block.popResource(world, pos, new ItemStack(Items.GLOW_BERRIES, 1));
++            // CraftBukkit start
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(picker, pos, (BlockState) state.setValue(CaveVines.BERRIES, false))) {
++                return InteractionResult.SUCCESS;
++            }
++
++            if (picker instanceof Player) {
++                PlayerHarvestBlockEvent event = CraftEventFactory.callPlayerHarvestBlockEvent(world, pos, (Player) picker, net.minecraft.world.InteractionHand.MAIN_HAND, Collections.singletonList(new ItemStack(Items.GLOW_BERRIES, 1)));
++                if (event.isCancelled()) {
++                    return InteractionResult.SUCCESS; // We need to return a success either way, because making it PASS or FAIL will result in a bug where cancelling while harvesting w/ block in hand places block
++                }
++                for (org.bukkit.inventory.ItemStack itemStack : event.getItemsHarvested()) {
++                    Block.popResource(world, pos, CraftItemStack.asNMSCopy(itemStack));
++                }
++            } else {
++                Block.popResource(world, pos, new ItemStack(Items.GLOW_BERRIES, 1));
++            }
++            // CraftBukkit end
++
+             float f = Mth.randomBetween(world.random, 0.8F, 1.2F);
+ 
+             world.playSound((Player) null, pos, SoundEvents.CAVE_VINES_PICK_BERRIES, SoundSource.BLOCKS, 1.0F, f);

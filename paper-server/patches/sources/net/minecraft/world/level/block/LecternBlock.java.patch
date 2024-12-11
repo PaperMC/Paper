@@ -1,0 +1,69 @@
+--- a/net/minecraft/world/level/block/LecternBlock.java
++++ b/net/minecraft/world/level/block/LecternBlock.java
+@@ -153,7 +153,24 @@
+         BlockEntity tileentity = world.getBlockEntity(pos);
+ 
+         if (tileentity instanceof LecternBlockEntity tileentitylectern) {
+-            tileentitylectern.setBook(stack.consumeAndReturn(1, user));
++            // Paper start - Add PlayerInsertLecternBookEvent
++            ItemStack eventSourcedBookStack = null;
++            if (user instanceof final net.minecraft.server.level.ServerPlayer serverPlayer) {
++                final io.papermc.paper.event.player.PlayerInsertLecternBookEvent event = new io.papermc.paper.event.player.PlayerInsertLecternBookEvent(
++                    serverPlayer.getBukkitEntity(),
++                    org.bukkit.craftbukkit.block.CraftBlock.at(world, pos),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack.copyWithCount(1))
++                );
++                if (!event.callEvent()) return;
++                eventSourcedBookStack = org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getBook());
++            }
++            if (eventSourcedBookStack == null) {
++                eventSourcedBookStack = stack.consumeAndReturn(1, user);
++            } else {
++                stack.consume(1, user);
++            }
++            tileentitylectern.setBook(eventSourcedBookStack);
++            // Paper end - Add PlayerInsertLecternBookEvent
+             LecternBlock.resetBookState(user, world, pos, state, true);
+             world.playSound((Player) null, pos, SoundEvents.BOOK_PUT, SoundSource.BLOCKS, 1.0F, 1.0F);
+         }
+@@ -175,6 +192,16 @@
+     }
+ 
+     private static void changePowered(Level world, BlockPos pos, BlockState state, boolean powered) {
++        // Paper start - Call BlockRedstoneEvent properly
++        final int currentRedstoneLevel = state.getValue(LecternBlock.POWERED) ? 15 : 0, targetRedstoneLevel = powered ? 15 : 0;
++        if (currentRedstoneLevel != targetRedstoneLevel) {
++            final org.bukkit.event.block.BlockRedstoneEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(world, pos, currentRedstoneLevel, targetRedstoneLevel);
++
++            if (event.getNewCurrent() != targetRedstoneLevel) {
++                return;
++            }
++        }
++        // Paper end - Call BlockRedstoneEvent properly
+         world.setBlock(pos, (BlockState) state.setValue(LecternBlock.POWERED, powered), 3);
+         LecternBlock.updateBelow(world, pos, state);
+     }
+@@ -206,11 +233,12 @@
+     }
+ 
+     private void popBook(BlockState state, Level world, BlockPos pos) {
+-        BlockEntity tileentity = world.getBlockEntity(pos);
++        BlockEntity tileentity = world.getBlockEntity(pos, false); // CraftBukkit - don't validate, type may be changed already
+ 
+         if (tileentity instanceof LecternBlockEntity tileentitylectern) {
+             Direction enumdirection = (Direction) state.getValue(LecternBlock.FACING);
+             ItemStack itemstack = tileentitylectern.getBook().copy();
++            if (itemstack.isEmpty()) return; // CraftBukkit - SPIGOT-5500
+             float f = 0.25F * (float) enumdirection.getStepX();
+             float f1 = 0.25F * (float) enumdirection.getStepZ();
+             ItemEntity entityitem = new ItemEntity(world, (double) pos.getX() + 0.5D + (double) f, (double) (pos.getY() + 1), (double) pos.getZ() + 0.5D + (double) f1, itemstack);
+@@ -282,8 +310,7 @@
+     private void openScreen(Level world, BlockPos pos, Player player) {
+         BlockEntity tileentity = world.getBlockEntity(pos);
+ 
+-        if (tileentity instanceof LecternBlockEntity) {
+-            player.openMenu((LecternBlockEntity) tileentity);
++        if (tileentity instanceof LecternBlockEntity && player.openMenu((LecternBlockEntity) tileentity).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+             player.awardStat(Stats.INTERACT_WITH_LECTERN);
+         }
+ 

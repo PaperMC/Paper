@@ -1,0 +1,35 @@
+--- a/net/minecraft/world/entity/npc/InventoryCarrier.java
++++ b/net/minecraft/world/entity/npc/InventoryCarrier.java
+@@ -8,6 +8,10 @@
+ import net.minecraft.world.entity.item.ItemEntity;
+ import net.minecraft.world.item.ItemStack;
+ 
++// CraftBukkit start
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
++
+ public interface InventoryCarrier {
+ 
+     String TAG_INVENTORY = "Inventory";
+@@ -25,13 +29,20 @@
+                 return;
+             }
+ 
++            // CraftBukkit start
++            ItemStack remaining = new SimpleContainer(inventorysubcontainer).addItem(itemstack);
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(entity, item, remaining.getCount(), false).isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
++
+             entity.onItemPickup(item);
+             int i = itemstack.getCount();
+             ItemStack itemstack1 = inventorysubcontainer.addItem(itemstack);
+ 
+             entity.take(item, i - itemstack1.getCount());
+             if (itemstack1.isEmpty()) {
+-                item.discard();
++                item.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+             } else {
+                 itemstack.setCount(itemstack1.getCount());
+             }

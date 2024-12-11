@@ -1,0 +1,154 @@
+--- a/net/minecraft/world/level/block/Block.java
++++ b/net/minecraft/world/level/block/Block.java
+@@ -88,6 +88,21 @@
+     public static final int UPDATE_LIMIT = 512;
+     protected final StateDefinition<Block, BlockState> stateDefinition;
+     private BlockState defaultBlockState;
++    // Paper start - Protect Bedrock and End Portal/Frames from being destroyed
++    public final boolean isDestroyable() {
++        return io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits ||
++            this != Blocks.BARRIER &&
++            this != Blocks.BEDROCK &&
++            this != Blocks.END_PORTAL_FRAME &&
++            this != Blocks.END_PORTAL &&
++            this != Blocks.END_GATEWAY &&
++            this != Blocks.COMMAND_BLOCK &&
++            this != Blocks.REPEATING_COMMAND_BLOCK &&
++            this != Blocks.CHAIN_COMMAND_BLOCK &&
++            this != Blocks.STRUCTURE_BLOCK &&
++            this != Blocks.JIGSAW;
++    }
++    // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
+     @Nullable
+     private Item item;
+     private static final int CACHE_SIZE = 256;
+@@ -295,12 +310,38 @@
+ 
+     }
+ 
++    // Paper start - Add BlockBreakBlockEvent
++    public static boolean dropResources(BlockState state, LevelAccessor levelAccessor, BlockPos pos, @Nullable BlockEntity blockEntity, BlockPos source) {
++        if (levelAccessor instanceof ServerLevel serverLevel) {
++            List<org.bukkit.inventory.ItemStack> items = new java.util.ArrayList<>();
++            for (ItemStack drop : Block.getDrops(state, serverLevel, pos, blockEntity)) {
++                items.add(org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(drop));
++            }
++            Block block = state.getBlock(); // Paper - Properly handle xp dropping
++            io.papermc.paper.event.block.BlockBreakBlockEvent event = new io.papermc.paper.event.block.BlockBreakBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, pos), org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, source), items);
++            event.setExpToDrop(block.getExpDrop(state, serverLevel, pos, net.minecraft.world.item.ItemStack.EMPTY, true)); // Paper - Properly handle xp dropping
++            event.callEvent();
++            for (org.bukkit.inventory.ItemStack drop : event.getDrops()) {
++                popResource(serverLevel, pos, org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(drop));
++            }
++            state.spawnAfterBreak(serverLevel, pos, ItemStack.EMPTY, false); // Paper - Properly handle xp dropping
++            block.popExperience(serverLevel, pos, event.getExpToDrop()); // Paper - Properly handle xp dropping
++        }
++        return true;
++    }
++    // Paper end - Add BlockBreakBlockEvent
++
+     public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool) {
++    // Paper start - Properly handle xp dropping
++        dropResources(state, world, pos, blockEntity, entity, tool, true);
++    }
++    public static void dropResources(BlockState state, Level world, BlockPos pos, @Nullable BlockEntity blockEntity, @Nullable Entity entity, ItemStack tool, boolean dropExperience) {
++    // Paper end - Properly handle xp dropping
+         if (world instanceof ServerLevel) {
+             Block.getDrops(state, (ServerLevel) world, pos, blockEntity, entity, tool).forEach((itemstack1) -> {
+                 Block.popResource(world, pos, itemstack1);
+             });
+-            state.spawnAfterBreak((ServerLevel) world, pos, tool, true);
++            state.spawnAfterBreak((ServerLevel) world, pos, tool, dropExperience); // Paper - Properly handle xp dropping
+         }
+ 
+     }
+@@ -340,7 +381,13 @@
+                 ItemEntity entityitem = (ItemEntity) itemEntitySupplier.get();
+ 
+                 entityitem.setDefaultPickUpDelay();
+-                world.addFreshEntity(entityitem);
++                // CraftBukkit start
++                if (world.captureDrops != null) {
++                    world.captureDrops.add(entityitem);
++                } else {
++                    world.addFreshEntity(entityitem);
++                }
++                // CraftBukkit end
+                 return;
+             }
+         }
+@@ -348,8 +395,13 @@
+     }
+ 
+     public void popExperience(ServerLevel world, BlockPos pos, int size) {
++        // Paper start - add entity parameter
++        popExperience(world, pos, size, null);
++    }
++    public void popExperience(ServerLevel world, BlockPos pos, int size, net.minecraft.world.entity.Entity entity) {
++        // Paper end - add entity parameter
+         if (world.getGameRules().getBoolean(GameRules.RULE_DOBLOCKDROPS)) {
+-            ExperienceOrb.award(world, Vec3.atCenterOf(pos), size);
++            ExperienceOrb.award(world, Vec3.atCenterOf(pos), size, org.bukkit.entity.ExperienceOrb.SpawnReason.BLOCK_BREAK, entity); // Paper
+         }
+ 
+     }
+@@ -367,10 +419,18 @@
+         return this.defaultBlockState();
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - fix drops not preventing stats/food exhaustion
+     public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
++        // Paper start - fix drops not preventing stats/food exhaustion
++        this.playerDestroy(world, player, pos, state, blockEntity, tool, true, true);
++    }
++    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool, boolean includeDrops, boolean dropExp) {
++        // Paper end - fix drops not preventing stats/food exhaustion
+         player.awardStat(Stats.BLOCK_MINED.get(this));
+-        player.causeFoodExhaustion(0.005F);
+-        Block.dropResources(state, world, pos, blockEntity, player, tool);
++        player.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
++        if (includeDrops) { // Paper - fix drops not preventing stats/food exhaustion
++        Block.dropResources(state, world, pos, blockEntity, player, tool, dropExp); // Paper - Properly handle xp dropping
++        } // Paper - fix drops not preventing stats/food exhaustion
+     }
+ 
+     public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {}
+@@ -490,15 +550,35 @@
+         return this.builtInRegistryHolder;
+     }
+ 
+-    protected void tryDropExperience(ServerLevel world, BlockPos pos, ItemStack tool, IntProvider experience) {
+-        int i = EnchantmentHelper.processBlockExperience(world, tool, experience.sample(world.getRandom()));
++    // CraftBukkit start
++    protected int tryDropExperience(ServerLevel worldserver, BlockPos blockposition, ItemStack itemstack, IntProvider intprovider) {
++        int i = EnchantmentHelper.processBlockExperience(worldserver, itemstack, intprovider.sample(worldserver.getRandom()));
+ 
+         if (i > 0) {
+-            this.popExperience(world, pos, i);
++            // this.popExperience(worldserver, blockposition, i);
++            return i;
+         }
+ 
++        return 0;
+     }
+ 
++    public int getExpDrop(BlockState iblockdata, ServerLevel worldserver, BlockPos blockposition, ItemStack itemstack, boolean flag) {
++        return 0;
++    }
++    // CraftBukkit end
++
++    // Spigot start
++    public static float range(float min, float value, float max) {
++        if (value < min) {
++            return min;
++        }
++        if (value > max) {
++            return max;
++        }
++        return value;
++    }
++    // Spigot end
++
+     private static record ShapePairKey(VoxelShape first, VoxelShape second) {
+ 
+         public boolean equals(Object object) {

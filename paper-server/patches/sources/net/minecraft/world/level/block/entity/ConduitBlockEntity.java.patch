@@ -1,0 +1,108 @@
+--- a/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/ConduitBlockEntity.java
+@@ -10,6 +10,7 @@
+ import net.minecraft.core.particles.ParticleTypes;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
++import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.sounds.SoundEvent;
+ import net.minecraft.sounds.SoundEvents;
+ import net.minecraft.sounds.SoundSource;
+@@ -187,11 +188,23 @@
+     }
+ 
+     private static void applyEffects(Level world, BlockPos pos, List<BlockPos> activatingBlocks) {
+-        int i = activatingBlocks.size();
++        // CraftBukkit start
++        ConduitBlockEntity.applyEffects(world, pos, ConduitBlockEntity.getRange(activatingBlocks));
++    }
++
++    public static int getRange(List<BlockPos> list) {
++        // CraftBukkit end
++        int i = list.size();
+         int j = i / 7 * 16;
+-        int k = pos.getX();
+-        int l = pos.getY();
+-        int i1 = pos.getZ();
++        // CraftBukkit start
++        return j;
++    }
++
++    private static void applyEffects(Level world, BlockPos blockposition, int j) { // j = effect range in blocks
++        // CraftBukkit end
++        int k = blockposition.getX();
++        int l = blockposition.getY();
++        int i1 = blockposition.getZ();
+         AABB axisalignedbb = (new AABB((double) k, (double) l, (double) i1, (double) (k + 1), (double) (l + 1), (double) (i1 + 1))).inflate((double) j).expandTowards(0.0D, (double) world.getHeight(), 0.0D);
+         List<Player> list1 = world.getEntitiesOfClass(Player.class, axisalignedbb);
+ 
+@@ -201,8 +214,8 @@
+             while (iterator.hasNext()) {
+                 Player entityhuman = (Player) iterator.next();
+ 
+-                if (pos.closerThan(entityhuman.blockPosition(), (double) j) && entityhuman.isInWaterOrRain()) {
+-                    entityhuman.addEffect(new MobEffectInstance(MobEffects.CONDUIT_POWER, 260, 0, true, true));
++                if (blockposition.closerThan(entityhuman.blockPosition(), (double) j) && entityhuman.isInWaterOrRain()) {
++                    entityhuman.addEffect(new MobEffectInstance(MobEffects.CONDUIT_POWER, 260, 0, true, true), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONDUIT); // CraftBukkit
+                 }
+             }
+ 
+@@ -210,33 +223,42 @@
+     }
+ 
+     private static void updateDestroyTarget(Level world, BlockPos pos, BlockState state, List<BlockPos> activatingBlocks, ConduitBlockEntity blockEntity) {
+-        LivingEntity entityliving = blockEntity.destroyTarget;
+-        int i = activatingBlocks.size();
++        // CraftBukkit start - add "damageTarget" boolean
++        ConduitBlockEntity.updateDestroyTarget(world, pos, state, activatingBlocks, blockEntity, true);
++    }
+ 
++    public static void updateDestroyTarget(Level world, BlockPos blockposition, BlockState iblockdata, List<BlockPos> list, ConduitBlockEntity tileentityconduit, boolean damageTarget) {
++        // CraftBukkit end
++        LivingEntity entityliving = tileentityconduit.destroyTarget;
++        int i = list.size();
++
+         if (i < 42) {
+-            blockEntity.destroyTarget = null;
+-        } else if (blockEntity.destroyTarget == null && blockEntity.destroyTargetUUID != null) {
+-            blockEntity.destroyTarget = ConduitBlockEntity.findDestroyTarget(world, pos, blockEntity.destroyTargetUUID);
+-            blockEntity.destroyTargetUUID = null;
+-        } else if (blockEntity.destroyTarget == null) {
+-            List<LivingEntity> list1 = world.getEntitiesOfClass(LivingEntity.class, ConduitBlockEntity.getDestroyRangeAABB(pos), (entityliving1) -> {
++            tileentityconduit.destroyTarget = null;
++        } else if (tileentityconduit.destroyTarget == null && tileentityconduit.destroyTargetUUID != null) {
++            tileentityconduit.destroyTarget = ConduitBlockEntity.findDestroyTarget(world, blockposition, tileentityconduit.destroyTargetUUID);
++            tileentityconduit.destroyTargetUUID = null;
++        } else if (tileentityconduit.destroyTarget == null) {
++            List<LivingEntity> list1 = world.getEntitiesOfClass(LivingEntity.class, ConduitBlockEntity.getDestroyRangeAABB(blockposition), (entityliving1) -> {
+                 return entityliving1 instanceof Enemy && entityliving1.isInWaterOrRain();
+             });
+ 
+             if (!list1.isEmpty()) {
+-                blockEntity.destroyTarget = (LivingEntity) list1.get(world.random.nextInt(list1.size()));
++                tileentityconduit.destroyTarget = (LivingEntity) list1.get(world.random.nextInt(list1.size()));
+             }
+-        } else if (!blockEntity.destroyTarget.isAlive() || !pos.closerThan(blockEntity.destroyTarget.blockPosition(), 8.0D)) {
+-            blockEntity.destroyTarget = null;
++        } else if (!tileentityconduit.destroyTarget.isAlive() || !blockposition.closerThan(tileentityconduit.destroyTarget.blockPosition(), 8.0D)) {
++            tileentityconduit.destroyTarget = null;
+         }
+ 
+-        if (blockEntity.destroyTarget != null) {
+-            world.playSound((Player) null, blockEntity.destroyTarget.getX(), blockEntity.destroyTarget.getY(), blockEntity.destroyTarget.getZ(), SoundEvents.CONDUIT_ATTACK_TARGET, SoundSource.BLOCKS, 1.0F, 1.0F);
+-            blockEntity.destroyTarget.hurt(world.damageSources().magic(), 4.0F);
++        // CraftBukkit start
++        if (damageTarget && tileentityconduit.destroyTarget != null) {
++            if (tileentityconduit.destroyTarget.hurtServer((ServerLevel) world, world.damageSources().magic().directBlock(world, blockposition), 4.0F)) {
++                world.playSound(null, tileentityconduit.destroyTarget.getX(), tileentityconduit.destroyTarget.getY(), tileentityconduit.destroyTarget.getZ(), SoundEvents.CONDUIT_ATTACK_TARGET, SoundSource.BLOCKS, 1.0F, 1.0F);
++            }
++            // CraftBukkit end
+         }
+ 
+-        if (entityliving != blockEntity.destroyTarget) {
+-            world.sendBlockUpdated(pos, state, state, 2);
++        if (entityliving != tileentityconduit.destroyTarget) {
++            world.sendBlockUpdated(blockposition, iblockdata, iblockdata, 2);
+         }
+ 
+     }

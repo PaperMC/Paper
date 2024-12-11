@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/entity/monster/Silverfish.java
++++ b/net/minecraft/world/entity/monster/Silverfish.java
+@@ -30,6 +30,10 @@
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.InfestedBlock;
+ import net.minecraft.world.level.block.state.BlockState;
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
+ 
+ public class Silverfish extends Monster {
+ 
+@@ -119,7 +123,7 @@
+         } else {
+             Player entityhuman = world.getNearestPlayer((double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, 5.0D, true);
+ 
+-            return entityhuman == null;
++            return !(entityhuman != null && !entityhuman.affectsSpawning) && entityhuman == null; // Paper - Affects Spawning API
+         }
+     }
+ 
+@@ -160,6 +164,12 @@
+                             Block block = iblockdata.getBlock();
+ 
+                             if (block instanceof InfestedBlock) {
++                                // CraftBukkit start
++                                BlockState afterState = getServerLevel(world).getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? iblockdata.getFluidState().createLegacyBlock() : ((InfestedBlock) block).hostStateByInfested(world.getBlockState(blockposition1)); // Paper - fix wrong block state
++                                if (!CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockposition1, afterState)) { // Paper - fix wrong block state
++                                    continue;
++                                }
++                                // CraftBukkit end
+                                 if (getServerLevel(world).getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+                                     world.destroyBlock(blockposition1, true, this.silverfish);
+                                 } else {
+@@ -229,9 +239,14 @@
+                 BlockState iblockdata = world.getBlockState(blockposition);
+ 
+                 if (InfestedBlock.isCompatibleHostBlock(iblockdata)) {
++                    // CraftBukkit start
++                    if (!CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockposition, InfestedBlock.infestedStateByHost(iblockdata))) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     world.setBlock(blockposition, InfestedBlock.infestedStateByHost(iblockdata), 3);
+                     this.mob.spawnAnim();
+-                    this.mob.discard();
++                    this.mob.discard(EntityRemoveEvent.Cause.ENTER_BLOCK); // CraftBukkit - add Bukkit remove cause
+                 }
+ 
+             }

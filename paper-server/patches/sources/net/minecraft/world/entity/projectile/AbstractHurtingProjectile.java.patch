@@ -1,0 +1,38 @@
+--- a/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
++++ b/net/minecraft/world/entity/projectile/AbstractHurtingProjectile.java
+@@ -14,12 +14,17 @@
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
+ 
+ public abstract class AbstractHurtingProjectile extends Projectile {
+ 
+     public static final double INITAL_ACCELERATION_POWER = 0.1D;
+     public static final double DEFLECTION_SCALE = 0.5D;
+     public double accelerationPower;
++    public float bukkitYield = 1; // CraftBukkit
++    public boolean isIncendiary = true; // CraftBukkit
+ 
+     protected AbstractHurtingProjectile(EntityType<? extends AbstractHurtingProjectile> type, Level world) {
+         super(type, world);
+@@ -69,7 +74,7 @@
+ 
+         this.applyInertia();
+         if (!this.level().isClientSide && (entity != null && entity.isRemoved() || !this.level().hasChunkAt(this.blockPosition()))) {
+-            this.discard();
++            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         } else {
+             HitResult movingobjectposition = ProjectileUtil.getHitResultOnMoveVector(this, this::canHitEntity, this.getClipType());
+             Vec3 vec3d;
+@@ -89,7 +94,7 @@
+             }
+ 
+             if (movingobjectposition.getType() != HitResult.Type.MISS && this.isAlive()) {
+-                this.hitTargetOrDeflectSelf(movingobjectposition);
++                this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
+             }
+ 
+             this.createParticleTrail();

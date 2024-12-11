@@ -1,0 +1,96 @@
+--- a/net/minecraft/world/item/alchemy/PotionBrewing.java
++++ b/net/minecraft/world/item/alchemy/PotionBrewing.java
+@@ -19,6 +19,7 @@
+     private final List<Ingredient> containers;
+     private final List<PotionBrewing.Mix<Potion>> potionMixes;
+     private final List<PotionBrewing.Mix<Item>> containerMixes;
++    private final it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<org.bukkit.NamespacedKey, io.papermc.paper.potion.PaperPotionMix> customMixes = new it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap<>(); // Paper - Custom Potion Mixes
+ 
+     PotionBrewing(List<Ingredient> potionTypes, List<PotionBrewing.Mix<Potion>> potionRecipes, List<PotionBrewing.Mix<Item>> itemRecipes) {
+         this.containers = potionTypes;
+@@ -27,7 +28,7 @@
+     }
+ 
+     public boolean isIngredient(ItemStack stack) {
+-        return this.isContainerIngredient(stack) || this.isPotionIngredient(stack);
++        return this.isContainerIngredient(stack) || this.isPotionIngredient(stack) || this.isCustomIngredient(stack); // Paper - Custom Potion Mixes
+     }
+ 
+     private boolean isContainer(ItemStack stack) {
+@@ -71,6 +72,11 @@
+     }
+ 
+     public boolean hasMix(ItemStack input, ItemStack ingredient) {
++        // Paper start - Custom Potion Mixes
++        if (this.hasCustomMix(input, ingredient)) {
++            return true;
++        }
++        // Paper end - Custom Potion Mixes
+         return this.isContainer(input) && (this.hasContainerMix(input, ingredient) || this.hasPotionMix(input, ingredient));
+     }
+ 
+@@ -103,6 +109,13 @@
+         if (input.isEmpty()) {
+             return input;
+         } else {
++            // Paper start - Custom Potion Mixes
++            for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++                if (mix.input().test(input) && mix.ingredient().test(ingredient)) {
++                    return mix.result().copy();
++                }
++            }
++            // Paper end - Custom Potion Mixes
+             Optional<Holder<Potion>> optional = input.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY).potion();
+             if (optional.isEmpty()) {
+                 return input;
+@@ -190,6 +203,50 @@
+         builder.addMix(Potions.SLOW_FALLING, Items.REDSTONE, Potions.LONG_SLOW_FALLING);
+     }
+ 
++    // Paper start - Custom Potion Mixes
++    public boolean isCustomIngredient(ItemStack stack) {
++        for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++            if (mix.ingredient().test(stack)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    public boolean isCustomInput(ItemStack stack) {
++        for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++            if (mix.input().test(stack)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    private boolean hasCustomMix(ItemStack input, ItemStack ingredient) {
++        for (io.papermc.paper.potion.PaperPotionMix mix : this.customMixes.values()) {
++            if (mix.input().test(input) && mix.ingredient().test(ingredient)) {
++                return true;
++            }
++        }
++        return false;
++    }
++
++    public void addPotionMix(io.papermc.paper.potion.PotionMix mix) {
++        if (this.customMixes.containsKey(mix.getKey())) {
++            throw new IllegalArgumentException("Duplicate recipe ignored with ID " + mix.getKey());
++        }
++        this.customMixes.putAndMoveToFirst(mix.getKey(), new io.papermc.paper.potion.PaperPotionMix(mix));
++    }
++
++    public boolean removePotionMix(org.bukkit.NamespacedKey key) {
++        return this.customMixes.remove(key) != null;
++    }
++
++    public PotionBrewing reload(FeatureFlagSet flags) {
++        return bootstrap(flags);
++    }
++    // Paper end - Custom Potion Mixes
++
+     public static class Builder {
+         private final List<Ingredient> containers = new ArrayList<>();
+         private final List<PotionBrewing.Mix<Potion>> potionMixes = new ArrayList<>();

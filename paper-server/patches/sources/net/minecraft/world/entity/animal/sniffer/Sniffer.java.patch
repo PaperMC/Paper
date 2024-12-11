@@ -1,0 +1,56 @@
+--- a/net/minecraft/world/entity/animal/sniffer/Sniffer.java
++++ b/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+@@ -267,6 +267,13 @@
+                 this.dropFromGiftLootTable(worldserver, BuiltInLootTables.SNIFFER_DIGGING, (worldserver1, itemstack) -> {
+                     ItemEntity entityitem = new ItemEntity(this.level(), (double) blockposition.getX(), (double) blockposition.getY(), (double) blockposition.getZ(), itemstack);
+ 
++                    // CraftBukkit start - handle EntityDropItemEvent
++                    org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
++                    org.bukkit.Bukkit.getPluginManager().callEvent(event);
++                    if (event.isCancelled()) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     entityitem.setDefaultPickUpDelay();
+                     worldserver1.addFreshEntity(entityitem);
+                 });
+@@ -308,7 +315,7 @@
+         List<GlobalPos> list = (List) this.getExploredPositions().limit(20L).collect(Collectors.toList());
+ 
+         list.add(0, GlobalPos.of(this.level().dimension(), pos));
+-        this.getBrain().setMemory(MemoryModuleType.SNIFFER_EXPLORED_POSITIONS, (Object) list);
++        this.getBrain().setMemory(MemoryModuleType.SNIFFER_EXPLORED_POSITIONS, list); // CraftBukkit - decompile error
+         return this;
+     }
+ 
+@@ -333,13 +340,19 @@
+ 
+     @Override
+     public void spawnChildFromBreeding(ServerLevel world, Animal other) {
++        // Paper start - Add EntityFertilizeEggEvent event
++        final io.papermc.paper.event.entity.EntityFertilizeEggEvent result = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityFertilizeEggEvent(this, other);
++        if (result.isCancelled()) return;
++        // Paper end - Add EntityFertilizeEggEvent event
++
+         ItemStack itemstack = new ItemStack(Items.SNIFFER_EGG);
+         ItemEntity entityitem = new ItemEntity(world, this.position().x(), this.position().y(), this.position().z(), itemstack);
+ 
+         entityitem.setDefaultPickUpDelay();
+-        this.finalizeSpawnChildFromBreeding(world, other, (AgeableMob) null);
++        this.finalizeSpawnChildFromBreeding(world, other, (AgeableMob) null, result.getExperience()); // Paper - Add EntityFertilizeEggEvent event
++        if (this.spawnAtLocation(world, entityitem) != null) { // Paper - Call EntityDropItemEvent
+         this.playSound(SoundEvents.SNIFFER_EGG_PLOP, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 0.5F);
+-        world.addFreshEntity(entityitem);
++        } // Paper - Call EntityDropItemEvent
+     }
+ 
+     @Override
+@@ -444,7 +457,7 @@
+ 
+     @Override
+     public Brain<Sniffer> getBrain() {
+-        return super.getBrain();
++        return (Brain<Sniffer>) super.getBrain(); // CraftBukkit - decompile error
+     }
+ 
+     @Override

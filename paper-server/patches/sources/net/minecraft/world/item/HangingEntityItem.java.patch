@@ -1,0 +1,67 @@
+--- a/net/minecraft/world/item/HangingEntityItem.java
++++ b/net/minecraft/world/item/HangingEntityItem.java
+@@ -19,12 +19,16 @@
+ import net.minecraft.world.entity.decoration.ItemFrame;
+ import net.minecraft.world.entity.decoration.Painting;
+ import net.minecraft.world.entity.decoration.PaintingVariant;
+-import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.component.CustomData;
+ import net.minecraft.world.item.context.UseOnContext;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ 
++// CraftBukkit start
++import org.bukkit.entity.Player;
++import org.bukkit.event.hanging.HangingPlaceEvent;
++// CraftBukkit end
++
+ public class HangingEntityItem extends Item {
+ 
+     private static final Component TOOLTIP_RANDOM_VARIANT = Component.translatable("painting.random").withStyle(ChatFormatting.GRAY);
+@@ -40,7 +44,7 @@
+         BlockPos blockposition = context.getClickedPos();
+         Direction enumdirection = context.getClickedFace();
+         BlockPos blockposition1 = blockposition.relative(enumdirection);
+-        Player entityhuman = context.getPlayer();
++        net.minecraft.world.entity.player.Player entityhuman = context.getPlayer();
+         ItemStack itemstack = context.getItemInHand();
+ 
+         if (entityhuman != null && !this.mayPlace(entityhuman, enumdirection, itemstack, blockposition1)) {
+@@ -75,6 +79,19 @@
+ 
+             if (((HangingEntity) object).survives()) {
+                 if (!world.isClientSide) {
++                    // CraftBukkit start - fire HangingPlaceEvent
++                    Player who = (context.getPlayer() == null) ? null : (Player) context.getPlayer().getBukkitEntity();
++                    org.bukkit.block.Block blockClicked = world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                    org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(enumdirection);
++                    org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(context.getHand());
++
++                    HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) ((HangingEntity) object).getBukkitEntity(), who, blockClicked, blockFace, hand, org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(itemstack));
++                    world.getCraftServer().getPluginManager().callEvent(event);
++
++                    if (event.isCancelled()) {
++                        return InteractionResult.FAIL;
++                    }
++                    // CraftBukkit end
+                     ((HangingEntity) object).playPlacementSound();
+                     world.gameEvent((Entity) entityhuman, (Holder) GameEvent.ENTITY_PLACE, ((HangingEntity) object).position());
+                     world.addFreshEntity((Entity) object);
+@@ -88,7 +105,7 @@
+         }
+     }
+ 
+-    protected boolean mayPlace(Player player, Direction side, ItemStack stack, BlockPos pos) {
++    protected boolean mayPlace(net.minecraft.world.entity.player.Player player, Direction side, ItemStack stack, BlockPos pos) {
+         return !side.getAxis().isVertical() && player.mayUseItemAt(pos, side, stack);
+     }
+ 
+@@ -102,7 +119,7 @@
+ 
+             if (!customdata.isEmpty()) {
+                 customdata.read(holderlookup_a.createSerializationContext(NbtOps.INSTANCE), Painting.VARIANT_MAP_CODEC).result().ifPresentOrElse((holder) -> {
+-                    Optional optional = ((PaintingVariant) holder.value()).title();
++                    Optional<Component> optional = ((PaintingVariant) holder.value()).title(); // CraftBukkit - decompile error
+ 
+                     Objects.requireNonNull(tooltip);
+                     optional.ifPresent(tooltip::add);

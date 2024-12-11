@@ -1,0 +1,46 @@
+--- a/net/minecraft/world/entity/ai/gossip/GossipContainer.java
++++ b/net/minecraft/world/entity/ai/gossip/GossipContainer.java
+@@ -216,6 +216,43 @@
+         public void remove(GossipType gossipType) {
+             this.entries.removeInt(gossipType);
+         }
++
++        // Paper start - Add villager reputation API
++        private static final GossipType[] TYPES = GossipType.values();
++        public com.destroystokyo.paper.entity.villager.Reputation getPaperReputation() {
++            Map<com.destroystokyo.paper.entity.villager.ReputationType, Integer> map = new java.util.EnumMap<>(com.destroystokyo.paper.entity.villager.ReputationType.class);
++            for (Object2IntMap.Entry<GossipType> type : this.entries.object2IntEntrySet()) {
++                map.put(toApi(type.getKey()), type.getIntValue());
++            }
++
++            return new com.destroystokyo.paper.entity.villager.Reputation(map);
++        }
++
++        public void assignFromPaperReputation(com.destroystokyo.paper.entity.villager.Reputation rep) {
++            for (GossipType type : TYPES) {
++                com.destroystokyo.paper.entity.villager.ReputationType api = toApi(type);
++
++                if (rep.hasReputationSet(api)) {
++                    int reputation = rep.getReputation(api);
++                    if (reputation == 0) {
++                        this.entries.removeInt(type);
++                    } else {
++                        this.entries.put(type, reputation);
++                    }
++                }
++            }
++        }
++
++        private static com.destroystokyo.paper.entity.villager.ReputationType toApi(GossipType type) {
++            return switch (type) {
++                case MAJOR_NEGATIVE -> com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_NEGATIVE;
++                case MINOR_NEGATIVE -> com.destroystokyo.paper.entity.villager.ReputationType.MINOR_NEGATIVE;
++                case MINOR_POSITIVE -> com.destroystokyo.paper.entity.villager.ReputationType.MINOR_POSITIVE;
++                case MAJOR_POSITIVE -> com.destroystokyo.paper.entity.villager.ReputationType.MAJOR_POSITIVE;
++                case TRADING -> com.destroystokyo.paper.entity.villager.ReputationType.TRADING;
++            };
++        }
++        // Paper end - Add villager reputation API
+     }
+ 
+     static record GossipEntry(UUID target, GossipType type, int value) {

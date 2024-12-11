@@ -1,0 +1,114 @@
+--- a/net/minecraft/commands/CommandSourceStack.java
++++ b/net/minecraft/commands/CommandSourceStack.java
+@@ -45,9 +45,9 @@
+ import net.minecraft.world.level.dimension.DimensionType;
+ import net.minecraft.world.phys.Vec2;
+ import net.minecraft.world.phys.Vec3;
++import com.mojang.brigadier.tree.CommandNode; // CraftBukkit
+ 
+-public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider {
+-
++public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Paper - Brigadier API
+     public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
+     public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
+     public final CommandSource source;
+@@ -65,6 +65,8 @@
+     private final Vec2 rotation;
+     private final CommandSigningContext signingContext;
+     private final TaskChainer chatMessageChainer;
++    public java.util.Map<Thread, CommandNode> currentCommand = new java.util.concurrent.ConcurrentHashMap<>(); // CraftBukkit // Paper - Thread Safe Vanilla Command permission checking
++    public boolean bypassSelectorPermissions = false; // Paper - add bypass for selector permissions
+ 
+     public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
+         this(output, pos, rot, world, level, name, displayName, server, entity, false, CommandResultCallback.EMPTY, EntityAnchorArgument.Anchor.FEET, CommandSigningContext.ANONYMOUS, TaskChainer.immediate(server));
+@@ -171,8 +173,43 @@
+ 
+     @Override
+     public boolean hasPermission(int level) {
++        // CraftBukkit start
++        // Paper start - Thread Safe Vanilla Command permission checking
++        CommandNode currentCommand = this.currentCommand.get(Thread.currentThread());
++        if (currentCommand != null) {
++            return this.hasPermission(level, org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
++            // Paper end - Thread Safe Vanilla Command permission checking
++        }
++        // CraftBukkit end
++
+         return this.permissionLevel >= level;
++    }
++
++    // Paper start - Fix permission levels for command blocks
++    private boolean forceRespectPermissionLevel() {
++        return this.source == CommandSource.NULL || (this.source instanceof final net.minecraft.world.level.BaseCommandBlock commandBlock && commandBlock.getLevel().paperConfig().commandBlocks.forceFollowPermLevel);
++    }
++    // Paper end - Fix permission levels for command blocks
++
++    // CraftBukkit start
++    public boolean hasPermission(int i, String bukkitPermission) {
++        // Paper start - Fix permission levels for command blocks
++        final java.util.function.BooleanSupplier hasBukkitPerm = () -> this.source == CommandSource.NULL /*treat NULL as having all bukkit perms*/ || this.getBukkitSender().hasPermission(bukkitPermission); // lazily check bukkit perms to the benefit of custom permission setups
++        // if the server is null, we must check the vanilla perm level system
++        // if ignoreVanillaPermissions is true, we can skip vanilla perms and just run the bukkit perm check
++        //noinspection ConstantValue
++        if (this.getServer() == null || !this.getServer().server.ignoreVanillaPermissions) { // server & level are null for command function loading
++            final boolean hasPermLevel = this.permissionLevel >= i;
++            if (this.forceRespectPermissionLevel()) { // NULL CommandSource and command blocks (if setting is enabled) should always pass the vanilla perm check
++                return hasPermLevel && hasBukkitPerm.getAsBoolean();
++            } else { // otherwise check vanilla perm first then bukkit perm, matching upstream behavior
++                return hasPermLevel || hasBukkitPerm.getAsBoolean();
++            }
++        }
++        return hasBukkitPerm.getAsBoolean();
++        // Paper end - Fix permission levels for command blocks
+     }
++    // CraftBukkit end
+ 
+     public Vec3 getPosition() {
+         return this.worldPosition;
+@@ -302,21 +339,26 @@
+             while (iterator.hasNext()) {
+                 ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+ 
+-                if (entityplayer.commandSource() != this.source && this.server.getPlayerList().isOp(entityplayer.getGameProfile())) {
++                if (entityplayer.commandSource() != this.source && entityplayer.getBukkitEntity().hasPermission("minecraft.admin.command_feedback")) { // CraftBukkit
+                     entityplayer.sendSystemMessage(ichatmutablecomponent);
+                 }
+             }
+         }
+ 
+-        if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS)) {
++        if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS) && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
+             this.server.sendSystemMessage(ichatmutablecomponent);
+         }
+ 
+     }
+ 
+     public void sendFailure(Component message) {
++        // Paper start - Add UnknownCommandEvent
++        this.sendFailure(message, true);
++    }
++    public void sendFailure(Component message, boolean withStyle) {
++        // Paper end - Add UnknownCommandEvent
+         if (this.source.acceptsFailure() && !this.silent) {
+-            this.source.sendSystemMessage(Component.empty().append(message).withStyle(ChatFormatting.RED));
++            this.source.sendSystemMessage(withStyle ? Component.empty().append(message).withStyle(ChatFormatting.RED) : message); // Paper - Add UnknownCommandEvent
+         }
+ 
+     }
+@@ -400,4 +442,16 @@
+     public boolean isSilent() {
+         return this.silent;
+     }
++
++    // Paper start
++    @Override
++    public CommandSourceStack getHandle() {
++        return this;
++    }
++    // Paper end
++    // CraftBukkit start
++    public org.bukkit.command.CommandSender getBukkitSender() {
++        return this.source.getBukkitSender(this);
++    }
++    // CraftBukkit end
+ }

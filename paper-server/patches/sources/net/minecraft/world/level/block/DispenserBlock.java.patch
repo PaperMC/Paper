@@ -1,0 +1,61 @@
+--- a/net/minecraft/world/level/block/DispenserBlock.java
++++ b/net/minecraft/world/level/block/DispenserBlock.java
+@@ -52,6 +52,7 @@
+     private static final DefaultDispenseItemBehavior DEFAULT_BEHAVIOR = new DefaultDispenseItemBehavior();
+     public static final Map<Item, DispenseItemBehavior> DISPENSER_REGISTRY = new IdentityHashMap();
+     private static final int TRIGGER_DURATION = 4;
++    public static boolean eventFired = false; // CraftBukkit
+ 
+     @Override
+     public MapCodec<? extends DispenserBlock> codec() {
+@@ -79,8 +80,9 @@
+             if (tileentity instanceof DispenserBlockEntity) {
+                 DispenserBlockEntity tileentitydispenser = (DispenserBlockEntity) tileentity;
+ 
+-                player.openMenu(tileentitydispenser);
++                if (player.openMenu(tileentitydispenser).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
+                 player.awardStat(tileentitydispenser instanceof DropperBlockEntity ? Stats.INSPECT_DROPPER : Stats.INSPECT_DISPENSER);
++                } // Paper - Fix InventoryOpenEvent cancellation
+             }
+         }
+ 
+@@ -88,7 +90,7 @@
+     }
+ 
+     public void dispenseFrom(ServerLevel world, BlockState state, BlockPos pos) {
+-        DispenserBlockEntity tileentitydispenser = (DispenserBlockEntity) world.getBlockEntity(pos, BlockEntityType.DISPENSER).orElse((Object) null);
++        DispenserBlockEntity tileentitydispenser = (DispenserBlockEntity) world.getBlockEntity(pos, BlockEntityType.DISPENSER).orElse(null); // CraftBukkit - decompile error
+ 
+         if (tileentitydispenser == null) {
+             DispenserBlock.LOGGER.warn("Ignoring dispensing attempt for Dispenser without matching block entity at {}", pos);
+@@ -97,13 +99,17 @@
+             int i = tileentitydispenser.getRandomSlot(world.random);
+ 
+             if (i < 0) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFailedDispenseEvent(world, pos)) { // Paper - Add BlockFailedDispenseEvent
+                 world.levelEvent(1001, pos, 0);
+                 world.gameEvent((Holder) GameEvent.BLOCK_ACTIVATE, pos, GameEvent.Context.of(tileentitydispenser.getBlockState()));
++                } // Paper - Add BlockFailedDispenseEvent
+             } else {
+                 ItemStack itemstack = tileentitydispenser.getItem(i);
+                 DispenseItemBehavior idispensebehavior = this.getDispenseMethod(world, itemstack);
+ 
+                 if (idispensebehavior != DispenseItemBehavior.NOOP) {
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockPreDispenseEvent(world, pos, itemstack, i)) return; // Paper - Add BlockPreDispenseEvent
++                    DispenserBlock.eventFired = false; // CraftBukkit - reset event status
+                     tileentitydispenser.setItem(i, idispensebehavior.dispense(sourceblock, itemstack));
+                 }
+ 
+@@ -111,6 +117,12 @@
+         }
+     }
+ 
++    // Paper start - Fix NPE with equippable and items without behavior
++    public static DispenseItemBehavior getDispenseBehavior(BlockSource pointer, ItemStack stack) {
++        return ((DispenserBlock) pointer.state().getBlock()).getDispenseMethod(pointer.level(), stack);
++    }
++    // Paper end - Fix NPE with equippable and items without behavior
++
+     protected DispenseItemBehavior getDispenseMethod(Level world, ItemStack stack) {
+         if (!stack.isItemEnabled(world.enabledFeatures())) {
+             return DispenserBlock.DEFAULT_BEHAVIOR;

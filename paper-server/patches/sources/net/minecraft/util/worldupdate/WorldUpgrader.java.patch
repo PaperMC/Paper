@@ -1,0 +1,32 @@
+--- a/net/minecraft/util/worldupdate/WorldUpgrader.java
++++ b/net/minecraft/util/worldupdate/WorldUpgrader.java
+@@ -80,7 +80,7 @@
+ 
+     public WorldUpgrader(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, RegistryAccess dynamicRegistryManager, boolean eraseCache, boolean recreateRegionFiles) {
+         this.dimensions = dynamicRegistryManager.lookupOrThrow(Registries.LEVEL_STEM);
+-        this.levels = (Set) this.dimensions.registryKeySet().stream().map(Registries::levelStemToLevel).collect(Collectors.toUnmodifiableSet());
++        this.levels = (Set) java.util.stream.Stream.of(session.dimensionType).map(Registries::levelStemToLevel).collect(Collectors.toUnmodifiableSet()); // CraftBukkit
+         this.eraseCache = eraseCache;
+         this.dataFixer = dataFixer;
+         this.levelStorage = session;
+@@ -197,9 +197,9 @@
+             if (nbttagcompound != null) {
+                 int i = ChunkStorage.getVersion(nbttagcompound);
+                 ChunkGenerator chunkgenerator = ((LevelStem) WorldUpgrader.this.dimensions.getValueOrThrow(Registries.levelToLevelStem(worldKey))).generator();
+-                CompoundTag nbttagcompound1 = storage.upgradeChunkTag(worldKey, () -> {
++                CompoundTag nbttagcompound1 = storage.upgradeChunkTag(Registries.levelToLevelStem(worldKey), () -> { // CraftBukkit
+                     return WorldUpgrader.this.overworldDataStorage;
+-                }, nbttagcompound, chunkgenerator.getTypeNameForDataFixer());
++                }, nbttagcompound, chunkgenerator.getTypeNameForDataFixer(), chunkPos, null); // CraftBukkit
+                 ChunkPos chunkcoordintpair1 = new ChunkPos(nbttagcompound1.getInt("xPos"), nbttagcompound1.getInt("zPos"));
+ 
+                 if (!chunkcoordintpair1.equals(chunkPos)) {
+@@ -321,7 +321,7 @@
+                         WorldUpgrader.DimensionToUpgrade<T> worldupgrader_c = (WorldUpgrader.DimensionToUpgrade) iterator.next();
+                         ResourceKey<Level> resourcekey = worldupgrader_c.dimensionKey;
+                         ListIterator<WorldUpgrader.FileToUpgrade> listiterator = worldupgrader_c.files;
+-                        T t0 = (AutoCloseable) worldupgrader_c.storage;
++                        T t0 = (T) worldupgrader_c.storage; // CraftBukkit - decompile error
+ 
+                         if (listiterator.hasNext()) {
+                             WorldUpgrader.FileToUpgrade worldupgrader_e = (WorldUpgrader.FileToUpgrade) listiterator.next();
