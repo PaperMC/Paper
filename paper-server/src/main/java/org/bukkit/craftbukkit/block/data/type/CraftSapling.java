@@ -5,20 +5,20 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftSapling extends CraftBlockData implements Sapling {
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger STAGE = getInteger("stage");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty STAGE = getInteger("stage");
 
     @Override
     public int getStage() {
-        return get(STAGE);
+        return this.get(CraftSapling.STAGE);
     }
 
     @Override
     public void setStage(int stage) {
-        set(STAGE, stage);
+        this.set(CraftSapling.STAGE, stage);
     }
 
     @Override
     public int getMaximumStage() {
-        return getMax(STAGE);
+        return getMax(CraftSapling.STAGE);
     }
 }

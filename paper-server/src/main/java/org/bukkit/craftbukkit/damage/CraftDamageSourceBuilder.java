@@ -41,6 +41,6 @@ public class CraftDamageSourceBuilder implements DamageSource.Builder {
 
     @Override
     public DamageSource build() {
-        return CraftDamageSource.buildFromBukkit(damageType, causingEntity, directEntity, damageLocation);
+        return CraftDamageSource.buildFromBukkit(this.damageType, this.causingEntity, this.directEntity, this.damageLocation);
     }
 }

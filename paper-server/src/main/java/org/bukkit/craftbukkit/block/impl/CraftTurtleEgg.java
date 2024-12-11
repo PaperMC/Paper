@@ -9,50 +9,50 @@ public final class CraftTurtleEgg extends org.bukkit.craftbukkit.block.data.Craf
         super();
     }
 
-    public CraftTurtleEgg(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftTurtleEgg(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftTurtleEgg
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger EGGS = getInteger(net.minecraft.world.level.block.BlockTurtleEgg.class, "eggs");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty EGGS = getInteger(net.minecraft.world.level.block.TurtleEggBlock.class, "eggs");
 
     @Override
     public int getEggs() {
-        return get(EGGS);
+        return this.get(CraftTurtleEgg.EGGS);
     }
 
     @Override
     public void setEggs(int eggs) {
-        set(EGGS, eggs);
+        this.set(CraftTurtleEgg.EGGS, eggs);
     }
 
     @Override
     public int getMinimumEggs() {
-        return getMin(EGGS);
+        return getMin(CraftTurtleEgg.EGGS);
     }
 
     @Override
     public int getMaximumEggs() {
-        return getMax(EGGS);
+        return getMax(CraftTurtleEgg.EGGS);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftHatchable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger HATCH = getInteger(net.minecraft.world.level.block.BlockTurtleEgg.class, "hatch");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty HATCH = getInteger(net.minecraft.world.level.block.TurtleEggBlock.class, "hatch");
 
     @Override
     public int getHatch() {
-        return get(HATCH);
+        return this.get(CraftTurtleEgg.HATCH);
     }
 
     @Override
     public void setHatch(int hatch) {
-        set(HATCH, hatch);
+        this.set(CraftTurtleEgg.HATCH, hatch);
     }
 
     @Override
     public int getMaximumHatch() {
-        return getMax(HATCH);
+        return getMax(CraftTurtleEgg.HATCH);
     }
 }

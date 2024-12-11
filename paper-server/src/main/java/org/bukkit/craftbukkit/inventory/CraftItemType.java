@@ -9,10 +9,10 @@ import java.util.function.Supplier;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemBlock;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.level.block.BlockComposter;
+import net.minecraft.world.level.block.ComposterBlock;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -111,27 +111,27 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     @Override
     public Item getHandle() {
-        return item;
+        return this.item;
     }
 
     public M getItemMeta(net.minecraft.world.item.ItemStack itemStack) {
-        return itemMetaData.get().fromItemStack().apply(itemStack);
+        return this.itemMetaData.get().fromItemStack().apply(itemStack);
     }
 
     public M getItemMeta(ItemMeta itemMeta) {
-        return itemMetaData.get().fromItemMeta().apply(this, (CraftMetaItem) itemMeta);
+        return this.itemMetaData.get().fromItemMeta().apply(this, (CraftMetaItem) itemMeta);
     }
 
     @Override
     public boolean hasBlockType() {
-        return item instanceof ItemBlock;
+        return this.item instanceof BlockItem;
     }
 
     @NotNull
     @Override
     public BlockType getBlockType() {
-        if (!(item instanceof ItemBlock block)) {
-            throw new IllegalStateException("The item type " + getKey() + " has no corresponding block type");
+        if (!(this.item instanceof BlockItem block)) {
+            throw new IllegalStateException("The item type " + this.getKey() + " has no corresponding block type");
         }
 
         return CraftBlockType.minecraftToBukkitNew(block.getBlock());
@@ -142,7 +142,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
         if (this == ItemType.AIR) {
             throw new UnsupportedOperationException("Air does not have ItemMeta");
         }
-        return itemMetaData.get().metaClass();
+        return this.itemMetaData.get().metaClass();
     }
 
     @Override
@@ -152,44 +152,44 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
         if (this == AIR) {
             return 0;
         }
-        return item.components().getOrDefault(DataComponents.MAX_STACK_SIZE, 64);
+        return this.item.components().getOrDefault(DataComponents.MAX_STACK_SIZE, 64);
     }
 
     @Override
     public short getMaxDurability() {
-        return item.components().getOrDefault(DataComponents.MAX_DAMAGE, 0).shortValue();
+        return this.item.components().getOrDefault(DataComponents.MAX_DAMAGE, 0).shortValue();
     }
 
     @Override
     public boolean isEdible() {
-        return item.components().has(DataComponents.FOOD);
+        return this.item.components().has(DataComponents.FOOD);
     }
 
     @Override
     public boolean isRecord() {
-        return item.components().has(DataComponents.JUKEBOX_PLAYABLE);
+        return this.item.components().has(DataComponents.JUKEBOX_PLAYABLE);
     }
 
     @Override
     public boolean isFuel() {
-        return MinecraftServer.getServer().fuelValues().isFuel(new net.minecraft.world.item.ItemStack(item));
+        return MinecraftServer.getServer().fuelValues().isFuel(new net.minecraft.world.item.ItemStack(this.item));
     }
 
     @Override
     public boolean isCompostable() {
-        return BlockComposter.COMPOSTABLES.containsKey(item);
+        return ComposterBlock.COMPOSTABLES.containsKey(this.item);
     }
 
     @Override
     public float getCompostChance() {
-        Preconditions.checkArgument(isCompostable(), "The item type " + getKey() + " is not compostable");
-        return BlockComposter.COMPOSTABLES.getFloat(item);
+        Preconditions.checkArgument(this.isCompostable(), "The item type " + this.getKey() + " is not compostable");
+        return ComposterBlock.COMPOSTABLES.getFloat(this.item);
     }
 
     @Override
     public ItemType getCraftingRemainingItem() {
-        net.minecraft.world.item.ItemStack expectedItem = item.getCraftingRemainder();
-        return expectedItem.isEmpty() ? null : minecraftToBukkitNew(expectedItem.getItem());
+        net.minecraft.world.item.ItemStack expectedItem = this.item.getCraftingRemainder();
+        return expectedItem.isEmpty() ? null : CraftItemType.minecraftToBukkitNew(expectedItem.getItem());
     }
 
 //    @Override
@@ -201,7 +201,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
         ImmutableMultimap.Builder<Attribute, AttributeModifier> defaultAttributes = ImmutableMultimap.builder();
 
-        ItemAttributeModifiers nmsDefaultAttributes = item.components().getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        ItemAttributeModifiers nmsDefaultAttributes = this.item.components().getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
 
         nmsDefaultAttributes.forEach(CraftEquipmentSlot.getNMS(slot), (key, value) -> {
             Attribute attribute = CraftAttribute.minecraftToBukkit(key.value());
@@ -219,18 +219,18 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
     @Override
     public boolean isEnabledByFeature(@NotNull World world) {
         Preconditions.checkNotNull(world, "World cannot be null");
-        return getHandle().isEnabled(((CraftWorld) world).getHandle().enabledFeatures());
+        return this.getHandle().isEnabled(((CraftWorld) world).getHandle().enabledFeatures());
     }
 
     @NotNull
     @Override
     public String getTranslationKey() {
-        return item.getDescriptionId();
+        return this.item.getDescriptionId();
     }
 
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 
     @Override

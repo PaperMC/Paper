@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.entity.raid.EntityRaider;
 import org.bukkit.Raid;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
@@ -13,13 +12,13 @@ import org.bukkit.entity.Raider;
 
 public abstract class CraftRaider extends CraftMonster implements Raider {
 
-    public CraftRaider(CraftServer server, EntityRaider entity) {
+    public CraftRaider(CraftServer server, net.minecraft.world.entity.raid.Raider entity) {
         super(server, entity);
     }
 
     @Override
-    public EntityRaider getHandle() {
-        return (EntityRaider) super.getHandle();
+    public net.minecraft.world.entity.raid.Raider getHandle() {
+        return (net.minecraft.world.entity.raid.Raider) super.getHandle();
     }
 
     @Override
@@ -29,83 +28,83 @@ public abstract class CraftRaider extends CraftMonster implements Raider {
 
     @Override
     public void setRaid(Raid raid) {
-        getHandle().setCurrentRaid(raid != null ? ((CraftRaid) raid).getHandle() : null);
+        this.getHandle().setCurrentRaid(raid != null ? ((CraftRaid) raid).getHandle() : null);
     }
 
     @Override
     public Raid getRaid() {
-        return getHandle().getCurrentRaid() == null ? null : new CraftRaid(getHandle().getCurrentRaid());
+        return this.getHandle().getCurrentRaid() == null ? null : new CraftRaid(this.getHandle().getCurrentRaid());
     }
 
     @Override
     public void setWave(int wave) {
         Preconditions.checkArgument(wave >= 0, "wave must be >= 0");
-        getHandle().setWave(wave);
+        this.getHandle().setWave(wave);
     }
 
     @Override
     public int getWave() {
-        return getHandle().getWave();
+        return this.getHandle().getWave();
     }
 
     @Override
     public Block getPatrolTarget() {
-        return getHandle().getPatrolTarget() == null ? null : CraftBlock.at(getHandle().level(), getHandle().getPatrolTarget());
+        return this.getHandle().getPatrolTarget() == null ? null : CraftBlock.at(this.getHandle().level(), this.getHandle().getPatrolTarget());
     }
 
     @Override
     public void setPatrolTarget(Block block) {
         if (block == null) {
-            getHandle().setPatrolTarget(null);
+            this.getHandle().setPatrolTarget(null);
         } else {
             Preconditions.checkArgument(block.getWorld().equals(this.getWorld()), "Block must be in same world");
-            getHandle().setPatrolTarget(((CraftBlock) block).getPosition());
+            this.getHandle().setPatrolTarget(((CraftBlock) block).getPosition());
         }
     }
 
     @Override
     public boolean isPatrolLeader() {
-        return getHandle().isPatrolLeader();
+        return this.getHandle().isPatrolLeader();
     }
 
     @Override
     public void setPatrolLeader(boolean leader) {
-        getHandle().setPatrolLeader(leader);
+        this.getHandle().setPatrolLeader(leader);
     }
 
     @Override
     public boolean isCanJoinRaid() {
-        return getHandle().canJoinRaid();
+        return this.getHandle().canJoinRaid();
     }
 
     @Override
     public void setCanJoinRaid(boolean join) {
-        getHandle().setCanJoinRaid(join);
+        this.getHandle().setCanJoinRaid(join);
     }
 
     @Override
     public boolean isCelebrating() {
-        return getHandle().isCelebrating();
+        return this.getHandle().isCelebrating();
     }
 
     @Override
     public void setCelebrating(boolean celebrating) {
-        getHandle().setCelebrating(celebrating);
+        this.getHandle().setCelebrating(celebrating);
     }
 
     @Override
     public int getTicksOutsideRaid() {
-        return getHandle().getTicksOutsideRaid();
+        return this.getHandle().getTicksOutsideRaid();
     }
 
     @Override
     public void setTicksOutsideRaid(int ticks) {
         Preconditions.checkArgument(ticks >= 0, "ticks must be >= 0");
-        getHandle().setTicksOutsideRaid(ticks);
+        this.getHandle().setTicksOutsideRaid(ticks);
     }
 
     @Override
     public Sound getCelebrationSound() {
-        return CraftSound.minecraftToBukkit(getHandle().getCelebrateSound());
+        return CraftSound.minecraftToBukkit(this.getHandle().getCelebrateSound());
     }
 }

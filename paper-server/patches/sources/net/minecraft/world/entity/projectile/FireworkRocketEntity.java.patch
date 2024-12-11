@@ -1,0 +1,69 @@
+--- a/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
++++ b/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
+@@ -32,6 +32,9 @@
+ import net.minecraft.world.phys.EntityHitResult;
+ import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
+ 
+ public class FireworkRocketEntity extends Projectile implements ItemSupplier {
+ 
+@@ -152,7 +155,7 @@
+         }
+ 
+         if (!this.noPhysics && this.isAlive() && movingobjectposition.getType() != HitResult.Type.MISS) {
+-            this.hitTargetOrDeflectSelf(movingobjectposition);
++            this.preHitTargetOrDeflectSelf(movingobjectposition); // CraftBukkit - projectile hit event
+             this.hasImpulse = true;
+         }
+ 
+@@ -172,7 +175,11 @@
+             if (world instanceof ServerLevel) {
+                 ServerLevel worldserver = (ServerLevel) world;
+ 
+-                this.explode(worldserver);
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                    this.explode(worldserver);
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -182,7 +189,7 @@
+         world.broadcastEntityEvent(this, (byte) 17);
+         this.gameEvent(GameEvent.EXPLODE, this.getOwner());
+         this.dealExplosionDamage(world);
+-        this.discard();
++        this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     @Override
+@@ -191,7 +198,11 @@
+         Level world = this.level();
+ 
+         if (world instanceof ServerLevel worldserver) {
+-            this.explode(worldserver);
++            // CraftBukkit start
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                this.explode(worldserver);
++            }
++            // CraftBukkit end
+         }
+ 
+     }
+@@ -205,7 +216,11 @@
+ 
+         if (world instanceof ServerLevel worldserver) {
+             if (this.hasExplosion()) {
+-                this.explode(worldserver);
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                    this.explode(worldserver);
++                }
++                // CraftBukkit end
+             }
+         }
+ 

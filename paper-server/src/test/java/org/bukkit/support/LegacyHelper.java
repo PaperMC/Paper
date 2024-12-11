@@ -24,6 +24,6 @@ public final class LegacyHelper {
     }
 
     public static List<Material> getInvalidatedMaterials() {
-        return INVALIDATED_MATERIALS;
+        return LegacyHelper.INVALIDATED_MATERIALS;
     }
 }

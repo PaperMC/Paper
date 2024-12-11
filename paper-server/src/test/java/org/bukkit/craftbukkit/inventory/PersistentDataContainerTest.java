@@ -40,43 +40,43 @@ public class PersistentDataContainerTest {
 
     @BeforeAll
     public static void setup() {
-        VALID_KEY = new NamespacedKey("test", "validkey");
+        PersistentDataContainerTest.VALID_KEY = new NamespacedKey("test", "validkey");
     }
 
     // Sets a test
     @Test
     public void testSetNoAdapter() {
-        ItemMeta itemMeta = createNewItemMeta();
+        ItemMeta itemMeta = PersistentDataContainerTest.createNewItemMeta();
         assertThrows(IllegalArgumentException.class, () -> itemMeta.getPersistentDataContainer().set(VALID_KEY, new PrimitiveTagType<>(boolean.class), true));
     }
 
     // Contains a tag
     @Test
     public void testHasNoAdapter() {
-        ItemMeta itemMeta = createNewItemMeta();
-        itemMeta.getPersistentDataContainer().set(VALID_KEY, PersistentDataType.INTEGER, 1); // We gotta set this so we at least try to compare it
+        ItemMeta itemMeta = PersistentDataContainerTest.createNewItemMeta();
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.INTEGER, 1); // We gotta set this so we at least try to compare it
         assertThrows(IllegalArgumentException.class, () -> itemMeta.getPersistentDataContainer().has(VALID_KEY, new PrimitiveTagType<>(boolean.class)));
     }
 
     @Test
     public void testHasNoType() {
-        ItemMeta itemMeta = createNewItemMeta();
-        itemMeta.getPersistentDataContainer().set(VALID_KEY, PersistentDataType.INTEGER, 1); // We gotta set this so we at least try to compare it
-        assertTrue(itemMeta.getPersistentDataContainer().has(VALID_KEY));
+        ItemMeta itemMeta = PersistentDataContainerTest.createNewItemMeta();
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.INTEGER, 1); // We gotta set this so we at least try to compare it
+        assertTrue(itemMeta.getPersistentDataContainer().has(PersistentDataContainerTest.VALID_KEY));
     }
 
     // Getting a tag
     @Test
     public void testGetNoAdapter() {
-        ItemMeta itemMeta = createNewItemMeta();
-        itemMeta.getPersistentDataContainer().set(VALID_KEY, PersistentDataType.INTEGER, 1); //We gotta set this so we at least try to compare it
+        ItemMeta itemMeta = PersistentDataContainerTest.createNewItemMeta();
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.INTEGER, 1); //We gotta set this so we at least try to compare it
         assertThrows(IllegalArgumentException.class, () -> itemMeta.getPersistentDataContainer().get(VALID_KEY, new PrimitiveTagType<>(boolean.class)));
     }
 
     @Test
     public void testGetWrongType() {
-        ItemMeta itemMeta = createNewItemMeta();
-        itemMeta.getPersistentDataContainer().set(VALID_KEY, PersistentDataType.INTEGER, 1);
+        ItemMeta itemMeta = PersistentDataContainerTest.createNewItemMeta();
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.INTEGER, 1);
         assertThrows(IllegalArgumentException.class, () -> itemMeta.getPersistentDataContainer().get(VALID_KEY, PersistentDataType.STRING));
     }
 
@@ -85,7 +85,7 @@ public class PersistentDataContainerTest {
         NamespacedKey namespacedKeyA = new NamespacedKey("plugin-a", "damage");
         NamespacedKey namespacedKeyB = new NamespacedKey("plugin-b", "damage");
 
-        ItemMeta meta = createNewItemMeta();
+        ItemMeta meta = PersistentDataContainerTest.createNewItemMeta();
         meta.getPersistentDataContainer().set(namespacedKeyA, PersistentDataType.LONG, 15L);
         meta.getPersistentDataContainer().set(namespacedKeyB, PersistentDataType.LONG, 160L);
 
@@ -103,21 +103,21 @@ public class PersistentDataContainerTest {
 
     @Test
     public void testCopyTo() {
-        PersistentDataContainer container = createComplexItemMeta().getPersistentDataContainer();
+        PersistentDataContainer container = this.createComplexItemMeta().getPersistentDataContainer();
         PersistentDataContainer target = container.getAdapterContext().newPersistentDataContainer();
-        target.set(VALID_KEY, PersistentDataType.INTEGER, 1);
-        container.set(VALID_KEY, PersistentDataType.INTEGER, 2);
+        target.set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.INTEGER, 1);
+        container.set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.INTEGER, 2);
         container.copyTo(target, false);
 
-        assertEquals(1, target.get(VALID_KEY, PersistentDataType.INTEGER)); // Should not be replaced
+        assertEquals(1, target.get(PersistentDataContainerTest.VALID_KEY, PersistentDataType.INTEGER)); // Should not be replaced
     }
 
     @Test
     public void testCopyToReplace() {
-        PersistentDataContainer container = createComplexItemMeta().getPersistentDataContainer();
+        PersistentDataContainer container = this.createComplexItemMeta().getPersistentDataContainer();
         PersistentDataContainer target = container.getAdapterContext().newPersistentDataContainer();
-        target.set(VALID_KEY, PersistentDataType.INTEGER, 1);
-        container.set(VALID_KEY, PersistentDataType.INTEGER, 2);
+        target.set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.INTEGER, 1);
+        container.set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.INTEGER, 2);
         container.copyTo(target, true);
 
         assertEquals(container, target);
@@ -126,7 +126,7 @@ public class PersistentDataContainerTest {
     // Removing a tag
     @Test
     public void testNBTTagStoring() {
-        CraftMetaItem itemMeta = createComplexItemMeta();
+        CraftMetaItem itemMeta = this.createComplexItemMeta();
 
         CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
         itemMeta.applyToItem(compound);
@@ -136,7 +136,7 @@ public class PersistentDataContainerTest {
 
     @Test
     public void testMapStoring() {
-        CraftMetaItem itemMeta = createComplexItemMeta();
+        CraftMetaItem itemMeta = this.createComplexItemMeta();
 
         Map<String, Object> serialize = itemMeta.serialize();
         assertEquals(itemMeta, new CraftMetaItem(serialize));
@@ -145,7 +145,7 @@ public class PersistentDataContainerTest {
     @Test
     public void testYAMLStoring() {
         ItemStack stack = new ItemStack(Material.DIAMOND);
-        CraftMetaItem meta = createComplexItemMeta();
+        CraftMetaItem meta = this.createComplexItemMeta();
         stack.setItemMeta(meta);
 
         YamlConfiguration configuration = new YamlConfiguration();
@@ -161,10 +161,10 @@ public class PersistentDataContainerTest {
     @Test
     public void testCorrectType() {
         ItemStack stack = new ItemStack(Material.DIAMOND);
-        CraftMetaItem meta = createComplexItemMeta();
+        CraftMetaItem meta = this.createComplexItemMeta();
 
-        meta.getPersistentDataContainer().set(requestKey("int"), PersistentDataType.STRING, "1");
-        meta.getPersistentDataContainer().set(requestKey("double"), PersistentDataType.STRING, "1.33");
+        meta.getPersistentDataContainer().set(PersistentDataContainerTest.requestKey("int"), PersistentDataType.STRING, "1");
+        meta.getPersistentDataContainer().set(PersistentDataContainerTest.requestKey("double"), PersistentDataType.STRING, "1.33");
         stack.setItemMeta(meta);
 
         YamlConfiguration configuration = new YamlConfiguration();
@@ -174,34 +174,34 @@ public class PersistentDataContainerTest {
         YamlConfiguration loadedConfig = YamlConfiguration.loadConfiguration(new StringReader(configValue));
         ItemStack newStack = loadedConfig.getSerializable("testpath", ItemStack.class);
 
-        assertTrue(newStack.getItemMeta().getPersistentDataContainer().has(requestKey("int"), PersistentDataType.STRING));
-        assertEquals(newStack.getItemMeta().getPersistentDataContainer().get(requestKey("int"), PersistentDataType.STRING), "1");
+        assertTrue(newStack.getItemMeta().getPersistentDataContainer().has(PersistentDataContainerTest.requestKey("int"), PersistentDataType.STRING));
+        assertEquals(newStack.getItemMeta().getPersistentDataContainer().get(PersistentDataContainerTest.requestKey("int"), PersistentDataType.STRING), "1");
 
-        assertTrue(newStack.getItemMeta().getPersistentDataContainer().has(requestKey("double"), PersistentDataType.STRING));
-        assertEquals(newStack.getItemMeta().getPersistentDataContainer().get(requestKey("double"), PersistentDataType.STRING), "1.33");
+        assertTrue(newStack.getItemMeta().getPersistentDataContainer().has(PersistentDataContainerTest.requestKey("double"), PersistentDataType.STRING));
+        assertEquals(newStack.getItemMeta().getPersistentDataContainer().get(PersistentDataContainerTest.requestKey("double"), PersistentDataType.STRING), "1.33");
     }
 
     private CraftMetaItem createComplexItemMeta() {
-        CraftMetaItem itemMeta = (CraftMetaItem) createNewItemMeta();
+        CraftMetaItem itemMeta = (CraftMetaItem) PersistentDataContainerTest.createNewItemMeta();
         itemMeta.setDisplayName("Item Display Name");
 
-        itemMeta.getPersistentDataContainer().set(requestKey("custom-long"), PersistentDataType.LONG, 4L); //Add random primitive values
-        itemMeta.getPersistentDataContainer().set(requestKey("custom-byte-array"), PersistentDataType.BYTE_ARRAY, new byte[]{
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.requestKey("custom-long"), PersistentDataType.LONG, 4L); //Add random primitive values
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.requestKey("custom-byte-array"), PersistentDataType.BYTE_ARRAY, new byte[]{
             0, 1, 2, 10
         });
-        itemMeta.getPersistentDataContainer().set(requestKey("custom-string"), PersistentDataType.STRING, "Hello there world");
-        itemMeta.getPersistentDataContainer().set(requestKey("custom-int"), PersistentDataType.INTEGER, 3);
-        itemMeta.getPersistentDataContainer().set(requestKey("custom-double"), PersistentDataType.DOUBLE, 3.123);
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.requestKey("custom-string"), PersistentDataType.STRING, "Hello there world");
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.requestKey("custom-int"), PersistentDataType.INTEGER, 3);
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.requestKey("custom-double"), PersistentDataType.DOUBLE, 3.123);
         itemMeta.getPersistentDataContainer().set(
-                requestKey("custom-list-string"), PersistentDataType.LIST.strings(), List.of("first[]", "second{}", "third()")
+                PersistentDataContainerTest.requestKey("custom-list-string"), PersistentDataType.LIST.strings(), List.of("first[]", "second{}", "third()")
         );
         itemMeta.getPersistentDataContainer().set(
-                requestKey("custom-list-bytes"), PersistentDataType.LIST.bytes(), List.of((byte) 1, (byte) 2, (byte) 3)
+                PersistentDataContainerTest.requestKey("custom-list-bytes"), PersistentDataType.LIST.bytes(), List.of((byte) 1, (byte) 2, (byte) 3)
         );
 
         PersistentDataContainer innerContainer = itemMeta.getPersistentDataContainer().getAdapterContext().newPersistentDataContainer(); //Add a inner container
-        innerContainer.set(VALID_KEY, PersistentDataType.LONG, 5L);
-        itemMeta.getPersistentDataContainer().set(requestKey("custom-inner-compound"), PersistentDataType.TAG_CONTAINER, innerContainer);
+        innerContainer.set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.LONG, 5L);
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.requestKey("custom-inner-compound"), PersistentDataType.TAG_CONTAINER, innerContainer);
         return itemMeta;
     }
 
@@ -222,11 +222,11 @@ public class PersistentDataContainerTest {
                 """;
 
         final PersistentDataContainer pdc = meta.getPersistentDataContainer();
-        pdc.set(requestKey("string_int"), PersistentDataType.STRING, "5i");
-        pdc.set(requestKey("string_true"), PersistentDataType.STRING, "true");
-        pdc.set(requestKey("string_byte_array"), PersistentDataType.STRING, "[B;-128B]");
-        pdc.set(requestKey("string_array_lookalike"), PersistentDataType.STRING, arrayLookalike);
-        pdc.set(requestKey("string_json_lookalike"), PersistentDataType.STRING, jsonLookalike);
+        pdc.set(PersistentDataContainerTest.requestKey("string_int"), PersistentDataType.STRING, "5i");
+        pdc.set(PersistentDataContainerTest.requestKey("string_true"), PersistentDataType.STRING, "true");
+        pdc.set(PersistentDataContainerTest.requestKey("string_byte_array"), PersistentDataType.STRING, "[B;-128B]");
+        pdc.set(PersistentDataContainerTest.requestKey("string_array_lookalike"), PersistentDataType.STRING, arrayLookalike);
+        pdc.set(PersistentDataContainerTest.requestKey("string_json_lookalike"), PersistentDataType.STRING, jsonLookalike);
 
         stack.setItemMeta(meta);
 
@@ -240,52 +240,52 @@ public class PersistentDataContainerTest {
         assertNotNull(loadedMeta);
 
         final PersistentDataContainer loadedPdc = loadedMeta.getPersistentDataContainer();
-        assertEquals("5i", loadedPdc.get(requestKey("string_int"), PersistentDataType.STRING));
-        assertEquals("true", loadedPdc.get(requestKey("string_true"), PersistentDataType.STRING));
-        assertEquals(arrayLookalike, loadedPdc.get(requestKey("string_array_lookalike"), PersistentDataType.STRING));
-        assertEquals(jsonLookalike, loadedPdc.get(requestKey("string_json_lookalike"), PersistentDataType.STRING));
+        assertEquals("5i", loadedPdc.get(PersistentDataContainerTest.requestKey("string_int"), PersistentDataType.STRING));
+        assertEquals("true", loadedPdc.get(PersistentDataContainerTest.requestKey("string_true"), PersistentDataType.STRING));
+        assertEquals(arrayLookalike, loadedPdc.get(PersistentDataContainerTest.requestKey("string_array_lookalike"), PersistentDataType.STRING));
+        assertEquals(jsonLookalike, loadedPdc.get(PersistentDataContainerTest.requestKey("string_json_lookalike"), PersistentDataType.STRING));
     }
 
     // Test complex object storage
     @Test
     public void storeUUIDOnItemTest() {
-        ItemMeta itemMeta = createNewItemMeta();
+        ItemMeta itemMeta = PersistentDataContainerTest.createNewItemMeta();
         UUIDPersistentDataType uuidPersistentDataType = new UUIDPersistentDataType();
         UUID uuid = UUID.fromString("434eea72-22a6-4c61-b5ef-945874a5c478");
 
-        itemMeta.getPersistentDataContainer().set(VALID_KEY, uuidPersistentDataType, uuid);
-        assertTrue(itemMeta.getPersistentDataContainer().has(VALID_KEY, uuidPersistentDataType));
-        assertEquals(uuid, itemMeta.getPersistentDataContainer().get(VALID_KEY, uuidPersistentDataType));
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.VALID_KEY, uuidPersistentDataType, uuid);
+        assertTrue(itemMeta.getPersistentDataContainer().has(PersistentDataContainerTest.VALID_KEY, uuidPersistentDataType));
+        assertEquals(uuid, itemMeta.getPersistentDataContainer().get(PersistentDataContainerTest.VALID_KEY, uuidPersistentDataType));
     }
 
     @Test
     public void encapsulatedContainers() {
         NamespacedKey innerKey = new NamespacedKey("plugin-a", "inner");
 
-        ItemMeta meta = createNewItemMeta();
+        ItemMeta meta = PersistentDataContainerTest.createNewItemMeta();
         PersistentDataAdapterContext context = meta.getPersistentDataContainer().getAdapterContext();
 
         PersistentDataContainer thirdContainer = context.newPersistentDataContainer();
-        thirdContainer.set(VALID_KEY, PersistentDataType.LONG, 3L);
+        thirdContainer.set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.LONG, 3L);
 
         PersistentDataContainer secondContainer = context.newPersistentDataContainer();
-        secondContainer.set(VALID_KEY, PersistentDataType.LONG, 2L);
+        secondContainer.set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.LONG, 2L);
         secondContainer.set(innerKey, PersistentDataType.TAG_CONTAINER, thirdContainer);
 
-        meta.getPersistentDataContainer().set(VALID_KEY, PersistentDataType.LONG, 1L);
+        meta.getPersistentDataContainer().set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.LONG, 1L);
         meta.getPersistentDataContainer().set(innerKey, PersistentDataType.TAG_CONTAINER, secondContainer);
 
         assertEquals(3L, meta.getPersistentDataContainer()
                 .get(innerKey, PersistentDataType.TAG_CONTAINER)
                 .get(innerKey, PersistentDataType.TAG_CONTAINER)
-                .get(VALID_KEY, PersistentDataType.LONG).longValue());
+                .get(PersistentDataContainerTest.VALID_KEY, PersistentDataType.LONG).longValue());
 
         assertEquals(2L, meta.getPersistentDataContainer()
                 .get(innerKey, PersistentDataType.TAG_CONTAINER)
-                .get(VALID_KEY, PersistentDataType.LONG).longValue());
+                .get(PersistentDataContainerTest.VALID_KEY, PersistentDataType.LONG).longValue());
 
         assertEquals(1L, meta.getPersistentDataContainer()
-                .get(VALID_KEY, PersistentDataType.LONG).longValue());
+                .get(PersistentDataContainerTest.VALID_KEY, PersistentDataType.LONG).longValue());
     }
 
     class UUIDPersistentDataType implements PersistentDataType<byte[], UUID> {
@@ -323,7 +323,7 @@ public class PersistentDataContainerTest {
 
     @Test
     public void testPrimitiveCustomTags() {
-        ItemMeta itemMeta = createNewItemMeta();
+        ItemMeta itemMeta = PersistentDataContainerTest.createNewItemMeta();
 
         this.testPrimitiveCustomTag(itemMeta, PersistentDataType.BYTE, (byte) 1);
         this.testPrimitiveCustomTag(itemMeta, PersistentDataType.SHORT, (short) 1);
@@ -401,9 +401,9 @@ public class PersistentDataContainerTest {
 
     @Test
     public void testItemMetaClone() {
-        ItemMeta itemMeta = createNewItemMeta();
+        ItemMeta itemMeta = PersistentDataContainerTest.createNewItemMeta();
         PersistentDataContainer container = itemMeta.getPersistentDataContainer();
-        itemMeta.getPersistentDataContainer().set(VALID_KEY, PersistentDataType.STRING, "notch");
+        itemMeta.getPersistentDataContainer().set(PersistentDataContainerTest.VALID_KEY, PersistentDataType.STRING, "notch");
 
         ItemMeta clonedMeta = itemMeta.clone();
         PersistentDataContainer clonedContainer = clonedMeta.getPersistentDataContainer();
@@ -418,12 +418,12 @@ public class PersistentDataContainerTest {
     @ParameterizedTest
     @MethodSource("testListTypeArgumentSource")
     public <T> void testListType(@NotNull final ListPersistentDataType<T, T> type, @NotNull final List<T> list, @NotNull final BiConsumer<T, T> equalsCheck) {
-        final ItemMeta meta = createNewItemMeta();
+        final ItemMeta meta = PersistentDataContainerTest.createNewItemMeta();
         final PersistentDataContainer container = meta.getPersistentDataContainer();
 
-        container.set(requestKey("list"), type, list);
+        container.set(PersistentDataContainerTest.requestKey("list"), type, list);
 
-        final List<T> returnedList = container.get(requestKey("list"), type);
+        final List<T> returnedList = container.get(PersistentDataContainerTest.requestKey("list"), type);
 
         assertNotNull(returnedList);
         assertEquals(list.size(), returnedList.size());
@@ -437,10 +437,10 @@ public class PersistentDataContainerTest {
 
     @NotNull
     private static Stream<Arguments> testListTypeArgumentSource() {
-        final PersistentDataContainer first = createNewItemMeta().getPersistentDataContainer();
+        final PersistentDataContainer first = PersistentDataContainerTest.createNewItemMeta().getPersistentDataContainer();
         final PersistentDataContainer second = first.getAdapterContext().newPersistentDataContainer();
-        first.set(requestKey("a"), PersistentDataType.STRING, "hello world");
-        second.set(requestKey("b"), PersistentDataType.BOOLEAN, true);
+        first.set(PersistentDataContainerTest.requestKey("a"), PersistentDataType.STRING, "hello world");
+        second.set(PersistentDataContainerTest.requestKey("b"), PersistentDataType.BOOLEAN, true);
 
         final BiConsumer<Object, Object> objectAssertion = Assertions::assertEquals;
         final BiConsumer<byte[], byte[]> byteArrayAssertion = Assertions::assertArrayEquals;
@@ -467,11 +467,11 @@ public class PersistentDataContainerTest {
         final CraftMetaItem craftItem = new CraftMetaItem(DataComponentPatch.EMPTY);
         final PersistentDataContainer container = craftItem.getPersistentDataContainer();
 
-        container.set(requestKey("list"), PersistentDataType.LIST.strings(), List.of());
-        assertTrue(container.has(requestKey("list"), PersistentDataType.LIST.strings()));
-        assertTrue(container.has(requestKey("list"), PersistentDataType.LIST.bytes()));
-        assertFalse(container.has(requestKey("list"), PersistentDataType.STRING));
-        assertEquals(List.of(), container.get(requestKey("list"), PersistentDataType.LIST.strings()));
+        container.set(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings(), List.of());
+        assertTrue(container.has(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings()));
+        assertTrue(container.has(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.bytes()));
+        assertFalse(container.has(PersistentDataContainerTest.requestKey("list"), PersistentDataType.STRING));
+        assertEquals(List.of(), container.get(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings()));
 
         // Write and read the entire container to NBT
         final CraftMetaItem.Applicator storage = new CraftMetaItem.Applicator();
@@ -480,10 +480,10 @@ public class PersistentDataContainerTest {
         final CraftMetaItem readItem = new CraftMetaItem(storage.build());
         final PersistentDataContainer readContainer = readItem.getPersistentDataContainer();
 
-        assertTrue(readContainer.has(requestKey("list"), PersistentDataType.LIST.strings()));
-        assertTrue(readContainer.has(requestKey("list"), PersistentDataType.LIST.bytes()));
-        assertFalse(readContainer.has(requestKey("list"), PersistentDataType.STRING));
-        assertEquals(List.of(), readContainer.get(requestKey("list"), PersistentDataType.LIST.strings()));
+        assertTrue(readContainer.has(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings()));
+        assertTrue(readContainer.has(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.bytes()));
+        assertFalse(readContainer.has(PersistentDataContainerTest.requestKey("list"), PersistentDataType.STRING));
+        assertEquals(List.of(), readContainer.get(PersistentDataContainerTest.requestKey("list"), PersistentDataType.LIST.strings()));
     }
 
     // This is a horrific marriage of tag container array "primitive" types the API offered and the new list types.
@@ -497,24 +497,24 @@ public class PersistentDataContainerTest {
     public void testListOfListViaContainerArray() {
         final ListPersistentDataType<PersistentDataContainer[], PersistentDataContainer[]> listPersistentDataType = PersistentDataType.LIST.listTypeFrom(PersistentDataType.TAG_CONTAINER_ARRAY);
 
-        final ItemMeta meta = createNewItemMeta();
+        final ItemMeta meta = PersistentDataContainerTest.createNewItemMeta();
         final PersistentDataContainer container = meta.getPersistentDataContainer();
         final PersistentDataAdapterContext adapterContext = container.getAdapterContext();
 
         final PersistentDataContainer first = adapterContext.newPersistentDataContainer();
-        first.set(requestKey("a"), PersistentDataType.STRING, "hi");
+        first.set(PersistentDataContainerTest.requestKey("a"), PersistentDataType.STRING, "hi");
 
         final PersistentDataContainer second = adapterContext.newPersistentDataContainer();
-        second.set(requestKey("a"), PersistentDataType.INTEGER, 2);
+        second.set(PersistentDataContainerTest.requestKey("a"), PersistentDataType.INTEGER, 2);
 
         final List<PersistentDataContainer[]> listOfArrays = new ArrayList<>();
         listOfArrays.add(new PersistentDataContainer[]{first, second});
 
-        container.set(requestKey("containerListList"), listPersistentDataType, listOfArrays);
+        container.set(PersistentDataContainerTest.requestKey("containerListList"), listPersistentDataType, listOfArrays);
 
-        assertTrue(container.has(requestKey("containerListList"), listPersistentDataType));
+        assertTrue(container.has(PersistentDataContainerTest.requestKey("containerListList"), listPersistentDataType));
 
-        final List<PersistentDataContainer[]> containerListList = container.get(requestKey("containerListList"), listPersistentDataType);
+        final List<PersistentDataContainer[]> containerListList = container.get(PersistentDataContainerTest.requestKey("containerListList"), listPersistentDataType);
 
         assertNotNull(containerListList);
         assertEquals(1, containerListList.size());
@@ -522,7 +522,7 @@ public class PersistentDataContainerTest {
         final PersistentDataContainer[] arrayOfPDC = containerListList.get(0);
         assertEquals(2, arrayOfPDC.length);
 
-        assertEquals("hi", arrayOfPDC[0].get(requestKey("a"), PersistentDataType.STRING));
-        assertEquals(2, arrayOfPDC[1].get(requestKey("a"), PersistentDataType.INTEGER));
+        assertEquals("hi", arrayOfPDC[0].get(PersistentDataContainerTest.requestKey("a"), PersistentDataType.STRING));
+        assertEquals(2, arrayOfPDC[1].get(PersistentDataContainerTest.requestKey("a"), PersistentDataType.INTEGER));
     }
 }

@@ -1,0 +1,41 @@
+--- a/net/minecraft/world/item/BoneMealItem.java
++++ b/net/minecraft/world/item/BoneMealItem.java
+@@ -35,24 +35,30 @@
+ 
+     @Override
+     public InteractionResult useOn(UseOnContext context) {
+-        Level world = context.getLevel();
+-        BlockPos blockposition = context.getClickedPos();
+-        BlockPos blockposition1 = blockposition.relative(context.getClickedFace());
++        // CraftBukkit start - extract bonemeal application logic to separate, static method
++        return BoneMealItem.applyBonemeal(context);
++    }
+ 
+-        if (BoneMealItem.growCrop(context.getItemInHand(), world, blockposition)) {
++    public static InteractionResult applyBonemeal(UseOnContext itemactioncontext) {
++        // CraftBukkit end
++        Level world = itemactioncontext.getLevel();
++        BlockPos blockposition = itemactioncontext.getClickedPos();
++        BlockPos blockposition1 = blockposition.relative(itemactioncontext.getClickedFace());
++
++        if (BoneMealItem.growCrop(itemactioncontext.getItemInHand(), world, blockposition)) {
+             if (!world.isClientSide) {
+-                context.getPlayer().gameEvent(GameEvent.ITEM_INTERACT_FINISH);
++                if (itemactioncontext.getPlayer() != null) itemactioncontext.getPlayer().gameEvent(GameEvent.ITEM_INTERACT_FINISH); // CraftBukkit - SPIGOT-7518
+                 world.levelEvent(1505, blockposition, 15);
+             }
+ 
+             return InteractionResult.SUCCESS;
+         } else {
+             BlockState iblockdata = world.getBlockState(blockposition);
+-            boolean flag = iblockdata.isFaceSturdy(world, blockposition, context.getClickedFace());
++            boolean flag = iblockdata.isFaceSturdy(world, blockposition, itemactioncontext.getClickedFace());
+ 
+-            if (flag && BoneMealItem.growWaterPlant(context.getItemInHand(), world, blockposition1, context.getClickedFace())) {
++            if (flag && BoneMealItem.growWaterPlant(itemactioncontext.getItemInHand(), world, blockposition1, itemactioncontext.getClickedFace())) {
+                 if (!world.isClientSide) {
+-                    context.getPlayer().gameEvent(GameEvent.ITEM_INTERACT_FINISH);
++                    if (itemactioncontext.getPlayer() != null) itemactioncontext.getPlayer().gameEvent(GameEvent.ITEM_INTERACT_FINISH); // CraftBukkit - SPIGOT-7518
+                     world.levelEvent(1505, blockposition1, 15);
+                 }
+ 

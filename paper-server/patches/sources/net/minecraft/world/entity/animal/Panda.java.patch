@@ -1,0 +1,63 @@
+--- a/net/minecraft/world/entity/animal/Panda.java
++++ b/net/minecraft/world/entity/animal/Panda.java
+@@ -68,6 +68,11 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.entity.EntityTargetEvent;
++// CraftBukkit end
+ 
+ public class Panda extends Animal {
+ 
+@@ -541,14 +546,14 @@
+ 
+     @Override
+     protected void pickUpItem(ServerLevel world, ItemEntity itemEntity) {
+-        if (this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() && Panda.canPickUpAndEat(itemEntity)) {
++        if (!CraftEventFactory.callEntityPickupItemEvent(this, itemEntity, 0, !(this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty() && Panda.canPickUpAndEat(itemEntity))).isCancelled()) { // CraftBukkit
+             this.onItemPickup(itemEntity);
+             ItemStack itemstack = itemEntity.getItem();
+ 
+             this.setItemSlot(EquipmentSlot.MAINHAND, itemstack);
+             this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+             this.take(itemEntity, itemstack.getCount());
+-            itemEntity.discard();
++            itemEntity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+         }
+ 
+     }
+@@ -772,7 +777,7 @@
+         }
+ 
+         public static Panda.Gene byName(String name) {
+-            return (Panda.Gene) Panda.Gene.CODEC.byName(name, (Enum) Panda.Gene.NORMAL);
++            return (Panda.Gene) Panda.Gene.CODEC.byName(name, Panda.Gene.NORMAL); // CraftBukkit - decompile error
+         }
+ 
+         public static Panda.Gene getRandom(RandomSource random) {
+@@ -876,10 +881,10 @@
+         private final Panda panda;
+ 
+         public PandaAvoidGoal(Panda panda, Class<T> fleeFromType, float distance, double slowSpeed, double fastSpeed) {
+-            Predicate predicate = EntitySelector.NO_SPECTATORS;
++            // Predicate predicate = IEntitySelector.NO_SPECTATORS;
+ 
+-            Objects.requireNonNull(predicate);
+-            super(panda, fleeFromType, distance, slowSpeed, fastSpeed, predicate::test);
++            // Objects.requireNonNull(predicate);
++            super(panda, fleeFromType, distance, slowSpeed, fastSpeed, EntitySelector.NO_SPECTATORS::test);
+             this.panda = panda;
+         }
+ 
+@@ -1116,7 +1121,7 @@
+         @Override
+         protected void alertOther(Mob mob, LivingEntity target) {
+             if (mob instanceof Panda && mob.isAggressive()) {
+-                mob.setTarget(target);
++                mob.setTarget(target, EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY, true); // CraftBukkit
+             }
+ 
+         }

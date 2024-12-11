@@ -21,10 +21,10 @@ public class ConsoleCommandCompleter implements Completer {
         Waitable<List<String>> waitable = new Waitable<List<String>>() {
             @Override
             protected List<String> evaluate() {
-                List<String> offers = server.getCommandMap().tabComplete(server.getConsoleSender(), buffer);
+                List<String> offers = ConsoleCommandCompleter.this.server.getCommandMap().tabComplete(ConsoleCommandCompleter.this.server.getConsoleSender(), buffer);
 
-                TabCompleteEvent tabEvent = new TabCompleteEvent(server.getConsoleSender(), buffer, (offers == null) ? Collections.EMPTY_LIST : offers);
-                server.getPluginManager().callEvent(tabEvent);
+                TabCompleteEvent tabEvent = new TabCompleteEvent(ConsoleCommandCompleter.this.server.getConsoleSender(), buffer, (offers == null) ? Collections.EMPTY_LIST : offers);
+                ConsoleCommandCompleter.this.server.getPluginManager().callEvent(tabEvent);
 
                 return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
             }

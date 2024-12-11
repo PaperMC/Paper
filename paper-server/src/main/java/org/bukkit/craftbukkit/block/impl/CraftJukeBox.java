@@ -9,16 +9,16 @@ public final class CraftJukeBox extends org.bukkit.craftbukkit.block.data.CraftB
         super();
     }
 
-    public CraftJukeBox(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftJukeBox(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftJukebox
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean HAS_RECORD = getBoolean(net.minecraft.world.level.block.BlockJukeBox.class, "has_record");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty HAS_RECORD = getBoolean(net.minecraft.world.level.block.JukeboxBlock.class, "has_record");
 
     @Override
     public boolean hasRecord() {
-        return get(HAS_RECORD);
+        return this.get(CraftJukeBox.HAS_RECORD);
     }
 }

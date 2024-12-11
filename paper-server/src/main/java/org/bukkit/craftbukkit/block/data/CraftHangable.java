@@ -4,15 +4,15 @@ import org.bukkit.block.data.Hangable;
 
 public abstract class CraftHangable extends CraftBlockData implements Hangable {
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean HANGING = getBoolean("hanging");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty HANGING = getBoolean("hanging");
 
     @Override
     public boolean isHanging() {
-        return get(HANGING);
+        return this.get(CraftHangable.HANGING);
     }
 
     @Override
     public void setHanging(boolean hanging) {
-        set(HANGING, hanging);
+        this.set(CraftHangable.HANGING, hanging);
     }
 }

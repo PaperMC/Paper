@@ -1,0 +1,75 @@
+--- a/net/minecraft/world/level/material/FlowingFluid.java
++++ b/net/minecraft/world/level/material/FlowingFluid.java
+@@ -31,6 +31,14 @@
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.phys.shapes.Shapes;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++// CraftBukkit start
++import org.bukkit.block.BlockFace;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.block.BlockFromToEvent;
++import org.bukkit.event.block.FluidLevelChangeEvent;
++// CraftBukkit end
+ 
+ public abstract class FlowingFluid extends Fluid {
+ 
+@@ -135,6 +143,15 @@
+                 Fluid fluidtype = fluid2.getType();
+ 
+                 if (fluid1.canBeReplacedWith(world, blockposition1, fluidtype, Direction.DOWN) && FlowingFluid.canHoldSpecificFluid(world, blockposition1, iblockdata1, fluidtype)) {
++                    // CraftBukkit start
++                    org.bukkit.block.Block source = CraftBlock.at(world, fluidPos);
++                    BlockFromToEvent event = new BlockFromToEvent(source, BlockFace.DOWN);
++                    world.getCraftServer().getPluginManager().callEvent(event);
++
++                    if (event.isCancelled()) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     this.spreadTo(world, blockposition1, iblockdata1, Direction.DOWN, fluid2);
+                     if (this.sourceNeighborCount(world, fluidPos) >= 3) {
+                         this.spreadToSides(world, fluidPos, fluidState, blockState);
+@@ -167,7 +184,16 @@
+                 Direction enumdirection = (Direction) entry.getKey();
+                 FluidState fluid1 = (FluidState) entry.getValue();
+                 BlockPos blockposition1 = pos.relative(enumdirection);
++
++                // CraftBukkit start
++                org.bukkit.block.Block source = CraftBlock.at(world, pos);
++                BlockFromToEvent event = new BlockFromToEvent(source, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(enumdirection));
++                world.getCraftServer().getPluginManager().callEvent(event);
+ 
++                if (event.isCancelled()) {
++                    continue;
++                }
++                // CraftBukkit end
+                 this.spreadTo(world, blockposition1, world.getBlockState(blockposition1), enumdirection, fluid1);
+             }
+ 
+@@ -444,10 +470,24 @@
+             if (fluid1.isEmpty()) {
+                 fluidState = fluid1;
+                 blockState = Blocks.AIR.defaultBlockState();
++                // CraftBukkit start
++                FluidLevelChangeEvent event = CraftEventFactory.callFluidLevelChangeEvent(world, pos, blockState);
++                if (event.isCancelled()) {
++                    return;
++                }
++                blockState = ((CraftBlockData) event.getNewData()).getState();
++                // CraftBukkit end
+                 world.setBlock(pos, blockState, 3);
+             } else if (!fluid1.equals(fluidState)) {
+                 fluidState = fluid1;
+                 blockState = fluid1.createLegacyBlock();
++                // CraftBukkit start
++                FluidLevelChangeEvent event = CraftEventFactory.callFluidLevelChangeEvent(world, pos, blockState);
++                if (event.isCancelled()) {
++                    return;
++                }
++                blockState = ((CraftBlockData) event.getNewData()).getState();
++                // CraftBukkit end
+                 world.setBlock(pos, blockState, 3);
+                 world.scheduleTick(pos, fluid1.getType(), i);
+             }

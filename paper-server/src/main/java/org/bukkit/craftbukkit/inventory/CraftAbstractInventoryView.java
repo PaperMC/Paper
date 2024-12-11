@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.InventoryUtils;
-import net.minecraft.world.entity.player.EntityHuman;
+import net.minecraft.world.Containers;
+import net.minecraft.world.entity.player.Player;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.Inventory;
@@ -15,31 +15,31 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
 
     @Override
     public void setItem(final int slot, @Nullable final ItemStack item) {
-        Inventory inventory = getInventory(slot);
+        Inventory inventory = this.getInventory(slot);
         if (inventory != null) {
-            inventory.setItem(convertSlot(slot), item);
+            inventory.setItem(this.convertSlot(slot), item);
         } else if (item != null) {
-            EntityHuman handle = ((CraftHumanEntity) getPlayer()).getHandle();
-            InventoryUtils.dropItemStack(handle.level(), handle.getX(), handle.getY(), handle.getZ(), CraftItemStack.asNMSCopy(item));
+            Player handle = ((CraftHumanEntity) this.getPlayer()).getHandle();
+            Containers.dropItemStack(handle.level(), handle.getX(), handle.getY(), handle.getZ(), CraftItemStack.asNMSCopy(item));
         }
     }
 
     @Nullable
     @Override
     public ItemStack getItem(final int slot) {
-        Inventory inventory = getInventory(slot);
-        return (inventory == null) ? null : inventory.getItem(convertSlot(slot));
+        Inventory inventory = this.getInventory(slot);
+        return (inventory == null) ? null : inventory.getItem(this.convertSlot(slot));
     }
 
     @Override
     public void setCursor(@Nullable final ItemStack item) {
-        getPlayer().setItemOnCursor(item);
+        this.getPlayer().setItemOnCursor(item);
     }
 
     @Nullable
     @Override
     public ItemStack getCursor() {
-        return getPlayer().getItemOnCursor();
+        return this.getPlayer().getItemOnCursor();
     }
 
     @Nullable
@@ -51,18 +51,18 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
             return null;
         }
         Preconditions.checkArgument(rawSlot >= 0, "Negative, non outside slot %s", rawSlot);
-        Preconditions.checkArgument(rawSlot < countSlots(), "Slot %s greater than inventory slot count", rawSlot);
+        Preconditions.checkArgument(rawSlot < this.countSlots(), "Slot %s greater than inventory slot count", rawSlot);
 
-        if (rawSlot < getTopInventory().getSize()) {
-            return getTopInventory();
+        if (rawSlot < this.getTopInventory().getSize()) {
+            return this.getTopInventory();
         } else {
-            return getBottomInventory();
+            return this.getBottomInventory();
         }
     }
 
     @Override
     public int convertSlot(final int rawSlot) {
-        int numInTop = getTopInventory().getSize();
+        int numInTop = this.getTopInventory().getSize();
         // Index from the top inventory as having slots from [0,size]
         if (rawSlot < numInTop) {
             return rawSlot;
@@ -73,7 +73,7 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
 
         // Player crafting slots are indexed differently. The matrix is caught by the first return.
         // Creative mode is the same, except that you can't see the crafting slots (but the IDs are still used)
-        if (getType() == InventoryType.CRAFTING || getType() == InventoryType.CREATIVE) {
+        if (this.getType() == InventoryType.CRAFTING || this.getType() == InventoryType.CREATIVE) {
             /*
              * Raw Slots:
              *
@@ -210,16 +210,16 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
 
     @Override
     public void close() {
-        getPlayer().closeInventory();
+        this.getPlayer().closeInventory();
     }
 
     @Override
     public int countSlots() {
-        return getTopInventory().getSize() + getBottomInventory().getSize();
+        return this.getTopInventory().getSize() + this.getBottomInventory().getSize();
     }
 
     @Override
     public boolean setProperty(@NotNull final Property prop, final int value) {
-        return getPlayer().setWindowProperty(prop, value);
+        return this.getPlayer().setWindowProperty(prop, value);
     }
 }

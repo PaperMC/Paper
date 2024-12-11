@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.scoreboard;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.world.scores.Scoreboard;
-import net.minecraft.world.scores.ScoreboardObjective;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.scoreboard.Criteria;
@@ -12,67 +11,67 @@ import org.bukkit.scoreboard.RenderType;
 import org.bukkit.scoreboard.Score;
 
 final class CraftObjective extends CraftScoreboardComponent implements Objective {
-    private final ScoreboardObjective objective;
+    private final net.minecraft.world.scores.Objective objective;
     private final CraftCriteria criteria;
 
-    CraftObjective(CraftScoreboard scoreboard, ScoreboardObjective objective) {
+    CraftObjective(CraftScoreboard scoreboard, net.minecraft.world.scores.Objective objective) {
         super(scoreboard);
         this.objective = objective;
         this.criteria = CraftCriteria.getFromNMS(objective);
     }
 
-    ScoreboardObjective getHandle() {
-        return objective;
+    net.minecraft.world.scores.Objective getHandle() {
+        return this.objective;
     }
 
     @Override
     public String getName() {
-        checkState();
+        this.checkState();
 
-        return objective.getName();
+        return this.objective.getName();
     }
 
     @Override
     public String getDisplayName() {
-        checkState();
+        this.checkState();
 
-        return CraftChatMessage.fromComponent(objective.getDisplayName());
+        return CraftChatMessage.fromComponent(this.objective.getDisplayName());
     }
 
     @Override
     public void setDisplayName(String displayName) {
         Preconditions.checkArgument(displayName != null, "Display name cannot be null");
-        checkState();
+        this.checkState();
 
-        objective.setDisplayName(CraftChatMessage.fromString(displayName)[0]); // SPIGOT-4112: not nullable
+        this.objective.setDisplayName(CraftChatMessage.fromString(displayName)[0]); // SPIGOT-4112: not nullable
     }
 
     @Override
     public String getCriteria() {
-        checkState();
+        this.checkState();
 
-        return criteria.bukkitName;
+        return this.criteria.bukkitName;
     }
 
     @Override
     public Criteria getTrackedCriteria() {
-        checkState();
+        this.checkState();
 
-        return criteria;
+        return this.criteria;
     }
 
     @Override
     public boolean isModifiable() {
-        checkState();
+        this.checkState();
 
-        return !criteria.criteria.isReadOnly();
+        return !this.criteria.criteria.isReadOnly();
     }
 
     @Override
     public void setDisplaySlot(DisplaySlot slot) {
-        CraftScoreboard scoreboard = checkState();
+        CraftScoreboard scoreboard = this.checkState();
         Scoreboard board = scoreboard.board;
-        ScoreboardObjective objective = this.objective;
+        net.minecraft.world.scores.Objective objective = this.objective;
 
         for (net.minecraft.world.scores.DisplaySlot i : net.minecraft.world.scores.DisplaySlot.values()) {
             if (board.getDisplayObjective(i) == objective) {
@@ -81,15 +80,15 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         }
         if (slot != null) {
             net.minecraft.world.scores.DisplaySlot slotNumber = CraftScoreboardTranslations.fromBukkitSlot(slot);
-            board.setDisplayObjective(slotNumber, getHandle());
+            board.setDisplayObjective(slotNumber, this.getHandle());
         }
     }
 
     @Override
     public DisplaySlot getDisplaySlot() {
-        CraftScoreboard scoreboard = checkState();
+        CraftScoreboard scoreboard = this.checkState();
         Scoreboard board = scoreboard.board;
-        ScoreboardObjective objective = this.objective;
+        net.minecraft.world.scores.Objective objective = this.objective;
 
         for (net.minecraft.world.scores.DisplaySlot i : net.minecraft.world.scores.DisplaySlot.values()) {
             if (board.getDisplayObjective(i) == objective) {
@@ -102,21 +101,21 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     @Override
     public void setRenderType(RenderType renderType) {
         Preconditions.checkArgument(renderType != null, "RenderType cannot be null");
-        checkState();
+        this.checkState();
 
         this.objective.setRenderType(CraftScoreboardTranslations.fromBukkitRender(renderType));
     }
 
     @Override
     public RenderType getRenderType() {
-        checkState();
+        this.checkState();
 
         return CraftScoreboardTranslations.toBukkitRender(this.objective.getRenderType());
     }
 
     @Override
     public Score getScore(OfflinePlayer player) {
-        checkState();
+        this.checkState();
 
         return new CraftScore(this, CraftScoreboard.getScoreHolder(player));
     }
@@ -125,23 +124,23 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     public Score getScore(String entry) {
         Preconditions.checkArgument(entry != null, "Entry cannot be null");
         Preconditions.checkArgument(entry.length() <= Short.MAX_VALUE, "Score '" + entry + "' is longer than the limit of 32767 characters");
-        checkState();
+        this.checkState();
 
         return new CraftScore(this, CraftScoreboard.getScoreHolder(entry));
     }
 
     @Override
     public void unregister() {
-        CraftScoreboard scoreboard = checkState();
+        CraftScoreboard scoreboard = this.checkState();
 
-        scoreboard.board.removeObjective(objective);
+        scoreboard.board.removeObjective(this.objective);
     }
 
     @Override
     CraftScoreboard checkState() {
-        Preconditions.checkState(getScoreboard().board.getObjective(objective.getName()) != null, "Unregistered scoreboard component");
+        Preconditions.checkState(this.getScoreboard().board.getObjective(this.objective.getName()) != null, "Unregistered scoreboard component");
 
-        return getScoreboard();
+        return this.getScoreboard();
     }
 
     @Override
@@ -156,7 +155,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (this.getClass() != obj.getClass()) {
             return false;
         }
         final CraftObjective other = (CraftObjective) obj;

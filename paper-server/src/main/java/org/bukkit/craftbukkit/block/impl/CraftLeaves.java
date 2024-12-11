@@ -9,46 +9,46 @@ public final class CraftLeaves extends org.bukkit.craftbukkit.block.data.CraftBl
         super();
     }
 
-    public CraftLeaves(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftLeaves(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftLeaves
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger DISTANCE = getInteger(net.minecraft.world.level.block.BlockLeaves.class, "distance");
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean PERSISTENT = getBoolean(net.minecraft.world.level.block.BlockLeaves.class, "persistent");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty DISTANCE = getInteger(net.minecraft.world.level.block.LeavesBlock.class, "distance");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty PERSISTENT = getBoolean(net.minecraft.world.level.block.LeavesBlock.class, "persistent");
 
     @Override
     public boolean isPersistent() {
-        return get(PERSISTENT);
+        return this.get(CraftLeaves.PERSISTENT);
     }
 
     @Override
     public void setPersistent(boolean persistent) {
-        set(PERSISTENT, persistent);
+        this.set(CraftLeaves.PERSISTENT, persistent);
     }
 
     @Override
     public int getDistance() {
-        return get(DISTANCE);
+        return this.get(CraftLeaves.DISTANCE);
     }
 
     @Override
     public void setDistance(int distance) {
-        set(DISTANCE, distance);
+        this.set(CraftLeaves.DISTANCE, distance);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftWaterlogged
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.world.level.block.BlockLeaves.class, "waterlogged");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED = getBoolean(net.minecraft.world.level.block.LeavesBlock.class, "waterlogged");
 
     @Override
     public boolean isWaterlogged() {
-        return get(WATERLOGGED);
+        return this.get(CraftLeaves.WATERLOGGED);
     }
 
     @Override
     public void setWaterlogged(boolean waterlogged) {
-        set(WATERLOGGED, waterlogged);
+        this.set(CraftLeaves.WATERLOGGED, waterlogged);
     }
 }

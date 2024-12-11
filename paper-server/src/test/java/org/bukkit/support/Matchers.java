@@ -16,17 +16,17 @@ public final class Matchers {
         private final int expected;
 
         SameHash(T object) {
-            expected = object.hashCode();
+            this.expected = object.hashCode();
         }
 
         @Override
         public boolean matches(Object item) {
-            return item.hashCode() == expected;
+            return item.hashCode() == this.expected;
         }
 
         @Override
         public void describeTo(Description description) {
-            description.appendValue(expected);
+            description.appendValue(this.expected);
         }
     }
 }

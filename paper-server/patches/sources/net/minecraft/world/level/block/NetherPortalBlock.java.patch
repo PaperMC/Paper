@@ -1,0 +1,132 @@
+--- a/net/minecraft/world/level/block/NetherPortalBlock.java
++++ b/net/minecraft/world/level/block/NetherPortalBlock.java
+@@ -32,12 +32,19 @@
+ import net.minecraft.world.level.block.state.properties.EnumProperty;
+ import net.minecraft.world.level.border.WorldBorder;
+ import net.minecraft.world.level.dimension.DimensionType;
++import net.minecraft.world.level.dimension.LevelStem;
+ import net.minecraft.world.level.portal.PortalShape;
+ import net.minecraft.world.level.portal.TeleportTransition;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
+ import org.slf4j.Logger;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.craftbukkit.event.CraftPortalEvent;
++import org.bukkit.craftbukkit.util.CraftLocation;
++import org.bukkit.event.entity.EntityPortalEnterEvent;
++import org.bukkit.event.player.PlayerTeleportEvent;
++// CraftBukkit end
+ 
+ public class NetherPortalBlock extends Block implements Portal {
+ 
+@@ -77,7 +84,8 @@
+             }
+ 
+             if (world.getBlockState(pos).isValidSpawn(world, pos, EntityType.ZOMBIFIED_PIGLIN)) {
+-                Entity entity = EntityType.ZOMBIFIED_PIGLIN.spawn(world, pos.above(), EntitySpawnReason.STRUCTURE);
++                // CraftBukkit - set spawn reason to NETHER_PORTAL
++                Entity entity = EntityType.ZOMBIFIED_PIGLIN.spawn(world, pos.above(), EntitySpawnReason.STRUCTURE, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NETHER_PORTAL);
+ 
+                 if (entity != null) {
+                     entity.setPortalCooldown();
+@@ -104,6 +112,10 @@
+     @Override
+     protected void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {
+         if (entity.canUsePortal(false)) {
++            // CraftBukkit start - Entity in portal
++            EntityPortalEnterEvent event = new EntityPortalEnterEvent(entity.getBukkitEntity(), new org.bukkit.Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ()));
++            world.getCraftServer().getPluginManager().callEvent(event);
++            // CraftBukkit end
+             entity.setAsInsidePortal(this, pos);
+         }
+ 
+@@ -121,51 +133,66 @@
+     @Nullable
+     @Override
+     public TeleportTransition getPortalDestination(ServerLevel world, Entity entity, BlockPos pos) {
+-        ResourceKey<Level> resourcekey = world.dimension() == Level.NETHER ? Level.OVERWORLD : Level.NETHER;
++        // CraftBukkit start
++        ResourceKey<Level> resourcekey = world.getTypeKey() == LevelStem.NETHER ? Level.OVERWORLD : Level.NETHER;
+         ServerLevel worldserver1 = world.getServer().getLevel(resourcekey);
+ 
+         if (worldserver1 == null) {
+-            return null;
++            return new TeleportTransition(PlayerTeleportEvent.TeleportCause.NETHER_PORTAL); // always fire event in case plugins wish to change it
+         } else {
+-            boolean flag = worldserver1.dimension() == Level.NETHER;
++            boolean flag = worldserver1.getTypeKey() == LevelStem.NETHER;
++            // CraftBukkit end
+             WorldBorder worldborder = worldserver1.getWorldBorder();
+             double d0 = DimensionType.getTeleportationScale(world.dimensionType(), worldserver1.dimensionType());
+             BlockPos blockposition1 = worldborder.clampToBounds(entity.getX() * d0, entity.getY(), entity.getZ() * d0);
++            // CraftBukkit start
++            CraftPortalEvent event = entity.callPortalEvent(entity, CraftLocation.toBukkit(blockposition1, worldserver1.getWorld()), PlayerTeleportEvent.TeleportCause.NETHER_PORTAL, flag ? 16 : 128, 16);
++            if (event == null) {
++                return null;
++            }
++            worldserver1 = ((CraftWorld) event.getTo().getWorld()).getHandle();
++            worldborder = worldserver1.getWorldBorder();
++            blockposition1 = worldborder.clampToBounds(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ());
+ 
+-            return this.getExitPortal(worldserver1, entity, pos, blockposition1, flag, worldborder);
++            return this.getExitPortal(worldserver1, entity, pos, blockposition1, flag, worldborder, event.getSearchRadius(), event.getCanCreatePortal(), event.getCreationRadius());
+         }
+     }
+ 
+     @Nullable
+-    private TeleportTransition getExitPortal(ServerLevel world, Entity entity, BlockPos pos, BlockPos scaledPos, boolean inNether, WorldBorder worldBorder) {
+-        Optional<BlockPos> optional = world.getPortalForcer().findClosestPortalPosition(scaledPos, inNether, worldBorder);
++    private TeleportTransition getExitPortal(ServerLevel worldserver, Entity entity, BlockPos blockposition, BlockPos blockposition1, boolean flag, WorldBorder worldborder, int searchRadius, boolean canCreatePortal, int createRadius) {
++        Optional<BlockPos> optional = worldserver.getPortalForcer().findClosestPortalPosition(blockposition1, worldborder, searchRadius);
+         BlockUtil.FoundRectangle blockutil_rectangle;
+         TeleportTransition.PostTeleportTransition teleporttransition_a;
+ 
+         if (optional.isPresent()) {
+             BlockPos blockposition2 = (BlockPos) optional.get();
+-            BlockState iblockdata = world.getBlockState(blockposition2);
++            BlockState iblockdata = worldserver.getBlockState(blockposition2);
+ 
+             blockutil_rectangle = BlockUtil.getLargestRectangleAround(blockposition2, (Direction.Axis) iblockdata.getValue(BlockStateProperties.HORIZONTAL_AXIS), 21, Direction.Axis.Y, 21, (blockposition3) -> {
+-                return world.getBlockState(blockposition3) == iblockdata;
++                return worldserver.getBlockState(blockposition3) == iblockdata;
+             });
+             teleporttransition_a = TeleportTransition.PLAY_PORTAL_SOUND.then((entity1) -> {
+                 entity1.placePortalTicket(blockposition2);
+             });
+-        } else {
+-            Direction.Axis enumdirection_enumaxis = (Direction.Axis) entity.level().getBlockState(pos).getOptionalValue(NetherPortalBlock.AXIS).orElse(Direction.Axis.X);
+-            Optional<BlockUtil.FoundRectangle> optional1 = world.getPortalForcer().createPortal(scaledPos, enumdirection_enumaxis);
++        } else if (canCreatePortal) {
++            Direction.Axis enumdirection_enumaxis = (Direction.Axis) entity.level().getBlockState(blockposition).getOptionalValue(NetherPortalBlock.AXIS).orElse(Direction.Axis.X);
++            Optional<BlockUtil.FoundRectangle> optional1 = worldserver.getPortalForcer().createPortal(blockposition1, enumdirection_enumaxis, entity, createRadius);
++            // CraftBukkit end
+ 
+             if (optional1.isEmpty()) {
+-                NetherPortalBlock.LOGGER.error("Unable to create a portal, likely target out of worldborder");
++                // BlockPortal.LOGGER.error("Unable to create a portal, likely target out of worldborder"); // CraftBukkit
+                 return null;
+             }
+ 
+             blockutil_rectangle = (BlockUtil.FoundRectangle) optional1.get();
+             teleporttransition_a = TeleportTransition.PLAY_PORTAL_SOUND.then(TeleportTransition.PLACE_PORTAL_TICKET);
++            // CraftBukkit start
++        } else {
++            return null;
++            // CraftBukkit end
+         }
+ 
+-        return NetherPortalBlock.getDimensionTransitionFromExit(entity, pos, blockutil_rectangle, world, teleporttransition_a);
++        return NetherPortalBlock.getDimensionTransitionFromExit(entity, blockposition, blockutil_rectangle, worldserver, teleporttransition_a);
+     }
+ 
+     private static TeleportTransition getDimensionTransitionFromExit(Entity entity, BlockPos pos, BlockUtil.FoundRectangle exitPortalRectangle, ServerLevel world, TeleportTransition.PostTeleportTransition postDimensionTransition) {
+@@ -203,7 +230,7 @@
+         Vec3 vec3d1 = new Vec3((double) blockposition.getX() + (flag ? d2 : d4), (double) blockposition.getY() + d3, (double) blockposition.getZ() + (flag ? d4 : d2));
+         Vec3 vec3d2 = PortalShape.findCollisionFreePosition(vec3d1, world, entity, entitysize);
+ 
+-        return new TeleportTransition(world, vec3d2, Vec3.ZERO, (float) i, 0.0F, Relative.union(Relative.DELTA, Relative.ROTATION), postDimensionTransition);
++        return new TeleportTransition(world, vec3d2, Vec3.ZERO, (float) i, 0.0F, Relative.union(Relative.DELTA, Relative.ROTATION), postDimensionTransition, PlayerTeleportEvent.TeleportCause.NETHER_PORTAL); // CraftBukkit
+     }
+ 
+     @Override

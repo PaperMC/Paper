@@ -7,15 +7,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
-import net.minecraft.core.BlockPosition;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.level.ChunkCoordIntPair;
-import net.minecraft.world.level.GeneratorAccessSeed;
-import net.minecraft.world.level.biome.BiomeBase;
-import net.minecraft.world.level.chunk.IChunkAccess;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import org.bukkit.HeightMap;
@@ -34,7 +33,7 @@ import org.bukkit.util.BoundingBox;
 
 public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRegion {
 
-    private final WeakReference<GeneratorAccessSeed> weakAccess;
+    private final WeakReference<WorldGenLevel> weakAccess;
     private final int centerChunkX;
     private final int centerChunkZ;
     // Buffer is one chunk (16 blocks), can be seen in ChunkStatus#q
@@ -50,24 +49,24 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     // Prevents crash for chunks which are converting from 1.17 to 1.18
     private final List<net.minecraft.world.entity.Entity> outsideEntities = new ArrayList<>();
 
-    public CraftLimitedRegion(GeneratorAccessSeed access, ChunkCoordIntPair center) {
+    public CraftLimitedRegion(WorldGenLevel access, ChunkPos center) {
         this.weakAccess = new WeakReference<>(access);
-        centerChunkX = center.x;
-        centerChunkZ = center.z;
+        this.centerChunkX = center.x;
+        this.centerChunkZ = center.z;
 
         World world = access.getMinecraftWorld().getWorld();
-        int xCenter = centerChunkX << 4;
-        int zCenter = centerChunkZ << 4;
-        int xMin = xCenter - getBuffer();
-        int zMin = zCenter - getBuffer();
-        int xMax = xCenter + getBuffer() + 16;
-        int zMax = zCenter + getBuffer() + 16;
+        int xCenter = this.centerChunkX << 4;
+        int zCenter = this.centerChunkZ << 4;
+        int xMin = xCenter - this.getBuffer();
+        int zMin = zCenter - this.getBuffer();
+        int xMax = xCenter + this.getBuffer() + 16;
+        int zMax = zCenter + this.getBuffer() + 16;
 
         this.region = new BoundingBox(xMin, world.getMinHeight(), zMin, xMax, world.getMaxHeight(), zMax);
     }
 
-    public GeneratorAccessSeed getHandle() {
-        GeneratorAccessSeed handle = weakAccess.get();
+    public WorldGenLevel getHandle() {
+        WorldGenLevel handle = this.weakAccess.get();
 
         Preconditions.checkState(handle != null, "GeneratorAccessSeed no longer present, are you using it in a different tick?");
 
@@ -75,22 +74,22 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
     }
 
     public void loadEntities() {
-        if (entitiesLoaded) {
+        if (this.entitiesLoaded) {
             return;
         }
 
-        GeneratorAccessSeed access = getHandle();
+        WorldGenLevel access = this.getHandle();
         // load entities which are already present
-        for (int x = -(buffer >> 4); x <= (buffer >> 4); x++) {
-            for (int z = -(buffer >> 4); z <= (buffer >> 4); z++) {
-                ProtoChunk chunk = (ProtoChunk) access.getChunk(centerChunkX + x, centerChunkZ + z);
-                for (NBTTagCompound compound : chunk.getEntities()) {
-                    EntityTypes.loadEntityRecursive(compound, access.getMinecraftWorld(), EntitySpawnReason.LOAD, (entity) -> {
-                        if (region.contains(entity.getX(), entity.getY(), entity.getZ())) {
+        for (int x = -(this.buffer >> 4); x <= (this.buffer >> 4); x++) {
+            for (int z = -(this.buffer >> 4); z <= (this.buffer >> 4); z++) {
+                ProtoChunk chunk = (ProtoChunk) access.getChunk(this.centerChunkX + x, this.centerChunkZ + z);
+                for (CompoundTag compound : chunk.getEntities()) {
+                    EntityType.loadEntityRecursive(compound, access.getMinecraftWorld(), EntitySpawnReason.LOAD, (entity) -> {
+                        if (this.region.contains(entity.getX(), entity.getY(), entity.getZ())) {
                             entity.generation = true;
-                            entities.add(entity);
+                            this.entities.add(entity);
                         } else {
-                            outsideEntities.add(entity);
+                            this.outsideEntities.add(entity);
                         }
                         return entity;
                     });
@@ -98,62 +97,62 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
             }
         }
 
-        entitiesLoaded = true;
+        this.entitiesLoaded = true;
     }
 
     public void saveEntities() {
-        GeneratorAccessSeed access = getHandle();
+        WorldGenLevel access = this.getHandle();
         // We don't clear existing entities when they are not loaded and therefore not modified
-        if (entitiesLoaded) {
-            for (int x = -(buffer >> 4); x <= (buffer >> 4); x++) {
-                for (int z = -(buffer >> 4); z <= (buffer >> 4); z++) {
-                    ProtoChunk chunk = (ProtoChunk) access.getChunk(centerChunkX + x, centerChunkZ + z);
+        if (this.entitiesLoaded) {
+            for (int x = -(this.buffer >> 4); x <= (this.buffer >> 4); x++) {
+                for (int z = -(this.buffer >> 4); z <= (this.buffer >> 4); z++) {
+                    ProtoChunk chunk = (ProtoChunk) access.getChunk(this.centerChunkX + x, this.centerChunkZ + z);
                     chunk.getEntities().clear();
                 }
             }
         }
 
-        for (net.minecraft.world.entity.Entity entity : entities) {
+        for (net.minecraft.world.entity.Entity entity : this.entities) {
             if (entity.isAlive()) {
                 // check if entity is still in region or if it got teleported outside it
-                Preconditions.checkState(region.contains(entity.getX(), entity.getY(), entity.getZ()), "Entity %s is not in the region", entity);
+                Preconditions.checkState(this.region.contains(entity.getX(), entity.getY(), entity.getZ()), "Entity %s is not in the region", entity);
                 access.addFreshEntityWithPassengers(entity);
             }
         }
 
-        for (net.minecraft.world.entity.Entity entity : outsideEntities) {
+        for (net.minecraft.world.entity.Entity entity : this.outsideEntities) {
             access.addFreshEntityWithPassengers(entity);
         }
     }
 
     public void breakLink() {
-        weakAccess.clear();
+        this.weakAccess.clear();
     }
 
     @Override
     public int getBuffer() {
-        return buffer;
+        return this.buffer;
     }
 
     @Override
     public boolean isInRegion(Location location) {
-        return region.contains(location.getX(), location.getY(), location.getZ());
+        return this.region.contains(location.getX(), location.getY(), location.getZ());
     }
 
     @Override
     public boolean isInRegion(int x, int y, int z) {
-        return region.contains(x, y, z);
+        return this.region.contains(x, y, z);
     }
 
     @Override
     public List<BlockState> getTileEntities() {
         List<BlockState> blockStates = new ArrayList<>();
 
-        for (int x = -(buffer >> 4); x <= (buffer >> 4); x++) {
-            for (int z = -(buffer >> 4); z <= (buffer >> 4); z++) {
-                ProtoChunk chunk = (ProtoChunk) getHandle().getChunk(centerChunkX + x, centerChunkZ + z);
-                for (BlockPosition position : chunk.getBlockEntitiesPos()) {
-                    blockStates.add(getBlockState(position.getX(), position.getY(), position.getZ()));
+        for (int x = -(this.buffer >> 4); x <= (this.buffer >> 4); x++) {
+            for (int z = -(this.buffer >> 4); z <= (this.buffer >> 4); z++) {
+                ProtoChunk chunk = (ProtoChunk) this.getHandle().getChunk(this.centerChunkX + x, this.centerChunkZ + z);
+                for (BlockPos position : chunk.getBlockEntitiesPos()) {
+                    blockStates.add(this.getBlockState(position.getX(), position.getY(), position.getZ()));
                 }
             }
         }
@@ -163,97 +162,97 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
 
     @Override
     public Biome getBiome(int x, int y, int z) {
-        Preconditions.checkArgument(isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
         return super.getBiome(x, y, z);
     }
 
     @Override
-    public void setBiome(int x, int y, int z, Holder<BiomeBase> biomeBase) {
-        Preconditions.checkArgument(isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
-        IChunkAccess chunk = getHandle().getChunk(x >> 4, z >> 4, ChunkStatus.EMPTY);
+    public void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biomeBase) {
+        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+        ChunkAccess chunk = this.getHandle().getChunk(x >> 4, z >> 4, ChunkStatus.EMPTY);
         chunk.setBiome(x >> 2, y >> 2, z >> 2, biomeBase);
     }
 
     @Override
     public BlockState getBlockState(int x, int y, int z) {
-        Preconditions.checkArgument(isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
         return super.getBlockState(x, y, z);
     }
 
     @Override
     public BlockData getBlockData(int x, int y, int z) {
-        Preconditions.checkArgument(isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
         return super.getBlockData(x, y, z);
     }
 
     @Override
     public Material getType(int x, int y, int z) {
-        Preconditions.checkArgument(isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
         return super.getType(x, y, z);
     }
 
     @Override
     public void setBlockData(int x, int y, int z, BlockData blockData) {
-        Preconditions.checkArgument(isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
+        Preconditions.checkArgument(this.isInRegion(x, y, z), "Coordinates %s, %s, %s are not in the region", x, y, z);
         super.setBlockData(x, y, z, blockData);
     }
 
     @Override
     public int getHighestBlockYAt(int x, int z) {
-        Preconditions.checkArgument(isInRegion(x, region.getCenter().getBlockY(), z), "Coordinates %s, %s are not in the region", x, z);
+        Preconditions.checkArgument(this.isInRegion(x, this.region.getCenter().getBlockY(), z), "Coordinates %s, %s are not in the region", x, z);
         return super.getHighestBlockYAt(x, z);
     }
 
     @Override
     public int getHighestBlockYAt(Location location) {
-        Preconditions.checkArgument(isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
         return super.getHighestBlockYAt(location);
     }
 
     @Override
     public int getHighestBlockYAt(int x, int z, HeightMap heightMap) {
-        Preconditions.checkArgument(isInRegion(x, region.getCenter().getBlockY(), z), "Coordinates %s, %s are not in the region", x, z);
+        Preconditions.checkArgument(this.isInRegion(x, this.region.getCenter().getBlockY(), z), "Coordinates %s, %s are not in the region", x, z);
         return super.getHighestBlockYAt(x, z, heightMap);
     }
 
     @Override
     public int getHighestBlockYAt(Location location, HeightMap heightMap) {
-        Preconditions.checkArgument(isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
         return super.getHighestBlockYAt(location, heightMap);
     }
 
     @Override
     public boolean generateTree(Location location, Random random, TreeType treeType) {
-        Preconditions.checkArgument(isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
         return super.generateTree(location, random, treeType);
     }
 
     @Override
     public boolean generateTree(Location location, Random random, TreeType treeType, Consumer<? super BlockState> consumer) {
-        Preconditions.checkArgument(isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
         return super.generateTree(location, random, treeType, consumer);
     }
 
     @Override
     public Collection<net.minecraft.world.entity.Entity> getNMSEntities() {
         // Only load entities if we need them
-        loadEntities();
-        return new ArrayList<>(entities);
+        this.loadEntities();
+        return new ArrayList<>(this.entities);
     }
 
     @Override
     public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
-        Preconditions.checkArgument(isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        Preconditions.checkArgument(this.isInRegion(location), "Coordinates %s, %s, %s are not in the region", location.getBlockX(), location.getBlockY(), location.getBlockZ());
         return super.spawn(location, clazz, function, reason);
     }
 
     @Override
     public void addEntityToWorld(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason) {
-        entities.add(entity);
+        this.entities.add(entity);
     }
 
     @Override
     public void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason) {
-        entities.add(entity);
+        this.entities.add(entity);
     }
 }

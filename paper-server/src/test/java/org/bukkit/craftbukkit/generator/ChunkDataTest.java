@@ -37,54 +37,54 @@ public class ChunkDataTest {
     @Test
     public void testMinHeight() {
         OldCraftChunkData data = new OldCraftChunkData(-128, 128, RegistryHelper.getBiomes());
-        assertTrue(testSetBlock(data, 0, -256, 0, RED_WOOL, AIR), "Could not set block below min height");
-        assertTrue(testSetBlock(data, 0, -64, 0, RED_WOOL, RED_WOOL), "Could set block above min height");
+        assertTrue(this.testSetBlock(data, 0, -256, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.AIR), "Could not set block below min height");
+        assertTrue(this.testSetBlock(data, 0, -64, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.RED_WOOL), "Could set block above min height");
     }
 
     @Test
     public void testMaxHeight() {
         OldCraftChunkData data = new OldCraftChunkData(0, 128, RegistryHelper.getBiomes());
-        assertTrue(testSetBlock(data, 0, 128, 0, RED_WOOL, AIR), "Could not set block above max height");
-        assertTrue(testSetBlock(data, 0, 127, 0, RED_WOOL, RED_WOOL), "Could set block below max height");
+        assertTrue(this.testSetBlock(data, 0, 128, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.AIR), "Could not set block above max height");
+        assertTrue(this.testSetBlock(data, 0, 127, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.RED_WOOL), "Could set block below max height");
     }
 
     @Test
     public void testBoundsCheckingSingle() {
         OldCraftChunkData data = new OldCraftChunkData(0, 256, RegistryHelper.getBiomes());
-        assertTrue(testSetBlock(data, 0, 0, 0, RED_WOOL, RED_WOOL), "Can set block inside chunk bounds");
-        assertTrue(testSetBlock(data, 15, 255, 15, RED_WOOL, RED_WOOL), "Can set block inside chunk bounds");
-        assertTrue(testSetBlock(data, -1, 0, 0, RED_WOOL, AIR), "Can no set block outside chunk bounds");
-        assertTrue(testSetBlock(data, 0, -1, 0, RED_WOOL, AIR), "Can no set block outside chunk bounds");
-        assertTrue(testSetBlock(data, 0, 0, -1, RED_WOOL, AIR), "Can no set block outside chunk bounds");
-        assertTrue(testSetBlock(data, 16, 0, 0, RED_WOOL, AIR), "Can no set block outside chunk bounds");
-        assertTrue(testSetBlock(data, 0, 256, 0, RED_WOOL, AIR), "Can no set block outside chunk bounds");
-        assertTrue(testSetBlock(data, 0, 0, 16, RED_WOOL, AIR), "Can no set block outside chunk bounds");
+        assertTrue(this.testSetBlock(data, 0, 0, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.RED_WOOL), "Can set block inside chunk bounds");
+        assertTrue(this.testSetBlock(data, 15, 255, 15, ChunkDataTest.RED_WOOL, ChunkDataTest.RED_WOOL), "Can set block inside chunk bounds");
+        assertTrue(this.testSetBlock(data, -1, 0, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.AIR), "Can no set block outside chunk bounds");
+        assertTrue(this.testSetBlock(data, 0, -1, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.AIR), "Can no set block outside chunk bounds");
+        assertTrue(this.testSetBlock(data, 0, 0, -1, ChunkDataTest.RED_WOOL, ChunkDataTest.AIR), "Can no set block outside chunk bounds");
+        assertTrue(this.testSetBlock(data, 16, 0, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.AIR), "Can no set block outside chunk bounds");
+        assertTrue(this.testSetBlock(data, 0, 256, 0, ChunkDataTest.RED_WOOL, ChunkDataTest.AIR), "Can no set block outside chunk bounds");
+        assertTrue(this.testSetBlock(data, 0, 0, 16, ChunkDataTest.RED_WOOL, ChunkDataTest.AIR), "Can no set block outside chunk bounds");
     }
 
     @Test
     public void testSetRegion() {
         OldCraftChunkData data = new OldCraftChunkData(0, 256, RegistryHelper.getBiomes());
-        testSetRegion(data, -100, 0, -100, 0, 256, 0, RED_WOOL); // exclusively outside
-        testSetRegion(data, 16, 256, 16, 0, 0, 0, RED_WOOL); // minimum >= maximum
-        testSetRegion(data, 0, 0, 0, 0, 0, 0, RED_WOOL); // minimum == maximum
-        testSetRegion(data, 0, 0, 0, 16, 16, 16, RED_WOOL); // Whole Chunk Section
-        data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 8, 0, 16, 24, 16, RED_WOOL); // Start middle of this section, end middle of next
-        data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 4, 0, 16, 12, 16, RED_WOOL); // Start in this section, end in this section
-        data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 0, 0, 16, 16, 1, RED_WOOL); // Whole Chunk Section
-        data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 8, 0, 16, 24, 1, RED_WOOL); // Start middle of this section, end middle of next
-        data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 4, 0, 16, 12, 1, RED_WOOL); // Start in this section, end in this section
-        data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 0, 0, 1, 16, 1, RED_WOOL); // Whole Chunk Section
-        data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 8, 0, 1, 24, 1, RED_WOOL); // Start middle of this section, end middle of next
-        data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 4, 0, 1, 12, 1, RED_WOOL); // Start in this section, end in this section
-        data.setRegion(0, 0, 0, 16, 256, 16, AIR);
-        testSetRegion(data, 0, 0, 0, 1, 1, 1, RED_WOOL); // Set single block.
+        this.testSetRegion(data, -100, 0, -100, 0, 256, 0, ChunkDataTest.RED_WOOL); // exclusively outside
+        this.testSetRegion(data, 16, 256, 16, 0, 0, 0, ChunkDataTest.RED_WOOL); // minimum >= maximum
+        this.testSetRegion(data, 0, 0, 0, 0, 0, 0, ChunkDataTest.RED_WOOL); // minimum == maximum
+        this.testSetRegion(data, 0, 0, 0, 16, 16, 16, ChunkDataTest.RED_WOOL); // Whole Chunk Section
+        data.setRegion(0, 0, 0, 16, 256, 16, ChunkDataTest.AIR);
+        this.testSetRegion(data, 0, 8, 0, 16, 24, 16, ChunkDataTest.RED_WOOL); // Start middle of this section, end middle of next
+        data.setRegion(0, 0, 0, 16, 256, 16, ChunkDataTest.AIR);
+        this.testSetRegion(data, 0, 4, 0, 16, 12, 16, ChunkDataTest.RED_WOOL); // Start in this section, end in this section
+        data.setRegion(0, 0, 0, 16, 256, 16, ChunkDataTest.AIR);
+        this.testSetRegion(data, 0, 0, 0, 16, 16, 1, ChunkDataTest.RED_WOOL); // Whole Chunk Section
+        data.setRegion(0, 0, 0, 16, 256, 16, ChunkDataTest.AIR);
+        this.testSetRegion(data, 0, 8, 0, 16, 24, 1, ChunkDataTest.RED_WOOL); // Start middle of this section, end middle of next
+        data.setRegion(0, 0, 0, 16, 256, 16, ChunkDataTest.AIR);
+        this.testSetRegion(data, 0, 4, 0, 16, 12, 1, ChunkDataTest.RED_WOOL); // Start in this section, end in this section
+        data.setRegion(0, 0, 0, 16, 256, 16, ChunkDataTest.AIR);
+        this.testSetRegion(data, 0, 0, 0, 1, 16, 1, ChunkDataTest.RED_WOOL); // Whole Chunk Section
+        data.setRegion(0, 0, 0, 16, 256, 16, ChunkDataTest.AIR);
+        this.testSetRegion(data, 0, 8, 0, 1, 24, 1, ChunkDataTest.RED_WOOL); // Start middle of this section, end middle of next
+        data.setRegion(0, 0, 0, 16, 256, 16, ChunkDataTest.AIR);
+        this.testSetRegion(data, 0, 4, 0, 1, 12, 1, ChunkDataTest.RED_WOOL); // Start in this section, end in this section
+        data.setRegion(0, 0, 0, 16, 256, 16, ChunkDataTest.AIR);
+        this.testSetRegion(data, 0, 0, 0, 1, 1, 1, ChunkDataTest.RED_WOOL); // Set single block.
     }
 }

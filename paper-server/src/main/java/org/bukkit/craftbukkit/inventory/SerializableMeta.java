@@ -68,11 +68,11 @@ public final class SerializableMeta implements ConfigurationSerializable {
     public static ItemMeta deserialize(Map<String, Object> map) throws Throwable {
         Preconditions.checkArgument(map != null, "Cannot deserialize null map");
 
-        String type = getString(map, TYPE_FIELD, false);
-        Constructor<? extends CraftMetaItem> constructor = constructorMap.get(type);
+        String type = SerializableMeta.getString(map, SerializableMeta.TYPE_FIELD, false);
+        Constructor<? extends CraftMetaItem> constructor = SerializableMeta.constructorMap.get(type);
 
         if (constructor == null) {
-            throw new IllegalArgumentException(type + " is not a valid " + TYPE_FIELD);
+            throw new IllegalArgumentException(type + " is not a valid " + SerializableMeta.TYPE_FIELD);
         }
 
         try {
@@ -98,16 +98,16 @@ public final class SerializableMeta implements ConfigurationSerializable {
     }
 
     public static String getString(Map<?, ?> map, Object field, boolean nullable) {
-        return getObject(String.class, map, field, nullable);
+        return SerializableMeta.getObject(String.class, map, field, nullable);
     }
 
     public static boolean getBoolean(Map<?, ?> map, Object field) {
-        Boolean value = getObject(Boolean.class, map, field, true);
+        Boolean value = SerializableMeta.getObject(Boolean.class, map, field, true);
         return value != null && value;
     }
 
     public static int getInteger(Map<?, ?> map, Object field) {
-        Integer value = getObject(Integer.class, map, field, true);
+        Integer value = SerializableMeta.getObject(Integer.class, map, field, true);
         return value != null ? value : 0;
     }
 

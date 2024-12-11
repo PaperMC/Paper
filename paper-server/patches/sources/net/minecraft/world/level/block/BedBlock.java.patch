@@ -1,0 +1,73 @@
+--- a/net/minecraft/world/level/block/BedBlock.java
++++ b/net/minecraft/world/level/block/BedBlock.java
+@@ -95,7 +95,8 @@
+                 }
+             }
+ 
+-            if (!BedBlock.canSetSpawn(world)) {
++            // CraftBukkit - moved world and biome check into EntityHuman
++            if (false && !BedBlock.canSetSpawn(world)) {
+                 world.removeBlock(pos, false);
+                 BlockPos blockposition1 = pos.relative(((Direction) state.getValue(BedBlock.FACING)).getOpposite());
+ 
+@@ -114,7 +115,16 @@
+ 
+                 return InteractionResult.SUCCESS_SERVER;
+             } else {
++                // CraftBukkit start
++                BlockState finaliblockdata = state;
++                BlockPos finalblockposition = pos;
++                // CraftBukkit end
+                 player.startSleepInBed(pos).ifLeft((entityhuman_enumbedresult) -> {
++                    // CraftBukkit start - handling bed explosion from below here
++                    if (!world.dimensionType().bedWorks()) {
++                        this.explodeBed(finaliblockdata, world, finalblockposition);
++                    } else
++                    // CraftBukkit end
+                     if (entityhuman_enumbedresult.getMessage() != null) {
+                         player.displayClientMessage(entityhuman_enumbedresult.getMessage(), true);
+                     }
+@@ -125,8 +135,30 @@
+         }
+     }
+ 
++    // CraftBukkit start
++    private InteractionResult explodeBed(BlockState iblockdata, Level world, BlockPos blockposition) {
++        {
++            {
++                org.bukkit.block.BlockState blockState = org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition).getState(); // CraftBukkit - capture BlockState before remove block
++                world.removeBlock(blockposition, false);
++                BlockPos blockposition1 = blockposition.relative(((Direction) iblockdata.getValue(BedBlock.FACING)).getOpposite());
++
++                if (world.getBlockState(blockposition1).getBlock() == this) {
++                    world.removeBlock(blockposition1, false);
++                }
++
++                Vec3 vec3d = blockposition.getCenter();
++
++                world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, blockState), (ExplosionDamageCalculator) null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // CraftBukkit - add state
++                return InteractionResult.SUCCESS;
++            }
++        }
++    }
++    // CraftBukkit end
++
+     public static boolean canSetSpawn(Level world) {
+-        return world.dimensionType().bedWorks();
++        // CraftBukkit - moved world and biome check into EntityHuman
++        return true || world.dimensionType().bedWorks();
+     }
+ 
+     private boolean kickVillagerOutOfBed(Level world, BlockPos pos) {
+@@ -320,6 +352,11 @@
+             BlockPos blockposition1 = pos.relative((Direction) state.getValue(BedBlock.FACING));
+ 
+             world.setBlock(blockposition1, (BlockState) state.setValue(BedBlock.PART, BedPart.HEAD), 3);
++            // CraftBukkit start - SPIGOT-7315: Don't updated if we capture block states
++            if (world.captureBlockStates) {
++                return;
++            }
++            // CraftBukkit end
+             world.blockUpdated(pos, Blocks.AIR);
+             state.updateNeighbourShapes(world, pos, 3);
+         }

@@ -6,7 +6,7 @@ import com.mojang.authlib.properties.Property;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.UUID;
-import net.minecraft.SystemUtils;
+import net.minecraft.Util;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -58,15 +58,15 @@ public class PlayerProfileTest {
     private static final String COMPACT_VALUE = "eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjg0ZGJmNjA3MDBiOTg4MmMwYzJhZDE5NDNiNTE1Y2MxMTFmMGI0ZTU2MmE5YTM2NjgyNDk1NjM2ZDg0Njc1NCJ9fX0=";
 
     private static CraftPlayerProfile buildPlayerProfile() {
-        GameProfile gameProfile = new GameProfile(UNIQUE_ID, NAME);
-        gameProfile.getProperties().put(CraftPlayerTextures.PROPERTY_NAME, new Property(CraftPlayerTextures.PROPERTY_NAME, VALUE, SIGNATURE));
+        GameProfile gameProfile = new GameProfile(PlayerProfileTest.UNIQUE_ID, PlayerProfileTest.NAME);
+        gameProfile.getProperties().put(CraftPlayerTextures.PROPERTY_NAME, new Property(CraftPlayerTextures.PROPERTY_NAME, PlayerProfileTest.VALUE, PlayerProfileTest.SIGNATURE));
         return new CraftPlayerProfile(gameProfile);
     }
 
     @Test
     @EnableIfMojangServerAvailable
     public void testProvidedValues() {
-        Property property = new Property(CraftPlayerTextures.PROPERTY_NAME, VALUE, SIGNATURE);
+        Property property = new Property(CraftPlayerTextures.PROPERTY_NAME, PlayerProfileTest.VALUE, PlayerProfileTest.SIGNATURE);
         assertTrue(CraftProfileProperty.hasValidSignature(property), "Invalid test property signature, has the public key changed?");
     }
 
@@ -84,9 +84,9 @@ public class PlayerProfileTest {
         });
 
         // Valid profiles:
-        new CraftPlayerProfile(UNIQUE_ID, null);
-        new CraftPlayerProfile(null, NAME);
-        new CraftPlayerProfile(UNIQUE_ID, NAME);
+        new CraftPlayerProfile(PlayerProfileTest.UNIQUE_ID, null);
+        new CraftPlayerProfile(null, PlayerProfileTest.NAME);
+        new CraftPlayerProfile(PlayerProfileTest.UNIQUE_ID, PlayerProfileTest.NAME);
     }
 
     @Test
@@ -100,49 +100,49 @@ public class PlayerProfileTest {
         });
 
         // Valid profiles:
-        CraftPlayerProfile profile1 = new CraftPlayerProfile(new GameProfile(UNIQUE_ID, NAME));
-        assertEquals(UNIQUE_ID, profile1.getUniqueId(), "Unique id is not the same");
-        assertEquals(NAME, profile1.getName(), "Name is not the same");
+        CraftPlayerProfile profile1 = new CraftPlayerProfile(new GameProfile(PlayerProfileTest.UNIQUE_ID, PlayerProfileTest.NAME));
+        assertEquals(PlayerProfileTest.UNIQUE_ID, profile1.getUniqueId(), "Unique id is not the same");
+        assertEquals(PlayerProfileTest.NAME, profile1.getName(), "Name is not the same");
 
-        CraftPlayerProfile profile2 = new CraftPlayerProfile(new GameProfile(UNIQUE_ID, ""));
-        assertEquals(UNIQUE_ID, profile2.getUniqueId(), "Unique id is not the same");
+        CraftPlayerProfile profile2 = new CraftPlayerProfile(new GameProfile(PlayerProfileTest.UNIQUE_ID, ""));
+        assertEquals(PlayerProfileTest.UNIQUE_ID, profile2.getUniqueId(), "Unique id is not the same");
         assertEquals(null, profile2.getName(), "Name is not null");
 
-        CraftPlayerProfile profile3 = new CraftPlayerProfile(new GameProfile(SystemUtils.NIL_UUID, NAME));
+        CraftPlayerProfile profile3 = new CraftPlayerProfile(new GameProfile(Util.NIL_UUID, PlayerProfileTest.NAME));
         assertEquals(null, profile3.getUniqueId(), "Unique id is not null");
-        assertEquals(NAME, profile3.getName(), "Name is not the same");
+        assertEquals(PlayerProfileTest.NAME, profile3.getName(), "Name is not the same");
     }
 
     @Test
     public void testTexturesLoading() {
-        CraftPlayerProfile profile = buildPlayerProfile();
-        assertEquals(UNIQUE_ID, profile.getUniqueId(), "Unique id is not the same");
-        assertEquals(NAME, profile.getName(), "Name is not the same");
-        assertEquals(SKIN, profile.getTextures().getSkin(), "Skin url is not the same");
+        CraftPlayerProfile profile = PlayerProfileTest.buildPlayerProfile();
+        assertEquals(PlayerProfileTest.UNIQUE_ID, profile.getUniqueId(), "Unique id is not the same");
+        assertEquals(PlayerProfileTest.NAME, profile.getName(), "Name is not the same");
+        assertEquals(PlayerProfileTest.SKIN, profile.getTextures().getSkin(), "Skin url is not the same");
         assertEquals(PlayerTextures.SkinModel.SLIM, profile.getTextures().getSkinModel(), "Skin model is not the same");
-        assertEquals(CAPE, profile.getTextures().getCape(), "Cape url is not the same");
-        assertEquals(TIMESTAMP, profile.getTextures().getTimestamp(), "Timestamp is not the same");
+        assertEquals(PlayerProfileTest.CAPE, profile.getTextures().getCape(), "Cape url is not the same");
+        assertEquals(PlayerProfileTest.TIMESTAMP, profile.getTextures().getTimestamp(), "Timestamp is not the same");
     }
 
     @Test
     @EnableIfMojangServerAvailable
     public void testBuildGameProfile() {
-        CraftPlayerProfile profile = buildPlayerProfile();
+        CraftPlayerProfile profile = PlayerProfileTest.buildPlayerProfile();
         GameProfile gameProfile = profile.buildGameProfile();
         assertNotNull(gameProfile, "GameProfile is null");
 
         Property property = CraftPlayerProfile.getProperty(gameProfile, CraftPlayerTextures.PROPERTY_NAME);
         assertNotNull(property, "Textures property is null");
-        assertEquals(VALUE, property.value(), "Property values are not the same");
-        assertEquals(NAME, gameProfile.getName(), "Names are not the same");
-        assertEquals(UNIQUE_ID, gameProfile.getId(), "Unique ids are not the same");
+        assertEquals(PlayerProfileTest.VALUE, property.value(), "Property values are not the same");
+        assertEquals(PlayerProfileTest.NAME, gameProfile.getName(), "Names are not the same");
+        assertEquals(PlayerProfileTest.UNIQUE_ID, gameProfile.getId(), "Unique ids are not the same");
         assertTrue(property.hasSignature(), "Signature is missing");
         assertTrue(CraftProfileProperty.hasValidSignature(property), "Signature is not valid");
     }
 
     @Test
     public void testBuildGameProfileReturnsNewInstance() {
-        CraftPlayerProfile profile = buildPlayerProfile();
+        CraftPlayerProfile profile = PlayerProfileTest.buildPlayerProfile();
         GameProfile gameProfile1 = profile.buildGameProfile();
         GameProfile gameProfile2 = profile.buildGameProfile();
         assertNotSame(gameProfile1, gameProfile2, "CraftPlayerProfile#buildGameProfile() does not produce a new instance");
@@ -151,13 +151,13 @@ public class PlayerProfileTest {
     @Test
     @EnableIfMojangServerAvailable
     public void testSignatureValidation() {
-        CraftPlayerProfile profile = buildPlayerProfile();
+        CraftPlayerProfile profile = PlayerProfileTest.buildPlayerProfile();
         assertTrue(profile.getTextures().isSigned(), "Signature is not valid");
     }
 
     @Test
     public void testSignatureInvalidation() {
-        CraftPlayerProfile profile = buildPlayerProfile();
+        CraftPlayerProfile profile = PlayerProfileTest.buildPlayerProfile();
         profile.getTextures().setSkin(null);
         assertEquals(0L, profile.getTextures().getTimestamp(), "Textures has a timestamp");
         assertFalse(profile.getTextures().isSigned(), "Textures signature is valid");
@@ -170,16 +170,16 @@ public class PlayerProfileTest {
 
     @Test
     public void testSetSkinResetsSkinModel() {
-        CraftPlayerProfile profile = buildPlayerProfile();
+        CraftPlayerProfile profile = PlayerProfileTest.buildPlayerProfile();
         assertEquals(PlayerTextures.SkinModel.SLIM, profile.getTextures().getSkinModel(), "Skin model is not the same");
-        profile.getTextures().setSkin(SKIN);
+        profile.getTextures().setSkin(PlayerProfileTest.SKIN);
         assertEquals(PlayerTextures.SkinModel.CLASSIC, profile.getTextures().getSkinModel(), "Skin model was not reset by skin change");
     }
 
     @Test
     public void testSetTextures() {
-        CraftPlayerProfile profile = buildPlayerProfile();
-        CraftPlayerProfile profile2 = new CraftPlayerProfile(new GameProfile(UNIQUE_ID, NAME));
+        CraftPlayerProfile profile = PlayerProfileTest.buildPlayerProfile();
+        CraftPlayerProfile profile2 = new CraftPlayerProfile(new GameProfile(PlayerProfileTest.UNIQUE_ID, PlayerProfileTest.NAME));
 
         assertFalse(profile.getTextures().isEmpty(), "profile has no textures");
         assertTrue(profile2.getTextures().isEmpty(), "profile2 has textures");
@@ -196,7 +196,7 @@ public class PlayerProfileTest {
 
     @Test
     public void testClearTextures() {
-        CraftPlayerProfile profile = buildPlayerProfile();
+        CraftPlayerProfile profile = PlayerProfileTest.buildPlayerProfile();
         assertFalse(profile.getTextures().isEmpty(), "profile has no textures");
 
         profile.getTextures().clear();
@@ -207,19 +207,19 @@ public class PlayerProfileTest {
 
     @Test
     public void testCustomSkin() {
-        CraftPlayerProfile profile = new CraftPlayerProfile(UNIQUE_ID, NAME);
-        profile.getTextures().setSkin(SKIN);
-        assertEquals(COMPACT_VALUE, profile.getTextures().getProperty().value(), "profile with custom skin does not match expected value");
+        CraftPlayerProfile profile = new CraftPlayerProfile(PlayerProfileTest.UNIQUE_ID, PlayerProfileTest.NAME);
+        profile.getTextures().setSkin(PlayerProfileTest.SKIN);
+        assertEquals(PlayerProfileTest.COMPACT_VALUE, profile.getTextures().getProperty().value(), "profile with custom skin does not match expected value");
     }
 
     @Test
     public void testEquals() {
-        CraftPlayerProfile profile1 = buildPlayerProfile();
-        CraftPlayerProfile profile2 = buildPlayerProfile();
-        CraftPlayerProfile profile3 = new CraftPlayerProfile(UNIQUE_ID, NAME);
-        CraftPlayerProfile profile4 = new CraftPlayerProfile(UNIQUE_ID, NAME);
-        CraftPlayerProfile profile5 = new CraftPlayerProfile(UNIQUE_ID, null);
-        CraftPlayerProfile profile6 = new CraftPlayerProfile(null, NAME);
+        CraftPlayerProfile profile1 = PlayerProfileTest.buildPlayerProfile();
+        CraftPlayerProfile profile2 = PlayerProfileTest.buildPlayerProfile();
+        CraftPlayerProfile profile3 = new CraftPlayerProfile(PlayerProfileTest.UNIQUE_ID, PlayerProfileTest.NAME);
+        CraftPlayerProfile profile4 = new CraftPlayerProfile(PlayerProfileTest.UNIQUE_ID, PlayerProfileTest.NAME);
+        CraftPlayerProfile profile5 = new CraftPlayerProfile(PlayerProfileTest.UNIQUE_ID, null);
+        CraftPlayerProfile profile6 = new CraftPlayerProfile(null, PlayerProfileTest.NAME);
 
         assertEquals(profile1, profile2, "profile1 and profile2 are not equal");
         assertEquals(profile3, profile4, "profile3 and profile4 are not equal");
@@ -230,8 +230,8 @@ public class PlayerProfileTest {
 
     @Test
     public void testTexturesEquals() {
-        CraftPlayerProfile profile1 = buildPlayerProfile();
-        CraftPlayerProfile profile2 = buildPlayerProfile();
+        CraftPlayerProfile profile1 = PlayerProfileTest.buildPlayerProfile();
+        CraftPlayerProfile profile2 = PlayerProfileTest.buildPlayerProfile();
         assertEquals(profile1.getTextures(), profile2.getTextures(), "Profile textures are not equal");
 
         profile1.getTextures().setCape(null);
@@ -243,19 +243,19 @@ public class PlayerProfileTest {
 
     @Test
     public void testClone() {
-        PlayerProfile profile = buildPlayerProfile();
+        PlayerProfile profile = PlayerProfileTest.buildPlayerProfile();
         PlayerProfile copy = profile.clone();
         assertEquals(profile, copy, "profile and copy are not equal");
 
         // New copies are independent (don't affect the original profile):
         copy.getTextures().setSkin(null);
-        assertEquals(SKIN, profile.getTextures().getSkin(), "copy is not independent");
+        assertEquals(PlayerProfileTest.SKIN, profile.getTextures().getSkin(), "copy is not independent");
     }
 
     @Test
     public void testSerializationFullProfile() throws InvalidConfigurationException {
         ConfigurationSerialization.registerClass(CraftPlayerProfile.class);
-        PlayerProfile playerProfile = buildPlayerProfile();
+        PlayerProfile playerProfile = PlayerProfileTest.buildPlayerProfile();
         YamlConfiguration configuration = new YamlConfiguration();
 
         configuration.set("test", playerProfile);

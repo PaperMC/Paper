@@ -1,0 +1,78 @@
+--- a/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
++++ b/net/minecraft/core/dispenser/ShearsDispenseItemBehavior.java
+@@ -22,6 +22,12 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.phys.AABB;
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockDispenseEvent;
++// CraftBukkit end
+ 
+ public class ShearsDispenseItemBehavior extends OptionalDispenseItemBehavior {
+ 
+@@ -30,11 +36,34 @@
+     @Override
+     protected ItemStack execute(BlockSource pointer, ItemStack stack) {
+         ServerLevel worldserver = pointer.level();
++        // CraftBukkit start
++        org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
++        CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack);
+ 
++        BlockDispenseEvent event = new BlockDispenseEvent(bukkitBlock, craftItem.clone(), new org.bukkit.util.Vector(0, 0, 0));
++        if (!DispenserBlock.eventFired) {
++            worldserver.getCraftServer().getPluginManager().callEvent(event);
++        }
++
++        if (event.isCancelled()) {
++            return stack;
++        }
++
++        if (!event.getItem().equals(craftItem)) {
++            // Chain to handler for new item
++            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++            DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
++            if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != this) {
++                idispensebehavior.dispense(pointer, eventStack);
++                return stack;
++            }
++        }
++        // CraftBukkit end
++
+         if (!worldserver.isClientSide()) {
+             BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
+ 
+-            this.setSuccess(ShearsDispenseItemBehavior.tryShearBeehive(worldserver, blockposition) || ShearsDispenseItemBehavior.tryShearLivingEntity(worldserver, blockposition, stack));
++            this.setSuccess(ShearsDispenseItemBehavior.tryShearBeehive(worldserver, blockposition) || ShearsDispenseItemBehavior.tryShearLivingEntity(worldserver, blockposition, stack, bukkitBlock, craftItem)); // CraftBukkit
+             if (this.isSuccess()) {
+                 stack.hurtAndBreak(1, worldserver, (ServerPlayer) null, (item) -> {
+                 });
+@@ -64,8 +93,8 @@
+         return false;
+     }
+ 
+-    private static boolean tryShearLivingEntity(ServerLevel world, BlockPos pos, ItemStack shears) {
+-        List<LivingEntity> list = world.getEntitiesOfClass(LivingEntity.class, new AABB(pos), EntitySelector.NO_SPECTATORS);
++    private static boolean tryShearLivingEntity(ServerLevel worldserver, BlockPos blockposition, ItemStack itemstack, org.bukkit.block.Block bukkitBlock, CraftItemStack craftItem) { // CraftBukkit - add args
++        List<LivingEntity> list = worldserver.getEntitiesOfClass(LivingEntity.class, new AABB(blockposition), EntitySelector.NO_SPECTATORS);
+         Iterator iterator = list.iterator();
+ 
+         while (iterator.hasNext()) {
+@@ -73,8 +102,13 @@
+ 
+             if (entityliving instanceof Shearable ishearable) {
+                 if (ishearable.readyForShearing()) {
+-                    ishearable.shear(world, SoundSource.BLOCKS, shears);
+-                    world.gameEvent((Entity) null, (Holder) GameEvent.SHEAR, pos);
++                    // CraftBukkit start
++                    if (CraftEventFactory.callBlockShearEntityEvent(entityliving, bukkitBlock, craftItem).isCancelled()) {
++                        continue;
++                    }
++                    // CraftBukkit end
++                    ishearable.shear(worldserver, SoundSource.BLOCKS, itemstack);
++                    worldserver.gameEvent((Entity) null, (Holder) GameEvent.SHEAR, blockposition);
+                     return true;
+                 }
+             }

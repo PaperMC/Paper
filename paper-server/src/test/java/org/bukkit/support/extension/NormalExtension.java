@@ -4,7 +4,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.core.IRegistryCustom;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.world.flag.FeatureFlags;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
@@ -48,7 +48,7 @@ public class NormalExtension extends BaseExtension {
                 });
 
 
-        IRegistryCustom registry = mock(withSettings().stubOnly().defaultAnswer(DEFAULT_ANSWER));
+        RegistryAccess registry = mock(withSettings().stubOnly().defaultAnswer(NormalExtension.DEFAULT_ANSWER));
         CraftRegistry.setMinecraftRegistry(registry);
     }
 
@@ -58,7 +58,7 @@ public class NormalExtension extends BaseExtension {
 
     private <T extends Keyed> Registry<T> createMockBukkitRegistry(Class<T> keyed) {
         Map<NamespacedKey, T> mocks = new HashMap<>();
-        Registry<T> registry = mock(withSettings().stubOnly().defaultAnswer(DEFAULT_ANSWER));
+        Registry<T> registry = mock(withSettings().stubOnly().defaultAnswer(NormalExtension.DEFAULT_ANSWER));
 
         doAnswer(invocation ->
                 mocks.computeIfAbsent(invocation.getArgument(0), k -> mock(RegistryHelper.updateClass(keyed, invocation.getArgument(0)), withSettings().stubOnly().defaultAnswer(DEFAULT_ANSWER)))

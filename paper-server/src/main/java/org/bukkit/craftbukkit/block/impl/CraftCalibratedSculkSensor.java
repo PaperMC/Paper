@@ -9,73 +9,73 @@ public final class CraftCalibratedSculkSensor extends org.bukkit.craftbukkit.blo
         super();
     }
 
-    public CraftCalibratedSculkSensor(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftCalibratedSculkSensor(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftDirectional
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACING = getEnum(net.minecraft.world.level.block.CalibratedSculkSensorBlock.class, "facing");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> FACING = getEnum(net.minecraft.world.level.block.CalibratedSculkSensorBlock.class, "facing");
 
     @Override
     public org.bukkit.block.BlockFace getFacing() {
-        return get(FACING, org.bukkit.block.BlockFace.class);
+        return this.get(CraftCalibratedSculkSensor.FACING, org.bukkit.block.BlockFace.class);
     }
 
     @Override
     public void setFacing(org.bukkit.block.BlockFace facing) {
-        set(FACING, facing);
+        this.set(CraftCalibratedSculkSensor.FACING, facing);
     }
 
     @Override
     public java.util.Set<org.bukkit.block.BlockFace> getFaces() {
-        return getValues(FACING, org.bukkit.block.BlockFace.class);
+        return this.getValues(CraftCalibratedSculkSensor.FACING, org.bukkit.block.BlockFace.class);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftSculkSensor
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> PHASE = getEnum(net.minecraft.world.level.block.CalibratedSculkSensorBlock.class, "sculk_sensor_phase");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> PHASE = getEnum(net.minecraft.world.level.block.CalibratedSculkSensorBlock.class, "sculk_sensor_phase");
 
     @Override
     public org.bukkit.block.data.type.SculkSensor.Phase getPhase() {
-        return get(PHASE, org.bukkit.block.data.type.SculkSensor.Phase.class);
+        return this.get(CraftCalibratedSculkSensor.PHASE, org.bukkit.block.data.type.SculkSensor.Phase.class);
     }
 
     @Override
     public void setPhase(org.bukkit.block.data.type.SculkSensor.Phase phase) {
-        set(PHASE, phase);
+        this.set(CraftCalibratedSculkSensor.PHASE, phase);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftAnaloguePowerable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger POWER = getInteger(net.minecraft.world.level.block.CalibratedSculkSensorBlock.class, "power");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty POWER = getInteger(net.minecraft.world.level.block.CalibratedSculkSensorBlock.class, "power");
 
     @Override
     public int getPower() {
-        return get(POWER);
+        return this.get(CraftCalibratedSculkSensor.POWER);
     }
 
     @Override
     public void setPower(int power) {
-        set(POWER, power);
+        this.set(CraftCalibratedSculkSensor.POWER, power);
     }
 
     @Override
     public int getMaximumPower() {
-        return getMax(POWER);
+        return getMax(CraftCalibratedSculkSensor.POWER);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftWaterlogged
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.world.level.block.CalibratedSculkSensorBlock.class, "waterlogged");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED = getBoolean(net.minecraft.world.level.block.CalibratedSculkSensorBlock.class, "waterlogged");
 
     @Override
     public boolean isWaterlogged() {
-        return get(WATERLOGGED);
+        return this.get(CraftCalibratedSculkSensor.WATERLOGGED);
     }
 
     @Override
     public void setWaterlogged(boolean waterlogged) {
-        set(WATERLOGGED, waterlogged);
+        this.set(CraftCalibratedSculkSensor.WATERLOGGED, waterlogged);
     }
 }

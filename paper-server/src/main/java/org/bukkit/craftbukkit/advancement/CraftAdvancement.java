@@ -17,30 +17,30 @@ public class CraftAdvancement implements org.bukkit.advancement.Advancement {
     }
 
     public AdvancementHolder getHandle() {
-        return handle;
+        return this.handle;
     }
 
     @Override
     public NamespacedKey getKey() {
-        return CraftNamespacedKey.fromMinecraft(handle.id());
+        return CraftNamespacedKey.fromMinecraft(this.handle.id());
     }
 
     @Override
     public Collection<String> getCriteria() {
-        return Collections.unmodifiableCollection(handle.value().criteria().keySet());
+        return Collections.unmodifiableCollection(this.handle.value().criteria().keySet());
     }
 
     @Override
     public AdvancementRequirements getRequirements() {
-        return new CraftAdvancementRequirements(handle.value().requirements());
+        return new CraftAdvancementRequirements(this.handle.value().requirements());
     }
 
     @Override
     public AdvancementDisplay getDisplay() {
-        if (handle.value().display().isEmpty()) {
+        if (this.handle.value().display().isEmpty()) {
             return null;
         }
 
-        return new CraftAdvancementDisplay(handle.value().display().get());
+        return new CraftAdvancementDisplay(this.handle.value().display().get());
     }
 }

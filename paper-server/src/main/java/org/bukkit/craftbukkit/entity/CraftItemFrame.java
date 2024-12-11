@@ -1,9 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.EnumDirection;
-import net.minecraft.world.entity.decoration.EntityHanging;
-import net.minecraft.world.entity.decoration.EntityItemFrame;
+import net.minecraft.core.Direction;
+import net.minecraft.world.entity.decoration.HangingEntity;
 import net.minecraft.world.level.block.Blocks;
 import org.bukkit.Rotation;
 import org.bukkit.block.BlockFace;
@@ -13,25 +12,25 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.ItemFrame;
 
 public class CraftItemFrame extends CraftHanging implements ItemFrame {
-    public CraftItemFrame(CraftServer server, EntityItemFrame entity) {
+    public CraftItemFrame(CraftServer server, net.minecraft.world.entity.decoration.ItemFrame entity) {
         super(server, entity);
     }
 
     @Override
     public boolean setFacingDirection(BlockFace face, boolean force) {
-        EntityHanging hanging = getHandle();
-        EnumDirection oldDir = hanging.getDirection();
-        EnumDirection newDir = CraftBlock.blockFaceToNotch(face);
+        HangingEntity hanging = this.getHandle();
+        Direction oldDir = hanging.getDirection();
+        Direction newDir = CraftBlock.blockFaceToNotch(face);
 
         Preconditions.checkArgument(newDir != null, "%s is not a valid facing direction", face);
 
-        getHandle().setDirection(newDir);
-        if (!force && !getHandle().generation && !hanging.survives()) {
+        this.getHandle().setDirection(newDir);
+        if (!force && !this.getHandle().generation && !hanging.survives()) {
             hanging.setDirection(oldDir);
             return false;
         }
 
-        update();
+        this.update();
 
         return true;
     }
@@ -41,45 +40,45 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         super.update();
 
         // mark dirty, so that the client gets updated with item and rotation
-        getHandle().getEntityData().markDirty(EntityItemFrame.DATA_ITEM);
-        getHandle().getEntityData().markDirty(EntityItemFrame.DATA_ROTATION);
+        this.getHandle().getEntityData().markDirty(net.minecraft.world.entity.decoration.ItemFrame.DATA_ITEM);
+        this.getHandle().getEntityData().markDirty(net.minecraft.world.entity.decoration.ItemFrame.DATA_ROTATION);
 
         // update redstone
-        if (!getHandle().generation) {
-            getHandle().level().updateNeighbourForOutputSignal(getHandle().getPos(), Blocks.AIR);
+        if (!this.getHandle().generation) {
+            this.getHandle().level().updateNeighbourForOutputSignal(this.getHandle().getPos(), Blocks.AIR);
         }
     }
 
     @Override
     public void setItem(org.bukkit.inventory.ItemStack item) {
-        setItem(item, true);
+        this.setItem(item, true);
     }
 
     @Override
     public void setItem(org.bukkit.inventory.ItemStack item, boolean playSound) {
         // only updated redstone and play sound when it is not in generation
-        getHandle().setItem(CraftItemStack.asNMSCopy(item), !getHandle().generation, !getHandle().generation && playSound);
+        this.getHandle().setItem(CraftItemStack.asNMSCopy(item), !this.getHandle().generation, !this.getHandle().generation && playSound);
     }
 
     @Override
     public org.bukkit.inventory.ItemStack getItem() {
-        return CraftItemStack.asBukkitCopy(getHandle().getItem());
+        return CraftItemStack.asBukkitCopy(this.getHandle().getItem());
     }
 
     @Override
     public float getItemDropChance() {
-        return getHandle().dropChance;
+        return this.getHandle().dropChance;
     }
 
     @Override
     public void setItemDropChance(float chance) {
         Preconditions.checkArgument(0.0 <= chance && chance <= 1.0, "Chance (%s) outside range [0, 1]", chance);
-        getHandle().dropChance = chance;
+        this.getHandle().dropChance = chance;
     }
 
     @Override
     public Rotation getRotation() {
-        return toBukkitRotation(getHandle().getRotation());
+        return this.toBukkitRotation(this.getHandle().getRotation());
     }
 
     Rotation toBukkitRotation(int value) {
@@ -102,14 +101,14 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
         case 7:
             return Rotation.COUNTER_CLOCKWISE_45;
         default:
-            throw new AssertionError("Unknown rotation " + value + " for " + getHandle());
+            throw new AssertionError("Unknown rotation " + value + " for " + this.getHandle());
         }
     }
 
     @Override
     public void setRotation(Rotation rotation) {
         Preconditions.checkArgument(rotation != null, "Rotation cannot be null");
-        getHandle().setRotation(toInteger(rotation));
+        this.getHandle().setRotation(CraftItemFrame.toInteger(rotation));
     }
 
     static int toInteger(Rotation rotation) {
@@ -138,31 +137,31 @@ public class CraftItemFrame extends CraftHanging implements ItemFrame {
 
     @Override
     public boolean isVisible() {
-        return !getHandle().isInvisible();
+        return !this.getHandle().isInvisible();
     }
 
     @Override
     public void setVisible(boolean visible) {
-        getHandle().setInvisible(!visible);
+        this.getHandle().setInvisible(!visible);
     }
 
     @Override
     public boolean isFixed() {
-        return getHandle().fixed;
+        return this.getHandle().fixed;
     }
 
     @Override
     public void setFixed(boolean fixed) {
-        getHandle().fixed = fixed;
+        this.getHandle().fixed = fixed;
     }
 
     @Override
-    public EntityItemFrame getHandle() {
-        return (EntityItemFrame) entity;
+    public net.minecraft.world.entity.decoration.ItemFrame getHandle() {
+        return (net.minecraft.world.entity.decoration.ItemFrame) this.entity;
     }
 
     @Override
     public String toString() {
-        return "CraftItemFrame{item=" + getItem() + ", rotation=" + getRotation() + "}";
+        return "CraftItemFrame{item=" + this.getItem() + ", rotation=" + this.getRotation() + "}";
     }
 }

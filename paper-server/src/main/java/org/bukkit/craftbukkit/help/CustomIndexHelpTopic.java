@@ -22,16 +22,16 @@ public class CustomIndexHelpTopic extends IndexHelpTopic {
 
     @Override
     public String getFullText(CommandSender sender) {
-        if (futureTopics != null) {
+        if (this.futureTopics != null) {
             List<HelpTopic> topics = new LinkedList<HelpTopic>();
-            for (String futureTopic : futureTopics) {
-                HelpTopic topic = helpMap.getHelpTopic(futureTopic);
+            for (String futureTopic : this.futureTopics) {
+                HelpTopic topic = this.helpMap.getHelpTopic(futureTopic);
                 if (topic != null) {
                     topics.add(topic);
                 }
             }
-            setTopicsCollection(topics);
-            futureTopics = null;
+            this.setTopicsCollection(topics);
+            this.futureTopics = null;
         }
 
         return super.getFullText(sender);

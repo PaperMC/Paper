@@ -9,31 +9,31 @@ public final class CraftSkullPlayer extends org.bukkit.craftbukkit.block.data.Cr
         super();
     }
 
-    public CraftSkullPlayer(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftSkullPlayer(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftPowerable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean POWERED = getBoolean(net.minecraft.world.level.block.BlockSkullPlayer.class, "powered");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty POWERED = getBoolean(net.minecraft.world.level.block.PlayerHeadBlock.class, "powered");
 
     @Override
     public boolean isPowered() {
-        return get(POWERED);
+        return this.get(CraftSkullPlayer.POWERED);
     }
 
     @Override
     public void setPowered(boolean powered) {
-        set(POWERED, powered);
+        this.set(CraftSkullPlayer.POWERED, powered);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftRotatable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger ROTATION = getInteger(net.minecraft.world.level.block.BlockSkullPlayer.class, "rotation");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty ROTATION = getInteger(net.minecraft.world.level.block.PlayerHeadBlock.class, "rotation");
 
     @Override
     public org.bukkit.block.BlockFace getRotation() {
-        int data = get(ROTATION);
+        int data = this.get(CraftSkullPlayer.ROTATION);
         switch (data) {
             case 0x0:
                 return org.bukkit.block.BlockFace.SOUTH;
@@ -127,6 +127,6 @@ public final class CraftSkullPlayer extends org.bukkit.craftbukkit.block.data.Cr
             default:
                 throw new IllegalArgumentException("Illegal rotation " + rotation);
         }
-        set(ROTATION, val);
+        this.set(CraftSkullPlayer.ROTATION, val);
     }
 }

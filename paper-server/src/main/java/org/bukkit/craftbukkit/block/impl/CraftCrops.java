@@ -9,26 +9,26 @@ public final class CraftCrops extends org.bukkit.craftbukkit.block.data.CraftBlo
         super();
     }
 
-    public CraftCrops(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftCrops(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftAgeable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger AGE = getInteger(net.minecraft.world.level.block.BlockCrops.class, "age");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty AGE = getInteger(net.minecraft.world.level.block.CropBlock.class, "age");
 
     @Override
     public int getAge() {
-        return get(AGE);
+        return this.get(CraftCrops.AGE);
     }
 
     @Override
     public void setAge(int age) {
-        set(AGE, age);
+        this.set(CraftCrops.AGE, age);
     }
 
     @Override
     public int getMaximumAge() {
-        return getMax(AGE);
+        return getMax(CraftCrops.AGE);
     }
 }

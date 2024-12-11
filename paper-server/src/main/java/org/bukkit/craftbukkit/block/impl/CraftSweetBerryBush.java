@@ -9,26 +9,26 @@ public final class CraftSweetBerryBush extends org.bukkit.craftbukkit.block.data
         super();
     }
 
-    public CraftSweetBerryBush(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftSweetBerryBush(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftAgeable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger AGE = getInteger(net.minecraft.world.level.block.BlockSweetBerryBush.class, "age");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty AGE = getInteger(net.minecraft.world.level.block.SweetBerryBushBlock.class, "age");
 
     @Override
     public int getAge() {
-        return get(AGE);
+        return this.get(CraftSweetBerryBush.AGE);
     }
 
     @Override
     public void setAge(int age) {
-        set(AGE, age);
+        this.set(CraftSweetBerryBush.AGE, age);
     }
 
     @Override
     public int getMaximumAge() {
-        return getMax(AGE);
+        return getMax(CraftSweetBerryBush.AGE);
     }
 }

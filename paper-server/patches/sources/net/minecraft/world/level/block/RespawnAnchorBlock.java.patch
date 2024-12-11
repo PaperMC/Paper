@@ -1,0 +1,39 @@
+--- a/net/minecraft/world/level/block/RespawnAnchorBlock.java
++++ b/net/minecraft/world/level/block/RespawnAnchorBlock.java
+@@ -88,7 +88,7 @@
+                 ServerPlayer entityplayer = (ServerPlayer) player;
+ 
+                 if (entityplayer.getRespawnDimension() != world.dimension() || !pos.equals(entityplayer.getRespawnPosition())) {
+-                    entityplayer.setRespawnPosition(world.dimension(), pos, 0.0F, false, true);
++                    entityplayer.setRespawnPosition(world.dimension(), pos, 0.0F, false, true, org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.RESPAWN_ANCHOR); // CraftBukkit
+                     world.playSound((Player) null, (double) pos.getX() + 0.5D, (double) pos.getY() + 0.5D, (double) pos.getZ() + 0.5D, SoundEvents.RESPAWN_ANCHOR_SET_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
+                     return InteractionResult.SUCCESS_SERVER;
+                 }
+@@ -127,15 +127,16 @@
+     }
+ 
+     private void explode(BlockState state, Level world, final BlockPos explodedPos) {
++        org.bukkit.block.BlockState blockState = org.bukkit.craftbukkit.block.CraftBlock.at(world, explodedPos).getState(); // CraftBukkit - capture BlockState before remove block
+         world.removeBlock(explodedPos, false);
+-        Stream stream = Direction.Plane.HORIZONTAL.stream();
++        Stream<Direction> stream = Direction.Plane.HORIZONTAL.stream(); // CraftBukkit - decompile error
+ 
+         Objects.requireNonNull(explodedPos);
+         boolean flag = stream.map(explodedPos::relative).anyMatch((blockposition1) -> {
+             return RespawnAnchorBlock.isWaterThatWouldFlow(blockposition1, world);
+         });
+         final boolean flag1 = flag || world.getFluidState(explodedPos.above()).is(FluidTags.WATER);
+-        ExplosionDamageCalculator explosiondamagecalculator = new ExplosionDamageCalculator(this) {
++        ExplosionDamageCalculator explosiondamagecalculator = new ExplosionDamageCalculator() { // CraftBukkit - decompile error
+             @Override
+             public Optional<Float> getBlockExplosionResistance(Explosion explosion, BlockGetter world, BlockPos pos, BlockState blockState, FluidState fluidState) {
+                 return pos.equals(explodedPos) && flag1 ? Optional.of(Blocks.WATER.getExplosionResistance()) : super.getBlockExplosionResistance(explosion, world, pos, blockState, fluidState);
+@@ -143,7 +144,7 @@
+         };
+         Vec3 vec3d = explodedPos.getCenter();
+ 
+-        world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d), explosiondamagecalculator, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK);
++        world.explode((Entity) null, world.damageSources().badRespawnPointExplosion(vec3d, blockState), explosiondamagecalculator, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // CraftBukkit - add state
+     }
+ 
+     public static boolean canSetSpawn(Level world) {

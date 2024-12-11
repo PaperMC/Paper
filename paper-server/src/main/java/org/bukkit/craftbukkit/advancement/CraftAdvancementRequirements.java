@@ -16,6 +16,6 @@ public class CraftAdvancementRequirements implements org.bukkit.advancement.Adva
     @NotNull
     @Override
     public List<AdvancementRequirement> getRequirements() {
-        return requirements.requirements().stream().map((requirement) -> (AdvancementRequirement) new CraftAdvancementRequirement(requirement)).toList();
+        return this.requirements.requirements().stream().map((requirement) -> (AdvancementRequirement) new CraftAdvancementRequirement(requirement)).toList();
     }
 }

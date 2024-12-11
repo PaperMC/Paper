@@ -37,14 +37,14 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
     CraftMetaArmor(DataComponentPatch tag) {
         super(tag);
 
-        getOrEmpty(tag, TRIM).ifPresent((trimCompound) -> {
+        getOrEmpty(tag, CraftMetaArmor.TRIM).ifPresent((trimCompound) -> {
             TrimMaterial trimMaterial = CraftTrimMaterial.minecraftHolderToBukkit(trimCompound.material());
             TrimPattern trimPattern = CraftTrimPattern.minecraftHolderToBukkit(trimCompound.pattern());
 
             this.trim = new ArmorTrim(trimMaterial, trimPattern);
 
             if (!trimCompound.showInTooltip()) {
-                addItemFlags(ItemFlag.HIDE_ARMOR_TRIM);
+                this.addItemFlags(ItemFlag.HIDE_ARMOR_TRIM);
             }
         });
     }
@@ -52,10 +52,10 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
     CraftMetaArmor(Map<String, Object> map) {
         super(map);
 
-        Map<?, ?> trimData = SerializableMeta.getObject(Map.class, map, TRIM.BUKKIT, true);
+        Map<?, ?> trimData = SerializableMeta.getObject(Map.class, map, CraftMetaArmor.TRIM.BUKKIT, true);
         if (trimData != null) {
-            String materialKeyString = SerializableMeta.getString(trimData, TRIM_MATERIAL.BUKKIT, true);
-            String patternKeyString = SerializableMeta.getString(trimData, TRIM_PATTERN.BUKKIT, true);
+            String materialKeyString = SerializableMeta.getString(trimData, CraftMetaArmor.TRIM_MATERIAL.BUKKIT, true);
+            String patternKeyString = SerializableMeta.getString(trimData, CraftMetaArmor.TRIM_PATTERN.BUKKIT, true);
 
             if (materialKeyString != null && patternKeyString != null) {
                 NamespacedKey materialKey = NamespacedKey.fromString(materialKeyString);
@@ -77,8 +77,8 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
     void applyToItem(CraftMetaItem.Applicator itemTag) {
         super.applyToItem(itemTag);
 
-        if (hasTrim()) {
-            itemTag.put(TRIM, new net.minecraft.world.item.equipment.trim.ArmorTrim(CraftTrimMaterial.bukkitToMinecraftHolder(trim.getMaterial()), CraftTrimPattern.bukkitToMinecraftHolder(trim.getPattern()), !hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM)));
+        if (this.hasTrim()) {
+            itemTag.put(CraftMetaArmor.TRIM, new net.minecraft.world.item.equipment.trim.ArmorTrim(CraftTrimMaterial.bukkitToMinecraftHolder(this.trim.getMaterial()), CraftTrimPattern.bukkitToMinecraftHolder(this.trim.getPattern()), !this.hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM)));
         }
     }
 
@@ -89,7 +89,7 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
         }
 
         if (that instanceof CraftMetaArmor armorMeta) {
-            return Objects.equals(trim, armorMeta.trim);
+            return Objects.equals(this.trim, armorMeta.trim);
         }
 
         return true;
@@ -97,16 +97,16 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
 
     @Override
     boolean notUncommon(CraftMetaItem meta) {
-        return super.notUncommon(meta) && (meta instanceof CraftMetaArmor || isArmorEmpty());
+        return super.notUncommon(meta) && (meta instanceof CraftMetaArmor || this.isArmorEmpty());
     }
 
     @Override
     boolean isEmpty() {
-        return super.isEmpty() && isArmorEmpty();
+        return super.isEmpty() && this.isArmorEmpty();
     }
 
     private boolean isArmorEmpty() {
-        return !hasTrim();
+        return !this.hasTrim();
     }
 
     @Override
@@ -114,8 +114,8 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
         final int original;
         int hash = original = super.applyHash();
 
-        if (hasTrim()) {
-            hash = 61 * hash + trim.hashCode();
+        if (this.hasTrim()) {
+            hash = 61 * hash + this.trim.hashCode();
         }
 
         return original != hash ? CraftMetaArmor.class.hashCode() ^ hash : hash;
@@ -132,11 +132,11 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
 
-        if (hasTrim()) {
+        if (this.hasTrim()) {
             Map<String, String> trimData = new HashMap<>();
-            trimData.put(TRIM_MATERIAL.BUKKIT, trim.getMaterial().getKey().toString());
-            trimData.put(TRIM_PATTERN.BUKKIT, trim.getPattern().getKey().toString());
-            builder.put(TRIM.BUKKIT, trimData);
+            trimData.put(CraftMetaArmor.TRIM_MATERIAL.BUKKIT, this.trim.getMaterial().getKey().toString());
+            trimData.put(CraftMetaArmor.TRIM_PATTERN.BUKKIT, this.trim.getPattern().getKey().toString());
+            builder.put(CraftMetaArmor.TRIM.BUKKIT, trimData);
         }
 
         return builder;
@@ -144,7 +144,7 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
 
     @Override
     public boolean hasTrim() {
-        return trim != null;
+        return this.trim != null;
     }
 
     @Override
@@ -154,6 +154,6 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
 
     @Override
     public ArmorTrim getTrim() {
-        return trim;
+        return this.trim;
     }
 }

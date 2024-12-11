@@ -1,0 +1,114 @@
+--- a/net/minecraft/world/entity/projectile/ThrownEgg.java
++++ b/net/minecraft/world/entity/projectile/ThrownEgg.java
+@@ -1,33 +1,39 @@
+ package net.minecraft.world.entity.projectile;
+ 
+-import net.minecraft.core.particles.ItemParticleOption;
+-import net.minecraft.core.particles.ParticleTypes;
+-import net.minecraft.world.entity.EntityDimensions;
+ import net.minecraft.world.entity.EntitySpawnReason;
+-import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.LivingEntity;
+-import net.minecraft.world.entity.animal.Chicken;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.EntityHitResult;
+ import net.minecraft.world.phys.HitResult;
++import net.minecraft.core.particles.ItemParticleOption;
++import net.minecraft.core.particles.ParticleTypes;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.EntityDimensions;
++import org.bukkit.entity.Ageable;
++import org.bukkit.entity.EntityType;
++import org.bukkit.entity.Player;
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.player.PlayerEggThrowEvent;
++// CraftBukkit end
+ 
+ public class ThrownEgg extends ThrowableItemProjectile {
+ 
+     private static final EntityDimensions ZERO_SIZED_DIMENSIONS = EntityDimensions.fixed(0.0F, 0.0F);
+ 
+-    public ThrownEgg(EntityType<? extends ThrownEgg> type, Level world) {
++    public ThrownEgg(net.minecraft.world.entity.EntityType<? extends ThrownEgg> type, Level world) {
+         super(type, world);
+     }
+ 
+     public ThrownEgg(Level world, LivingEntity owner, ItemStack stack) {
+-        super(EntityType.EGG, owner, world, stack);
++        super(net.minecraft.world.entity.EntityType.EGG, owner, world, stack);
+     }
+ 
+     public ThrownEgg(Level world, double x, double y, double z, ItemStack stack) {
+-        super(EntityType.EGG, x, y, z, world, stack);
++        super(net.minecraft.world.entity.EntityType.EGG, x, y, z, world, stack);
+     }
+ 
+     @Override
+@@ -52,30 +58,58 @@
+     protected void onHit(HitResult hitResult) {
+         super.onHit(hitResult);
+         if (!this.level().isClientSide) {
+-            if (this.random.nextInt(8) == 0) {
++            // CraftBukkit start
++            boolean hatching = this.random.nextInt(8) == 0;
++            if (true) {
++            // CraftBukkit end
+                 byte b0 = 1;
+ 
+                 if (this.random.nextInt(32) == 0) {
+                     b0 = 4;
+                 }
+ 
++                // CraftBukkit start
++                EntityType hatchingType = EntityType.CHICKEN;
++
++                Entity shooter = this.getOwner();
++                if (!hatching) {
++                    b0 = 0;
++                }
++                if (shooter instanceof ServerPlayer) {
++                    PlayerEggThrowEvent event = new PlayerEggThrowEvent((Player) shooter.getBukkitEntity(), (org.bukkit.entity.Egg) this.getBukkitEntity(), hatching, b0, hatchingType);
++                    this.level().getCraftServer().getPluginManager().callEvent(event);
++
++                    b0 = event.getNumHatches();
++                    hatching = event.isHatching();
++                    hatchingType = event.getHatchingType();
++                    // If hatching is set to false, ensure child count is 0
++                    if (!hatching) {
++                        b0 = 0;
++                    }
++                }
++                // CraftBukkit end
++
+                 for (int i = 0; i < b0; ++i) {
+-                    Chicken entitychicken = (Chicken) EntityType.CHICKEN.create(this.level(), EntitySpawnReason.TRIGGERED);
++                    Entity entitychicken = this.level().getWorld().makeEntity(new org.bukkit.Location(this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F), hatchingType.getEntityClass()); // CraftBukkit
+ 
+                     if (entitychicken != null) {
+-                        entitychicken.setAge(-24000);
++                        // CraftBukkit start
++                        if (entitychicken.getBukkitEntity() instanceof Ageable) {
++                            ((Ageable) entitychicken.getBukkitEntity()).setBaby();
++                        }
++                        // CraftBukkit end
+                         entitychicken.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F);
+                         if (!entitychicken.fudgePositionAfterSizeChange(ThrownEgg.ZERO_SIZED_DIMENSIONS)) {
+                             break;
+                         }
+ 
+-                        this.level().addFreshEntity(entitychicken);
++                        this.level().addFreshEntity(entitychicken, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // CraftBukkit
+                     }
+                 }
+             }
+ 
+             this.level().broadcastEntityEvent(this, (byte) 3);
+-            this.discard();
++            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
+         }
+ 
+     }

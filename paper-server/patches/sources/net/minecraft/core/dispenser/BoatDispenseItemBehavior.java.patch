@@ -1,0 +1,58 @@
+--- a/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
++++ b/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
+@@ -11,6 +11,11 @@
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.block.DispenserBlock;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockDispenseEvent;
++// CraftBukkit end
+ 
+ public class BoatDispenseItemBehavior extends DefaultDispenseItemBehavior {
+ 
+@@ -43,14 +48,40 @@
+             d4 = 0.0D;
+         }
+ 
++        // CraftBukkit start
++        ItemStack itemstack1 = stack.split(1);
++        org.bukkit.block.Block block = CraftBlock.at(worldserver, pointer.pos());
++        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
++
++        BlockDispenseEvent event = new BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(d1, d2 + d4, d3));
++        if (!DispenserBlock.eventFired) {
++            worldserver.getCraftServer().getPluginManager().callEvent(event);
++        }
++
++        if (event.isCancelled()) {
++            stack.grow(1);
++            return stack;
++        }
++
++        if (!event.getItem().equals(craftItem)) {
++            stack.grow(1);
++            // Chain to handler for new item
++            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++            DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
++            if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != this) {
++                idispensebehavior.dispense(pointer, eventStack);
++                return stack;
++            }
++        }
++        // CraftBukkit end
+         AbstractBoat abstractboat = (AbstractBoat) this.type.create(worldserver, EntitySpawnReason.DISPENSER);
+ 
+         if (abstractboat != null) {
+-            abstractboat.setInitialPos(d1, d2 + d4, d3);
++            abstractboat.setInitialPos(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ()); // CraftBukkit
+             EntityType.createDefaultStackConfig(worldserver, stack, (Player) null).accept(abstractboat);
+             abstractboat.setYRot(enumdirection.toYRot());
+-            worldserver.addFreshEntity(abstractboat);
+-            stack.shrink(1);
++            if (!worldserver.addFreshEntity(abstractboat)) stack.grow(1); // CraftBukkit
++            // itemstack.shrink(1); // CraftBukkit - handled during event processing
+         }
+ 
+         return stack;

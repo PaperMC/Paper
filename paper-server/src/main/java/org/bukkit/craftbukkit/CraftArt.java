@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import java.util.Locale;
 import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.decoration.PaintingVariant;
 import org.bukkit.Art;
@@ -21,7 +20,7 @@ public class CraftArt implements Art, Handleable<PaintingVariant> {
     }
 
     public static Art minecraftHolderToBukkit(Holder<PaintingVariant> minecraft) {
-        return minecraftToBukkit(minecraft.value());
+        return CraftArt.minecraftToBukkit(minecraft.value());
     }
 
     public static PaintingVariant bukkitToMinecraft(Art bukkit) {
@@ -31,9 +30,9 @@ public class CraftArt implements Art, Handleable<PaintingVariant> {
     public static Holder<PaintingVariant> bukkitToMinecraftHolder(Art bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        IRegistry<PaintingVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT);
+        net.minecraft.core.Registry<PaintingVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT);
 
-        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<PaintingVariant> holder) {
+        if (registry.wrapAsHolder(CraftArt.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<PaintingVariant> holder) {
             return holder;
         }
 
@@ -58,55 +57,55 @@ public class CraftArt implements Art, Handleable<PaintingVariant> {
         } else {
             this.name = key.toString();
         }
-        this.ordinal = count++;
+        this.ordinal = CraftArt.count++;
     }
 
     @Override
     public PaintingVariant getHandle() {
-        return paintingVariant;
+        return this.paintingVariant;
     }
 
     @Override
     public int getBlockWidth() {
-        return paintingVariant.width();
+        return this.paintingVariant.width();
     }
 
     @Override
     public int getBlockHeight() {
-        return paintingVariant.height();
+        return this.paintingVariant.height();
     }
 
     @Override
     public int getId() {
-        return CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getId(paintingVariant);
+        return CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getId(this.paintingVariant);
     }
 
     @NotNull
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 
     @Override
     public int compareTo(@NotNull Art art) {
-        return ordinal - art.ordinal();
+        return this.ordinal - art.ordinal();
     }
 
     @NotNull
     @Override
     public String name() {
-        return name;
+        return this.name;
     }
 
     @Override
     public int ordinal() {
-        return ordinal;
+        return this.ordinal;
     }
 
     @Override
     public String toString() {
         // For backwards compatibility
-        return name();
+        return this.name();
     }
 
     @Override
@@ -119,11 +118,11 @@ public class CraftArt implements Art, Handleable<PaintingVariant> {
             return false;
         }
 
-        return getKey().equals(otherArt.getKey());
+        return this.getKey().equals(otherArt.getKey());
     }
 
     @Override
     public int hashCode() {
-        return getKey().hashCode();
+        return this.getKey().hashCode();
     }
 }

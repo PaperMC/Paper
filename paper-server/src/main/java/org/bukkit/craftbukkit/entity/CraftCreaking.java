@@ -11,7 +11,7 @@ public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Cre
 
     @Override
     public Creaking getHandle() {
-        return (Creaking) entity;
+        return (Creaking) this.entity;
     }
 
     @Override

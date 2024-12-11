@@ -45,7 +45,7 @@ public class EntityRemoveEventTest {
 
                 if (instruction instanceof MethodInsnNode methodInsnNode) {
                     // Check for discard and remove method call
-                    if (check(methodInsnNode.owner, methodInsnNode.name, methodInsnNode.desc)) {
+                    if (this.check(methodInsnNode.owner, methodInsnNode.name, methodInsnNode.desc)) {
                         // Add to list
                         missingReason.add(String.format("Method name: %s, name: %s, line number: %s", methodNode.name, methodInsnNode.name, lastLineNumber.line));
                     }
@@ -58,7 +58,7 @@ public class EntityRemoveEventTest {
 
                     Handle handle = (Handle) dynamicInsnNode.bsmArgs[1];
 
-                    if (check(handle.getOwner(), handle.getName(), handle.getDesc())) {
+                    if (this.check(handle.getOwner(), handle.getName(), handle.getDesc())) {
                         // Add to list
                         missingReason.add(String.format("[D] Method name: %s, name: %s, line number: %s", methodNode.name, handle.getName(), lastLineNumber.line));
                     }
@@ -93,7 +93,7 @@ public class EntityRemoveEventTest {
 
     private boolean check(String owner, String name, String desc) throws ClassNotFoundException {
         if (!name.equals("discard") && !name.equals("remove") && !name.equals("setRemoved")) {
-            if (!checkExtraMethod(owner, name, desc)) {
+            if (!this.checkExtraMethod(owner, name, desc)) {
                 return false;
             }
         }
@@ -102,7 +102,7 @@ public class EntityRemoveEventTest {
             return false;
         }
 
-        Class<?> ownerClass = Class.forName(owner.replace('/', '.'), false, getClass().getClassLoader());
+        Class<?> ownerClass = Class.forName(owner.replace('/', '.'), false, this.getClass().getClassLoader());
 
         // Found missing discard, remove or setRemoved method call
         return EntityAccess.class.isAssignableFrom(ownerClass);

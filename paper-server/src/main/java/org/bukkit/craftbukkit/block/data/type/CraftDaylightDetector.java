@@ -5,15 +5,15 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftDaylightDetector extends CraftBlockData implements DaylightDetector {
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean INVERTED = getBoolean("inverted");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty INVERTED = getBoolean("inverted");
 
     @Override
     public boolean isInverted() {
-        return get(INVERTED);
+        return this.get(CraftDaylightDetector.INVERTED);
     }
 
     @Override
     public void setInverted(boolean inverted) {
-        set(INVERTED, inverted);
+        this.set(CraftDaylightDetector.INVERTED, inverted);
     }
 }

@@ -23,38 +23,38 @@ public final class DeprecatedCustomTagContainer implements CustomItemTagContaine
     @Override
     public <T, Z> void setCustomTag(NamespacedKey key, ItemTagType<T, Z> type, Z value) {
         if (Objects.equals(CustomItemTagContainer.class, type.getPrimitiveType())) {
-            wrapped.set(key, new DeprecatedContainerTagType<>((ItemTagType<CustomItemTagContainer, Z>) type), value);
+            this.wrapped.set(key, new DeprecatedContainerTagType<>((ItemTagType<CustomItemTagContainer, Z>) type), value);
         } else {
-            wrapped.set(key, new DeprecatedItemTagType<>(type), value);
+            this.wrapped.set(key, new DeprecatedItemTagType<>(type), value);
         }
     }
 
     @Override
     public <T, Z> boolean hasCustomTag(NamespacedKey key, ItemTagType<T, Z> type) {
         if (Objects.equals(CustomItemTagContainer.class, type.getPrimitiveType())) {
-            return wrapped.has(key, new DeprecatedContainerTagType<>((ItemTagType<CustomItemTagContainer, Z>) type));
+            return this.wrapped.has(key, new DeprecatedContainerTagType<>((ItemTagType<CustomItemTagContainer, Z>) type));
         } else {
-            return wrapped.has(key, new DeprecatedItemTagType<>(type));
+            return this.wrapped.has(key, new DeprecatedItemTagType<>(type));
         }
     }
 
     @Override
     public <T, Z> Z getCustomTag(NamespacedKey key, ItemTagType<T, Z> type) {
         if (Objects.equals(CustomItemTagContainer.class, type.getPrimitiveType())) {
-            return wrapped.get(key, new DeprecatedContainerTagType<>((ItemTagType<CustomItemTagContainer, Z>) type));
+            return this.wrapped.get(key, new DeprecatedContainerTagType<>((ItemTagType<CustomItemTagContainer, Z>) type));
         } else {
-            return wrapped.get(key, new DeprecatedItemTagType<>(type));
+            return this.wrapped.get(key, new DeprecatedItemTagType<>(type));
         }
     }
 
     @Override
     public void removeCustomTag(NamespacedKey key) {
-        wrapped.remove(key);
+        this.wrapped.remove(key);
     }
 
     @Override
     public boolean isEmpty() {
-        return wrapped.isEmpty();
+        return this.wrapped.isEmpty();
     }
 
     @Override
@@ -63,6 +63,6 @@ public final class DeprecatedCustomTagContainer implements CustomItemTagContaine
     }
 
     public PersistentDataContainer getWrapped() {
-        return wrapped;
+        return this.wrapped;
     }
 }

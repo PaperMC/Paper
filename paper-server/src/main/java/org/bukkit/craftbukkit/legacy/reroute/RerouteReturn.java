@@ -27,6 +27,6 @@ public record RerouteReturn(Type type) {
      * @return the opcode of the type
      */
     public int instruction() {
-        return type.getOpcode(Opcodes.IRETURN);
+        return this.type.getOpcode(Opcodes.IRETURN);
     }
 }

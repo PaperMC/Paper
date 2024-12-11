@@ -9,26 +9,26 @@ public final class CraftCactus extends org.bukkit.craftbukkit.block.data.CraftBl
         super();
     }
 
-    public CraftCactus(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftCactus(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftAgeable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger AGE = getInteger(net.minecraft.world.level.block.BlockCactus.class, "age");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty AGE = getInteger(net.minecraft.world.level.block.CactusBlock.class, "age");
 
     @Override
     public int getAge() {
-        return get(AGE);
+        return this.get(CraftCactus.AGE);
     }
 
     @Override
     public void setAge(int age) {
-        set(AGE, age);
+        this.set(CraftCactus.AGE, age);
     }
 
     @Override
     public int getMaximumAge() {
-        return getMax(AGE);
+        return getMax(CraftCactus.AGE);
     }
 }

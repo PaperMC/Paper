@@ -52,34 +52,34 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
         this.excludedClasses = classReaderTest.excludedClasses();
         this.excludedPackages = classReaderTest.excludedPackages();
 
-        for (int i = 0; i < excludedPackages.length; i++) {
+        for (int i = 0; i < this.excludedPackages.length; i++) {
             this.excludedPackages[i] = this.excludedPackages[i].replace('.', '/');
         }
     }
 
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
-        return getClassReaders().map(Arguments::of);
+        return this.getClassReaders().map(Arguments::of);
     }
 
     public Stream<ClassReader> getClassReaders() {
-        assertNotEquals(CRAFT_BUKKIT_CLASSES, MINECRAFT_CLASSES, """
+        assertNotEquals(ClassReaderArgumentProvider.CRAFT_BUKKIT_CLASSES, ClassReaderArgumentProvider.MINECRAFT_CLASSES, """
                 The Minecraft and CraftBukkit uri point to the same directory / file.
                 Please make sure the CRAFT_BUKKIT_CLASSES points to the test class directory and MINECRAFT_CLASSES to the minecraft server jar.
                 """);
 
         Stream<InputStream> result = Stream.empty();
 
-        if (contains(ClassReaderTest.ClassType.MINECRAFT_UNMODIFIED)) {
-            result = Stream.concat(result, readMinecraftClasses());
+        if (this.contains(ClassReaderTest.ClassType.MINECRAFT_UNMODIFIED)) {
+            result = Stream.concat(result, this.readMinecraftClasses());
         }
 
-        if (contains(ClassReaderTest.ClassType.CRAFT_BUKKIT) || contains(ClassReaderTest.ClassType.MINECRAFT_MODIFIED)) {
-            result = Stream.concat(result, readCraftBukkitAndOrMinecraftModifiedClasses(contains(ClassReaderTest.ClassType.CRAFT_BUKKIT), contains(ClassReaderTest.ClassType.MINECRAFT_MODIFIED)));
+        if (this.contains(ClassReaderTest.ClassType.CRAFT_BUKKIT) || this.contains(ClassReaderTest.ClassType.MINECRAFT_MODIFIED)) {
+            result = Stream.concat(result, this.readCraftBukkitAndOrMinecraftModifiedClasses(this.contains(ClassReaderTest.ClassType.CRAFT_BUKKIT), this.contains(ClassReaderTest.ClassType.MINECRAFT_MODIFIED)));
         }
 
-        if (contains(ClassReaderTest.ClassType.BUKKIT)) {
-            result = Stream.concat(result, readBukkitClasses());
+        if (this.contains(ClassReaderTest.ClassType.BUKKIT)) {
+            result = Stream.concat(result, this.readBukkitClasses());
         }
 
         return result.map(this::toClassReader);
@@ -94,7 +94,7 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
     }
 
     private boolean contains(ClassReaderTest.ClassType classType) {
-        for (ClassReaderTest.ClassType c : classTypes) {
+        for (ClassReaderTest.ClassType c : this.classTypes) {
             if (c == classType) {
                 return true;
             }
@@ -104,21 +104,21 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
     }
 
     private Stream<InputStream> readMinecraftClasses() {
-        return readJarFile(MINECRAFT_CLASSES, true);
+        return this.readJarFile(ClassReaderArgumentProvider.MINECRAFT_CLASSES, true);
     }
 
     private Stream<InputStream> readBukkitClasses() {
-        return readJarFile(BUKKIT_CLASSES, false);
+        return this.readJarFile(ClassReaderArgumentProvider.BUKKIT_CLASSES, false);
     }
 
     private Stream<InputStream> readJarFile(URI uri, boolean filterModified) {
         try {
             JarFile jarFile = new JarFile(new File(uri));
-            return jarFile.stream().onClose(() -> closeJarFile(jarFile))
+            return jarFile.stream().onClose(() -> this.closeJarFile(jarFile))
                     .filter(entry -> entry.getName().endsWith(".class"))
-                    .filter(entry -> filterModifiedIfNeeded(entry, filterModified))
-                    .filter(entry -> filterPackageNames(entry.getName()))
-                    .filter(entry -> filterClass(entry.getName()))
+                    .filter(entry -> this.filterModifiedIfNeeded(entry, filterModified))
+                    .filter(entry -> this.filterPackageNames(entry.getName()))
+                    .filter(entry -> this.filterClass(entry.getName()))
                     .map(entry -> {
                         try {
                             return jarFile.getInputStream(entry);
@@ -136,11 +136,11 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
             return true;
         }
 
-        return !new File(CRAFT_BUKKIT_CLASSES.resolve(entry.getName())).exists();
+        return !new File(ClassReaderArgumentProvider.CRAFT_BUKKIT_CLASSES.resolve(entry.getName())).exists();
     }
 
     private boolean filterPackageNames(String name) {
-        for (String packageName : excludedPackages) {
+        for (String packageName : this.excludedPackages) {
             if (name.startsWith(packageName)) {
                 return false;
             }
@@ -150,7 +150,7 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
     }
 
     private boolean filterClass(String name) {
-        for (Class<?> clazz : excludedClasses) {
+        for (Class<?> clazz : this.excludedClasses) {
             if (name.equals(clazz.getName().replace('.', '/') + ".class")) {
                 return false;
             }
@@ -161,13 +161,13 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
 
     private Stream<InputStream> readCraftBukkitAndOrMinecraftModifiedClasses(boolean craftBukkit, boolean minecraftModified) {
         try {
-            return Files.walk(Path.of(CRAFT_BUKKIT_CLASSES))
+            return Files.walk(Path.of(ClassReaderArgumentProvider.CRAFT_BUKKIT_CLASSES))
                     .map(Path::toFile)
                     .filter(File::isFile)
                     .filter(file -> file.getName().endsWith(".class"))
-                    .filter(file -> shouldInclude(removeHomeDirectory(file), craftBukkit, minecraftModified))
-                    .filter(file -> filterPackageNames(removeHomeDirectory(file)))
-                    .filter(file -> filterClass(removeHomeDirectory(file)))
+                    .filter(file -> this.shouldInclude(this.removeHomeDirectory(file), craftBukkit, minecraftModified))
+                    .filter(file -> this.filterPackageNames(this.removeHomeDirectory(file)))
+                    .filter(file -> this.filterClass(this.removeHomeDirectory(file)))
                     .map(file -> {
                         try {
                             return new FileInputStream(file);
@@ -181,7 +181,7 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
     }
 
     private String removeHomeDirectory(File file) {
-        return file.getAbsolutePath().substring(CRAFT_BUKKIT_CLASSES.getPath().length());
+        return file.getAbsolutePath().substring(ClassReaderArgumentProvider.CRAFT_BUKKIT_CLASSES.getPath().length());
     }
 
     private boolean shouldInclude(String name, boolean craftBukkit, boolean minecraftModified) {

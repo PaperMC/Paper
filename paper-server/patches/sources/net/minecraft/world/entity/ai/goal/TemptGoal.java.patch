@@ -1,0 +1,44 @@
+--- a/net/minecraft/world/entity/ai/goal/TemptGoal.java
++++ b/net/minecraft/world/entity/ai/goal/TemptGoal.java
+@@ -8,9 +8,15 @@
+ import net.minecraft.world.entity.PathfinderMob;
+ import net.minecraft.world.entity.ai.attributes.Attributes;
+ import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+-import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityTargetEvent;
++import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
++// CraftBukkit end
++
+ public class TemptGoal extends Goal {
+ 
+     private static final TargetingConditions TEMPT_TARGETING = TargetingConditions.forNonCombat().ignoreLineOfSight();
+@@ -23,7 +29,7 @@
+     private double pRotX;
+     private double pRotY;
+     @Nullable
+-    protected Player player;
++    protected LivingEntity player; // CraftBukkit
+     private int calmDown;
+     private boolean isRunning;
+     private final Predicate<ItemStack> items;
+@@ -47,6 +53,15 @@
+             return false;
+         } else {
+             this.player = getServerLevel((Entity) this.mob).getNearestPlayer(this.targetingConditions.range(this.mob.getAttributeValue(Attributes.TEMPT_RANGE)), this.mob);
++            // CraftBukkit start
++            if (this.player != null) {
++                EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(this.mob, this.player, EntityTargetEvent.TargetReason.TEMPT);
++                if (event.isCancelled()) {
++                    return false;
++                }
++                this.player = (event.getTarget() == null) ? null : ((CraftLivingEntity) event.getTarget()).getHandle();
++            }
++            // CraftBukkit end
+             return this.player != null;
+         }
+     }

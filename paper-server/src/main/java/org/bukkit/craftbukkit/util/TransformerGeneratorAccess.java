@@ -1,11 +1,11 @@
 package org.bukkit.craftbukkit.util;
 
-import net.minecraft.core.BlockPosition;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.block.entity.TileEntity;
-import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
-import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
 import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
@@ -20,77 +20,77 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
     }
 
     public CraftStructureTransformer getStructureTransformer() {
-        return structureTransformer;
+        return this.structureTransformer;
     }
 
     @Override
-    public boolean addFreshEntity(Entity arg0) {
-        if (structureTransformer != null && !structureTransformer.transformEntity(arg0)) {
+    public boolean addFreshEntity(Entity entity) {
+        if (this.structureTransformer != null && !this.structureTransformer.transformEntity(entity)) {
             return false;
         }
-        return super.addFreshEntity(arg0);
+        return super.addFreshEntity(entity);
     }
 
     @Override
     public boolean addFreshEntity(Entity arg0, SpawnReason arg1) {
-        if (structureTransformer != null && !structureTransformer.transformEntity(arg0)) {
+        if (this.structureTransformer != null && !this.structureTransformer.transformEntity(arg0)) {
             return false;
         }
         return super.addFreshEntity(arg0, arg1);
     }
 
     @Override
-    public void addFreshEntityWithPassengers(Entity arg0) {
-        if (structureTransformer != null && !structureTransformer.transformEntity(arg0)) {
+    public void addFreshEntityWithPassengers(Entity entity) {
+        if (this.structureTransformer != null && !this.structureTransformer.transformEntity(entity)) {
             return;
         }
-        super.addFreshEntityWithPassengers(arg0);
+        super.addFreshEntityWithPassengers(entity);
     }
 
     @Override
     public void addFreshEntityWithPassengers(Entity arg0, SpawnReason arg1) {
-        if (structureTransformer != null && !structureTransformer.transformEntity(arg0)) {
+        if (this.structureTransformer != null && !this.structureTransformer.transformEntity(arg0)) {
             return;
         }
         super.addFreshEntityWithPassengers(arg0, arg1);
     }
 
-    public boolean setCraftBlock(BlockPosition position, CraftBlockState craftBlockState, int i, int j) {
-        if (structureTransformer != null) {
-            craftBlockState = structureTransformer.transformCraftState(craftBlockState);
+    public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, int i, int j) {
+        if (this.structureTransformer != null) {
+            craftBlockState = this.structureTransformer.transformCraftState(craftBlockState);
         }
         // This code is based on the method 'net.minecraft.world.level.levelgen.structure.StructurePiece#placeBlock'
         // It ensures that any kind of block is updated correctly upon placing it
-        IBlockData iblockdata = craftBlockState.getHandle();
+        BlockState iblockdata = craftBlockState.getHandle();
         boolean result = super.setBlock(position, iblockdata, i, j);
-        Fluid fluid = getFluidState(position);
+        FluidState fluid = this.getFluidState(position);
         if (!fluid.isEmpty()) {
-            scheduleTick(position, fluid.getType(), 0);
+            this.scheduleTick(position, fluid.getType(), 0);
         }
         if (StructurePiece.SHAPE_CHECK_BLOCKS.contains(iblockdata.getBlock())) {
-            getChunk(position).markPosForPostprocessing(position);
+            this.getChunk(position).markPosForPostprocessing(position);
         }
-        TileEntity tileEntity = getBlockEntity(position);
+        BlockEntity tileEntity = this.getBlockEntity(position);
         if (tileEntity != null && craftBlockState instanceof CraftBlockEntityState<?> craftEntityState) {
             tileEntity.loadWithComponents(craftEntityState.getSnapshotNBT(), this.registryAccess());
         }
         return result;
     }
 
-    public boolean setCraftBlock(BlockPosition position, CraftBlockState craftBlockState, int i) {
-        return setCraftBlock(position, craftBlockState, i, 512);
+    public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, int i) {
+        return this.setCraftBlock(position, craftBlockState, i, 512);
     }
 
     @Override
-    public boolean setBlock(BlockPosition position, IBlockData iblockdata, int i, int j) {
-        if (structureTransformer == null || !structureTransformer.canTransformBlocks()) {
-            return super.setBlock(position, iblockdata, i, j);
+    public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
+        if (this.structureTransformer == null || !this.structureTransformer.canTransformBlocks()) {
+            return super.setBlock(pos, state, flags, maxUpdateDepth);
         }
-        return setCraftBlock(position, (CraftBlockState) CraftBlockStates.getBlockState(this, position, iblockdata, null), i, j);
+        return this.setCraftBlock(pos, (CraftBlockState) CraftBlockStates.getBlockState(this, pos, state, null), flags, maxUpdateDepth);
     }
 
     @Override
-    public boolean setBlock(BlockPosition position, IBlockData iblockdata, int i) {
-        return setBlock(position, iblockdata, i, 512);
+    public boolean setBlock(BlockPos pos, BlockState state, int flags) {
+        return this.setBlock(pos, state, flags, 512);
     }
 }

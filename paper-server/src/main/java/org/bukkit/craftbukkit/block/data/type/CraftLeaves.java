@@ -5,26 +5,26 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftLeaves extends CraftBlockData implements Leaves {
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger DISTANCE = getInteger("distance");
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean PERSISTENT = getBoolean("persistent");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty DISTANCE = getInteger("distance");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty PERSISTENT = getBoolean("persistent");
 
     @Override
     public boolean isPersistent() {
-        return get(PERSISTENT);
+        return this.get(CraftLeaves.PERSISTENT);
     }
 
     @Override
     public void setPersistent(boolean persistent) {
-        set(PERSISTENT, persistent);
+        this.set(CraftLeaves.PERSISTENT, persistent);
     }
 
     @Override
     public int getDistance() {
-        return get(DISTANCE);
+        return this.get(CraftLeaves.DISTANCE);
     }
 
     @Override
     public void setDistance(int distance) {
-        set(DISTANCE, distance);
+        this.set(CraftLeaves.DISTANCE, distance);
     }
 }

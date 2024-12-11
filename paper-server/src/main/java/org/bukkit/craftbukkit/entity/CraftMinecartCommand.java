@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.Set;
-import net.minecraft.world.entity.vehicle.EntityMinecartCommandBlock;
+import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftServer;
@@ -16,29 +16,29 @@ import org.bukkit.plugin.Plugin;
 public class CraftMinecartCommand extends CraftMinecart implements CommandMinecart {
     private final PermissibleBase perm = new PermissibleBase(this);
 
-    public CraftMinecartCommand(CraftServer server, EntityMinecartCommandBlock entity) {
+    public CraftMinecartCommand(CraftServer server, MinecartCommandBlock entity) {
         super(server, entity);
     }
 
     @Override
-    public EntityMinecartCommandBlock getHandle() {
-        return (EntityMinecartCommandBlock) entity;
+    public MinecartCommandBlock getHandle() {
+        return (MinecartCommandBlock) this.entity;
     }
 
     @Override
     public String getCommand() {
-        return getHandle().getCommandBlock().getCommand();
+        return this.getHandle().getCommandBlock().getCommand();
     }
 
     @Override
     public void setCommand(String command) {
-        getHandle().getCommandBlock().setCommand(command != null ? command : "");
-        getHandle().getEntityData().set(EntityMinecartCommandBlock.DATA_ID_COMMAND_NAME, getHandle().getCommandBlock().getCommand());
+        this.getHandle().getCommandBlock().setCommand(command != null ? command : "");
+        this.getHandle().getEntityData().set(MinecartCommandBlock.DATA_ID_COMMAND_NAME, this.getHandle().getCommandBlock().getCommand());
     }
 
     @Override
     public void setName(String name) {
-        getHandle().getCommandBlock().setCustomName(CraftChatMessage.fromStringOrNull(name));
+        this.getHandle().getCommandBlock().setCustomName(CraftChatMessage.fromStringOrNull(name));
     }
 
     @Override
@@ -56,7 +56,7 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
 
     @Override
     public String getName() {
-        return CraftChatMessage.fromComponent(getHandle().getCommandBlock().getName());
+        return CraftChatMessage.fromComponent(this.getHandle().getCommandBlock().getName());
     }
 
     @Override
@@ -71,7 +71,7 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
 
     @Override
     public boolean isPermissionSet(String name) {
-        return perm.isPermissionSet(name);
+        return this.perm.isPermissionSet(name);
     }
 
     @Override
@@ -81,7 +81,7 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
 
     @Override
     public boolean hasPermission(String name) {
-        return perm.hasPermission(name);
+        return this.perm.hasPermission(name);
     }
 
     @Override
@@ -91,37 +91,37 @@ public class CraftMinecartCommand extends CraftMinecart implements CommandMineca
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value) {
-        return perm.addAttachment(plugin, name, value);
+        return this.perm.addAttachment(plugin, name, value);
     }
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin) {
-        return perm.addAttachment(plugin);
+        return this.perm.addAttachment(plugin);
     }
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin, String name, boolean value, int ticks) {
-        return perm.addAttachment(plugin, name, value, ticks);
+        return this.perm.addAttachment(plugin, name, value, ticks);
     }
 
     @Override
     public PermissionAttachment addAttachment(Plugin plugin, int ticks) {
-        return perm.addAttachment(plugin, ticks);
+        return this.perm.addAttachment(plugin, ticks);
     }
 
     @Override
     public void removeAttachment(PermissionAttachment attachment) {
-        perm.removeAttachment(attachment);
+        this.perm.removeAttachment(attachment);
     }
 
     @Override
     public void recalculatePermissions() {
-        perm.recalculatePermissions();
+        this.perm.recalculatePermissions();
     }
 
     @Override
     public Set<PermissionAttachmentInfo> getEffectivePermissions() {
-        return perm.getEffectivePermissions();
+        return this.perm.getEffectivePermissions();
     }
 
     @Override

@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.vehicle.EntityMinecartAbstract;
-import net.minecraft.world.entity.vehicle.EntityMinecartContainer;
+import net.minecraft.world.entity.vehicle.AbstractMinecart;
+import net.minecraft.world.entity.vehicle.AbstractMinecartContainer;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.loot.LootTable;
@@ -9,36 +9,36 @@ import org.bukkit.loot.Lootable;
 
 public abstract class CraftMinecartContainer extends CraftMinecart implements Lootable {
 
-    public CraftMinecartContainer(CraftServer server, EntityMinecartAbstract entity) {
+    public CraftMinecartContainer(CraftServer server, AbstractMinecart entity) {
         super(server, entity);
     }
 
     @Override
-    public EntityMinecartContainer getHandle() {
-        return (EntityMinecartContainer) entity;
+    public AbstractMinecartContainer getHandle() {
+        return (AbstractMinecartContainer) this.entity;
     }
 
     @Override
     public void setLootTable(LootTable table) {
-        setLootTable(table, getSeed());
+        this.setLootTable(table, this.getSeed());
     }
 
     @Override
     public LootTable getLootTable() {
-        return CraftLootTable.minecraftToBukkit(getHandle().lootTable);
+        return CraftLootTable.minecraftToBukkit(this.getHandle().lootTable);
     }
 
     @Override
     public void setSeed(long seed) {
-        setLootTable(getLootTable(), seed);
+        this.setLootTable(this.getLootTable(), seed);
     }
 
     @Override
     public long getSeed() {
-        return getHandle().lootTableSeed;
+        return this.getHandle().lootTableSeed;
     }
 
-    private void setLootTable(LootTable table, long seed) {
-        getHandle().setLootTable(CraftLootTable.bukkitToMinecraft(table), seed);
+    public void setLootTable(LootTable table, long seed) {
+        this.getHandle().setLootTable(CraftLootTable.bukkitToMinecraft(table), seed);
     }
 }

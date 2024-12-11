@@ -26,7 +26,7 @@ public final class DeprecatedContainerTagType<C> implements PersistentDataType<P
     @NotNull
     @Override
     public Class<C> getComplexType() {
-        return deprecated.getComplexType();
+        return this.deprecated.getComplexType();
     }
 
     @NotNull

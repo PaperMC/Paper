@@ -1,0 +1,62 @@
+--- a/net/minecraft/world/inventory/DispenserMenu.java
++++ b/net/minecraft/world/inventory/DispenserMenu.java
+@@ -6,6 +6,11 @@
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.inventory.CraftInventory;
++import org.bukkit.craftbukkit.inventory.CraftInventoryView;
++// CraftBukkit end
++
+ public class DispenserMenu extends AbstractContainerMenu {
+ 
+     private static final int SLOT_COUNT = 9;
+@@ -14,6 +19,10 @@
+     private static final int USE_ROW_SLOT_START = 36;
+     private static final int USE_ROW_SLOT_END = 45;
+     public final Container dispenser;
++    // CraftBukkit start
++    private CraftInventoryView bukkitEntity = null;
++    private Inventory player;
++    // CraftBukkit end
+ 
+     public DispenserMenu(int syncId, Inventory playerInventory) {
+         this(syncId, playerInventory, new SimpleContainer(9));
+@@ -21,6 +30,10 @@
+ 
+     public DispenserMenu(int syncId, Inventory playerInventory, Container inventory) {
+         super(MenuType.GENERIC_3x3, syncId);
++        // CraftBukkit start - Save player
++        this.player = playerInventory;
++        // CraftBukkit end
++
+         checkContainerSize(inventory, 9);
+         this.dispenser = inventory;
+         inventory.startOpen(playerInventory.player);
+@@ -41,6 +54,7 @@
+ 
+     @Override
+     public boolean stillValid(Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return this.dispenser.stillValid(player);
+     }
+ 
+@@ -82,4 +96,17 @@
+         super.removed(player);
+         this.dispenser.stopOpen(player);
+     }
++
++    // CraftBukkit start
++    @Override
++    public CraftInventoryView getBukkitView() {
++        if (this.bukkitEntity != null) {
++            return this.bukkitEntity;
++        }
++
++        CraftInventory inventory = new CraftInventory(this.dispenser);
++        this.bukkitEntity = new CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
++        return this.bukkitEntity;
++    }
++    // CraftBukkit end
+ }

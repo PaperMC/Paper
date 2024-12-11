@@ -9,54 +9,54 @@ public final class CraftBigDripleaf extends org.bukkit.craftbukkit.block.data.Cr
         super();
     }
 
-    public CraftBigDripleaf(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftBigDripleaf(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftBigDripleaf
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> TILT = getEnum(net.minecraft.world.level.block.BigDripleafBlock.class, "tilt");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> TILT = getEnum(net.minecraft.world.level.block.BigDripleafBlock.class, "tilt");
 
     @Override
     public Tilt getTilt() {
-        return get(TILT, org.bukkit.block.data.type.BigDripleaf.Tilt.class);
+        return this.get(CraftBigDripleaf.TILT, org.bukkit.block.data.type.BigDripleaf.Tilt.class);
     }
 
     @Override
     public void setTilt(org.bukkit.block.data.type.BigDripleaf.Tilt tilt) {
-        set(TILT, tilt);
+        this.set(CraftBigDripleaf.TILT, tilt);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftDirectional
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACING = getEnum(net.minecraft.world.level.block.BigDripleafBlock.class, "facing");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> FACING = getEnum(net.minecraft.world.level.block.BigDripleafBlock.class, "facing");
 
     @Override
     public org.bukkit.block.BlockFace getFacing() {
-        return get(FACING, org.bukkit.block.BlockFace.class);
+        return this.get(CraftBigDripleaf.FACING, org.bukkit.block.BlockFace.class);
     }
 
     @Override
     public void setFacing(org.bukkit.block.BlockFace facing) {
-        set(FACING, facing);
+        this.set(CraftBigDripleaf.FACING, facing);
     }
 
     @Override
     public java.util.Set<org.bukkit.block.BlockFace> getFaces() {
-        return getValues(FACING, org.bukkit.block.BlockFace.class);
+        return this.getValues(CraftBigDripleaf.FACING, org.bukkit.block.BlockFace.class);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftWaterlogged
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.world.level.block.BigDripleafBlock.class, "waterlogged");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED = getBoolean(net.minecraft.world.level.block.BigDripleafBlock.class, "waterlogged");
 
     @Override
     public boolean isWaterlogged() {
-        return get(WATERLOGGED);
+        return this.get(CraftBigDripleaf.WATERLOGGED);
     }
 
     @Override
     public void setWaterlogged(boolean waterlogged) {
-        set(WATERLOGGED, waterlogged);
+        this.set(CraftBigDripleaf.WATERLOGGED, waterlogged);
     }
 }

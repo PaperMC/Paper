@@ -1,0 +1,60 @@
+--- a/net/minecraft/world/level/block/SculkVeinBlock.java
++++ b/net/minecraft/world/level/block/SculkVeinBlock.java
+@@ -101,28 +101,33 @@
+ 
+     @Override
+     public int attemptUseCharge(SculkSpreader.ChargeCursor cursor, LevelAccessor world, BlockPos catalystPos, RandomSource random, SculkSpreader spreadManager, boolean shouldConvertToBlock) {
+-        return shouldConvertToBlock && this.attemptPlaceSculk(spreadManager, world, cursor.getPos(), random) ? cursor.getCharge() - 1 : (random.nextInt(spreadManager.chargeDecayRate()) == 0 ? Mth.floor((float) cursor.getCharge() * 0.5F) : cursor.getCharge());
++        // CraftBukkit - add source block
++        return shouldConvertToBlock && this.attemptPlaceSculk(spreadManager, world, cursor.getPos(), random, catalystPos) ? cursor.getCharge() - 1 : (random.nextInt(spreadManager.chargeDecayRate()) == 0 ? Mth.floor((float) cursor.getCharge() * 0.5F) : cursor.getCharge());
+     }
+ 
+-    private boolean attemptPlaceSculk(SculkSpreader spreadManager, LevelAccessor world, BlockPos pos, RandomSource random) {
+-        BlockState iblockdata = world.getBlockState(pos);
+-        TagKey<Block> tagkey = spreadManager.replaceableBlocks();
+-        Iterator iterator = Direction.allShuffled(random).iterator();
++    private boolean attemptPlaceSculk(SculkSpreader sculkspreader, LevelAccessor generatoraccess, BlockPos blockposition, RandomSource randomsource, BlockPos sourceBlock) { // CraftBukkit
++        BlockState iblockdata = generatoraccess.getBlockState(blockposition);
++        TagKey<Block> tagkey = sculkspreader.replaceableBlocks();
++        Iterator iterator = Direction.allShuffled(randomsource).iterator();
+ 
+         while (iterator.hasNext()) {
+             Direction enumdirection = (Direction) iterator.next();
+ 
+             if (hasFace(iblockdata, enumdirection)) {
+-                BlockPos blockposition1 = pos.relative(enumdirection);
+-                BlockState iblockdata1 = world.getBlockState(blockposition1);
++                BlockPos blockposition1 = blockposition.relative(enumdirection);
++                BlockState iblockdata1 = generatoraccess.getBlockState(blockposition1);
+ 
+                 if (iblockdata1.is(tagkey)) {
+                     BlockState iblockdata2 = Blocks.SCULK.defaultBlockState();
+ 
+-                    world.setBlock(blockposition1, iblockdata2, 3);
+-                    Block.pushEntitiesUp(iblockdata1, iblockdata2, world, blockposition1);
+-                    world.playSound((Player) null, blockposition1, SoundEvents.SCULK_BLOCK_SPREAD, SoundSource.BLOCKS, 1.0F, 1.0F);
+-                    this.veinSpreader.spreadAll(iblockdata2, world, blockposition1, spreadManager.isWorldGeneration());
++                    // CraftBukkit start - Call BlockSpreadEvent
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(generatoraccess, sourceBlock, blockposition1, iblockdata2, 3)) {
++                        return false;
++                    }
++                    // CraftBukkit end
++                    Block.pushEntitiesUp(iblockdata1, iblockdata2, generatoraccess, blockposition1);
++                    generatoraccess.playSound((Player) null, blockposition1, SoundEvents.SCULK_BLOCK_SPREAD, SoundSource.BLOCKS, 1.0F, 1.0F);
++                    this.veinSpreader.spreadAll(iblockdata2, generatoraccess, blockposition1, sculkspreader.isWorldGeneration());
+                     Direction enumdirection1 = enumdirection.getOpposite();
+                     Direction[] aenumdirection = SculkVeinBlock.DIRECTIONS;
+                     int i = aenumdirection.length;
+@@ -132,10 +137,10 @@
+ 
+                         if (enumdirection2 != enumdirection1) {
+                             BlockPos blockposition2 = blockposition1.relative(enumdirection2);
+-                            BlockState iblockdata3 = world.getBlockState(blockposition2);
++                            BlockState iblockdata3 = generatoraccess.getBlockState(blockposition2);
+ 
+                             if (iblockdata3.is((Block) this)) {
+-                                this.onDischarged(world, iblockdata3, blockposition2, random);
++                                this.onDischarged(generatoraccess, iblockdata3, blockposition2, randomsource);
+                             }
+                         }
+                     }

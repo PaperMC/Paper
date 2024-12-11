@@ -1,0 +1,110 @@
+--- a/net/minecraft/world/level/block/SpongeBlock.java
++++ b/net/minecraft/world/level/block/SpongeBlock.java
+@@ -15,6 +15,13 @@
+ import net.minecraft.world.level.material.FluidState;
+ import net.minecraft.world.level.redstone.Orientation;
+ 
++// CraftBukkit start
++import java.util.List;
++import org.bukkit.craftbukkit.block.CraftBlockState;
++import org.bukkit.craftbukkit.util.BlockStateListPopulator;
++import org.bukkit.event.block.SpongeAbsorbEvent;
++// CraftBukkit end
++
+ public class SpongeBlock extends Block {
+ 
+     public static final MapCodec<SpongeBlock> CODEC = simpleCodec(SpongeBlock::new);
+@@ -53,7 +60,8 @@
+     }
+ 
+     private boolean removeWaterBreadthFirstSearch(Level world, BlockPos pos) {
+-        return BlockPos.breadthFirstTraversal(pos, 6, 65, (blockposition1, consumer) -> {
++        BlockStateListPopulator blockList = new BlockStateListPopulator(world); // CraftBukkit - Use BlockStateListPopulator
++        BlockPos.breadthFirstTraversal(pos, 6, 65, (blockposition1, consumer) -> {
+             Direction[] aenumdirection = SpongeBlock.ALL_DIRECTIONS;
+             int i = aenumdirection.length;
+ 
+@@ -67,8 +75,10 @@
+             if (blockposition1.equals(pos)) {
+                 return BlockPos.TraversalNodeStatus.ACCEPT;
+             } else {
+-                BlockState iblockdata = world.getBlockState(blockposition1);
+-                FluidState fluid = world.getFluidState(blockposition1);
++                // CraftBukkit start
++                BlockState iblockdata = blockList.getBlockState(blockposition1);
++                FluidState fluid = blockList.getFluidState(blockposition1);
++                // CraftBukkit end
+ 
+                 if (!fluid.is(FluidTags.WATER)) {
+                     return BlockPos.TraversalNodeStatus.SKIP;
+@@ -78,27 +88,64 @@
+                     if (block instanceof BucketPickup) {
+                         BucketPickup ifluidsource = (BucketPickup) block;
+ 
+-                        if (!ifluidsource.pickupBlock((Player) null, world, blockposition1, iblockdata).isEmpty()) {
++                        if (!ifluidsource.pickupBlock((Player) null, blockList, blockposition1, iblockdata).isEmpty()) { // CraftBukkit
+                             return BlockPos.TraversalNodeStatus.ACCEPT;
+                         }
+                     }
+ 
+                     if (iblockdata.getBlock() instanceof LiquidBlock) {
+-                        world.setBlock(blockposition1, Blocks.AIR.defaultBlockState(), 3);
++                        blockList.setBlock(blockposition1, Blocks.AIR.defaultBlockState(), 3); // CraftBukkit
+                     } else {
+                         if (!iblockdata.is(Blocks.KELP) && !iblockdata.is(Blocks.KELP_PLANT) && !iblockdata.is(Blocks.SEAGRASS) && !iblockdata.is(Blocks.TALL_SEAGRASS)) {
+                             return BlockPos.TraversalNodeStatus.SKIP;
+                         }
+ 
+-                        BlockEntity tileentity = iblockdata.hasBlockEntity() ? world.getBlockEntity(blockposition1) : null;
++                        // CraftBukkit start
++                        // TileEntity tileentity = iblockdata.hasBlockEntity() ? world.getBlockEntity(blockposition1) : null;
+ 
+-                        dropResources(iblockdata, world, blockposition1, tileentity);
+-                        world.setBlock(blockposition1, Blocks.AIR.defaultBlockState(), 3);
++                        // dropResources(iblockdata, world, blockposition1, tileentity);
++                        blockList.setBlock(blockposition1, Blocks.AIR.defaultBlockState(), 3);
++                        // CraftBukkit end
+                     }
+ 
+                     return BlockPos.TraversalNodeStatus.ACCEPT;
+                 }
+             }
+-        }) > 1;
++        });
++        // CraftBukkit start
++        List<CraftBlockState> blocks = blockList.getList(); // Is a clone
++        if (!blocks.isEmpty()) {
++            final org.bukkit.block.Block bblock = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++
++            SpongeAbsorbEvent event = new SpongeAbsorbEvent(bblock, (List<org.bukkit.block.BlockState>) (List) blocks);
++            world.getCraftServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return false;
++            }
++
++            for (CraftBlockState block : blocks) {
++                BlockPos blockposition1 = block.getPosition();
++                BlockState iblockdata = world.getBlockState(blockposition1);
++                FluidState fluid = world.getFluidState(blockposition1);
++
++                if (fluid.is(FluidTags.WATER)) {
++                    if (iblockdata.getBlock() instanceof BucketPickup && !((BucketPickup) iblockdata.getBlock()).pickupBlock((Player) null, blockList, blockposition1, iblockdata).isEmpty()) {
++                        // NOP
++                    } else if (iblockdata.getBlock() instanceof LiquidBlock) {
++                        // NOP
++                    } else if (iblockdata.is(Blocks.KELP) || iblockdata.is(Blocks.KELP_PLANT) || iblockdata.is(Blocks.SEAGRASS) || iblockdata.is(Blocks.TALL_SEAGRASS)) {
++                        BlockEntity tileentity = iblockdata.hasBlockEntity() ? world.getBlockEntity(blockposition1) : null;
++
++                        dropResources(iblockdata, world, blockposition1, tileentity);
++                    }
++                }
++                world.setBlock(blockposition1, block.getHandle(), block.getFlag());
++            }
++
++            return true;
++        }
++        return false;
++        // CraftBukkit end
+     }
+ }

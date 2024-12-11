@@ -2,9 +2,9 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.minecraft.nbt.MojangsonParser;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.TagParser;
+import net.minecraft.world.entity.EntityType;
 import org.bukkit.entity.EntityFactory;
 import org.bukkit.entity.EntitySnapshot;
 
@@ -23,14 +23,14 @@ public class CraftEntityFactory implements EntityFactory {
     public EntitySnapshot createEntitySnapshot(String input) {
         Preconditions.checkArgument(input != null, "Input string cannot be null");
 
-        NBTTagCompound tag;
+        CompoundTag tag;
         try {
-            tag = MojangsonParser.parseTag(input);
+            tag = TagParser.parseTag(input);
         } catch (CommandSyntaxException e) {
             throw new IllegalArgumentException("Could not parse Entity: " + input, e);
         }
 
-        EntityTypes<?> type = EntityTypes.by(tag).orElse(null);
+        EntityType<?> type = EntityType.by(tag).orElse(null);
         if (type == null) {
             throw new IllegalArgumentException("Could not parse Entity: " + input);
         }
@@ -39,6 +39,6 @@ public class CraftEntityFactory implements EntityFactory {
     }
 
     public static CraftEntityFactory instance() {
-        return instance;
+        return CraftEntityFactory.instance;
     }
 }

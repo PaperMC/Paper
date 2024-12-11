@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.block.sign;
 
-import net.minecraft.network.chat.IChatBaseComponent;
-import net.minecraft.world.item.EnumColor;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.block.entity.SignText;
 import org.bukkit.DyeColor;
 import org.bukkit.block.sign.SignSide;
@@ -24,60 +23,60 @@ public class CraftSignSide implements SignSide {
     @NotNull
     @Override
     public String[] getLines() {
-        if (lines == null) {
+        if (this.lines == null) {
             // Lazy initialization:
-            IChatBaseComponent[] messages = signText.getMessages(false);
-            lines = new String[messages.length];
-            System.arraycopy(CraftSign.revertComponents(messages), 0, lines, 0, lines.length);
-            originalLines = new String[lines.length];
-            System.arraycopy(lines, 0, originalLines, 0, originalLines.length);
+            Component[] messages = this.signText.getMessages(false);
+            this.lines = new String[messages.length];
+            System.arraycopy(CraftSign.revertComponents(messages), 0, this.lines, 0, this.lines.length);
+            this.originalLines = new String[this.lines.length];
+            System.arraycopy(this.lines, 0, this.originalLines, 0, this.originalLines.length);
         }
-        return lines;
+        return this.lines;
     }
 
     @NotNull
     @Override
     public String getLine(int index) throws IndexOutOfBoundsException {
-        return getLines()[index];
+        return this.getLines()[index];
     }
 
     @Override
     public void setLine(int index, @NotNull String line) throws IndexOutOfBoundsException {
-        getLines()[index] = line;
+        this.getLines()[index] = line;
     }
 
     @Override
     public boolean isGlowingText() {
-        return signText.hasGlowingText();
+        return this.signText.hasGlowingText();
     }
 
     @Override
     public void setGlowingText(boolean glowing) {
-        signText = signText.setHasGlowingText(glowing);
+        this.signText = this.signText.setHasGlowingText(glowing);
     }
 
     @Nullable
     @Override
     public DyeColor getColor() {
-        return DyeColor.getByWoolData((byte) signText.getColor().getId());
+        return DyeColor.getByWoolData((byte) this.signText.getColor().getId());
     }
 
     @Override
     public void setColor(@NotNull DyeColor color) {
-        signText = signText.setColor(EnumColor.byId(color.getWoolData()));
+        this.signText = this.signText.setColor(net.minecraft.world.item.DyeColor.byId(color.getWoolData()));
     }
 
     public SignText applyLegacyStringToSignSide() {
-        if (lines != null) {
-            for (int i = 0; i < lines.length; i++) {
-                String line = (lines[i] == null) ? "" : lines[i];
-                if (line.equals(originalLines[i])) {
+        if (this.lines != null) {
+            for (int i = 0; i < this.lines.length; i++) {
+                String line = (this.lines[i] == null) ? "" : this.lines[i];
+                if (line.equals(this.originalLines[i])) {
                     continue; // The line contents are still the same, skip.
                 }
-                signText = signText.setMessage(i, CraftChatMessage.fromString(line)[0]);
+                this.signText = this.signText.setMessage(i, CraftChatMessage.fromString(line)[0]);
             }
         }
 
-        return signText;
+        return this.signText;
     }
 }

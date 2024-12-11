@@ -1,21 +1,19 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.entity.EntityLiving;
-import net.minecraft.world.entity.projectile.EntityEvokerFangs;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.EvokerFangs;
 import org.bukkit.entity.LivingEntity;
 
 public class CraftEvokerFangs extends CraftEntity implements EvokerFangs {
 
-    public CraftEvokerFangs(CraftServer server, EntityEvokerFangs entity) {
+    public CraftEvokerFangs(CraftServer server, net.minecraft.world.entity.projectile.EvokerFangs entity) {
         super(server, entity);
     }
 
     @Override
-    public EntityEvokerFangs getHandle() {
-        return (EntityEvokerFangs) super.getHandle();
+    public net.minecraft.world.entity.projectile.EvokerFangs getHandle() {
+        return (net.minecraft.world.entity.projectile.EvokerFangs) super.getHandle();
     }
 
     @Override
@@ -25,25 +23,25 @@ public class CraftEvokerFangs extends CraftEntity implements EvokerFangs {
 
     @Override
     public LivingEntity getOwner() {
-        EntityLiving owner = getHandle().getOwner();
+        net.minecraft.world.entity.LivingEntity owner = this.getHandle().getOwner();
 
         return (owner == null) ? null : (LivingEntity) owner.getBukkitEntity();
     }
 
     @Override
     public void setOwner(LivingEntity owner) {
-        getHandle().setOwner(owner == null ? null : ((CraftLivingEntity) owner).getHandle());
+        this.getHandle().setOwner(owner == null ? null : ((CraftLivingEntity) owner).getHandle());
     }
 
     @Override
     public int getAttackDelay() {
-        return getHandle().warmupDelayTicks;
+        return this.getHandle().warmupDelayTicks;
     }
 
     @Override
     public void setAttackDelay(int delay) {
         Preconditions.checkArgument(delay >= 0, "Delay must be positive");
 
-        getHandle().warmupDelayTicks = delay;
+        this.getHandle().warmupDelayTicks = delay;
     }
 }

@@ -5,20 +5,16 @@ import java.util.List;
 import java.util.stream.Stream;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.sounds.SoundEffect;
-import net.minecraft.world.effect.MobEffectList;
-import net.minecraft.world.entity.ai.attributes.AttributeBase;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.world.entity.animal.FrogVariant;
 import net.minecraft.world.entity.animal.WolfVariant;
 import net.minecraft.world.entity.decoration.PaintingVariant;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
-import net.minecraft.world.inventory.Containers;
 import net.minecraft.world.item.Instrument;
-import net.minecraft.world.level.biome.BiomeBase;
-import net.minecraft.world.level.block.entity.EnumBannerPatternType;
-import net.minecraft.world.level.material.FluidType;
+import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.level.saveddata.maps.MapDecorationType;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
@@ -79,15 +75,15 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
     static {
         // Order: Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
         register(Art.class, Registries.PAINTING_VARIANT, CraftArt.class, PaintingVariant.class);
-        register(Attribute.class, Registries.ATTRIBUTE, CraftAttribute.class, AttributeBase.class);
-        register(Biome.class, Registries.BIOME, CraftBiome.class, BiomeBase.class);
+        register(Attribute.class, Registries.ATTRIBUTE, CraftAttribute.class, net.minecraft.world.entity.ai.attributes.Attribute.class);
+        register(Biome.class, Registries.BIOME, CraftBiome.class, net.minecraft.world.level.biome.Biome.class);
         register(Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class);
-        register(Fluid.class, Registries.FLUID, CraftFluid.class, FluidType.class);
+        register(Fluid.class, Registries.FLUID, CraftFluid.class, net.minecraft.world.level.material.Fluid.class);
         register(GameEvent.class, Registries.GAME_EVENT, CraftGameEvent.class, net.minecraft.world.level.gameevent.GameEvent.class);
         register(MusicInstrument.class, Registries.INSTRUMENT, CraftMusicInstrument.class, Instrument.class);
-        register(MenuType.class, Registries.MENU, CraftMenuType.class, Containers.class);
-        register(PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffectList.class);
-        register(Sound.class, Registries.SOUND_EVENT, CraftSound.class, SoundEffect.class);
+        register(MenuType.class, Registries.MENU, CraftMenuType.class, net.minecraft.world.inventory.MenuType.class);
+        register(PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffect.class);
+        register(Sound.class, Registries.SOUND_EVENT, CraftSound.class, SoundEvent.class);
         register(Structure.class, Registries.STRUCTURE, CraftStructure.class, net.minecraft.world.level.levelgen.structure.Structure.class);
         register(StructureType.class, Registries.STRUCTURE_TYPE, CraftStructureType.class, net.minecraft.world.level.levelgen.structure.StructureType.class);
         register(Villager.Type.class, Registries.VILLAGER_TYPE, CraftVillager.CraftType.class, VillagerType.class);
@@ -102,24 +98,24 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(Frog.Variant.class, Registries.FROG_VARIANT, CraftFrog.CraftVariant.class, FrogVariant.class);
         register(Cat.Type.class, Registries.CAT_VARIANT, CraftCat.CraftType.class, CatVariant.class);
         register(MapCursor.Type.class, Registries.MAP_DECORATION_TYPE, CraftMapCursor.CraftType.class, MapDecorationType.class);
-        register(PatternType.class, Registries.BANNER_PATTERN, CraftPatternType.class, EnumBannerPatternType.class);
+        register(PatternType.class, Registries.BANNER_PATTERN, CraftPatternType.class, BannerPattern.class);
 
     }
 
     private static void register(Class bukkit, ResourceKey registry, Class craft, Class minecraft) {
-        register(bukkit, registry, craft, minecraft, false);
+        RegistriesArgumentProvider.register(bukkit, registry, craft, minecraft, false);
     }
 
     private static void register(Class bukkit, ResourceKey registry, Class craft, Class minecraft, boolean newClass) {
-        DATA.add(Arguments.of(bukkit, registry, craft, minecraft, newClass));
+        RegistriesArgumentProvider.DATA.add(Arguments.of(bukkit, registry, craft, minecraft, newClass));
     }
 
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
-        return getData();
+        return RegistriesArgumentProvider.getData();
     }
 
     public static Stream<? extends Arguments> getData() {
-        return DATA.stream();
+        return RegistriesArgumentProvider.DATA.stream();
     }
 }

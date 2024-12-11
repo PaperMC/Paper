@@ -10,6 +10,6 @@ public abstract class CraftVehicle extends CraftEntity implements Vehicle {
 
     @Override
     public String toString() {
-        return "CraftVehicle{passenger=" + getPassenger() + '}';
+        return "CraftVehicle{passenger=" + this.getPassenger() + '}';
     }
 }

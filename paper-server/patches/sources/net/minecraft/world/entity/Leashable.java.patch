@@ -1,0 +1,125 @@
+--- a/net/minecraft/world/entity/Leashable.java
++++ b/net/minecraft/world/entity/Leashable.java
+@@ -15,6 +15,10 @@
+ import net.minecraft.world.level.GameRules;
+ import net.minecraft.world.level.ItemLike;
+ import net.minecraft.world.level.Level;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityUnleashEvent;
++import org.bukkit.event.entity.EntityUnleashEvent.UnleashReason;
++// CraftBukkit end
+ 
+ public interface Leashable {
+ 
+@@ -45,7 +49,7 @@
+ 
+     default void setDelayedLeashHolderId(int unresolvedLeashHolderId) {
+         this.setLeashData(new Leashable.LeashData(unresolvedLeashHolderId));
+-        Leashable.dropLeash((Entity) this, false, false);
++        Leashable.dropLeash((Entity & Leashable) this, false, false); // CraftBukkit - decompile error
+     }
+ 
+     default void readLeashData(CompoundTag nbt) {
+@@ -64,7 +68,7 @@
+             return new Leashable.LeashData(Either.left(nbt.getCompound("leash").getUUID("UUID")));
+         } else {
+             if (nbt.contains("leash", 11)) {
+-                Either<UUID, BlockPos> either = (Either) NbtUtils.readBlockPos(nbt, "leash").map(Either::right).orElse((Object) null);
++                Either<UUID, BlockPos> either = (Either) NbtUtils.readBlockPos(nbt, "leash").map(Either::right).orElse(null); // CraftBukkit - decompile error
+ 
+                 if (either != null) {
+                     return new Leashable.LeashData(either);
+@@ -79,6 +83,11 @@
+         if (leashData != null) {
+             Either<UUID, BlockPos> either = leashData.delayedLeashInfo;
+             Entity entity = leashData.leashHolder;
++            // CraftBukkit start - SPIGOT-7487: Don't save (and possible drop) leash, when the holder was removed by a plugin
++            if (entity != null && entity.pluginRemoved) {
++                return;
++            }
++            // CraftBukkit end
+ 
+             if (entity instanceof LeashFenceKnotEntity) {
+                 LeashFenceKnotEntity entityleash = (LeashFenceKnotEntity) entity;
+@@ -121,7 +130,9 @@
+                 }
+ 
+                 if (entity.tickCount > 100) {
++                    entity.forceDrops = true; // CraftBukkit
+                     entity.spawnAtLocation(worldserver, (ItemLike) Items.LEAD);
++                    entity.forceDrops = false; // CraftBukkit
+                     ((Leashable) entity).setLeashData((Leashable.LeashData) null);
+                 }
+             }
+@@ -130,11 +141,11 @@
+     }
+ 
+     default void dropLeash() {
+-        Leashable.dropLeash((Entity) this, true, true);
++        Leashable.dropLeash((Entity & Leashable) this, true, true); // CraftBukkit - decompile error
+     }
+ 
+     default void removeLeash() {
+-        Leashable.dropLeash((Entity) this, true, false);
++        Leashable.dropLeash((Entity & Leashable) this, true, false); // CraftBukkit - decompile error
+     }
+ 
+     default void onLeashRemoved() {}
+@@ -151,7 +162,9 @@
+                 ServerLevel worldserver = (ServerLevel) world;
+ 
+                 if (dropItem) {
++                    entity.forceDrops = true; // CraftBukkit
+                     entity.spawnAtLocation(worldserver, (ItemLike) Items.LEAD);
++                    entity.forceDrops = false; // CraftBukkit
+                 }
+ 
+                 if (sendPacket) {
+@@ -171,7 +184,8 @@
+ 
+         if (leashable_a != null && leashable_a.leashHolder != null) {
+             if (!entity.isAlive() || !leashable_a.leashHolder.isAlive()) {
+-                if (world.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS)) {
++                world.getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(entity.getBukkitEntity(), (!entity.isAlive()) ? UnleashReason.PLAYER_UNLEASH : UnleashReason.HOLDER_GONE)); // CraftBukkit
++                if (world.getGameRules().getBoolean(GameRules.RULE_DOENTITYDROPS) && !entity.pluginRemoved) { // CraftBukkit - SPIGOT-7487: Don't drop leash, when the holder was removed by a plugin
+                     ((Leashable) entity).dropLeash();
+                 } else {
+                     ((Leashable) entity).removeLeash();
+@@ -205,13 +219,18 @@
+     }
+ 
+     default void leashTooFarBehaviour() {
++        // CraftBukkit start
++        if (this instanceof Entity entity) {
++            entity.level().getCraftServer().getPluginManager().callEvent(new EntityUnleashEvent(entity.getBukkitEntity(), EntityUnleashEvent.UnleashReason.DISTANCE));
++        }
++        // CraftBukkit end
+         this.dropLeash();
+     }
+ 
+     default void closeRangeLeashBehaviour(Entity entity) {}
+ 
+     default void elasticRangeLeashBehaviour(Entity leashHolder, float distance) {
+-        Leashable.legacyElasticRangeLeashBehaviour((Entity) this, leashHolder, distance);
++        Leashable.legacyElasticRangeLeashBehaviour((Entity & Leashable) this, leashHolder, distance); // CraftBukkit - decompile error
+     }
+ 
+     private static <E extends Entity & Leashable> void legacyElasticRangeLeashBehaviour(E entity, Entity leashHolder, float distance) {
+@@ -223,7 +242,7 @@
+     }
+ 
+     default void setLeashedTo(Entity leashHolder, boolean sendPacket) {
+-        this.setLeashedTo((Entity) this, leashHolder, sendPacket);
++        Leashable.setLeashedTo((Entity & Leashable) this, leashHolder, sendPacket); // CraftBukkit - decompile error
+     }
+ 
+     private static <E extends Entity & Leashable> void setLeashedTo(E entity, Entity leashHolder, boolean sendPacket) {
+@@ -254,7 +273,7 @@
+ 
+     @Nullable
+     default Entity getLeashHolder() {
+-        return Leashable.getLeashHolder((Entity) this);
++        return Leashable.getLeashHolder((Entity & Leashable) this); // CraftBukkit - decompile error
+     }
+ 
+     @Nullable

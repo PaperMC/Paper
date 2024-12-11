@@ -13,7 +13,7 @@ import org.junit.jupiter.params.provider.Arguments;
 public class ItemStackEnchantStorageTest extends ItemStackTest {
 
     public static Stream<Arguments> data() {
-        return StackProvider.compound(operators(), "%s %s", NAME_PARAMETER, Material.ENCHANTED_BOOK);
+        return StackProvider.compound(ItemStackEnchantStorageTest.operators(), "%s %s", NAME_PARAMETER, Material.ENCHANTED_BOOK);
     }
 
     @SuppressWarnings("unchecked")

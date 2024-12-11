@@ -9,21 +9,21 @@ public final class CraftSculkCatalyst extends org.bukkit.craftbukkit.block.data.
         super();
     }
 
-    public CraftSculkCatalyst(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftSculkCatalyst(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftSculkCatalyst
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean BLOOM = getBoolean(net.minecraft.world.level.block.SculkCatalystBlock.class, "bloom");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty BLOOM = getBoolean(net.minecraft.world.level.block.SculkCatalystBlock.class, "bloom");
 
     @Override
     public boolean isBloom() {
-        return get(BLOOM);
+        return this.get(CraftSculkCatalyst.BLOOM);
     }
 
     @Override
     public void setBloom(boolean bloom) {
-        set(BLOOM, bloom);
+        this.set(CraftSculkCatalyst.BLOOM, bloom);
     }
 }

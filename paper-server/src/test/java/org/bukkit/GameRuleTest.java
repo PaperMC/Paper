@@ -24,9 +24,9 @@ public class GameRuleTest {
 
     @Test
     public void testMinecraftRules() {
-        Map<String, GameRules.GameRuleKey<?>> minecraftRules = CraftWorld.getGameRulesNMS(new GameRules(FeatureFlags.REGISTRY.allFlags()));
+        Map<String, GameRules.Key<?>> minecraftRules = CraftWorld.getGameRulesNMS(new GameRules(FeatureFlags.REGISTRY.allFlags()));
 
-        for (Map.Entry<String, GameRules.GameRuleKey<?>> entry : minecraftRules.entrySet()) {
+        for (Map.Entry<String, GameRules.Key<?>> entry : minecraftRules.entrySet()) {
             GameRule<?> bukkitRule = GameRule.getByName(entry.getKey());
 
             assertNotNull(bukkitRule, "Missing " + entry.getKey());

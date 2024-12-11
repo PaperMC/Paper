@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.damage;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -35,7 +34,7 @@ public class CraftDamageType implements DamageType, Handleable<net.minecraft.wor
 
     @Override
     public DamageScaling getDamageScaling() {
-        return damageScalingToBukkit(this.getHandle().scaling());
+        return CraftDamageType.damageScalingToBukkit(this.getHandle().scaling());
     }
 
     @Override
@@ -45,7 +44,7 @@ public class CraftDamageType implements DamageType, Handleable<net.minecraft.wor
 
     @Override
     public DeathMessageType getDeathMessageType() {
-        return deathMessageTypeToBukkit(this.getHandle().deathMessageType());
+        return CraftDamageType.deathMessageTypeToBukkit(this.getHandle().deathMessageType());
     }
 
     @Override
@@ -100,15 +99,15 @@ public class CraftDamageType implements DamageType, Handleable<net.minecraft.wor
     }
 
     public static DamageType minecraftHolderToBukkit(Holder<net.minecraft.world.damagesource.DamageType> minecraftHolder) {
-        return minecraftToBukkit(minecraftHolder.value());
+        return CraftDamageType.minecraftToBukkit(minecraftHolder.value());
     }
 
     public static Holder<net.minecraft.world.damagesource.DamageType> bukkitToMinecraftHolder(DamageType bukkitDamageType) {
         Preconditions.checkArgument(bukkitDamageType != null);
 
-        IRegistry<net.minecraft.world.damagesource.DamageType> registry = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE);
+        net.minecraft.core.Registry<net.minecraft.world.damagesource.DamageType> registry = CraftRegistry.getMinecraftRegistry(Registries.DAMAGE_TYPE);
 
-        if (registry.wrapAsHolder(bukkitToMinecraft(bukkitDamageType)) instanceof Holder.c<net.minecraft.world.damagesource.DamageType> holder) {
+        if (registry.wrapAsHolder(CraftDamageType.bukkitToMinecraft(bukkitDamageType)) instanceof Holder.Reference<net.minecraft.world.damagesource.DamageType> holder) {
             return holder;
         }
 

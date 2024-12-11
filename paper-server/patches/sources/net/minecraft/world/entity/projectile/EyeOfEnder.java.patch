@@ -1,0 +1,35 @@
+--- a/net/minecraft/world/entity/projectile/EyeOfEnder.java
++++ b/net/minecraft/world/entity/projectile/EyeOfEnder.java
+@@ -17,6 +17,9 @@
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
+ 
+ public class EyeOfEnder extends Entity implements ItemSupplier {
+ 
+@@ -153,7 +156,7 @@
+             ++this.life;
+             if (this.life > 80 && !this.level().isClientSide) {
+                 this.playSound(SoundEvents.ENDER_EYE_DEATH, 1.0F, 1.0F);
+-                this.discard();
++                this.discard(this.surviveAfterDeath ? EntityRemoveEvent.Cause.DROP : EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                 if (this.surviveAfterDeath) {
+                     this.level().addFreshEntity(new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), this.getItem()));
+                 } else {
+@@ -174,7 +177,12 @@
+     @Override
+     public void readAdditionalSaveData(CompoundTag nbt) {
+         if (nbt.contains("Item", 10)) {
+-            this.setItem((ItemStack) ItemStack.parse(this.registryAccess(), nbt.getCompound("Item")).orElse(this.getDefaultItem()));
++            // CraftBukkit start - SPIGOT-6103 summon, see also SPIGOT-5474
++            ItemStack itemstack = (ItemStack) ItemStack.parse(this.registryAccess(), nbt.getCompound("Item")).orElse(this.getDefaultItem());
++            if (!itemstack.isEmpty()) {
++                this.setItem(itemstack);
++            }
++            // CraftBukkit end
+         } else {
+             this.setItem(this.getDefaultItem());
+         }

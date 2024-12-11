@@ -1,0 +1,80 @@
+--- a/net/minecraft/world/level/block/SculkSpreader.java
++++ b/net/minecraft/world/level/block/SculkSpreader.java
+@@ -30,6 +30,7 @@
+ import net.minecraft.core.Vec3i;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.nbt.NbtOps;
++import net.minecraft.nbt.Tag;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.sounds.SoundEvents;
+ import net.minecraft.sounds.SoundSource;
+@@ -37,9 +38,14 @@
+ import net.minecraft.tags.TagKey;
+ import net.minecraft.util.RandomSource;
+ import net.minecraft.world.entity.player.Player;
++import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.LevelAccessor;
+ import net.minecraft.world.level.block.state.BlockState;
+ import org.slf4j.Logger;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.block.SculkBloomEvent;
++// CraftBukkit end
+ 
+ public class SculkSpreader {
+ 
+@@ -57,6 +63,7 @@
+     private final int additionalDecayRate;
+     private List<SculkSpreader.ChargeCursor> cursors = new ArrayList();
+     private static final Logger LOGGER = LogUtils.getLogger();
++    public Level level; // CraftBukkit
+ 
+     public SculkSpreader(boolean worldGen, TagKey<Block> replaceableTag, int extraBlockChance, int maxDistance, int spreadChance, int decayChance) {
+         this.isWorldGeneration = worldGen;
+@@ -111,7 +118,7 @@
+     public void load(CompoundTag nbt) {
+         if (nbt.contains("cursors", 9)) {
+             this.cursors.clear();
+-            DataResult dataresult = SculkSpreader.ChargeCursor.CODEC.listOf().parse(new Dynamic(NbtOps.INSTANCE, nbt.getList("cursors", 10)));
++            DataResult<List<SculkSpreader.ChargeCursor>> dataresult = SculkSpreader.ChargeCursor.CODEC.listOf().parse(new Dynamic<>(NbtOps.INSTANCE, nbt.getList("cursors", 10))); // CraftBukkit - decompile error
+             Logger logger = SculkSpreader.LOGGER;
+ 
+             Objects.requireNonNull(logger);
+@@ -126,7 +133,7 @@
+     }
+ 
+     public void save(CompoundTag nbt) {
+-        DataResult dataresult = SculkSpreader.ChargeCursor.CODEC.listOf().encodeStart(NbtOps.INSTANCE, this.cursors);
++        DataResult<Tag> dataresult = SculkSpreader.ChargeCursor.CODEC.listOf().encodeStart(NbtOps.INSTANCE, this.cursors); // CraftBukkit - decompile error
+         Logger logger = SculkSpreader.LOGGER;
+ 
+         Objects.requireNonNull(logger);
+@@ -147,6 +154,19 @@
+ 
+     private void addCursor(SculkSpreader.ChargeCursor cursor) {
+         if (this.cursors.size() < 32) {
++            // CraftBukkit start
++            if (!this.isWorldGeneration()) { // CraftBukkit - SPIGOT-7475: Don't call event during world generation
++                CraftBlock bukkitBlock = CraftBlock.at(this.level, cursor.pos);
++                SculkBloomEvent event = new SculkBloomEvent(bukkitBlock, cursor.getCharge());
++                Bukkit.getPluginManager().callEvent(event);
++                if (event.isCancelled()) {
++                    return;
++                }
++
++                cursor.charge = event.getCharge();
++            }
++            // CraftBukkit end
++
+             this.cursors.add(cursor);
+         }
+     }
+@@ -244,7 +264,7 @@
+             this.charge = charge;
+             this.decayDelay = decay;
+             this.updateDelay = update;
+-            this.facings = (Set) faces.orElse((Object) null);
++            this.facings = (Set) faces.orElse(null); // CraftBukkit - decompile error
+         }
+ 
+         public ChargeCursor(BlockPos pos, int charge) {

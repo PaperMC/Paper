@@ -1,0 +1,92 @@
+--- a/net/minecraft/world/level/block/entity/JukeboxBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/JukeboxBlockEntity.java
+@@ -19,13 +19,57 @@
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.ticks.ContainerSingleItem;
+ 
++// CraftBukkit start
++import java.util.Collections;
++import java.util.List;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.entity.HumanEntity;
++// CraftBukkit end
++
+ public class JukeboxBlockEntity extends BlockEntity implements ContainerSingleItem.BlockContainerSingleItem {
+ 
+     public static final String SONG_ITEM_TAG_ID = "RecordItem";
+     public static final String TICKS_SINCE_SONG_STARTED_TAG_ID = "ticks_since_song_started";
+     private ItemStack item;
+     private final JukeboxSongPlayer jukeboxSongPlayer;
++    // CraftBukkit start - add fields and methods
++    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
++    private int maxStack = MAX_STACK;
++    public boolean opened;
+ 
++    @Override
++    public List<ItemStack> getContents() {
++        return Collections.singletonList(this.item);
++    }
++
++    @Override
++    public void onOpen(CraftHumanEntity who) {
++        this.transaction.add(who);
++    }
++
++    @Override
++    public void onClose(CraftHumanEntity who) {
++        this.transaction.remove(who);
++    }
++
++    @Override
++    public List<HumanEntity> getViewers() {
++        return this.transaction;
++    }
++
++    @Override
++    public void setMaxStackSize(int size) {
++        this.maxStack = size;
++    }
++
++    @Override
++    public Location getLocation() {
++        if (this.level == null) return null;
++        return new org.bukkit.Location(this.level.getWorld(), this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ());
++    }
++    // CraftBukkit end
++
+     public JukeboxBlockEntity(BlockPos pos, BlockState state) {
+         super(BlockEntityType.JUKEBOX, pos, state);
+         this.item = ItemStack.EMPTY;
+@@ -137,7 +181,7 @@
+ 
+     @Override
+     public int getMaxStackSize() {
+-        return 1;
++        return this.maxStack; // CraftBukkit
+     }
+ 
+     @Override
+@@ -156,12 +200,17 @@
+     }
+ 
+     @VisibleForTesting
+-    public void setSongItemWithoutPlaying(ItemStack stack) {
+-        this.item = stack;
+-        JukeboxSong.fromStack(this.level.registryAccess(), stack).ifPresent((holder) -> {
+-            this.jukeboxSongPlayer.setSongWithoutPlaying(holder, 0L);
++    public void setSongItemWithoutPlaying(ItemStack itemstack, long ticksSinceSongStarted) { // CraftBukkit - add argument
++        this.item = itemstack;
++        this.jukeboxSongPlayer.song = null; // CraftBukkit - reset
++        JukeboxSong.fromStack(this.level.registryAccess(), itemstack).ifPresent((holder) -> {
++            this.jukeboxSongPlayer.setSongWithoutPlaying(holder, ticksSinceSongStarted); // CraftBukkit - add argument
+         });
+-        this.level.updateNeighborsAt(this.getBlockPos(), this.getBlockState().getBlock());
++        // CraftBukkit start - add null check for level
++        if (this.level != null) {
++            this.level.updateNeighborsAt(this.getBlockPos(), this.getBlockState().getBlock());
++        }
++        // CraftBukkit end
+         this.setChanged();
+     }
+ 

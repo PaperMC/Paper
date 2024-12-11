@@ -9,21 +9,21 @@ public final class CraftHangingMoss extends org.bukkit.craftbukkit.block.data.Cr
         super();
     }
 
-    public CraftHangingMoss(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftHangingMoss(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftHangingMoss
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean TIP = getBoolean(net.minecraft.world.level.block.HangingMossBlock.class, "tip");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty TIP = getBoolean(net.minecraft.world.level.block.HangingMossBlock.class, "tip");
 
     @Override
     public boolean isTip() {
-        return get(TIP);
+        return this.get(CraftHangingMoss.TIP);
     }
 
     @Override
     public void setTip(boolean tip) {
-        set(TIP, tip);
+        this.set(CraftHangingMoss.TIP, tip);
     }
 }

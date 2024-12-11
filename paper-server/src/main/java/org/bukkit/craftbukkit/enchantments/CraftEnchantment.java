@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.enchantments;
 
 import com.google.common.base.Preconditions;
 import java.util.Locale;
-import net.minecraft.SystemUtils;
+import net.minecraft.Util;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.EnchantmentTags;
@@ -25,7 +25,7 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
     }
 
     public static Enchantment minecraftHolderToBukkit(Holder<net.minecraft.world.item.enchantment.Enchantment> minecraft) {
-        return minecraftToBukkit(minecraft.value());
+        return CraftEnchantment.minecraftToBukkit(minecraft.value());
     }
 
     public static net.minecraft.world.item.enchantment.Enchantment bukkitToMinecraft(Enchantment bukkit) {
@@ -65,22 +65,22 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
 
     @Override
     public net.minecraft.world.item.enchantment.Enchantment getHandle() {
-        return handle.value();
+        return this.handle.value();
     }
 
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 
     @Override
     public int getMaxLevel() {
-        return getHandle().getMaxLevel();
+        return this.getHandle().getMaxLevel();
     }
 
     @Override
     public int getStartLevel() {
-        return getHandle().getMinLevel();
+        return this.getHandle().getMinLevel();
     }
 
     @Override
@@ -90,26 +90,26 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
 
     @Override
     public boolean isTreasure() {
-        return !handle.is(EnchantmentTags.IN_ENCHANTING_TABLE);
+        return !this.handle.is(EnchantmentTags.IN_ENCHANTING_TABLE);
     }
 
     @Override
     public boolean isCursed() {
-        return handle.is(EnchantmentTags.CURSE);
+        return this.handle.is(EnchantmentTags.CURSE);
     }
 
     @Override
     public boolean canEnchantItem(ItemStack item) {
-        return getHandle().canEnchant(CraftItemStack.asNMSCopy(item));
+        return this.getHandle().canEnchant(CraftItemStack.asNMSCopy(item));
     }
 
     @Override
     public String getName() {
         // PAIL: migration paths
-        if (!getKey().getNamespace().equals(NamespacedKey.MINECRAFT)) {
-            return getKey().toString();
+        if (!this.getKey().getNamespace().equals(NamespacedKey.MINECRAFT)) {
+            return this.getKey().toString();
         }
-        String keyName = getKey().getKey().toUpperCase(Locale.ROOT);
+        String keyName = this.getKey().getKey().toUpperCase(Locale.ROOT);
         return switch (keyName) {
             case "PROTECTION" -> "PROTECTION_ENVIRONMENTAL";
             case "FIRE_PROTECTION" -> "PROTECTION_FIRE";
@@ -143,12 +143,12 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
             return false;
         }
         CraftEnchantment ench = (CraftEnchantment) other;
-        return !net.minecraft.world.item.enchantment.Enchantment.areCompatible(handle, ench.handle);
+        return !net.minecraft.world.item.enchantment.Enchantment.areCompatible(this.handle, ench.handle);
     }
 
     @Override
     public String getTranslationKey() {
-        return SystemUtils.makeDescriptionId("enchantment", handle.unwrapKey().get().location());
+        return Util.makeDescriptionId("enchantment", this.handle.unwrapKey().get().location());
     }
 
     @Override
@@ -161,16 +161,16 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
             return false;
         }
 
-        return getKey().equals(((Enchantment) other).getKey());
+        return this.getKey().equals(((Enchantment) other).getKey());
     }
 
     @Override
     public int hashCode() {
-        return getKey().hashCode();
+        return this.getKey().hashCode();
     }
 
     @Override
     public String toString() {
-        return "CraftEnchantment[" + getKey() + "]";
+        return "CraftEnchantment[" + this.getKey() + "]";
     }
 }

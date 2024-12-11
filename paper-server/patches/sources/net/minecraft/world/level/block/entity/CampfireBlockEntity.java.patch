@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/CampfireBlockEntity.java
+@@ -31,6 +31,14 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockCookEvent;
++import org.bukkit.event.block.CampfireStartEvent;
++import org.bukkit.inventory.CampfireRecipe;
++// CraftBukkit end
++
+ public class CampfireBlockEntity extends BlockEntity implements Clearable {
+ 
+     private static final int BURN_COOL_SPEED = 2;
+@@ -63,6 +71,20 @@
+                     }).orElse(itemstack);
+ 
+                     if (itemstack1.isItemEnabled(world.enabledFeatures())) {
++                        // CraftBukkit start - fire BlockCookEvent
++                        CraftItemStack source = CraftItemStack.asCraftMirror(itemstack);
++                        org.bukkit.inventory.ItemStack result = CraftItemStack.asBukkitCopy(itemstack1);
++
++                        BlockCookEvent blockCookEvent = new BlockCookEvent(CraftBlock.at(world, pos), source, result);
++                        world.getCraftServer().getPluginManager().callEvent(blockCookEvent);
++
++                        if (blockCookEvent.isCancelled()) {
++                            return;
++                        }
++
++                        result = blockCookEvent.getResult();
++                        itemstack1 = CraftItemStack.asNMSCopy(result);
++                        // CraftBukkit end
+                         Containers.dropItemStack(world, (double) pos.getX(), (double) pos.getY(), (double) pos.getZ(), itemstack1);
+                         blockEntity.items.set(i, ItemStack.EMPTY);
+                         world.sendBlockUpdated(pos, state, state, 3);
+@@ -177,7 +199,11 @@
+                     return false;
+                 }
+ 
+-                this.cookingTime[i] = ((CampfireCookingRecipe) ((RecipeHolder) optional.get()).value()).cookingTime();
++                // CraftBukkit start
++                CampfireStartEvent event = new CampfireStartEvent(CraftBlock.at(this.level,this.worldPosition), CraftItemStack.asCraftMirror(stack), (CampfireRecipe) optional.get().toBukkitRecipe());
++                this.level.getCraftServer().getPluginManager().callEvent(event);
++                this.cookingTime[i] = event.getTotalCookTime(); // i -> event.getTotalCookTime()
++                // CraftBukkit end
+                 this.cookingProgress[i] = 0;
+                 this.items.set(i, stack.consumeAndReturn(1, entity));
+                 world.gameEvent((Holder) GameEvent.BLOCK_CHANGE, this.getBlockPos(), GameEvent.Context.of(entity, this.getBlockState()));

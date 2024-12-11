@@ -5,7 +5,7 @@ import java.awt.Color;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import net.minecraft.world.level.material.MaterialMapColor;
+import net.minecraft.world.level.material.MapColor;
 import org.bukkit.craftbukkit.map.CraftMapColorCache;
 import org.bukkit.support.environment.Normal;
 import org.bukkit.support.environment.Slow;
@@ -20,7 +20,7 @@ public class MapTest {
     @Test
     @Normal
     public void testColors() {
-        MaterialMapColor[] nmsColors = MaterialMapColor.MATERIAL_COLORS;
+        MapColor[] nmsColors = MapColor.MATERIAL_COLORS;
         Color[] bukkitColors = MapPalette.colors;
 
         boolean fail = false;
@@ -35,23 +35,23 @@ public class MapTest {
             int b = rgb & 0xFF;
 
             if (i + 1 > bukkitColors.length / 4) {
-                for (int modi : modifiers) {
+                for (int modi : MapTest.modifiers) {
                     int mr = (r * modi) / 255;
                     int mg = (g * modi) / 255;
                     int mb = (b * modi) / 255;
-                    logger.log(Level.WARNING, "Missing color (check CraftMapView#render and update md5 hash in CraftMapColorCache): c({0}, {1}, {2})", new Object[]{mr, mg, mb});
+                    MapTest.logger.log(Level.WARNING, "Missing color (check CraftMapView#render and update md5 hash in CraftMapColorCache): c({0}, {1}, {2})", new Object[]{mr, mg, mb});
                 }
                 fail = true;
             } else {
-                for (int j = 0; j < modifiers.length; j++) {
-                    int modi = modifiers[j];
+                for (int j = 0; j < MapTest.modifiers.length; j++) {
+                    int modi = MapTest.modifiers[j];
                     Color bukkit = bukkitColors[i * 4 + j];
                     int mr = (r * modi) / 255;
                     int mg = (g * modi) / 255;
                     int mb = (b * modi) / 255;
 
                     if (bukkit.getRed() != mr || bukkit.getGreen() != mg || bukkit.getBlue() != mb) {
-                        logger.log(Level.WARNING, "Incorrect color: {6} {7} c({0}, {1}, {2}) != c({3}, {4}, {5})", new Object[]{
+                        MapTest.logger.log(Level.WARNING, "Incorrect color: {6} {7} c({0}, {1}, {2}) != c({3}, {4}, {5})", new Object[]{
                             bukkit.getRed(), bukkit.getGreen(), bukkit.getBlue(),
                             mr, mg, mb,
                             i, j
@@ -67,7 +67,7 @@ public class MapTest {
     @Test
     @Slow("Test takes around 25 seconds, should be run by changes to the map color conversion")
     public void testMapColorCacheBuilding() throws ExecutionException, InterruptedException {
-        CraftMapColorCache craftMapColorCache = new CraftMapColorCache(logger);
+        CraftMapColorCache craftMapColorCache = new CraftMapColorCache(MapTest.logger);
         craftMapColorCache.initCache().get();
 
         for (int r = 0; r < 256; r++) {

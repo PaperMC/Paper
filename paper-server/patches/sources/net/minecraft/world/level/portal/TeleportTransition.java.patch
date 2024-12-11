@@ -1,0 +1,62 @@
+--- a/net/minecraft/world/level/portal/TeleportTransition.java
++++ b/net/minecraft/world/level/portal/TeleportTransition.java
+@@ -8,26 +8,55 @@
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.Relative;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.event.player.PlayerTeleportEvent;
+ 
+-public record TeleportTransition(ServerLevel newLevel, Vec3 position, Vec3 deltaMovement, float yRot, float xRot, boolean missingRespawnBlock, boolean asPassenger, Set<Relative> relatives, TeleportTransition.PostTeleportTransition postTeleportTransition) {
++public record TeleportTransition(ServerLevel newLevel, Vec3 position, Vec3 deltaMovement, float yRot, float xRot, boolean missingRespawnBlock, boolean asPassenger, Set<Relative> relatives, TeleportTransition.PostTeleportTransition postTeleportTransition, PlayerTeleportEvent.TeleportCause cause) {
+ 
++    public TeleportTransition(ServerLevel newLevel, Vec3 position, Vec3 deltaMovement, float yRot, float xRot, boolean missingRespawnBlock, boolean asPassenger, Set<Relative> relatives, TeleportTransition.PostTeleportTransition postTeleportTransition) {
++        this(newLevel, position, deltaMovement, yRot, xRot, missingRespawnBlock, asPassenger, relatives, postTeleportTransition, PlayerTeleportEvent.TeleportCause.UNKNOWN);
++    }
++
++    public TeleportTransition(PlayerTeleportEvent.TeleportCause cause) {
++        this(null, Vec3.ZERO, Vec3.ZERO, 0.0F, 0.0F, false, false, Set.of(), DO_NOTHING, cause);
++    }
++    // CraftBukkit end
++
+     public static final TeleportTransition.PostTeleportTransition DO_NOTHING = (entity) -> {
+     };
+     public static final TeleportTransition.PostTeleportTransition PLAY_PORTAL_SOUND = TeleportTransition::playPortalSound;
+     public static final TeleportTransition.PostTeleportTransition PLACE_PORTAL_TICKET = TeleportTransition::placePortalTicket;
+ 
+     public TeleportTransition(ServerLevel world, Vec3 pos, Vec3 velocity, float yaw, float pitch, TeleportTransition.PostTeleportTransition postDimensionTransition) {
+-        this(world, pos, velocity, yaw, pitch, Set.of(), postDimensionTransition);
++        // CraftBukkit start
++        this(world, pos, velocity, yaw, pitch, postDimensionTransition, PlayerTeleportEvent.TeleportCause.UNKNOWN);
+     }
+ 
++    public TeleportTransition(ServerLevel worldserver, Vec3 vec3d, Vec3 vec3d1, float f, float f1, TeleportTransition.PostTeleportTransition teleporttransition_a, PlayerTeleportEvent.TeleportCause cause) {
++        this(worldserver, vec3d, vec3d1, f, f1, Set.of(), teleporttransition_a, cause);
++        // CraftBukkit end
++    }
++
+     public TeleportTransition(ServerLevel world, Vec3 pos, Vec3 velocity, float yaw, float pitch, Set<Relative> flags, TeleportTransition.PostTeleportTransition postDimensionTransition) {
+-        this(world, pos, velocity, yaw, pitch, false, false, flags, postDimensionTransition);
++        // CraftBukkit start
++        this(world, pos, velocity, yaw, pitch, flags, postDimensionTransition, PlayerTeleportEvent.TeleportCause.UNKNOWN);
+     }
+ 
++    public TeleportTransition(ServerLevel worldserver, Vec3 vec3d, Vec3 vec3d1, float f, float f1, Set<Relative> set, TeleportTransition.PostTeleportTransition teleporttransition_a, PlayerTeleportEvent.TeleportCause cause) {
++        this(worldserver, vec3d, vec3d1, f, f1, false, false, set, teleporttransition_a, cause);
++        // CraftBukkit end
++    }
++
+     public TeleportTransition(ServerLevel world, Entity entity, TeleportTransition.PostTeleportTransition postDimensionTransition) {
+-        this(world, findAdjustedSharedSpawnPos(world, entity), Vec3.ZERO, 0.0F, 0.0F, false, false, Set.of(), postDimensionTransition);
++        // CraftBukkit start
++        this(world, entity, postDimensionTransition, PlayerTeleportEvent.TeleportCause.UNKNOWN);
+     }
+ 
++    public TeleportTransition(ServerLevel worldserver, Entity entity, TeleportTransition.PostTeleportTransition teleporttransition_a, PlayerTeleportEvent.TeleportCause cause) {
++        this(worldserver, findAdjustedSharedSpawnPos(worldserver, entity), Vec3.ZERO, 0.0F, 0.0F, false, false, Set.of(), teleporttransition_a, cause);
++        // CraftBukkit end
++    }
++
+     private static void playPortalSound(Entity entity) {
+         if (entity instanceof ServerPlayer entityplayer) {
+             entityplayer.connection.send(new ClientboundLevelEventPacket(1032, BlockPos.ZERO, 0, false));

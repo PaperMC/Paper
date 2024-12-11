@@ -1,0 +1,62 @@
+--- a/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -46,6 +46,7 @@
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.context.BlockPlaceContext;
++import net.minecraft.world.item.context.UseOnContext;
+ import net.minecraft.world.level.BlockGetter;
+ import net.minecraft.world.level.EmptyBlockGetter;
+ import net.minecraft.world.level.Explosion;
+@@ -83,6 +84,8 @@
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.Shapes;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++import net.minecraft.world.level.ServerExplosion;
++// CraftBukkit end
+ 
+ public abstract class BlockBehaviour implements FeatureElement {
+ 
+@@ -158,6 +161,12 @@
+ 
+     protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {}
+ 
++    // CraftBukkit start
++    protected void onPlace(BlockState iblockdata, Level world, BlockPos blockposition, BlockState iblockdata1, boolean flag, @Nullable UseOnContext context) {
++        this.onPlace(iblockdata, world, blockposition, iblockdata1, flag);
++    }
++    // CraftBukkit end
++
+     protected void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
+         if (state.hasBlockEntity() && !state.is(newState.getBlock())) {
+             world.removeBlockEntity(pos);
+@@ -174,8 +183,10 @@
+                 BlockEntity tileentity = state.hasBlockEntity() ? world.getBlockEntity(pos) : null;
+                 LootParams.Builder lootparams_a = (new LootParams.Builder(world)).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos)).withParameter(LootContextParams.TOOL, ItemStack.EMPTY).withOptionalParameter(LootContextParams.BLOCK_ENTITY, tileentity).withOptionalParameter(LootContextParams.THIS_ENTITY, explosion.getDirectSourceEntity());
+ 
+-                if (explosion.getBlockInteraction() == Explosion.BlockInteraction.DESTROY_WITH_DECAY) {
+-                    lootparams_a.withParameter(LootContextParams.EXPLOSION_RADIUS, explosion.radius());
++                // CraftBukkit start - add yield
++                if (explosion instanceof ServerExplosion serverExplosion && serverExplosion.yield < 1.0F) {
++                    lootparams_a.withParameter(LootContextParams.EXPLOSION_RADIUS, 1.0F / serverExplosion.yield);
++                    // CraftBukkit end
+                 }
+ 
+                 state.spawnAfterBreak(world, pos, ItemStack.EMPTY, flag);
+@@ -1125,9 +1136,15 @@
+         }
+ 
+         public void onPlace(Level world, BlockPos pos, BlockState state, boolean notify) {
+-            this.getBlock().onPlace(this.asState(), world, pos, state, notify);
++            // CraftBukkit start
++            this.onPlace(world, pos, state, notify, null);
+         }
+ 
++        public void onPlace(Level world, BlockPos blockposition, BlockState iblockdata, boolean flag, @Nullable UseOnContext context) {
++            this.getBlock().onPlace(this.asState(), world, blockposition, iblockdata, flag, context);
++            // CraftBukkit end
++        }
++
+         public void onRemove(Level world, BlockPos pos, BlockState state, boolean moved) {
+             this.getBlock().onRemove(this.asState(), world, pos, state, moved);
+         }

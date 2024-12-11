@@ -26,7 +26,7 @@ public class ImposterEnumSet extends AbstractSet<Object> {
     }
 
     public static ImposterEnumSet noneOf(Class<?> clazz) {
-        Set set = createSet(clazz);
+        Set set = ImposterEnumSet.createSet(clazz);
         return new ImposterEnumSet(set, clazz);
     }
 
@@ -65,7 +65,7 @@ public class ImposterEnumSet extends AbstractSet<Object> {
             }
         }
 
-        Set newSet = createSet(clazz);
+        Set newSet = ImposterEnumSet.createSet(clazz);
         newSet.addAll(set);
 
         return new ImposterEnumSet(newSet, clazz);
@@ -88,7 +88,7 @@ public class ImposterEnumSet extends AbstractSet<Object> {
             }
         }
 
-        Set newSet = createSet(clazz);
+        Set newSet = ImposterEnumSet.createSet(clazz);
         newSet.addAll(collection);
 
         return new ImposterEnumSet(newSet, clazz);
@@ -153,14 +153,14 @@ public class ImposterEnumSet extends AbstractSet<Object> {
     }
 
     public static ImposterEnumSet of(Object e) {
-        Set set = createSet(e.getClass());
+        Set set = ImposterEnumSet.createSet(e.getClass());
         set.add(e);
 
         return new ImposterEnumSet(set, e.getClass());
     }
 
     public static ImposterEnumSet of(Object e1, Object e2) {
-        Set set = createSet(e1.getClass());
+        Set set = ImposterEnumSet.createSet(e1.getClass());
         set.add(e1);
         set.add(e2);
 
@@ -168,7 +168,7 @@ public class ImposterEnumSet extends AbstractSet<Object> {
     }
 
     public static ImposterEnumSet of(Object e1, Object e2, Object e3) {
-        Set set = createSet(e1.getClass());
+        Set set = ImposterEnumSet.createSet(e1.getClass());
         set.add(e1);
         set.add(e2);
         set.add(e3);
@@ -178,7 +178,7 @@ public class ImposterEnumSet extends AbstractSet<Object> {
 
 
     public static ImposterEnumSet of(Object e1, Object e2, Object e3, Object e4) {
-        Set set = createSet(e1.getClass());
+        Set set = ImposterEnumSet.createSet(e1.getClass());
         set.add(e1);
         set.add(e2);
         set.add(e3);
@@ -189,7 +189,7 @@ public class ImposterEnumSet extends AbstractSet<Object> {
 
 
     public static ImposterEnumSet of(Object e1, Object e2, Object e3, Object e4, Object e5) {
-        Set set = createSet(e1.getClass());
+        Set set = ImposterEnumSet.createSet(e1.getClass());
         set.add(e1);
         set.add(e2);
         set.add(e3);
@@ -201,7 +201,7 @@ public class ImposterEnumSet extends AbstractSet<Object> {
 
 
     public static ImposterEnumSet of(Object e, Object... rest) {
-        Set set = createSet(e.getClass());
+        Set set = ImposterEnumSet.createSet(e.getClass());
         set.add(e);
 
         Collections.addAll(set, rest);
@@ -239,71 +239,71 @@ public class ImposterEnumSet extends AbstractSet<Object> {
 
     @Override
     public Iterator<Object> iterator() {
-        return set.iterator();
+        return this.set.iterator();
     }
 
     @Override
     public int size() {
-        return set.size();
+        return this.set.size();
     }
 
     @Override
     public boolean equals(Object o) {
-        return set.equals(o);
+        return this.set.equals(o);
     }
 
     @Override
     public int hashCode() {
-        return set.hashCode();
+        return this.set.hashCode();
     }
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        return set.removeAll(c);
+        return this.set.removeAll(c);
     }
 
     @Override
     public boolean isEmpty() {
-        return set.isEmpty();
+        return this.set.isEmpty();
     }
 
     @Override
     public boolean contains(Object o) {
-        return set.contains(o);
+        return this.set.contains(o);
     }
 
     @NotNull
     @Override
     public Object[] toArray() {
-        return set.toArray();
+        return this.set.toArray();
     }
 
     @NotNull
     @Override
     public <T> T[] toArray(@NotNull T[] a) {
-        return (T[]) set.toArray(a);
+        return (T[]) this.set.toArray(a);
     }
 
     @Override
     public boolean add(Object o) {
-        typeCheck(o);
-        return set.add(o);
+        this.typeCheck(o);
+        return this.set.add(o);
     }
 
     @Override
     public boolean remove(Object o) {
-        return set.remove(o);
+        return this.set.remove(o);
     }
 
     @Override
     public boolean containsAll(@NotNull Collection<?> c) {
-        return set.containsAll(c);
+        return this.set.containsAll(c);
     }
 
     @Override
     public boolean addAll(@NotNull Collection<?> c) {
-        if (set instanceof EnumSet<?>) {
-            set.addAll(c);
+        if (this.set instanceof EnumSet<?>) {
+            this.set.addAll(c);
         }
 
         return super.addAll(c);
@@ -311,35 +311,35 @@ public class ImposterEnumSet extends AbstractSet<Object> {
 
     @Override
     public boolean retainAll(@NotNull Collection<?> c) {
-        return set.retainAll(c);
+        return this.set.retainAll(c);
     }
 
     @Override
     public void clear() {
-        set.clear();
+        this.set.clear();
     }
 
     @Override
     public String toString() {
-        return set.toString();
+        return this.set.toString();
     }
 
     public ImposterEnumSet clone() {
         Set newSet;
-        if (set instanceof EnumSet<?> enumSet) {
+        if (this.set instanceof EnumSet<?> enumSet) {
             newSet = enumSet.clone();
         } else {
             newSet = new HashSet();
-            newSet.addAll(set);
+            newSet.addAll(this.set);
         }
 
-        return new ImposterEnumSet(newSet, objectClass);
+        return new ImposterEnumSet(newSet, this.objectClass);
     }
 
     private void typeCheck(Object object) {
-        if (objectClass != DummyEnum.class) {
-            if (!objectClass.isAssignableFrom(object.getClass())) {
-                throw new ClassCastException(object.getClass() + " != " + objectClass);
+        if (this.objectClass != DummyEnum.class) {
+            if (!this.objectClass.isAssignableFrom(object.getClass())) {
+                throw new ClassCastException(object.getClass() + " != " + this.objectClass);
             }
         }
     }

@@ -1,0 +1,62 @@
+--- a/net/minecraft/world/level/storage/loot/LootTable.java
++++ b/net/minecraft/world/level/storage/loot/LootTable.java
+@@ -31,6 +31,13 @@
+ import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.CraftLootTable;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.world.LootGenerateEvent;
++// CraftBukkit end
++
+ public class LootTable {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -54,6 +61,7 @@
+     private final List<LootPool> pools;
+     private final List<LootItemFunction> functions;
+     private final BiFunction<ItemStack, LootContext, ItemStack> compositeFunction;
++    public CraftLootTable craftLootTable; // CraftBukkit
+ 
+     LootTable(ContextKeySet type, Optional<ResourceLocation> randomSequenceId, List<LootPool> pools, List<LootItemFunction> functions) {
+         this.paramSet = type;
+@@ -157,10 +165,23 @@
+     }
+ 
+     public void fill(Container inventory, LootParams parameters, long seed) {
+-        LootContext loottableinfo = (new LootContext.Builder(parameters)).withOptionalRandomSeed(seed).create(this.randomSequence);
++        // CraftBukkit start
++        this.fillInventory(inventory, parameters, seed, false);
++    }
++
++    public void fillInventory(Container iinventory, LootParams lootparams, long i, boolean plugin) {
++        // CraftBukkit end
++        LootContext loottableinfo = (new LootContext.Builder(lootparams)).withOptionalRandomSeed(i).create(this.randomSequence);
+         ObjectArrayList<ItemStack> objectarraylist = this.getRandomItems(loottableinfo);
+         RandomSource randomsource = loottableinfo.getRandom();
+-        List<Integer> list = this.getAvailableSlots(inventory, randomsource);
++        // CraftBukkit start
++        LootGenerateEvent event = CraftEventFactory.callLootGenerateEvent(iinventory, this, loottableinfo, objectarraylist, plugin);
++        if (event.isCancelled()) {
++            return;
++        }
++        objectarraylist = event.getLoot().stream().map(CraftItemStack::asNMSCopy).collect(ObjectArrayList.toList());
++        // CraftBukkit end
++        List<Integer> list = this.getAvailableSlots(iinventory, randomsource);
+ 
+         this.shuffleAndSplitItems(objectarraylist, list.size(), randomsource);
+         ObjectListIterator objectlistiterator = objectarraylist.iterator();
+@@ -174,9 +195,9 @@
+             }
+ 
+             if (itemstack.isEmpty()) {
+-                inventory.setItem((Integer) list.remove(list.size() - 1), ItemStack.EMPTY);
++                iinventory.setItem((Integer) list.remove(list.size() - 1), ItemStack.EMPTY);
+             } else {
+-                inventory.setItem((Integer) list.remove(list.size() - 1), itemstack);
++                iinventory.setItem((Integer) list.remove(list.size() - 1), itemstack);
+             }
+         }
+ 

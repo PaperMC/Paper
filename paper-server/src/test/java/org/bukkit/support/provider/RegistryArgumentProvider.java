@@ -17,12 +17,12 @@ public class RegistryArgumentProvider implements ArgumentsProvider, AnnotationCo
 
     @Override
     public void accept(RegistryTest registryTest) {
-        registryType = registryTest.value();
+        this.registryType = registryTest.value();
     }
 
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
-        return getValues(registryType);
+        return RegistryArgumentProvider.getValues(this.registryType);
     }
 
     public static Stream<? extends Arguments> getValues(Class<? extends Keyed> registryType) {

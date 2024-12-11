@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.entity.item.EntityFallingBlock;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftServer;
@@ -10,13 +10,13 @@ import org.bukkit.entity.FallingBlock;
 
 public class CraftFallingBlock extends CraftEntity implements FallingBlock {
 
-    public CraftFallingBlock(CraftServer server, EntityFallingBlock entity) {
+    public CraftFallingBlock(CraftServer server, FallingBlockEntity entity) {
         super(server, entity);
     }
 
     @Override
-    public EntityFallingBlock getHandle() {
-        return (EntityFallingBlock) entity;
+    public FallingBlockEntity getHandle() {
+        return (FallingBlockEntity) this.entity;
     }
 
     @Override
@@ -26,42 +26,42 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
 
     @Override
     public Material getMaterial() {
-        return getBlockData().getMaterial();
+        return this.getBlockData().getMaterial();
     }
 
     @Override
     public BlockData getBlockData() {
-        return CraftBlockData.fromData(getHandle().getBlockState());
+        return CraftBlockData.fromData(this.getHandle().getBlockState());
     }
 
     @Override
     public boolean getDropItem() {
-        return getHandle().dropItem;
+        return this.getHandle().dropItem;
     }
 
     @Override
     public void setDropItem(boolean drop) {
-        getHandle().dropItem = drop;
+        this.getHandle().dropItem = drop;
     }
 
     @Override
     public boolean getCancelDrop() {
-        return getHandle().cancelDrop;
+        return this.getHandle().cancelDrop;
     }
 
     @Override
     public void setCancelDrop(boolean cancelDrop) {
-        getHandle().cancelDrop = cancelDrop;
+        this.getHandle().cancelDrop = cancelDrop;
     }
 
     @Override
     public boolean canHurtEntities() {
-        return getHandle().hurtEntities;
+        return this.getHandle().hurtEntities;
     }
 
     @Override
     public void setHurtEntities(boolean hurtEntities) {
-        getHandle().hurtEntities = hurtEntities;
+        this.getHandle().hurtEntities = hurtEntities;
     }
 
     @Override
@@ -69,19 +69,19 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
         super.setTicksLived(value);
 
         // Second field for EntityFallingBlock
-        getHandle().time = value;
+        this.getHandle().time = value;
     }
 
     @Override
     public float getDamagePerBlock() {
-        return getHandle().fallDamagePerDistance;
+        return this.getHandle().fallDamagePerDistance;
     }
 
     @Override
     public void setDamagePerBlock(float damage) {
         Preconditions.checkArgument(damage >= 0.0, "damage must be >= 0.0, given %s", damage);
 
-        getHandle().fallDamagePerDistance = damage;
+        this.getHandle().fallDamagePerDistance = damage;
         if (damage > 0.0) {
             this.setHurtEntities(true);
         }
@@ -89,14 +89,14 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
 
     @Override
     public int getMaxDamage() {
-        return getHandle().fallDamageMax;
+        return this.getHandle().fallDamageMax;
     }
 
     @Override
     public void setMaxDamage(int damage) {
         Preconditions.checkArgument(damage >= 0, "damage must be >= 0, given %s", damage);
 
-        getHandle().fallDamageMax = damage;
+        this.getHandle().fallDamageMax = damage;
         if (damage > 0) {
             this.setHurtEntities(true);
         }

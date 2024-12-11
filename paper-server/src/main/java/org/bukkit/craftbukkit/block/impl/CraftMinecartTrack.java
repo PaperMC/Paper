@@ -9,40 +9,40 @@ public final class CraftMinecartTrack extends org.bukkit.craftbukkit.block.data.
         super();
     }
 
-    public CraftMinecartTrack(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftMinecartTrack(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftRail
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> SHAPE = getEnum(net.minecraft.world.level.block.BlockMinecartTrack.class, "shape");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> SHAPE = getEnum(net.minecraft.world.level.block.RailBlock.class, "shape");
 
     @Override
     public org.bukkit.block.data.Rail.Shape getShape() {
-        return get(SHAPE, org.bukkit.block.data.Rail.Shape.class);
+        return this.get(CraftMinecartTrack.SHAPE, org.bukkit.block.data.Rail.Shape.class);
     }
 
     @Override
     public void setShape(org.bukkit.block.data.Rail.Shape shape) {
-        set(SHAPE, shape);
+        this.set(CraftMinecartTrack.SHAPE, shape);
     }
 
     @Override
     public java.util.Set<org.bukkit.block.data.Rail.Shape> getShapes() {
-        return getValues(SHAPE, org.bukkit.block.data.Rail.Shape.class);
+        return this.getValues(CraftMinecartTrack.SHAPE, org.bukkit.block.data.Rail.Shape.class);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftWaterlogged
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.world.level.block.BlockMinecartTrack.class, "waterlogged");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED = getBoolean(net.minecraft.world.level.block.RailBlock.class, "waterlogged");
 
     @Override
     public boolean isWaterlogged() {
-        return get(WATERLOGGED);
+        return this.get(CraftMinecartTrack.WATERLOGGED);
     }
 
     @Override
     public void setWaterlogged(boolean waterlogged) {
-        set(WATERLOGGED, waterlogged);
+        this.set(CraftMinecartTrack.WATERLOGGED, waterlogged);
     }
 }

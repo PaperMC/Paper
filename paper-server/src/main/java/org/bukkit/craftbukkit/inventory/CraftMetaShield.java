@@ -6,10 +6,9 @@ import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import net.minecraft.core.BlockPosition;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.world.item.EnumColor;
 import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
@@ -26,7 +25,7 @@ import org.bukkit.inventory.meta.ShieldMeta;
 @DelegateDeserialization(SerializableMeta.class)
 public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockStateMeta {
 
-    static final ItemMetaKeyType<EnumColor> BASE_COLOR = new ItemMetaKeyType<>(DataComponents.BASE_COLOR, "Base", "base-color");
+    static final ItemMetaKeyType<net.minecraft.world.item.DyeColor> BASE_COLOR = new ItemMetaKeyType<>(DataComponents.BASE_COLOR, "Base", "base-color");
 
     private Banner banner;
 
@@ -45,19 +44,19 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
     CraftMetaShield(DataComponentPatch tag) {
         super(tag);
 
-        getOrEmpty(tag, BASE_COLOR).ifPresent((color) -> {
-            banner = getBlockState(DyeColor.getByWoolData((byte) color.getId()));
+        getOrEmpty(tag, CraftMetaShield.BASE_COLOR).ifPresent((color) -> {
+            this.banner = CraftMetaShield.getBlockState(DyeColor.getByWoolData((byte) color.getId()));
         });
 
         getOrEmpty(tag, CraftMetaBanner.PATTERNS).ifPresent((entityTag) -> {
-            List<BannerPatternLayers.b> patterns = entityTag.layers();
+            List<BannerPatternLayers.Layer> patterns = entityTag.layers();
             for (int i = 0; i < Math.min(patterns.size(), 20); i++) {
-                BannerPatternLayers.b p = patterns.get(i);
+                BannerPatternLayers.Layer p = patterns.get(i);
                 DyeColor color = DyeColor.getByWoolData((byte) p.color().getId());
                 PatternType pattern = CraftPatternType.minecraftHolderToBukkit(p.pattern());
 
                 if (color != null && pattern != null) {
-                    addPattern(new Pattern(color, pattern));
+                    this.addPattern(new Pattern(color, pattern));
                 }
             }
         });
@@ -66,9 +65,9 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
     CraftMetaShield(Map<String, Object> map) {
         super(map);
 
-        String baseColor = SerializableMeta.getString(map, BASE_COLOR.BUKKIT, true);
+        String baseColor = SerializableMeta.getString(map, CraftMetaShield.BASE_COLOR.BUKKIT, true);
         if (baseColor != null) {
-            banner = getBlockState(DyeColor.valueOf(baseColor));
+            this.banner = CraftMetaShield.getBlockState(DyeColor.valueOf(baseColor));
         }
 
         Iterable<?> rawPatternList = SerializableMeta.getObject(Iterable.class, map, CraftMetaBanner.PATTERNS.BUKKIT, true);
@@ -78,7 +77,7 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
 
         for (Object obj : rawPatternList) {
             Preconditions.checkArgument(obj instanceof Pattern, "Object (%s) in pattern list is not valid", obj.getClass());
-            addPattern((Pattern) obj);
+            this.addPattern((Pattern) obj);
         }
     }
 
@@ -86,14 +85,14 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
     void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
-        if (banner != null) {
-            tag.put(BASE_COLOR, EnumColor.byId(banner.getBaseColor().getWoolData()));
+        if (this.banner != null) {
+            tag.put(CraftMetaShield.BASE_COLOR, net.minecraft.world.item.DyeColor.byId(this.banner.getBaseColor().getWoolData()));
 
-            if (banner.numberOfPatterns() > 0) {
-                List<BannerPatternLayers.b> newPatterns = new ArrayList<>();
+            if (this.banner.numberOfPatterns() > 0) {
+                List<BannerPatternLayers.Layer> newPatterns = new ArrayList<>();
 
-                for (Pattern p : banner.getPatterns()) {
-                    newPatterns.add(new BannerPatternLayers.b(CraftPatternType.bukkitToMinecraftHolder(p.getPattern()), EnumColor.byId(p.getColor().getWoolData())));
+                for (Pattern p : this.banner.getPatterns()) {
+                    newPatterns.add(new BannerPatternLayers.Layer(CraftPatternType.bukkitToMinecraftHolder(p.getPattern()), net.minecraft.world.item.DyeColor.byId(p.getColor().getWoolData())));
                 }
 
                 tag.put(CraftMetaBanner.PATTERNS, new BannerPatternLayers(newPatterns));
@@ -103,94 +102,94 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
 
     @Override
     public List<Pattern> getPatterns() {
-        if (banner == null) {
+        if (this.banner == null) {
             return new ArrayList<>();
         }
 
-        return banner.getPatterns();
+        return this.banner.getPatterns();
     }
 
     @Override
     public void setPatterns(List<Pattern> patterns) {
-        if (banner == null) {
+        if (this.banner == null) {
             if (patterns.isEmpty()) {
                 return;
             }
 
-            banner = getBlockState(null);
+            this.banner = CraftMetaShield.getBlockState(null);
         }
 
-        banner.setPatterns(patterns);
+        this.banner.setPatterns(patterns);
     }
 
     @Override
     public void addPattern(Pattern pattern) {
-        if (banner == null) {
-            banner = getBlockState(null);
+        if (this.banner == null) {
+            this.banner = CraftMetaShield.getBlockState(null);
         }
 
-        banner.addPattern(pattern);
+        this.banner.addPattern(pattern);
     }
 
     @Override
     public Pattern getPattern(int i) {
-        if (banner == null) {
+        if (this.banner == null) {
             throw new IndexOutOfBoundsException(i);
         }
 
-        return banner.getPattern(i);
+        return this.banner.getPattern(i);
     }
 
     @Override
     public Pattern removePattern(int i) {
-        if (banner == null) {
+        if (this.banner == null) {
             throw new IndexOutOfBoundsException(i);
         }
 
-        return banner.removePattern(i);
+        return this.banner.removePattern(i);
     }
 
     @Override
     public void setPattern(int i, Pattern pattern) {
-        if (banner == null) {
+        if (this.banner == null) {
             throw new IndexOutOfBoundsException(i);
         }
 
-        banner.setPattern(i, pattern);
+        this.banner.setPattern(i, pattern);
     }
 
     @Override
     public int numberOfPatterns() {
-        if (banner == null) {
+        if (this.banner == null) {
             return 0;
         }
 
-        return banner.numberOfPatterns();
+        return this.banner.numberOfPatterns();
     }
 
     @Override
     public DyeColor getBaseColor() {
-        if (banner == null) {
+        if (this.banner == null) {
             return null;
         }
 
-        return banner.getBaseColor();
+        return this.banner.getBaseColor();
     }
 
     @Override
     public void setBaseColor(DyeColor baseColor) {
         if (baseColor == null) {
-            if (banner.numberOfPatterns() > 0) {
-                banner.setBaseColor(DyeColor.WHITE);
+            if (this.banner.numberOfPatterns() > 0) {
+                this.banner.setBaseColor(DyeColor.WHITE);
             } else {
-                banner = null;
+                this.banner = null;
             }
         } else {
-            if (banner == null) {
-                banner = getBlockState(baseColor);
+            if (this.banner == null) {
+                this.banner = CraftMetaShield.getBlockState(baseColor);
             }
 
-            banner.setBaseColor(baseColor);
+            this.banner.setBaseColor(baseColor);
         }
     }
 
@@ -198,11 +197,11 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
     ImmutableMap.Builder<String, Object> serialize(ImmutableMap.Builder<String, Object> builder) {
         super.serialize(builder);
 
-        if (banner != null) {
-            builder.put(BASE_COLOR.BUKKIT, banner.getBaseColor().toString());
+        if (this.banner != null) {
+            builder.put(CraftMetaShield.BASE_COLOR.BUKKIT, this.banner.getBaseColor().toString());
 
-            if (banner.numberOfPatterns() > 0) {
-                builder.put(CraftMetaBanner.PATTERNS.BUKKIT, banner.getPatterns());
+            if (this.banner.numberOfPatterns() > 0) {
+                builder.put(CraftMetaBanner.PATTERNS.BUKKIT, this.banner.getPatterns());
             }
         }
 
@@ -213,8 +212,8 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
     int applyHash() {
         final int original;
         int hash = original = super.applyHash();
-        if (banner != null) {
-            hash = 61 * hash + banner.hashCode();
+        if (this.banner != null) {
+            hash = 61 * hash + this.banner.hashCode();
         }
         return original != hash ? CraftMetaShield.class.hashCode() ^ hash : hash;
     }
@@ -242,12 +241,12 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
 
     @Override
     public boolean hasBlockState() {
-        return banner != null;
+        return this.banner != null;
     }
 
     @Override
     public BlockState getBlockState() {
-        return (banner != null) ? banner.copy() : getBlockState(null);
+        return (this.banner != null) ? this.banner.copy() : CraftMetaShield.getBlockState(null);
     }
 
     @Override
@@ -259,8 +258,8 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
     }
 
     private static Banner getBlockState(DyeColor color) {
-        BlockPosition pos = BlockPosition.ZERO;
-        Material stateMaterial = shieldToBannerHack(color);
+        BlockPos pos = BlockPos.ZERO;
+        Material stateMaterial = CraftMetaShield.shieldToBannerHack(color);
 
         return (Banner) CraftBlockStates.getBlockState(pos, stateMaterial, null);
     }
@@ -269,7 +268,7 @@ public class CraftMetaShield extends CraftMetaItem implements ShieldMeta, BlockS
     public CraftMetaShield clone() {
         CraftMetaShield meta = (CraftMetaShield) super.clone();
         if (this.banner != null) {
-            meta.banner = (Banner) banner.copy();
+            meta.banner = (Banner) this.banner.copy();
         }
         return meta;
     }

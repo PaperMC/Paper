@@ -1,0 +1,83 @@
+--- a/net/minecraft/world/item/BlockItem.java
++++ b/net/minecraft/world/item/BlockItem.java
+@@ -10,9 +10,9 @@
+ import net.minecraft.core.registries.Registries;
+ import net.minecraft.nbt.CompoundTag;
+ import net.minecraft.network.chat.Component;
++import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.sounds.SoundEvent;
+-import net.minecraft.sounds.SoundSource;
+ import net.minecraft.world.InteractionResult;
+ import net.minecraft.world.entity.item.ItemEntity;
+ import net.minecraft.world.entity.player.Player;
+@@ -31,6 +31,10 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.phys.shapes.CollisionContext;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.event.block.BlockCanBuildEvent;
++// CraftBukkit end
+ 
+ public class BlockItem extends Item {
+ 
+@@ -62,6 +66,12 @@
+                 return InteractionResult.FAIL;
+             } else {
+                 BlockState iblockdata = this.getPlacementState(blockactioncontext1);
++                // CraftBukkit start - special case for handling block placement with water lilies and snow buckets
++                org.bukkit.block.BlockState blockstate = null;
++                if (this instanceof PlaceOnWaterBlockItem || this instanceof SolidBucketItem) {
++                    blockstate = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(blockactioncontext1.getLevel(), blockactioncontext1.getClickedPos());
++                }
++                // CraftBukkit end
+ 
+                 if (iblockdata == null) {
+                     return InteractionResult.FAIL;
+@@ -79,6 +89,19 @@
+                         this.updateCustomBlockEntityTag(blockposition, world, entityhuman, itemstack, iblockdata1);
+                         BlockItem.updateBlockEntityComponents(world, blockposition, itemstack);
+                         iblockdata1.getBlock().setPlacedBy(world, blockposition, iblockdata1, entityhuman, itemstack);
++                        // CraftBukkit start
++                        if (blockstate != null) {
++                            org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent((ServerLevel) world, entityhuman, blockactioncontext1.getHand(), blockstate, blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                            if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
++                                blockstate.update(true, false);
++
++                                if (this instanceof SolidBucketItem) {
++                                    ((ServerPlayer) entityhuman).getBukkitEntity().updateInventory(); // SPIGOT-4541
++                                }
++                                return InteractionResult.FAIL;
++                            }
++                        }
++                        // CraftBukkit end
+                         if (entityhuman instanceof ServerPlayer) {
+                             CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer) entityhuman, blockposition, itemstack);
+                         }
+@@ -86,7 +109,7 @@
+ 
+                     SoundType soundeffecttype = iblockdata1.getSoundType();
+ 
+-                    world.playSound(entityhuman, blockposition, this.getPlaceSound(iblockdata1), SoundSource.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
++                    // world.playSound(entityhuman, blockposition, this.getPlaceSound(iblockdata1), SoundCategory.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
+                     world.gameEvent((Holder) GameEvent.BLOCK_PLACE, blockposition, GameEvent.Context.of(entityhuman, iblockdata1));
+                     itemstack.consume(1, entityhuman);
+                     return InteractionResult.SUCCESS;
+@@ -144,8 +167,15 @@
+     protected boolean canPlace(BlockPlaceContext context, BlockState state) {
+         Player entityhuman = context.getPlayer();
+         CollisionContext voxelshapecollision = entityhuman == null ? CollisionContext.empty() : CollisionContext.of(entityhuman);
++        // CraftBukkit start - store default return
++        boolean defaultReturn = (!this.mustSurvive() || state.canSurvive(context.getLevel(), context.getClickedPos())) && context.getLevel().isUnobstructed(state, context.getClickedPos(), voxelshapecollision);
++        org.bukkit.entity.Player player = (context.getPlayer() instanceof ServerPlayer) ? (org.bukkit.entity.Player) context.getPlayer().getBukkitEntity() : null;
+ 
+-        return (!this.mustSurvive() || state.canSurvive(context.getLevel(), context.getClickedPos())) && context.getLevel().isUnobstructed(state, context.getClickedPos(), voxelshapecollision);
++        BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(context.getLevel(), context.getClickedPos()), player, CraftBlockData.fromData(state), defaultReturn);
++        context.getLevel().getCraftServer().getPluginManager().callEvent(event);
++
++        return event.isBuildable();
++        // CraftBukkit end
+     }
+ 
+     protected boolean mustSurvive() {

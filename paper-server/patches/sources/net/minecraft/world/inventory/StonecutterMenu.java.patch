@@ -1,0 +1,129 @@
+--- a/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -7,7 +7,6 @@
+ import net.minecraft.world.Container;
+ import net.minecraft.world.SimpleContainer;
+ import net.minecraft.world.entity.player.Inventory;
+-import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.crafting.RecipeHolder;
+@@ -17,6 +16,13 @@
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.Blocks;
+ 
++// CraftBukkit start
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.inventory.CraftInventoryStonecutter;
++import org.bukkit.craftbukkit.inventory.view.CraftStonecutterView;
++import org.bukkit.entity.Player;
++// CraftBukkit end
++
+ public class StonecutterMenu extends AbstractContainerMenu {
+ 
+     public static final int INPUT_SLOT = 0;
+@@ -36,6 +42,21 @@
+     Runnable slotUpdateListener;
+     public final Container container;
+     final ResultContainer resultContainer;
++    // CraftBukkit start
++    private CraftStonecutterView bukkitEntity = null;
++    private Player player;
++
++    @Override
++    public CraftStonecutterView getBukkitView() {
++        if (this.bukkitEntity != null) {
++            return this.bukkitEntity;
++        }
++
++        CraftInventoryStonecutter inventory = new CraftInventoryStonecutter(this.container, this.resultContainer);
++        this.bukkitEntity = new CraftStonecutterView(this.player, inventory, this);
++        return this.bukkitEntity;
++    }
++    // CraftBukkit end
+ 
+     public StonecutterMenu(int syncId, Inventory playerInventory) {
+         this(syncId, playerInventory, ContainerLevelAccess.NULL);
+@@ -55,6 +76,13 @@
+                 StonecutterMenu.this.slotsChanged(this);
+                 StonecutterMenu.this.slotUpdateListener.run();
+             }
++
++            // CraftBukkit start
++            @Override
++            public Location getLocation() {
++                return context.getLocation();
++            }
++            // CraftBukkit end
+         };
+         this.resultContainer = new ResultContainer();
+         this.access = context;
+@@ -67,7 +95,7 @@
+             }
+ 
+             @Override
+-            public void onTake(Player player, ItemStack stack) {
++            public void onTake(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+                 stack.onCraftedBy(player.level(), player, stack.getCount());
+                 StonecutterMenu.this.resultContainer.awardUsedRecipes(player, this.getRelevantItems());
+                 ItemStack itemstack1 = StonecutterMenu.this.inputSlot.remove(1);
+@@ -80,7 +108,7 @@
+                     long j = world.getGameTime();
+ 
+                     if (StonecutterMenu.this.lastSoundTime != j) {
+-                        world.playSound((Player) null, blockposition, SoundEvents.UI_STONECUTTER_TAKE_RESULT, SoundSource.BLOCKS, 1.0F, 1.0F);
++                        world.playSound((net.minecraft.world.entity.player.Player) null, blockposition, SoundEvents.UI_STONECUTTER_TAKE_RESULT, SoundSource.BLOCKS, 1.0F, 1.0F);
+                         StonecutterMenu.this.lastSoundTime = j;
+                     }
+ 
+@@ -94,6 +122,7 @@
+         });
+         this.addStandardInventorySlots(playerInventory, 8, 84);
+         this.addDataSlot(this.selectedRecipeIndex);
++        this.player = (Player) playerInventory.player.getBukkitEntity(); // CraftBukkit
+     }
+ 
+     public int getSelectedRecipeIndex() {
+@@ -113,12 +142,13 @@
+     }
+ 
+     @Override
+-    public boolean stillValid(Player player) {
++    public boolean stillValid(net.minecraft.world.entity.player.Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return stillValid(this.access, player, Blocks.STONECUTTER);
+     }
+ 
+     @Override
+-    public boolean clickMenuButton(Player player, int id) {
++    public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
+         if (this.selectedRecipeIndex.get() == id) {
+             return false;
+         } else {
+@@ -158,7 +188,7 @@
+     }
+ 
+     void setupResultSlot(int selectedId) {
+-        Optional optional;
++        Optional<RecipeHolder<StonecutterRecipe>> optional; // CraftBukkit - decompile error
+ 
+         if (!this.recipesForInput.isEmpty() && this.isValidRecipeIndex(selectedId)) {
+             SelectableRecipe.SingleInputEntry<StonecutterRecipe> selectablerecipe_a = (SelectableRecipe.SingleInputEntry) this.recipesForInput.entries().get(selectedId);
+@@ -193,7 +223,7 @@
+     }
+ 
+     @Override
+-    public ItemStack quickMoveStack(Player player, int slot) {
++    public ItemStack quickMoveStack(net.minecraft.world.entity.player.Player player, int slot) {
+         ItemStack itemstack = ItemStack.EMPTY;
+         Slot slot1 = (Slot) this.slots.get(slot);
+ 
+@@ -246,7 +276,7 @@
+     }
+ 
+     @Override
+-    public void removed(Player player) {
++    public void removed(net.minecraft.world.entity.player.Player player) {
+         super.removed(player);
+         this.resultContainer.removeItemNoUpdate(1);
+         this.access.execute((world, blockposition) -> {

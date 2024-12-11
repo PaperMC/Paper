@@ -9,21 +9,21 @@ public final class CraftCandleCake extends org.bukkit.craftbukkit.block.data.Cra
         super();
     }
 
-    public CraftCandleCake(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftCandleCake(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftLightable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean LIT = getBoolean(net.minecraft.world.level.block.CandleCakeBlock.class, "lit");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty LIT = getBoolean(net.minecraft.world.level.block.CandleCakeBlock.class, "lit");
 
     @Override
     public boolean isLit() {
-        return get(LIT);
+        return this.get(CraftCandleCake.LIT);
     }
 
     @Override
     public void setLit(boolean lit) {
-        set(LIT, lit);
+        this.set(CraftCandleCake.LIT, lit);
     }
 }

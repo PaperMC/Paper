@@ -2,31 +2,30 @@ package org.bukkit.craftbukkit;
 
 import java.util.Locale;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.level.material.FluidType;
 import org.bukkit.Fluid;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftFluid implements Fluid, Handleable<FluidType> {
+public class CraftFluid implements Fluid, Handleable<net.minecraft.world.level.material.Fluid> {
 
     private static int count = 0;
 
-    public static Fluid minecraftToBukkit(FluidType minecraft) {
+    public static Fluid minecraftToBukkit(net.minecraft.world.level.material.Fluid minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.FLUID, Registry.FLUID);
     }
 
-    public static FluidType bukkitToMinecraft(Fluid bukkit) {
+    public static net.minecraft.world.level.material.Fluid bukkitToMinecraft(Fluid bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
     private final NamespacedKey key;
-    private final FluidType fluidType;
+    private final net.minecraft.world.level.material.Fluid fluidType;
     private final String name;
     private final int ordinal;
 
-    public CraftFluid(NamespacedKey key, FluidType fluidType) {
+    public CraftFluid(NamespacedKey key, net.minecraft.world.level.material.Fluid fluidType) {
         this.key = key;
         this.fluidType = fluidType;
         // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
@@ -38,40 +37,40 @@ public class CraftFluid implements Fluid, Handleable<FluidType> {
         } else {
             this.name = key.toString();
         }
-        this.ordinal = count++;
+        this.ordinal = CraftFluid.count++;
     }
 
     @Override
-    public FluidType getHandle() {
-        return fluidType;
+    public net.minecraft.world.level.material.Fluid getHandle() {
+        return this.fluidType;
     }
 
     @NotNull
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 
     @Override
     public int compareTo(@NotNull Fluid fluid) {
-        return ordinal - fluid.ordinal();
+        return this.ordinal - fluid.ordinal();
     }
 
     @NotNull
     @Override
     public String name() {
-        return name;
+        return this.name;
     }
 
     @Override
     public int ordinal() {
-        return ordinal;
+        return this.ordinal;
     }
 
     @Override
     public String toString() {
         // For backwards compatibility
-        return name();
+        return this.name();
     }
 
     @Override
@@ -84,11 +83,11 @@ public class CraftFluid implements Fluid, Handleable<FluidType> {
             return false;
         }
 
-        return getKey().equals(otherFluid.getKey());
+        return this.getKey().equals(otherFluid.getKey());
     }
 
     @Override
     public int hashCode() {
-        return getKey().hashCode();
+        return this.getKey().hashCode();
     }
 }

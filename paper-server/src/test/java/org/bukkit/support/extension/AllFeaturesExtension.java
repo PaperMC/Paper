@@ -24,11 +24,11 @@ public class AllFeaturesExtension extends BaseExtension {
     }
 
     public static <T extends Keyed> Registry<T> getRealRegistry(Class<T> clazz) {
-        return (Registry<T>) realRegistries.get(clazz);
+        return (Registry<T>) AllFeaturesExtension.realRegistries.get(clazz);
     }
 
     public static Map<Class<? extends Keyed>, Registry<?>> getRealRegistries() {
-        return realRegistries;
+        return AllFeaturesExtension.realRegistries;
     }
 
     @Override

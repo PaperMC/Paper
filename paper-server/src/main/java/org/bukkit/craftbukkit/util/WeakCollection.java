@@ -12,13 +12,13 @@ public final class WeakCollection<T> implements Collection<T> {
     private final Collection<WeakReference<T>> collection;
 
     public WeakCollection() {
-        collection = new ArrayList<>();
+        this.collection = new ArrayList<>();
     }
 
     @Override
     public boolean add(T value) {
         Preconditions.checkArgument(value != null, "Cannot add null value");
-        return collection.add(new WeakReference<T>(value));
+        return this.collection.add(new WeakReference<T>(value));
     }
 
     @Override
@@ -34,7 +34,7 @@ public final class WeakCollection<T> implements Collection<T> {
 
     @Override
     public void clear() {
-        collection.clear();
+        this.collection.clear();
     }
 
     @Override
@@ -52,24 +52,24 @@ public final class WeakCollection<T> implements Collection<T> {
 
     @Override
     public boolean containsAll(Collection<?> collection) {
-        return toCollection().containsAll(collection);
+        return this.toCollection().containsAll(collection);
     }
 
     @Override
     public boolean isEmpty() {
-        return !iterator().hasNext();
+        return !this.iterator().hasNext();
     }
 
     @Override
     public Iterator<T> iterator() {
         return new Iterator<T>() {
-            Iterator<WeakReference<T>> it = collection.iterator();
-            Object value = NO_VALUE;
+            Iterator<WeakReference<T>> it = WeakCollection.this.collection.iterator();
+            Object value = WeakCollection.NO_VALUE;
 
             @Override
             public boolean hasNext() {
                 Object value = this.value;
-                if (value != null && value != NO_VALUE) {
+                if (value != null && value != WeakCollection.NO_VALUE) {
                     return true;
                 }
 
@@ -91,22 +91,22 @@ public final class WeakCollection<T> implements Collection<T> {
 
             @Override
             public T next() throws NoSuchElementException {
-                if (!hasNext()) {
+                if (!this.hasNext()) {
                     throw new NoSuchElementException("No more elements");
                 }
 
                 @SuppressWarnings("unchecked")
                 T value = (T) this.value;
-                this.value = NO_VALUE;
+                this.value = WeakCollection.NO_VALUE;
                 return value;
             }
 
             @Override
             public void remove() throws IllegalStateException {
-                Preconditions.checkState(value == NO_VALUE, "No last element");
+                Preconditions.checkState(this.value == WeakCollection.NO_VALUE, "No last element");
 
-                value = null;
-                it.remove();
+                this.value = null;
+                this.it.remove();
             }
         };
     }
@@ -169,7 +169,7 @@ public final class WeakCollection<T> implements Collection<T> {
 
     @Override
     public <T> T[] toArray(T[] array) {
-        return toCollection().toArray(array);
+        return this.toCollection().toArray(array);
     }
 
     private Collection<T> toCollection() {

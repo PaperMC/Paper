@@ -5,25 +5,25 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public class CraftSnow extends CraftBlockData implements Snow {
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger LAYERS = getInteger("layers");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty LAYERS = getInteger("layers");
 
     @Override
     public int getLayers() {
-        return get(LAYERS);
+        return this.get(CraftSnow.LAYERS);
     }
 
     @Override
     public void setLayers(int layers) {
-        set(LAYERS, layers);
+        this.set(CraftSnow.LAYERS, layers);
     }
 
     @Override
     public int getMinimumLayers() {
-        return getMin(LAYERS);
+        return getMin(CraftSnow.LAYERS);
     }
 
     @Override
     public int getMaximumLayers() {
-        return getMax(LAYERS);
+        return getMax(CraftSnow.LAYERS);
     }
 }

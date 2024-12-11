@@ -1,0 +1,30 @@
+--- a/net/minecraft/world/level/block/ObserverBlock.java
++++ b/net/minecraft/world/level/block/ObserverBlock.java
+@@ -18,6 +18,8 @@
+ import net.minecraft.world.level.redstone.ExperimentalRedstoneUtils;
+ import net.minecraft.world.level.redstone.Orientation;
+ 
++import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
++
+ public class ObserverBlock extends DirectionalBlock {
+ 
+     public static final MapCodec<ObserverBlock> CODEC = simpleCodec(ObserverBlock::new);
+@@ -51,8 +53,18 @@
+     @Override
+     protected void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         if ((Boolean) state.getValue(ObserverBlock.POWERED)) {
++            // CraftBukkit start
++            if (CraftEventFactory.callRedstoneChange(world, pos, 15, 0).getNewCurrent() != 0) {
++                return;
++            }
++            // CraftBukkit end
+             world.setBlock(pos, (BlockState) state.setValue(ObserverBlock.POWERED, false), 2);
+         } else {
++            // CraftBukkit start
++            if (CraftEventFactory.callRedstoneChange(world, pos, 0, 15).getNewCurrent() != 15) {
++                return;
++            }
++            // CraftBukkit end
+             world.setBlock(pos, (BlockState) state.setValue(ObserverBlock.POWERED, true), 2);
+             world.scheduleTick(pos, (Block) this, 2);
+         }

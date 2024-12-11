@@ -27,7 +27,7 @@ public class DeprecatedItemMetaCustomValueTest {
 
     @BeforeAll
     public static void setup() {
-        VALID_KEY = new NamespacedKey("test", "validkey");
+        DeprecatedItemMetaCustomValueTest.VALID_KEY = new NamespacedKey("test", "validkey");
     }
 
     /*
@@ -35,7 +35,7 @@ public class DeprecatedItemMetaCustomValueTest {
      */
     @Test
     public void testSetNoAdapter() {
-        ItemMeta itemMeta = createNewItemMeta();
+        ItemMeta itemMeta = this.createNewItemMeta();
         assertThrows(IllegalArgumentException.class, () -> itemMeta.getCustomTagContainer().setCustomTag(VALID_KEY, new PrimitiveTagType<>(boolean.class), true));
     }
 
@@ -44,8 +44,8 @@ public class DeprecatedItemMetaCustomValueTest {
      */
     @Test
     public void testHasNoAdapter() {
-        ItemMeta itemMeta = createNewItemMeta();
-        itemMeta.getCustomTagContainer().setCustomTag(VALID_KEY, ItemTagType.INTEGER, 1); // We gotta set this so we at least try to compare it
+        ItemMeta itemMeta = this.createNewItemMeta();
+        itemMeta.getCustomTagContainer().setCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, ItemTagType.INTEGER, 1); // We gotta set this so we at least try to compare it
         assertThrows(IllegalArgumentException.class, () -> itemMeta.getCustomTagContainer().hasCustomTag(VALID_KEY, new PrimitiveTagType<>(boolean.class)));
     }
 
@@ -54,15 +54,15 @@ public class DeprecatedItemMetaCustomValueTest {
      */
     @Test
     public void testGetNoAdapter() {
-        ItemMeta itemMeta = createNewItemMeta();
-        itemMeta.getCustomTagContainer().setCustomTag(VALID_KEY, ItemTagType.INTEGER, 1); //We gotta set this so we at least try to compare it
+        ItemMeta itemMeta = this.createNewItemMeta();
+        itemMeta.getCustomTagContainer().setCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, ItemTagType.INTEGER, 1); //We gotta set this so we at least try to compare it
         assertThrows(IllegalArgumentException.class, () -> itemMeta.getCustomTagContainer().getCustomTag(VALID_KEY, new PrimitiveTagType<>(boolean.class)));
     }
 
     @Test
     public void testGetWrongType() {
-        ItemMeta itemMeta = createNewItemMeta();
-        itemMeta.getCustomTagContainer().setCustomTag(VALID_KEY, ItemTagType.INTEGER, 1);
+        ItemMeta itemMeta = this.createNewItemMeta();
+        itemMeta.getCustomTagContainer().setCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, ItemTagType.INTEGER, 1);
         assertThrows(IllegalArgumentException.class, () -> itemMeta.getCustomTagContainer().getCustomTag(VALID_KEY, ItemTagType.STRING));
     }
 
@@ -71,7 +71,7 @@ public class DeprecatedItemMetaCustomValueTest {
         NamespacedKey namespacedKeyA = new NamespacedKey("plugin-a", "damage");
         NamespacedKey namespacedKeyB = new NamespacedKey("plugin-b", "damage");
 
-        ItemMeta meta = createNewItemMeta();
+        ItemMeta meta = this.createNewItemMeta();
         meta.getCustomTagContainer().setCustomTag(namespacedKeyA, ItemTagType.LONG, 15L);
         meta.getCustomTagContainer().setCustomTag(namespacedKeyB, ItemTagType.LONG, 160L);
 
@@ -92,7 +92,7 @@ public class DeprecatedItemMetaCustomValueTest {
      */
     @Test
     public void testNBTTagStoring() {
-        CraftMetaItem itemMeta = createComplexItemMeta();
+        CraftMetaItem itemMeta = this.createComplexItemMeta();
 
         CraftMetaItem.Applicator compound = new CraftMetaItem.Applicator();
         itemMeta.applyToItem(compound);
@@ -102,7 +102,7 @@ public class DeprecatedItemMetaCustomValueTest {
 
     @Test
     public void testMapStoring() {
-        CraftMetaItem itemMeta = createComplexItemMeta();
+        CraftMetaItem itemMeta = this.createComplexItemMeta();
 
         Map<String, Object> serialize = itemMeta.serialize();
         assertEquals(itemMeta, new CraftMetaItem(serialize));
@@ -111,7 +111,7 @@ public class DeprecatedItemMetaCustomValueTest {
     @Test
     public void testYAMLStoring() {
         ItemStack stack = new ItemStack(Material.DIAMOND);
-        CraftMetaItem meta = createComplexItemMeta();
+        CraftMetaItem meta = this.createComplexItemMeta();
         stack.setItemMeta(meta);
 
         YamlConfiguration configuration = new YamlConfiguration();
@@ -127,10 +127,10 @@ public class DeprecatedItemMetaCustomValueTest {
     @Test
     public void testCorrectType() {
         ItemStack stack = new ItemStack(Material.DIAMOND);
-        CraftMetaItem meta = createComplexItemMeta();
+        CraftMetaItem meta = this.createComplexItemMeta();
 
-        meta.getCustomTagContainer().setCustomTag(requestKey("int"), ItemTagType.STRING, "1");
-        meta.getCustomTagContainer().setCustomTag(requestKey("double"), ItemTagType.STRING, "1.33");
+        meta.getCustomTagContainer().setCustomTag(this.requestKey("int"), ItemTagType.STRING, "1");
+        meta.getCustomTagContainer().setCustomTag(this.requestKey("double"), ItemTagType.STRING, "1.33");
         stack.setItemMeta(meta);
 
         YamlConfiguration configuration = new YamlConfiguration();
@@ -140,28 +140,28 @@ public class DeprecatedItemMetaCustomValueTest {
         YamlConfiguration loadedConfig = YamlConfiguration.loadConfiguration(new StringReader(configValue));
         ItemStack newStack = loadedConfig.getSerializable("testpath", ItemStack.class);
 
-        assertTrue(newStack.getItemMeta().getCustomTagContainer().hasCustomTag(requestKey("int"), ItemTagType.STRING));
-        assertEquals(newStack.getItemMeta().getCustomTagContainer().getCustomTag(requestKey("int"), ItemTagType.STRING), "1");
+        assertTrue(newStack.getItemMeta().getCustomTagContainer().hasCustomTag(this.requestKey("int"), ItemTagType.STRING));
+        assertEquals(newStack.getItemMeta().getCustomTagContainer().getCustomTag(this.requestKey("int"), ItemTagType.STRING), "1");
 
-        assertTrue(newStack.getItemMeta().getCustomTagContainer().hasCustomTag(requestKey("double"), ItemTagType.STRING));
-        assertEquals(newStack.getItemMeta().getCustomTagContainer().getCustomTag(requestKey("double"), ItemTagType.STRING), "1.33");
+        assertTrue(newStack.getItemMeta().getCustomTagContainer().hasCustomTag(this.requestKey("double"), ItemTagType.STRING));
+        assertEquals(newStack.getItemMeta().getCustomTagContainer().getCustomTag(this.requestKey("double"), ItemTagType.STRING), "1.33");
     }
 
     private CraftMetaItem createComplexItemMeta() {
-        CraftMetaItem itemMeta = (CraftMetaItem) createNewItemMeta();
+        CraftMetaItem itemMeta = (CraftMetaItem) this.createNewItemMeta();
         itemMeta.setDisplayName("Item Display Name");
 
-        itemMeta.getCustomTagContainer().setCustomTag(requestKey("custom-long"), ItemTagType.LONG, 4L); //Add random primitive values
-        itemMeta.getCustomTagContainer().setCustomTag(requestKey("custom-byte-array"), ItemTagType.BYTE_ARRAY, new byte[]{
+        itemMeta.getCustomTagContainer().setCustomTag(this.requestKey("custom-long"), ItemTagType.LONG, 4L); //Add random primitive values
+        itemMeta.getCustomTagContainer().setCustomTag(this.requestKey("custom-byte-array"), ItemTagType.BYTE_ARRAY, new byte[]{
             0, 1, 2, 10
         });
-        itemMeta.getCustomTagContainer().setCustomTag(requestKey("custom-string"), ItemTagType.STRING, "Hello there world");
-        itemMeta.getCustomTagContainer().setCustomTag(requestKey("custom-int"), ItemTagType.INTEGER, 3);
-        itemMeta.getCustomTagContainer().setCustomTag(requestKey("custom-double"), ItemTagType.DOUBLE, 3.123);
+        itemMeta.getCustomTagContainer().setCustomTag(this.requestKey("custom-string"), ItemTagType.STRING, "Hello there world");
+        itemMeta.getCustomTagContainer().setCustomTag(this.requestKey("custom-int"), ItemTagType.INTEGER, 3);
+        itemMeta.getCustomTagContainer().setCustomTag(this.requestKey("custom-double"), ItemTagType.DOUBLE, 3.123);
 
         CustomItemTagContainer innerContainer = itemMeta.getCustomTagContainer().getAdapterContext().newTagContainer(); //Add a inner container
-        innerContainer.setCustomTag(VALID_KEY, ItemTagType.LONG, 5L);
-        itemMeta.getCustomTagContainer().setCustomTag(requestKey("custom-inner-compound"), ItemTagType.TAG_CONTAINER, innerContainer);
+        innerContainer.setCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, ItemTagType.LONG, 5L);
+        itemMeta.getCustomTagContainer().setCustomTag(this.requestKey("custom-inner-compound"), ItemTagType.TAG_CONTAINER, innerContainer);
         return itemMeta;
     }
 
@@ -170,43 +170,43 @@ public class DeprecatedItemMetaCustomValueTest {
      */
     @Test
     public void storeUUIDOnItemTest() {
-        ItemMeta itemMeta = createNewItemMeta();
+        ItemMeta itemMeta = this.createNewItemMeta();
         UUIDItemTagType uuidItemTagType = new UUIDItemTagType();
         UUID uuid = UUID.fromString("434eea72-22a6-4c61-b5ef-945874a5c478");
 
-        itemMeta.getCustomTagContainer().setCustomTag(VALID_KEY, uuidItemTagType, uuid);
-        assertTrue(itemMeta.getCustomTagContainer().hasCustomTag(VALID_KEY, uuidItemTagType));
-        assertEquals(uuid, itemMeta.getCustomTagContainer().getCustomTag(VALID_KEY, uuidItemTagType));
+        itemMeta.getCustomTagContainer().setCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, uuidItemTagType, uuid);
+        assertTrue(itemMeta.getCustomTagContainer().hasCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, uuidItemTagType));
+        assertEquals(uuid, itemMeta.getCustomTagContainer().getCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, uuidItemTagType));
     }
 
     @Test
     public void encapsulatedContainers() {
         NamespacedKey innerKey = new NamespacedKey("plugin-a", "inner");
 
-        ItemMeta meta = createNewItemMeta();
+        ItemMeta meta = this.createNewItemMeta();
         ItemTagAdapterContext context = meta.getCustomTagContainer().getAdapterContext();
 
         CustomItemTagContainer thirdContainer = context.newTagContainer();
-        thirdContainer.setCustomTag(VALID_KEY, ItemTagType.LONG, 3L);
+        thirdContainer.setCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, ItemTagType.LONG, 3L);
 
         CustomItemTagContainer secondContainer = context.newTagContainer();
-        secondContainer.setCustomTag(VALID_KEY, ItemTagType.LONG, 2L);
+        secondContainer.setCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, ItemTagType.LONG, 2L);
         secondContainer.setCustomTag(innerKey, ItemTagType.TAG_CONTAINER, thirdContainer);
 
-        meta.getCustomTagContainer().setCustomTag(VALID_KEY, ItemTagType.LONG, 1L);
+        meta.getCustomTagContainer().setCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, ItemTagType.LONG, 1L);
         meta.getCustomTagContainer().setCustomTag(innerKey, ItemTagType.TAG_CONTAINER, secondContainer);
 
         assertEquals(3L, meta.getCustomTagContainer()
                 .getCustomTag(innerKey, ItemTagType.TAG_CONTAINER)
                 .getCustomTag(innerKey, ItemTagType.TAG_CONTAINER)
-                .getCustomTag(VALID_KEY, ItemTagType.LONG).longValue());
+                .getCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, ItemTagType.LONG).longValue());
 
         assertEquals(2L, meta.getCustomTagContainer()
                 .getCustomTag(innerKey, ItemTagType.TAG_CONTAINER)
-                .getCustomTag(VALID_KEY, ItemTagType.LONG).longValue());
+                .getCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, ItemTagType.LONG).longValue());
 
         assertEquals(1L, meta.getCustomTagContainer()
-                .getCustomTag(VALID_KEY, ItemTagType.LONG).longValue());
+                .getCustomTag(DeprecatedItemMetaCustomValueTest.VALID_KEY, ItemTagType.LONG).longValue());
     }
 
     class UUIDItemTagType implements ItemTagType<byte[], UUID> {
@@ -240,24 +240,24 @@ public class DeprecatedItemMetaCustomValueTest {
 
     @Test
     public void testPrimitiveCustomTags() {
-        ItemMeta itemMeta = createNewItemMeta();
+        ItemMeta itemMeta = this.createNewItemMeta();
 
-        testPrimitiveCustomTag(itemMeta, ItemTagType.BYTE, (byte) 1);
-        testPrimitiveCustomTag(itemMeta, ItemTagType.SHORT, (short) 1);
-        testPrimitiveCustomTag(itemMeta, ItemTagType.INTEGER, 1);
-        testPrimitiveCustomTag(itemMeta, ItemTagType.LONG, 1L);
-        testPrimitiveCustomTag(itemMeta, ItemTagType.FLOAT, 1.34F);
-        testPrimitiveCustomTag(itemMeta, ItemTagType.DOUBLE, 151.123);
+        this.testPrimitiveCustomTag(itemMeta, ItemTagType.BYTE, (byte) 1);
+        this.testPrimitiveCustomTag(itemMeta, ItemTagType.SHORT, (short) 1);
+        this.testPrimitiveCustomTag(itemMeta, ItemTagType.INTEGER, 1);
+        this.testPrimitiveCustomTag(itemMeta, ItemTagType.LONG, 1L);
+        this.testPrimitiveCustomTag(itemMeta, ItemTagType.FLOAT, 1.34F);
+        this.testPrimitiveCustomTag(itemMeta, ItemTagType.DOUBLE, 151.123);
 
-        testPrimitiveCustomTag(itemMeta, ItemTagType.STRING, "test");
+        this.testPrimitiveCustomTag(itemMeta, ItemTagType.STRING, "test");
 
-        testPrimitiveCustomTag(itemMeta, ItemTagType.BYTE_ARRAY, new byte[]{
+        this.testPrimitiveCustomTag(itemMeta, ItemTagType.BYTE_ARRAY, new byte[]{
             1, 4, 2, Byte.MAX_VALUE
         });
-        testPrimitiveCustomTag(itemMeta, ItemTagType.INTEGER_ARRAY, new int[]{
+        this.testPrimitiveCustomTag(itemMeta, ItemTagType.INTEGER_ARRAY, new int[]{
             1, 4, 2, Integer.MAX_VALUE
         });
-        testPrimitiveCustomTag(itemMeta, ItemTagType.LONG_ARRAY, new long[]{
+        this.testPrimitiveCustomTag(itemMeta, ItemTagType.LONG_ARRAY, new long[]{
             1L, 4L, 2L, Long.MAX_VALUE
         });
     }
@@ -293,12 +293,12 @@ public class DeprecatedItemMetaCustomValueTest {
 
         @Override
         public Class<T> getPrimitiveType() {
-            return primitiveType;
+            return this.primitiveType;
         }
 
         @Override
         public Class<T> getComplexType() {
-            return primitiveType;
+            return this.primitiveType;
         }
 
         @Override

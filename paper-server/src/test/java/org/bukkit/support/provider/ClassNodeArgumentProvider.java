@@ -24,7 +24,7 @@ public class ClassNodeArgumentProvider implements ArgumentsProvider, AnnotationC
         this.excludedClasses = classNodeTest.excludedClasses();
         this.excludedPackages = classNodeTest.excludedPackages();
 
-        for (int i = 0; i < excludedPackages.length; i++) {
+        for (int i = 0; i < this.excludedPackages.length; i++) {
             this.excludedPackages[i] = this.excludedPackages[i].replace('.', '/');
         }
     }
@@ -32,16 +32,16 @@ public class ClassNodeArgumentProvider implements ArgumentsProvider, AnnotationC
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext extensionContext) throws Exception {
         ClassReaderArgumentProvider classReaderArgumentProvider = new ClassReaderArgumentProvider();
-        classReaderArgumentProvider.accept(new ClassReaderArguments(classReaderClassType(), excludedClasses, excludedPackages));
+        classReaderArgumentProvider.accept(new ClassReaderArguments(this.classReaderClassType(), this.excludedClasses, this.excludedPackages));
 
         return classReaderArgumentProvider.getClassReaders().map(this::toClassNode).map(Arguments::of);
     }
 
     private ClassReaderTest.ClassType[] classReaderClassType() {
-        ClassReaderTest.ClassType[] newValues = new ClassReaderTest.ClassType[classTypes.length];
+        ClassReaderTest.ClassType[] newValues = new ClassReaderTest.ClassType[this.classTypes.length];
 
-        for (int i = 0; i < classTypes.length; i++) {
-            newValues[i] = switch (classTypes[i]) {
+        for (int i = 0; i < this.classTypes.length; i++) {
+            newValues[i] = switch (this.classTypes[i]) {
                 case BUKKIT -> ClassReaderTest.ClassType.BUKKIT;
                 case CRAFT_BUKKIT -> ClassReaderTest.ClassType.CRAFT_BUKKIT;
                 case MINECRAFT_UNMODIFIED -> ClassReaderTest.ClassType.MINECRAFT_UNMODIFIED;

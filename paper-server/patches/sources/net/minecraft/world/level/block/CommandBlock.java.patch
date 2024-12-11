@@ -1,0 +1,28 @@
+--- a/net/minecraft/world/level/block/CommandBlock.java
++++ b/net/minecraft/world/level/block/CommandBlock.java
+@@ -31,6 +31,8 @@
+ import net.minecraft.world.phys.BlockHitResult;
+ import org.slf4j.Logger;
+ 
++import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
++
+ public class CommandBlock extends BaseEntityBlock implements GameMasterBlock {
+ 
+     public static final MapCodec<CommandBlock> CODEC = RecordCodecBuilder.mapCodec((instance) -> {
+@@ -78,7 +80,16 @@
+ 
+     private void setPoweredAndUpdate(Level world, BlockPos pos, CommandBlockEntity blockEntity, boolean powered) {
+         boolean flag1 = blockEntity.isPowered();
++        // CraftBukkit start
++        org.bukkit.block.Block bukkitBlock = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++        int old = flag1 ? 15 : 0;
++        int current = powered ? 15 : 0;
+ 
++        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bukkitBlock, old, current);
++        world.getCraftServer().getPluginManager().callEvent(eventRedstone);
++        powered = eventRedstone.getNewCurrent() > 0;
++        // CraftBukkit end
++
+         if (powered != flag1) {
+             blockEntity.setPowered(powered);
+             if (powered) {

@@ -4,11 +4,11 @@ import java.util.Iterator;
 import java.util.Map;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.item.crafting.Recipes;
+import net.minecraft.world.item.crafting.RecipeType;
 import org.bukkit.inventory.Recipe;
 
 public class RecipeIterator implements Iterator<Recipe> {
-    private final Iterator<Map.Entry<Recipes<?>, RecipeHolder<?>>> recipes;
+    private final Iterator<Map.Entry<RecipeType<?>, RecipeHolder<?>>> recipes;
 
     public RecipeIterator() {
         this.recipes = MinecraftServer.getServer().getRecipeManager().recipes.byType.entries().iterator();
@@ -16,16 +16,16 @@ public class RecipeIterator implements Iterator<Recipe> {
 
     @Override
     public boolean hasNext() {
-        return recipes.hasNext();
+        return this.recipes.hasNext();
     }
 
     @Override
     public Recipe next() {
-        return recipes.next().getValue().toBukkitRecipe();
+        return this.recipes.next().getValue().toBukkitRecipe();
     }
 
     @Override
     public void remove() {
-        recipes.remove();
+        this.recipes.remove();
     }
 }

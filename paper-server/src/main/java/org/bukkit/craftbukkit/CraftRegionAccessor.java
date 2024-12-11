@@ -7,23 +7,20 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import net.minecraft.core.BlockPosition;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntityInsentient;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.GroupDataEntity;
-import net.minecraft.world.entity.projectile.EntityPotion;
-import net.minecraft.world.level.GeneratorAccessSeed;
-import net.minecraft.world.level.biome.BiomeBase;
-import net.minecraft.world.level.block.BlockChorusFlower;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraft.world.level.levelgen.feature.WorldGenFeatureConfigured;
+import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.portal.TeleportTransition;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -64,123 +61,123 @@ import org.bukkit.potion.PotionType;
 
 public abstract class CraftRegionAccessor implements RegionAccessor {
 
-    public abstract GeneratorAccessSeed getHandle();
+    public abstract WorldGenLevel getHandle();
 
     public boolean isNormalWorld() {
-        return getHandle() instanceof net.minecraft.server.level.WorldServer;
+        return this.getHandle() instanceof net.minecraft.server.level.ServerLevel;
     }
 
     @Override
     public Biome getBiome(Location location) {
-        return getBiome(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return this.getBiome(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     @Override
     public Biome getBiome(int x, int y, int z) {
-        return CraftBiome.minecraftHolderToBukkit(getHandle().getNoiseBiome(x >> 2, y >> 2, z >> 2));
+        return CraftBiome.minecraftHolderToBukkit(this.getHandle().getNoiseBiome(x >> 2, y >> 2, z >> 2));
     }
 
     @Override
     public void setBiome(Location location, Biome biome) {
-        setBiome(location.getBlockX(), location.getBlockY(), location.getBlockZ(), biome);
+        this.setBiome(location.getBlockX(), location.getBlockY(), location.getBlockZ(), biome);
     }
 
     @Override
     public void setBiome(int x, int y, int z, Biome biome) {
         Preconditions.checkArgument(biome != Biome.CUSTOM, "Cannot set the biome to %s", biome);
-        Holder<BiomeBase> biomeBase = CraftBiome.bukkitToMinecraftHolder(biome);
-        setBiome(x, y, z, biomeBase);
+        Holder<net.minecraft.world.level.biome.Biome> biomeBase = CraftBiome.bukkitToMinecraftHolder(biome);
+        this.setBiome(x, y, z, biomeBase);
     }
 
-    public abstract void setBiome(int x, int y, int z, Holder<BiomeBase> biomeBase);
+    public abstract void setBiome(int x, int y, int z, Holder<net.minecraft.world.level.biome.Biome> biomeBase);
 
     @Override
     public BlockState getBlockState(Location location) {
-        return getBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return this.getBlockState(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     @Override
     public BlockState getBlockState(int x, int y, int z) {
-        return CraftBlock.at(getHandle(), new BlockPosition(x, y, z)).getState();
+        return CraftBlock.at(this.getHandle(), new BlockPos(x, y, z)).getState();
     }
 
     @Override
     public BlockData getBlockData(Location location) {
-        return getBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return this.getBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     @Override
     public BlockData getBlockData(int x, int y, int z) {
-        return CraftBlockData.fromData(getData(x, y, z));
+        return CraftBlockData.fromData(this.getData(x, y, z));
     }
 
     @Override
     public Material getType(Location location) {
-        return getType(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        return this.getType(location.getBlockX(), location.getBlockY(), location.getBlockZ());
     }
 
     @Override
     public Material getType(int x, int y, int z) {
-        return CraftBlockType.minecraftToBukkit(getData(x, y, z).getBlock());
+        return CraftBlockType.minecraftToBukkit(this.getData(x, y, z).getBlock());
     }
 
-    private IBlockData getData(int x, int y, int z) {
-        return getHandle().getBlockState(new BlockPosition(x, y, z));
+    private net.minecraft.world.level.block.state.BlockState getData(int x, int y, int z) {
+        return this.getHandle().getBlockState(new BlockPos(x, y, z));
     }
 
     @Override
     public void setBlockData(Location location, BlockData blockData) {
-        setBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockData);
+        this.setBlockData(location.getBlockX(), location.getBlockY(), location.getBlockZ(), blockData);
     }
 
     @Override
     public void setBlockData(int x, int y, int z, BlockData blockData) {
-        GeneratorAccessSeed world = getHandle();
-        BlockPosition pos = new BlockPosition(x, y, z);
-        IBlockData old = getHandle().getBlockState(pos);
+        WorldGenLevel world = this.getHandle();
+        BlockPos pos = new BlockPos(x, y, z);
+        net.minecraft.world.level.block.state.BlockState old = this.getHandle().getBlockState(pos);
 
         CraftBlock.setTypeAndData(world, pos, old, ((CraftBlockData) blockData).getState(), true);
     }
 
     @Override
     public void setType(Location location, Material material) {
-        setType(location.getBlockX(), location.getBlockY(), location.getBlockZ(), material);
+        this.setType(location.getBlockX(), location.getBlockY(), location.getBlockZ(), material);
     }
 
     @Override
     public void setType(int x, int y, int z, Material material) {
-        setBlockData(x, y, z, material.createBlockData());
+        this.setBlockData(x, y, z, material.createBlockData());
     }
 
     @Override
     public int getHighestBlockYAt(int x, int z) {
-        return getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING);
+        return this.getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING);
     }
 
     @Override
     public int getHighestBlockYAt(Location location) {
-        return getHighestBlockYAt(location.getBlockX(), location.getBlockZ());
+        return this.getHighestBlockYAt(location.getBlockX(), location.getBlockZ());
     }
 
     @Override
     public int getHighestBlockYAt(int x, int z, org.bukkit.HeightMap heightMap) {
-        return getHandle().getHeight(CraftHeightMap.toNMS(heightMap), x, z);
+        return this.getHandle().getHeight(CraftHeightMap.toNMS(heightMap), x, z);
     }
 
     @Override
     public int getHighestBlockYAt(Location location, org.bukkit.HeightMap heightMap) {
-        return getHighestBlockYAt(location.getBlockX(), location.getBlockZ(), heightMap);
+        return this.getHighestBlockYAt(location.getBlockX(), location.getBlockZ(), heightMap);
     }
 
     @Override
     public boolean generateTree(Location location, Random random, TreeType treeType) {
-        BlockPosition pos = CraftLocation.toBlockPosition(location);
-        return generateTree(getHandle(), getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
+        BlockPos pos = CraftLocation.toBlockPosition(location);
+        return this.generateTree(this.getHandle(), this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
     }
 
     @Override
     public boolean generateTree(Location location, Random random, TreeType treeType, Consumer<? super BlockState> consumer) {
-        return generateTree(location, random, treeType, (consumer == null) ? null : (block) -> {
+        return this.generateTree(location, random, treeType, (consumer == null) ? null : (block) -> {
             consumer.accept(block);
             return true;
         });
@@ -188,9 +185,9 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public boolean generateTree(Location location, Random random, TreeType treeType, Predicate<? super BlockState> predicate) {
-        BlockPosition pos = CraftLocation.toBlockPosition(location);
-        BlockStateListPopulator populator = new BlockStateListPopulator(getHandle());
-        boolean result = generateTree(populator, getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
+        BlockPos pos = CraftLocation.toBlockPosition(location);
+        BlockStateListPopulator populator = new BlockStateListPopulator(this.getHandle());
+        boolean result = this.generateTree(populator, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
         populator.refreshTiles();
 
         for (BlockState blockState : populator.getList()) {
@@ -202,8 +199,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         return result;
     }
 
-    public boolean generateTree(GeneratorAccessSeed access, ChunkGenerator chunkGenerator, BlockPosition pos, RandomSource random, TreeType treeType) {
-        ResourceKey<WorldGenFeatureConfigured<?, ?>> gen;
+    public boolean generateTree(WorldGenLevel access, ChunkGenerator chunkGenerator, BlockPos pos, RandomSource random, TreeType treeType) {
+        ResourceKey<ConfiguredFeature<?, ?>> gen;
         switch (treeType) {
             case BIG_TREE:
                 gen = TreeFeatures.FANCY_OAK;
@@ -254,7 +251,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 gen = TreeFeatures.SUPER_BIRCH_BEES_0002;
                 break;
             case CHORUS_PLANT:
-                ((BlockChorusFlower) Blocks.CHORUS_FLOWER).generatePlant(access, pos, random, 8);
+                ((ChorusFlowerBlock) Blocks.CHORUS_FLOWER).generatePlant(access, pos, random, 8);
                 return true;
             case CRIMSON_FUNGUS:
                 gen = TreeFeatures.CRIMSON_FUNGUS_PLANTED;
@@ -286,29 +283,29 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 break;
         }
 
-        Holder<WorldGenFeatureConfigured<?, ?>> holder = access.registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE).get(gen).orElse(null);
+        Holder<ConfiguredFeature<?, ?>> holder = access.registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE).get(gen).orElse(null);
         return (holder != null) ? holder.value().place(access, chunkGenerator, random, pos) : false;
     }
 
     @Override
     public Entity spawnEntity(Location location, EntityType entityType) {
-        return spawn(location, entityType.getEntityClass());
+        return this.spawn(location, entityType.getEntityClass());
     }
 
     @Override
     public Entity spawnEntity(Location loc, EntityType type, boolean randomizeData) {
-        return spawn(loc, type.getEntityClass(), null, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
+        return this.spawn(loc, type.getEntityClass(), null, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
     }
 
     @Override
     public List<Entity> getEntities() {
         List<Entity> list = new ArrayList<Entity>();
 
-        getNMSEntities().forEach(entity -> {
+        this.getNMSEntities().forEach(entity -> {
             Entity bukkitEntity = entity.getBukkitEntity();
 
             // Assuming that bukkitEntity isn't null
-            if (bukkitEntity != null && (!isNormalWorld() || bukkitEntity.isValid())) {
+            if (bukkitEntity != null && (!this.isNormalWorld() || bukkitEntity.isValid())) {
                 list.add(bukkitEntity);
             }
         });
@@ -320,11 +317,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     public List<LivingEntity> getLivingEntities() {
         List<LivingEntity> list = new ArrayList<LivingEntity>();
 
-        getNMSEntities().forEach(entity -> {
+        this.getNMSEntities().forEach(entity -> {
             Entity bukkitEntity = entity.getBukkitEntity();
 
             // Assuming that bukkitEntity isn't null
-            if (bukkitEntity != null && bukkitEntity instanceof LivingEntity && (!isNormalWorld() || bukkitEntity.isValid())) {
+            if (bukkitEntity != null && bukkitEntity instanceof LivingEntity && (!this.isNormalWorld() || bukkitEntity.isValid())) {
                 list.add((LivingEntity) bukkitEntity);
             }
         });
@@ -337,7 +334,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     public <T extends Entity> Collection<T> getEntitiesByClass(Class<T> clazz) {
         Collection<T> list = new ArrayList<T>();
 
-        getNMSEntities().forEach(entity -> {
+        this.getNMSEntities().forEach(entity -> {
             Entity bukkitEntity = entity.getBukkitEntity();
 
             if (bukkitEntity == null) {
@@ -346,7 +343,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
             Class<?> bukkitClass = bukkitEntity.getClass();
 
-            if (clazz.isAssignableFrom(bukkitClass) && (!isNormalWorld() || bukkitEntity.isValid())) {
+            if (clazz.isAssignableFrom(bukkitClass) && (!this.isNormalWorld() || bukkitEntity.isValid())) {
                 list.add((T) bukkitEntity);
             }
         });
@@ -358,7 +355,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     public Collection<Entity> getEntitiesByClasses(Class<?>... classes) {
         Collection<Entity> list = new ArrayList<Entity>();
 
-        getNMSEntities().forEach(entity -> {
+        this.getNMSEntities().forEach(entity -> {
             Entity bukkitEntity = entity.getBukkitEntity();
 
             if (bukkitEntity == null) {
@@ -369,7 +366,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
             for (Class<?> clazz : classes) {
                 if (clazz.isAssignableFrom(bukkitClass)) {
-                    if (!isNormalWorld() || bukkitEntity.isValid()) {
+                    if (!this.isNormalWorld() || bukkitEntity.isValid()) {
                         list.add(bukkitEntity);
                     }
                     break;
@@ -385,9 +382,9 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     @Override
     @SuppressWarnings("unchecked")
     public <T extends Entity> T createEntity(Location location, Class<T> clazz) throws IllegalArgumentException {
-        net.minecraft.world.entity.Entity entity = createEntity(location, clazz, true);
+        net.minecraft.world.entity.Entity entity = this.createEntity(location, clazz, true);
 
-        if (!isNormalWorld()) {
+        if (!this.isNormalWorld()) {
             entity.generation = true;
         }
 
@@ -396,27 +393,27 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public <T extends Entity> T spawn(Location location, Class<T> clazz) throws IllegalArgumentException {
-        return spawn(location, clazz, null, CreatureSpawnEvent.SpawnReason.CUSTOM);
+        return this.spawn(location, clazz, null, CreatureSpawnEvent.SpawnReason.CUSTOM);
     }
 
     @Override
     public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function) throws IllegalArgumentException {
-        return spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM);
+        return this.spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM);
     }
 
     @Override
     public <T extends Entity> T spawn(Location location, Class<T> clazz, boolean randomizeData, Consumer<? super T> function) throws IllegalArgumentException {
-        return spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
+        return this.spawn(location, clazz, function, CreatureSpawnEvent.SpawnReason.CUSTOM, randomizeData);
     }
 
     public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
-        return spawn(location, clazz, function, reason, true);
+        return this.spawn(location, clazz, function, reason, true);
     }
 
     public <T extends Entity> T spawn(Location location, Class<T> clazz, Consumer<? super T> function, CreatureSpawnEvent.SpawnReason reason, boolean randomizeData) throws IllegalArgumentException {
-        net.minecraft.world.entity.Entity entity = createEntity(location, clazz, randomizeData);
+        net.minecraft.world.entity.Entity entity = this.createEntity(location, clazz, randomizeData);
 
-        return addEntity(entity, reason, function, randomizeData);
+        return this.addEntity(entity, reason, function, randomizeData);
     }
 
     @Override
@@ -424,28 +421,28 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     public <T extends Entity> T addEntity(T entity) {
         Preconditions.checkArgument(!entity.isInWorld(), "Entity has already been added to a world");
         net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
-        if (nmsEntity.level() != getHandle().getLevel()) {
-            nmsEntity = nmsEntity.teleport(new TeleportTransition(getHandle().getLevel(), nmsEntity, TeleportTransition.DO_NOTHING));
+        if (nmsEntity.level() != this.getHandle().getLevel()) {
+            nmsEntity = nmsEntity.teleport(new TeleportTransition(this.getHandle().getLevel(), nmsEntity, TeleportTransition.DO_NOTHING));
         }
 
-        addEntityWithPassengers(nmsEntity, CreatureSpawnEvent.SpawnReason.CUSTOM);
+        this.addEntityWithPassengers(nmsEntity, CreatureSpawnEvent.SpawnReason.CUSTOM);
         return (T) nmsEntity.getBukkitEntity();
     }
 
     @SuppressWarnings("unchecked")
     public <T extends Entity> T addEntity(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason) throws IllegalArgumentException {
-        return addEntity(entity, reason, null, true);
+        return this.addEntity(entity, reason, null, true);
     }
 
     @SuppressWarnings("unchecked")
     public <T extends Entity> T addEntity(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason, Consumer<? super T> function, boolean randomizeData) throws IllegalArgumentException {
         Preconditions.checkArgument(entity != null, "Cannot spawn null entity");
 
-        if (randomizeData && entity instanceof EntityInsentient) {
-            ((EntityInsentient) entity).finalizeSpawn(getHandle(), getHandle().getCurrentDifficultyAt(entity.blockPosition()), EntitySpawnReason.COMMAND, (GroupDataEntity) null);
+        if (randomizeData && entity instanceof Mob) {
+            ((Mob) entity).finalizeSpawn(this.getHandle(), this.getHandle().getCurrentDifficultyAt(entity.blockPosition()), EntitySpawnReason.COMMAND, (SpawnGroupData) null);
         }
 
-        if (!isNormalWorld()) {
+        if (!this.isNormalWorld()) {
             entity.generation = true;
         }
 
@@ -453,7 +450,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             function.accept((T) entity.getBukkitEntity());
         }
 
-        addEntityToWorld(entity, reason);
+        this.addEntityToWorld(entity, reason);
         return (T) entity.getBukkitEntity();
     }
 
@@ -463,7 +460,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @SuppressWarnings("unchecked")
     public net.minecraft.world.entity.Entity makeEntity(Location location, Class<? extends Entity> clazz) throws IllegalArgumentException {
-        return createEntity(location, clazz, true);
+        return this.createEntity(location, clazz, true);
     }
 
     @SuppressWarnings("unchecked")
@@ -481,7 +478,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             clazz = LargeFireball.class;
         } else if (clazz == LingeringPotion.class) {
             clazz = ThrownPotion.class;
-            runOld = other -> ((EntityPotion) other).setItem(CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.LINGERING_POTION, 1)));
+            runOld = other -> ((net.minecraft.world.entity.projectile.ThrownPotion) other).setItem(CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.LINGERING_POTION, 1)));
         } else if (clazz == Minecart.class) {
             clazz = RideableMinecart.class;
         } else if (clazz == SizedFireball.class) {
@@ -505,11 +502,11 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             }
         }
 
-        if (!entityTypeData.entityType().isEnabledByFeature(getHandle().getMinecraftWorld().getWorld())) {
+        if (!entityTypeData.entityType().isEnabledByFeature(this.getHandle().getMinecraftWorld().getWorld())) {
             throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName() + " because it is not an enabled feature");
         }
 
-        net.minecraft.world.entity.Entity entity = entityTypeData.spawnFunction().apply(new CraftEntityTypes.SpawnData(getHandle(), location, randomizeData, isNormalWorld()));
+        net.minecraft.world.entity.Entity entity = entityTypeData.spawnFunction().apply(new CraftEntityTypes.SpawnData(this.getHandle(), location, randomizeData, this.isNormalWorld()));
 
         if (entity != null) {
             runOld.accept(entity);

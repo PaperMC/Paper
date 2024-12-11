@@ -1,0 +1,31 @@
+--- a/net/minecraft/world/entity/animal/frog/Tadpole.java
++++ b/net/minecraft/world/entity/animal/frog/Tadpole.java
+@@ -74,7 +74,7 @@
+ 
+     @Override
+     public Brain<Tadpole> getBrain() {
+-        return super.getBrain();
++        return (Brain<Tadpole>) super.getBrain(); // CraftBukkit - decompile error
+     }
+ 
+     @Override
+@@ -225,12 +225,17 @@
+         Level world = this.level();
+ 
+         if (world instanceof ServerLevel worldserver) {
+-            this.convertTo(EntityType.FROG, ConversionParams.single(this, false, false), (frog) -> {
++            Frog converted = this.convertTo(EntityType.FROG, ConversionParams.single(this, false, false), (frog) -> { // CraftBukkit
+                 frog.finalizeSpawn(worldserver, this.level().getCurrentDifficultyAt(frog.blockPosition()), EntitySpawnReason.CONVERSION, (SpawnGroupData) null);
+                 frog.setPersistenceRequired();
+                 frog.fudgePositionAfterSizeChange(this.getDimensions(this.getPose()));
+                 this.playSound(SoundEvents.TADPOLE_GROW_UP, 0.15F, 1.0F);
+-            });
++            // CraftBukkit start
++            }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.METAMORPHOSIS, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.METAMORPHOSIS);
++            if (converted == null) {
++                this.setAge(0); // Sets the age to 0 for avoid a loop if the event is canceled
++            }
++            // CraftBukkit end
+         }
+ 
+     }

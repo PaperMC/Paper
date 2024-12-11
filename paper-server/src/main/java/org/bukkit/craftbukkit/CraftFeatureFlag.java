@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit;
 
 import java.util.HashSet;
 import java.util.Set;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
 import org.bukkit.FeatureFlag;
@@ -15,7 +15,7 @@ public class CraftFeatureFlag implements FeatureFlag {
     private final NamespacedKey namespacedKey;
     private final net.minecraft.world.flag.FeatureFlag featureFlag;
 
-    public CraftFeatureFlag(MinecraftKey minecraftKey, net.minecraft.world.flag.FeatureFlag featureFlag) {
+    public CraftFeatureFlag(ResourceLocation minecraftKey, net.minecraft.world.flag.FeatureFlag featureFlag) {
         this.namespacedKey = CraftNamespacedKey.fromMinecraft(minecraftKey);
         this.featureFlag = featureFlag;
     }

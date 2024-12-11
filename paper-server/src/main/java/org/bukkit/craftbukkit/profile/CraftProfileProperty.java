@@ -20,7 +20,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.bukkit.craftbukkit.configuration.ConfigSerializationUtil;
 
-final class CraftProfileProperty {
+public final class CraftProfileProperty {
 
     /**
      * Different JSON formatting styles to use for encoded property values.
@@ -36,7 +36,7 @@ final class CraftProfileProperty {
 
             @Override
             public String format(JsonElement jsonElement) {
-                return gson.toJson(jsonElement);
+                return this.gson.toJson(jsonElement);
             }
         };
 
@@ -54,7 +54,7 @@ final class CraftProfileProperty {
     }
 
     public static boolean hasValidSignature(@Nonnull Property property) {
-        return property.hasSignature() && PUBLIC_KEYS.keys(ServicesKeyType.PROFILE_PROPERTY).stream().anyMatch((key) -> key.validateProperty(property));
+        return property.hasSignature() && CraftProfileProperty.PUBLIC_KEYS.keys(ServicesKeyType.PROFILE_PROPERTY).stream().anyMatch((key) -> key.validateProperty(property));
     }
 
     @Nullable
@@ -68,7 +68,7 @@ final class CraftProfileProperty {
 
     @Nullable
     public static JsonObject decodePropertyValue(@Nonnull String encodedPropertyValue) {
-        String json = decodeBase64(encodedPropertyValue);
+        String json = CraftProfileProperty.decodeBase64(encodedPropertyValue);
         if (json == null) return null;
         try {
             JsonElement jsonElement = JsonParser.parseString(json);

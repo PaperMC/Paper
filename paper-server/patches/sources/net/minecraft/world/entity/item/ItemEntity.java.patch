@@ -1,0 +1,214 @@
+--- a/net/minecraft/world/entity/item/ItemEntity.java
++++ b/net/minecraft/world/entity/item/ItemEntity.java
+@@ -5,18 +5,6 @@
+ import java.util.Objects;
+ import java.util.UUID;
+ import javax.annotation.Nullable;
+-import net.minecraft.core.BlockPos;
+-import net.minecraft.nbt.CompoundTag;
+-import net.minecraft.network.chat.Component;
+-import net.minecraft.network.syncher.EntityDataAccessor;
+-import net.minecraft.network.syncher.EntityDataSerializers;
+-import net.minecraft.network.syncher.SynchedEntityData;
+-import net.minecraft.server.level.ServerLevel;
+-import net.minecraft.sounds.SoundSource;
+-import net.minecraft.stats.Stats;
+-import net.minecraft.tags.FluidTags;
+-import net.minecraft.tags.ItemTags;
+-import net.minecraft.util.Mth;
+ import net.minecraft.world.damagesource.DamageSource;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntityType;
+@@ -24,7 +12,6 @@
+ import net.minecraft.world.entity.MoverType;
+ import net.minecraft.world.entity.SlotAccess;
+ import net.minecraft.world.entity.TraceableEntity;
+-import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.Explosion;
+@@ -33,6 +20,26 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.portal.TeleportTransition;
+ import net.minecraft.world.phys.Vec3;
++import net.minecraft.core.BlockPos;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.network.chat.Component;
++import net.minecraft.network.syncher.EntityDataAccessor;
++import net.minecraft.network.syncher.EntityDataSerializers;
++import net.minecraft.network.syncher.SynchedEntityData;
++// CraftBukkit start
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.sounds.SoundSource;
++import net.minecraft.stats.Stats;
++import net.minecraft.tags.FluidTags;
++import net.minecraft.tags.ItemTags;
++import net.minecraft.util.Mth;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.entity.Player;
++import org.bukkit.event.entity.EntityPickupItemEvent;
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.player.PlayerPickupItemEvent;
++// CraftBukkit end
+ 
+ public class ItemEntity extends Entity implements TraceableEntity {
+ 
+@@ -52,6 +59,7 @@
+     @Nullable
+     public UUID target;
+     public final float bobOffs;
++    private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
+ 
+     public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
+         super(type, world);
+@@ -133,12 +141,15 @@
+     @Override
+     public void tick() {
+         if (this.getItem().isEmpty()) {
+-            this.discard();
++            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         } else {
+             super.tick();
+-            if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
+-                --this.pickupDelay;
+-            }
++            // CraftBukkit start - Use wall time for pickup and despawn timers
++            int elapsedTicks = MinecraftServer.currentTick - this.lastTick;
++            if (this.pickupDelay != 32767) this.pickupDelay -= elapsedTicks;
++            if (this.age != -32768) this.age += elapsedTicks;
++            this.lastTick = MinecraftServer.currentTick;
++            // CraftBukkit end
+ 
+             this.xo = this.getX();
+             this.yo = this.getY();
+@@ -188,9 +199,11 @@
+                 this.mergeWithNeighbours();
+             }
+ 
++            /* CraftBukkit start - moved up
+             if (this.age != -32768) {
+                 ++this.age;
+             }
++            // CraftBukkit end */
+ 
+             this.hasImpulse |= this.updateInWaterStateAndDoFluidPushing();
+             if (!this.level().isClientSide) {
+@@ -202,7 +215,13 @@
+             }
+ 
+             if (!this.level().isClientSide && this.age >= 6000) {
+-                this.discard();
++                // CraftBukkit start - fire ItemDespawnEvent
++                if (CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
++                    this.age = 0;
++                    return;
++                }
++                // CraftBukkit end
++                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+             }
+ 
+         }
+@@ -287,11 +306,16 @@
+     }
+ 
+     private static void merge(ItemEntity targetEntity, ItemStack targetStack, ItemEntity sourceEntity, ItemStack sourceStack) {
++        // CraftBukkit start
++        if (!CraftEventFactory.callItemMergeEvent(sourceEntity, targetEntity)) {
++            return;
++        }
++        // CraftBukkit end
+         ItemEntity.merge(targetEntity, targetStack, sourceStack);
+         targetEntity.pickupDelay = Math.max(targetEntity.pickupDelay, sourceEntity.pickupDelay);
+         targetEntity.age = Math.min(targetEntity.age, sourceEntity.age);
+         if (sourceStack.isEmpty()) {
+-            sourceEntity.discard();
++            sourceEntity.discard(EntityRemoveEvent.Cause.MERGE); // CraftBukkit - add Bukkit remove cause);
+         }
+ 
+     }
+@@ -320,12 +344,17 @@
+         } else if (!this.getItem().canBeHurtBy(source)) {
+             return false;
+         } else {
++            // CraftBukkit start
++            if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount)) {
++                return false;
++            }
++            // CraftBukkit end
+             this.markHurt();
+             this.health = (int) ((float) this.health - amount);
+             this.gameEvent(GameEvent.ENTITY_DAMAGE, source.getEntity());
+             if (this.health <= 0) {
+                 this.getItem().onDestroyed(this);
+-                this.discard();
++                this.discard(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
+             }
+ 
+             return true;
+@@ -382,22 +411,62 @@
+         }
+ 
+         if (this.getItem().isEmpty()) {
+-            this.discard();
++            this.discard(null); // CraftBukkit - add Bukkit remove cause
+         }
+ 
+     }
+ 
+     @Override
+-    public void playerTouch(Player player) {
++    public void playerTouch(net.minecraft.world.entity.player.Player player) {
+         if (!this.level().isClientSide) {
+             ItemStack itemstack = this.getItem();
+             Item item = itemstack.getItem();
+             int i = itemstack.getCount();
+ 
++            // CraftBukkit start - fire PlayerPickupItemEvent
++            int canHold = player.getInventory().canHold(itemstack);
++            int remaining = i - canHold;
++
++            if (this.pickupDelay <= 0 && canHold > 0) {
++                itemstack.setCount(canHold);
++                // Call legacy event
++                PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                playerEvent.setCancelled(!playerEvent.getPlayer().getCanPickupItems());
++                this.level().getCraftServer().getPluginManager().callEvent(playerEvent);
++                if (playerEvent.isCancelled()) {
++                    itemstack.setCount(i); // SPIGOT-5294 - restore count
++                    return;
++                }
++
++                // Call newer event afterwards
++                EntityPickupItemEvent entityEvent = new EntityPickupItemEvent((Player) player.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                entityEvent.setCancelled(!entityEvent.getEntity().getCanPickupItems());
++                this.level().getCraftServer().getPluginManager().callEvent(entityEvent);
++                if (entityEvent.isCancelled()) {
++                    itemstack.setCount(i); // SPIGOT-5294 - restore count
++                    return;
++                }
++
++                // Update the ItemStack if it was changed in the event
++                ItemStack current = this.getItem();
++                if (!itemstack.equals(current)) {
++                    itemstack = current;
++                } else {
++                    itemstack.setCount(canHold + remaining); // = i
++                }
++
++                // Possibly < 0; fix here so we do not have to modify code below
++                this.pickupDelay = 0;
++            } else if (this.pickupDelay == 0) {
++                // ensure that the code below isn't triggered if canHold says we can't pick the items up
++                this.pickupDelay = -1;
++            }
++            // CraftBukkit end
++
+             if (this.pickupDelay == 0 && (this.target == null || this.target.equals(player.getUUID())) && player.getInventory().add(itemstack)) {
+                 player.take(this, i);
+                 if (itemstack.isEmpty()) {
+-                    this.discard();
++                    this.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+                     itemstack.setCount(i);
+                 }
+ 

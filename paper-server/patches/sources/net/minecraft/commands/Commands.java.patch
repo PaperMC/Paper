@@ -1,0 +1,240 @@
+--- a/net/minecraft/commands/Commands.java
++++ b/net/minecraft/commands/Commands.java
+@@ -138,6 +138,14 @@
+ import net.minecraft.world.flag.FeatureFlags;
+ import net.minecraft.world.level.GameRules;
+ import org.slf4j.Logger;
++
++// CraftBukkit start
++import com.google.common.base.Joiner;
++import java.util.Collection;
++import java.util.LinkedHashSet;
++import org.bukkit.event.player.PlayerCommandSendEvent;
++import org.bukkit.event.server.ServerCommandEvent;
++// CraftBukkit end
+ 
+ public class Commands {
+ 
+@@ -151,6 +159,7 @@
+     private final com.mojang.brigadier.CommandDispatcher<CommandSourceStack> dispatcher = new com.mojang.brigadier.CommandDispatcher();
+ 
+     public Commands(Commands.CommandSelection environment, CommandBuildContext commandRegistryAccess) {
++        this(); // CraftBukkit
+         AdvancementCommands.register(this.dispatcher);
+         AttributeCommand.register(this.dispatcher, commandRegistryAccess);
+         ExecuteCommand.register(this.dispatcher, commandRegistryAccess);
+@@ -252,6 +261,11 @@
+             PublishCommand.register(this.dispatcher);
+         }
+ 
++        // CraftBukkit start
++    }
++
++    public Commands() {
++        // CraftBukkkit end
+         this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
+     }
+ 
+@@ -262,30 +276,77 @@
+         return new ParseResults(commandcontextbuilder1, parseResults.getReader(), parseResults.getExceptions());
+     }
+ 
+-    public void performPrefixedCommand(CommandSourceStack source, String command) {
+-        command = command.startsWith("/") ? command.substring(1) : command;
+-        this.performCommand(this.dispatcher.parse(command, source), command);
++    // CraftBukkit start
++    public void dispatchServerCommand(CommandSourceStack sender, String command) {
++        Joiner joiner = Joiner.on(" ");
++        if (command.startsWith("/")) {
++            command = command.substring(1);
++        }
++
++        ServerCommandEvent event = new ServerCommandEvent(sender.getBukkitSender(), command);
++        org.bukkit.Bukkit.getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            return;
++        }
++        command = event.getCommand();
++
++        String[] args = command.split(" ");
++
++        String cmd = args[0];
++        if (cmd.startsWith("minecraft:")) cmd = cmd.substring("minecraft:".length());
++        if (cmd.startsWith("bukkit:")) cmd = cmd.substring("bukkit:".length());
++
++        // Block disallowed commands
++        if (cmd.equalsIgnoreCase("stop") || cmd.equalsIgnoreCase("kick") || cmd.equalsIgnoreCase("op")
++                || cmd.equalsIgnoreCase("deop") || cmd.equalsIgnoreCase("ban") || cmd.equalsIgnoreCase("ban-ip")
++                || cmd.equalsIgnoreCase("pardon") || cmd.equalsIgnoreCase("pardon-ip") || cmd.equalsIgnoreCase("reload")) {
++            return;
++        }
++
++        // Handle vanilla commands;
++        if (sender.getLevel().getCraftServer().getCommandBlockOverride(args[0])) {
++            args[0] = "minecraft:" + args[0];
++        }
++
++        String newCommand = joiner.join(args);
++        this.performPrefixedCommand(sender, newCommand, newCommand);
+     }
++    // CraftBukkit end
+ 
++    public void performPrefixedCommand(CommandSourceStack source, String command) {
++        // CraftBukkit start
++        this.performPrefixedCommand(source, command, command);
++    }
++
++    public void performPrefixedCommand(CommandSourceStack commandlistenerwrapper, String s, String label) {
++        s = s.startsWith("/") ? s.substring(1) : s;
++        this.performCommand(this.dispatcher.parse(s, commandlistenerwrapper), s, label);
++        // CraftBukkit end
++    }
++
+     public void performCommand(ParseResults<CommandSourceStack> parseResults, String command) {
+-        CommandSourceStack commandlistenerwrapper = (CommandSourceStack) parseResults.getContext().getSource();
++        this.performCommand(parseResults, command, command);
++    }
++
++    public void performCommand(ParseResults<CommandSourceStack> parseresults, String s, String label) { // CraftBukkit
++        CommandSourceStack commandlistenerwrapper = (CommandSourceStack) parseresults.getContext().getSource();
+ 
+         Profiler.get().push(() -> {
+-            return "/" + command;
++            return "/" + s;
+         });
+-        ContextChain<CommandSourceStack> contextchain = Commands.finishParsing(parseResults, command, commandlistenerwrapper);
++        ContextChain<CommandSourceStack> contextchain = Commands.finishParsing(parseresults, s, commandlistenerwrapper, label); // CraftBukkit
+ 
+         try {
+             if (contextchain != null) {
+                 Commands.executeCommandInContext(commandlistenerwrapper, (executioncontext) -> {
+-                    ExecutionContext.queueInitialCommandExecution(executioncontext, command, contextchain, commandlistenerwrapper, CommandResultCallback.EMPTY);
++                    ExecutionContext.queueInitialCommandExecution(executioncontext, s, contextchain, commandlistenerwrapper, CommandResultCallback.EMPTY);
+                 });
+             }
+         } catch (Exception exception) {
+             MutableComponent ichatmutablecomponent = Component.literal(exception.getMessage() == null ? exception.getClass().getName() : exception.getMessage());
+ 
+             if (Commands.LOGGER.isDebugEnabled()) {
+-                Commands.LOGGER.error("Command exception: /{}", command, exception);
++                Commands.LOGGER.error("Command exception: /{}", s, exception);
+                 StackTraceElement[] astacktraceelement = exception.getStackTrace();
+ 
+                 for (int i = 0; i < Math.min(astacktraceelement.length, 3); ++i) {
+@@ -298,7 +359,7 @@
+             }));
+             if (SharedConstants.IS_RUNNING_IN_IDE) {
+                 commandlistenerwrapper.sendFailure(Component.literal(Util.describeError(exception)));
+-                Commands.LOGGER.error("'/{}' threw an exception", command, exception);
++                Commands.LOGGER.error("'/{}' threw an exception", s, exception);
+             }
+         } finally {
+             Profiler.get().pop();
+@@ -307,18 +368,18 @@
+     }
+ 
+     @Nullable
+-    private static ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseResults, String command, CommandSourceStack source) {
++    private static ContextChain<CommandSourceStack> finishParsing(ParseResults<CommandSourceStack> parseresults, String s, CommandSourceStack commandlistenerwrapper, String label) { // CraftBukkit
+         try {
+-            Commands.validateParseResults(parseResults);
+-            return (ContextChain) ContextChain.tryFlatten(parseResults.getContext().build(command)).orElseThrow(() -> {
+-                return CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(parseResults.getReader());
++            Commands.validateParseResults(parseresults);
++            return (ContextChain) ContextChain.tryFlatten(parseresults.getContext().build(s)).orElseThrow(() -> {
++                return CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(parseresults.getReader());
+             });
+         } catch (CommandSyntaxException commandsyntaxexception) {
+-            source.sendFailure(ComponentUtils.fromMessage(commandsyntaxexception.getRawMessage()));
++            commandlistenerwrapper.sendFailure(ComponentUtils.fromMessage(commandsyntaxexception.getRawMessage()));
+             if (commandsyntaxexception.getInput() != null && commandsyntaxexception.getCursor() >= 0) {
+                 int i = Math.min(commandsyntaxexception.getInput().length(), commandsyntaxexception.getCursor());
+                 MutableComponent ichatmutablecomponent = Component.empty().withStyle(ChatFormatting.GRAY).withStyle((chatmodifier) -> {
+-                    return chatmodifier.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/" + command));
++                    return chatmodifier.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, label)); // CraftBukkit
+                 });
+ 
+                 if (i > 10) {
+@@ -333,7 +394,7 @@
+                 }
+ 
+                 ichatmutablecomponent.append((Component) Component.translatable("command.context.here").withStyle(ChatFormatting.RED, ChatFormatting.ITALIC));
+-                source.sendFailure(ichatmutablecomponent);
++                commandlistenerwrapper.sendFailure(ichatmutablecomponent);
+             }
+ 
+             return null;
+@@ -368,7 +429,7 @@
+ 
+                 executioncontext1.close();
+             } finally {
+-                Commands.CURRENT_EXECUTION_CONTEXT.set((Object) null);
++                Commands.CURRENT_EXECUTION_CONTEXT.set(null); // CraftBukkit - decompile error
+             }
+         } else {
+             callback.accept(executioncontext);
+@@ -377,11 +438,36 @@
+     }
+ 
+     public void sendCommands(ServerPlayer player) {
+-        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newHashMap();
++        // CraftBukkit start
++        // Register Vanilla commands into builtRoot as before
++        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
++        RootCommandNode vanillaRoot = new RootCommandNode();
++
++        RootCommandNode<CommandSourceStack> vanilla = player.server.vanillaCommandDispatcher.getDispatcher().getRoot();
++        map.put(vanilla, vanillaRoot);
++        this.fillUsableCommands(vanilla, vanillaRoot, player.createCommandSourceStack(), (Map) map);
++
++        // Now build the global commands in a second pass
+         RootCommandNode<SharedSuggestionProvider> rootcommandnode = new RootCommandNode();
+ 
+         map.put(this.dispatcher.getRoot(), rootcommandnode);
+         this.fillUsableCommands(this.dispatcher.getRoot(), rootcommandnode, player.createCommandSourceStack(), map);
++
++        Collection<String> bukkit = new LinkedHashSet<>();
++        for (CommandNode node : rootcommandnode.getChildren()) {
++            bukkit.add(node.getName());
++        }
++
++        PlayerCommandSendEvent event = new PlayerCommandSendEvent(player.getBukkitEntity(), new LinkedHashSet<>(bukkit));
++        event.getPlayer().getServer().getPluginManager().callEvent(event);
++
++        // Remove labels that were removed during the event
++        for (String orig : bukkit) {
++            if (!event.getCommands().contains(orig)) {
++                rootcommandnode.removeCommand(orig);
++            }
++        }
++        // CraftBukkit end
+         player.connection.send(new ClientboundCommandsPacket(rootcommandnode));
+     }
+ 
+@@ -392,7 +478,7 @@
+             CommandNode<CommandSourceStack> commandnode2 = (CommandNode) iterator.next();
+ 
+             if (commandnode2.canUse(source)) {
+-                ArgumentBuilder<SharedSuggestionProvider, ?> argumentbuilder = commandnode2.createBuilder();
++                ArgumentBuilder argumentbuilder = commandnode2.createBuilder(); // CraftBukkit - decompile error
+ 
+                 argumentbuilder.requires((icompletionprovider) -> {
+                     return true;
+@@ -415,7 +501,7 @@
+                     argumentbuilder.redirect((CommandNode) resultNodes.get(argumentbuilder.getRedirect()));
+                 }
+ 
+-                CommandNode<SharedSuggestionProvider> commandnode3 = argumentbuilder.build();
++                CommandNode commandnode3 = argumentbuilder.build(); // CraftBukkit - decompile error
+ 
+                 resultNodes.put(commandnode2, commandnode3);
+                 result.addChild(commandnode3);
+@@ -481,7 +567,7 @@
+             }
+ 
+             private <T> HolderLookup.RegistryLookup.Delegate<T> createLookup(final HolderLookup.RegistryLookup<T> original) {
+-                return new HolderLookup.RegistryLookup.Delegate<T>(this) {
++                return new HolderLookup.RegistryLookup.Delegate<T>() { // CraftBukkit - decompile error
+                     @Override
+                     public HolderLookup.RegistryLookup<T> parent() {
+                         return original;

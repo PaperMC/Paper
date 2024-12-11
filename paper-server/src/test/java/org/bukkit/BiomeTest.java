@@ -2,7 +2,6 @@ package org.bukkit;
 
 import static org.junit.jupiter.api.Assertions.*;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.level.biome.BiomeBase;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.block.CraftBiome;
@@ -25,7 +24,7 @@ public class BiomeTest {
 
     @Test
     public void testMinecraftToBukkit() {
-        for (BiomeBase biomeBase : CraftRegistry.getMinecraftRegistry(Registries.BIOME)) {
+        for (net.minecraft.world.level.biome.Biome biomeBase : CraftRegistry.getMinecraftRegistry(Registries.BIOME)) {
             Biome biome = CraftBiome.minecraftToBukkit(biomeBase);
             assertTrue(biome != null && biome != Biome.CUSTOM, "No Bukkit mapping for " + biomeBase);
         }

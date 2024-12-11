@@ -29,7 +29,7 @@ public class Main {
 
     private void run(String[] argv) {
         try {
-            String defaultMainClassName = readResource("main-class", BufferedReader::readLine);
+            String defaultMainClassName = this.readResource("main-class", BufferedReader::readLine);
             String mainClassName = System.getProperty("bundlerMainClass", defaultMainClassName);
 
             String repoDir = System.getProperty("bundlerRepoDir", "bundler");
@@ -42,8 +42,8 @@ public class Main {
 
             boolean readOnly = Boolean.getBoolean("bundlerReadOnly");
             List<URL> extractedUrls = new ArrayList<>();
-            readAndExtractDir("versions", outputDir, extractedUrls, readOnly);
-            readAndExtractDir("libraries", outputDir, extractedUrls, readOnly);
+            this.readAndExtractDir("versions", outputDir, extractedUrls, readOnly);
+            this.readAndExtractDir("libraries", outputDir, extractedUrls, readOnly);
 
             if (mainClassName == null || mainClassName.isEmpty()) {
                 System.out.println("Empty main class specified, exiting");
@@ -73,7 +73,7 @@ public class Main {
 
     private <T> T readResource(String resource, ResourceParser<T> parser) throws Exception {
         String fullPath = "/META-INF/" + resource;
-        try (InputStream is = getClass().getResourceAsStream(fullPath)) {
+        try (InputStream is = this.getClass().getResourceAsStream(fullPath)) {
             if (is == null) {
                 throw new IllegalStateException("Resource " + fullPath + " not found");
             }
@@ -82,7 +82,7 @@ public class Main {
     }
 
     private void readAndExtractDir(String subdir, Path outputDir, List<URL> extractedUrls, boolean readOnly) throws Exception {
-        List<FileEntry> entries = readResource(subdir + ".list", reader -> reader.lines().map(FileEntry::parseLine).toList());
+        List<FileEntry> entries = this.readResource(subdir + ".list", reader -> reader.lines().map(FileEntry::parseLine).toList());
         Path subdirPath = outputDir.resolve(subdir);
         for (FileEntry entry : entries) {
             if (entry.path.startsWith("minecraft-server")) {
@@ -90,23 +90,23 @@ public class Main {
             }
             Path outputFile = subdirPath.resolve(entry.path);
             if (!readOnly) {
-                checkAndExtractJar(subdir, entry, outputFile);
+                this.checkAndExtractJar(subdir, entry, outputFile);
             }
             extractedUrls.add(outputFile.toUri().toURL());
         }
     }
 
     private void checkAndExtractJar(String subdir, FileEntry entry, Path outputFile) throws Exception {
-        if (!Files.exists(outputFile) || !checkIntegrity(outputFile, entry.hash())) {
+        if (!Files.exists(outputFile) || !Main.checkIntegrity(outputFile, entry.hash())) {
             System.out.printf("Unpacking %s (%s:%s) to %s%n", entry.path, subdir, entry.id, outputFile);
-            extractJar(subdir, entry.path, outputFile);
+            this.extractJar(subdir, entry.path, outputFile);
         }
     }
 
     private void extractJar(String subdir, String jarPath, Path outputFile) throws IOException {
         Files.createDirectories(outputFile.getParent());
 
-        try (InputStream input = getClass().getResourceAsStream("/META-INF/" + subdir + "/" + jarPath)) {
+        try (InputStream input = this.getClass().getResourceAsStream("/META-INF/" + subdir + "/" + jarPath)) {
             if (input == null) {
                 throw new IllegalStateException("Declared library " + jarPath + " not found");
             }
@@ -121,7 +121,7 @@ public class Main {
         try (InputStream output = Files.newInputStream(file)) {
             output.transferTo(new DigestOutputStream(OutputStream.nullOutputStream(), digest));
 
-            String actualHash = byteToHex(digest.digest());
+            String actualHash = Main.byteToHex(digest.digest());
             if (actualHash.equalsIgnoreCase(expectedHash)) {
                 return true;
             }

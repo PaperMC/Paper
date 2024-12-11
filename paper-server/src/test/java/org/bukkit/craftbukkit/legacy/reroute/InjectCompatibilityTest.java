@@ -12,8 +12,8 @@ public class InjectCompatibilityTest extends AbstractRerouteTest {
 
     @Test
     public void testInjectCompatibility() {
-        test(InjectCompatibilityTestData.class, Map.of(
-                        "()Ljava/util/List;getList", create(
+        this.test(InjectCompatibilityTestData.class, Map.of(
+                        "()Ljava/util/List;getList", this.create(
                                 "()Ljava/util/List;getList",
                                 "()Ljava/util/List;",
                                 "java/lang/Object",
@@ -22,9 +22,9 @@ public class InjectCompatibilityTest extends AbstractRerouteTest {
                                 "(Ljava/lang/Object;Z)Ljava/util/List;",
                                 "org/bukkit/craftbukkit/legacy/reroute/InjectCompatibilityTest$InjectCompatibilityTestData",
                                 "getList",
-                                create(
-                                        create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null),
-                                        create("Z", "Z", false, false, "test-value")
+                                this.create(
+                                        this.create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null),
+                                        this.create("Z", "Z", false, false, "test-value")
                                 ),
                                 "Ljava/util/List;",
                                 true,

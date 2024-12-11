@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.IRegistry;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 
 final class CraftHolderUtil {
@@ -21,20 +21,20 @@ final class CraftHolderUtil {
                 .ifRight(list -> result.put(key, list.stream().map((entry) -> entry.unwrapKey().orElseThrow().location().toString()).toList())); // List
     }
 
-    public static <T> HolderSet<T> parse(Object parseObject, ResourceKey<IRegistry<T>> registryKey, IRegistry<T> registry) {
+    public static <T> HolderSet<T> parse(Object parseObject, ResourceKey<Registry<T>> registryKey, Registry<T> registry) {
         HolderSet<T> holderSet = null;
 
         if (parseObject instanceof String parseString && parseString.startsWith("#")) { // Tag
             parseString = parseString.substring(1);
-            MinecraftKey key = MinecraftKey.tryParse(parseString);
+            ResourceLocation key = ResourceLocation.tryParse(parseString);
             if (key != null) {
                 holderSet = registry.get(TagKey.create(registryKey, key)).orElse(null);
             }
         } else if (parseObject instanceof List parseList) { // List
-            List<Holder.c<T>> holderList = new ArrayList<>(parseList.size());
+            List<Holder.Reference<T>> holderList = new ArrayList<>(parseList.size());
 
             for (Object entry : parseList) {
-                MinecraftKey key = MinecraftKey.tryParse(entry.toString());
+                ResourceLocation key = ResourceLocation.tryParse(entry.toString());
                 if (key == null) {
                     continue;
                 }

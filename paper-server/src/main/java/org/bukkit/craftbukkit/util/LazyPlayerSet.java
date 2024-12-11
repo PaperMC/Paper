@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.HashSet;
 import java.util.List;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.EntityPlayer;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.entity.Player;
 
 public class LazyPlayerSet extends LazyHashSet<Player> {
@@ -17,10 +17,10 @@ public class LazyPlayerSet extends LazyHashSet<Player> {
 
     @Override
     HashSet<Player> makeReference() {
-        Preconditions.checkState(reference == null, "Reference already created!");
-        List<EntityPlayer> players = server.getPlayerList().players;
+        Preconditions.checkState(this.reference == null, "Reference already created!");
+        List<ServerPlayer> players = this.server.getPlayerList().players;
         HashSet<Player> reference = new HashSet<Player>(players.size());
-        for (EntityPlayer player : players) {
+        for (ServerPlayer player : players) {
             reference.add(player.getBukkitEntity());
         }
         return reference;

@@ -1,0 +1,58 @@
+--- a/net/minecraft/core/dispenser/MinecartDispenseItemBehavior.java
++++ b/net/minecraft/core/dispenser/MinecartDispenseItemBehavior.java
+@@ -15,6 +15,11 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.block.state.properties.RailShape;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockDispenseEvent;
++// CraftBukkit end
+ 
+ public class MinecartDispenseItemBehavior extends DefaultDispenseItemBehavior {
+ 
+@@ -62,11 +67,40 @@
+         }
+ 
+         Vec3 vec3d1 = new Vec3(d0, d1 + d3, d2);
+-        AbstractMinecart entityminecartabstract = AbstractMinecart.createMinecart(worldserver, vec3d1.x, vec3d1.y, vec3d1.z, this.entityType, EntitySpawnReason.DISPENSER, stack, (Player) null);
++        // CraftBukkit start
++        // EntityMinecartAbstract entityminecartabstract = EntityMinecartAbstract.createMinecart(worldserver, vec3d1.x, vec3d1.y, vec3d1.z, this.entityType, EntitySpawnReason.DISPENSER, itemstack, (EntityHuman) null);
++        ItemStack itemstack1 = stack.split(1);
++        org.bukkit.block.Block block2 = CraftBlock.at(worldserver, pointer.pos());
++        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
+ 
++        BlockDispenseEvent event = new BlockDispenseEvent(block2, craftItem.clone(), new org.bukkit.util.Vector(vec3d1.x, vec3d1.y, vec3d1.z));
++        if (!DispenserBlock.eventFired) {
++            worldserver.getCraftServer().getPluginManager().callEvent(event);
++        }
++
++        if (event.isCancelled()) {
++            stack.grow(1);
++            return stack;
++        }
++
++        if (!event.getItem().equals(craftItem)) {
++            stack.grow(1);
++            // Chain to handler for new item
++            ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++            DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
++            if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != this) {
++                idispensebehavior.dispense(pointer, eventStack);
++                return stack;
++            }
++        }
++
++        itemstack1 = CraftItemStack.asNMSCopy(event.getItem());
++        AbstractMinecart entityminecartabstract = AbstractMinecart.createMinecart(worldserver, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.entityType, EntitySpawnReason.DISPENSER, itemstack1, (Player) null);
++
+         if (entityminecartabstract != null) {
+-            worldserver.addFreshEntity(entityminecartabstract);
+-            stack.shrink(1);
++            if (!worldserver.addFreshEntity(entityminecartabstract)) stack.grow(1);
++            // itemstack.shrink(1); // CraftBukkit - handled during event processing
++            // CraftBukkit end
+         }
+ 
+         return stack;

@@ -4,20 +4,20 @@ import org.bukkit.block.data.Levelled;
 
 public abstract class CraftLevelled extends CraftBlockData implements Levelled {
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger LEVEL = getInteger("level");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty LEVEL = getInteger("level");
 
     @Override
     public int getLevel() {
-        return get(LEVEL);
+        return this.get(CraftLevelled.LEVEL);
     }
 
     @Override
     public void setLevel(int level) {
-        set(LEVEL, level);
+        this.set(CraftLevelled.LEVEL, level);
     }
 
     @Override
     public int getMaximumLevel() {
-        return getMax(LEVEL);
+        return getMax(CraftLevelled.LEVEL);
     }
 }

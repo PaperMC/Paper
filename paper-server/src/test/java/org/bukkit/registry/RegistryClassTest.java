@@ -23,10 +23,9 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
-import net.minecraft.core.IRegistry;
-import net.minecraft.core.IRegistryCustom;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.flag.FeatureElement;
 import net.minecraft.world.flag.FeatureFlags;
 import org.bukkit.Bukkit;
@@ -62,26 +61,26 @@ public class RegistryClassTest {
 
     private static final Map<Class<? extends Keyed>, Data> INIT_DATA = new HashMap<>();
     private static final List<Arguments> FIELD_DATA_CACHE = new ArrayList<>();
-    private static IRegistryCustom.Dimension vanilla_registry;
+    private static RegistryAccess.Frozen vanilla_registry;
 
     public static Stream<Arguments> fieldData() {
-        return FIELD_DATA_CACHE.stream();
+        return RegistryClassTest.FIELD_DATA_CACHE.stream();
     }
 
     @BeforeAll
     public static void init() {
-        initValueClasses();
-        initFieldDataCache();
+        RegistryClassTest.initValueClasses();
+        RegistryClassTest.initFieldDataCache();
     }
 
     @AfterAll
     public static void cleanUp() {
-        INIT_DATA.clear();
-        FIELD_DATA_CACHE.clear();
+        RegistryClassTest.INIT_DATA.clear();
+        RegistryClassTest.FIELD_DATA_CACHE.clear();
     }
 
     private static void initValueClasses() {
-        vanilla_registry = RegistryHelper.createRegistry(FeatureFlags.VANILLA_SET);
+        RegistryClassTest.vanilla_registry = RegistryHelper.createRegistry(FeatureFlags.VANILLA_SET);
 
         Map<Class<? extends Keyed>, List<NamespacedKey>> outsideRequest = new LinkedHashMap<>();
 
@@ -183,13 +182,13 @@ public class RegistryClassTest {
     private static void initFieldDataCache() {
         RegistriesArgumentProvider.getData().map(arguments -> {
             Class<? extends Keyed> type = (Class<? extends Keyed>) arguments.get()[0];
-            Map<String, List<Class<? extends Annotation>>> annotations = getFieldAnnotations(type);
+            Map<String, List<Class<? extends Annotation>>> annotations = RegistryClassTest.getFieldAnnotations(type);
 
             List<FieldData> fields = new ArrayList<>();
             for (Field field : type.getFields()) {
                 // We ignore each field that does not have the class itself as its type,
                 // is not static, public, or is deprecated.
-                if (!isValidField(type, field)) {
+                if (!RegistryClassTest.isValidField(type, field)) {
                     continue;
                 }
 
@@ -258,7 +257,7 @@ public class RegistryClassTest {
 
     @RegistriesTest
     public <T extends Keyed> void testOutsideRequests(Class<T> type) {
-        Data data = INIT_DATA.get(type);
+        Data data = RegistryClassTest.INIT_DATA.get(type);
 
         assertNotNull(data, String.format("No data present for %s. This should never happen since the same data source is used.\n"
                 + "Something has gone horribly wrong.", type));
@@ -288,7 +287,7 @@ public class RegistryClassTest {
 
     @RegistriesTest
     public <T extends Keyed> void testNoNullValuePresent(Class<T> type) {
-        Data data = INIT_DATA.get(type);
+        Data data = RegistryClassTest.INIT_DATA.get(type);
 
         assertNotNull(data, String.format("No data present for %s. This should never happen since the same data source is used.\n"
                 + "Something has gone horribly wrong.", type));
@@ -308,7 +307,7 @@ public class RegistryClassTest {
 
         for (Field field : type.getFields()) {
             // We ignore each field that does not have the class itself as its type, is not static, public, or is deprecated.
-            if (!isValidField(type, field)) {
+            if (!RegistryClassTest.isValidField(type, field)) {
                 continue;
             }
 
@@ -330,7 +329,7 @@ public class RegistryClassTest {
 
     @ParameterizedTest
     @MethodSource("fieldData")
-    public <T extends Keyed> void testExcessExperimentalAnnotation(Class<T> type, ResourceKey<IRegistry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
+    public <T extends Keyed> void testExcessExperimentalAnnotation(Class<T> type, ResourceKey<net.minecraft.core.Registry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
         List<Field> excess = new ArrayList<>();
 
         for (FieldData fieldData : fieldDataList) {
@@ -339,7 +338,7 @@ public class RegistryClassTest {
                 continue;
             }
 
-            IRegistry<?> registry = vanilla_registry.lookupOrThrow(registryKey);
+            net.minecraft.core.Registry<?> registry = RegistryClassTest.vanilla_registry.lookupOrThrow(registryKey);
 
             Optional<?> optionalValue = registry.getOptional(CraftNamespacedKey.toMinecraft(((Keyed) fieldData.field().get(null)).getKey()));
 
@@ -367,8 +366,8 @@ public class RegistryClassTest {
 
     @ParameterizedTest
     @MethodSource("fieldData")
-    public <T extends Keyed> void testMissingExperimentalAnnotation(Class<T> type, ResourceKey<IRegistry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
-        IRegistry<?> registry = vanilla_registry.lookupOrThrow(registryKey);
+    public <T extends Keyed> void testMissingExperimentalAnnotation(Class<T> type, ResourceKey<net.minecraft.core.Registry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
+        net.minecraft.core.Registry<?> registry = RegistryClassTest.vanilla_registry.lookupOrThrow(registryKey);
         List<Field> missing = new ArrayList<>();
 
         for (FieldData fieldData : fieldDataList) {
@@ -402,10 +401,10 @@ public class RegistryClassTest {
 
     @ParameterizedTest
     @MethodSource("fieldData")
-    public <T extends Keyed> void testExcessNullCheck(Class<T> type, ResourceKey<IRegistry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
-        IRegistry<?> registry = vanilla_registry.lookupOrThrow(registryKey);
+    public <T extends Keyed> void testExcessNullCheck(Class<T> type, ResourceKey<net.minecraft.core.Registry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
+        net.minecraft.core.Registry<?> registry = RegistryClassTest.vanilla_registry.lookupOrThrow(registryKey);
         List<Field> excess = new ArrayList<>();
-        Data data = INIT_DATA.get(type);
+        Data data = RegistryClassTest.INIT_DATA.get(type);
 
         for (FieldData fieldData : fieldDataList) {
             NamespacedKey key = ((Keyed) fieldData.field().get(null)).getKey();
@@ -433,10 +432,10 @@ public class RegistryClassTest {
 
     @ParameterizedTest
     @MethodSource("fieldData")
-    public <T extends Keyed> void testMissingNullCheck(Class<T> type, ResourceKey<IRegistry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
-        IRegistry<?> registry = vanilla_registry.lookupOrThrow(registryKey);
+    public <T extends Keyed> void testMissingNullCheck(Class<T> type, ResourceKey<net.minecraft.core.Registry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
+        net.minecraft.core.Registry<?> registry = RegistryClassTest.vanilla_registry.lookupOrThrow(registryKey);
         List<Field> missing = new ArrayList<>();
-        Data data = INIT_DATA.get(type);
+        Data data = RegistryClassTest.INIT_DATA.get(type);
 
         for (FieldData fieldData : fieldDataList) {
             NamespacedKey key = ((Keyed) fieldData.field().get(null)).getKey();
@@ -464,13 +463,13 @@ public class RegistryClassTest {
 
     @ParameterizedTest
     @MethodSource("fieldData")
-    public <T extends Keyed> void testMatchingFieldNames(Class<T> type, ResourceKey<IRegistry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
+    public <T extends Keyed> void testMatchingFieldNames(Class<T> type, ResourceKey<net.minecraft.core.Registry<?>> registryKey, List<FieldData> fieldDataList) throws IllegalAccessException {
         Map<Field, NamespacedKey> notMatching = new LinkedHashMap<>();
 
         for (FieldData fieldData : fieldDataList) {
             NamespacedKey key = ((Keyed) fieldData.field().get(null)).getKey();
 
-            if (fieldData.field().getName().equals(convertToFieldName(key.getKey()))) {
+            if (fieldData.field().getName().equals(this.convertToFieldName(key.getKey()))) {
                 continue;
             }
 
@@ -490,19 +489,19 @@ public class RegistryClassTest {
 
     @ParameterizedTest
     @MethodSource("fieldData")
-    public <T extends Keyed> void testMissingConstants(Class<T> type, ResourceKey<IRegistry<?>> registryKey) throws IllegalAccessException {
-        IRegistry<Object> registry = RegistryHelper.getRegistry().lookupOrThrow(registryKey);
-        List<MinecraftKey> missingKeys = new ArrayList<>();
+    public <T extends Keyed> void testMissingConstants(Class<T> type, ResourceKey<net.minecraft.core.Registry<?>> registryKey) throws IllegalAccessException {
+        net.minecraft.core.Registry<Object> registry = RegistryHelper.getRegistry().lookupOrThrow(registryKey);
+        List<ResourceLocation> missingKeys = new ArrayList<>();
 
         for (Object nmsObject : registry) {
-            MinecraftKey minecraftKey = registry.getKey(nmsObject);
+            ResourceLocation minecraftKey = registry.getKey(nmsObject);
 
             try {
-                Field field = type.getField(convertToFieldName(minecraftKey.getPath()));
+                Field field = type.getField(this.convertToFieldName(minecraftKey.getPath()));
 
                 // Only fields which are not Deprecated
                 // and have the right registry item associated with the field count.
-                if (!isValidField(type, field)) {
+                if (!RegistryClassTest.isValidField(type, field)) {
                     missingKeys.add(minecraftKey);
                     continue;
                 }

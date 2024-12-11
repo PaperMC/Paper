@@ -1,0 +1,53 @@
+--- a/net/minecraft/world/level/block/Block.java
++++ b/net/minecraft/world/level/block/Block.java
+@@ -340,7 +340,13 @@
+                 ItemEntity entityitem = (ItemEntity) itemEntitySupplier.get();
+ 
+                 entityitem.setDefaultPickUpDelay();
+-                world.addFreshEntity(entityitem);
++                // CraftBukkit start
++                if (world.captureDrops != null) {
++                    world.captureDrops.add(entityitem);
++                } else {
++                    world.addFreshEntity(entityitem);
++                }
++                // CraftBukkit end
+                 return;
+             }
+         }
+@@ -369,7 +375,7 @@
+ 
+     public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity blockEntity, ItemStack tool) {
+         player.awardStat(Stats.BLOCK_MINED.get(this));
+-        player.causeFoodExhaustion(0.005F);
++        player.causeFoodExhaustion(0.005F, org.bukkit.event.entity.EntityExhaustionEvent.ExhaustionReason.BLOCK_MINED); // CraftBukkit - EntityExhaustionEvent
+         Block.dropResources(state, world, pos, blockEntity, player, tool);
+     }
+ 
+@@ -490,15 +496,23 @@
+         return this.builtInRegistryHolder;
+     }
+ 
+-    protected void tryDropExperience(ServerLevel world, BlockPos pos, ItemStack tool, IntProvider experience) {
+-        int i = EnchantmentHelper.processBlockExperience(world, tool, experience.sample(world.getRandom()));
++    // CraftBukkit start
++    protected int tryDropExperience(ServerLevel worldserver, BlockPos blockposition, ItemStack itemstack, IntProvider intprovider) {
++        int i = EnchantmentHelper.processBlockExperience(worldserver, itemstack, intprovider.sample(worldserver.getRandom()));
+ 
+         if (i > 0) {
+-            this.popExperience(world, pos, i);
++            // this.popExperience(worldserver, blockposition, i);
++            return i;
+         }
+ 
++        return 0;
+     }
+ 
++    public int getExpDrop(BlockState iblockdata, ServerLevel worldserver, BlockPos blockposition, ItemStack itemstack, boolean flag) {
++        return 0;
++    }
++    // CraftBukkit end
++
+     private static record ShapePairKey(VoxelShape first, VoxelShape second) {
+ 
+         public boolean equals(Object object) {

@@ -16,7 +16,7 @@ public final class JsonHelper {
 
     @Nonnull
     public static JsonObject getOrCreateObject(@Nonnull JsonObject parent, @Nonnull String key) {
-        JsonObject jsonObject = getObjectOrNull(parent, key);
+        JsonObject jsonObject = JsonHelper.getObjectOrNull(parent, key);
         if (jsonObject == null) {
             jsonObject = new JsonObject();
             parent.add(key, jsonObject);
@@ -32,7 +32,7 @@ public final class JsonHelper {
 
     @Nullable
     public static String getStringOrNull(JsonObject parent, String key) {
-        JsonPrimitive primitive = getPrimitiveOrNull(parent, key);
+        JsonPrimitive primitive = JsonHelper.getPrimitiveOrNull(parent, key);
         return (primitive != null) ? primitive.getAsString() : null;
     }
 

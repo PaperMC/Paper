@@ -1,0 +1,31 @@
+--- a/net/minecraft/server/network/ServerConnectionListener.java
++++ b/net/minecraft/server/network/ServerConnectionListener.java
+@@ -100,16 +100,26 @@
+ 
+                     Connection.configureSerialization(channelpipeline, PacketFlow.SERVERBOUND, false, (BandwidthDebugMonitor) null);
+                     int j = ServerConnectionListener.this.server.getRateLimitPacketsPerSecond();
+-                    Object object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND);
++                    Connection object = j > 0 ? new RateKickingConnection(j) : new Connection(PacketFlow.SERVERBOUND); // CraftBukkit - decompile error
+ 
+                     ServerConnectionListener.this.connections.add(object);
+                     ((Connection) object).configurePacketHandler(channelpipeline);
+                     ((Connection) object).setListenerForServerboundHandshake(new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, (Connection) object));
+                 }
+-            }).group(eventloopgroup).localAddress(address, port)).bind().syncUninterruptibly());
++            }).group(eventloopgroup).localAddress(address, port)).option(ChannelOption.AUTO_READ, false).bind().syncUninterruptibly()); // CraftBukkit
+         }
+     }
+ 
++    // CraftBukkit start
++    public void acceptConnections() {
++        synchronized (this.channels) {
++            for (ChannelFuture future : this.channels) {
++                future.channel().config().setAutoRead(true);
++            }
++        }
++    }
++    // CraftBukkit end
++
+     public SocketAddress startMemoryChannel() {
+         List list = this.channels;
+         ChannelFuture channelfuture;

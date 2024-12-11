@@ -1,0 +1,67 @@
+--- a/net/minecraft/world/damagesource/DamageSources.java
++++ b/net/minecraft/world/damagesource/DamageSources.java
+@@ -43,9 +43,15 @@
+     private final DamageSource stalagmite;
+     private final DamageSource outsideBorder;
+     private final DamageSource genericKill;
++    // CraftBukkit start
++    private final DamageSource melting;
++    private final DamageSource poison;
+ 
+     public DamageSources(RegistryAccess registryManager) {
+         this.damageTypes = registryManager.lookupOrThrow(Registries.DAMAGE_TYPE);
++        this.melting = this.source(DamageTypes.ON_FIRE).melting();
++        this.poison = this.source(DamageTypes.MAGIC).poison();
++        // CraftBukkit end
+         this.inFire = this.source(DamageTypes.IN_FIRE);
+         this.campfire = this.source(DamageTypes.CAMPFIRE);
+         this.lightningBolt = this.source(DamageTypes.LIGHTNING_BOLT);
+@@ -84,6 +90,16 @@
+     private DamageSource source(ResourceKey<DamageType> key, @Nullable Entity source, @Nullable Entity attacker) {
+         return new DamageSource(this.damageTypes.getOrThrow(key), source, attacker);
+     }
++
++    // CraftBukkit start
++    public DamageSource melting() {
++        return this.melting;
++    }
++
++    public DamageSource poison() {
++        return this.poison;
++    }
++    // CraftBukkit end
+ 
+     public DamageSource inFire() {
+         return this.inFire;
+@@ -254,17 +270,29 @@
+     }
+ 
+     public DamageSource explosion(@Nullable Entity source, @Nullable Entity attacker) {
+-        return this.source(attacker != null && source != null ? DamageTypes.PLAYER_EXPLOSION : DamageTypes.EXPLOSION, source, attacker);
++        // CraftBukkit start
++        return this.explosion(source, attacker, attacker != null && source != null ? DamageTypes.PLAYER_EXPLOSION : DamageTypes.EXPLOSION);
+     }
+ 
++    public DamageSource explosion(@Nullable Entity entity, @Nullable Entity entity1, ResourceKey<DamageType> resourceKey) {
++        return this.source(resourceKey, entity, entity1);
++        // CraftBukkit end
++    }
++
+     public DamageSource sonicBoom(Entity attacker) {
+         return this.source(DamageTypes.SONIC_BOOM, attacker);
+     }
+ 
+     public DamageSource badRespawnPointExplosion(Vec3 position) {
+-        return new DamageSource(this.damageTypes.getOrThrow(DamageTypes.BAD_RESPAWN_POINT), position);
++        // CraftBukkit start
++        return this.badRespawnPointExplosion(position, null);
+     }
+ 
++    public DamageSource badRespawnPointExplosion(Vec3 vec3d, org.bukkit.block.BlockState blockState) {
++        return new DamageSource(this.damageTypes.getOrThrow(DamageTypes.BAD_RESPAWN_POINT), vec3d).directBlockState(blockState);
++        // CraftBukkit end
++    }
++
+     public DamageSource outOfBorder() {
+         return this.outsideBorder;
+     }

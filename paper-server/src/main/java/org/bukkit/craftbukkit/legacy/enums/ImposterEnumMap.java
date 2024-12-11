@@ -20,7 +20,7 @@ public class ImposterEnumMap extends AbstractMap<Object, Object> {
 
     public ImposterEnumMap(Class<?> objectClass) {
         this.objectClass = objectClass;
-        this.map = getMap(objectClass);
+        this.map = ImposterEnumMap.getMap(objectClass);
     }
 
     public ImposterEnumMap(EnumMap enumMap) {
@@ -31,7 +31,7 @@ public class ImposterEnumMap extends AbstractMap<Object, Object> {
     public ImposterEnumMap(Map map) {
         if (map instanceof ImposterEnumMap) {
             this.objectClass = ((ImposterEnumMap) map).objectClass;
-            this.map = getMap(objectClass);
+            this.map = ImposterEnumMap.getMap(this.objectClass);
         } else {
             this.objectClass = DummyEnum.class;
             this.map = new TreeMap();
@@ -52,39 +52,39 @@ public class ImposterEnumMap extends AbstractMap<Object, Object> {
 
     @Override
     public int size() {
-        return map.size();
+        return this.map.size();
     }
 
     @Override
     public boolean containsValue(Object value) {
-        return map.containsValue(value);
+        return this.map.containsValue(value);
     }
 
     @Override
     public boolean containsKey(Object key) {
-        return map.containsKey(key);
+        return this.map.containsKey(key);
     }
 
     @Override
     public Object get(Object key) {
-        return map.get(key);
+        return this.map.get(key);
     }
 
     @Override
     public Object put(Object key, Object value) {
-        typeCheck(key);
-        return map.put(key, value);
+        this.typeCheck(key);
+        return this.map.put(key, value);
     }
 
     @Override
     public Object remove(Object key) {
-        return map.remove(key);
+        return this.map.remove(key);
     }
 
     @Override
     public void putAll(Map<? extends Object, ?> m) {
-        if (map instanceof EnumMap<?, ?>) {
-            map.putAll(m);
+        if (this.map instanceof EnumMap<?, ?>) {
+            this.map.putAll(m);
         }
 
         super.putAll(m);
@@ -92,45 +92,45 @@ public class ImposterEnumMap extends AbstractMap<Object, Object> {
 
     @Override
     public void clear() {
-        map.clear();
+        this.map.clear();
     }
 
     @Override
     public Set<Object> keySet() {
-        return map.keySet();
+        return this.map.keySet();
     }
 
     @Override
     public Collection<Object> values() {
-        return map.values();
+        return this.map.values();
     }
 
     @Override
     public Set<Entry<Object, Object>> entrySet() {
-        return map.entrySet();
+        return this.map.entrySet();
     }
 
     @Override
     public boolean equals(Object o) {
-        return map.equals(o);
+        return this.map.equals(o);
     }
 
     @Override
     public int hashCode() {
-        return map.hashCode();
+        return this.map.hashCode();
     }
 
     @Override
     public ImposterEnumMap clone() {
-        ImposterEnumMap enumMap = new ImposterEnumMap(objectClass);
-        enumMap.putAll(map);
+        ImposterEnumMap enumMap = new ImposterEnumMap(this.objectClass);
+        enumMap.putAll(this.map);
         return enumMap;
     }
 
     private void typeCheck(Object object) {
-        if (objectClass != DummyEnum.class) {
-            if (!objectClass.isAssignableFrom(object.getClass())) {
-                throw new ClassCastException(object.getClass() + " != " + objectClass);
+        if (this.objectClass != DummyEnum.class) {
+            if (!this.objectClass.isAssignableFrom(object.getClass())) {
+                throw new ClassCastException(object.getClass() + " != " + this.objectClass);
             }
         }
     }

@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import net.minecraft.world.food.FoodInfo;
+import net.minecraft.world.food.FoodProperties;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.inventory.SerializableMeta;
 import org.bukkit.inventory.meta.components.FoodComponent;
@@ -12,9 +12,9 @@ import org.bukkit.inventory.meta.components.FoodComponent;
 @SerializableAs("Food")
 public final class CraftFoodComponent implements FoodComponent {
 
-    private FoodInfo handle;
+    private FoodProperties handle;
 
-    public CraftFoodComponent(FoodInfo food) {
+    public CraftFoodComponent(FoodProperties food) {
         this.handle = food;
     }
 
@@ -27,52 +27,52 @@ public final class CraftFoodComponent implements FoodComponent {
         Float saturationModifier = SerializableMeta.getObject(Float.class, map, "saturation", false);
         Boolean canAlwaysEat = SerializableMeta.getBoolean(map, "can-always-eat");
 
-        this.handle = new FoodInfo(nutrition, saturationModifier, canAlwaysEat);
+        this.handle = new FoodProperties(nutrition, saturationModifier, canAlwaysEat);
     }
 
     @Override
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("nutrition", getNutrition());
-        result.put("saturation", getSaturation());
-        result.put("can-always-eat", canAlwaysEat());
+        result.put("nutrition", this.getNutrition());
+        result.put("saturation", this.getSaturation());
+        result.put("can-always-eat", this.canAlwaysEat());
 
         return result;
     }
 
-    public FoodInfo getHandle() {
-        return handle;
+    public FoodProperties getHandle() {
+        return this.handle;
     }
 
     @Override
     public int getNutrition() {
-        return handle.nutrition();
+        return this.handle.nutrition();
     }
 
     @Override
     public void setNutrition(int nutrition) {
         Preconditions.checkArgument(nutrition >= 0, "Nutrition cannot be negative");
-        handle = new FoodInfo(nutrition, handle.saturation(), handle.canAlwaysEat());
+        this.handle = new FoodProperties(nutrition, this.handle.saturation(), this.handle.canAlwaysEat());
     }
 
     @Override
     public float getSaturation() {
-        return handle.saturation();
+        return this.handle.saturation();
     }
 
     @Override
     public void setSaturation(float saturation) {
-        handle = new FoodInfo(handle.nutrition(), saturation, handle.canAlwaysEat());
+        this.handle = new FoodProperties(this.handle.nutrition(), saturation, this.handle.canAlwaysEat());
     }
 
     @Override
     public boolean canAlwaysEat() {
-        return handle.canAlwaysEat();
+        return this.handle.canAlwaysEat();
     }
 
     @Override
     public void setCanAlwaysEat(boolean canAlwaysEat) {
-        handle = new FoodInfo(handle.nutrition(), handle.saturation(), canAlwaysEat);
+        this.handle = new FoodProperties(this.handle.nutrition(), this.handle.saturation(), canAlwaysEat);
     }
 
     @Override
@@ -90,7 +90,7 @@ public final class CraftFoodComponent implements FoodComponent {
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (this.getClass() != obj.getClass()) {
             return false;
         }
         final CraftFoodComponent other = (CraftFoodComponent) obj;
@@ -99,6 +99,6 @@ public final class CraftFoodComponent implements FoodComponent {
 
     @Override
     public String toString() {
-        return "CraftFoodComponent{" + "handle=" + handle + '}';
+        return "CraftFoodComponent{" + "handle=" + this.handle + '}';
     }
 }

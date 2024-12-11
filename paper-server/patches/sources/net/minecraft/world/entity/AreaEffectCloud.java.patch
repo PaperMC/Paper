@@ -1,0 +1,140 @@
+--- a/net/minecraft/world/entity/AreaEffectCloud.java
++++ b/net/minecraft/world/entity/AreaEffectCloud.java
+@@ -33,6 +33,12 @@
+ import net.minecraft.world.level.material.PushReaction;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.entity.LivingEntity;
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
++
+ public class AreaEffectCloud extends Entity implements TraceableEntity {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -54,7 +60,7 @@
+     public float radiusOnUse;
+     public float radiusPerTick;
+     @Nullable
+-    private LivingEntity owner;
++    private net.minecraft.world.entity.LivingEntity owner;
+     @Nullable
+     public UUID ownerUUID;
+ 
+@@ -200,7 +206,7 @@
+ 
+     private void serverTick(ServerLevel world) {
+         if (this.tickCount >= this.waitTime + this.duration) {
+-            this.discard();
++            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         } else {
+             boolean flag = this.isWaiting();
+             boolean flag1 = this.tickCount < this.waitTime;
+@@ -215,7 +221,7 @@
+                 if (this.radiusPerTick != 0.0F) {
+                     f += this.radiusPerTick;
+                     if (f < 0.5F) {
+-                        this.discard();
++                        this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                         return;
+                     }
+ 
+@@ -244,16 +250,17 @@
+                         }
+ 
+                         list.addAll(this.potionContents.customEffects());
+-                        List<LivingEntity> list1 = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox());
++                        List<net.minecraft.world.entity.LivingEntity> list1 = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, this.getBoundingBox());
+ 
+                         if (!list1.isEmpty()) {
+                             Iterator iterator1 = list1.iterator();
+ 
++                            List<LivingEntity> entities = new java.util.ArrayList<LivingEntity>(); // CraftBukkit
+                             while (iterator1.hasNext()) {
+-                                LivingEntity entityliving = (LivingEntity) iterator1.next();
++                                net.minecraft.world.entity.LivingEntity entityliving = (net.minecraft.world.entity.LivingEntity) iterator1.next();
+ 
+                                 if (!this.victims.containsKey(entityliving) && entityliving.isAffectedByPotions()) {
+-                                    Stream stream = list.stream();
++                                    Stream<MobEffectInstance> stream = list.stream(); // CraftBukkit - decompile error
+ 
+                                     Objects.requireNonNull(entityliving);
+                                     if (!stream.noneMatch(entityliving::canBeAffected)) {
+@@ -262,6 +269,19 @@
+                                         double d2 = d0 * d0 + d1 * d1;
+ 
+                                         if (d2 <= (double) (f * f)) {
++                                            // CraftBukkit start
++                                            entities.add((LivingEntity) entityliving.getBukkitEntity());
++                                        }
++                                    }
++                                }
++                            }
++                            {
++                                org.bukkit.event.entity.AreaEffectCloudApplyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callAreaEffectCloudApplyEvent(this, entities);
++                                if (!event.isCancelled()) {
++                                    for (LivingEntity entity : event.getAffectedEntities()) {
++                                        if (entity instanceof CraftLivingEntity) {
++                                            net.minecraft.world.entity.LivingEntity entityliving = ((CraftLivingEntity) entity).getHandle();
++                                            // CraftBukkit end
+                                             this.victims.put(entityliving, this.tickCount + this.reapplicationDelay);
+                                             Iterator iterator2 = list.iterator();
+ 
+@@ -271,14 +291,14 @@
+                                                 if (((MobEffect) mobeffect1.getEffect().value()).isInstantenous()) {
+                                                     ((MobEffect) mobeffect1.getEffect().value()).applyInstantenousEffect(world, this, this.getOwner(), entityliving, mobeffect1.getAmplifier(), 0.5D);
+                                                 } else {
+-                                                    entityliving.addEffect(new MobEffectInstance(mobeffect1), this);
++                                                    entityliving.addEffect(new MobEffectInstance(mobeffect1), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AREA_EFFECT_CLOUD); // CraftBukkit
+                                                 }
+                                             }
+ 
+                                             if (this.radiusOnUse != 0.0F) {
+                                                 f += this.radiusOnUse;
+                                                 if (f < 0.5F) {
+-                                                    this.discard();
++                                                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                                                     return;
+                                                 }
+ 
+@@ -288,7 +308,7 @@
+                                             if (this.durationOnUse != 0) {
+                                                 this.duration += this.durationOnUse;
+                                                 if (this.duration <= 0) {
+-                                                    this.discard();
++                                                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+                                                     return;
+                                                 }
+                                             }
+@@ -336,14 +356,14 @@
+         this.waitTime = waitTime;
+     }
+ 
+-    public void setOwner(@Nullable LivingEntity owner) {
++    public void setOwner(@Nullable net.minecraft.world.entity.LivingEntity owner) {
+         this.owner = owner;
+         this.ownerUUID = owner == null ? null : owner.getUUID();
+     }
+ 
+     @Nullable
+     @Override
+-    public LivingEntity getOwner() {
++    public net.minecraft.world.entity.LivingEntity getOwner() {
+         if (this.owner != null && !this.owner.isRemoved()) {
+             return this.owner;
+         } else {
+@@ -353,10 +373,10 @@
+                 if (world instanceof ServerLevel) {
+                     ServerLevel worldserver = (ServerLevel) world;
+                     Entity entity = worldserver.getEntity(this.ownerUUID);
+-                    LivingEntity entityliving;
++                    net.minecraft.world.entity.LivingEntity entityliving;
+ 
+-                    if (entity instanceof LivingEntity) {
+-                        LivingEntity entityliving1 = (LivingEntity) entity;
++                    if (entity instanceof net.minecraft.world.entity.LivingEntity) {
++                        net.minecraft.world.entity.LivingEntity entityliving1 = (net.minecraft.world.entity.LivingEntity) entity;
+ 
+                         entityliving = entityliving1;
+                     } else {

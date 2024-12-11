@@ -13,7 +13,7 @@ import org.junit.jupiter.params.provider.Arguments;
 public class ItemStackPotionsTest extends ItemStackTest {
 
     public static Stream<Arguments> data() {
-        return StackProvider.compound(operators(), "%s %s", NAME_PARAMETER, Material.POTION);
+        return StackProvider.compound(ItemStackPotionsTest.operators(), "%s %s", NAME_PARAMETER, Material.POTION);
     }
 
     @SuppressWarnings("unchecked")

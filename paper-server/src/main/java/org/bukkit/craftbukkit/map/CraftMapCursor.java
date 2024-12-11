@@ -21,7 +21,7 @@ public final class CraftMapCursor {
         }
 
         public static MapCursor.Type minecraftHolderToBukkit(Holder<MapDecorationType> minecraft) {
-            return minecraftToBukkit(minecraft.value());
+            return CraftType.minecraftToBukkit(minecraft.value());
         }
 
         public static MapDecorationType bukkitToMinecraft(MapCursor.Type bukkit) {
@@ -49,38 +49,38 @@ public final class CraftMapCursor {
             } else {
                 this.name = key.toString();
             }
-            this.ordinal = count++;
+            this.ordinal = CraftType.count++;
         }
 
         @Override
         public MapDecorationType getHandle() {
-            return mapDecorationType;
+            return this.mapDecorationType;
         }
 
         @Override
         public NamespacedKey getKey() {
-            return key;
+            return this.key;
         }
 
         @Override
         public int compareTo(MapCursor.Type type) {
-            return ordinal - type.ordinal();
+            return this.ordinal - type.ordinal();
         }
 
         @Override
         public String name() {
-            return name;
+            return this.name;
         }
 
         @Override
         public int ordinal() {
-            return ordinal;
+            return this.ordinal;
         }
 
         @Override
         public String toString() {
             // For backwards compatibility
-            return name();
+            return this.name();
         }
 
         @Override
@@ -93,17 +93,17 @@ public final class CraftMapCursor {
                 return false;
             }
 
-            return getKey().equals(((MapCursor.Type) other).getKey());
+            return this.getKey().equals(((MapCursor.Type) other).getKey());
         }
 
         @Override
         public int hashCode() {
-            return getKey().hashCode();
+            return this.getKey().hashCode();
         }
 
         @Override
         public byte getValue() {
-            return (byte) CraftRegistry.getMinecraftRegistry(Registries.MAP_DECORATION_TYPE).getId(getHandle());
+            return (byte) CraftRegistry.getMinecraftRegistry(Registries.MAP_DECORATION_TYPE).getId(this.getHandle());
         }
     }
 }

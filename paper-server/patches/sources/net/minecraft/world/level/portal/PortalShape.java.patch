@@ -1,0 +1,226 @@
+--- a/net/minecraft/world/level/portal/PortalShape.java
++++ b/net/minecraft/world/level/portal/PortalShape.java
+@@ -23,6 +23,11 @@
+ import net.minecraft.world.phys.shapes.VoxelShape;
+ import org.apache.commons.lang3.mutable.MutableInt;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.util.BlockStateListPopulator;
++import org.bukkit.event.world.PortalCreateEvent;
++// CraftBukkit end
++
+ public class PortalShape {
+ 
+     private static final int MIN_WIDTH = 2;
+@@ -40,14 +45,18 @@
+     private final BlockPos bottomLeft;
+     private final int height;
+     private final int width;
++    // CraftBukkit start - add field
++    private final BlockStateListPopulator blocks;
+ 
+-    private PortalShape(Direction.Axis axis, int foundPortalBlocks, Direction negativeDir, BlockPos lowerCorner, int width, int height) {
+-        this.axis = axis;
+-        this.numPortalBlocks = foundPortalBlocks;
+-        this.rightDir = negativeDir;
+-        this.bottomLeft = lowerCorner;
+-        this.width = width;
+-        this.height = height;
++    private PortalShape(Direction.Axis enumdirection_enumaxis, int i, Direction enumdirection, BlockPos blockposition, int j, int k, BlockStateListPopulator blocks) {
++        this.blocks = blocks;
++        // CraftBukkit end
++        this.axis = enumdirection_enumaxis;
++        this.numPortalBlocks = i;
++        this.rightDir = enumdirection;
++        this.bottomLeft = blockposition;
++        this.width = j;
++        this.height = k;
+     }
+ 
+     public static Optional<PortalShape> findEmptyPortalShape(LevelAccessor world, BlockPos pos, Direction.Axis firstCheckedAxis) {
+@@ -69,110 +78,118 @@
+     }
+ 
+     public static PortalShape findAnyShape(BlockGetter world, BlockPos pos, Direction.Axis axis) {
++        BlockStateListPopulator blocks = new BlockStateListPopulator(((LevelAccessor) world).getMinecraftWorld()); // CraftBukkit
+         Direction enumdirection = axis == Direction.Axis.X ? Direction.WEST : Direction.SOUTH;
+-        BlockPos blockposition1 = PortalShape.calculateBottomLeft(world, enumdirection, pos);
++        BlockPos blockposition1 = PortalShape.calculateBottomLeft(world, enumdirection, pos, blocks); // CraftBukkit
+ 
+         if (blockposition1 == null) {
+-            return new PortalShape(axis, 0, enumdirection, pos, 0, 0);
++            return new PortalShape(axis, 0, enumdirection, pos, 0, 0, blocks); // CraftBukkit
+         } else {
+-            int i = PortalShape.calculateWidth(world, blockposition1, enumdirection);
++            int i = PortalShape.calculateWidth(world, blockposition1, enumdirection, blocks); // CraftBukkit
+ 
+             if (i == 0) {
+-                return new PortalShape(axis, 0, enumdirection, blockposition1, 0, 0);
++                return new PortalShape(axis, 0, enumdirection, blockposition1, 0, 0, blocks); // CraftBukkit
+             } else {
+                 MutableInt mutableint = new MutableInt();
+-                int j = PortalShape.calculateHeight(world, blockposition1, enumdirection, i, mutableint);
++                int j = PortalShape.calculateHeight(world, blockposition1, enumdirection, i, mutableint, blocks); // CraftBukkit
+ 
+-                return new PortalShape(axis, mutableint.getValue(), enumdirection, blockposition1, i, j);
++                return new PortalShape(axis, mutableint.getValue(), enumdirection, blockposition1, i, j, blocks); // CraftBukkit
+             }
+         }
+     }
+ 
+     @Nullable
+-    private static BlockPos calculateBottomLeft(BlockGetter world, Direction direction, BlockPos pow) {
+-        for (int i = Math.max(world.getMinY(), pow.getY() - 21); pow.getY() > i && PortalShape.isEmpty(world.getBlockState(pow.below())); pow = pow.below()) {
++    private static BlockPos calculateBottomLeft(BlockGetter iblockaccess, Direction enumdirection, BlockPos blockposition, BlockStateListPopulator blocks) { // CraftBukkit
++        for (int i = Math.max(iblockaccess.getMinY(), blockposition.getY() - 21); blockposition.getY() > i && PortalShape.isEmpty(iblockaccess.getBlockState(blockposition.below())); blockposition = blockposition.below()) {
+             ;
+         }
+ 
+-        Direction enumdirection1 = direction.getOpposite();
+-        int j = PortalShape.getDistanceUntilEdgeAboveFrame(world, pow, enumdirection1) - 1;
++        Direction enumdirection1 = enumdirection.getOpposite();
++        int j = PortalShape.getDistanceUntilEdgeAboveFrame(iblockaccess, blockposition, enumdirection1, blocks) - 1; // CraftBukkit
+ 
+-        return j < 0 ? null : pow.relative(enumdirection1, j);
++        return j < 0 ? null : blockposition.relative(enumdirection1, j);
+     }
+ 
+-    private static int calculateWidth(BlockGetter world, BlockPos lowerCorner, Direction negativeDir) {
+-        int i = PortalShape.getDistanceUntilEdgeAboveFrame(world, lowerCorner, negativeDir);
++    private static int calculateWidth(BlockGetter iblockaccess, BlockPos blockposition, Direction enumdirection, BlockStateListPopulator blocks) { // CraftBukkit
++        int i = PortalShape.getDistanceUntilEdgeAboveFrame(iblockaccess, blockposition, enumdirection, blocks); // CraftBukkit
+ 
+         return i >= 2 && i <= 21 ? i : 0;
+     }
+ 
+-    private static int getDistanceUntilEdgeAboveFrame(BlockGetter world, BlockPos lowerCorner, Direction negativeDir) {
++    private static int getDistanceUntilEdgeAboveFrame(BlockGetter iblockaccess, BlockPos blockposition, Direction enumdirection, BlockStateListPopulator blocks) { // CraftBukkit
+         BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
+ 
+         for (int i = 0; i <= 21; ++i) {
+-            blockposition_mutableblockposition.set(lowerCorner).move(negativeDir, i);
+-            BlockState iblockdata = world.getBlockState(blockposition_mutableblockposition);
++            blockposition_mutableblockposition.set(blockposition).move(enumdirection, i);
++            BlockState iblockdata = iblockaccess.getBlockState(blockposition_mutableblockposition);
+ 
+             if (!PortalShape.isEmpty(iblockdata)) {
+-                if (PortalShape.FRAME.test(iblockdata, world, blockposition_mutableblockposition)) {
++                if (PortalShape.FRAME.test(iblockdata, iblockaccess, blockposition_mutableblockposition)) {
++                    blocks.setBlock(blockposition_mutableblockposition, iblockdata, 18); // CraftBukkit - lower left / right
+                     return i;
+                 }
+                 break;
+             }
+ 
+-            BlockState iblockdata1 = world.getBlockState(blockposition_mutableblockposition.move(Direction.DOWN));
++            BlockState iblockdata1 = iblockaccess.getBlockState(blockposition_mutableblockposition.move(Direction.DOWN));
+ 
+-            if (!PortalShape.FRAME.test(iblockdata1, world, blockposition_mutableblockposition)) {
++            if (!PortalShape.FRAME.test(iblockdata1, iblockaccess, blockposition_mutableblockposition)) {
+                 break;
+             }
++            blocks.setBlock(blockposition_mutableblockposition, iblockdata1, 18); // CraftBukkit - bottom row
+         }
+ 
+         return 0;
+     }
+ 
+-    private static int calculateHeight(BlockGetter world, BlockPos lowerCorner, Direction negativeDir, int width, MutableInt foundPortalBlocks) {
+-        BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
+-        int j = PortalShape.getDistanceUntilTop(world, lowerCorner, negativeDir, blockposition_mutableblockposition, width, foundPortalBlocks);
++    private static int calculateHeight(BlockGetter iblockaccess, BlockPos blockposition, Direction enumdirection, int i, MutableInt mutableint, BlockStateListPopulator blocks) { // CraftBukkit
++        BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
++        int j = PortalShape.getDistanceUntilTop(iblockaccess, blockposition, enumdirection, blockposition_mutableblockposition, i, mutableint, blocks); // CraftBukkit
+ 
+-        return j >= 3 && j <= 21 && PortalShape.hasTopFrame(world, lowerCorner, negativeDir, blockposition_mutableblockposition, width, j) ? j : 0;
++        return j >= 3 && j <= 21 && PortalShape.hasTopFrame(iblockaccess, blockposition, enumdirection, blockposition_mutableblockposition, i, j, blocks) ? j : 0; // CraftBukkit
+     }
+ 
+-    private static boolean hasTopFrame(BlockGetter world, BlockPos lowerCorner, Direction direction, BlockPos.MutableBlockPos pos, int width, int height) {
+-        for (int k = 0; k < width; ++k) {
+-            BlockPos.MutableBlockPos blockposition_mutableblockposition1 = pos.set(lowerCorner).move(Direction.UP, height).move(direction, k);
++    private static boolean hasTopFrame(BlockGetter iblockaccess, BlockPos blockposition, Direction enumdirection, BlockPos.MutableBlockPos blockposition_mutableblockposition, int i, int j, BlockStateListPopulator blocks) { // CraftBukkit
++        for (int k = 0; k < i; ++k) {
++            BlockPos.MutableBlockPos blockposition_mutableblockposition1 = blockposition_mutableblockposition.set(blockposition).move(Direction.UP, j).move(enumdirection, k);
+ 
+-            if (!PortalShape.FRAME.test(world.getBlockState(blockposition_mutableblockposition1), world, blockposition_mutableblockposition1)) {
++            if (!PortalShape.FRAME.test(iblockaccess.getBlockState(blockposition_mutableblockposition1), iblockaccess, blockposition_mutableblockposition1)) {
+                 return false;
+             }
++            blocks.setBlock(blockposition_mutableblockposition1, iblockaccess.getBlockState(blockposition_mutableblockposition1), 18); // CraftBukkit - upper row
+         }
+ 
+         return true;
+     }
+ 
+-    private static int getDistanceUntilTop(BlockGetter world, BlockPos lowerCorner, Direction negativeDir, BlockPos.MutableBlockPos pos, int width, MutableInt foundPortalBlocks) {
++    private static int getDistanceUntilTop(BlockGetter iblockaccess, BlockPos blockposition, Direction enumdirection, BlockPos.MutableBlockPos blockposition_mutableblockposition, int i, MutableInt mutableint, BlockStateListPopulator blocks) { // CraftBukkit
+         for (int j = 0; j < 21; ++j) {
+-            pos.set(lowerCorner).move(Direction.UP, j).move(negativeDir, -1);
+-            if (!PortalShape.FRAME.test(world.getBlockState(pos), world, pos)) {
++            blockposition_mutableblockposition.set(blockposition).move(Direction.UP, j).move(enumdirection, -1);
++            if (!PortalShape.FRAME.test(iblockaccess.getBlockState(blockposition_mutableblockposition), iblockaccess, blockposition_mutableblockposition)) {
+                 return j;
+             }
+ 
+-            pos.set(lowerCorner).move(Direction.UP, j).move(negativeDir, width);
+-            if (!PortalShape.FRAME.test(world.getBlockState(pos), world, pos)) {
++            blockposition_mutableblockposition.set(blockposition).move(Direction.UP, j).move(enumdirection, i);
++            if (!PortalShape.FRAME.test(iblockaccess.getBlockState(blockposition_mutableblockposition), iblockaccess, blockposition_mutableblockposition)) {
+                 return j;
+             }
+ 
+-            for (int k = 0; k < width; ++k) {
+-                pos.set(lowerCorner).move(Direction.UP, j).move(negativeDir, k);
+-                BlockState iblockdata = world.getBlockState(pos);
++            for (int k = 0; k < i; ++k) {
++                blockposition_mutableblockposition.set(blockposition).move(Direction.UP, j).move(enumdirection, k);
++                BlockState iblockdata = iblockaccess.getBlockState(blockposition_mutableblockposition);
+ 
+                 if (!PortalShape.isEmpty(iblockdata)) {
+                     return j;
+                 }
+ 
+                 if (iblockdata.is(Blocks.NETHER_PORTAL)) {
+-                    foundPortalBlocks.increment();
++                    mutableint.increment();
+                 }
+             }
++            // CraftBukkit start - left and right
++            blocks.setBlock(blockposition_mutableblockposition.set(blockposition).move(Direction.UP, j).move(enumdirection, -1), iblockaccess.getBlockState(blockposition_mutableblockposition), 18);
++            blocks.setBlock(blockposition_mutableblockposition.set(blockposition).move(Direction.UP, j).move(enumdirection, i), iblockaccess.getBlockState(blockposition_mutableblockposition), 18);
++            // CraftBukkit end
+         }
+ 
+         return 21;
+@@ -186,12 +203,28 @@
+         return this.width >= 2 && this.width <= 21 && this.height >= 3 && this.height <= 21;
+     }
+ 
+-    public void createPortalBlocks(LevelAccessor world) {
++    // CraftBukkit start - return boolean, add entity
++    public boolean createPortalBlocks(LevelAccessor generatoraccess, Entity entity) {
++        org.bukkit.World bworld = generatoraccess.getMinecraftWorld().getWorld();
++
++        // Copy below for loop
+         BlockState iblockdata = (BlockState) Blocks.NETHER_PORTAL.defaultBlockState().setValue(NetherPortalBlock.AXIS, this.axis);
+ 
+         BlockPos.betweenClosed(this.bottomLeft, this.bottomLeft.relative(Direction.UP, this.height - 1).relative(this.rightDir, this.width - 1)).forEach((blockposition) -> {
+-            world.setBlock(blockposition, iblockdata, 18);
++            this.blocks.setBlock(blockposition, iblockdata, 18);
+         });
++
++        PortalCreateEvent event = new PortalCreateEvent((java.util.List<org.bukkit.block.BlockState>) (java.util.List) this.blocks.getList(), bworld, (entity == null) ? null : entity.getBukkitEntity(), PortalCreateEvent.CreateReason.FIRE);
++        generatoraccess.getMinecraftWorld().getServer().server.getPluginManager().callEvent(event);
++
++        if (event.isCancelled()) {
++            return false;
++        }
++        // CraftBukkit end
++        BlockPos.betweenClosed(this.bottomLeft, this.bottomLeft.relative(Direction.UP, this.height - 1).relative(this.rightDir, this.width - 1)).forEach((blockposition) -> {
++            generatoraccess.setBlock(blockposition, iblockdata, 18);
++        });
++        return true; // CraftBukkit
+     }
+ 
+     public boolean isComplete() {

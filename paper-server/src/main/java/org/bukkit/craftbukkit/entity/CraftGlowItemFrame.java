@@ -16,6 +16,6 @@ public class CraftGlowItemFrame extends CraftItemFrame implements GlowItemFrame 
 
     @Override
     public String toString() {
-        return "CraftGlowItemFrame{item=" + getItem() + ", rotation=" + getRotation() + "}";
+        return "CraftGlowItemFrame{item=" + this.getItem() + ", rotation=" + this.getRotation() + "}";
     }
 }

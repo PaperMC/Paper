@@ -3,33 +3,32 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import java.util.Locale;
 import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.sounds.SoundEffect;
+import net.minecraft.sounds.SoundEvent;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftSound implements Sound, Handleable<SoundEffect> {
+public class CraftSound implements Sound, Handleable<SoundEvent> {
 
     private static int count = 0;
 
-    public static Sound minecraftToBukkit(SoundEffect minecraft) {
+    public static Sound minecraftToBukkit(SoundEvent minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.SOUND_EVENT, Registry.SOUNDS);
     }
 
-    public static SoundEffect bukkitToMinecraft(Sound bukkit) {
+    public static SoundEvent bukkitToMinecraft(Sound bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    public static Holder<SoundEffect> bukkitToMinecraftHolder(Sound bukkit) {
+    public static Holder<SoundEvent> bukkitToMinecraftHolder(Sound bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        IRegistry<SoundEffect> registry = CraftRegistry.getMinecraftRegistry(Registries.SOUND_EVENT);
+        net.minecraft.core.Registry<SoundEvent> registry = CraftRegistry.getMinecraftRegistry(Registries.SOUND_EVENT);
 
-        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<SoundEffect> holder) {
+        if (registry.wrapAsHolder(CraftSound.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<SoundEvent> holder) {
             return holder;
         }
 
@@ -38,11 +37,11 @@ public class CraftSound implements Sound, Handleable<SoundEffect> {
     }
 
     private final NamespacedKey key;
-    private final SoundEffect soundEffect;
+    private final SoundEvent soundEffect;
     private final String name;
     private final int ordinal;
 
-    public CraftSound(NamespacedKey key, SoundEffect soundEffect) {
+    public CraftSound(NamespacedKey key, SoundEvent soundEffect) {
         this.key = key;
         this.soundEffect = soundEffect;
         // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
@@ -54,40 +53,40 @@ public class CraftSound implements Sound, Handleable<SoundEffect> {
         } else {
             this.name = key.toString();
         }
-        this.ordinal = count++;
+        this.ordinal = CraftSound.count++;
     }
 
     @Override
-    public SoundEffect getHandle() {
-        return soundEffect;
+    public SoundEvent getHandle() {
+        return this.soundEffect;
     }
 
     @NotNull
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 
     @Override
     public int compareTo(@NotNull Sound sound) {
-        return ordinal - sound.ordinal();
+        return this.ordinal - sound.ordinal();
     }
 
     @NotNull
     @Override
     public String name() {
-        return name;
+        return this.name;
     }
 
     @Override
     public int ordinal() {
-        return ordinal;
+        return this.ordinal;
     }
 
     @Override
     public String toString() {
         // For backwards compatibility
-        return name();
+        return this.name();
     }
 
     @Override
@@ -100,11 +99,11 @@ public class CraftSound implements Sound, Handleable<SoundEffect> {
             return false;
         }
 
-        return getKey().equals(otherSound.getKey());
+        return this.getKey().equals(otherSound.getKey());
     }
 
     @Override
     public int hashCode() {
-        return getKey().hashCode();
+        return this.getKey().hashCode();
     }
 }

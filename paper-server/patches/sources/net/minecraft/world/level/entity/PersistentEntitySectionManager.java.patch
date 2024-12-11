@@ -1,0 +1,170 @@
+--- a/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
++++ b/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
+@@ -29,8 +29,13 @@
+ import net.minecraft.util.CsvOutput;
+ import net.minecraft.util.VisibleForDebug;
+ import net.minecraft.world.entity.Entity;
+-import net.minecraft.world.level.ChunkPos;
+ import org.slf4j.Logger;
++import net.minecraft.world.level.ChunkPos;
++// CraftBukkit start
++import net.minecraft.world.level.chunk.storage.EntityStorage;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
+ 
+ public class PersistentEntitySectionManager<T extends EntityAccess> implements AutoCloseable {
+ 
+@@ -55,6 +60,16 @@
+         this.entityGetter = new LevelEntityGetterAdapter<>(this.visibleEntityStorage, this.sectionStorage);
+     }
+ 
++    // CraftBukkit start - add method to get all entities in chunk
++    public List<Entity> getEntities(ChunkPos chunkCoordIntPair) {
++        return this.sectionStorage.getExistingSectionsInChunk(chunkCoordIntPair.toLong()).flatMap(EntitySection::getEntities).map(entity -> (Entity) entity).collect(Collectors.toList());
++    }
++
++    public boolean isPending(long pair) {
++        return this.chunkLoadStatuses.get(pair) == ChunkLoadStatus.PENDING;
++    }
++    // CraftBukkit end
++
+     void removeSectionIfEmpty(long sectionPos, EntitySection<T> section) {
+         if (section.isEmpty()) {
+             this.sectionStorage.remove(sectionPos);
+@@ -196,27 +211,35 @@
+     }
+ 
+     private boolean storeChunkSections(long chunkPos, Consumer<T> action) {
+-        PersistentEntitySectionManager.ChunkLoadStatus persistententitysectionmanager_b = (PersistentEntitySectionManager.ChunkLoadStatus) this.chunkLoadStatuses.get(chunkPos);
++        // CraftBukkit start - add boolean for event call
++        return this.storeChunkSections(chunkPos, action, false);
++    }
+ 
++    private boolean storeChunkSections(long i, Consumer<T> consumer, boolean callEvent) {
++        // CraftBukkit end
++        PersistentEntitySectionManager.ChunkLoadStatus persistententitysectionmanager_b = (PersistentEntitySectionManager.ChunkLoadStatus) this.chunkLoadStatuses.get(i);
++
+         if (persistententitysectionmanager_b == PersistentEntitySectionManager.ChunkLoadStatus.PENDING) {
+             return false;
+         } else {
+-            List<T> list = (List) this.sectionStorage.getExistingSectionsInChunk(chunkPos).flatMap((entitysection) -> {
++            List<T> list = (List) this.sectionStorage.getExistingSectionsInChunk(i).flatMap((entitysection) -> {
+                 return entitysection.getEntities().filter(EntityAccess::shouldBeSaved);
+             }).collect(Collectors.toList());
+ 
+             if (list.isEmpty()) {
+                 if (persistententitysectionmanager_b == PersistentEntitySectionManager.ChunkLoadStatus.LOADED) {
+-                    this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(chunkPos), ImmutableList.of()));
++                    if (callEvent) CraftEventFactory.callEntitiesUnloadEvent(((EntityStorage) this.permanentStorage).level, new ChunkPos(i), ImmutableList.of()); // CraftBukkit
++                    this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(i), ImmutableList.of()));
+                 }
+ 
+                 return true;
+             } else if (persistententitysectionmanager_b == PersistentEntitySectionManager.ChunkLoadStatus.FRESH) {
+-                this.requestChunkLoad(chunkPos);
++                this.requestChunkLoad(i);
+                 return false;
+             } else {
+-                this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(chunkPos), list));
+-                list.forEach(action);
++                if (callEvent) CraftEventFactory.callEntitiesUnloadEvent(((EntityStorage) this.permanentStorage).level, new ChunkPos(i), list.stream().map(entity -> (Entity) entity).collect(Collectors.toList())); // CraftBukkit
++                this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(i), list));
++                list.forEach(consumer);
+                 return true;
+             }
+         }
+@@ -238,7 +261,7 @@
+     private boolean processChunkUnload(long chunkPos) {
+         boolean flag = this.storeChunkSections(chunkPos, (entityaccess) -> {
+             entityaccess.getPassengersAndSelf().forEach(this::unloadEntity);
+-        });
++        }, true); // CraftBukkit - add boolean for event call
+ 
+         if (!flag) {
+             return false;
+@@ -249,24 +272,28 @@
+     }
+ 
+     private void unloadEntity(EntityAccess entity) {
+-        entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK);
++        entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveEvent.Cause.UNLOAD); // CraftBukkit - add Bukkit remove cause
+         entity.setLevelCallback(EntityInLevelCallback.NULL);
+     }
+ 
+     private void processUnloads() {
+-        this.chunksToUnload.removeIf((i) -> {
++        this.chunksToUnload.removeIf((java.util.function.LongPredicate) (i) -> { // CraftBukkit - decompile error
+             return this.chunkVisibility.get(i) != Visibility.HIDDEN ? true : this.processChunkUnload(i);
+         });
+     }
+ 
+     private void processPendingLoads() {
+-        ChunkEntities chunkentities;
++        ChunkEntities<T> chunkentities; // CraftBukkit - decompile error
+ 
+         while ((chunkentities = (ChunkEntities) this.loadingInbox.poll()) != null) {
+             chunkentities.getEntities().forEach((entityaccess) -> {
+                 this.addEntity(entityaccess, true);
+             });
+             this.chunkLoadStatuses.put(chunkentities.getPos().toLong(), PersistentEntitySectionManager.ChunkLoadStatus.LOADED);
++            // CraftBukkit start - call entity load event
++            List<Entity> entities = this.getEntities(chunkentities.getPos());
++            CraftEventFactory.callEntitiesLoadEvent(((EntityStorage) this.permanentStorage).level, chunkentities.getPos(), entities);
++            // CraftBukkit end
+         }
+ 
+     }
+@@ -292,7 +319,7 @@
+     }
+ 
+     public void autoSave() {
+-        this.getAllChunksToSave().forEach((i) -> {
++        this.getAllChunksToSave().forEach((java.util.function.LongConsumer) (i) -> { // CraftBukkit - decompile error
+             boolean flag = this.chunkVisibility.get(i) == Visibility.HIDDEN;
+ 
+             if (flag) {
+@@ -311,7 +338,7 @@
+         while (!longset.isEmpty()) {
+             this.permanentStorage.flush(false);
+             this.processPendingLoads();
+-            longset.removeIf((i) -> {
++            longset.removeIf((java.util.function.LongPredicate) (i) -> { // CraftBukkit - decompile error
+                 boolean flag = this.chunkVisibility.get(i) == Visibility.HIDDEN;
+ 
+                 return flag ? this.processChunkUnload(i) : this.storeChunkSections(i, (entityaccess) -> {
+@@ -323,7 +350,15 @@
+     }
+ 
+     public void close() throws IOException {
+-        this.saveAll();
++        // CraftBukkit start - add save boolean
++        this.close(true);
++    }
++
++    public void close(boolean save) throws IOException {
++        if (save) {
++            this.saveAll();
++        }
++        // CraftBukkit end
+         this.permanentStorage.close();
+     }
+ 
+@@ -350,7 +385,7 @@
+     public void dumpSections(Writer writer) throws IOException {
+         CsvOutput csvwriter = CsvOutput.builder().addColumn("x").addColumn("y").addColumn("z").addColumn("visibility").addColumn("load_status").addColumn("entity_count").build(writer);
+ 
+-        this.sectionStorage.getAllChunksWithExistingSections().forEach((i) -> {
++        this.sectionStorage.getAllChunksWithExistingSections().forEach((java.util.function.LongConsumer) (i) -> { // CraftBukkit - decompile error
+             PersistentEntitySectionManager.ChunkLoadStatus persistententitysectionmanager_b = (PersistentEntitySectionManager.ChunkLoadStatus) this.chunkLoadStatuses.get(i);
+ 
+             this.sectionStorage.getExistingSectionPositionsInChunk(i).forEach((j) -> {
+@@ -394,7 +429,7 @@
+         private EntitySection<T> currentSection;
+ 
+         Callback(final EntityAccess entityaccess, final long i, final EntitySection entitysection) {
+-            this.entity = entityaccess;
++            this.entity = (T) entityaccess; // CraftBukkit - decompile error
+             this.currentSectionKey = i;
+             this.currentSection = entitysection;
+         }

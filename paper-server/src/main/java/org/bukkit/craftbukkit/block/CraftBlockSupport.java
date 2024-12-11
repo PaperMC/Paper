@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
-import net.minecraft.world.level.block.EnumBlockSupport;
+import net.minecraft.world.level.block.SupportType;
 import org.bukkit.block.BlockSupport;
 
 public final class CraftBlockSupport {
@@ -8,7 +8,7 @@ public final class CraftBlockSupport {
     private CraftBlockSupport() {
     }
 
-    public static BlockSupport toBukkit(EnumBlockSupport support) {
+    public static BlockSupport toBukkit(SupportType support) {
         return switch (support) {
             case FULL -> BlockSupport.FULL;
             case CENTER -> BlockSupport.CENTER;
@@ -17,11 +17,11 @@ public final class CraftBlockSupport {
         };
     }
 
-    public static EnumBlockSupport toNMS(BlockSupport support) {
+    public static SupportType toNMS(BlockSupport support) {
         return switch (support) {
-            case FULL -> EnumBlockSupport.FULL;
-            case CENTER -> EnumBlockSupport.CENTER;
-            case RIGID -> EnumBlockSupport.RIGID;
+            case FULL -> SupportType.FULL;
+            case CENTER -> SupportType.CENTER;
+            case RIGID -> SupportType.RIGID;
             default -> throw new IllegalArgumentException("Unsupported BlockSupport type: " + support + ". This is a bug.");
         };
     }

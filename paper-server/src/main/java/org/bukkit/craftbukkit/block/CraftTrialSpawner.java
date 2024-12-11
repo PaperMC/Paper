@@ -23,8 +23,8 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     public CraftTrialSpawner(World world, TrialSpawnerBlockEntity tileEntity) {
         super(world, tileEntity);
-        this.normalConfig = new CraftTrialSpawnerConfiguration(tileEntity.getTrialSpawner().getNormalConfig(), getSnapshot());
-        this.ominousConfig = new CraftTrialSpawnerConfiguration(tileEntity.getTrialSpawner().getOminousConfig(), getSnapshot());
+        this.normalConfig = new CraftTrialSpawnerConfiguration(tileEntity.getTrialSpawner().getNormalConfig(), this.getSnapshot());
+        this.ominousConfig = new CraftTrialSpawnerConfiguration(tileEntity.getTrialSpawner().getOminousConfig(), this.getSnapshot());
     }
 
     protected CraftTrialSpawner(CraftTrialSpawner state, Location location) {
@@ -35,29 +35,29 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
 
     @Override
     public int getCooldownLength() {
-        return getSnapshot().trialSpawner.getTargetCooldownLength();
+        return this.getSnapshot().trialSpawner.getTargetCooldownLength();
     }
 
     @Override
     public void setCooldownLength(int ticks) {
-        getSnapshot().trialSpawner.targetCooldownLength = ticks;
+        this.getSnapshot().trialSpawner.targetCooldownLength = ticks;
     }
 
     @Override
     public int getRequiredPlayerRange() {
-      return getSnapshot().trialSpawner.getRequiredPlayerRange();
+      return this.getSnapshot().trialSpawner.getRequiredPlayerRange();
     }
 
     @Override
     public void setRequiredPlayerRange(int requiredPlayerRange) {
-        getSnapshot().trialSpawner.requiredPlayerRange = requiredPlayerRange;
+        this.getSnapshot().trialSpawner.requiredPlayerRange = requiredPlayerRange;
     }
 
     @Override
     public Collection<Player> getTrackedPlayers() {
         ImmutableSet.Builder<Player> players = ImmutableSet.builder();
 
-        for (UUID uuid : getTrialData().detectedPlayers) {
+        for (UUID uuid : this.getTrialData().detectedPlayers) {
             Player player = Bukkit.getPlayer(uuid);
             if (player != null) {
                 players.add(player);
@@ -70,28 +70,28 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
     public boolean isTrackingPlayer(Player player) {
         Preconditions.checkArgument(player != null, "Player cannot be null");
 
-        return getTrialData().detectedPlayers.contains(player.getUniqueId());
+        return this.getTrialData().detectedPlayers.contains(player.getUniqueId());
     }
 
     @Override
     public void startTrackingPlayer(Player player) {
         Preconditions.checkArgument(player != null, "Player cannot be null");
 
-        getTrialData().detectedPlayers.add(player.getUniqueId());
+        this.getTrialData().detectedPlayers.add(player.getUniqueId());
     }
 
     @Override
     public void stopTrackingPlayer(Player player) {
         Preconditions.checkArgument(player != null, "Player cannot be null");
 
-        getTrialData().detectedPlayers.remove(player.getUniqueId());
+        this.getTrialData().detectedPlayers.remove(player.getUniqueId());
     }
 
     @Override
     public Collection<Entity> getTrackedEntities() {
         ImmutableSet.Builder<Entity> entities = ImmutableSet.builder();
 
-        for (UUID uuid : getTrialData().currentMobs) {
+        for (UUID uuid : this.getTrialData().currentMobs) {
             Entity entity = Bukkit.getEntity(uuid);
             if (entity != null) {
                 entities.add(entity);
@@ -104,60 +104,60 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
     public boolean isTrackingEntity(Entity entity) {
         Preconditions.checkArgument(entity != null, "Entity cannot be null");
 
-        return getTrialData().currentMobs.contains(entity.getUniqueId());
+        return this.getTrialData().currentMobs.contains(entity.getUniqueId());
     }
 
     @Override
     public void startTrackingEntity(Entity entity) {
         Preconditions.checkArgument(entity != null, "Entity cannot be null");
 
-        getTrialData().currentMobs.add(entity.getUniqueId());
+        this.getTrialData().currentMobs.add(entity.getUniqueId());
     }
 
     @Override
     public void stopTrackingEntity(Entity entity) {
         Preconditions.checkArgument(entity != null, "Entity cannot be null");
 
-        getTrialData().currentMobs.remove(entity.getUniqueId());
+        this.getTrialData().currentMobs.remove(entity.getUniqueId());
     }
 
     @Override
     public boolean isOminous() {
-        return getHandle().getValue(TrialSpawnerBlock.OMINOUS);
+        return this.getHandle().getValue(TrialSpawnerBlock.OMINOUS);
     }
 
     @Override
     public void setOminous(boolean ominous) {
-        getSnapshot().trialSpawner.isOminous = ominous;
+        this.getSnapshot().trialSpawner.isOminous = ominous;
         if (ominous) {
-            setData(getHandle().setValue(TrialSpawnerBlock.OMINOUS, true));
+            this.setData(this.getHandle().setValue(TrialSpawnerBlock.OMINOUS, true));
             // TODO: Consider calling TrialSpawnerData#resetAfterBecomingOminous in update(...), but note that method also removes entities
             return;
         }
 
-        setData(getHandle().setValue(TrialSpawnerBlock.OMINOUS, false));
+        this.setData(this.getHandle().setValue(TrialSpawnerBlock.OMINOUS, false));
     }
 
     @Override
     public TrialSpawnerConfiguration getNormalConfiguration() {
-       return normalConfig;
+       return this.normalConfig;
     }
 
     @Override
     public TrialSpawnerConfiguration getOminousConfiguration() {
-       return ominousConfig;
+       return this.ominousConfig;
     }
 
     @Override
     protected void applyTo(TrialSpawnerBlockEntity tileEntity) {
         super.applyTo(tileEntity);
 
-        tileEntity.trialSpawner.normalConfig = Holder.direct(normalConfig.toMinecraft());
-        tileEntity.trialSpawner.ominousConfig = Holder.direct(ominousConfig.toMinecraft());
+        tileEntity.trialSpawner.normalConfig = Holder.direct(this.normalConfig.toMinecraft());
+        tileEntity.trialSpawner.ominousConfig = Holder.direct(this.ominousConfig.toMinecraft());
     }
 
     private TrialSpawnerData getTrialData() {
-        return getSnapshot().getTrialSpawner().getData();
+        return this.getSnapshot().getTrialSpawner().getData();
     }
 
     @Override

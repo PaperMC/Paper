@@ -10,8 +10,8 @@ public class RerouteStaticTest extends AbstractRerouteTest {
 
     @Test
     public void testStaticReroute() {
-        test(RerouteStaticTestData.class, Map.of(
-                        "(Ljava/lang/Object;)Ljava/util/List;getList", create(
+        this.test(RerouteStaticTestData.class, Map.of(
+                        "(Ljava/lang/Object;)Ljava/util/List;getList", this.create(
                                 "(Ljava/lang/Object;)Ljava/util/List;getList",
                                 "(Ljava/lang/Object;)Ljava/util/List;",
                                 "java/util/Map",
@@ -20,8 +20,8 @@ public class RerouteStaticTest extends AbstractRerouteTest {
                                 "(Ljava/lang/Object;)Ljava/util/List;",
                                 "org/bukkit/craftbukkit/legacy/reroute/RerouteStaticTest$RerouteStaticTestData",
                                 "getList",
-                                create(
-                                        create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null)
+                                this.create(
+                                        this.create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null)
                                 ),
                                 "Ljava/util/List;",
                                 true,

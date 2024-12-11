@@ -1,0 +1,113 @@
+--- a/net/minecraft/world/entity/vehicle/AbstractBoat.java
++++ b/net/minecraft/world/entity/vehicle/AbstractBoat.java
+@@ -47,6 +47,14 @@
+ import net.minecraft.world.phys.shapes.BooleanOp;
+ import net.minecraft.world.phys.shapes.Shapes;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++// CraftBukkit start
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.util.CraftLocation;
++import org.bukkit.entity.Vehicle;
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.vehicle.VehicleEntityCollisionEvent;
++import org.bukkit.event.vehicle.VehicleMoveEvent;
++// CraftBukkit end
+ 
+ public abstract class AbstractBoat extends VehicleEntity implements Leashable {
+ 
+@@ -87,6 +95,14 @@
+     private Leashable.LeashData leashData;
+     private final Supplier<Item> dropItem;
+ 
++    // CraftBukkit start
++    // PAIL: Some of these haven't worked since a few updates, and since 1.9 they are less and less applicable.
++    public double maxSpeed = 0.4D;
++    public double occupiedDeceleration = 0.2D;
++    public double unoccupiedDeceleration = -1;
++    public boolean landBoats = false;
++    // CraftBukkit end
++
+     public AbstractBoat(EntityType<? extends AbstractBoat> type, Level world, Supplier<Item> itemSupplier) {
+         super(type, world);
+         this.dropItem = itemSupplier;
+@@ -182,9 +198,29 @@
+     public void push(Entity entity) {
+         if (entity instanceof AbstractBoat) {
+             if (entity.getBoundingBox().minY < this.getBoundingBox().maxY) {
++                // CraftBukkit start
++                if (!this.isPassengerOfSameVehicle(entity)) {
++                    VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
++                    this.level().getCraftServer().getPluginManager().callEvent(event);
++
++                    if (event.isCancelled()) {
++                        return;
++                    }
++                }
++                // CraftBukkit end
+                 super.push(entity);
+             }
+         } else if (entity.getBoundingBox().minY <= this.getBoundingBox().minY) {
++            // CraftBukkit start
++            if (!this.isPassengerOfSameVehicle(entity)) {
++                VehicleEntityCollisionEvent event = new VehicleEntityCollisionEvent((Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
++                this.level().getCraftServer().getPluginManager().callEvent(event);
++
++                if (event.isCancelled()) {
++                    return;
++                }
++            }
++            // CraftBukkit end
+             super.push(entity);
+         }
+ 
+@@ -247,6 +283,7 @@
+         return this.getDirection().getClockWise();
+     }
+ 
++    private Location lastLocation; // CraftBukkit
+     @Override
+     public void tick() {
+         this.oldStatus = this.status;
+@@ -287,6 +324,21 @@
+             this.setDeltaMovement(Vec3.ZERO);
+         }
+ 
++        // CraftBukkit start
++        org.bukkit.Server server = this.level().getCraftServer();
++        org.bukkit.World bworld = this.level().getWorld();
++
++        Location to = CraftLocation.toBukkit(this.position(), bworld, this.getYRot(), this.getXRot());
++        Vehicle vehicle = (Vehicle) this.getBukkitEntity();
++
++        server.getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
++
++        if (this.lastLocation != null && !this.lastLocation.equals(to)) {
++            VehicleMoveEvent event = new VehicleMoveEvent(vehicle, this.lastLocation, to);
++            server.getPluginManager().callEvent(event);
++        }
++        this.lastLocation = vehicle.getLocation();
++        // CraftBukkit end
+         this.applyEffectsFromBlocks();
+         this.applyEffectsFromBlocks();
+         this.tickBubbleColumn();
+@@ -790,11 +842,18 @@
+ 
+     @Override
+     public void remove(Entity.RemovalReason reason) {
+-        if (!this.level().isClientSide && reason.shouldDestroy() && this.isLeashed()) {
++        // CraftBukkit start - add Bukkit remove cause
++        this.remove(reason, null);
++    }
++
++    @Override
++    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++        // CraftBukkit end
++        if (!this.level().isClientSide && entity_removalreason.shouldDestroy() && this.isLeashed()) {
+             this.dropLeash();
+         }
+ 
+-        super.remove(reason);
++        super.remove(entity_removalreason, cause); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     @Override

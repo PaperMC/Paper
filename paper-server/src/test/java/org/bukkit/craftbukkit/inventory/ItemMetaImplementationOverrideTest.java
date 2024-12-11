@@ -24,15 +24,15 @@ public class ItemMetaImplementationOverrideTest {
         List<Class<? extends CraftMetaItem>> classes = new ArrayList<Class<? extends CraftMetaItem>>();
 
         for (Material material : ItemStackTest.COMPOUND_MATERIALS) {
-            Class<? extends CraftMetaItem> clazz = CraftItemFactory.instance().getItemMeta(material).getClass().asSubclass(parent);
-            if (clazz != parent) {
+            Class<? extends CraftMetaItem> clazz = CraftItemFactory.instance().getItemMeta(material).getClass().asSubclass(ItemMetaImplementationOverrideTest.parent);
+            if (clazz != ItemMetaImplementationOverrideTest.parent) {
                 classes.add(clazz);
             }
         }
 
         List<Method> list = new ArrayList<Method>();
 
-        for (Method method: parent.getDeclaredMethods()) {
+        for (Method method: ItemMetaImplementationOverrideTest.parent.getDeclaredMethods()) {
             if (method.isAnnotationPresent(Overridden.class)) {
                 list.add(method);
             }

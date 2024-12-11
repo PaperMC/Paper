@@ -27,50 +27,50 @@ public abstract class BaseExtension implements BeforeAllCallback, BeforeEachCall
 
     @Override
     public final void beforeAll(ExtensionContext extensionContext) throws Exception {
-        if (!isTestCase(extensionContext)) {
+        if (!this.isTestCase(extensionContext)) {
             return;
         }
 
-        checkRunBeforeOnce(extensionContext);
+        this.checkRunBeforeOnce(extensionContext);
     }
 
     @Override
     public final void beforeEach(ExtensionContext extensionContext) throws Exception {
-        if (!isTestCase(extensionContext)) {
+        if (!this.isTestCase(extensionContext)) {
             return;
         }
 
-        checkRunBeforeOnce(extensionContext);
-        runBeforeEach(extensionContext);
+        this.checkRunBeforeOnce(extensionContext);
+        this.runBeforeEach(extensionContext);
     }
 
     private boolean isTestCase(ExtensionContext extensionContext) {
-        if (currentlyRunning != null) {
-            return testSuite.equals(currentlyRunning);
+        if (BaseExtension.currentlyRunning != null) {
+            return this.testSuite.equals(BaseExtension.currentlyRunning);
         }
 
         Optional<String> runningTestSuite = extensionContext.getConfigurationParameter("TestSuite");
         if (runningTestSuite.isPresent()) {
             // We are inside a test suite, check if it is the test suite from this extension
-            if (!runningTestSuite.get().equals(testSuite)) {
+            if (!runningTestSuite.get().equals(this.testSuite)) {
                 return false;
             }
 
-            currentlyRunning = testSuite;
-            logger.info("Running tests with environment: " + testSuite);
+            BaseExtension.currentlyRunning = this.testSuite;
+            this.logger.info("Running tests with environment: " + this.testSuite);
             return true;
         }
 
         Set<String> tags = new HashSet<>(extensionContext.getTags());
-        tags.removeAll(IGNORE_TAGS);
+        tags.removeAll(BaseExtension.IGNORE_TAGS);
 
-        if (!tags.contains(testSuite)) {
+        if (!tags.contains(this.testSuite)) {
             fail(String.format("""
                     Extension was triggered without the tag for the test suite being present. This should not happen.
                     Did you forget to add @Tag to a new environment annotation? Or maybe a spelling mistake?
 
                     Expected %s, but found:
-                    %s""", testSuite, Joiner.on('\n').join(tags)));
+                    %s""", this.testSuite, Joiner.on('\n').join(tags)));
             return false; // Will never reach ):
         }
 
@@ -89,18 +89,18 @@ public abstract class BaseExtension implements BeforeAllCallback, BeforeEachCall
             return false; // Will never reach ):
         }
 
-        currentlyRunning = testSuite;
-        logger.info("Running tests with environment: " + testSuite);
+        BaseExtension.currentlyRunning = this.testSuite;
+        this.logger.info("Running tests with environment: " + this.testSuite);
         return true;
     }
 
     private void checkRunBeforeOnce(ExtensionContext extensionContext) {
-        if (run) {
+        if (BaseExtension.run) {
             return;
         }
 
-        init(extensionContext);
-        run = true;
+        this.init(extensionContext);
+        BaseExtension.run = true;
     }
 
     abstract void init(ExtensionContext extensionContext);

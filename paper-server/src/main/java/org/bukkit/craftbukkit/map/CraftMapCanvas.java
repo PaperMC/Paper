@@ -19,17 +19,17 @@ public class CraftMapCanvas implements MapCanvas {
 
     protected CraftMapCanvas(CraftMapView mapView) {
         this.mapView = mapView;
-        Arrays.fill(buffer, (byte) -1);
+        Arrays.fill(this.buffer, (byte) -1);
     }
 
     @Override
     public CraftMapView getMapView() {
-        return mapView;
+        return this.mapView;
     }
 
     @Override
     public MapCursorCollection getCursors() {
-        return cursors;
+        return this.cursors;
     }
 
     @Override
@@ -39,12 +39,12 @@ public class CraftMapCanvas implements MapCanvas {
 
     @Override
     public void setPixelColor(int x, int y, Color color) {
-        setPixel(x, y, (color == null) ? -1 : MapPalette.matchColor(color));
+        this.setPixel(x, y, (color == null) ? -1 : MapPalette.matchColor(color));
     }
 
     @Override
     public Color getPixelColor(int x, int y) {
-        byte pixel = getPixel(x, y);
+        byte pixel = this.getPixel(x, y);
         if (pixel == -1) {
             return null;
         }
@@ -54,16 +54,16 @@ public class CraftMapCanvas implements MapCanvas {
 
     @Override
     public Color getBasePixelColor(int x, int y) {
-        return MapPalette.getColor(getBasePixel(x, y));
+        return MapPalette.getColor(this.getBasePixel(x, y));
     }
 
     @Override
     public void setPixel(int x, int y, byte color) {
         if (x < 0 || y < 0 || x >= 128 || y >= 128)
             return;
-        if (buffer[y * 128 + x] != color) {
-            buffer[y * 128 + x] = color;
-            mapView.worldMap.setColorsDirty(x, y);
+        if (this.buffer[y * 128 + x] != color) {
+            this.buffer[y * 128 + x] = color;
+            this.mapView.worldMap.setColorsDirty(x, y);
         }
     }
 
@@ -71,14 +71,14 @@ public class CraftMapCanvas implements MapCanvas {
     public byte getPixel(int x, int y) {
         if (x < 0 || y < 0 || x >= 128 || y >= 128)
             return 0;
-        return buffer[y * 128 + x];
+        return this.buffer[y * 128 + x];
     }
 
     @Override
     public byte getBasePixel(int x, int y) {
         if (x < 0 || y < 0 || x >= 128 || y >= 128)
             return 0;
-        return base[y * 128 + x];
+        return this.base[y * 128 + x];
     }
 
     protected void setBase(byte[] base) {
@@ -86,7 +86,7 @@ public class CraftMapCanvas implements MapCanvas {
     }
 
     protected byte[] getBuffer() {
-        return buffer;
+        return this.buffer;
     }
 
     @Override
@@ -94,7 +94,7 @@ public class CraftMapCanvas implements MapCanvas {
         byte[] bytes = MapPalette.imageToBytes(image);
         for (int x2 = 0; x2 < image.getWidth(null); ++x2) {
             for (int y2 = 0; y2 < image.getHeight(null); ++y2) {
-                setPixel(x + x2, y + y2, bytes[y2 * image.getWidth(null) + x2]);
+                this.setPixel(x + x2, y + y2, bytes[y2 * image.getWidth(null) + x2]);
             }
         }
     }
@@ -126,7 +126,7 @@ public class CraftMapCanvas implements MapCanvas {
             for (int r = 0; r < font.getHeight(); ++r) {
                 for (int c = 0; c < sprite.getWidth(); ++c) {
                     if (sprite.get(r, c)) {
-                        setPixel(x + c, y + r, color);
+                        this.setPixel(x + c, y + r, color);
                     }
                 }
             }

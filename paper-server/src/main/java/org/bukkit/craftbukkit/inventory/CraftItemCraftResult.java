@@ -18,27 +18,27 @@ public final class CraftItemCraftResult implements ItemCraftResult {
         this.resultMatrix = new ItemStack[9];
         this.overflowItems = new ArrayList<>();
 
-        for (int i = 0; i < resultMatrix.length; i++) {
-            resultMatrix[i] = new ItemStack(Material.AIR);
+        for (int i = 0; i < this.resultMatrix.length; i++) {
+            this.resultMatrix[i] = new ItemStack(Material.AIR);
         }
     }
 
     @Override
     public ItemStack getResult() {
-        return result;
+        return this.result;
     }
 
     @Override
     public ItemStack[] getResultingMatrix() {
-        return resultMatrix;
+        return this.resultMatrix;
     }
 
     @Override
     public List<ItemStack> getOverflowItems() {
-        return overflowItems;
+        return this.overflowItems;
     }
 
     public void setResultMatrix(int i, ItemStack itemStack) {
-        resultMatrix[i] = Objects.requireNonNullElseGet(itemStack, () -> new ItemStack(Material.AIR));
+        this.resultMatrix[i] = Objects.requireNonNullElseGet(itemStack, () -> new ItemStack(Material.AIR));
     }
 }

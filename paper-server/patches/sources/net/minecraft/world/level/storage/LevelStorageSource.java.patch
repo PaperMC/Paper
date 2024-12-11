@@ -1,0 +1,106 @@
+--- a/net/minecraft/world/level/storage/LevelStorageSource.java
++++ b/net/minecraft/world/level/storage/LevelStorageSource.java
+@@ -68,7 +68,6 @@
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.LevelSettings;
+ import net.minecraft.world.level.WorldDataConfiguration;
+-import net.minecraft.world.level.dimension.DimensionType;
+ import net.minecraft.world.level.dimension.LevelStem;
+ import net.minecraft.world.level.levelgen.WorldDimensions;
+ import net.minecraft.world.level.levelgen.WorldGenSettings;
+@@ -149,7 +148,7 @@
+     }
+ 
+     public static WorldDataConfiguration readDataConfig(Dynamic<?> dynamic) {
+-        DataResult dataresult = WorldDataConfiguration.CODEC.parse(dynamic);
++        DataResult<WorldDataConfiguration> dataresult = WorldDataConfiguration.CODEC.parse(dynamic); // CraftBukkit - decompile error
+         Logger logger = LevelStorageSource.LOGGER;
+ 
+         Objects.requireNonNull(logger);
+@@ -168,6 +167,7 @@
+         WorldDimensions.Complete worlddimensions_b = generatorsettings.dimensions().bake(dimensionsRegistry);
+         Lifecycle lifecycle = worlddimensions_b.lifecycle().add(registries.allRegistriesLifecycle());
+         PrimaryLevelData worlddataserver = PrimaryLevelData.parse(dynamic1, worldsettings, worlddimensions_b.specialWorldProperty(), generatorsettings.options(), lifecycle);
++        worlddataserver.pdc = ((Dynamic<Tag>) dynamic1).getElement("BukkitValues", null); // CraftBukkit - Add PDC to world
+ 
+         return new LevelDataAndDimensions(worlddataserver, worlddimensions_b);
+     }
+@@ -409,26 +409,40 @@
+         return this.backupDir;
+     }
+ 
+-    public LevelStorageSource.LevelStorageAccess validateAndCreateAccess(String directoryName) throws IOException, ContentValidationException {
+-        Path path = this.getLevelPath(directoryName);
++    public LevelStorageSource.LevelStorageAccess validateAndCreateAccess(String s, ResourceKey<LevelStem> dimensionType) throws IOException, ContentValidationException { // CraftBukkit
++        Path path = this.getLevelPath(s);
+         List<ForbiddenSymlinkInfo> list = this.worldDirValidator.validateDirectory(path, true);
+ 
+         if (!list.isEmpty()) {
+             throw new ContentValidationException(path, list);
+         } else {
+-            return new LevelStorageSource.LevelStorageAccess(directoryName, path);
++            return new LevelStorageSource.LevelStorageAccess(s, path, dimensionType); // CraftBukkit
+         }
+     }
+ 
+-    public LevelStorageSource.LevelStorageAccess createAccess(String directoryName) throws IOException {
+-        Path path = this.getLevelPath(directoryName);
++    public LevelStorageSource.LevelStorageAccess createAccess(String s, ResourceKey<LevelStem> dimensionType) throws IOException { // CraftBukkit
++        Path path = this.getLevelPath(s);
+ 
+-        return new LevelStorageSource.LevelStorageAccess(directoryName, path);
++        return new LevelStorageSource.LevelStorageAccess(s, path, dimensionType); // CraftBukkit
+     }
+ 
+     public DirectoryValidator getWorldDirValidator() {
+         return this.worldDirValidator;
++    }
++
++    // CraftBukkit start
++    public static Path getStorageFolder(Path path, ResourceKey<LevelStem> dimensionType) {
++        if (dimensionType == LevelStem.OVERWORLD) {
++            return path;
++        } else if (dimensionType == LevelStem.NETHER) {
++            return path.resolve("DIM-1");
++        } else if (dimensionType == LevelStem.END) {
++            return path.resolve("DIM1");
++        } else {
++            return path.resolve("dimensions").resolve(dimensionType.location().getNamespace()).resolve(dimensionType.location().getPath());
++        }
+     }
++    // CraftBukkit end
+ 
+     public static record LevelCandidates(List<LevelStorageSource.LevelDirectory> levels) implements Iterable<LevelStorageSource.LevelDirectory> {
+ 
+@@ -488,8 +502,12 @@
+         public final LevelStorageSource.LevelDirectory levelDirectory;
+         private final String levelId;
+         private final Map<LevelResource, Path> resources = Maps.newHashMap();
++        // CraftBukkit start
++        public final ResourceKey<LevelStem> dimensionType;
+ 
+-        LevelStorageAccess(final String s, final Path path) throws IOException {
++        LevelStorageAccess(final String s, final Path path, final ResourceKey<LevelStem> dimensionType) throws IOException {
++            this.dimensionType = dimensionType;
++            // CraftBukkit end
+             this.levelId = s;
+             this.levelDirectory = new LevelStorageSource.LevelDirectory(path);
+             this.lock = DirectoryLock.create(path);
+@@ -529,7 +547,7 @@
+         }
+ 
+         public Path getLevelPath(LevelResource savePath) {
+-            Map map = this.resources;
++            Map<LevelResource, Path> map = this.resources; // CraftBukkit - decompile error
+             LevelStorageSource.LevelDirectory convertable_b = this.levelDirectory;
+ 
+             Objects.requireNonNull(this.levelDirectory);
+@@ -537,7 +555,7 @@
+         }
+ 
+         public Path getDimensionPath(ResourceKey<Level> key) {
+-            return DimensionType.getStorageFolder(key, this.levelDirectory.path());
++            return LevelStorageSource.getStorageFolder(this.levelDirectory.path(), this.dimensionType); // CraftBukkit
+         }
+ 
+         private void checkLock() {

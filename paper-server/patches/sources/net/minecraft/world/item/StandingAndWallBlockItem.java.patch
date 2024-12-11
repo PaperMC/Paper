@@ -1,0 +1,41 @@
+--- a/net/minecraft/world/item/StandingAndWallBlockItem.java
++++ b/net/minecraft/world/item/StandingAndWallBlockItem.java
+@@ -4,12 +4,17 @@
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
++import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.world.item.context.BlockPlaceContext;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.LevelReader;
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.phys.shapes.CollisionContext;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.event.block.BlockCanBuildEvent;
++// CraftBukkit end
+ 
+ public class StandingAndWallBlockItem extends BlockItem {
+ 
+@@ -49,7 +54,19 @@
+             }
+         }
+ 
+-        return iblockdata1 != null && world.isUnobstructed(iblockdata1, blockposition, CollisionContext.empty()) ? iblockdata1 : null;
++        // CraftBukkit start
++        if (iblockdata1 != null) {
++            boolean defaultReturn = world.isUnobstructed(iblockdata1, blockposition, CollisionContext.empty());
++            org.bukkit.entity.Player player = (context.getPlayer() instanceof ServerPlayer) ? (org.bukkit.entity.Player) context.getPlayer().getBukkitEntity() : null;
++
++            BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(world, blockposition), player, CraftBlockData.fromData(iblockdata1), defaultReturn);
++            context.getLevel().getCraftServer().getPluginManager().callEvent(event);
++
++            return (event.isBuildable()) ? iblockdata1 : null;
++        } else {
++            return null;
++        }
++        // CraftBukkit end
+     }
+ 
+     @Override

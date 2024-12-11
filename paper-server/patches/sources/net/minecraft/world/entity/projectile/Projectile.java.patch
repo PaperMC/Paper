@@ -1,0 +1,71 @@
+--- a/net/minecraft/world/entity/projectile/Projectile.java
++++ b/net/minecraft/world/entity/projectile/Projectile.java
+@@ -35,6 +35,9 @@
+ import net.minecraft.world.phys.EntityHitResult;
+ import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.projectiles.ProjectileSource;
++// CraftBukkit end
+ 
+ public abstract class Projectile extends Entity implements TraceableEntity {
+ 
+@@ -47,6 +50,10 @@
+     @Nullable
+     private Entity lastDeflectedBy;
+ 
++    // CraftBukkit start
++    protected boolean hitCancelled = false;
++    // CraftBukkit end
++
+     Projectile(EntityType<? extends Projectile> type, Level world) {
+         super(type, world);
+     }
+@@ -56,6 +63,7 @@
+             this.ownerUUID = entity.getUUID();
+             this.cachedOwner = entity;
+         }
++        this.projectileSource = (entity != null && entity.getBukkitEntity() instanceof ProjectileSource) ? (ProjectileSource) entity.getBukkitEntity() : null; // CraftBukkit
+ 
+     }
+ 
+@@ -213,7 +221,7 @@
+ 
+     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel world, ItemStack projectileStack, Consumer<T> beforeSpawn) {
+         beforeSpawn.accept(projectile);
+-        world.addFreshEntity(projectile);
++        if (world.addFreshEntity(projectile)) // CraftBukkit
+         projectile.applyOnProjectileSpawned(world, projectileStack);
+         return projectile;
+     }
+@@ -230,7 +238,18 @@
+             }
+         }
+ 
++    }
++
++    // CraftBukkit start - call projectile hit event
++    protected ProjectileDeflection preHitTargetOrDeflectSelf(HitResult movingobjectposition) {
++        org.bukkit.event.entity.ProjectileHitEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition);
++        this.hitCancelled = event != null && event.isCancelled();
++        if (movingobjectposition.getType() == HitResult.Type.BLOCK || !this.hitCancelled) {
++            return this.hitTargetOrDeflectSelf(movingobjectposition);
++        }
++        return ProjectileDeflection.NONE;
+     }
++    // CraftBukkit end
+ 
+     protected ProjectileDeflection hitTargetOrDeflectSelf(HitResult hitResult) {
+         if (hitResult.getType() == HitResult.Type.ENTITY) {
+@@ -309,6 +328,11 @@
+     protected void onHitEntity(EntityHitResult entityHitResult) {}
+ 
+     protected void onHitBlock(BlockHitResult blockHitResult) {
++        // CraftBukkit start - cancellable hit event
++        if (this.hitCancelled) {
++            return;
++        }
++        // CraftBukkit end
+         BlockState iblockdata = this.level().getBlockState(blockHitResult.getBlockPos());
+ 
+         iblockdata.onProjectileHit(this.level(), iblockdata, blockHitResult, this);

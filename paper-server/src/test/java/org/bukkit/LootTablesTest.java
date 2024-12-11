@@ -25,7 +25,7 @@ public class LootTablesTest {
 
     @Test
     public void testNMS() {
-        for (ResourceKey<net.minecraft.world.level.storage.loot.LootTable> key : net.minecraft.world.level.storage.loot.LootTables.all()) {
+        for (ResourceKey<net.minecraft.world.level.storage.loot.LootTable> key : net.minecraft.world.level.storage.loot.BuiltInLootTables.all()) {
             NamespacedKey bukkitKey = CraftLootTable.minecraftToBukkitKey(key);
             LootTables lootTable = Registry.LOOT_TABLES.get(bukkitKey);
 

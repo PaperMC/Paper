@@ -1,0 +1,45 @@
+--- a/net/minecraft/world/entity/animal/Parrot.java
++++ b/net/minecraft/world/entity/animal/Parrot.java
+@@ -248,7 +248,7 @@
+             }
+ 
+             if (!this.level().isClientSide) {
+-                if (this.random.nextInt(10) == 0) {
++                if (this.random.nextInt(10) == 0 && !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) { // CraftBukkit
+                     this.tame(player);
+                     this.level().broadcastEntityEvent(this, (byte) 7);
+                 } else {
+@@ -269,7 +269,7 @@
+             }
+         } else {
+             this.usePlayerItem(player, hand, itemstack);
+-            this.addEffect(new MobEffectInstance(MobEffects.POISON, 900));
++            this.addEffect(new MobEffectInstance(MobEffects.POISON, 900), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.FOOD); // CraftBukkit
+             if (player.isCreative() || !this.isInvulnerable()) {
+                 this.hurt(this.damageSources().playerAttack(player), Float.MAX_VALUE);
+             }
+@@ -363,7 +363,7 @@
+ 
+     @Override
+     public boolean isPushable() {
+-        return true;
++        return super.isPushable(); // CraftBukkit - collidable API
+     }
+ 
+     @Override
+@@ -378,8 +378,14 @@
+         if (this.isInvulnerableTo(world, source)) {
+             return false;
+         } else {
++            // CraftBukkit start
++            boolean result = super.hurtServer(world, source, amount);
++            if (!result) {
++                return result;
++            }
++            // CraftBukkit end
+             this.setOrderedToSit(false);
+-            return super.hurtServer(world, source, amount);
++            return result; // CraftBukkit
+         }
+     }
+ 

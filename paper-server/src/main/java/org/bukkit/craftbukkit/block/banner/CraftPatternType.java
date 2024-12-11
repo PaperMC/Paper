@@ -3,37 +3,36 @@ package org.bukkit.craftbukkit.block.banner;
 import com.google.common.base.Preconditions;
 import java.util.Locale;
 import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.level.block.entity.EnumBannerPatternType;
+import net.minecraft.world.level.block.entity.BannerPattern;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
 
-public class CraftPatternType implements PatternType, Handleable<EnumBannerPatternType> {
+public class CraftPatternType implements PatternType, Handleable<BannerPattern> {
 
     private static int count = 0;
 
-    public static PatternType minecraftToBukkit(EnumBannerPatternType minecraft) {
+    public static PatternType minecraftToBukkit(BannerPattern minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.BANNER_PATTERN, Registry.BANNER_PATTERN);
     }
 
-    public static PatternType minecraftHolderToBukkit(Holder<EnumBannerPatternType> minecraft) {
-        return minecraftToBukkit(minecraft.value());
+    public static PatternType minecraftHolderToBukkit(Holder<BannerPattern> minecraft) {
+        return CraftPatternType.minecraftToBukkit(minecraft.value());
     }
 
-    public static EnumBannerPatternType bukkitToMinecraft(PatternType bukkit) {
+    public static BannerPattern bukkitToMinecraft(PatternType bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    public static Holder<EnumBannerPatternType> bukkitToMinecraftHolder(PatternType bukkit) {
+    public static Holder<BannerPattern> bukkitToMinecraftHolder(PatternType bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        IRegistry<EnumBannerPatternType> registry = CraftRegistry.getMinecraftRegistry(Registries.BANNER_PATTERN);
+        net.minecraft.core.Registry<BannerPattern> registry = CraftRegistry.getMinecraftRegistry(Registries.BANNER_PATTERN);
 
-        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<EnumBannerPatternType> holder) {
+        if (registry.wrapAsHolder(CraftPatternType.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<BannerPattern> holder) {
             return holder;
         }
 
@@ -42,11 +41,11 @@ public class CraftPatternType implements PatternType, Handleable<EnumBannerPatte
     }
 
     private final NamespacedKey key;
-    private final EnumBannerPatternType bannerPatternType;
+    private final BannerPattern bannerPatternType;
     private final String name;
     private final int ordinal;
 
-    public CraftPatternType(NamespacedKey key, EnumBannerPatternType bannerPatternType) {
+    public CraftPatternType(NamespacedKey key, BannerPattern bannerPatternType) {
         this.key = key;
         this.bannerPatternType = bannerPatternType;
         // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
@@ -58,38 +57,38 @@ public class CraftPatternType implements PatternType, Handleable<EnumBannerPatte
         } else {
             this.name = key.toString();
         }
-        this.ordinal = count++;
+        this.ordinal = CraftPatternType.count++;
     }
 
     @Override
-    public EnumBannerPatternType getHandle() {
-        return bannerPatternType;
+    public BannerPattern getHandle() {
+        return this.bannerPatternType;
     }
 
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 
     @Override
     public int compareTo(PatternType patternType) {
-        return ordinal - patternType.ordinal();
+        return this.ordinal - patternType.ordinal();
     }
 
     @Override
     public String name() {
-        return name;
+        return this.name;
     }
 
     @Override
     public int ordinal() {
-        return ordinal;
+        return this.ordinal;
     }
 
     @Override
     public String toString() {
         // For backwards compatibility
-        return name();
+        return this.name();
     }
 
     @Override
@@ -102,12 +101,12 @@ public class CraftPatternType implements PatternType, Handleable<EnumBannerPatte
             return false;
         }
 
-        return getKey().equals(((PatternType) other).getKey());
+        return this.getKey().equals(((PatternType) other).getKey());
     }
 
     @Override
     public int hashCode() {
-        return getKey().hashCode();
+        return this.getKey().hashCode();
     }
 
     @Override

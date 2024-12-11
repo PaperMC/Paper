@@ -8,45 +8,44 @@
  import com.mojang.brigadier.AmbiguityConsumer;
  import com.mojang.brigadier.Command;
  import com.mojang.brigadier.RedirectModifier;
-@@ -23,6 +24,8 @@
+@@ -22,6 +23,7 @@
+ import java.util.Set;
  import java.util.concurrent.CompletableFuture;
  import java.util.function.Predicate;
++import net.minecraft.commands.CommandSourceStack;
  
-+import net.minecraft.commands.CommandListenerWrapper; // CraftBukkit
-+
  public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
      private final Map<String, CommandNode<S>> children = new LinkedHashMap<>();
-     private final Map<String, LiteralCommandNode<S>> literals = new LinkedHashMap<>();
-@@ -32,6 +35,13 @@
+@@ -32,6 +34,13 @@
      private final RedirectModifier<S> modifier;
      private final boolean forks;
      private Command<S> command;
 +    // CraftBukkit start
 +    public void removeCommand(String name) {
-+        children.remove(name);
-+        literals.remove(name);
-+        arguments.remove(name);
++        this.children.remove(name);
++        this.literals.remove(name);
++        this.arguments.remove(name);
 +    }
 +    // CraftBukkit end
  
      protected CommandNode(final Command<S> command, final Predicate<S> requirement, final CommandNode<S> redirect, final RedirectModifier<S> modifier, final boolean forks) {
          this.command = command;
-@@ -61,7 +71,17 @@
-         return modifier;
+@@ -61,7 +70,17 @@
+         return this.modifier;
      }
  
 -    public boolean canUse(final S source) {
 +    // CraftBukkit start
 +    public synchronized boolean canUse(final S source) {
-+        if (source instanceof CommandListenerWrapper) {
++        if (source instanceof CommandSourceStack) {
 +            try {
-+                ((CommandListenerWrapper) source).currentCommand = this;
-+                return requirement.test(source);
++                ((CommandSourceStack) source).currentCommand = this;
++                return this.requirement.test(source);
 +            } finally {
-+                ((CommandListenerWrapper) source).currentCommand = null;
++                ((CommandSourceStack) source).currentCommand = null;
 +            }
 +        }
 +        // CraftBukkit end
-         return requirement.test(source);
+         return this.requirement.test(source);
      }
  

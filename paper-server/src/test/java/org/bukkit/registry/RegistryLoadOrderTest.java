@@ -6,11 +6,10 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import net.minecraft.core.IRegistry;
+import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.RegistrationInfo;
-import net.minecraft.core.RegistryMaterials;
-import net.minecraft.resources.MinecraftKey;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -31,14 +30,14 @@ public class RegistryLoadOrderTest {
     public static Stream<Arguments> data() {
         return Stream.of(
                 Arguments.of(
-                        (Supplier<Boolean>) () -> initInterface,
+                        (Supplier<Boolean>) () -> RegistryLoadOrderTest.initInterface,
                         BukkitInterfaceTestType.class,
                         (BiFunction<NamespacedKey, MinecraftTestType, Keyed>) CraftBukkitInterfaceTestType::new,
                         (Supplier<Keyed>) () -> BukkitInterfaceTestType.TEST_ONE,
                         (Supplier<Keyed>) () -> BukkitInterfaceTestType.TEST_TWO
                 ),
                 Arguments.of(
-                        (Supplier<Boolean>) () -> initAbstract,
+                        (Supplier<Boolean>) () -> RegistryLoadOrderTest.initAbstract,
                         BukkitAbstractTestType.class,
                         (BiFunction<NamespacedKey, MinecraftTestType, Keyed>) CraftBukkitAbstractTestType::new,
                         (Supplier<Keyed>) () -> BukkitAbstractTestType.TEST_ONE,
@@ -50,21 +49,21 @@ public class RegistryLoadOrderTest {
     @ParameterizedTest
     @MethodSource("data")
     public void testRegistryLoadOrder(Supplier<Boolean> init, Class<Keyed> keyedClass, BiFunction<NamespacedKey, MinecraftTestType, Keyed> minecraftToBukkit, Supplier<Keyed> first, Supplier<Keyed> second) {
-        testClassNotLoaded(init.get());
+        this.testClassNotLoaded(init.get());
 
-        ResourceKey<IRegistry<MinecraftTestType>> resourceKey = ResourceKey.createRegistryKey(MinecraftKey.tryBuild("bukkit", "test-registry"));
-        RegistryMaterials<MinecraftTestType> minecraftRegistry = new RegistryMaterials<>(resourceKey, Lifecycle.experimental());
+        ResourceKey<net.minecraft.core.Registry<MinecraftTestType>> resourceKey = ResourceKey.createRegistryKey(ResourceLocation.tryBuild("bukkit", "test-registry"));
+        MappedRegistry<MinecraftTestType> minecraftRegistry = new MappedRegistry<>(resourceKey, Lifecycle.experimental());
 
-        minecraftRegistry.register(ResourceKey.create(resourceKey, MinecraftKey.tryBuild("bukkit", "test-one")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
-        minecraftRegistry.register(ResourceKey.create(resourceKey, MinecraftKey.tryBuild("bukkit", "test-two")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
+        minecraftRegistry.register(ResourceKey.create(resourceKey, ResourceLocation.tryBuild("bukkit", "test-one")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
+        minecraftRegistry.register(ResourceKey.create(resourceKey, ResourceLocation.tryBuild("bukkit", "test-two")), new MinecraftTestType(), new RegistrationInfo(Optional.empty(), Lifecycle.experimental()));
         minecraftRegistry.freeze();
 
-        registry = new CraftRegistry<>(keyedClass, minecraftRegistry, minecraftToBukkit, (namespacedKey, apiVersion) -> namespacedKey);
-        testClassNotLoaded(init.get());
+        RegistryLoadOrderTest.registry = new CraftRegistry<>(keyedClass, minecraftRegistry, minecraftToBukkit, (namespacedKey, apiVersion) -> namespacedKey);
+        this.testClassNotLoaded(init.get());
 
-        Object testOne = registry.get(new NamespacedKey("bukkit", "test-one"));
-        Object otherTestOne = registry.get(new NamespacedKey("bukkit", "test-one"));
-        Object testTwo = registry.get(new NamespacedKey("bukkit", "test-two"));
+        Object testOne = RegistryLoadOrderTest.registry.get(new NamespacedKey("bukkit", "test-one"));
+        Object otherTestOne = RegistryLoadOrderTest.registry.get(new NamespacedKey("bukkit", "test-one"));
+        Object testTwo = RegistryLoadOrderTest.registry.get(new NamespacedKey("bukkit", "test-two"));
 
         assertNotNull(testOne);
         assertNotNull(otherTestOne);
@@ -89,16 +88,16 @@ public class RegistryLoadOrderTest {
     }
 
     public interface BukkitInterfaceTestType extends Keyed {
-        BukkitInterfaceTestType TEST_ONE = get("test-one");
-        BukkitInterfaceTestType TEST_TWO = get("test-two");
+        BukkitInterfaceTestType TEST_ONE = BukkitInterfaceTestType.get("test-one");
+        BukkitInterfaceTestType TEST_TWO = BukkitInterfaceTestType.get("test-two");
 
         private static BukkitInterfaceTestType get(String key) {
-            initInterface = true;
-            if (registry == null) {
+            RegistryLoadOrderTest.initInterface = true;
+            if (RegistryLoadOrderTest.registry == null) {
                 return null;
             }
 
-            return (BukkitInterfaceTestType) registry.get(new NamespacedKey("bukkit", key));
+            return (BukkitInterfaceTestType) RegistryLoadOrderTest.registry.get(new NamespacedKey("bukkit", key));
         }
     }
 
@@ -113,21 +112,21 @@ public class RegistryLoadOrderTest {
         @NotNull
         @Override
         public NamespacedKey getKey() {
-            return key;
+            return this.key;
         }
     }
 
     public abstract static class BukkitAbstractTestType implements Keyed {
-        public static final BukkitAbstractTestType TEST_ONE = get("test-one");
-        public static final BukkitAbstractTestType TEST_TWO = get("test-two");
+        public static final BukkitAbstractTestType TEST_ONE = BukkitAbstractTestType.get("test-one");
+        public static final BukkitAbstractTestType TEST_TWO = BukkitAbstractTestType.get("test-two");
 
         private static BukkitAbstractTestType get(String key) {
-            initAbstract = true;
-            if (registry == null) {
+            RegistryLoadOrderTest.initAbstract = true;
+            if (RegistryLoadOrderTest.registry == null) {
                 return null;
             }
 
-            return (BukkitAbstractTestType) registry.get(new NamespacedKey("bukkit", key));
+            return (BukkitAbstractTestType) RegistryLoadOrderTest.registry.get(new NamespacedKey("bukkit", key));
         }
     }
 
@@ -142,7 +141,7 @@ public class RegistryLoadOrderTest {
         @NotNull
         @Override
         public NamespacedKey getKey() {
-            return key;
+            return this.key;
         }
     }
 

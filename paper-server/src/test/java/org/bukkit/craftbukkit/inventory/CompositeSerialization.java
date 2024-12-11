@@ -24,7 +24,7 @@ public class CompositeSerialization {
 
     @Test
     public void testSaveRestoreCompositeList() throws InvalidConfigurationException {
-        YamlConfiguration out = getConfig();
+        YamlConfiguration out = this.getConfig();
 
         List<ItemStack> stacks = new ArrayList<ItemStack>();
         stacks.add(new ItemStack(Material.STONE));

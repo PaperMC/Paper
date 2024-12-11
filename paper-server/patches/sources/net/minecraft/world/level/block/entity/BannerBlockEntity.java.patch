@@ -1,0 +1,45 @@
+--- a/net/minecraft/world/level/block/entity/BannerBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BannerBlockEntity.java
+@@ -19,6 +19,10 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import java.util.List;
++// CraftBukkit end
++
+ public class BannerBlockEntity extends BlockEntity implements Nameable {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -74,7 +78,7 @@
+             BannerPatternLayers.CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), nbt.get("patterns")).resultOrPartial((s) -> {
+                 BannerBlockEntity.LOGGER.error("Failed to parse banner patterns: '{}'", s);
+             }).ifPresent((bannerpatternlayers) -> {
+-                this.patterns = bannerpatternlayers;
++                this.setPatterns(bannerpatternlayers); // CraftBukkit - apply limits
+             });
+         }
+ 
+@@ -108,7 +112,7 @@
+     @Override
+     protected void applyImplicitComponents(BlockEntity.DataComponentInput components) {
+         super.applyImplicitComponents(components);
+-        this.patterns = (BannerPatternLayers) components.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY);
++        this.setPatterns((BannerPatternLayers) components.getOrDefault(DataComponents.BANNER_PATTERNS, BannerPatternLayers.EMPTY)); // CraftBukkit - apply limits
+         this.name = (Component) components.get(DataComponents.CUSTOM_NAME);
+     }
+ 
+@@ -124,4 +128,13 @@
+         nbt.remove("patterns");
+         nbt.remove("CustomName");
+     }
++
++    // CraftBukkit start
++    public void setPatterns(BannerPatternLayers bannerpatternlayers) {
++        if (bannerpatternlayers.layers().size() > 20) {
++            bannerpatternlayers = new BannerPatternLayers(List.copyOf(bannerpatternlayers.layers().subList(0, 20)));
++        }
++        this.patterns = bannerpatternlayers;
++    }
++    // CraftBukkit end
+ }

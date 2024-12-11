@@ -1,0 +1,65 @@
+--- a/net/minecraft/world/level/block/TurtleEggBlock.java
++++ b/net/minecraft/world/level/block/TurtleEggBlock.java
+@@ -31,6 +31,11 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityInteractEvent;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit end
+ 
+ public class TurtleEggBlock extends Block {
+ 
+@@ -74,6 +79,19 @@
+     private void destroyEgg(Level world, BlockState state, BlockPos pos, Entity entity, int inverseChance) {
+         if (state.is(Blocks.TURTLE_EGG) && world instanceof ServerLevel worldserver) {
+             if (this.canDestroyEgg(worldserver, entity) && world.random.nextInt(inverseChance) == 0) {
++                // CraftBukkit start - Step on eggs
++                org.bukkit.event.Cancellable cancellable;
++                if (entity instanceof Player) {
++                    cancellable = CraftEventFactory.callPlayerInteractEvent((Player) entity, org.bukkit.event.block.Action.PHYSICAL, pos, null, null, null);
++                } else {
++                    cancellable = new EntityInteractEvent(entity.getBukkitEntity(), CraftBlock.at(worldserver, pos));
++                    worldserver.getCraftServer().getPluginManager().callEvent((EntityInteractEvent) cancellable);
++                }
++
++                if (cancellable.isCancelled()) {
++                    return;
++                }
++                // CraftBukkit end
+                 this.decreaseEggs(worldserver, pos, state);
+             }
+         }
+@@ -100,10 +118,20 @@
+             int i = (Integer) state.getValue(TurtleEggBlock.HATCH);
+ 
+             if (i < 2) {
++                // CraftBukkit start - Call BlockGrowEvent
++                if (!CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(TurtleEggBlock.HATCH, i + 1), 2)) {
++                    return;
++                }
++                // CraftBukkit end
+                 world.playSound((Player) null, pos, SoundEvents.TURTLE_EGG_CRACK, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
+-                world.setBlock(pos, (BlockState) state.setValue(TurtleEggBlock.HATCH, i + 1), 2);
++                // worldserver.setBlock(blockposition, (IBlockData) iblockdata.setValue(BlockTurtleEgg.HATCH, i + 1), 2); // CraftBukkit - handled above
+                 world.gameEvent((Holder) GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(state));
+             } else {
++                // CraftBukkit start - Call BlockFadeEvent
++                if (CraftEventFactory.callBlockFadeEvent(world, pos, Blocks.AIR.defaultBlockState()).isCancelled()) {
++                    return;
++                }
++                // CraftBukkit end
+                 world.playSound((Player) null, pos, SoundEvents.TURTLE_EGG_HATCH, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
+                 world.removeBlock(pos, false);
+                 world.gameEvent((Holder) GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(state));
+@@ -116,7 +144,7 @@
+                         entityturtle.setAge(-24000);
+                         entityturtle.setHomePos(pos);
+                         entityturtle.moveTo((double) pos.getX() + 0.3D + (double) j * 0.2D, (double) pos.getY(), (double) pos.getZ() + 0.3D, 0.0F, 0.0F);
+-                        world.addFreshEntity(entityturtle);
++                        world.addFreshEntity(entityturtle, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // CraftBukkit
+                     }
+                 }
+             }

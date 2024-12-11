@@ -6,10 +6,9 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.MinecraftKey;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -61,12 +60,12 @@ public class RegistryConstantsTest {
         assertTrue(excessKeys.isEmpty(), excessKeys.size() + " excess constants(s) in " + clazz.getSimpleName() + " that do not exist: " + excessKeys);
     }
 
-    private <T extends Keyed, M> void testMissingConstants(Class<T> clazz, ResourceKey<IRegistry<M>> nmsRegistryKey) {
-        List<MinecraftKey> missingKeys = new ArrayList<>();
+    private <T extends Keyed, M> void testMissingConstants(Class<T> clazz, ResourceKey<net.minecraft.core.Registry<M>> nmsRegistryKey) {
+        List<ResourceLocation> missingKeys = new ArrayList<>();
 
-        IRegistry<M> nmsRegistry = RegistryHelper.getRegistry().lookupOrThrow(nmsRegistryKey);
+        net.minecraft.core.Registry<M> nmsRegistry = RegistryHelper.getRegistry().lookupOrThrow(nmsRegistryKey);
         for (M nmsObject : nmsRegistry) {
-            MinecraftKey minecraftKey = nmsRegistry.getKey(nmsObject);
+            ResourceLocation minecraftKey = nmsRegistry.getKey(nmsObject);
 
             try {
                 @SuppressWarnings("unchecked")

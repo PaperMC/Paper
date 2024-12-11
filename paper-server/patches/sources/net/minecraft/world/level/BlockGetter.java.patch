@@ -1,0 +1,44 @@
+--- a/net/minecraft/world/level/BlockGetter.java
++++ b/net/minecraft/world/level/BlockGetter.java
+@@ -31,7 +31,7 @@
+     default <T extends BlockEntity> Optional<T> getBlockEntity(BlockPos pos, BlockEntityType<T> type) {
+         BlockEntity tileentity = this.getBlockEntity(pos);
+ 
+-        return tileentity != null && tileentity.getType() == type ? Optional.of(tileentity) : Optional.empty();
++        return tileentity != null && tileentity.getType() == type ? (Optional<T>) Optional.of(tileentity) : Optional.empty(); // CraftBukkit - decompile error
+     }
+ 
+     BlockState getBlockState(BlockPos pos);
+@@ -59,8 +59,8 @@
+         });
+     }
+ 
+-    default BlockHitResult clip(ClipContext context) {
+-        return (BlockHitResult) BlockGetter.traverseBlocks(context.getFrom(), context.getTo(), context, (raytrace1, blockposition) -> {
++    // CraftBukkit start - moved block handling into separate method for use by Block#rayTrace
++    default BlockHitResult clip(ClipContext raytrace1, BlockPos blockposition) {
+             BlockState iblockdata = this.getBlockState(blockposition);
+             FluidState fluid = this.getFluidState(blockposition);
+             Vec3 vec3d = raytrace1.getFrom();
+@@ -73,6 +73,12 @@
+             double d1 = movingobjectpositionblock1 == null ? Double.MAX_VALUE : raytrace1.getFrom().distanceToSqr(movingobjectpositionblock1.getLocation());
+ 
+             return d0 <= d1 ? movingobjectpositionblock : movingobjectpositionblock1;
++    }
++    // CraftBukkit end
++
++    default BlockHitResult clip(ClipContext context) {
++        return (BlockHitResult) BlockGetter.traverseBlocks(context.getFrom(), context.getTo(), context, (raytrace1, blockposition) -> {
++            return this.clip(raytrace1, blockposition); // CraftBukkit - moved into separate method
+         }, (raytrace1) -> {
+             Vec3 vec3d = raytrace1.getFrom().subtract(raytrace1.getTo());
+ 
+@@ -145,7 +151,7 @@
+                 double d13 = d10 * (i1 > 0 ? 1.0D - Mth.frac(d4) : Mth.frac(d4));
+                 double d14 = d11 * (j1 > 0 ? 1.0D - Mth.frac(d5) : Mth.frac(d5));
+ 
+-                Object object;
++                T object; // CraftBukkit - decompile error
+ 
+                 do {
+                     if (d12 > 1.0D && d13 > 1.0D && d14 > 1.0D) {

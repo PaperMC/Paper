@@ -1,0 +1,42 @@
+--- a/net/minecraft/world/item/TridentItem.java
++++ b/net/minecraft/world/item/TridentItem.java
+@@ -86,9 +86,19 @@
+                     if (world instanceof ServerLevel) {
+                         ServerLevel worldserver = (ServerLevel) world;
+ 
+-                        stack.hurtWithoutBreaking(1, entityhuman);
++                        // itemstack.hurtWithoutBreaking(1, entityhuman); // CraftBukkit - moved down
+                         if (f == 0.0F) {
+                             ThrownTrident entitythrowntrident = (ThrownTrident) Projectile.spawnProjectileFromRotation(ThrownTrident::new, worldserver, stack, entityhuman, 0.0F, 2.5F, 1.0F);
++                            // CraftBukkit start
++                            if (entitythrowntrident.isRemoved()) {
++                                if (entityhuman instanceof net.minecraft.server.level.ServerPlayer) {
++                                    ((net.minecraft.server.level.ServerPlayer) entityhuman).getBukkitEntity().updateInventory();
++                                }
++                                return false;
++                            }
++                            stack.hurtWithoutBreaking(1, entityhuman);
++                            entitythrowntrident.pickupItemStack = stack.copy(); // SPIGOT-4511 update since damage call moved
++                            // CraftBukkit end
+ 
+                             if (entityhuman.hasInfiniteMaterials()) {
+                                 entitythrowntrident.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
+@@ -98,6 +108,10 @@
+ 
+                             world.playSound((Player) null, (Entity) entitythrowntrident, (SoundEvent) holder.value(), SoundSource.PLAYERS, 1.0F, 1.0F);
+                             return true;
++                            // CraftBukkit start - SPIGOT-5458 also need in this branch :(
++                        } else {
++                            stack.hurtWithoutBreaking(1, entityhuman);
++                            // CraftBukkkit end
+                         }
+                     }
+ 
+@@ -112,6 +126,7 @@
+                         f3 *= f / f6;
+                         f4 *= f / f6;
+                         f5 *= f / f6;
++                        org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerRiptideEvent(entityhuman, stack, f3, f4, f5); // CraftBukkit
+                         entityhuman.push((double) f3, (double) f4, (double) f5);
+                         entityhuman.startAutoSpinAttack(20, 8.0F, stack);
+                         if (entityhuman.onGround()) {

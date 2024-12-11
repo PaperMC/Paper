@@ -1,0 +1,237 @@
+--- a/net/minecraft/world/level/GameRules.java
++++ b/net/minecraft/world/level/GameRules.java
+@@ -58,7 +58,7 @@
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_SENDCOMMANDFEEDBACK = GameRules.register("sendCommandFeedback", GameRules.Category.CHAT, GameRules.BooleanValue.create(true));
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_REDUCEDDEBUGINFO = GameRules.register("reducedDebugInfo", GameRules.Category.MISC, GameRules.BooleanValue.create(false, (minecraftserver, gamerules_gameruleboolean) -> {
+         int i = gamerules_gameruleboolean.get() ? 22 : 23;
+-        Iterator iterator = minecraftserver.getPlayerList().getPlayers().iterator();
++        Iterator iterator = minecraftserver.players().iterator(); // CraftBukkit - per-world
+ 
+         while (iterator.hasNext()) {
+             ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+@@ -74,7 +74,7 @@
+     public static final GameRules.Key<GameRules.IntegerValue> RULE_MAX_ENTITY_CRAMMING = GameRules.register("maxEntityCramming", GameRules.Category.MOBS, GameRules.IntegerValue.create(24));
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_WEATHER_CYCLE = GameRules.register("doWeatherCycle", GameRules.Category.UPDATES, GameRules.BooleanValue.create(true));
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_LIMITED_CRAFTING = GameRules.register("doLimitedCrafting", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (minecraftserver, gamerules_gameruleboolean) -> {
+-        Iterator iterator = minecraftserver.getPlayerList().getPlayers().iterator();
++        Iterator iterator = minecraftserver.players().iterator(); // CraftBukkit - per-world
+ 
+         while (iterator.hasNext()) {
+             ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+@@ -90,7 +90,7 @@
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_DISABLE_RAIDS = GameRules.register("disableRaids", GameRules.Category.MOBS, GameRules.BooleanValue.create(false));
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_DOINSOMNIA = GameRules.register("doInsomnia", GameRules.Category.SPAWNING, GameRules.BooleanValue.create(true));
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_IMMEDIATE_RESPAWN = GameRules.register("doImmediateRespawn", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (minecraftserver, gamerules_gameruleboolean) -> {
+-        Iterator iterator = minecraftserver.getPlayerList().getPlayers().iterator();
++        Iterator iterator = minecraftserver.players().iterator(); // CraftBukkit - per-world
+ 
+         while (iterator.hasNext()) {
+             ServerPlayer entityplayer = (ServerPlayer) iterator.next();
+@@ -123,7 +123,7 @@
+     public static final GameRules.Key<GameRules.IntegerValue> RULE_MINECART_MAX_SPEED = GameRules.register("minecartMaxSpeed", GameRules.Category.MISC, GameRules.IntegerValue.create(8, 1, 1000, FeatureFlagSet.of(FeatureFlags.MINECART_IMPROVEMENTS), (minecraftserver, gamerules_gameruleint) -> {
+     }));
+     public static final GameRules.Key<GameRules.IntegerValue> RULE_SPAWN_CHUNK_RADIUS = GameRules.register("spawnChunkRadius", GameRules.Category.MISC, GameRules.IntegerValue.create(2, 0, 32, FeatureFlagSet.of(), (minecraftserver, gamerules_gameruleint) -> {
+-        ServerLevel worldserver = minecraftserver.overworld();
++        ServerLevel worldserver = minecraftserver; // CraftBukkit - per-world
+ 
+         worldserver.setDefaultSpawnPos(worldserver.getSharedSpawnPos(), worldserver.getSharedSpawnAngle());
+     }));
+@@ -164,7 +164,7 @@
+     }
+ 
+     public <T extends GameRules.Value<T>> T getRule(GameRules.Key<T> key) {
+-        T t0 = (GameRules.Value) this.rules.get(key);
++        T t0 = (T) this.rules.get(key); // CraftBukkit - decompile error
+ 
+         if (t0 == null) {
+             throw new IllegalArgumentException("Tried to access invalid game rule");
+@@ -184,7 +184,7 @@
+ 
+     private void loadFromTag(DynamicLike<?> values) {
+         this.rules.forEach((gamerules_gamerulekey, gamerules_gamerulevalue) -> {
+-            DataResult dataresult = values.get(gamerules_gamerulekey.id).asString();
++            DataResult<String> dataresult = values.get(gamerules_gamerulekey.id).asString(); // CraftBukkit - decompile error
+ 
+             Objects.requireNonNull(gamerules_gamerulevalue);
+             dataresult.ifSuccess(gamerules_gamerulevalue::deserialize);
+@@ -205,22 +205,22 @@
+ 
+     private <T extends GameRules.Value<T>> void callVisitorCap(GameRules.GameRuleTypeVisitor visitor, GameRules.Key<?> key, GameRules.Type<?> type) {
+         if (type.requiredFeatures.isSubsetOf(this.enabledFeatures)) {
+-            visitor.visit(key, type);
+-            type.callVisitor(visitor, key);
++            visitor.visit((GameRules.Key<T>) key, (GameRules.Type<T>) type); // CraftBukkit - decompile error
++            ((GameRules.Type<T>) type).callVisitor(visitor, (GameRules.Key<T>) key); // CraftBukkit - decompile error
+         }
+ 
+     }
+ 
+-    public void assignFrom(GameRules rules, @Nullable MinecraftServer server) {
+-        rules.rules.keySet().forEach((gamerules_gamerulekey) -> {
+-            this.assignCap(gamerules_gamerulekey, rules, server);
++    public void assignFrom(GameRules gamerules, @Nullable ServerLevel minecraftserver) { // CraftBukkit - per-world
++        gamerules.rules.keySet().forEach((gamerules_gamerulekey) -> {
++            this.assignCap(gamerules_gamerulekey, gamerules, minecraftserver);
+         });
+     }
+ 
+-    private <T extends GameRules.Value<T>> void assignCap(GameRules.Key<T> key, GameRules rules, @Nullable MinecraftServer server) {
+-        T t0 = rules.getRule(key);
++    private <T extends GameRules.Value<T>> void assignCap(GameRules.Key<T> gamerules_gamerulekey, GameRules gamerules, @Nullable ServerLevel minecraftserver) { // CraftBukkit - per-world
++        T t0 = gamerules.getRule(gamerules_gamerulekey);
+ 
+-        this.getRule(key).setFrom(t0, server);
++        this.getRule(gamerules_gamerulekey).setFrom(t0, minecraftserver);
+     }
+ 
+     public boolean getBoolean(GameRules.Key<GameRules.BooleanValue> rule) {
+@@ -285,11 +285,11 @@
+ 
+         final Supplier<ArgumentType<?>> argument;
+         private final Function<GameRules.Type<T>, T> constructor;
+-        final BiConsumer<MinecraftServer, T> callback;
++        final BiConsumer<ServerLevel, T> callback; // CraftBukkit - per-world
+         private final GameRules.VisitorCaller<T> visitorCaller;
+         final FeatureFlagSet requiredFeatures;
+ 
+-        Type(Supplier<ArgumentType<?>> argumentType, Function<GameRules.Type<T>, T> ruleFactory, BiConsumer<MinecraftServer, T> changeCallback, GameRules.VisitorCaller<T> ruleAcceptor, FeatureFlagSet requiredFeatures) {
++        Type(Supplier<ArgumentType<?>> argumentType, Function<GameRules.Type<T>, T> ruleFactory, BiConsumer<ServerLevel, T> changeCallback, GameRules.VisitorCaller<T> ruleAcceptor, FeatureFlagSet requiredFeatures) { // CraftBukkit - per-world
+             this.argument = argumentType;
+             this.constructor = ruleFactory;
+             this.callback = changeCallback;
+@@ -302,7 +302,7 @@
+         }
+ 
+         public T createRule() {
+-            return (GameRules.Value) this.constructor.apply(this);
++            return this.constructor.apply(this); // CraftBukkit - decompile error
+         }
+ 
+         public void callVisitor(GameRules.GameRuleTypeVisitor consumer, GameRules.Key<T> key) {
+@@ -326,17 +326,17 @@
+ 
+         public void setFromArgument(CommandContext<CommandSourceStack> context, String name) {
+             this.updateFromArgument(context, name);
+-            this.onChanged(((CommandSourceStack) context.getSource()).getServer());
++            this.onChanged(((CommandSourceStack) context.getSource()).getLevel()); // CraftBukkit - per-world
+         }
+ 
+-        public void onChanged(@Nullable MinecraftServer server) {
+-            if (server != null) {
+-                this.type.callback.accept(server, this.getSelf());
++        public void onChanged(@Nullable ServerLevel minecraftserver) { // CraftBukkit - per-world
++            if (minecraftserver != null) {
++                this.type.callback.accept(minecraftserver, this.getSelf());
+             }
+ 
+         }
+ 
+-        protected abstract void deserialize(String value);
++        public abstract void deserialize(String value); // PAIL - private->public
+ 
+         public abstract String serialize();
+ 
+@@ -350,7 +350,7 @@
+ 
+         protected abstract T copy();
+ 
+-        public abstract void setFrom(T rule, @Nullable MinecraftServer server);
++        public abstract void setFrom(T t0, @Nullable ServerLevel minecraftserver); // CraftBukkit - per-world
+     }
+ 
+     public interface GameRuleTypeVisitor {
+@@ -366,7 +366,7 @@
+ 
+         private boolean value;
+ 
+-        static GameRules.Type<GameRules.BooleanValue> create(boolean initialValue, BiConsumer<MinecraftServer, GameRules.BooleanValue> changeCallback) {
++        static GameRules.Type<GameRules.BooleanValue> create(boolean initialValue, BiConsumer<ServerLevel, GameRules.BooleanValue> changeCallback) { // CraftBukkit - per-world
+             return new GameRules.Type<>(BoolArgumentType::bool, (gamerules_gameruledefinition) -> {
+                 return new GameRules.BooleanValue(gamerules_gameruledefinition, initialValue);
+             }, changeCallback, GameRules.GameRuleTypeVisitor::visitBoolean, FeatureFlagSet.of());
+@@ -391,9 +391,9 @@
+             return this.value;
+         }
+ 
+-        public void set(boolean value, @Nullable MinecraftServer server) {
+-            this.value = value;
+-            this.onChanged(server);
++        public void set(boolean flag, @Nullable ServerLevel minecraftserver) { // CraftBukkit - per-world
++            this.value = flag;
++            this.onChanged(minecraftserver);
+         }
+ 
+         @Override
+@@ -402,7 +402,7 @@
+         }
+ 
+         @Override
+-        protected void deserialize(String value) {
++        public void deserialize(String value) { // PAIL - protected->public
+             this.value = Boolean.parseBoolean(value);
+         }
+ 
+@@ -421,9 +421,9 @@
+             return new GameRules.BooleanValue(this.type, this.value);
+         }
+ 
+-        public void setFrom(GameRules.BooleanValue rule, @Nullable MinecraftServer server) {
+-            this.value = rule.value;
+-            this.onChanged(server);
++        public void setFrom(GameRules.BooleanValue gamerules_gameruleboolean, @Nullable ServerLevel minecraftserver) { // CraftBukkit - per-world
++            this.value = gamerules_gameruleboolean.value;
++            this.onChanged(minecraftserver);
+         }
+     }
+ 
+@@ -431,13 +431,13 @@
+ 
+         private int value;
+ 
+-        private static GameRules.Type<GameRules.IntegerValue> create(int initialValue, BiConsumer<MinecraftServer, GameRules.IntegerValue> changeCallback) {
++        private static GameRules.Type<GameRules.IntegerValue> create(int initialValue, BiConsumer<ServerLevel, GameRules.IntegerValue> changeCallback) { // CraftBukkit - per-world
+             return new GameRules.Type<>(IntegerArgumentType::integer, (gamerules_gameruledefinition) -> {
+                 return new GameRules.IntegerValue(gamerules_gameruledefinition, initialValue);
+             }, changeCallback, GameRules.GameRuleTypeVisitor::visitInteger, FeatureFlagSet.of());
+         }
+ 
+-        static GameRules.Type<GameRules.IntegerValue> create(int initialValue, int min, int max, FeatureFlagSet requiredFeatures, BiConsumer<MinecraftServer, GameRules.IntegerValue> changeCallback) {
++        static GameRules.Type<GameRules.IntegerValue> create(int initialValue, int min, int max, FeatureFlagSet requiredFeatures, BiConsumer<ServerLevel, GameRules.IntegerValue> changeCallback) { // CraftBukkit - per-world
+             return new GameRules.Type<>(() -> {
+                 return IntegerArgumentType.integer(min, max);
+             }, (gamerules_gameruledefinition) -> {
+@@ -464,9 +464,9 @@
+             return this.value;
+         }
+ 
+-        public void set(int value, @Nullable MinecraftServer server) {
+-            this.value = value;
+-            this.onChanged(server);
++        public void set(int i, @Nullable ServerLevel minecraftserver) { // CraftBukkit - per-world
++            this.value = i;
++            this.onChanged(minecraftserver);
+         }
+ 
+         @Override
+@@ -475,7 +475,7 @@
+         }
+ 
+         @Override
+-        protected void deserialize(String value) {
++        public void deserialize(String value) { // PAIL - protected->public
+             this.value = IntegerValue.safeParse(value);
+         }
+ 
+@@ -517,9 +517,9 @@
+             return new GameRules.IntegerValue(this.type, this.value);
+         }
+ 
+-        public void setFrom(GameRules.IntegerValue rule, @Nullable MinecraftServer server) {
+-            this.value = rule.value;
+-            this.onChanged(server);
++        public void setFrom(GameRules.IntegerValue gamerules_gameruleint, @Nullable ServerLevel minecraftserver) { // CraftBukkit - per-world
++            this.value = gamerules_gameruleint.value;
++            this.onChanged(minecraftserver);
+         }
+     }
+ 

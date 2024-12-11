@@ -1,0 +1,111 @@
+--- a/net/minecraft/world/entity/animal/Wolf.java
++++ b/net/minecraft/world/entity/animal/Wolf.java
+@@ -85,6 +85,12 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.pathfinder.PathType;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityDamageEvent;
++import org.bukkit.event.entity.EntityRegainHealthEvent;
++import org.bukkit.event.entity.EntityTargetEvent;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit end
+ 
+ public class Wolf extends TamableAnimal implements NeutralMob, VariantHolder<Holder<WolfVariant>> {
+ 
+@@ -345,8 +351,14 @@
+         if (this.isInvulnerableTo(world, source)) {
+             return false;
+         } else {
++            // CraftBukkit start
++            boolean result = super.hurtServer(world, source, amount);
++            if (!result) {
++                return result;
++            }
++            // CraftBukkit end
+             this.setOrderedToSit(false);
+-            return super.hurtServer(world, source, amount);
++            return result; // CraftBukkit
+         }
+     }
+ 
+@@ -356,21 +368,27 @@
+     }
+ 
+     @Override
+-    protected void actuallyHurt(ServerLevel world, DamageSource source, float amount) {
+-        if (!this.canArmorAbsorb(source)) {
+-            super.actuallyHurt(world, source, amount);
++    public boolean actuallyHurt(ServerLevel worldserver, DamageSource damagesource, float f, EntityDamageEvent event) { // CraftBukkit - void -> boolean
++        if (!this.canArmorAbsorb(damagesource)) {
++            return super.actuallyHurt(worldserver, damagesource, f, event); // CraftBukkit
+         } else {
++            // CraftBukkit start - SPIGOT-7815: if the damage was cancelled, no need to run the wolf armor behaviour
++            if (event.isCancelled()) {
++                return false;
++            }
++            // CraftBukkit end
+             ItemStack itemstack = this.getBodyArmorItem();
+             int i = itemstack.getDamageValue();
+             int j = itemstack.getMaxDamage();
+ 
+-            itemstack.hurtAndBreak(Mth.ceil(amount), this, EquipmentSlot.BODY);
++            itemstack.hurtAndBreak(Mth.ceil(f), this, EquipmentSlot.BODY);
+             if (Crackiness.WOLF_ARMOR.byDamage(i, j) != Crackiness.WOLF_ARMOR.byDamage(this.getBodyArmorItem())) {
+                 this.playSound(SoundEvents.WOLF_ARMOR_CRACK);
+-                world.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, Items.ARMADILLO_SCUTE.getDefaultInstance()), this.getX(), this.getY() + 1.0D, this.getZ(), 20, 0.2D, 0.1D, 0.2D, 0.1D);
++                worldserver.sendParticles(new ItemParticleOption(ParticleTypes.ITEM, Items.ARMADILLO_SCUTE.getDefaultInstance()), this.getX(), this.getY() + 1.0D, this.getZ(), 20, 0.2D, 0.1D, 0.2D, 0.1D);
+             }
+ 
+         }
++        return false; // CraftBukkit
+     }
+ 
+     private boolean canArmorAbsorb(DamageSource source) {
+@@ -381,7 +399,7 @@
+     protected void applyTamingSideEffects() {
+         if (this.isTame()) {
+             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(40.0D);
+-            this.setHealth(40.0F);
++            this.setHealth(this.getMaxHealth()); // CraftBukkit - 40.0 -> getMaxHealth()
+         } else {
+             this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(8.0D);
+         }
+@@ -404,7 +422,7 @@
+                 FoodProperties foodinfo = (FoodProperties) itemstack.get(DataComponents.FOOD);
+                 float f = foodinfo != null ? (float) foodinfo.nutrition() : 1.0F;
+ 
+-                this.heal(2.0F * f);
++                this.heal(2.0F * f, EntityRegainHealthEvent.RegainReason.EATING); // CraftBukkit
+                 return InteractionResult.SUCCESS;
+             } else {
+                 if (item instanceof DyeItem) {
+@@ -440,7 +458,9 @@
+                         if (world instanceof ServerLevel) {
+                             ServerLevel worldserver = (ServerLevel) world;
+ 
++                            this.forceDrops = true; // CraftBukkit
+                             this.spawnAtLocation(worldserver, itemstack1);
++                            this.forceDrops = false; // CraftBukkit
+                         }
+ 
+                         return InteractionResult.SUCCESS;
+@@ -459,7 +479,7 @@
+                             this.setOrderedToSit(!this.isOrderedToSit());
+                             this.jumping = false;
+                             this.navigation.stop();
+-                            this.setTarget((LivingEntity) null);
++                            this.setTarget((LivingEntity) null, EntityTargetEvent.TargetReason.FORGOT_TARGET, true); // CraftBukkit - reason
+                             return InteractionResult.SUCCESS.withoutItem();
+                         } else {
+                             return enuminteractionresult;
+@@ -477,7 +497,8 @@
+     }
+ 
+     private void tryToTame(Player player) {
+-        if (this.random.nextInt(3) == 0) {
++        // CraftBukkit - added event call and isCancelled check.
++        if (this.random.nextInt(3) == 0 && !CraftEventFactory.callEntityTameEvent(this, player).isCancelled()) {
+             this.tame(player);
+             this.navigation.stop();
+             this.setTarget((LivingEntity) null);

@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import java.util.Collection;
 import java.util.stream.Collectors;
-import net.minecraft.core.BlockPosition;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
@@ -34,18 +34,18 @@ public class CraftSniffer extends CraftAnimals implements Sniffer {
     @Override
     public void removeExploredLocation(Location location) {
         Preconditions.checkArgument(location != null, "location cannot be null");
-        if (location.getWorld() != getWorld()) {
+        if (location.getWorld() != this.getWorld()) {
             return;
         }
 
-        BlockPosition blockPosition = CraftLocation.toBlockPosition(location);
+        BlockPos blockPosition = CraftLocation.toBlockPosition(location);
         this.getHandle().getBrain().setMemory(MemoryModuleType.SNIFFER_EXPLORED_POSITIONS, this.getHandle().getExploredPositions().filter(blockPositionExplored -> !blockPositionExplored.equals(blockPosition)).collect(Collectors.toList()));
     }
 
     @Override
     public void addExploredLocation(Location location) {
         Preconditions.checkArgument(location != null, "location cannot be null");
-        if (location.getWorld() != getWorld()) {
+        if (location.getWorld() != this.getWorld()) {
             return;
         }
 

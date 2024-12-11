@@ -1,0 +1,44 @@
+--- a/net/minecraft/util/SpawnUtil.java
++++ b/net/minecraft/util/SpawnUtil.java
+@@ -21,24 +21,31 @@
+     public SpawnUtil() {}
+ 
+     public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entityType, EntitySpawnReason reason, ServerLevel world, BlockPos pos, int tries, int horizontalRange, int verticalRange, SpawnUtil.Strategy requirements, boolean requireEmptySpace) {
+-        BlockPos.MutableBlockPos blockposition_mutableblockposition = pos.mutable();
++        // CraftBukkit start
++        return SpawnUtil.trySpawnMob(entityType, reason, world, pos, tries, horizontalRange, verticalRange, requirements, requireEmptySpace, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
+ 
+-        for (int l = 0; l < tries; ++l) {
+-            int i1 = Mth.randomBetweenInclusive(world.random, -horizontalRange, horizontalRange);
+-            int j1 = Mth.randomBetweenInclusive(world.random, -horizontalRange, horizontalRange);
++    public static <T extends Mob> Optional<T> trySpawnMob(EntityType<T> entitytypes, EntitySpawnReason entityspawnreason, ServerLevel worldserver, BlockPos blockposition, int i, int j, int k, SpawnUtil.Strategy spawnutil_a, boolean flag, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++        // CraftBukkit end
++        BlockPos.MutableBlockPos blockposition_mutableblockposition = blockposition.mutable();
+ 
+-            blockposition_mutableblockposition.setWithOffset(pos, i1, verticalRange, j1);
+-            if (world.getWorldBorder().isWithinBounds((BlockPos) blockposition_mutableblockposition) && SpawnUtil.moveToPossibleSpawnPosition(world, verticalRange, blockposition_mutableblockposition, requirements) && (!requireEmptySpace || world.noCollision(entityType.getSpawnAABB((double) blockposition_mutableblockposition.getX() + 0.5D, (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + 0.5D)))) {
+-                T t0 = (Mob) entityType.create(world, (Consumer) null, blockposition_mutableblockposition, reason, false, false);
++        for (int l = 0; l < i; ++l) {
++            int i1 = Mth.randomBetweenInclusive(worldserver.random, -j, j);
++            int j1 = Mth.randomBetweenInclusive(worldserver.random, -j, j);
+ 
++            blockposition_mutableblockposition.setWithOffset(blockposition, i1, k, j1);
++            if (worldserver.getWorldBorder().isWithinBounds((BlockPos) blockposition_mutableblockposition) && SpawnUtil.moveToPossibleSpawnPosition(worldserver, k, blockposition_mutableblockposition, spawnutil_a) && (!flag || worldserver.noCollision(entitytypes.getSpawnAABB((double) blockposition_mutableblockposition.getX() + 0.5D, (double) blockposition_mutableblockposition.getY(), (double) blockposition_mutableblockposition.getZ() + 0.5D)))) {
++                T t0 = entitytypes.create(worldserver, (Consumer<T>) null, blockposition_mutableblockposition, entityspawnreason, false, false); // CraftBukkit - decompile error
++
+                 if (t0 != null) {
+-                    if (t0.checkSpawnRules(world, reason) && t0.checkSpawnObstruction(world)) {
+-                        world.addFreshEntityWithPassengers(t0);
++                    if (t0.checkSpawnRules(worldserver, entityspawnreason) && t0.checkSpawnObstruction(worldserver)) {
++                        worldserver.addFreshEntityWithPassengers(t0, reason); // CraftBukkit
++                        if (t0.isRemoved()) return Optional.empty(); // CraftBukkit
+                         t0.playAmbientSound();
+                         return Optional.of(t0);
+                     }
+ 
+-                    t0.discard();
++                    t0.discard(null); // CraftBukkit - add Bukkit remove cause
+                 }
+             }
+         }

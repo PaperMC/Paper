@@ -1,0 +1,50 @@
+--- a/net/minecraft/world/level/block/SweetBerryBushBlock.java
++++ b/net/minecraft/world/level/block/SweetBerryBushBlock.java
+@@ -28,6 +28,12 @@
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++// CraftBukkit start
++import java.util.Collections;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.player.PlayerHarvestBlockEvent;
++// CraftBukkit end
+ 
+ public class SweetBerryBushBlock extends BushBlock implements BonemealableBlock {
+ 
+@@ -70,7 +76,7 @@
+         if (i < 3 && random.nextInt(5) == 0 && world.getRawBrightness(pos.above(), 0) >= 9) {
+             BlockState iblockdata1 = (BlockState) state.setValue(SweetBerryBushBlock.AGE, i + 1);
+ 
+-            world.setBlock(pos, iblockdata1, 2);
++            if (!CraftEventFactory.handleBlockGrowEvent(world, pos, iblockdata1, 2)) return; // CraftBukkit
+             world.gameEvent((Holder) GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(iblockdata1));
+         }
+ 
+@@ -91,7 +97,7 @@
+                         double d1 = Math.abs(vec3d.z());
+ 
+                         if (d0 >= 0.003000000026077032D || d1 >= 0.003000000026077032D) {
+-                            entity.hurtServer(worldserver, world.damageSources().sweetBerryBush(), 1.0F);
++                            entity.hurtServer(worldserver, world.damageSources().sweetBerryBush().directBlock(world, pos), 1.0F); // CraftBukkit
+                         }
+                     }
+ 
+@@ -118,7 +124,15 @@
+         if (i > 1) {
+             int j = 1 + world.random.nextInt(2);
+ 
+-            popResource(world, pos, new ItemStack(Items.SWEET_BERRIES, j + (flag ? 1 : 0)));
++            // CraftBukkit start - useWithoutItem is always MAIN_HAND
++            PlayerHarvestBlockEvent event = CraftEventFactory.callPlayerHarvestBlockEvent(world, pos, player, InteractionHand.MAIN_HAND, Collections.singletonList(new ItemStack(Items.SWEET_BERRIES, j + (flag ? 1 : 0))));
++            if (event.isCancelled()) {
++                return InteractionResult.SUCCESS; // We need to return a success either way, because making it PASS or FAIL will result in a bug where cancelling while harvesting w/ block in hand places block
++            }
++            for (org.bukkit.inventory.ItemStack itemStack : event.getItemsHarvested()) {
++                popResource(world, pos, CraftItemStack.asNMSCopy(itemStack));
++            }
++            // CraftBukkit end
+             world.playSound((Player) null, pos, SoundEvents.SWEET_BERRY_BUSH_PICK_BERRIES, SoundSource.BLOCKS, 1.0F, 0.8F + world.random.nextFloat() * 0.4F);
+             BlockState iblockdata1 = (BlockState) state.setValue(SweetBerryBushBlock.AGE, 1);
+ 

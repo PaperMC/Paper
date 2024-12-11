@@ -1,0 +1,28 @@
+--- a/net/minecraft/world/item/component/SuspiciousStewEffects.java
++++ b/net/minecraft/world/item/component/SuspiciousStewEffects.java
+@@ -29,7 +29,7 @@
+     public static final StreamCodec<RegistryFriendlyByteBuf, SuspiciousStewEffects> STREAM_CODEC = SuspiciousStewEffects.Entry.STREAM_CODEC.apply(ByteBufCodecs.list()).map(SuspiciousStewEffects::new, SuspiciousStewEffects::effects);
+ 
+     public SuspiciousStewEffects withEffectAdded(SuspiciousStewEffects.Entry stewEffect) {
+-        return new SuspiciousStewEffects(Util.copyAndAdd(this.effects, (Object) stewEffect));
++        return new SuspiciousStewEffects(Util.copyAndAdd(this.effects, stewEffect)); // CraftBukkit - decompile error
+     }
+ 
+     @Override
+@@ -44,7 +44,16 @@
+ 
+     }
+ 
++    // CraftBukkit start
+     @Override
++    public void cancelUsingItem(net.minecraft.server.level.ServerPlayer entityplayer, ItemStack itemstack) {
++        for (SuspiciousStewEffects.Entry suspicioussteweffects_a : this.effects) {
++            entityplayer.connection.send(new net.minecraft.network.protocol.game.ClientboundRemoveMobEffectPacket(entityplayer.getId(), suspicioussteweffects_a.effect()));
++        }
++    }
++    // CraftBukkit end
++
++    @Override
+     public void addToTooltip(Item.TooltipContext context, Consumer<Component> tooltip, TooltipFlag type) {
+         if (type.isCreative()) {
+             List<MobEffectInstance> list = new ArrayList();

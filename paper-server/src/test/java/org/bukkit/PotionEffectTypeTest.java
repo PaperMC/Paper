@@ -7,8 +7,8 @@ import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.List;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.MinecraftKey;
-import net.minecraft.world.effect.MobEffectInfo;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.effect.MobEffectCategory;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectTypeCategory;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.potion.PotionEffectType;
@@ -23,7 +23,7 @@ public class PotionEffectTypeTest {
     public void verifyMapping() {
         List<PotionEffectType> effects = Lists.newArrayList(PotionEffectType.values());
 
-        for (MinecraftKey key : BuiltInRegistries.MOB_EFFECT.keySet()) {
+        for (ResourceLocation key : BuiltInRegistries.MOB_EFFECT.keySet()) {
             String name = key.getPath();
             PotionEffectType effect = PotionEffectType.getByKey(CraftNamespacedKey.fromMinecraft(key));
 
@@ -43,7 +43,7 @@ public class PotionEffectTypeTest {
             assertDoesNotThrow(() -> CraftPotionEffectTypeCategory.bukkitToMinecraft(category), "PotionEffectTypeCategory." + categoryName + " exists but MobEffectInfo." + categoryName + " does not!");
         }
 
-        for (MobEffectInfo info : MobEffectInfo.values()) {
+        for (MobEffectCategory info : MobEffectCategory.values()) {
             assertDoesNotThrow(() -> CraftPotionEffectTypeCategory.minecraftToBukkit(info), "Missing PotionEffectTypeCategory for MobEffectInfo." + info.name());
         }
     }

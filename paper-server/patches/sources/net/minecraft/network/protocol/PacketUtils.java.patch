@@ -1,0 +1,27 @@
+--- a/net/minecraft/network/protocol/PacketUtils.java
++++ b/net/minecraft/network/protocol/PacketUtils.java
+@@ -6,10 +6,15 @@
+ import net.minecraft.CrashReportCategory;
+ import net.minecraft.ReportedException;
+ import net.minecraft.network.PacketListener;
++import org.slf4j.Logger;
++
++// CraftBukkit start
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.server.RunningOnDifferentThreadException;
+ import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.network.ServerCommonPacketListenerImpl;
++// CraftBukkit end
+ import net.minecraft.util.thread.BlockableEventLoop;
+-import org.slf4j.Logger;
+ 
+ public class PacketUtils {
+ 
+@@ -24,6 +29,7 @@
+     public static <T extends PacketListener> void ensureRunningOnSameThread(Packet<T> packet, T listener, BlockableEventLoop<?> engine) throws RunningOnDifferentThreadException {
+         if (!engine.isSameThread()) {
+             engine.executeIfPossible(() -> {
++                if (listener instanceof ServerCommonPacketListenerImpl serverCommonPacketListener && serverCommonPacketListener.processedDisconnect) return; // CraftBukkit - Don't handle sync packets for kicked players
+                 if (listener.shouldHandleMessage(packet)) {
+                     try {
+                         packet.handle(listener);

@@ -1,0 +1,33 @@
+--- a/net/minecraft/world/level/block/LightningRodBlock.java
++++ b/net/minecraft/world/level/block/LightningRodBlock.java
+@@ -24,6 +24,11 @@
+ import net.minecraft.world.level.material.Fluids;
+ import net.minecraft.world.level.redstone.ExperimentalRedstoneUtils;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.block.BlockRedstoneEvent;
++// CraftBukkit end
++
+ public class LightningRodBlock extends RodBlock implements SimpleWaterloggedBlock {
+ 
+     public static final MapCodec<LightningRodBlock> CODEC = simpleCodec(LightningRodBlock::new);
+@@ -76,6 +81,18 @@
+     }
+ 
+     public void onLightningStrike(BlockState state, Level world, BlockPos pos) {
++        // CraftBukkit start
++        boolean powered = state.getValue(LightningRodBlock.POWERED);
++        int old = (powered) ? 15 : 0;
++        int current = (!powered) ? 15 : 0;
++
++        BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(CraftBlock.at(world, pos), old, current);
++        world.getCraftServer().getPluginManager().callEvent(eventRedstone);
++
++        if (eventRedstone.getNewCurrent() <= 0) {
++            return;
++        }
++        // CraftBukkit end
+         world.setBlock(pos, (BlockState) state.setValue(LightningRodBlock.POWERED, true), 3);
+         this.updateNeighbours(state, world, pos);
+         world.scheduleTick(pos, (Block) this, 8);

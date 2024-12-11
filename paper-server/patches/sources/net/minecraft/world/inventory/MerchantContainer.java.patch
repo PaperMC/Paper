@@ -1,0 +1,70 @@
+--- a/net/minecraft/world/inventory/MerchantContainer.java
++++ b/net/minecraft/world/inventory/MerchantContainer.java
+@@ -5,11 +5,20 @@
+ import net.minecraft.core.NonNullList;
+ import net.minecraft.world.Container;
+ import net.minecraft.world.ContainerHelper;
++import net.minecraft.world.entity.npc.AbstractVillager;
++import net.minecraft.world.entity.npc.Villager;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.trading.Merchant;
+ import net.minecraft.world.item.trading.MerchantOffer;
+ import net.minecraft.world.item.trading.MerchantOffers;
++// CraftBukkit start
++import java.util.List;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.entity.CraftAbstractVillager;
++import org.bukkit.entity.HumanEntity;
++// CraftBukkit end
+ 
+ public class MerchantContainer implements Container {
+ 
+@@ -20,6 +29,46 @@
+     public int selectionHint;
+     private int futureXp;
+ 
++    // CraftBukkit start - add fields and methods
++    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
++    private int maxStack = MAX_STACK;
++
++    public List<ItemStack> getContents() {
++        return this.itemStacks;
++    }
++
++    public void onOpen(CraftHumanEntity who) {
++        this.transaction.add(who);
++    }
++
++    public void onClose(CraftHumanEntity who) {
++        this.transaction.remove(who);
++        this.merchant.setTradingPlayer((Player) null); // SPIGOT-4860
++    }
++
++    public List<HumanEntity> getViewers() {
++        return this.transaction;
++    }
++
++    @Override
++    public int getMaxStackSize() {
++        return this.maxStack;
++    }
++
++    public void setMaxStackSize(int i) {
++        this.maxStack = i;
++    }
++
++    public org.bukkit.inventory.InventoryHolder getOwner() {
++        return (this.merchant instanceof AbstractVillager) ? (CraftAbstractVillager) ((AbstractVillager) this.merchant).getBukkitEntity() : null;
++    }
++
++    @Override
++    public Location getLocation() {
++        return (this.merchant instanceof Villager) ? ((Villager) this.merchant).getBukkitEntity().getLocation() : null;
++    }
++    // CraftBukkit end
++
+     public MerchantContainer(Merchant merchant) {
+         this.itemStacks = NonNullList.withSize(3, ItemStack.EMPTY);
+         this.merchant = merchant;

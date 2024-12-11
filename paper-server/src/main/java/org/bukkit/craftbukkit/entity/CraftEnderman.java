@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.entity.monster.EntityEnderman;
-import net.minecraft.world.level.block.state.IBlockData;
+import net.minecraft.world.entity.monster.EnderMan;
+import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftServer;
@@ -13,35 +13,35 @@ import org.bukkit.entity.Entity;
 import org.bukkit.material.MaterialData;
 
 public class CraftEnderman extends CraftMonster implements Enderman {
-    public CraftEnderman(CraftServer server, EntityEnderman entity) {
+    public CraftEnderman(CraftServer server, EnderMan entity) {
         super(server, entity);
     }
 
     @Override
     public MaterialData getCarriedMaterial() {
-        IBlockData blockData = getHandle().getCarriedBlock();
+        BlockState blockData = this.getHandle().getCarriedBlock();
         return (blockData == null) ? Material.AIR.getNewData((byte) 0) : CraftMagicNumbers.getMaterial(blockData);
     }
 
     @Override
     public BlockData getCarriedBlock() {
-        IBlockData blockData = getHandle().getCarriedBlock();
+        BlockState blockData = this.getHandle().getCarriedBlock();
         return (blockData == null) ? null : CraftBlockData.fromData(blockData);
     }
 
     @Override
     public void setCarriedMaterial(MaterialData data) {
-        getHandle().setCarriedBlock(CraftMagicNumbers.getBlock(data));
+        this.getHandle().setCarriedBlock(CraftMagicNumbers.getBlock(data));
     }
 
     @Override
     public void setCarriedBlock(BlockData blockData) {
-        getHandle().setCarriedBlock(blockData == null ? null : ((CraftBlockData) blockData).getState());
+        this.getHandle().setCarriedBlock(blockData == null ? null : ((CraftBlockData) blockData).getState());
     }
 
     @Override
-    public EntityEnderman getHandle() {
-        return (EntityEnderman) entity;
+    public EnderMan getHandle() {
+        return (EnderMan) this.entity;
     }
 
     @Override
@@ -51,13 +51,13 @@ public class CraftEnderman extends CraftMonster implements Enderman {
 
     @Override
     public boolean teleport() {
-        return getHandle().teleport();
+        return this.getHandle().teleport();
     }
 
     @Override
     public boolean teleportTowards(Entity entity) {
         Preconditions.checkArgument(entity != null, "entity cannot be null");
 
-        return getHandle().teleportTowards(((CraftEntity) entity).getHandle());
+        return this.getHandle().teleportTowards(((CraftEntity) entity).getHandle());
     }
 }

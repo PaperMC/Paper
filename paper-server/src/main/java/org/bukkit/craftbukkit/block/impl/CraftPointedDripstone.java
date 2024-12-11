@@ -9,51 +9,51 @@ public final class CraftPointedDripstone extends org.bukkit.craftbukkit.block.da
         super();
     }
 
-    public CraftPointedDripstone(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftPointedDripstone(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftPointedDripstone
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> VERTICAL_DIRECTION = getEnum(net.minecraft.world.level.block.PointedDripstoneBlock.class, "vertical_direction");
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> THICKNESS = getEnum(net.minecraft.world.level.block.PointedDripstoneBlock.class, "thickness");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> VERTICAL_DIRECTION = getEnum(net.minecraft.world.level.block.PointedDripstoneBlock.class, "vertical_direction");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> THICKNESS = getEnum(net.minecraft.world.level.block.PointedDripstoneBlock.class, "thickness");
 
     @Override
     public org.bukkit.block.BlockFace getVerticalDirection() {
-        return get(VERTICAL_DIRECTION, org.bukkit.block.BlockFace.class);
+        return this.get(CraftPointedDripstone.VERTICAL_DIRECTION, org.bukkit.block.BlockFace.class);
     }
 
     @Override
     public void setVerticalDirection(org.bukkit.block.BlockFace direction) {
-        set(VERTICAL_DIRECTION, direction);
+        this.set(CraftPointedDripstone.VERTICAL_DIRECTION, direction);
     }
 
     @Override
     public java.util.Set<org.bukkit.block.BlockFace> getVerticalDirections() {
-        return getValues(VERTICAL_DIRECTION, org.bukkit.block.BlockFace.class);
+        return this.getValues(CraftPointedDripstone.VERTICAL_DIRECTION, org.bukkit.block.BlockFace.class);
     }
 
     @Override
     public org.bukkit.block.data.type.PointedDripstone.Thickness getThickness() {
-        return get(THICKNESS, org.bukkit.block.data.type.PointedDripstone.Thickness.class);
+        return this.get(CraftPointedDripstone.THICKNESS, org.bukkit.block.data.type.PointedDripstone.Thickness.class);
     }
 
     @Override
     public void setThickness(org.bukkit.block.data.type.PointedDripstone.Thickness thickness) {
-        set(THICKNESS, thickness);
+        this.set(CraftPointedDripstone.THICKNESS, thickness);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftWaterlogged
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.world.level.block.PointedDripstoneBlock.class, "waterlogged");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED = getBoolean(net.minecraft.world.level.block.PointedDripstoneBlock.class, "waterlogged");
 
     @Override
     public boolean isWaterlogged() {
-        return get(WATERLOGGED);
+        return this.get(CraftPointedDripstone.WATERLOGGED);
     }
 
     @Override
     public void setWaterlogged(boolean waterlogged) {
-        set(WATERLOGGED, waterlogged);
+        this.set(CraftPointedDripstone.WATERLOGGED, waterlogged);
     }
 }

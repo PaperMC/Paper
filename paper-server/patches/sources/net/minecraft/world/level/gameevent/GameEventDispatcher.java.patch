@@ -1,0 +1,30 @@
+--- a/net/minecraft/world/level/gameevent/GameEventDispatcher.java
++++ b/net/minecraft/world/level/gameevent/GameEventDispatcher.java
+@@ -11,6 +11,12 @@
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.level.chunk.LevelChunk;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.CraftGameEvent;
++import org.bukkit.craftbukkit.util.CraftLocation;
++import org.bukkit.event.world.GenericGameEvent;
++// CraftBukkit end
+ 
+ public class GameEventDispatcher {
+ 
+@@ -23,6 +29,14 @@
+     public void post(Holder<GameEvent> event, Vec3 emitterPos, GameEvent.Context emitter) {
+         int i = ((GameEvent) event.value()).notificationRadius();
+         BlockPos blockposition = BlockPos.containing(emitterPos);
++        // CraftBukkit start
++        GenericGameEvent event1 = new GenericGameEvent(CraftGameEvent.minecraftToBukkit(event.value()), CraftLocation.toBukkit(blockposition, this.level.getWorld()), (emitter.sourceEntity() == null) ? null : emitter.sourceEntity().getBukkitEntity(), i, !Bukkit.isPrimaryThread());
++        this.level.getCraftServer().getPluginManager().callEvent(event1);
++        if (event1.isCancelled()) {
++            return;
++        }
++        i = event1.getRadius();
++        // CraftBukkit end
+         int j = SectionPos.blockToSectionCoord(blockposition.getX() - i);
+         int k = SectionPos.blockToSectionCoord(blockposition.getY() - i);
+         int l = SectionPos.blockToSectionCoord(blockposition.getZ() - i);

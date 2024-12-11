@@ -13,7 +13,7 @@ public class CraftBiomeParameterPoint implements BiomeParameterPoint {
     private final double weirdness;
     private final Climate.Sampler sampler;
 
-    public static BiomeParameterPoint createBiomeParameterPoint(Climate.Sampler sampler, Climate.h targetPoint) {
+    public static BiomeParameterPoint createBiomeParameterPoint(Climate.Sampler sampler, Climate.TargetPoint targetPoint) {
         return new CraftBiomeParameterPoint(sampler, Climate.unquantizeCoord(targetPoint.temperature()), Climate.unquantizeCoord(targetPoint.humidity()), Climate.unquantizeCoord(targetPoint.continentalness()), Climate.unquantizeCoord(targetPoint.erosion()), Climate.unquantizeCoord(targetPoint.depth()), Climate.unquantizeCoord(targetPoint.weirdness()));
     }
 

@@ -2,8 +2,8 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
-import net.minecraft.world.level.block.BlockFurnace;
-import net.minecraft.world.level.block.entity.TileEntityFurnace;
+import net.minecraft.world.level.block.AbstractFurnaceBlock;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -14,7 +14,7 @@ import org.bukkit.inventory.CookingRecipe;
 import org.bukkit.inventory.FurnaceInventory;
 import org.bukkit.inventory.Recipe;
 
-public abstract class CraftFurnace<T extends TileEntityFurnace> extends CraftContainer<T> implements Furnace {
+public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends CraftContainer<T> implements Furnace {
 
     public CraftFurnace(World world, T tileEntity) {
         super(world, tileEntity);
@@ -47,7 +47,7 @@ public abstract class CraftFurnace<T extends TileEntityFurnace> extends CraftCon
     public void setBurnTime(short burnTime) {
         this.getSnapshot().litTimeRemaining = burnTime;
         // SPIGOT-844: Allow lighting and relighting using this API
-        this.data = this.data.setValue(BlockFurnace.LIT, burnTime > 0);
+        this.data = this.data.setValue(AbstractFurnaceBlock.LIT, burnTime > 0);
     }
 
     @Override

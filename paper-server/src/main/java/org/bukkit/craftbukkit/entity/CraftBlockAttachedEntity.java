@@ -10,7 +10,7 @@ public class CraftBlockAttachedEntity extends CraftEntity {
 
     @Override
     public BlockAttachedEntity getHandle() {
-        return (BlockAttachedEntity) entity;
+        return (BlockAttachedEntity) this.entity;
     }
 
     @Override

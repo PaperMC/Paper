@@ -1,0 +1,60 @@
+--- a/net/minecraft/world/entity/npc/AbstractVillager.java
++++ b/net/minecraft/world/entity/npc/AbstractVillager.java
+@@ -40,8 +40,21 @@
+ import net.minecraft.world.phys.Vec3;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.inventory.CraftMerchant;
++import org.bukkit.craftbukkit.inventory.CraftMerchantRecipe;
++import org.bukkit.event.entity.VillagerAcquireTradeEvent;
++// CraftBukkit end
++
+ public abstract class AbstractVillager extends AgeableMob implements InventoryCarrier, Npc, Merchant {
+ 
++    // CraftBukkit start
++    @Override
++    public CraftMerchant getCraftMerchant() {
++        return (org.bukkit.craftbukkit.entity.CraftAbstractVillager) this.getBukkitEntity();
++    }
++    // CraftBukkit end
+     private static final EntityDataAccessor<Integer> DATA_UNHAPPY_COUNTER = SynchedEntityData.defineId(AbstractVillager.class, EntityDataSerializers.INT);
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public static final int VILLAGER_SLOT_OFFSET = 300;
+@@ -50,7 +63,7 @@
+     private Player tradingPlayer;
+     @Nullable
+     protected MerchantOffers offers;
+-    private final SimpleContainer inventory = new SimpleContainer(8);
++    private final SimpleContainer inventory = new SimpleContainer(8, (org.bukkit.craftbukkit.entity.CraftAbstractVillager) this.getBukkitEntity()); // CraftBukkit add argument
+ 
+     public AbstractVillager(EntityType<? extends AbstractVillager> type, Level world) {
+         super(type, world);
+@@ -179,7 +192,7 @@
+     public void readAdditionalSaveData(CompoundTag nbt) {
+         super.readAdditionalSaveData(nbt);
+         if (nbt.contains("Offers")) {
+-            DataResult dataresult = MerchantOffers.CODEC.parse(this.registryAccess().createSerializationContext(NbtOps.INSTANCE), nbt.get("Offers"));
++            DataResult<MerchantOffers> dataresult = MerchantOffers.CODEC.parse(this.registryAccess().createSerializationContext(NbtOps.INSTANCE), nbt.get("Offers")); // CraftBukkit - decompile error
+             Logger logger = AbstractVillager.LOGGER;
+ 
+             Objects.requireNonNull(logger);
+@@ -246,7 +259,16 @@
+             MerchantOffer merchantrecipe = ((VillagerTrades.ItemListing) arraylist.remove(this.random.nextInt(arraylist.size()))).getOffer(this, this.random);
+ 
+             if (merchantrecipe != null) {
+-                recipeList.add(merchantrecipe);
++                // CraftBukkit start
++                VillagerAcquireTradeEvent event = new VillagerAcquireTradeEvent((org.bukkit.entity.AbstractVillager) this.getBukkitEntity(), merchantrecipe.asBukkit());
++                // Suppress during worldgen
++                if (this.valid) {
++                    Bukkit.getPluginManager().callEvent(event);
++                }
++                if (!event.isCancelled()) {
++                    recipeList.add(CraftMerchantRecipe.fromBukkit(event.getRecipe()).toMinecraft());
++                }
++                // CraftBukkit end
+                 ++j;
+             }
+         }

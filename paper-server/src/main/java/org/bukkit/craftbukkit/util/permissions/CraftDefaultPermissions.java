@@ -9,7 +9,7 @@ public final class CraftDefaultPermissions {
     private CraftDefaultPermissions() {}
 
     public static void registerCorePermissions() {
-        Permission parent = DefaultPermissions.registerPermission(ROOT, "Gives the user the ability to use all vanilla utilities and commands");
+        Permission parent = DefaultPermissions.registerPermission(CraftDefaultPermissions.ROOT, "Gives the user the ability to use all vanilla utilities and commands");
         CommandPermissions.registerPermissions(parent);
         parent.recalculatePermissibles();
     }

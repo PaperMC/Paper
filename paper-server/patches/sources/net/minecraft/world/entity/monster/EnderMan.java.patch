@@ -1,0 +1,68 @@
+--- a/net/minecraft/world/entity/monster/EnderMan.java
++++ b/net/minecraft/world/entity/monster/EnderMan.java
+@@ -68,6 +68,10 @@
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.BlockHitResult;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityTargetEvent;
++// CraftBukkit end
+ 
+ public class EnderMan extends Monster implements NeutralMob {
+ 
+@@ -112,10 +116,20 @@
+ 
+     @Override
+     public void setTarget(@Nullable LivingEntity target) {
+-        super.setTarget(target);
++        // CraftBukkit start - fire event
++        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);
++    }
++
++    @Override
++    public boolean setTarget(LivingEntity entityliving, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
++        if (!super.setTarget(entityliving, reason, fireEvent)) {
++            return false;
++        }
++        entityliving = this.getTarget();
++        // CraftBukkit end
+         AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
+ 
+-        if (target == null) {
++        if (entityliving == null) {
+             this.targetChangeTime = 0;
+             this.entityData.set(EnderMan.DATA_CREEPY, false);
+             this.entityData.set(EnderMan.DATA_STARED_AT, false);
+@@ -127,6 +141,7 @@
+                 attributemodifiable.addTransientModifier(EnderMan.SPEED_MODIFIER_ATTACKING);
+             }
+         }
++        return true;
+ 
+     }
+ 
+@@ -465,9 +480,11 @@
+             if (iblockdata2 != null) {
+                 iblockdata2 = Block.updateFromNeighbourShapes(iblockdata2, this.enderman.level(), blockposition);
+                 if (this.canPlaceBlock(world, blockposition, iblockdata2, iblockdata, iblockdata1, blockposition1)) {
++                    if (CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockposition, iblockdata2)) { // CraftBukkit - Place event
+                     world.setBlock(blockposition, iblockdata2, 3);
+                     world.gameEvent((Holder) GameEvent.BLOCK_PLACE, blockposition, GameEvent.Context.of(this.enderman, iblockdata2));
+                     this.enderman.setCarriedBlock((BlockState) null);
++                    } // CraftBukkit
+                 }
+ 
+             }
+@@ -506,9 +523,11 @@
+             boolean flag = movingobjectpositionblock.getBlockPos().equals(blockposition);
+ 
+             if (iblockdata.is(BlockTags.ENDERMAN_HOLDABLE) && flag) {
++                if (CraftEventFactory.callEntityChangeBlockEvent(this.enderman, blockposition, Blocks.AIR.defaultBlockState())) { // CraftBukkit - Place event
+                 world.removeBlock(blockposition, false);
+                 world.gameEvent((Holder) GameEvent.BLOCK_DESTROY, blockposition, GameEvent.Context.of(this.enderman, iblockdata));
+                 this.enderman.setCarriedBlock(iblockdata.getBlock().defaultBlockState());
++                } // CraftBukkit
+             }
+ 
+         }

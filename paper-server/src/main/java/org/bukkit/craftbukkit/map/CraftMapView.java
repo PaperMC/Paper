@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.WorldServer;
-import net.minecraft.world.level.saveddata.maps.WorldMap;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -22,100 +22,100 @@ public final class CraftMapView implements MapView {
     private final Map<CraftPlayer, RenderData> renderCache = new HashMap<CraftPlayer, RenderData>();
     private final List<MapRenderer> renderers = new ArrayList<MapRenderer>();
     private final Map<MapRenderer, Map<CraftPlayer, CraftMapCanvas>> canvases = new HashMap<MapRenderer, Map<CraftPlayer, CraftMapCanvas>>();
-    protected final WorldMap worldMap;
+    protected final MapItemSavedData worldMap;
 
-    public CraftMapView(WorldMap worldMap) {
+    public CraftMapView(MapItemSavedData worldMap) {
         this.worldMap = worldMap;
-        addRenderer(new CraftMapRenderer(this, worldMap));
+        this.addRenderer(new CraftMapRenderer(this, worldMap));
     }
 
     @Override
     public int getId() {
-        return worldMap.id.id();
+        return this.worldMap.id.id();
     }
 
     @Override
     public boolean isVirtual() {
-        return renderers.size() > 0 && !(renderers.get(0) instanceof CraftMapRenderer);
+        return this.renderers.size() > 0 && !(this.renderers.get(0) instanceof CraftMapRenderer);
     }
 
     @Override
     public Scale getScale() {
-        return Scale.valueOf(worldMap.scale);
+        return Scale.valueOf(this.worldMap.scale);
     }
 
     @Override
     public void setScale(Scale scale) {
-        worldMap.scale = scale.getValue();
+        this.worldMap.scale = scale.getValue();
     }
 
     @Override
     public World getWorld() {
-        ResourceKey<net.minecraft.world.level.World> dimension = worldMap.dimension;
-        WorldServer world = MinecraftServer.getServer().getLevel(dimension);
+        ResourceKey<net.minecraft.world.level.Level> dimension = this.worldMap.dimension;
+        ServerLevel world = MinecraftServer.getServer().getLevel(dimension);
 
         if (world != null) {
             return world.getWorld();
         }
 
-        if (worldMap.uniqueId != null) {
-            return Bukkit.getServer().getWorld(worldMap.uniqueId);
+        if (this.worldMap.uniqueId != null) {
+            return Bukkit.getServer().getWorld(this.worldMap.uniqueId);
         }
         return null;
     }
 
     @Override
     public void setWorld(World world) {
-        worldMap.dimension = ((CraftWorld) world).getHandle().dimension();
-        worldMap.uniqueId = world.getUID();
+        this.worldMap.dimension = ((CraftWorld) world).getHandle().dimension();
+        this.worldMap.uniqueId = world.getUID();
     }
 
     @Override
     public int getCenterX() {
-        return worldMap.centerX;
+        return this.worldMap.centerX;
     }
 
     @Override
     public int getCenterZ() {
-        return worldMap.centerZ;
+        return this.worldMap.centerZ;
     }
 
     @Override
     public void setCenterX(int x) {
-        worldMap.centerX = x;
+        this.worldMap.centerX = x;
     }
 
     @Override
     public void setCenterZ(int z) {
-        worldMap.centerZ = z;
+        this.worldMap.centerZ = z;
     }
 
     @Override
     public List<MapRenderer> getRenderers() {
-        return new ArrayList<MapRenderer>(renderers);
+        return new ArrayList<MapRenderer>(this.renderers);
     }
 
     @Override
     public void addRenderer(MapRenderer renderer) {
-        if (!renderers.contains(renderer)) {
-            renderers.add(renderer);
-            canvases.put(renderer, new HashMap<CraftPlayer, CraftMapCanvas>());
+        if (!this.renderers.contains(renderer)) {
+            this.renderers.add(renderer);
+            this.canvases.put(renderer, new HashMap<CraftPlayer, CraftMapCanvas>());
             renderer.initialize(this);
         }
     }
 
     @Override
     public boolean removeRenderer(MapRenderer renderer) {
-        if (renderers.contains(renderer)) {
-            renderers.remove(renderer);
-            for (Map.Entry<CraftPlayer, CraftMapCanvas> entry : canvases.get(renderer).entrySet()) {
+        if (this.renderers.contains(renderer)) {
+            this.renderers.remove(renderer);
+            for (Map.Entry<CraftPlayer, CraftMapCanvas> entry : this.canvases.get(renderer).entrySet()) {
                 for (int x = 0; x < 128; ++x) {
                     for (int y = 0; y < 128; ++y) {
                         entry.getValue().setPixel(x, y, (byte) -1);
                     }
                 }
             }
-            canvases.remove(renderer);
+            this.canvases.remove(renderer);
             return true;
         } else {
             return false;
@@ -123,33 +123,33 @@ public final class CraftMapView implements MapView {
     }
 
     private boolean isContextual() {
-        for (MapRenderer renderer : renderers) {
+        for (MapRenderer renderer : this.renderers) {
             if (renderer.isContextual()) return true;
         }
         return false;
     }
 
     public RenderData render(CraftPlayer player) {
-        boolean context = isContextual();
-        RenderData render = renderCache.get(context ? player : null);
+        boolean context = this.isContextual();
+        RenderData render = this.renderCache.get(context ? player : null);
 
         if (render == null) {
             render = new RenderData();
-            renderCache.put(context ? player : null, render);
+            this.renderCache.put(context ? player : null, render);
         }
 
-        if (context && renderCache.containsKey(null)) {
-            renderCache.remove(null);
+        if (context && this.renderCache.containsKey(null)) {
+            this.renderCache.remove(null);
         }
 
         Arrays.fill(render.buffer, (byte) 0);
         render.cursors.clear();
 
-        for (MapRenderer renderer : renderers) {
-            CraftMapCanvas canvas = canvases.get(renderer).get(renderer.isContextual() ? player : null);
+        for (MapRenderer renderer : this.renderers) {
+            CraftMapCanvas canvas = this.canvases.get(renderer).get(renderer.isContextual() ? player : null);
             if (canvas == null) {
                 canvas = new CraftMapCanvas(this);
-                canvases.get(renderer).put(renderer.isContextual() ? player : null, canvas);
+                this.canvases.get(renderer).put(renderer.isContextual() ? player : null, canvas);
             }
 
             canvas.setBase(render.buffer);
@@ -176,31 +176,31 @@ public final class CraftMapView implements MapView {
 
     @Override
     public boolean isTrackingPosition() {
-        return worldMap.trackingPosition;
+        return this.worldMap.trackingPosition;
     }
 
     @Override
     public void setTrackingPosition(boolean trackingPosition) {
-        worldMap.trackingPosition = trackingPosition;
+        this.worldMap.trackingPosition = trackingPosition;
     }
 
     @Override
     public boolean isUnlimitedTracking() {
-        return worldMap.unlimitedTracking;
+        return this.worldMap.unlimitedTracking;
     }
 
     @Override
     public void setUnlimitedTracking(boolean unlimited) {
-        worldMap.unlimitedTracking = unlimited;
+        this.worldMap.unlimitedTracking = unlimited;
     }
 
     @Override
     public boolean isLocked() {
-        return worldMap.locked;
+        return this.worldMap.locked;
     }
 
     @Override
     public void setLocked(boolean locked) {
-        worldMap.locked = locked;
+        this.worldMap.locked = locked;
     }
 }

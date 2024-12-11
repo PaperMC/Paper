@@ -31,10 +31,10 @@ public record RerouteArgument(Type type, Type sourceType, boolean injectPluginNa
      * @return the opcode of the type
      */
     public int instruction() {
-        if (injectPluginName() || injectPluginVersion() || injectCompatibility() != null) {
+        if (this.injectPluginName() || this.injectPluginVersion() || this.injectCompatibility() != null) {
             throw new IllegalStateException(String.format("Cannot get instruction for plugin name / version argument / compatibility: %s", this));
         }
 
-        return type.getOpcode(Opcodes.ILOAD);
+        return this.type.getOpcode(Opcodes.ILOAD);
     }
 }

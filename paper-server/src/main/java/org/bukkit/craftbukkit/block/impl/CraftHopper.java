@@ -9,40 +9,40 @@ public final class CraftHopper extends org.bukkit.craftbukkit.block.data.CraftBl
         super();
     }
 
-    public CraftHopper(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftHopper(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftHopper
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean ENABLED = getBoolean(net.minecraft.world.level.block.BlockHopper.class, "enabled");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty ENABLED = getBoolean(net.minecraft.world.level.block.HopperBlock.class, "enabled");
 
     @Override
     public boolean isEnabled() {
-        return get(ENABLED);
+        return this.get(CraftHopper.ENABLED);
     }
 
     @Override
     public void setEnabled(boolean enabled) {
-        set(ENABLED, enabled);
+        this.set(CraftHopper.ENABLED, enabled);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftDirectional
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACING = getEnum(net.minecraft.world.level.block.BlockHopper.class, "facing");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> FACING = getEnum(net.minecraft.world.level.block.HopperBlock.class, "facing");
 
     @Override
     public org.bukkit.block.BlockFace getFacing() {
-        return get(FACING, org.bukkit.block.BlockFace.class);
+        return this.get(CraftHopper.FACING, org.bukkit.block.BlockFace.class);
     }
 
     @Override
     public void setFacing(org.bukkit.block.BlockFace facing) {
-        set(FACING, facing);
+        this.set(CraftHopper.FACING, facing);
     }
 
     @Override
     public java.util.Set<org.bukkit.block.BlockFace> getFaces() {
-        return getValues(FACING, org.bukkit.block.BlockFace.class);
+        return this.getValues(CraftHopper.FACING, org.bukkit.block.BlockFace.class);
     }
 }

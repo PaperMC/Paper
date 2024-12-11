@@ -5,15 +5,15 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftPiston extends CraftBlockData implements Piston {
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean EXTENDED = getBoolean("extended");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty EXTENDED = getBoolean("extended");
 
     @Override
     public boolean isExtended() {
-        return get(EXTENDED);
+        return this.get(CraftPiston.EXTENDED);
     }
 
     @Override
     public void setExtended(boolean extended) {
-        set(EXTENDED, extended);
+        this.set(CraftPiston.EXTENDED, extended);
     }
 }

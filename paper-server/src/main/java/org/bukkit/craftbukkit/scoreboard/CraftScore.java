@@ -25,24 +25,24 @@ final class CraftScore implements Score {
 
     @Override
     public OfflinePlayer getPlayer() {
-        return Bukkit.getOfflinePlayer(entry.getScoreboardName());
+        return Bukkit.getOfflinePlayer(this.entry.getScoreboardName());
     }
 
     @Override
     public String getEntry() {
-        return entry.getScoreboardName();
+        return this.entry.getScoreboardName();
     }
 
     @Override
     public Objective getObjective() {
-        return objective;
+        return this.objective;
     }
 
     @Override
     public int getScore() {
-        Scoreboard board = objective.checkState().board;
+        Scoreboard board = this.objective.checkState().board;
 
-        ReadOnlyScoreInfo score = board.getPlayerScoreInfo(entry, objective.getHandle());
+        ReadOnlyScoreInfo score = board.getPlayerScoreInfo(this.entry, this.objective.getHandle());
         if (score != null) { // Lazy
             return score.value();
         }
@@ -52,18 +52,18 @@ final class CraftScore implements Score {
 
     @Override
     public void setScore(int score) {
-        objective.checkState().board.getOrCreatePlayerScore(entry, objective.getHandle()).set(score);
+        this.objective.checkState().board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).set(score);
     }
 
     @Override
     public boolean isScoreSet() {
-        Scoreboard board = objective.checkState().board;
+        Scoreboard board = this.objective.checkState().board;
 
-        return board.getPlayerScoreInfo(entry, objective.getHandle()) != null;
+        return board.getPlayerScoreInfo(this.entry, this.objective.getHandle()) != null;
     }
 
     @Override
     public CraftScoreboard getScoreboard() {
-        return objective.getScoreboard();
+        return this.objective.getScoreboard();
     }
 }

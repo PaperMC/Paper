@@ -1,8 +1,9 @@
 package org.bukkit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import net.minecraft.EnumChatFormat;
-import net.minecraft.network.chat.IChatBaseComponent;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ public class ChatTest {
             assertEquals(color, CraftChatMessage.getColor(CraftChatMessage.getColor(color)));
         }
 
-        for (EnumChatFormat format : EnumChatFormat.values()) {
+        for (ChatFormatting format : ChatFormatting.values()) {
             assertNotNull(CraftChatMessage.getColor(format));
             assertEquals(format, CraftChatMessage.getColor(CraftChatMessage.getColor(format)));
         }
@@ -25,7 +26,7 @@ public class ChatTest {
 
     @Test
     public void testURLJsonConversion() {
-        IChatBaseComponent[] components;
+        Component[] components;
         components = CraftChatMessage.fromString("https://spigotmc.org/test Test Message");
         assertEquals("{\"text\":\"\",\"extra\":[{\"text\":\"https://spigotmc.org/test\",\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://spigotmc.org/test\"}},\" Test Message\"]}",
                 CraftChatMessage.toJSON(components[0]));

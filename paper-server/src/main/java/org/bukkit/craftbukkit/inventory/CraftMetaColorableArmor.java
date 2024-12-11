@@ -36,11 +36,11 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
 
     @Override
     boolean isEmpty() {
-        return super.isEmpty() && isLeatherArmorEmpty();
+        return super.isEmpty() && this.isLeatherArmorEmpty();
     }
 
     boolean isLeatherArmorEmpty() {
-        return !(hasColor());
+        return !(this.hasColor());
     }
 
     @Override
@@ -52,7 +52,7 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
 
     @Override
     public Color getColor() {
-        return color;
+        return this.color;
     }
 
     @Override
@@ -81,22 +81,22 @@ public class CraftMetaColorableArmor extends CraftMetaArmor implements Colorable
         if (meta instanceof CraftMetaColorableArmor) {
             CraftMetaColorableArmor that = (CraftMetaColorableArmor) meta;
 
-            return color.equals(that.color);
+            return this.color.equals(that.color);
         }
         return true;
     }
 
     @Override
     boolean notUncommon(CraftMetaItem meta) {
-        return super.notUncommon(meta) && (meta instanceof CraftMetaColorableArmor || isLeatherArmorEmpty());
+        return super.notUncommon(meta) && (meta instanceof CraftMetaColorableArmor || this.isLeatherArmorEmpty());
     }
 
     @Override
     int applyHash() {
         final int original;
         int hash = original = super.applyHash();
-        if (hasColor()) {
-            hash ^= color.hashCode();
+        if (this.hasColor()) {
+            hash ^= this.color.hashCode();
         }
         return original != hash ? CraftMetaColorableArmor.class.hashCode() ^ hash : hash;
     }

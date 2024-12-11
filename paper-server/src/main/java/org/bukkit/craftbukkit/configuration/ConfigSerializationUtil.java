@@ -11,7 +11,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 public final class ConfigSerializationUtil {
 
     public static String getString(Map<?, ?> map, String key, boolean nullable) {
-        return getObject(String.class, map, key, nullable);
+        return ConfigSerializationUtil.getObject(String.class, map, key, nullable);
     }
 
     public static UUID getUuid(Map<?, ?> map, String key, boolean nullable) {

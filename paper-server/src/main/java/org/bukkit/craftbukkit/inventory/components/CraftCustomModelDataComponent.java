@@ -26,7 +26,7 @@ public final class CraftCustomModelDataComponent implements CustomModelDataCompo
     }
 
     public CraftCustomModelDataComponent(Map<String, Object> map) {
-        handle = new CustomModelData(
+        this.handle = new CustomModelData(
                 SerializableMeta.getList(Float.class, map, "floats"),
                 SerializableMeta.getList(Boolean.class, map, "flags"),
                 SerializableMeta.getList(String.class, map, "strings"),
@@ -38,56 +38,56 @@ public final class CraftCustomModelDataComponent implements CustomModelDataCompo
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<>();
 
-        result.put("floats", getFloats());
-        result.put("flags", getFlags());
-        result.put("strings", getStrings());
-        result.put("colors", getColors());
+        result.put("floats", this.getFloats());
+        result.put("flags", this.getFlags());
+        result.put("strings", this.getStrings());
+        result.put("colors", this.getColors());
 
         return result;
     }
 
     public CustomModelData getHandle() {
-        return handle;
+        return this.handle;
     }
 
     @Override
     public List<Float> getFloats() {
-        return Collections.unmodifiableList(handle.floats());
+        return Collections.unmodifiableList(this.handle.floats());
     }
 
     @Override
     public void setFloats(List<Float> floats) {
-        handle = new CustomModelData(new ArrayList<>(floats), handle.flags(), handle.strings(), handle.colors());
+        this.handle = new CustomModelData(new ArrayList<>(floats), this.handle.flags(), this.handle.strings(), this.handle.colors());
     }
 
     @Override
     public List<Boolean> getFlags() {
-        return Collections.unmodifiableList(handle.flags());
+        return Collections.unmodifiableList(this.handle.flags());
     }
 
     @Override
     public void setFlags(List<Boolean> flags) {
-        handle = new CustomModelData(handle.floats(), new ArrayList<>(handle.flags()), handle.strings(), handle.colors());
+        this.handle = new CustomModelData(this.handle.floats(), new ArrayList<>(this.handle.flags()), this.handle.strings(), this.handle.colors());
     }
 
     @Override
     public List<String> getStrings() {
-        return Collections.unmodifiableList(handle.strings());
+        return Collections.unmodifiableList(this.handle.strings());
     }
 
     @Override
     public void setStrings(List<String> strings) {
-        handle = new CustomModelData(handle.floats(), handle.flags(), new ArrayList<>(handle.strings()), handle.colors());
+        this.handle = new CustomModelData(this.handle.floats(), this.handle.flags(), new ArrayList<>(this.handle.strings()), this.handle.colors());
     }
 
     @Override
     public List<Color> getColors() {
-        return getHandle().colors().stream().map(Color::fromRGB).toList();
+        return this.getHandle().colors().stream().map(Color::fromRGB).toList();
     }
 
     @Override
     public void setColors(List<Color> colors) {
-        handle = new CustomModelData(handle.floats(), handle.flags(), handle.strings(), new ArrayList<>(handle.colors()));
+        this.handle = new CustomModelData(this.handle.floats(), this.handle.flags(), this.handle.strings(), new ArrayList<>(this.handle.colors()));
     }
 
     @Override
@@ -98,7 +98,7 @@ public final class CraftCustomModelDataComponent implements CustomModelDataCompo
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (this.getClass() != obj.getClass()) {
             return false;
         }
         final CraftCustomModelDataComponent other = (CraftCustomModelDataComponent) obj;
@@ -114,6 +114,6 @@ public final class CraftCustomModelDataComponent implements CustomModelDataCompo
 
     @Override
     public String toString() {
-        return "CraftCustomModelDataComponent{" + "handle=" + handle + '}';
+        return "CraftCustomModelDataComponent{" + "handle=" + this.handle + '}';
     }
 }

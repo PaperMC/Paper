@@ -1,8 +1,7 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.entity.EntityInsentient;
-import net.minecraft.world.entity.EnumItemSlot;
+import net.minecraft.world.entity.Mob;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.Entity;
@@ -26,20 +25,20 @@ public class CraftEntityEquipment implements EntityEquipment {
     @Override
     public void setItem(EquipmentSlot slot, ItemStack item, boolean silent) {
         Preconditions.checkArgument(slot != null, "slot must not be null");
-        EnumItemSlot nmsSlot = CraftEquipmentSlot.getNMS(slot);
-        setEquipment(nmsSlot, item, silent);
+        net.minecraft.world.entity.EquipmentSlot nmsSlot = CraftEquipmentSlot.getNMS(slot);
+        this.setEquipment(nmsSlot, item, silent);
     }
 
     @Override
     public ItemStack getItem(EquipmentSlot slot) {
         Preconditions.checkArgument(slot != null, "slot must not be null");
-        EnumItemSlot nmsSlot = CraftEquipmentSlot.getNMS(slot);
-        return getEquipment(nmsSlot);
+        net.minecraft.world.entity.EquipmentSlot nmsSlot = CraftEquipmentSlot.getNMS(slot);
+        return this.getEquipment(nmsSlot);
     }
 
     @Override
     public ItemStack getItemInMainHand() {
-        return getEquipment(EnumItemSlot.MAINHAND);
+        return this.getEquipment(net.minecraft.world.entity.EquipmentSlot.MAINHAND);
     }
 
     @Override
@@ -49,12 +48,12 @@ public class CraftEntityEquipment implements EntityEquipment {
 
     @Override
     public void setItemInMainHand(ItemStack item, boolean silent) {
-        setEquipment(EnumItemSlot.MAINHAND, item, silent);
+        this.setEquipment(net.minecraft.world.entity.EquipmentSlot.MAINHAND, item, silent);
     }
 
     @Override
     public ItemStack getItemInOffHand() {
-        return getEquipment(EnumItemSlot.OFFHAND);
+        return this.getEquipment(net.minecraft.world.entity.EquipmentSlot.OFFHAND);
     }
 
     @Override
@@ -64,22 +63,22 @@ public class CraftEntityEquipment implements EntityEquipment {
 
     @Override
     public void setItemInOffHand(ItemStack item, boolean silent) {
-        setEquipment(EnumItemSlot.OFFHAND, item, silent);
+        this.setEquipment(net.minecraft.world.entity.EquipmentSlot.OFFHAND, item, silent);
     }
 
     @Override
     public ItemStack getItemInHand() {
-        return getItemInMainHand();
+        return this.getItemInMainHand();
     }
 
     @Override
     public void setItemInHand(ItemStack stack) {
-        setItemInMainHand(stack);
+        this.setItemInMainHand(stack);
     }
 
     @Override
     public ItemStack getHelmet() {
-        return getEquipment(EnumItemSlot.HEAD);
+        return this.getEquipment(net.minecraft.world.entity.EquipmentSlot.HEAD);
     }
 
     @Override
@@ -89,12 +88,12 @@ public class CraftEntityEquipment implements EntityEquipment {
 
     @Override
     public void setHelmet(ItemStack helmet, boolean silent) {
-        setEquipment(EnumItemSlot.HEAD, helmet, silent);
+        this.setEquipment(net.minecraft.world.entity.EquipmentSlot.HEAD, helmet, silent);
     }
 
     @Override
     public ItemStack getChestplate() {
-        return getEquipment(EnumItemSlot.CHEST);
+        return this.getEquipment(net.minecraft.world.entity.EquipmentSlot.CHEST);
     }
 
     @Override
@@ -104,12 +103,12 @@ public class CraftEntityEquipment implements EntityEquipment {
 
     @Override
     public void setChestplate(ItemStack chestplate, boolean silent) {
-        setEquipment(EnumItemSlot.CHEST, chestplate, silent);
+        this.setEquipment(net.minecraft.world.entity.EquipmentSlot.CHEST, chestplate, silent);
     }
 
     @Override
     public ItemStack getLeggings() {
-        return getEquipment(EnumItemSlot.LEGS);
+        return this.getEquipment(net.minecraft.world.entity.EquipmentSlot.LEGS);
     }
 
     @Override
@@ -119,12 +118,12 @@ public class CraftEntityEquipment implements EntityEquipment {
 
     @Override
     public void setLeggings(ItemStack leggings, boolean silent) {
-        setEquipment(EnumItemSlot.LEGS, leggings, silent);
+        this.setEquipment(net.minecraft.world.entity.EquipmentSlot.LEGS, leggings, silent);
     }
 
     @Override
     public ItemStack getBoots() {
-        return getEquipment(EnumItemSlot.FEET);
+        return this.getEquipment(net.minecraft.world.entity.EquipmentSlot.FEET);
     }
 
     @Override
@@ -134,137 +133,137 @@ public class CraftEntityEquipment implements EntityEquipment {
 
     @Override
     public void setBoots(ItemStack boots, boolean silent) {
-        setEquipment(EnumItemSlot.FEET, boots, silent);
+        this.setEquipment(net.minecraft.world.entity.EquipmentSlot.FEET, boots, silent);
     }
 
     @Override
     public ItemStack[] getArmorContents() {
         ItemStack[] armor = new ItemStack[]{
-                getEquipment(EnumItemSlot.FEET),
-                getEquipment(EnumItemSlot.LEGS),
-                getEquipment(EnumItemSlot.CHEST),
-                getEquipment(EnumItemSlot.HEAD),
+                this.getEquipment(net.minecraft.world.entity.EquipmentSlot.FEET),
+                this.getEquipment(net.minecraft.world.entity.EquipmentSlot.LEGS),
+                this.getEquipment(net.minecraft.world.entity.EquipmentSlot.CHEST),
+                this.getEquipment(net.minecraft.world.entity.EquipmentSlot.HEAD),
         };
         return armor;
     }
 
     @Override
     public void setArmorContents(ItemStack[] items) {
-        setEquipment(EnumItemSlot.FEET, items.length >= 1 ? items[0] : null, false);
-        setEquipment(EnumItemSlot.LEGS, items.length >= 2 ? items[1] : null, false);
-        setEquipment(EnumItemSlot.CHEST, items.length >= 3 ? items[2] : null, false);
-        setEquipment(EnumItemSlot.HEAD, items.length >= 4 ? items[3] : null, false);
+        this.setEquipment(net.minecraft.world.entity.EquipmentSlot.FEET, items.length >= 1 ? items[0] : null, false);
+        this.setEquipment(net.minecraft.world.entity.EquipmentSlot.LEGS, items.length >= 2 ? items[1] : null, false);
+        this.setEquipment(net.minecraft.world.entity.EquipmentSlot.CHEST, items.length >= 3 ? items[2] : null, false);
+        this.setEquipment(net.minecraft.world.entity.EquipmentSlot.HEAD, items.length >= 4 ? items[3] : null, false);
     }
 
-    private ItemStack getEquipment(EnumItemSlot slot) {
-        return CraftItemStack.asBukkitCopy(entity.getHandle().getItemBySlot(slot));
+    private ItemStack getEquipment(net.minecraft.world.entity.EquipmentSlot slot) {
+        return CraftItemStack.asBukkitCopy(this.entity.getHandle().getItemBySlot(slot));
     }
 
-    private void setEquipment(EnumItemSlot slot, ItemStack stack, boolean silent) {
-        entity.getHandle().setItemSlot(slot, CraftItemStack.asNMSCopy(stack), silent);
+    private void setEquipment(net.minecraft.world.entity.EquipmentSlot slot, ItemStack stack, boolean silent) {
+        this.entity.getHandle().setItemSlot(slot, CraftItemStack.asNMSCopy(stack), silent);
     }
 
     @Override
     public void clear() {
-        for (EnumItemSlot slot : EnumItemSlot.values()) {
-            setEquipment(slot, null, false);
+        for (net.minecraft.world.entity.EquipmentSlot slot : net.minecraft.world.entity.EquipmentSlot.values()) {
+            this.setEquipment(slot, null, false);
         }
     }
 
     @Override
     public Entity getHolder() {
-        return entity;
+        return this.entity;
     }
 
     @Override
     public float getItemInHandDropChance() {
-        return getItemInMainHandDropChance();
+        return this.getItemInMainHandDropChance();
     }
 
     @Override
     public void setItemInHandDropChance(float chance) {
-        setItemInMainHandDropChance(chance);
+        this.setItemInMainHandDropChance(chance);
     }
 
     @Override
     public float getItemInMainHandDropChance() {
-       return getDropChance(EnumItemSlot.MAINHAND);
+       return this.getDropChance(net.minecraft.world.entity.EquipmentSlot.MAINHAND);
     }
 
     @Override
     public void setItemInMainHandDropChance(float chance) {
-        setDropChance(EnumItemSlot.MAINHAND, chance);
+        this.setDropChance(net.minecraft.world.entity.EquipmentSlot.MAINHAND, chance);
     }
 
     @Override
     public float getItemInOffHandDropChance() {
-        return getDropChance(EnumItemSlot.OFFHAND);
+        return this.getDropChance(net.minecraft.world.entity.EquipmentSlot.OFFHAND);
     }
 
     @Override
     public void setItemInOffHandDropChance(float chance) {
-        setDropChance(EnumItemSlot.OFFHAND, chance);
+        this.setDropChance(net.minecraft.world.entity.EquipmentSlot.OFFHAND, chance);
     }
 
     @Override
     public float getHelmetDropChance() {
-        return getDropChance(EnumItemSlot.HEAD);
+        return this.getDropChance(net.minecraft.world.entity.EquipmentSlot.HEAD);
     }
 
     @Override
     public void setHelmetDropChance(float chance) {
-        setDropChance(EnumItemSlot.HEAD, chance);
+        this.setDropChance(net.minecraft.world.entity.EquipmentSlot.HEAD, chance);
     }
 
     @Override
     public float getChestplateDropChance() {
-        return getDropChance(EnumItemSlot.CHEST);
+        return this.getDropChance(net.minecraft.world.entity.EquipmentSlot.CHEST);
     }
 
     @Override
     public void setChestplateDropChance(float chance) {
-        setDropChance(EnumItemSlot.CHEST, chance);
+        this.setDropChance(net.minecraft.world.entity.EquipmentSlot.CHEST, chance);
     }
 
     @Override
     public float getLeggingsDropChance() {
-        return getDropChance(EnumItemSlot.LEGS);
+        return this.getDropChance(net.minecraft.world.entity.EquipmentSlot.LEGS);
     }
 
     @Override
     public void setLeggingsDropChance(float chance) {
-        setDropChance(EnumItemSlot.LEGS, chance);
+        this.setDropChance(net.minecraft.world.entity.EquipmentSlot.LEGS, chance);
     }
 
     @Override
     public float getBootsDropChance() {
-        return getDropChance(EnumItemSlot.FEET);
+        return this.getDropChance(net.minecraft.world.entity.EquipmentSlot.FEET);
     }
 
     @Override
     public void setBootsDropChance(float chance) {
-        setDropChance(EnumItemSlot.FEET, chance);
+        this.setDropChance(net.minecraft.world.entity.EquipmentSlot.FEET, chance);
     }
 
-    private void setDropChance(EnumItemSlot slot, float chance) {
-        Preconditions.checkArgument(entity.getHandle() instanceof EntityInsentient, "Cannot set drop chance for non-Mob entity");
+    private void setDropChance(net.minecraft.world.entity.EquipmentSlot slot, float chance) {
+        Preconditions.checkArgument(this.entity.getHandle() instanceof Mob, "Cannot set drop chance for non-Mob entity");
 
-        if (slot == EnumItemSlot.MAINHAND || slot == EnumItemSlot.OFFHAND) {
-            ((EntityInsentient) entity.getHandle()).handDropChances[slot.getIndex()] = chance;
+        if (slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND || slot == net.minecraft.world.entity.EquipmentSlot.OFFHAND) {
+            ((Mob) this.entity.getHandle()).handDropChances[slot.getIndex()] = chance;
         } else {
-            ((EntityInsentient) entity.getHandle()).armorDropChances[slot.getIndex()] = chance;
+            ((Mob) this.entity.getHandle()).armorDropChances[slot.getIndex()] = chance;
         }
     }
 
-    private float getDropChance(EnumItemSlot slot) {
-        if (!(entity.getHandle() instanceof EntityInsentient)) {
+    private float getDropChance(net.minecraft.world.entity.EquipmentSlot slot) {
+        if (!(this.entity.getHandle() instanceof Mob)) {
             return 1;
         }
 
-        if (slot == EnumItemSlot.MAINHAND || slot == EnumItemSlot.OFFHAND) {
-            return ((EntityInsentient) entity.getHandle()).handDropChances[slot.getIndex()];
+        if (slot == net.minecraft.world.entity.EquipmentSlot.MAINHAND || slot == net.minecraft.world.entity.EquipmentSlot.OFFHAND) {
+            return ((Mob) this.entity.getHandle()).handDropChances[slot.getIndex()];
         } else {
-            return ((EntityInsentient) entity.getHandle()).armorDropChances[slot.getIndex()];
+            return ((Mob) this.entity.getHandle()).armorDropChances[slot.getIndex()];
         }
     }
 }

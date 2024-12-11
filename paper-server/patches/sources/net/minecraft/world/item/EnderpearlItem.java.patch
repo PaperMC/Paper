@@ -1,0 +1,22 @@
+--- a/net/minecraft/world/item/EnderpearlItem.java
++++ b/net/minecraft/world/item/EnderpearlItem.java
+@@ -23,10 +23,17 @@
+     public InteractionResult use(Level world, Player user, InteractionHand hand) {
+         ItemStack itemstack = user.getItemInHand(hand);
+ 
+-        world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.ENDER_PEARL_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
+         if (world instanceof ServerLevel worldserver) {
+-            Projectile.spawnProjectileFromRotation(ThrownEnderpearl::new, worldserver, itemstack, user, 0.0F, EnderpearlItem.PROJECTILE_SHOOT_POWER, 1.0F);
++            // CraftBukkit start
++            if (Projectile.spawnProjectileFromRotation(ThrownEnderpearl::new, worldserver, itemstack, user, 0.0F, EnderpearlItem.PROJECTILE_SHOOT_POWER, 1.0F).isRemoved()) {
++                if (user instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++                }
++                return InteractionResult.FAIL;
++            }
+         }
++        world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.ENDER_PEARL_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
++        // CraftBukkit end
+ 
+         user.awardStat(Stats.ITEM_USED.get(this));
+         itemstack.consume(1, user);

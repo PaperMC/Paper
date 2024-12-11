@@ -7,8 +7,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
-import net.minecraft.core.IRegistryCustom;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Art;
@@ -66,19 +65,19 @@ import org.jetbrains.annotations.NotNull;
 
 public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
-    private static IRegistryCustom registry;
+    private static RegistryAccess registry;
 
-    public static void setMinecraftRegistry(IRegistryCustom registry) {
+    public static void setMinecraftRegistry(RegistryAccess registry) {
         Preconditions.checkState(CraftRegistry.registry == null, "Registry already set");
         CraftRegistry.registry = registry;
     }
 
-    public static IRegistryCustom getMinecraftRegistry() {
-        return registry;
+    public static RegistryAccess getMinecraftRegistry() {
+        return CraftRegistry.registry;
     }
 
-    public static <E> IRegistry<E> getMinecraftRegistry(ResourceKey<IRegistry<E>> key) {
-        return getMinecraftRegistry().lookupOrThrow(key);
+    public static <E> net.minecraft.core.Registry<E> getMinecraftRegistry(ResourceKey<net.minecraft.core.Registry<E>> key) {
+        return CraftRegistry.getMinecraftRegistry().lookupOrThrow(key);
     }
 
     /**
@@ -90,10 +89,10 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
      * @param bukkitRegistry the bukkit registry to use
      * @return the bukkit representation of the minecraft value
      */
-    public static <B extends Keyed, M> B minecraftToBukkit(M minecraft, ResourceKey<IRegistry<M>> registryKey, Registry<B> bukkitRegistry) {
+    public static <B extends Keyed, M> B minecraftToBukkit(M minecraft, ResourceKey<net.minecraft.core.Registry<M>> registryKey, Registry<B> bukkitRegistry) {
         Preconditions.checkArgument(minecraft != null);
 
-        IRegistry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
+        net.minecraft.core.Registry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
         B bukkit = bukkitRegistry.get(CraftNamespacedKey.fromMinecraft(registry.getResourceKey(minecraft)
                 .orElseThrow(() -> new IllegalStateException(String.format("Cannot convert '%s' to bukkit representation, since it is not registered.", minecraft))).location()));
 
@@ -115,12 +114,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return ((Handleable<M>) bukkit).getHandle();
     }
 
-    public static <B extends Keyed, M> Holder<M> bukkitToMinecraftHolder(B bukkit, ResourceKey<IRegistry<M>> registryKey) {
+    public static <B extends Keyed, M> Holder<M> bukkitToMinecraftHolder(B bukkit, ResourceKey<net.minecraft.core.Registry<M>> registryKey) {
         Preconditions.checkArgument(bukkit != null);
 
-        IRegistry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
+        net.minecraft.core.Registry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
 
-        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<M> holder) {
+        if (registry.wrapAsHolder(CraftRegistry.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<M> holder) {
             return holder;
         }
 
@@ -135,7 +134,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
      * @param registryHolder the minecraft registry holder
      * @return the bukkit registry of the provided class
      */
-    public static <B extends Keyed> Registry<?> createRegistry(Class<? super B> bukkitClass, IRegistryCustom registryHolder) {
+    public static <B extends Keyed> Registry<?> createRegistry(Class<? super B> bukkitClass, RegistryAccess registryHolder) {
         if (bukkitClass == Art.class) {
             return new CraftRegistry<>(Art.class, registryHolder.lookupOrThrow(Registries.PAINTING_VARIANT), CraftArt::new, FieldRename.NONE);
         }
@@ -237,12 +236,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
     private final Class<? super B> bukkitClass;
     private final Map<NamespacedKey, B> cache = new HashMap<>();
-    private final IRegistry<M> minecraftRegistry;
+    private final net.minecraft.core.Registry<M> minecraftRegistry;
     private final BiFunction<NamespacedKey, M, B> minecraftToBukkit;
     private final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> updater;
     private boolean init;
 
-    public CraftRegistry(Class<? super B> bukkitClass, IRegistry<M> minecraftRegistry, BiFunction<NamespacedKey, M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> updater) {
+    public CraftRegistry(Class<? super B> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, BiFunction<NamespacedKey, M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> updater) {
         this.bukkitClass = bukkitClass;
         this.minecraftRegistry = minecraftRegistry;
         this.minecraftToBukkit = minecraftToBukkit;
@@ -250,12 +249,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     }
 
     public B get(NamespacedKey namespacedKey, ApiVersion apiVersion) {
-        return get(updater.apply(namespacedKey, apiVersion));
+        return this.get(this.updater.apply(namespacedKey, apiVersion));
     }
 
     @Override
     public B get(NamespacedKey namespacedKey) {
-        B cached = cache.get(namespacedKey);
+        B cached = this.cache.get(namespacedKey);
         if (cached != null) {
             return cached;
         }
@@ -270,23 +269,23 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         // With this code (when bukkit class is not loaded):
         // Registry#get -> (load class -> create default) -> Registry#get -> get from cache
         // Result: Registry#get == <bukkitClass>.<field>
-        if (!init) {
-            init = true;
+        if (!this.init) {
+            this.init = true;
             try {
-                Class.forName(bukkitClass.getName());
+                Class.forName(this.bukkitClass.getName());
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Could not load registry class " + bukkitClass, e);
+                throw new RuntimeException("Could not load registry class " + this.bukkitClass, e);
             }
 
-            return get(namespacedKey);
+            return this.get(namespacedKey);
         }
 
-        B bukkit = createBukkit(namespacedKey, minecraftRegistry.getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElse(null));
+        B bukkit = this.createBukkit(namespacedKey, this.minecraftRegistry.getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElse(null));
         if (bukkit == null) {
             return null;
         }
 
-        cache.put(namespacedKey, bukkit);
+        this.cache.put(namespacedKey, bukkit);
 
         return bukkit;
     }
@@ -294,9 +293,9 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     @NotNull
     @Override
     public B getOrThrow(@NotNull NamespacedKey namespacedKey) {
-        B object = get(namespacedKey);
+        B object = this.get(namespacedKey);
 
-        Preconditions.checkArgument(object != null, "No %s registry entry found for key %s.", minecraftRegistry.key(), namespacedKey);
+        Preconditions.checkArgument(object != null, "No %s registry entry found for key %s.", this.minecraftRegistry.key(), namespacedKey);
 
         return object;
     }
@@ -304,12 +303,12 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     @NotNull
     @Override
     public Stream<B> stream() {
-        return minecraftRegistry.keySet().stream().map(minecraftKey -> get(CraftNamespacedKey.fromMinecraft(minecraftKey)));
+        return this.minecraftRegistry.keySet().stream().map(minecraftKey -> this.get(CraftNamespacedKey.fromMinecraft(minecraftKey)));
     }
 
     @Override
     public Iterator<B> iterator() {
-        return stream().iterator();
+        return this.stream().iterator();
     }
 
     public B createBukkit(NamespacedKey namespacedKey, M minecraft) {
@@ -317,6 +316,6 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
             return null;
         }
 
-        return minecraftToBukkit.apply(namespacedKey, minecraft);
+        return this.minecraftToBukkit.apply(namespacedKey, minecraft);
     }
 }

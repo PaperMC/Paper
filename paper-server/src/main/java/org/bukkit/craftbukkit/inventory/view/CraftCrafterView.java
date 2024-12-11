@@ -15,18 +15,18 @@ public class CraftCrafterView extends CraftInventoryView<CrafterMenu, CrafterInv
 
     @Override
     public boolean isSlotDisabled(final int slot) {
-        return container.isSlotDisabled(slot);
+        return this.container.isSlotDisabled(slot);
     }
 
     @Override
     public boolean isPowered() {
-        return container.isPowered();
+        return this.container.isPowered();
     }
 
     @Override
     public void setSlotDisabled(final int slot, final boolean disabled) {
         Preconditions.checkArgument(slot >= 0 && slot < 9, "Invalid slot index %s for Crafter", slot);
 
-        container.setSlotState(slot, !disabled);
+        this.container.setSlotState(slot, !disabled);
     }
 }

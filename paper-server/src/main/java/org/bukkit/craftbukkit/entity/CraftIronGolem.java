@@ -1,17 +1,16 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.animal.EntityIronGolem;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.IronGolem;
 
 public class CraftIronGolem extends CraftGolem implements IronGolem {
-    public CraftIronGolem(CraftServer server, EntityIronGolem entity) {
+    public CraftIronGolem(CraftServer server, net.minecraft.world.entity.animal.IronGolem entity) {
         super(server, entity);
     }
 
     @Override
-    public EntityIronGolem getHandle() {
-        return (EntityIronGolem) entity;
+    public net.minecraft.world.entity.animal.IronGolem getHandle() {
+        return (net.minecraft.world.entity.animal.IronGolem) this.entity;
     }
 
     @Override
@@ -21,11 +20,11 @@ public class CraftIronGolem extends CraftGolem implements IronGolem {
 
     @Override
     public boolean isPlayerCreated() {
-        return getHandle().isPlayerCreated();
+        return this.getHandle().isPlayerCreated();
     }
 
     @Override
     public void setPlayerCreated(boolean playerCreated) {
-        getHandle().setPlayerCreated(playerCreated);
+        this.getHandle().setPlayerCreated(playerCreated);
     }
 }

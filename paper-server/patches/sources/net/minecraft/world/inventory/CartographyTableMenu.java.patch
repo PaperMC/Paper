@@ -1,0 +1,129 @@
+--- a/net/minecraft/world/inventory/CartographyTableMenu.java
++++ b/net/minecraft/world/inventory/CartographyTableMenu.java
+@@ -6,16 +6,36 @@
+ import net.minecraft.world.Container;
+ import net.minecraft.world.SimpleContainer;
+ import net.minecraft.world.entity.player.Inventory;
+-import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.item.MapItem;
+ import net.minecraft.world.item.component.MapPostProcessing;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
++// CraftBukkit start
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.inventory.CraftInventoryCartography;
++import org.bukkit.craftbukkit.inventory.CraftInventoryView;
++import org.bukkit.entity.Player;
++// CraftBukkit end
+ 
+ public class CartographyTableMenu extends AbstractContainerMenu {
+ 
++    // CraftBukkit start
++    private CraftInventoryView bukkitEntity = null;
++    private Player player;
++
++    @Override
++    public CraftInventoryView getBukkitView() {
++        if (this.bukkitEntity != null) {
++            return this.bukkitEntity;
++        }
++
++        CraftInventoryCartography inventory = new CraftInventoryCartography(this.container, this.resultContainer);
++        this.bukkitEntity = new CraftInventoryView(this.player, inventory, this);
++        return this.bukkitEntity;
++    }
++    // CraftBukkit end
+     public static final int MAP_SLOT = 0;
+     public static final int ADDITIONAL_SLOT = 1;
+     public static final int RESULT_SLOT = 2;
+@@ -40,6 +60,13 @@
+                 CartographyTableMenu.this.slotsChanged(this);
+                 super.setChanged();
+             }
++
++            // CraftBukkit start
++            @Override
++            public Location getLocation() {
++                return context.getLocation();
++            }
++            // CraftBukkit end
+         };
+         this.resultContainer = new ResultContainer() {
+             @Override
+@@ -47,15 +74,22 @@
+                 CartographyTableMenu.this.slotsChanged(this);
+                 super.setChanged();
+             }
++
++            // CraftBukkit start
++            @Override
++            public Location getLocation() {
++                return context.getLocation();
++            }
++            // CraftBukkit end
+         };
+         this.access = context;
+-        this.addSlot(new Slot(this, this.container, 0, 15, 15) {
++        this.addSlot(new Slot(this.container, 0, 15, 15) { // CraftBukkit - decompile error
+             @Override
+             public boolean mayPlace(ItemStack stack) {
+                 return stack.has(DataComponents.MAP_ID);
+             }
+         });
+-        this.addSlot(new Slot(this, this.container, 1, 15, 52) {
++        this.addSlot(new Slot(this.container, 1, 15, 52) { // CraftBukkit - decompile error
+             @Override
+             public boolean mayPlace(ItemStack stack) {
+                 return stack.is(Items.PAPER) || stack.is(Items.MAP) || stack.is(Items.GLASS_PANE);
+@@ -68,7 +102,7 @@
+             }
+ 
+             @Override
+-            public void onTake(Player player, ItemStack stack) {
++            public void onTake(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+                 ((Slot) CartographyTableMenu.this.slots.get(0)).remove(1);
+                 ((Slot) CartographyTableMenu.this.slots.get(1)).remove(1);
+                 stack.getItem().onCraftedBy(stack, player.level(), player);
+@@ -76,7 +110,7 @@
+                     long j = world.getGameTime();
+ 
+                     if (CartographyTableMenu.this.lastSoundTime != j) {
+-                        world.playSound((Player) null, blockposition, SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, SoundSource.BLOCKS, 1.0F, 1.0F);
++                        world.playSound((net.minecraft.world.entity.player.Player) null, blockposition, SoundEvents.UI_CARTOGRAPHY_TABLE_TAKE_RESULT, SoundSource.BLOCKS, 1.0F, 1.0F);
+                         CartographyTableMenu.this.lastSoundTime = j;
+                     }
+ 
+@@ -85,10 +119,12 @@
+             }
+         });
+         this.addStandardInventorySlots(inventory, 8, 84);
++        this.player = (Player) inventory.player.getBukkitEntity(); // CraftBukkit
+     }
+ 
+     @Override
+-    public boolean stillValid(Player player) {
++    public boolean stillValid(net.minecraft.world.entity.player.Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return stillValid(this.access, player, Blocks.CARTOGRAPHY_TABLE);
+     }
+ 
+@@ -147,7 +183,7 @@
+     }
+ 
+     @Override
+-    public ItemStack quickMoveStack(Player player, int slot) {
++    public ItemStack quickMoveStack(net.minecraft.world.entity.player.Player player, int slot) {
+         ItemStack itemstack = ItemStack.EMPTY;
+         Slot slot1 = (Slot) this.slots.get(slot);
+ 
+@@ -199,7 +235,7 @@
+     }
+ 
+     @Override
+-    public void removed(Player player) {
++    public void removed(net.minecraft.world.entity.player.Player player) {
+         super.removed(player);
+         this.resultContainer.removeItemNoUpdate(2);
+         this.access.execute((world, blockposition) -> {

@@ -19,6 +19,6 @@ public final class DeprecatedItemAdapterContext implements ItemTagAdapterContext
      */
     @Override
     public CustomItemTagContainer newTagContainer() {
-        return new DeprecatedCustomTagContainer(context.newPersistentDataContainer());
+        return new DeprecatedCustomTagContainer(this.context.newPersistentDataContainer());
     }
 }

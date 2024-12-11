@@ -36,7 +36,7 @@ public class RerouteValidationTest {
                     continue;
                 }
 
-                String error = isValid(entry.getKey(), entry.getValue());
+                String error = this.isValid(entry.getKey(), entry.getValue());
 
                 if (error != null) {
                     wrongReroutes.put(entry.getKey(), error);
@@ -56,13 +56,13 @@ public class RerouteValidationTest {
 
     private String isValid(String key, RerouteMethodData rerouteMethodData) {
         try {
-            Class<?> clazz = toClass(rerouteMethodData.sourceOwner());
-            Class<?> returnClazz = toClass(rerouteMethodData.sourceDesc().getReturnType());
+            Class<?> clazz = this.toClass(rerouteMethodData.sourceOwner());
+            Class<?> returnClazz = this.toClass(rerouteMethodData.sourceDesc().getReturnType());
             Class<?>[] paras = new Class[rerouteMethodData.sourceDesc().getArgumentCount()];
             Type[] paraTypes = rerouteMethodData.sourceDesc().getArgumentTypes();
 
             for (int i = 0; i < paraTypes.length; i++) {
-                paras[i] = toClass(paraTypes[i]);
+                paras[i] = this.toClass(paraTypes[i]);
             }
 
             Method method = clazz.getDeclaredMethod(rerouteMethodData.sourceName(), paras);
@@ -93,9 +93,9 @@ public class RerouteValidationTest {
 
     private Class<?> toClass(Type type) throws ClassNotFoundException {
         if (type.getSort() == Type.OBJECT) {
-            return Class.forName(type.getClassName(), false, getClass().getClassLoader());
+            return Class.forName(type.getClassName(), false, this.getClass().getClassLoader());
         } else if (type.getSort() == Type.ARRAY) {
-            return Class.forName(type.getDescriptor().replace('/', '.'), false, getClass().getClassLoader());
+            return Class.forName(type.getDescriptor().replace('/', '.'), false, this.getClass().getClassLoader());
         } else {
             return switch (type.getSort()) {
                 case Type.VOID -> void.class;

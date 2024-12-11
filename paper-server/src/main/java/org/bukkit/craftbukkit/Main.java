@@ -23,117 +23,117 @@ public class Main {
         // Todo: Installation script
         OptionParser parser = new OptionParser() {
             {
-                acceptsAll(asList("?", "help"), "Show the help");
+                this.acceptsAll(Main.asList("?", "help"), "Show the help");
 
-                acceptsAll(asList("c", "config"), "Properties file to use")
+                this.acceptsAll(Main.asList("c", "config"), "Properties file to use")
                         .withRequiredArg()
                         .ofType(File.class)
                         .defaultsTo(new File("server.properties"))
                         .describedAs("Properties file");
 
-                acceptsAll(asList("P", "plugins"), "Plugin directory to use")
+                this.acceptsAll(Main.asList("P", "plugins"), "Plugin directory to use")
                         .withRequiredArg()
                         .ofType(File.class)
                         .defaultsTo(new File("plugins"))
                         .describedAs("Plugin directory");
 
-                acceptsAll(asList("h", "host", "server-ip"), "Host to listen on")
+                this.acceptsAll(Main.asList("h", "host", "server-ip"), "Host to listen on")
                         .withRequiredArg()
                         .ofType(String.class)
                         .describedAs("Hostname or IP");
 
-                acceptsAll(asList("W", "world-dir", "universe", "world-container"), "World container")
+                this.acceptsAll(Main.asList("W", "world-dir", "universe", "world-container"), "World container")
                         .withRequiredArg()
                         .ofType(File.class)
                         .defaultsTo(new File("."))
                         .describedAs("Directory containing worlds");
 
-                acceptsAll(asList("w", "world", "level-name"), "World name")
+                this.acceptsAll(Main.asList("w", "world", "level-name"), "World name")
                         .withRequiredArg()
                         .ofType(String.class)
                         .describedAs("World name");
 
-                acceptsAll(asList("p", "port", "server-port"), "Port to listen on")
+                this.acceptsAll(Main.asList("p", "port", "server-port"), "Port to listen on")
                         .withRequiredArg()
                         .ofType(Integer.class)
                         .describedAs("Port");
 
-                accepts("serverId", "Server ID")
+                this.accepts("serverId", "Server ID")
                         .withRequiredArg();
 
-                accepts("jfrProfile", "Enable JFR profiling");
+                this.accepts("jfrProfile", "Enable JFR profiling");
 
-                accepts("pidFile", "pid File")
+                this.accepts("pidFile", "pid File")
                         .withRequiredArg()
                         .withValuesConvertedBy(new PathConverter());
 
-                acceptsAll(asList("o", "online-mode"), "Whether to use online authentication")
+                this.acceptsAll(Main.asList("o", "online-mode"), "Whether to use online authentication")
                         .withRequiredArg()
                         .ofType(Boolean.class)
                         .describedAs("Authentication");
 
-                acceptsAll(asList("s", "size", "max-players"), "Maximum amount of players")
+                this.acceptsAll(Main.asList("s", "size", "max-players"), "Maximum amount of players")
                         .withRequiredArg()
                         .ofType(Integer.class)
                         .describedAs("Server size");
 
-                acceptsAll(asList("d", "date-format"), "Format of the date to display in the console (for log entries)")
+                this.acceptsAll(Main.asList("d", "date-format"), "Format of the date to display in the console (for log entries)")
                         .withRequiredArg()
                         .ofType(SimpleDateFormat.class)
                         .describedAs("Log date format");
 
-                acceptsAll(asList("log-pattern"), "Specfies the log filename pattern")
+                this.acceptsAll(Main.asList("log-pattern"), "Specfies the log filename pattern")
                         .withRequiredArg()
                         .ofType(String.class)
                         .defaultsTo("server.log")
                         .describedAs("Log filename");
 
-                acceptsAll(asList("log-limit"), "Limits the maximum size of the log file (0 = unlimited)")
+                this.acceptsAll(Main.asList("log-limit"), "Limits the maximum size of the log file (0 = unlimited)")
                         .withRequiredArg()
                         .ofType(Integer.class)
                         .defaultsTo(0)
                         .describedAs("Max log size");
 
-                acceptsAll(asList("log-count"), "Specified how many log files to cycle through")
+                this.acceptsAll(Main.asList("log-count"), "Specified how many log files to cycle through")
                         .withRequiredArg()
                         .ofType(Integer.class)
                         .defaultsTo(1)
                         .describedAs("Log count");
 
-                acceptsAll(asList("log-append"), "Whether to append to the log file")
+                this.acceptsAll(Main.asList("log-append"), "Whether to append to the log file")
                         .withRequiredArg()
                         .ofType(Boolean.class)
                         .defaultsTo(true)
                         .describedAs("Log append");
 
-                acceptsAll(asList("log-strip-color"), "Strips color codes from log file");
+                this.acceptsAll(Main.asList("log-strip-color"), "Strips color codes from log file");
 
-                acceptsAll(asList("b", "bukkit-settings"), "File for bukkit settings")
+                this.acceptsAll(Main.asList("b", "bukkit-settings"), "File for bukkit settings")
                         .withRequiredArg()
                         .ofType(File.class)
                         .defaultsTo(new File("bukkit.yml"))
                         .describedAs("Yml file");
 
-                acceptsAll(asList("C", "commands-settings"), "File for command settings")
+                this.acceptsAll(Main.asList("C", "commands-settings"), "File for command settings")
                         .withRequiredArg()
                         .ofType(File.class)
                         .defaultsTo(new File("commands.yml"))
                         .describedAs("Yml file");
 
-                acceptsAll(asList("forceUpgrade"), "Whether to force a world upgrade");
-                acceptsAll(asList("eraseCache"), "Whether to force cache erase during world upgrade");
-                acceptsAll(asList("recreateRegionFiles"), "Whether to recreate region files during world upgrade");
-                acceptsAll(asList("nogui"), "Disables the graphical console");
+                this.acceptsAll(Main.asList("forceUpgrade"), "Whether to force a world upgrade");
+                this.acceptsAll(Main.asList("eraseCache"), "Whether to force cache erase during world upgrade");
+                this.acceptsAll(Main.asList("recreateRegionFiles"), "Whether to recreate region files during world upgrade");
+                this.acceptsAll(Main.asList("nogui"), "Disables the graphical console");
 
-                acceptsAll(asList("nojline"), "Disables jline and emulates the vanilla console");
+                this.acceptsAll(Main.asList("nojline"), "Disables jline and emulates the vanilla console");
 
-                acceptsAll(asList("noconsole"), "Disables the console");
+                this.acceptsAll(Main.asList("noconsole"), "Disables the console");
 
-                acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
+                this.acceptsAll(Main.asList("v", "version"), "Show the CraftBukkit Version");
 
-                acceptsAll(asList("demo"), "Demo mode");
+                this.acceptsAll(Main.asList("demo"), "Demo mode");
 
-                acceptsAll(asList("initSettings"), "Only create configuration files and then exit"); // SPIGOT-5761: Add initSettings option
+                this.acceptsAll(Main.asList("initSettings"), "Only create configuration files and then exit"); // SPIGOT-5761: Add initSettings option
             }
         };
 
@@ -172,14 +172,14 @@ public class Main {
                 String jline_UnsupportedTerminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 'U', 'n', 's', 'u', 'p', 'p', 'o', 'r', 't', 'e', 'd', 'T', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
                 String jline_terminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 't', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
 
-                useJline = !(jline_UnsupportedTerminal).equals(System.getProperty(jline_terminal));
+                Main.useJline = !(jline_UnsupportedTerminal).equals(System.getProperty(jline_terminal));
 
                 if (options.has("nojline")) {
                     System.setProperty("user.language", "en");
-                    useJline = false;
+                    Main.useJline = false;
                 }
 
-                if (useJline) {
+                if (Main.useJline) {
                     AnsiConsole.systemInstall();
                 } else {
                     // This ensures the terminal literal will always match the jline implementation
@@ -187,7 +187,7 @@ public class Main {
                 }
 
                 if (options.has("noconsole")) {
-                    useConsole = false;
+                    Main.useConsole = false;
                 }
 
                 if (Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) {

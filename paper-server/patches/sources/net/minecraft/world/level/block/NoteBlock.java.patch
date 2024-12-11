@@ -1,0 +1,23 @@
+--- a/net/minecraft/world/level/block/NoteBlock.java
++++ b/net/minecraft/world/level/block/NoteBlock.java
+@@ -85,6 +85,7 @@
+         if (flag1 != (Boolean) state.getValue(NoteBlock.POWERED)) {
+             if (flag1) {
+                 this.playNote((Entity) null, state, world, pos);
++                state = world.getBlockState(pos); // CraftBukkit - SPIGOT-5617: update in case changed in event
+             }
+ 
+             world.setBlock(pos, (BlockState) state.setValue(NoteBlock.POWERED, flag1), 3);
+@@ -94,6 +95,12 @@
+ 
+     private void playNote(@Nullable Entity entity, BlockState state, Level world, BlockPos pos) {
+         if (((NoteBlockInstrument) state.getValue(NoteBlock.INSTRUMENT)).worksAboveNoteBlock() || world.getBlockState(pos.above()).isAir()) {
++            // CraftBukkit start
++            org.bukkit.event.block.NotePlayEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callNotePlayEvent(world, pos, state.getValue(NoteBlock.INSTRUMENT), state.getValue(NoteBlock.NOTE));
++            if (event.isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
+             world.blockEvent(pos, this, 0, 0);
+             world.gameEvent(entity, (Holder) GameEvent.NOTE_BLOCK_PLAY, pos);
+         }

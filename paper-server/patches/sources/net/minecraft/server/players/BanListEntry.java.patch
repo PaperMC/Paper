@@ -1,0 +1,34 @@
+--- a/net/minecraft/server/players/BanListEntry.java
++++ b/net/minecraft/server/players/BanListEntry.java
+@@ -27,7 +27,7 @@
+     }
+ 
+     protected BanListEntry(@Nullable T key, JsonObject json) {
+-        super(key);
++        super(BanListEntry.checkExpiry(key, json)); // CraftBukkit
+ 
+         Date date;
+ 
+@@ -83,4 +83,22 @@
+         json.addProperty("expires", this.expires == null ? "forever" : BanListEntry.DATE_FORMAT.format(this.expires));
+         json.addProperty("reason", this.reason);
+     }
++
++    // CraftBukkit start
++    private static <T> T checkExpiry(T object, JsonObject jsonobject) {
++        Date expires = null;
++
++        try {
++            expires = jsonobject.has("expires") ? BanListEntry.DATE_FORMAT.parse(jsonobject.get("expires").getAsString()) : null;
++        } catch (ParseException ex) {
++            // Guess we don't have a date
++        }
++
++        if (expires == null || expires.after(new Date())) {
++            return object;
++        } else {
++            return null;
++        }
++    }
++    // CraftBukkit end
+ }

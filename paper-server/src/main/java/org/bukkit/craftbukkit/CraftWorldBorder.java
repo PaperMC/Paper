@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
 import java.util.concurrent.TimeUnit;
-import net.minecraft.core.BlockPosition;
+import net.minecraft.core.BlockPos;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldBorder;
@@ -24,7 +24,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public World getWorld() {
-        return world;
+        return this.world;
     }
 
     @Override
@@ -44,7 +44,7 @@ public class CraftWorldBorder implements WorldBorder {
 
     @Override
     public void setSize(double newSize, long time) {
-        setSize(Math.min(getMaxSize(), Math.max(1.0D, newSize)), TimeUnit.SECONDS, Math.min(9223372036854775L, Math.max(0L, time)));
+        this.setSize(Math.min(this.getMaxSize(), Math.max(1.0D, newSize)), TimeUnit.SECONDS, Math.min(9223372036854775L, Math.max(0L, time)));
     }
 
     @Override
@@ -125,7 +125,7 @@ public class CraftWorldBorder implements WorldBorder {
     public boolean isInside(Location location) {
         Preconditions.checkArgument(location != null, "location cannot be null");
 
-        return (world == null || location.getWorld().equals(this.world)) && this.handle.isWithinBounds(BlockPosition.containing(location.getX(), location.getY(), location.getZ()));
+        return (this.world == null || location.getWorld().equals(this.world)) && this.handle.isWithinBounds(BlockPos.containing(location.getX(), location.getY(), location.getZ()));
     }
 
     @Override
@@ -139,10 +139,10 @@ public class CraftWorldBorder implements WorldBorder {
     }
 
     public net.minecraft.world.level.border.WorldBorder getHandle() {
-        return handle;
+        return this.handle;
     }
 
     public boolean isVirtual() {
-        return world == null;
+        return this.world == null;
     }
 }

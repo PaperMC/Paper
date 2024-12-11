@@ -1,0 +1,63 @@
+--- a/net/minecraft/world/entity/ai/behavior/HarvestFarmland.java
++++ b/net/minecraft/world/entity/ai/behavior/HarvestFarmland.java
+@@ -22,10 +22,15 @@
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.GameRules;
+ import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.gameevent.GameEvent;
++
++// CraftBukkit start
++import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.CropBlock;
+ import net.minecraft.world.level.block.FarmBlock;
+ import net.minecraft.world.level.block.state.BlockState;
+-import net.minecraft.world.level.gameevent.GameEvent;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit end
+ 
+ public class HarvestFarmland extends Behavior<Villager> {
+ 
+@@ -82,8 +87,8 @@
+ 
+     protected void start(ServerLevel worldserver, Villager entityvillager, long i) {
+         if (i > this.nextOkStartTime && this.aboveFarmlandPos != null) {
+-            entityvillager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BlockPosTracker(this.aboveFarmlandPos)));
+-            entityvillager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, (Object) (new WalkTarget(new BlockPosTracker(this.aboveFarmlandPos), 0.5F, 1)));
++            entityvillager.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (new BlockPosTracker(this.aboveFarmlandPos))); // CraftBukkit - decompile error
++            entityvillager.getBrain().setMemory(MemoryModuleType.WALK_TARGET, (new WalkTarget(new BlockPosTracker(this.aboveFarmlandPos), 0.5F, 1))); // CraftBukkit - decompile error
+         }
+ 
+     }
+@@ -103,7 +108,9 @@
+                 Block block1 = world.getBlockState(this.aboveFarmlandPos.below()).getBlock();
+ 
+                 if (block instanceof CropBlock && ((CropBlock) block).isMaxAge(iblockdata)) {
++                    if (CraftEventFactory.callEntityChangeBlockEvent(entity, this.aboveFarmlandPos, Blocks.AIR.defaultBlockState())) { // CraftBukkit
+                     world.destroyBlock(this.aboveFarmlandPos, true, entity);
++                    } // CraftBukkit
+                 }
+ 
+                 if (iblockdata.isAir() && block1 instanceof FarmBlock && entity.hasFarmSeeds()) {
+@@ -120,9 +127,11 @@
+                                 BlockItem itemblock = (BlockItem) item;
+                                 BlockState iblockdata1 = itemblock.getBlock().defaultBlockState();
+ 
++                                if (CraftEventFactory.callEntityChangeBlockEvent(entity, this.aboveFarmlandPos, iblockdata1)) { // CraftBukkit
+                                 world.setBlockAndUpdate(this.aboveFarmlandPos, iblockdata1);
+                                 world.gameEvent((Holder) GameEvent.BLOCK_PLACE, this.aboveFarmlandPos, GameEvent.Context.of(entity, iblockdata1));
+                                 flag = true;
++                                } // CraftBukkit
+                             }
+                         }
+ 
+@@ -142,8 +151,8 @@
+                     this.aboveFarmlandPos = this.getValidFarmland(world);
+                     if (this.aboveFarmlandPos != null) {
+                         this.nextOkStartTime = time + 20L;
+-                        entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET, (Object) (new WalkTarget(new BlockPosTracker(this.aboveFarmlandPos), 0.5F, 1)));
+-                        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new BlockPosTracker(this.aboveFarmlandPos)));
++                        entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET, (new WalkTarget(new BlockPosTracker(this.aboveFarmlandPos), 0.5F, 1))); // CraftBukkit - decompile error
++                        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (new BlockPosTracker(this.aboveFarmlandPos))); // CraftBukkit - decompile error
+                     }
+                 }
+             }

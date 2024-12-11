@@ -5,15 +5,15 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftCaveVinesPlant extends CraftBlockData implements CaveVinesPlant {
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean BERRIES = getBoolean("berries");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty BERRIES = getBoolean("berries");
 
     @Override
     public boolean isBerries() {
-        return get(BERRIES);
+        return this.get(CraftCaveVinesPlant.BERRIES);
     }
 
     @Override
     public void setBerries(boolean berries) {
-        set(BERRIES, berries);
+        this.set(CraftCaveVinesPlant.BERRIES, berries);
     }
 }

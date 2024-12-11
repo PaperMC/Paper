@@ -12,10 +12,10 @@ public class ServerShutdownThread extends Thread {
     @Override
     public void run() {
         try {
-            server.close();
+            this.server.close();
         } finally {
             try {
-                server.reader.getTerminal().restore();
+                this.server.reader.getTerminal().restore();
             } catch (Exception e) {
             }
         }

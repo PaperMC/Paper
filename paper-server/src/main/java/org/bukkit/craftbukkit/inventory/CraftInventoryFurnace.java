@@ -1,47 +1,47 @@
 package org.bukkit.craftbukkit.inventory;
 
-import net.minecraft.world.level.block.entity.TileEntityFurnace;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import org.bukkit.block.Furnace;
 import org.bukkit.inventory.FurnaceInventory;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftInventoryFurnace extends CraftInventory implements FurnaceInventory {
-    public CraftInventoryFurnace(TileEntityFurnace inventory) {
+    public CraftInventoryFurnace(AbstractFurnaceBlockEntity inventory) {
         super(inventory);
     }
 
     @Override
     public ItemStack getResult() {
-        return getItem(2);
+        return this.getItem(2);
     }
 
     @Override
     public ItemStack getFuel() {
-        return getItem(1);
+        return this.getItem(1);
     }
 
     @Override
     public ItemStack getSmelting() {
-        return getItem(0);
+        return this.getItem(0);
     }
 
     @Override
     public void setFuel(ItemStack stack) {
-        setItem(1, stack);
+        this.setItem(1, stack);
     }
 
     @Override
     public void setResult(ItemStack stack) {
-        setItem(2, stack);
+        this.setItem(2, stack);
     }
 
     @Override
     public void setSmelting(ItemStack stack) {
-        setItem(0, stack);
+        this.setItem(0, stack);
     }
 
     @Override
     public Furnace getHolder() {
-        return (Furnace) inventory.getOwner();
+        return (Furnace) this.inventory.getOwner();
     }
 }

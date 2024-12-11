@@ -1,0 +1,31 @@
+--- a/net/minecraft/world/level/BaseSpawner.java
++++ b/net/minecraft/world/level/BaseSpawner.java
+@@ -54,6 +54,7 @@
+ 
+     public void setEntityId(EntityType<?> type, @Nullable Level world, RandomSource random, BlockPos pos) {
+         this.getOrCreateNextSpawnData(world, random, pos).getEntityToSpawn().putString("id", BuiltInRegistries.ENTITY_TYPE.getKey(type).toString());
++        this.spawnPotentials = SimpleWeightedRandomList.empty(); // CraftBukkit - SPIGOT-3496, MC-92282
+     }
+ 
+     public boolean isNearPlayer(Level world, BlockPos pos) {
+@@ -157,13 +158,18 @@
+                                 ((Mob) entity).finalizeSpawn(world, world.getCurrentDifficultyAt(entity.blockPosition()), EntitySpawnReason.SPAWNER, (SpawnGroupData) null);
+                             }
+ 
+-                            Optional optional1 = mobspawnerdata.getEquipment();
++                            Optional<net.minecraft.world.entity.EquipmentTable> optional1 = mobspawnerdata.getEquipment(); // CraftBukkit - decompile error
+ 
+                             Objects.requireNonNull(entityinsentient);
+                             optional1.ifPresent(entityinsentient::equip);
+                         }
+ 
+-                        if (!world.tryAddFreshEntityWithPassengers(entity)) {
++                        // CraftBukkit start
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callSpawnerSpawnEvent(entity, pos).isCancelled()) {
++                            continue;
++                        }
++                        if (!world.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER)) {
++                            // CraftBukkit end
+                             this.delay(world, pos);
+                             return;
+                         }

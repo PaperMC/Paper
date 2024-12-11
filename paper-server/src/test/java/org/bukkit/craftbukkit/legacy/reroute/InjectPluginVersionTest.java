@@ -13,8 +13,8 @@ public class InjectPluginVersionTest extends AbstractRerouteTest {
 
     @Test
     public void testInjectPluginVersion() {
-        test(InjectPluginVersionTestData.class, Map.of(
-                        "()Ljava/util/List;getList", create(
+        this.test(InjectPluginVersionTestData.class, Map.of(
+                        "()Ljava/util/List;getList", this.create(
                                 "()Ljava/util/List;getList",
                                 "()Ljava/util/List;",
                                 "java/lang/Object",
@@ -23,9 +23,9 @@ public class InjectPluginVersionTest extends AbstractRerouteTest {
                                 "(Ljava/lang/Object;Lorg/bukkit/craftbukkit/util/ApiVersion;)Ljava/util/List;",
                                 "org/bukkit/craftbukkit/legacy/reroute/InjectPluginVersionTest$InjectPluginVersionTestData",
                                 "getList",
-                                create(
-                                        create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null),
-                                        create("Lorg/bukkit/craftbukkit/util/ApiVersion;", "Lorg/bukkit/craftbukkit/util/ApiVersion;", false, true, null)
+                                this.create(
+                                        this.create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null),
+                                        this.create("Lorg/bukkit/craftbukkit/util/ApiVersion;", "Lorg/bukkit/craftbukkit/util/ApiVersion;", false, true, null)
                                 ),
                                 "Ljava/util/List;",
                                 true,

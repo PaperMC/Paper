@@ -10,7 +10,7 @@ public class HeightMapTest {
 
     @Test
     public void heightMapConversionFromNMSToBukkitShouldNotThrowExceptio() {
-        for (net.minecraft.world.level.levelgen.HeightMap.Type nmsHeightMapType : net.minecraft.world.level.levelgen.HeightMap.Type.values()) {
+        for (net.minecraft.world.level.levelgen.Heightmap.Types nmsHeightMapType : net.minecraft.world.level.levelgen.Heightmap.Types.values()) {
             assertNotNull(CraftHeightMap.fromNMS(nmsHeightMapType), "fromNMS");
         }
     }

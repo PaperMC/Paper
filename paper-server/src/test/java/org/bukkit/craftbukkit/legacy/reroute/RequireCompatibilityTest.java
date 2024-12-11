@@ -11,8 +11,8 @@ public class RequireCompatibilityTest extends AbstractRerouteTest {
 
     @Test
     public void testRequireCompatibility() {
-        test(RequireCompatibilityTestData.class, Map.of(
-                        "()Ljava/util/List;getList", create(
+        this.test(RequireCompatibilityTestData.class, Map.of(
+                        "()Ljava/util/List;getList", this.create(
                                 "()Ljava/util/List;getList",
                                 "()Ljava/util/List;",
                                 "java/lang/Object",
@@ -21,8 +21,8 @@ public class RequireCompatibilityTest extends AbstractRerouteTest {
                                 "(Ljava/lang/Object;)Ljava/util/List;",
                                 "org/bukkit/craftbukkit/legacy/reroute/RequireCompatibilityTest$RequireCompatibilityTestData",
                                 "getList",
-                                create(
-                                        create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null)
+                                this.create(
+                                        this.create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null)
                                 ),
                                 "Ljava/util/List;",
                                 true,
@@ -34,7 +34,7 @@ public class RequireCompatibilityTest extends AbstractRerouteTest {
 
     @Test
     public void testRequireCompatibilityNotPresent() {
-        test(RequireCompatibilityTestData.class, Predicates.alwaysFalse(), Map.of());
+        this.test(RequireCompatibilityTestData.class, Predicates.alwaysFalse(), Map.of());
     }
 
     public static class RequireCompatibilityTestData {

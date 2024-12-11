@@ -27,13 +27,13 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
 
     @Override
     public net.minecraft.world.level.gameevent.GameEvent getHandle() {
-        return handle;
+        return this.handle;
     }
 
     @NotNull
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 
     @Override
@@ -46,16 +46,16 @@ public class CraftGameEvent extends GameEvent implements Handleable<net.minecraf
             return false;
         }
 
-        return getKey().equals(((GameEvent) other).getKey());
+        return this.getKey().equals(((GameEvent) other).getKey());
     }
 
     @Override
     public int hashCode() {
-        return getKey().hashCode();
+        return this.getKey().hashCode();
     }
 
     @Override
     public String toString() {
-        return "CraftGameEvent{key=" + key + "}";
+        return "CraftGameEvent{key=" + this.key + "}";
     }
 }

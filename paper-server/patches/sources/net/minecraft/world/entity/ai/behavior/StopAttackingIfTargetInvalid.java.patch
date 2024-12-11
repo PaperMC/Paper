@@ -1,0 +1,33 @@
+--- a/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
++++ b/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
+@@ -7,6 +7,12 @@
+ import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
+ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityTargetEvent;
++// CraftBukkit end
++
+ public class StopAttackingIfTargetInvalid {
+ 
+     private static final int TIMEOUT_TO_GET_WITHIN_ATTACK_RANGE = 200;
+@@ -40,6 +46,17 @@
+                     if (entityinsentient.canAttack(entityliving) && (!shouldForgetIfTargetUnreachable || !StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(entityinsentient, behaviorbuilder_b.tryGet(memoryaccessor1))) && entityliving.isAlive() && entityliving.level() == entityinsentient.level() && !condition.test(worldserver, entityliving)) {
+                         return true;
+                     } else {
++                        // CraftBukkit start
++                        LivingEntity old = entityinsentient.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null);
++                        EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entityinsentient, null, (old != null && !old.isAlive()) ? EntityTargetEvent.TargetReason.TARGET_DIED : EntityTargetEvent.TargetReason.FORGOT_TARGET);
++                        if (event.isCancelled()) {
++                            return false;
++                        }
++                        if (event.getTarget() != null) {
++                            entityinsentient.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, ((CraftLivingEntity) event.getTarget()).getHandle());
++                            return true;
++                        }
++                        // CraftBukkit end
+                         callback.accept(worldserver, entityinsentient, entityliving);
+                         memoryaccessor.erase();
+                         return true;

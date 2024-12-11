@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import net.minecraft.network.protocol.game.PacketPlayOutBoss;
-import net.minecraft.server.level.BossBattleServer;
-import net.minecraft.server.level.EntityPlayer;
-import net.minecraft.world.BossBattle;
+import net.minecraft.network.protocol.game.ClientboundBossEventPacket;
+import net.minecraft.server.level.ServerBossEvent;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.BossEvent;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
@@ -21,14 +21,14 @@ import org.bukkit.entity.Player;
 
 public class CraftBossBar implements BossBar {
 
-    private final BossBattleServer handle;
+    private final ServerBossEvent handle;
     private Map<BarFlag, FlagContainer> flags;
 
     public CraftBossBar(String title, BarColor color, BarStyle style, BarFlag... flags) {
-        handle = new BossBattleServer(
+        this.handle = new ServerBossEvent(
                 CraftChatMessage.fromString(title, true)[0],
-                convertColor(color),
-                convertStyle(style)
+                this.convertColor(color),
+                this.convertStyle(style)
         );
 
         this.initialize();
@@ -41,7 +41,7 @@ public class CraftBossBar implements BossBar {
         this.setStyle(style);
     }
 
-    public CraftBossBar(BossBattleServer bossBattleServer) {
+    public CraftBossBar(ServerBossEvent bossBattleServer) {
         this.handle = bossBattleServer;
         this.initialize();
     }
@@ -53,33 +53,33 @@ public class CraftBossBar implements BossBar {
         this.flags.put(BarFlag.CREATE_FOG, new FlagContainer(handle::shouldCreateWorldFog, handle::setCreateWorldFog));
     }
 
-    private BarColor convertColor(BossBattle.BarColor color) {
+    private BarColor convertColor(BossEvent.BossBarColor color) {
         BarColor bukkitColor = BarColor.valueOf(color.name());
         return (bukkitColor == null) ? BarColor.WHITE : bukkitColor;
     }
 
-    private BossBattle.BarColor convertColor(BarColor color) {
-        BossBattle.BarColor nmsColor = BossBattle.BarColor.valueOf(color.name());
-        return (nmsColor == null) ? BossBattle.BarColor.WHITE : nmsColor;
+    private BossEvent.BossBarColor convertColor(BarColor color) {
+        BossEvent.BossBarColor nmsColor = BossEvent.BossBarColor.valueOf(color.name());
+        return (nmsColor == null) ? BossEvent.BossBarColor.WHITE : nmsColor;
     }
 
-    private BossBattle.BarStyle convertStyle(BarStyle style) {
+    private BossEvent.BossBarOverlay convertStyle(BarStyle style) {
         switch (style) {
             default:
             case SOLID:
-                return BossBattle.BarStyle.PROGRESS;
+                return BossEvent.BossBarOverlay.PROGRESS;
             case SEGMENTED_6:
-                return BossBattle.BarStyle.NOTCHED_6;
+                return BossEvent.BossBarOverlay.NOTCHED_6;
             case SEGMENTED_10:
-                return BossBattle.BarStyle.NOTCHED_10;
+                return BossEvent.BossBarOverlay.NOTCHED_10;
             case SEGMENTED_12:
-                return BossBattle.BarStyle.NOTCHED_12;
+                return BossEvent.BossBarOverlay.NOTCHED_12;
             case SEGMENTED_20:
-                return BossBattle.BarStyle.NOTCHED_20;
+                return BossEvent.BossBarOverlay.NOTCHED_20;
         }
     }
 
-    private BarStyle convertStyle(BossBattle.BarStyle style) {
+    private BarStyle convertStyle(BossEvent.BossBarOverlay style) {
         switch (style) {
             default:
             case PROGRESS:
@@ -97,40 +97,40 @@ public class CraftBossBar implements BossBar {
 
     @Override
     public String getTitle() {
-        return CraftChatMessage.fromComponent(handle.name);
+        return CraftChatMessage.fromComponent(this.handle.name);
     }
 
     @Override
     public void setTitle(String title) {
-        handle.name = CraftChatMessage.fromString(title, true)[0];
-        handle.broadcast(PacketPlayOutBoss::createUpdateNamePacket);
+        this.handle.name = CraftChatMessage.fromString(title, true)[0];
+        this.handle.broadcast(ClientboundBossEventPacket::createUpdateNamePacket);
     }
 
     @Override
     public BarColor getColor() {
-        return convertColor(handle.color);
+        return this.convertColor(this.handle.color);
     }
 
     @Override
     public void setColor(BarColor color) {
-        handle.color = convertColor(color);
-        handle.broadcast(PacketPlayOutBoss::createUpdateStylePacket);
+        this.handle.color = this.convertColor(color);
+        this.handle.broadcast(ClientboundBossEventPacket::createUpdateStylePacket);
     }
 
     @Override
     public BarStyle getStyle() {
-        return convertStyle(handle.overlay);
+        return this.convertStyle(this.handle.overlay);
     }
 
     @Override
     public void setStyle(BarStyle style) {
-        handle.overlay = convertStyle(style);
-        handle.broadcast(PacketPlayOutBoss::createUpdateStylePacket);
+        this.handle.overlay = this.convertStyle(style);
+        this.handle.broadcast(ClientboundBossEventPacket::createUpdateStylePacket);
     }
 
     @Override
     public void addFlag(BarFlag flag) {
-        FlagContainer flagContainer = flags.get(flag);
+        FlagContainer flagContainer = this.flags.get(flag);
         if (flagContainer != null) {
             flagContainer.set.accept(true);
         }
@@ -138,7 +138,7 @@ public class CraftBossBar implements BossBar {
 
     @Override
     public void removeFlag(BarFlag flag) {
-        FlagContainer flagContainer = flags.get(flag);
+        FlagContainer flagContainer = this.flags.get(flag);
         if (flagContainer != null) {
             flagContainer.set.accept(false);
         }
@@ -146,7 +146,7 @@ public class CraftBossBar implements BossBar {
 
     @Override
     public boolean hasFlag(BarFlag flag) {
-        FlagContainer flagContainer = flags.get(flag);
+        FlagContainer flagContainer = this.flags.get(flag);
         if (flagContainer != null) {
             return flagContainer.get.get();
         }
@@ -156,12 +156,12 @@ public class CraftBossBar implements BossBar {
     @Override
     public void setProgress(double progress) {
         Preconditions.checkArgument(progress >= 0.0 && progress <= 1.0, "Progress must be between 0.0 and 1.0 (%s)", progress);
-        handle.setProgress((float) progress);
+        this.handle.setProgress((float) progress);
     }
 
     @Override
     public double getProgress() {
-        return handle.getProgress();
+        return this.handle.getProgress();
     }
 
     @Override
@@ -169,20 +169,20 @@ public class CraftBossBar implements BossBar {
         Preconditions.checkArgument(player != null, "player == null");
         Preconditions.checkArgument(((CraftPlayer) player).getHandle().connection != null, "player is not fully connected (wait for PlayerJoinEvent)");
 
-        handle.addPlayer(((CraftPlayer) player).getHandle());
+        this.handle.addPlayer(((CraftPlayer) player).getHandle());
     }
 
     @Override
     public void removePlayer(Player player) {
         Preconditions.checkArgument(player != null, "player == null");
 
-        handle.removePlayer(((CraftPlayer) player).getHandle());
+        this.handle.removePlayer(((CraftPlayer) player).getHandle());
     }
 
     @Override
     public List<Player> getPlayers() {
         ImmutableList.Builder<Player> players = ImmutableList.builder();
-        for (EntityPlayer p : handle.getPlayers()) {
+        for (ServerPlayer p : this.handle.getPlayers()) {
             players.add(p.getBukkitEntity());
         }
         return players.build();
@@ -190,28 +190,28 @@ public class CraftBossBar implements BossBar {
 
     @Override
     public void setVisible(boolean visible) {
-        handle.setVisible(visible);
+        this.handle.setVisible(visible);
     }
 
     @Override
     public boolean isVisible() {
-        return handle.visible;
+        return this.handle.visible;
     }
 
     @Override
     public void show() {
-        handle.setVisible(true);
+        this.handle.setVisible(true);
     }
 
     @Override
     public void hide() {
-        handle.setVisible(false);
+        this.handle.setVisible(false);
     }
 
     @Override
     public void removeAll() {
-        for (Player player : getPlayers()) {
-            removePlayer(player);
+        for (Player player : this.getPlayers()) {
+            this.removePlayer(player);
         }
     }
 
@@ -226,7 +226,7 @@ public class CraftBossBar implements BossBar {
         }
     }
 
-    public BossBattleServer getHandle() {
-        return handle;
+    public ServerBossEvent getHandle() {
+        return this.handle;
     }
 }

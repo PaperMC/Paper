@@ -1,0 +1,74 @@
+--- a/net/minecraft/world/inventory/BeaconMenu.java
++++ b/net/minecraft/world/inventory/BeaconMenu.java
+@@ -8,10 +8,13 @@
+ import net.minecraft.world.Container;
+ import net.minecraft.world.SimpleContainer;
+ import net.minecraft.world.effect.MobEffect;
++import net.minecraft.world.entity.player.Inventory;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.Blocks;
++import org.bukkit.craftbukkit.inventory.view.CraftBeaconView;
++// CraftBukkit end
+ 
+ public class BeaconMenu extends AbstractContainerMenu {
+ 
+@@ -27,6 +30,10 @@
+     private final BeaconMenu.PaymentSlot paymentSlot;
+     private final ContainerLevelAccess access;
+     private final ContainerData beaconData;
++    // CraftBukkit start
++    private CraftBeaconView bukkitEntity = null;
++    private Inventory player;
++    // CraftBukkit end
+ 
+     public BeaconMenu(int syncId, Container inventory) {
+         this(syncId, inventory, new SimpleContainerData(3), ContainerLevelAccess.NULL);
+@@ -34,7 +41,8 @@
+ 
+     public BeaconMenu(int syncId, Container inventory, ContainerData propertyDelegate, ContainerLevelAccess context) {
+         super(MenuType.BEACON, syncId);
+-        this.beacon = new SimpleContainer(this, 1) {
++        this.player = (Inventory) inventory; // CraftBukkit - TODO: check this
++        this.beacon = new SimpleContainer(1) { // CraftBukkit - decompile error
+             @Override
+             public boolean canPlaceItem(int slot, ItemStack stack) {
+                 return stack.is(ItemTags.BEACON_PAYMENT_ITEMS);
+@@ -69,6 +77,7 @@
+ 
+     @Override
+     public boolean stillValid(Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return stillValid(this.access, player, Blocks.BEACON);
+     }
+ 
+@@ -150,8 +159,8 @@
+ 
+     public void updateEffects(Optional<Holder<MobEffect>> primary, Optional<Holder<MobEffect>> secondary) {
+         if (this.paymentSlot.hasItem()) {
+-            this.beaconData.set(1, BeaconMenu.encodeEffect((Holder) primary.orElse((Object) null)));
+-            this.beaconData.set(2, BeaconMenu.encodeEffect((Holder) secondary.orElse((Object) null)));
++            this.beaconData.set(1, BeaconMenu.encodeEffect((Holder) primary.orElse(null)));// CraftBukkit - decompile error
++            this.beaconData.set(2, BeaconMenu.encodeEffect((Holder) secondary.orElse(null)));// CraftBukkit - decompile error
+             this.paymentSlot.remove(1);
+             this.access.execute(Level::blockEntityChanged);
+         }
+@@ -178,4 +187,17 @@
+             return 1;
+         }
+     }
++
++    // CraftBukkit start
++    @Override
++    public CraftBeaconView getBukkitView() {
++        if (this.bukkitEntity != null) {
++            return this.bukkitEntity;
++        }
++
++        org.bukkit.craftbukkit.inventory.CraftInventoryBeacon inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryBeacon(this.beacon);
++        this.bukkitEntity = new CraftBeaconView(this.player.player.getBukkitEntity(), inventory, this);
++        return this.bukkitEntity;
++    }
++    // CraftBukkit end
+ }

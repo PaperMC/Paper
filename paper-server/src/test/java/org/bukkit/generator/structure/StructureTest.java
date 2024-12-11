@@ -4,9 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Locale;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.resources.ResourceLocation;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -34,9 +33,9 @@ public class StructureTest {
 
     @Test
     public void testMinecraftToBukkitFieldName() {
-        IRegistry<net.minecraft.world.level.levelgen.structure.Structure> structureBuiltInRegistries = CraftRegistry.getMinecraftRegistry(Registries.STRUCTURE);
+        net.minecraft.core.Registry<net.minecraft.world.level.levelgen.structure.Structure> structureBuiltInRegistries = CraftRegistry.getMinecraftRegistry(Registries.STRUCTURE);
         for (net.minecraft.world.level.levelgen.structure.Structure structure : structureBuiltInRegistries) {
-            MinecraftKey minecraftKey = structureBuiltInRegistries.getKey(structure);
+            ResourceLocation minecraftKey = structureBuiltInRegistries.getKey(structure);
 
             try {
                 Structure bukkit = (Structure) Structure.class.getField(minecraftKey.getPath().toUpperCase(Locale.ROOT)).get(null);

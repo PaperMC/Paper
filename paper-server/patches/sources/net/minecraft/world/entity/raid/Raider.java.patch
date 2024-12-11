@@ -1,0 +1,57 @@
+--- a/net/minecraft/world/entity/raid/Raider.java
++++ b/net/minecraft/world/entity/raid/Raider.java
+@@ -40,6 +40,9 @@
+ import net.minecraft.world.level.ServerLevelAccessor;
+ import net.minecraft.world.level.pathfinder.Path;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
+ 
+ public abstract class Raider extends PatrollingMonster {
+ 
+@@ -236,7 +239,7 @@
+             this.onItemPickup(itemEntity);
+             this.setItemSlot(enumitemslot, itemstack);
+             this.take(itemEntity, itemstack.getCount());
+-            itemEntity.discard();
++            itemEntity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+             this.getCurrentRaid().setLeader(this.getWave(), this);
+             this.setPatrolLeader(true);
+         } else {
+@@ -290,7 +293,7 @@
+         @Nullable
+         private ItemEntity pursuedBannerItemEntity;
+ 
+-        public ObtainRaidLeaderBannerGoal(final Raider entityraider) {
++        public ObtainRaidLeaderBannerGoal(final T entityraider) { // CraftBukkit - decompile error
+             this.mob = entityraider;
+             this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+         }
+@@ -518,7 +521,7 @@
+         }
+     }
+ 
+-    protected static class HoldGroundAttackGoal extends Goal {
++    public static class HoldGroundAttackGoal extends Goal {
+ 
+         private final Raider mob;
+         private final float hostileRadiusSqr;
+@@ -547,7 +550,7 @@
+             while (iterator.hasNext()) {
+                 Raider entityraider = (Raider) iterator.next();
+ 
+-                entityraider.setTarget(this.mob.getTarget());
++                entityraider.setTarget(this.mob.getTarget(), org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER, true); // CraftBukkit
+             }
+ 
+         }
+@@ -564,7 +567,7 @@
+                 while (iterator.hasNext()) {
+                     Raider entityraider = (Raider) iterator.next();
+ 
+-                    entityraider.setTarget(entityliving);
++                    entityraider.setTarget(this.mob.getTarget(), org.bukkit.event.entity.EntityTargetEvent.TargetReason.FOLLOW_LEADER, true); // CraftBukkit
+                     entityraider.setAggressive(true);
+                 }
+ 

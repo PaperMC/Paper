@@ -146,15 +146,15 @@ public class LegacyTest {
     @Test
     public void toLegacyMaterial() {
         for (Material material : Material.values()) {
-            if (!INVALIDATED_MATERIALS.contains(material) && !material.isLegacy()) {
+            if (!this.INVALIDATED_MATERIALS.contains(material) && !material.isLegacy()) {
                 MaterialData converted = CraftLegacy.toLegacyData(material);
 
                 assertNotEquals(Material.LEGACY_AIR, converted.getItemType(), "Could not toLegacy " + material);
 
-                if (!INVALIDATED_MATERIALS.contains(converted.getItemType())) {
+                if (!this.INVALIDATED_MATERIALS.contains(converted.getItemType())) {
                     assertNotEquals(Material.AIR, CraftLegacy.fromLegacy(converted), "Could not fromLegacy(toLegacy) " + converted + "(" + material + ")");
                 }
-                if (!INVERSION_FAILS.contains(material)) {
+                if (!this.INVERSION_FAILS.contains(material)) {
                     assertEquals(material, CraftLegacy.fromLegacy(converted), "Could not fromLegacy(toLegacy) " + converted + "(" + material + ")");
                 }
             }
@@ -166,12 +166,12 @@ public class LegacyTest {
     @Test
     public void fromLegacyMaterial() {
         for (Material material : Material.values()) {
-            if (!INVALIDATED_MATERIALS.contains(material) && material.isLegacy()) {
+            if (!this.INVALIDATED_MATERIALS.contains(material) && material.isLegacy()) {
                 Material converted = CraftLegacy.fromLegacy(material);
                 assertNotEquals(Material.AIR, converted, "Could not fromLegacy " + material);
 
                 assertNotEquals(Material.AIR, CraftLegacy.toLegacy(converted), "Could not toLegacy(fromLegacy) " + converted + "(" + material + ")");
-                if (!INVERSION_FAILS.contains(material)) {
+                if (!this.INVERSION_FAILS.contains(material)) {
                     assertEquals(material, CraftLegacy.toLegacy(converted), "Could not toLegacy(fromLegacy) " + converted + "(" + material + ")");
                 }
             }

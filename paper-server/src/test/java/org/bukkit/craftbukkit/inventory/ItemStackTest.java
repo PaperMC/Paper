@@ -39,11 +39,11 @@ public class ItemStackTest {
         }
 
         ItemStack bukkit() {
-            return operate(cleanStack(material, false));
+            return this.operate(StackProvider.cleanStack(this.material, false));
         }
 
         ItemStack craft() {
-            return operate(cleanStack(material, true));
+            return this.operate(StackProvider.cleanStack(this.material, true));
         }
 
         abstract ItemStack operate(ItemStack cleanStack);
@@ -55,7 +55,7 @@ public class ItemStackTest {
 
         @Override
         public String toString() {
-            return material.toString();
+            return this.material.toString();
         }
 
         /**
@@ -124,7 +124,7 @@ public class ItemStackTest {
 
         @Override
         public ItemStack operate(ItemStack cleanStack) {
-            for (Operator operator : operators) {
+            for (Operator operator : this.operators) {
                 operator.operate(cleanStack);
             }
             return cleanStack;
@@ -132,7 +132,7 @@ public class ItemStackTest {
 
         @Override
         public String toString() {
-            return Arrays.toString(operators);
+            return Arrays.toString(this.operators);
         }
 
 
@@ -162,7 +162,7 @@ public class ItemStackTest {
 
             for (final List<Object[]> primarySingleton : singletons) {
                 // Iterate over our singletons, to multiply the 'out' each time
-                for (final Object[] entry : out.toArray(EMPTY_ARRAY)) {
+                for (final Object[] entry : out.toArray(ItemStackTest.EMPTY_ARRAY)) {
                     // Iterate over a snapshot of 'out' to prevent CMEs / infinite iteration
                     final int len = entry.length;
                     for (final Object[] singleton : primarySingleton) {
@@ -196,7 +196,7 @@ public class ItemStackTest {
 
             final RecursiveContainer methodParams = new RecursiveContainer(joiner, new Object[lists.length], nameParameter, new ArrayList<Object[]>(lists.length), new ArrayList<Object[]>(), lists);
 
-            recursivelyCompound(methodParams, 0);
+            CompoundOperator.recursivelyCompound(methodParams, 0);
             methodParams.out.addAll(out);
 
             return methodParams.out;
@@ -239,7 +239,7 @@ public class ItemStackTest {
 
                 for (final Object[] params : methodParams.lists[level]) {
                     stack.add(params);
-                    recursivelyCompound(methodParams, level + 1);
+                    CompoundOperator.recursivelyCompound(methodParams, level + 1);
                     stack.remove(marker);
                 }
             }
@@ -259,12 +259,12 @@ public class ItemStackTest {
 
         @Override
         public ItemStack stack() {
-            return provider.craft();
+            return this.provider.craft();
         }
 
         @Override
         public String toString() {
-            return "Craft " + provider;
+            return "Craft " + this.provider;
         }
     }
 
@@ -277,12 +277,12 @@ public class ItemStackTest {
 
         @Override
         public ItemStack stack() {
-            return provider.bukkit();
+            return this.provider.bukkit();
         }
 
         @Override
         public String toString() {
-            return "Bukkit " + provider;
+            return "Bukkit " + this.provider;
         }
     }
 
@@ -327,7 +327,7 @@ public class ItemStackTest {
         COMPOUND_MATERIALS = possibleMaterials.values().toArray(new Material[possibleMaterials.size()]);
     }
 
-    @ParameterizedTest(name = "[{index}]:{" + NAME_PARAMETER + "}")
+    @ParameterizedTest(name = "[{index}]:{" + ItemStackTest.NAME_PARAMETER + "}")
     @MethodSource({"data",
             "org.bukkit.craftbukkit.inventory.ItemStackSkullTest#data",
             "org.bukkit.craftbukkit.inventory.ItemStackPotionsTest#data",
@@ -341,11 +341,11 @@ public class ItemStackTest {
     })
     public void testBukkitInequality(StackProvider provider, StackProvider unequalProvider, String name) {
         final StackWrapper bukkitWrapper = new CraftWrapper(provider);
-        testInequality(bukkitWrapper, new BukkitWrapper(unequalProvider));
-        testInequality(bukkitWrapper, new BukkitWrapper(new NoOpProvider(provider.material)));
+        ItemStackTest.testInequality(bukkitWrapper, new BukkitWrapper(unequalProvider));
+        ItemStackTest.testInequality(bukkitWrapper, new BukkitWrapper(new NoOpProvider(provider.material)));
     }
 
-    @ParameterizedTest(name = "[{index}]:{" + NAME_PARAMETER + "}")
+    @ParameterizedTest(name = "[{index}]:{" + ItemStackTest.NAME_PARAMETER + "}")
     @MethodSource({"data",
             "org.bukkit.craftbukkit.inventory.ItemStackSkullTest#data",
             "org.bukkit.craftbukkit.inventory.ItemStackPotionsTest#data",
@@ -359,11 +359,11 @@ public class ItemStackTest {
     })
     public void testCraftInequality(StackProvider provider, StackProvider unequalProvider, String name) {
         final StackWrapper craftWrapper = new CraftWrapper(provider);
-        testInequality(craftWrapper, new CraftWrapper(unequalProvider));
-        testInequality(craftWrapper, new CraftWrapper(new NoOpProvider(provider.material)));
+        ItemStackTest.testInequality(craftWrapper, new CraftWrapper(unequalProvider));
+        ItemStackTest.testInequality(craftWrapper, new CraftWrapper(new NoOpProvider(provider.material)));
     }
 
-    @ParameterizedTest(name = "[{index}]:{" + NAME_PARAMETER + "}")
+    @ParameterizedTest(name = "[{index}]:{" + ItemStackTest.NAME_PARAMETER + "}")
     @MethodSource({"data",
             "org.bukkit.craftbukkit.inventory.ItemStackSkullTest#data",
             "org.bukkit.craftbukkit.inventory.ItemStackPotionsTest#data",
@@ -377,12 +377,12 @@ public class ItemStackTest {
     })
     public void testMixedInequality(StackProvider provider, StackProvider unequalProvider, String name) {
         final StackWrapper craftWrapper = new CraftWrapper(provider);
-        testInequality(craftWrapper, new BukkitWrapper(unequalProvider));
-        testInequality(craftWrapper, new BukkitWrapper(new NoOpProvider(provider.material)));
+        ItemStackTest.testInequality(craftWrapper, new BukkitWrapper(unequalProvider));
+        ItemStackTest.testInequality(craftWrapper, new BukkitWrapper(new NoOpProvider(provider.material)));
 
         final StackWrapper bukkitWrapper = new CraftWrapper(provider);
-        testInequality(bukkitWrapper, new CraftWrapper(unequalProvider));
-        testInequality(bukkitWrapper, new CraftWrapper(new NoOpProvider(provider.material)));
+        ItemStackTest.testInequality(bukkitWrapper, new CraftWrapper(unequalProvider));
+        ItemStackTest.testInequality(bukkitWrapper, new CraftWrapper(new NoOpProvider(provider.material)));
     }
 
     static void testInequality(StackWrapper provider, StackWrapper unequalProvider) {
@@ -426,7 +426,7 @@ public class ItemStackTest {
         assertThat(newUnequalCraftStack.getItemMeta(), is(not(stack.getItemMeta())));
     }
 
-    @ParameterizedTest(name = "[{index}]:{" + NAME_PARAMETER + "}")
+    @ParameterizedTest(name = "[{index}]:{" + ItemStackTest.NAME_PARAMETER + "}")
     @MethodSource({"data",
             "org.bukkit.craftbukkit.inventory.ItemStackSkullTest#data",
             "org.bukkit.craftbukkit.inventory.ItemStackPotionsTest#data",
@@ -439,10 +439,10 @@ public class ItemStackTest {
             "org.bukkit.craftbukkit.inventory.ItemStackBookTest#data"
     })
     public void testBukkitYamlDeserialize(StackProvider provider, StackProvider unequalProvider, String name) throws Throwable {
-        testYamlDeserialize(new BukkitWrapper(provider), new BukkitWrapper(unequalProvider));
+        ItemStackTest.testYamlDeserialize(new BukkitWrapper(provider), new BukkitWrapper(unequalProvider));
     }
 
-    @ParameterizedTest(name = "[{index}]:{" + NAME_PARAMETER + "}")
+    @ParameterizedTest(name = "[{index}]:{" + ItemStackTest.NAME_PARAMETER + "}")
     @MethodSource({"data",
             "org.bukkit.craftbukkit.inventory.ItemStackSkullTest#data",
             "org.bukkit.craftbukkit.inventory.ItemStackPotionsTest#data",
@@ -455,10 +455,10 @@ public class ItemStackTest {
             "org.bukkit.craftbukkit.inventory.ItemStackBookTest#data"
     })
     public void testCraftYamlDeserialize(StackProvider provider, StackProvider unequalProvider, String name) throws Throwable {
-        testYamlDeserialize(new CraftWrapper(provider), new CraftWrapper(unequalProvider));
+        ItemStackTest.testYamlDeserialize(new CraftWrapper(provider), new CraftWrapper(unequalProvider));
     }
 
-    @ParameterizedTest(name = "[{index}]:{" + NAME_PARAMETER + "}")
+    @ParameterizedTest(name = "[{index}]:{" + ItemStackTest.NAME_PARAMETER + "}")
     @MethodSource({"data",
             "org.bukkit.craftbukkit.inventory.ItemStackSkullTest#data",
             "org.bukkit.craftbukkit.inventory.ItemStackPotionsTest#data",
@@ -471,10 +471,10 @@ public class ItemStackTest {
             "org.bukkit.craftbukkit.inventory.ItemStackBookTest#data"
     })
     public void testBukkitStreamDeserialize(StackProvider provider, StackProvider unequalProvider, String name) throws Throwable {
-        testStreamDeserialize(new BukkitWrapper(provider), new BukkitWrapper(unequalProvider));
+        ItemStackTest.testStreamDeserialize(new BukkitWrapper(provider), new BukkitWrapper(unequalProvider));
     }
 
-    @ParameterizedTest(name = "[{index}]:{" + NAME_PARAMETER + "}")
+    @ParameterizedTest(name = "[{index}]:{" + ItemStackTest.NAME_PARAMETER + "}")
     @MethodSource({"data",
             "org.bukkit.craftbukkit.inventory.ItemStackSkullTest#data",
             "org.bukkit.craftbukkit.inventory.ItemStackPotionsTest#data",
@@ -487,7 +487,7 @@ public class ItemStackTest {
             "org.bukkit.craftbukkit.inventory.ItemStackBookTest#data"
     })
     public void testCraftStreamDeserialize(StackProvider provider, StackProvider unequalProvider, String name) throws Throwable {
-        testStreamDeserialize(new CraftWrapper(provider), new CraftWrapper(unequalProvider));
+        ItemStackTest.testStreamDeserialize(new CraftWrapper(provider), new CraftWrapper(unequalProvider));
     }
 
     static void testStreamDeserialize(StackWrapper provider, StackWrapper unequalProvider) throws Throwable {
@@ -532,7 +532,7 @@ public class ItemStackTest {
             }
         }
 
-        testEqualities(data, readFirst, readSecond, stack, unequalStack);
+        ItemStackTest.testEqualities(data, readFirst, readSecond, stack, unequalStack);
     }
 
     static void testYamlDeserialize(StackWrapper provider, StackWrapper unequalProvider) {
@@ -552,7 +552,7 @@ public class ItemStackTest {
             throw new RuntimeException(out, ex);
         }
 
-        testEqualities(out, configIn.getItemStack("provider"), configIn.getItemStack("unequal"), stack, unequalStack);
+        ItemStackTest.testEqualities(out, configIn.getItemStack("provider"), configIn.getItemStack("unequal"), stack, unequalStack);
     }
 
     static void testEqualities(String information, ItemStack primaryRead, ItemStack unequalRead, ItemStack primaryOriginal, ItemStack unequalOriginal) {

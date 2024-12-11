@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.inventory.trim;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import org.bukkit.NamespacedKey;
@@ -19,7 +18,7 @@ public class CraftTrimPattern implements TrimPattern, Handleable<net.minecraft.w
     }
 
     public static TrimPattern minecraftHolderToBukkit(Holder<net.minecraft.world.item.equipment.trim.TrimPattern> minecraft) {
-        return minecraftToBukkit(minecraft.value());
+        return CraftTrimPattern.minecraftToBukkit(minecraft.value());
     }
 
     public static net.minecraft.world.item.equipment.trim.TrimPattern bukkitToMinecraft(TrimPattern bukkit) {
@@ -29,9 +28,9 @@ public class CraftTrimPattern implements TrimPattern, Handleable<net.minecraft.w
     public static Holder<net.minecraft.world.item.equipment.trim.TrimPattern> bukkitToMinecraftHolder(TrimPattern bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        IRegistry<net.minecraft.world.item.equipment.trim.TrimPattern> registry = CraftRegistry.getMinecraftRegistry(Registries.TRIM_PATTERN);
+        net.minecraft.core.Registry<net.minecraft.world.item.equipment.trim.TrimPattern> registry = CraftRegistry.getMinecraftRegistry(Registries.TRIM_PATTERN);
 
-        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<net.minecraft.world.item.equipment.trim.TrimPattern> holder) {
+        if (registry.wrapAsHolder(CraftTrimPattern.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<net.minecraft.world.item.equipment.trim.TrimPattern> holder) {
             return holder;
         }
 
@@ -49,18 +48,18 @@ public class CraftTrimPattern implements TrimPattern, Handleable<net.minecraft.w
 
     @Override
     public net.minecraft.world.item.equipment.trim.TrimPattern getHandle() {
-        return handle;
+        return this.handle;
     }
 
     @Override
     @NotNull
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 
     @NotNull
     @Override
     public String getTranslationKey() {
-        return ((TranslatableContents) handle.description().getContents()).getKey();
+        return ((TranslatableContents) this.handle.description().getContents()).getKey();
     }
 }

@@ -12,10 +12,10 @@ public class ForwardLogHandler extends ConsoleHandler {
     private Map<String, Logger> cachedLoggers = new ConcurrentHashMap<String, Logger>();
 
     private Logger getLogger(String name) {
-        Logger logger = cachedLoggers.get(name);
+        Logger logger = this.cachedLoggers.get(name);
         if (logger == null) {
             logger = LogManager.getLogger(name);
-            cachedLoggers.put(name, logger);
+            this.cachedLoggers.put(name, logger);
         }
 
         return logger;
@@ -23,10 +23,10 @@ public class ForwardLogHandler extends ConsoleHandler {
 
     @Override
     public void publish(LogRecord record) {
-        Logger logger = getLogger(String.valueOf(record.getLoggerName())); // See SPIGOT-1230
+        Logger logger = this.getLogger(String.valueOf(record.getLoggerName())); // See SPIGOT-1230
         Throwable exception = record.getThrown();
         Level level = record.getLevel();
-        String message = getFormatter().formatMessage(record);
+        String message = this.getFormatter().formatMessage(record);
 
         if (level == Level.SEVERE) {
             logger.error(message, exception);

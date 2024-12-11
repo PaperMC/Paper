@@ -5,8 +5,6 @@ import java.util.Locale;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.animal.CatVariant;
-import net.minecraft.world.entity.animal.EntityCat;
-import net.minecraft.world.item.EnumColor;
 import org.bukkit.DyeColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -17,13 +15,13 @@ import org.bukkit.entity.Cat;
 
 public class CraftCat extends CraftTameableAnimal implements Cat {
 
-    public CraftCat(CraftServer server, EntityCat entity) {
+    public CraftCat(CraftServer server, net.minecraft.world.entity.animal.Cat entity) {
         super(server, entity);
     }
 
     @Override
-    public EntityCat getHandle() {
-        return (EntityCat) super.getHandle();
+    public net.minecraft.world.entity.animal.Cat getHandle() {
+        return (net.minecraft.world.entity.animal.Cat) super.getHandle();
     }
 
     @Override
@@ -33,24 +31,24 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
 
     @Override
     public Type getCatType() {
-        return CraftType.minecraftHolderToBukkit(getHandle().getVariant());
+        return CraftType.minecraftHolderToBukkit(this.getHandle().getVariant());
     }
 
     @Override
     public void setCatType(Type type) {
         Preconditions.checkArgument(type != null, "Cannot have null Type");
 
-        getHandle().setVariant(CraftType.bukkitToMinecraftHolder(type));
+        this.getHandle().setVariant(CraftType.bukkitToMinecraftHolder(type));
     }
 
     @Override
     public DyeColor getCollarColor() {
-        return DyeColor.getByWoolData((byte) getHandle().getCollarColor().getId());
+        return DyeColor.getByWoolData((byte) this.getHandle().getCollarColor().getId());
     }
 
     @Override
     public void setCollarColor(DyeColor color) {
-        getHandle().setCollarColor(EnumColor.byId(color.getWoolData()));
+        this.getHandle().setCollarColor(net.minecraft.world.item.DyeColor.byId(color.getWoolData()));
     }
 
     public static class CraftType implements Type, Handleable<CatVariant> {
@@ -61,7 +59,7 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
         }
 
         public static Type minecraftHolderToBukkit(Holder<CatVariant> minecraft) {
-            return minecraftToBukkit(minecraft.value());
+            return CraftType.minecraftToBukkit(minecraft.value());
         }
 
         public static CatVariant bukkitToMinecraft(Type bukkit) {
@@ -89,38 +87,38 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
             } else {
                 this.name = key.toString();
             }
-            this.ordinal = count++;
+            this.ordinal = CraftType.count++;
         }
 
         @Override
         public CatVariant getHandle() {
-            return catVariant;
+            return this.catVariant;
         }
 
         @Override
         public NamespacedKey getKey() {
-            return key;
+            return this.key;
         }
 
         @Override
         public int compareTo(Type variant) {
-            return ordinal - variant.ordinal();
+            return this.ordinal - variant.ordinal();
         }
 
         @Override
         public String name() {
-            return name;
+            return this.name;
         }
 
         @Override
         public int ordinal() {
-            return ordinal;
+            return this.ordinal;
         }
 
         @Override
         public String toString() {
             // For backwards compatibility
-            return name();
+            return this.name();
         }
 
         @Override
@@ -133,12 +131,12 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
                 return false;
             }
 
-            return getKey().equals(((CraftType) other).getKey());
+            return this.getKey().equals(((CraftType) other).getKey());
         }
 
         @Override
         public int hashCode() {
-            return getKey().hashCode();
+            return this.getKey().hashCode();
         }
     }
 }

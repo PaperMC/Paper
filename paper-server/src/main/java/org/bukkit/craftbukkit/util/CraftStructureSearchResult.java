@@ -15,10 +15,10 @@ public class CraftStructureSearchResult implements StructureSearchResult {
     }
 
     public Structure getStructure() {
-        return structure;
+        return this.structure;
     }
 
     public Location getLocation() {
-        return location;
+        return this.location;
     }
 }

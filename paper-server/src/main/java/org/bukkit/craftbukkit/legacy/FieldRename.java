@@ -35,18 +35,18 @@ public class FieldRename {
         }
 
         return switch (owner) {
-            case "org/bukkit/block/banner/PatternType" -> convertPatternTypeName(apiVersion, from);
-            case "org/bukkit/enchantments/Enchantment" -> convertEnchantmentName(apiVersion, from);
-            case "org/bukkit/block/Biome" -> convertBiomeName(apiVersion, from);
-            case "org/bukkit/entity/EntityType" -> convertEntityTypeName(apiVersion, from);
-            case "org/bukkit/potion/PotionEffectType" -> convertPotionEffectTypeName(apiVersion, from);
-            case "org/bukkit/potion/PotionType" -> convertPotionTypeName(apiVersion, from);
-            case "org/bukkit/MusicInstrument" -> convertMusicInstrumentName(apiVersion, from);
-            case "org/bukkit/Particle" -> convertParticleName(apiVersion, from);
-            case "org/bukkit/loot/LootTables" -> convertLootTablesName(apiVersion, from);
-            case "org/bukkit/attribute/Attribute" -> convertAttributeName(apiVersion, from).replace('.', '_');
-            case "org/bukkit/map/MapCursor$Type" -> convertMapCursorTypeName(apiVersion, from);
-            case "org/bukkit/inventory/ItemFlag" -> convertItemFlagName(apiVersion, from);
+            case "org/bukkit/block/banner/PatternType" -> FieldRename.convertPatternTypeName(apiVersion, from);
+            case "org/bukkit/enchantments/Enchantment" -> FieldRename.convertEnchantmentName(apiVersion, from);
+            case "org/bukkit/block/Biome" -> FieldRename.convertBiomeName(apiVersion, from);
+            case "org/bukkit/entity/EntityType" -> FieldRename.convertEntityTypeName(apiVersion, from);
+            case "org/bukkit/potion/PotionEffectType" -> FieldRename.convertPotionEffectTypeName(apiVersion, from);
+            case "org/bukkit/potion/PotionType" -> FieldRename.convertPotionTypeName(apiVersion, from);
+            case "org/bukkit/MusicInstrument" -> FieldRename.convertMusicInstrumentName(apiVersion, from);
+            case "org/bukkit/Particle" -> FieldRename.convertParticleName(apiVersion, from);
+            case "org/bukkit/loot/LootTables" -> FieldRename.convertLootTablesName(apiVersion, from);
+            case "org/bukkit/attribute/Attribute" -> FieldRename.convertAttributeName(apiVersion, from).replace('.', '_');
+            case "org/bukkit/map/MapCursor$Type" -> FieldRename.convertMapCursorTypeName(apiVersion, from);
+            case "org/bukkit/inventory/ItemFlag" -> FieldRename.convertItemFlagName(apiVersion, from);
             default -> from;
         };
     }
@@ -73,13 +73,13 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertPatternTypeName(ApiVersion version, String from) {
-        return PATTERN_TYPE_DATA.getReplacement(version, from);
+        return FieldRename.PATTERN_TYPE_DATA.getReplacement(version, from);
     }
 
     @RerouteMethodName("valueOf")
     @RerouteStatic("org/bukkit/block/banner/PatternType")
     public static PatternType valueOf_PatternType(String value, @InjectPluginVersion ApiVersion version) {
-        return PatternType.valueOf(convertPatternTypeName(version, value));
+        return PatternType.valueOf(FieldRename.convertPatternTypeName(version, value));
     }
 
     // Enchantment
@@ -112,14 +112,14 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertEnchantmentName(ApiVersion version, String from) {
-        return ENCHANTMENT_DATA.getReplacement(version, from);
+        return FieldRename.ENCHANTMENT_DATA.getReplacement(version, from);
     }
 
     @RerouteMethodName("getByName")
     @RerouteStatic("org/bukkit/enchantments/Enchantment")
     public static Enchantment getByName_Enchantment(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return Enchantment.getByName(convertEnchantmentName(ApiVersion.CURRENT, name));
+        return Enchantment.getByName(FieldRename.convertEnchantmentName(ApiVersion.CURRENT, name));
     }
 
     // Biome
@@ -144,14 +144,14 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertBiomeName(ApiVersion version, String from) {
-        return BIOME_DATA.getReplacement(version, from);
+        return FieldRename.BIOME_DATA.getReplacement(version, from);
     }
 
     @RerouteMethodName("valueOf")
     @RerouteStatic("org/bukkit/block/Biome")
     public static Biome valueOf_Biome(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return Biome.valueOf(convertBiomeName(ApiVersion.CURRENT, name));
+        return Biome.valueOf(FieldRename.convertBiomeName(ApiVersion.CURRENT, name));
     }
 
     // EntityType
@@ -197,21 +197,21 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertEntityTypeName(ApiVersion version, String from) {
-        return ENTITY_TYPE_DATA.getReplacement(version, from);
+        return FieldRename.ENTITY_TYPE_DATA.getReplacement(version, from);
     }
 
     @RerouteMethodName("valueOf")
     @RerouteStatic("org/bukkit/entity/EntityType")
     public static EntityType valueOf_EntityType(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return EntityType.valueOf(convertEntityTypeName(ApiVersion.CURRENT, name));
+        return EntityType.valueOf(FieldRename.convertEntityTypeName(ApiVersion.CURRENT, name));
     }
 
     @RerouteMethodName("fromName")
     @RerouteStatic("org/bukkit/entity/EntityType")
     public static EntityType fromName_EntityType(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return EntityType.fromName(convertEntityTypeName(ApiVersion.CURRENT, name));
+        return EntityType.fromName(FieldRename.convertEntityTypeName(ApiVersion.CURRENT, name));
     }
 
     // PotionEffectType
@@ -230,14 +230,14 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertPotionEffectTypeName(ApiVersion version, String from) {
-        return POTION_EFFECT_TYPE_DATA.getReplacement(version, from);
+        return FieldRename.POTION_EFFECT_TYPE_DATA.getReplacement(version, from);
     }
 
     @RerouteMethodName("getByName")
     @RerouteStatic("org/bukkit/potion/PotionEffectType")
     public static PotionEffectType getByName_PotionEffectType(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return PotionEffectType.getByName(convertPotionEffectTypeName(ApiVersion.CURRENT, name));
+        return PotionEffectType.getByName(FieldRename.convertPotionEffectTypeName(ApiVersion.CURRENT, name));
     }
 
     // PotionType
@@ -252,14 +252,14 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertPotionTypeName(ApiVersion version, String from) {
-        return POTION_TYPE_DATA.getReplacement(version, from);
+        return FieldRename.POTION_TYPE_DATA.getReplacement(version, from);
     }
 
     @RerouteMethodName("valueOf")
     @RerouteStatic("org/bukkit/potion/PotionType")
     public static PotionType valueOf_PotionType(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return PotionType.valueOf(convertPotionTypeName(ApiVersion.CURRENT, name));
+        return PotionType.valueOf(FieldRename.convertPotionTypeName(ApiVersion.CURRENT, name));
     }
 
     // MusicInstrument
@@ -276,7 +276,7 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertMusicInstrumentName(ApiVersion version, String from) {
-        return MUSIC_INSTRUMENT_DATA.getReplacement(version, from);
+        return FieldRename.MUSIC_INSTRUMENT_DATA.getReplacement(version, from);
     }
 
     // Particle
@@ -322,14 +322,14 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertParticleName(ApiVersion version, String from) {
-        return PARTICLE_DATA.getReplacement(version, from);
+        return FieldRename.PARTICLE_DATA.getReplacement(version, from);
     }
 
     @RerouteMethodName("valueOf")
     @RerouteStatic("org/bukkit/Particle")
     public static Particle valueOf_Particle(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return Particle.valueOf(convertParticleName(ApiVersion.CURRENT, name));
+        return Particle.valueOf(FieldRename.convertParticleName(ApiVersion.CURRENT, name));
     }
 
     // LootTables
@@ -340,14 +340,14 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertLootTablesName(ApiVersion version, String from) {
-        return LOOT_TABLES_DATA.getReplacement(version, from);
+        return FieldRename.LOOT_TABLES_DATA.getReplacement(version, from);
     }
 
     @RerouteMethodName("valueOf")
     @RerouteStatic("org/bukkit/loot/LootTables")
     public static LootTables valueOf_LootTables(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return LootTables.valueOf(convertLootTablesName(ApiVersion.CURRENT, name));
+        return LootTables.valueOf(FieldRename.convertLootTablesName(ApiVersion.CURRENT, name));
     }
 
     // Attribute
@@ -393,14 +393,14 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertAttributeName(ApiVersion version, String from) {
-        return ATTRIBUTE_DATA.getReplacement(version, from);
+        return FieldRename.ATTRIBUTE_DATA.getReplacement(version, from);
     }
 
     @RerouteMethodName("valueOf")
     @RerouteStatic("org/bukkit/attribute/Attribute")
     public static Attribute valueOf_Attribute(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return Attribute.valueOf(convertAttributeName(ApiVersion.CURRENT, name).replace('.', '_'));
+        return Attribute.valueOf(FieldRename.convertAttributeName(ApiVersion.CURRENT, name).replace('.', '_'));
     }
 
     // MapCursor Type
@@ -425,13 +425,13 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertMapCursorTypeName(ApiVersion version, String from) {
-        return MAP_CURSOR_TYPE_DATA.getReplacement(version, from);
+        return FieldRename.MAP_CURSOR_TYPE_DATA.getReplacement(version, from);
     }
 
     @RerouteMethodName("valueOf")
     @RerouteStatic("org/bukkit/map/MapCursor$Type")
     public static MapCursor.Type valueOf_MapCursorType(String name, @InjectPluginVersion ApiVersion version) {
-        return MapCursor.Type.valueOf(convertMapCursorTypeName(version, name));
+        return MapCursor.Type.valueOf(FieldRename.convertMapCursorTypeName(version, name));
     }
 
     // ItemFlag
@@ -442,13 +442,13 @@ public class FieldRename {
 
     @DoNotReroute
     public static String convertItemFlagName(ApiVersion version, String from) {
-        return ITEM_FLAG_DATA.getReplacement(version, from);
+        return FieldRename.ITEM_FLAG_DATA.getReplacement(version, from);
     }
 
     @RerouteMethodName("valueOf")
     @RerouteStatic("org/bukkit/inventory/ItemFlag")
     public static ItemFlag valueOf_ItemFlag(String name) {
         // We don't have version-specific changes, so just use current, and don't inject a version
-        return ItemFlag.valueOf(convertItemFlagName(ApiVersion.CURRENT, name));
+        return ItemFlag.valueOf(FieldRename.convertItemFlagName(ApiVersion.CURRENT, name));
     }
 }

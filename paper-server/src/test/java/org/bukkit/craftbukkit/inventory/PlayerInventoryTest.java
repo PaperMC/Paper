@@ -1,7 +1,8 @@
 package org.bukkit.craftbukkit.inventory;
 
 import static org.junit.jupiter.api.Assertions.*;
-import net.minecraft.world.entity.player.PlayerInventory;
+
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import org.bukkit.support.environment.Normal;
@@ -19,7 +20,7 @@ public class PlayerInventoryTest {
         ItemStack itemStack64Coal = new ItemStack(Items.COAL, 64);
 
         // keep one slot empty
-        PlayerInventory inventory = new PlayerInventory(null);
+        Inventory inventory = new Inventory(null);
         for (int i = 0; i < inventory.items.size() - 1; i++) {
             inventory.setItem(i, itemStackApple);
         }

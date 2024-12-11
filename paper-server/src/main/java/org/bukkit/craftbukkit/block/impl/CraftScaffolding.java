@@ -9,51 +9,51 @@ public final class CraftScaffolding extends org.bukkit.craftbukkit.block.data.Cr
         super();
     }
 
-    public CraftScaffolding(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftScaffolding(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftScaffolding
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean BOTTOM = getBoolean(net.minecraft.world.level.block.BlockScaffolding.class, "bottom");
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger DISTANCE = getInteger(net.minecraft.world.level.block.BlockScaffolding.class, "distance");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty BOTTOM = getBoolean(net.minecraft.world.level.block.ScaffoldingBlock.class, "bottom");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty DISTANCE = getInteger(net.minecraft.world.level.block.ScaffoldingBlock.class, "distance");
 
     @Override
     public boolean isBottom() {
-        return get(BOTTOM);
+        return this.get(CraftScaffolding.BOTTOM);
     }
 
     @Override
     public void setBottom(boolean bottom) {
-        set(BOTTOM, bottom);
+        this.set(CraftScaffolding.BOTTOM, bottom);
     }
 
     @Override
     public int getDistance() {
-        return get(DISTANCE);
+        return this.get(CraftScaffolding.DISTANCE);
     }
 
     @Override
     public void setDistance(int distance) {
-        set(DISTANCE, distance);
+        this.set(CraftScaffolding.DISTANCE, distance);
     }
 
     @Override
     public int getMaximumDistance() {
-        return getMax(DISTANCE);
+        return getMax(CraftScaffolding.DISTANCE);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftWaterlogged
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.world.level.block.BlockScaffolding.class, "waterlogged");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED = getBoolean(net.minecraft.world.level.block.ScaffoldingBlock.class, "waterlogged");
 
     @Override
     public boolean isWaterlogged() {
-        return get(WATERLOGGED);
+        return this.get(CraftScaffolding.WATERLOGGED);
     }
 
     @Override
     public void setWaterlogged(boolean waterlogged) {
-        set(WATERLOGGED, waterlogged);
+        this.set(CraftScaffolding.WATERLOGGED, waterlogged);
     }
 }

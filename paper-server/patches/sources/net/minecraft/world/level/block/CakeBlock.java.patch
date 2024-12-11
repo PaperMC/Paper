@@ -1,0 +1,22 @@
+--- a/net/minecraft/world/level/block/CakeBlock.java
++++ b/net/minecraft/world/level/block/CakeBlock.java
+@@ -98,7 +98,18 @@
+             return InteractionResult.PASS;
+         } else {
+             player.awardStat(Stats.EAT_CAKE_SLICE);
+-            player.getFoodData().eat(2, 0.1F);
++            // CraftBukkit start
++            // entityhuman.getFoodData().eat(2, 0.1F);
++            int oldFoodLevel = player.getFoodData().foodLevel;
++
++            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(player, 2 + oldFoodLevel);
++
++            if (!event.isCancelled()) {
++                player.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, 0.1F);
++            }
++
++            ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity().sendHealthUpdate();
++            // CraftBukkit end
+             int i = (Integer) state.getValue(CakeBlock.BITES);
+ 
+             world.gameEvent((Entity) player, (Holder) GameEvent.EAT, pos);

@@ -1,0 +1,72 @@
+--- a/net/minecraft/world/level/levelgen/feature/EndPlatformFeature.java
++++ b/net/minecraft/world/level/levelgen/feature/EndPlatformFeature.java
+@@ -7,6 +7,11 @@
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
++// CraftBukkit start
++import java.util.List;
++import org.bukkit.block.BlockState;
++import org.bukkit.event.world.PortalCreateEvent;
++// CraftBukkit end
+ 
+ public class EndPlatformFeature extends Feature<NoneFeatureConfiguration> {
+ 
+@@ -21,24 +26,51 @@
+     }
+ 
+     public static void createEndPlatform(ServerLevelAccessor world, BlockPos pos, boolean breakBlocks) {
+-        BlockPos.MutableBlockPos blockposition_mutableblockposition = pos.mutable();
++        EndPlatformFeature.createEndPlatform(world, pos, breakBlocks, null);
++        // CraftBukkit start
++    }
+ 
++    public static void createEndPlatform(ServerLevelAccessor worldaccess, BlockPos blockposition, boolean flag, Entity entity) {
++        org.bukkit.craftbukkit.util.BlockStateListPopulator blockList = new org.bukkit.craftbukkit.util.BlockStateListPopulator(worldaccess);
++        // CraftBukkit end
++        BlockPos.MutableBlockPos blockposition_mutableblockposition = blockposition.mutable();
++
+         for (int i = -2; i <= 2; ++i) {
+             for (int j = -2; j <= 2; ++j) {
+                 for (int k = -1; k < 3; ++k) {
+-                    BlockPos.MutableBlockPos blockposition_mutableblockposition1 = blockposition_mutableblockposition.set(pos).move(j, k, i);
++                    BlockPos.MutableBlockPos blockposition_mutableblockposition1 = blockposition_mutableblockposition.set(blockposition).move(j, k, i);
+                     Block block = k == -1 ? Blocks.OBSIDIAN : Blocks.AIR;
+ 
+-                    if (!world.getBlockState(blockposition_mutableblockposition1).is(block)) {
+-                        if (breakBlocks) {
+-                            world.destroyBlock(blockposition_mutableblockposition1, true, (Entity) null);
++                    // CraftBukkit start
++                    if (!blockList.getBlockState(blockposition_mutableblockposition1).is(block)) {
++                        if (flag) {
++                            blockList.destroyBlock(blockposition_mutableblockposition1, true, (Entity) null);
+                         }
+ 
+-                        world.setBlock(blockposition_mutableblockposition1, block.defaultBlockState(), 3);
++                        blockList.setBlock(blockposition_mutableblockposition1, block.defaultBlockState(), 3);
++                        // CraftBukkit end
+                     }
+                 }
+             }
+         }
++        // CraftBukkit start
++        // SPIGOT-7746: Entity will only be null during world generation, which is async, so just generate without event
++        if (entity != null) {
++            org.bukkit.World bworld = worldaccess.getLevel().getWorld();
++            PortalCreateEvent portalEvent = new PortalCreateEvent((List<BlockState>) (List) blockList.getList(), bworld, entity.getBukkitEntity(), org.bukkit.event.world.PortalCreateEvent.CreateReason.END_PLATFORM);
+ 
++            worldaccess.getLevel().getCraftServer().getPluginManager().callEvent(portalEvent);
++            if (portalEvent.isCancelled()) {
++                return;
++            }
++        }
++
++        // SPIGOT-7856: End platform not dropping items after replacing blocks
++        if (flag) {
++            blockList.getList().forEach((state) -> worldaccess.destroyBlock(state.getPosition(), true, null));
++        }
++        blockList.updateList();
++        // CraftBukkit end
++
+     }
+ }

@@ -39,14 +39,14 @@ public class FactoryItemMaterialTest {
 
     static String name(Enum<?> from, Enum<?> to) {
         if (from.getClass() == to.getClass()) {
-            return buffer.delete(0, Integer.MAX_VALUE).append(from.getClass().getName()).append(' ').append(from.name()).append(" to ").append(to.name()).toString();
+            return FactoryItemMaterialTest.buffer.delete(0, Integer.MAX_VALUE).append(from.getClass().getName()).append(' ').append(from.name()).append(" to ").append(to.name()).toString();
         }
-        return buffer.delete(0, Integer.MAX_VALUE).append(from.getClass().getName()).append('(').append(from.name()).append(") to ").append(to.getClass().getName()).append('(').append(to.name()).append(')').toString();
+        return FactoryItemMaterialTest.buffer.delete(0, Integer.MAX_VALUE).append(from.getClass().getName()).append('(').append(from.name()).append(") to ").append(to.getClass().getName()).append('(').append(to.name()).append(')').toString();
     }
 
     public static Stream<Arguments> data() {
         List<Arguments> list = new ArrayList<>();
-        for (Material material : materials) {
+        for (Material material : FactoryItemMaterialTest.materials) {
             list.add(Arguments.of(material));
         }
         return list.stream();
@@ -57,27 +57,27 @@ public class FactoryItemMaterialTest {
     public void itemStack(Material material) {
         ItemStack bukkitStack = new ItemStack(material);
         CraftItemStack craftStack = CraftItemStack.asCraftCopy(bukkitStack);
-        ItemMeta meta = factory.getItemMeta(material);
+        ItemMeta meta = FactoryItemMaterialTest.factory.getItemMeta(material);
         if (meta == null) {
             assertThat(material, is(Material.AIR));
         } else {
-            assertTrue(factory.isApplicable(meta, bukkitStack));
-            assertTrue(factory.isApplicable(meta, craftStack));
+            assertTrue(FactoryItemMaterialTest.factory.isApplicable(meta, bukkitStack));
+            assertTrue(FactoryItemMaterialTest.factory.isApplicable(meta, craftStack));
         }
     }
 
     @ParameterizedTest
     @MethodSource("data")
     public void generalCase(Material material) {
-        CraftMetaItem meta = (CraftMetaItem) factory.getItemMeta(material);
+        CraftMetaItem meta = (CraftMetaItem) FactoryItemMaterialTest.factory.getItemMeta(material);
         if (meta == null) {
             assertThat(material, is(Material.AIR));
         } else {
-            assertTrue(factory.isApplicable(meta, material));
+            assertTrue(FactoryItemMaterialTest.factory.isApplicable(meta, material));
             assertTrue(meta.applicableTo(material));
 
             meta = meta.clone();
-            assertTrue(factory.isApplicable(meta, material));
+            assertTrue(FactoryItemMaterialTest.factory.isApplicable(meta, material));
             assertTrue(meta.applicableTo(material));
         }
     }
@@ -85,27 +85,27 @@ public class FactoryItemMaterialTest {
     @ParameterizedTest
     @MethodSource("data")
     public void asMetaFor(Material material) {
-        final CraftMetaItem baseMeta = (CraftMetaItem) factory.getItemMeta(material);
+        final CraftMetaItem baseMeta = (CraftMetaItem) FactoryItemMaterialTest.factory.getItemMeta(material);
         if (baseMeta == null) {
             assertThat(material, is(Material.AIR));
             return;
         }
 
-        for (Material other : materials) {
+        for (Material other : FactoryItemMaterialTest.materials) {
             final ItemStack bukkitStack = new ItemStack(other);
             final CraftItemStack craftStack = CraftItemStack.asCraftCopy(bukkitStack);
-            final CraftMetaItem otherMeta = (CraftMetaItem) factory.asMetaFor(baseMeta, other);
+            final CraftMetaItem otherMeta = (CraftMetaItem) FactoryItemMaterialTest.factory.asMetaFor(baseMeta, other);
 
-            final String testName = name(material, other);
+            final String testName = FactoryItemMaterialTest.name(material, other);
 
             if (otherMeta == null) {
                 assertThat(other, is(Material.AIR), testName);
                 continue;
             }
 
-            assertTrue(factory.isApplicable(otherMeta, craftStack), testName);
-            assertTrue(factory.isApplicable(otherMeta, bukkitStack), testName);
-            assertTrue(factory.isApplicable(otherMeta, other), testName);
+            assertTrue(FactoryItemMaterialTest.factory.isApplicable(otherMeta, craftStack), testName);
+            assertTrue(FactoryItemMaterialTest.factory.isApplicable(otherMeta, bukkitStack), testName);
+            assertTrue(FactoryItemMaterialTest.factory.isApplicable(otherMeta, other), testName);
             assertTrue(otherMeta.applicableTo(other), testName);
         }
     }
@@ -116,7 +116,7 @@ public class FactoryItemMaterialTest {
         if (material == Material.AIR) {
             return;
         }
-        final CraftMetaItem baseMeta = (CraftMetaItem) factory.getItemMeta(material);
+        final CraftMetaItem baseMeta = (CraftMetaItem) FactoryItemMaterialTest.factory.getItemMeta(material);
         final CraftMetaItem baseMetaClone = baseMeta.clone();
 
         final ItemStack baseMetaStack = new ItemStack(material);
@@ -124,29 +124,29 @@ public class FactoryItemMaterialTest {
 
         assertThat(baseMeta, is(not(sameInstance(baseMetaStack.getItemMeta()))));
 
-        assertTrue(factory.equals(baseMeta, null));
-        assertTrue(factory.equals(null, baseMeta));
+        assertTrue(FactoryItemMaterialTest.factory.equals(baseMeta, null));
+        assertTrue(FactoryItemMaterialTest.factory.equals(null, baseMeta));
 
-        assertTrue(factory.equals(baseMeta, baseMetaClone));
-        assertTrue(factory.equals(baseMetaClone, baseMeta));
+        assertTrue(FactoryItemMaterialTest.factory.equals(baseMeta, baseMetaClone));
+        assertTrue(FactoryItemMaterialTest.factory.equals(baseMetaClone, baseMeta));
 
         assertThat(baseMeta, is(not(sameInstance(baseMetaClone))));
 
         assertThat(baseMeta, is(baseMetaClone));
         assertThat(baseMetaClone, is(baseMeta));
 
-        for (Material other : materials) {
-            final String testName = name(material, other);
+        for (Material other : FactoryItemMaterialTest.materials) {
+            final String testName = FactoryItemMaterialTest.name(material, other);
 
-            final CraftMetaItem otherMeta = (CraftMetaItem) factory.asMetaFor(baseMetaClone, other);
+            final CraftMetaItem otherMeta = (CraftMetaItem) FactoryItemMaterialTest.factory.asMetaFor(baseMetaClone, other);
 
             if (otherMeta == null) {
                 assertThat(other, is(Material.AIR), testName);
                 continue;
             }
 
-            assertTrue(factory.equals(baseMeta, otherMeta), testName);
-            assertTrue(factory.equals(otherMeta, baseMeta), testName);
+            assertTrue(FactoryItemMaterialTest.factory.equals(baseMeta, otherMeta), testName);
+            assertTrue(FactoryItemMaterialTest.factory.equals(otherMeta, baseMeta), testName);
 
             assertThat(baseMeta, is(otherMeta), testName);
             assertThat(otherMeta, is(baseMeta), testName);

@@ -6,7 +6,7 @@ import java.lang.reflect.Modifier;
 import java.util.Locale;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.resources.ResourceLocation;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -35,7 +35,7 @@ public class StructureTypeTest {
     @Test
     public void testMinecraftToBukkitFieldName() {
         for (net.minecraft.world.level.levelgen.structure.StructureType<?> structureType : CraftRegistry.getMinecraftRegistry(Registries.STRUCTURE_TYPE)) {
-            MinecraftKey minecraftKey = BuiltInRegistries.STRUCTURE_TYPE.getKey(structureType);
+            ResourceLocation minecraftKey = BuiltInRegistries.STRUCTURE_TYPE.getKey(structureType);
 
             try {
                 StructureType bukkit = (StructureType) StructureType.class.getField(minecraftKey.getPath().toUpperCase(Locale.ROOT)).get(null);

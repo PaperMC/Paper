@@ -1,0 +1,86 @@
+--- a/net/minecraft/world/item/crafting/ShapedRecipe.java
++++ b/net/minecraft/world/item/crafting/ShapedRecipe.java
+@@ -16,6 +16,13 @@
+ import net.minecraft.world.item.crafting.display.ShapedCraftingRecipeDisplay;
+ import net.minecraft.world.item.crafting.display.SlotDisplay;
+ import net.minecraft.world.level.Level;
++// CraftBukkit start
++import org.bukkit.NamespacedKey;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.inventory.CraftRecipe;
++import org.bukkit.craftbukkit.inventory.CraftShapedRecipe;
++import org.bukkit.inventory.RecipeChoice;
++// CraftBukkit end
+ 
+ public class ShapedRecipe implements CraftingRecipe {
+ 
+@@ -39,7 +46,69 @@
+         this(group, category, raw, result, true);
+     }
+ 
++    // CraftBukkit start
+     @Override
++    public org.bukkit.inventory.ShapedRecipe toBukkitRecipe(NamespacedKey id) {
++        CraftItemStack result = CraftItemStack.asCraftMirror(this.result);
++        CraftShapedRecipe recipe = new CraftShapedRecipe(id, result, this);
++        recipe.setGroup(this.group);
++        recipe.setCategory(CraftRecipe.getCategory(this.category()));
++
++        switch (this.pattern.height()) {
++        case 1:
++            switch (this.pattern.width()) {
++            case 1:
++                recipe.shape("a");
++                break;
++            case 2:
++                recipe.shape("ab");
++                break;
++            case 3:
++                recipe.shape("abc");
++                break;
++            }
++            break;
++        case 2:
++            switch (this.pattern.width()) {
++            case 1:
++                recipe.shape("a","b");
++                break;
++            case 2:
++                recipe.shape("ab","cd");
++                break;
++            case 3:
++                recipe.shape("abc","def");
++                break;
++            }
++            break;
++        case 3:
++            switch (this.pattern.width()) {
++            case 1:
++                recipe.shape("a","b","c");
++                break;
++            case 2:
++                recipe.shape("ab","cd","ef");
++                break;
++            case 3:
++                recipe.shape("abc","def","ghi");
++                break;
++            }
++            break;
++        }
++        char c = 'a';
++        for (Optional<Ingredient> list : this.pattern.ingredients()) {
++            RecipeChoice choice = CraftRecipe.toBukkit(list);
++            if (choice != null) {
++                recipe.setIngredient(c, choice);
++            }
++
++            c++;
++        }
++        return recipe;
++    }
++    // CraftBukkit end
++
++    @Override
+     public RecipeSerializer<? extends ShapedRecipe> getSerializer() {
+         return RecipeSerializer.SHAPED_RECIPE;
+     }

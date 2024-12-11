@@ -1,0 +1,50 @@
+--- a/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java
++++ b/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java
+@@ -30,6 +30,11 @@
+ import net.minecraft.world.level.gameevent.PositionSource;
+ import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.craftbukkit.CraftGameEvent;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.block.BlockReceiveGameEvent;
++// CraftBukkit end
+ 
+ public interface VibrationSystem {
+ 
+@@ -233,7 +238,8 @@
+             if (callback.requiresAdjacentChunksToBeTicking() && !Ticker.areAdjacentChunksTicking(world, blockposition1)) {
+                 return false;
+             } else {
+-                callback.onReceiveVibration(world, blockposition, vibration.gameEvent(), (Entity) vibration.getEntity(world).orElse((Object) null), (Entity) vibration.getProjectileOwner(world).orElse((Object) null), VibrationSystem.Listener.distanceBetweenInBlocks(blockposition, blockposition1));
++                // CraftBukkit - decompile error
++                callback.onReceiveVibration(world, blockposition, vibration.gameEvent(), (Entity) vibration.getEntity(world).orElse(null), (Entity) vibration.getProjectileOwner(world).orElse(null), VibrationSystem.Listener.distanceBetweenInBlocks(blockposition, blockposition1));
+                 listenerData.setCurrentVibration((VibrationInfo) null);
+                 return true;
+             }
+@@ -288,8 +294,14 @@
+                     return false;
+                 } else {
+                     Vec3 vec3d1 = (Vec3) optional.get();
+-
+-                    if (!vibrationsystem_d.canReceiveVibration(world, BlockPos.containing(emitterPos), event, emitter)) {
++                    // CraftBukkit start
++                    boolean defaultCancel = !vibrationsystem_d.canReceiveVibration(world, BlockPos.containing(emitterPos), event, emitter);
++                    Entity entity = emitter.sourceEntity();
++                    BlockReceiveGameEvent event1 = new BlockReceiveGameEvent(CraftGameEvent.minecraftToBukkit(event.value()), CraftBlock.at(world, BlockPos.containing(vec3d1)), (entity == null) ? null : entity.getBukkitEntity());
++                    event1.setCancelled(defaultCancel);
++                    world.getCraftServer().getPluginManager().callEvent(event1);
++                    if (event1.isCancelled()) {
++                        // CraftBukkit end
+                         return false;
+                     } else if (Listener.isOccluded(world, emitterPos, vec3d1)) {
+                         return false;
+@@ -342,7 +354,7 @@
+             return instance.group(VibrationInfo.CODEC.lenientOptionalFieldOf("event").forGetter((vibrationsystem_a) -> {
+                 return Optional.ofNullable(vibrationsystem_a.currentVibration);
+             }), VibrationSelector.CODEC.fieldOf("selector").forGetter(VibrationSystem.Data::getSelectionStrategy), ExtraCodecs.NON_NEGATIVE_INT.fieldOf("event_delay").orElse(0).forGetter(VibrationSystem.Data::getTravelTimeInTicks)).apply(instance, (optional, vibrationselector, integer) -> {
+-                return new VibrationSystem.Data((VibrationInfo) optional.orElse((Object) null), vibrationselector, integer, true);
++                return new VibrationSystem.Data((VibrationInfo) optional.orElse(null), vibrationselector, integer, true); // CraftBukkit - decompile error
+             });
+         });
+         public static final String NBT_TAG_KEY = "listener";

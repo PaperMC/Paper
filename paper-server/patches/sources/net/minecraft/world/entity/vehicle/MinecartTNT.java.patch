@@ -1,0 +1,40 @@
+--- a/net/minecraft/world/entity/vehicle/MinecartTNT.java
++++ b/net/minecraft/world/entity/vehicle/MinecartTNT.java
+@@ -25,6 +25,10 @@
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.material.FluidState;
++// CraftBukkit start
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.entity.ExplosionPrimeEvent;
++// CraftBukkit end
+ 
+ public class MinecartTNT extends AbstractMinecart {
+ 
+@@ -37,6 +41,7 @@
+     public int fuse = -1;
+     public float explosionPowerBase = 4.0F;
+     public float explosionSpeedFactor = 1.0F;
++    public boolean isIncendiary = false; // CraftBukkit - add field
+ 
+     public MinecartTNT(EntityType<? extends MinecartTNT> type, Level world) {
+         super(type, world);
+@@ -117,8 +122,16 @@
+         if (world instanceof ServerLevel worldserver) {
+             double d1 = Math.min(Math.sqrt(power), 5.0D);
+ 
+-            worldserver.explode(this, damageSource, (ExplosionDamageCalculator) null, this.getX(), this.getY(), this.getZ(), (float) ((double) this.explosionPowerBase + (double) this.explosionSpeedFactor * this.random.nextDouble() * 1.5D * d1), false, Level.ExplosionInteraction.TNT);
+-            this.discard();
++            // CraftBukkit start
++            ExplosionPrimeEvent event = new ExplosionPrimeEvent(this.getBukkitEntity(), (float) ((double) this.explosionPowerBase + (double) this.explosionSpeedFactor * this.random.nextDouble() * 1.5D * d1), this.isIncendiary);
++            worldserver.getCraftServer().getPluginManager().callEvent(event);
++            if (event.isCancelled()) {
++                this.fuse = -1;
++                return;
++            }
++            worldserver.explode(this, damageSource, (ExplosionDamageCalculator) null, this.getX(), this.getY(), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.TNT);
++            // CraftBukkit end
++            this.discard(EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
+         }
+ 
+     }

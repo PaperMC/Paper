@@ -15,10 +15,10 @@ public class CraftBiomeSearchResult implements BiomeSearchResult {
     }
 
     public Biome getBiome() {
-        return biome;
+        return this.biome;
     }
 
     public Location getLocation() {
-        return location;
+        return this.location;
     }
 }

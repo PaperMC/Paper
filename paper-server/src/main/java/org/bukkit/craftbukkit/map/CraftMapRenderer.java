@@ -1,7 +1,7 @@
 package org.bukkit.craftbukkit.map;
 
-import net.minecraft.world.level.saveddata.maps.MapIcon;
-import net.minecraft.world.level.saveddata.maps.WorldMap;
+import net.minecraft.world.level.saveddata.maps.MapDecoration;
+import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.Player;
@@ -13,9 +13,9 @@ import org.bukkit.map.MapView;
 
 public class CraftMapRenderer extends MapRenderer {
 
-    private final WorldMap worldMap;
+    private final MapItemSavedData worldMap;
 
-    public CraftMapRenderer(CraftMapView mapView, WorldMap worldMap) {
+    public CraftMapRenderer(CraftMapView mapView, MapItemSavedData worldMap) {
         super(false);
         this.worldMap = worldMap;
     }
@@ -25,7 +25,7 @@ public class CraftMapRenderer extends MapRenderer {
         // Map
         for (int x = 0; x < 128; ++x) {
             for (int y = 0; y < 128; ++y) {
-                canvas.setPixel(x, y, worldMap.colors[y * 128 + x]);
+                canvas.setPixel(x, y, this.worldMap.colors[y * 128 + x]);
             }
         }
 
@@ -35,14 +35,14 @@ public class CraftMapRenderer extends MapRenderer {
             cursors.removeCursor(cursors.getCursor(0));
         }
 
-        for (String key : worldMap.decorations.keySet()) {
+        for (String key : this.worldMap.decorations.keySet()) {
             // If this cursor is for a player check visibility with vanish system
             Player other = Bukkit.getPlayerExact((String) key);
             if (other != null && !player.canSee(other)) {
                 continue;
             }
 
-            MapIcon decoration = worldMap.decorations.get(key);
+            MapDecoration decoration = this.worldMap.decorations.get(key);
             cursors.addCursor(new MapCursor(decoration.x(), decoration.y(), (byte) (decoration.rot() & 15), CraftMapCursor.CraftType.minecraftHolderToBukkit(decoration.type()), true, CraftChatMessage.fromComponent(decoration.name().orElse(null))));
         }
     }

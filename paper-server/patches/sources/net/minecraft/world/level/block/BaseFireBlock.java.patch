@@ -1,0 +1,73 @@
+--- a/net/minecraft/world/level/block/BaseFireBlock.java
++++ b/net/minecraft/world/level/block/BaseFireBlock.java
+@@ -12,6 +12,7 @@
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.context.BlockPlaceContext;
++import net.minecraft.world.item.context.UseOnContext;
+ import net.minecraft.world.level.BlockGetter;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.state.BlockBehaviour;
+@@ -137,7 +138,14 @@
+             }
+ 
+             if (entity.getRemainingFireTicks() >= 0) {
+-                entity.igniteForSeconds(8.0F);
++                // CraftBukkit start
++                org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.event.entity.EntityCombustByBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, pos), entity.getBukkitEntity(), 8.0F);
++                world.getCraftServer().getPluginManager().callEvent(event);
++
++                if (!event.isCancelled()) {
++                    entity.igniteForSeconds(event.getDuration(), false);
++                }
++                // CraftBukkit end
+             }
+         }
+ 
+@@ -146,26 +154,26 @@
+     }
+ 
+     @Override
+-    protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+-        if (!oldState.is(state.getBlock())) {
++    protected void onPlace(BlockState iblockdata, Level world, BlockPos blockposition, BlockState iblockdata1, boolean flag, UseOnContext context) { // CraftBukkit - context
++        if (!iblockdata1.is(iblockdata.getBlock())) {
+             if (BaseFireBlock.inPortalDimension(world)) {
+-                Optional<PortalShape> optional = PortalShape.findEmptyPortalShape(world, pos, Direction.Axis.X);
++                Optional<PortalShape> optional = PortalShape.findEmptyPortalShape(world, blockposition, Direction.Axis.X);
+ 
+                 if (optional.isPresent()) {
+-                    ((PortalShape) optional.get()).createPortalBlocks(world);
++                    ((PortalShape) optional.get()).createPortalBlocks(world, (context == null) ? null : context.getPlayer()); // CraftBukkit - player
+                     return;
+                 }
+             }
+ 
+-            if (!state.canSurvive(world, pos)) {
+-                world.removeBlock(pos, false);
++            if (!iblockdata.canSurvive(world, blockposition)) {
++                this.fireExtinguished(world, blockposition); // CraftBukkit - fuel block broke
+             }
+ 
+         }
+     }
+ 
+     private static boolean inPortalDimension(Level world) {
+-        return world.dimension() == Level.OVERWORLD || world.dimension() == Level.NETHER;
++        return world.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.OVERWORLD || world.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER; // CraftBukkit - getTypeKey()
+     }
+ 
+     @Override
+@@ -213,4 +221,12 @@
+             }
+         }
+     }
++
++    // CraftBukkit start
++    protected void fireExtinguished(net.minecraft.world.level.LevelAccessor world, BlockPos position) {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, position, Blocks.AIR.defaultBlockState()).isCancelled()) {
++            world.removeBlock(position, false);
++        }
++    }
++    // CraftBukkit end
+ }

@@ -47,30 +47,30 @@ public final class CraftEvil {
     }
 
     public static int getBlockTypeIdAt(World world, int x, int y, int z) {
-        return getId(world.getBlockAt(x, y, z).getType());
+        return CraftEvil.getId(world.getBlockAt(x, y, z).getType());
     }
 
     public static int getBlockTypeIdAt(World world, Location location) {
-        return getId(world.getBlockAt(location).getType());
+        return CraftEvil.getId(world.getBlockAt(location).getType());
     }
 
     public static int getTypeId(Block block) {
-        return getId(block.getType());
+        return CraftEvil.getId(block.getType());
     }
 
     public static boolean setTypeId(Block block, int type) {
-        block.setType(getMaterial(type));
+        block.setType(CraftEvil.getMaterial(type));
         return true;
     }
 
     public static boolean setTypeId(Block block, int type, boolean applyPhysics) {
-        block.setType(getMaterial(type), applyPhysics);
+        block.setType(CraftEvil.getMaterial(type), applyPhysics);
         return true;
     }
 
     public static boolean setTypeIdAndData(Block block, int type, byte data, boolean applyPhysics) {
-        block.setType(getMaterial(type), applyPhysics);
-        setData(block, data);
+        block.setType(CraftEvil.getMaterial(type), applyPhysics);
+        CraftEvil.setData(block, data);
         return true;
     }
 
@@ -83,24 +83,24 @@ public final class CraftEvil {
     }
 
     public static int getTypeId(BlockState state) {
-        return getId(state.getType());
+        return CraftEvil.getId(state.getType());
     }
 
     public static boolean setTypeId(BlockState state, int type) {
-        state.setType(getMaterial(type));
+        state.setType(CraftEvil.getMaterial(type));
         return true;
     }
 
     public static int getTypeId(ItemStack stack) {
-        return getId(stack.getType());
+        return CraftEvil.getId(stack.getType());
     }
 
     public static void setTypeId(ItemStack stack, int type) {
-        stack.setType(getMaterial(type));
+        stack.setType(CraftEvil.getMaterial(type));
     }
 
     public static Material getMaterial(int id) {
-        return byId.get(id);
+        return CraftEvil.byId.get(id);
     }
 
     public static int getId(Material material) {

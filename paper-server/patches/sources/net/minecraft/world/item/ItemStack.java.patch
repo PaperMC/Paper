@@ -1,0 +1,510 @@
+--- a/net/minecraft/world/item/ItemStack.java
++++ b/net/minecraft/world/item/ItemStack.java
+@@ -23,6 +23,7 @@
+ import net.minecraft.ChatFormatting;
+ import net.minecraft.advancements.CriteriaTriggers;
+ import net.minecraft.core.BlockPos;
++import net.minecraft.core.Direction;
+ import net.minecraft.core.Holder;
+ import net.minecraft.core.HolderLookup;
+ import net.minecraft.core.HolderSet;
+@@ -46,10 +47,12 @@
+ import net.minecraft.network.chat.MutableComponent;
+ import net.minecraft.network.codec.ByteBufCodecs;
+ import net.minecraft.network.codec.StreamCodec;
++import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
+ import net.minecraft.resources.RegistryOps;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.sounds.SoundEvent;
++import net.minecraft.sounds.SoundSource;
+ import net.minecraft.stats.Stats;
+ import net.minecraft.tags.TagKey;
+ import net.minecraft.util.ExtraCodecs;
+@@ -70,7 +73,6 @@
+ import net.minecraft.world.entity.ai.attributes.Attributes;
+ import net.minecraft.world.entity.decoration.ItemFrame;
+ import net.minecraft.world.entity.item.ItemEntity;
+-import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.flag.FeatureFlagSet;
+ import net.minecraft.world.inventory.ClickAction;
+ import net.minecraft.world.inventory.Slot;
+@@ -88,26 +90,53 @@
+ import net.minecraft.world.item.enchantment.EnchantmentHelper;
+ import net.minecraft.world.item.enchantment.ItemEnchantments;
+ import net.minecraft.world.item.enchantment.Repairable;
+-import net.minecraft.world.level.ItemLike;
+-import net.minecraft.world.level.Level;
+-import net.minecraft.world.level.block.state.BlockState;
+-import net.minecraft.world.level.block.state.pattern.BlockInWorld;
+ import net.minecraft.world.level.saveddata.maps.MapId;
+ import org.apache.commons.lang3.mutable.MutableBoolean;
+ import org.slf4j.Logger;
++
++// CraftBukkit start
++import java.util.Map;
++import java.util.Objects;
++import net.minecraft.world.level.ItemLike;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.BaseEntityBlock;
++import net.minecraft.world.level.block.BedBlock;
++import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.SaplingBlock;
++import net.minecraft.world.level.block.SignBlock;
++import net.minecraft.world.level.block.SoundType;
++import net.minecraft.world.level.block.WitherSkullBlock;
++import net.minecraft.world.level.block.entity.BlockEntity;
++import net.minecraft.world.level.block.entity.SignBlockEntity;
++import net.minecraft.world.level.block.entity.SkullBlockEntity;
++import net.minecraft.world.level.block.state.pattern.BlockInWorld;
++import net.minecraft.world.level.gameevent.GameEvent;
++import org.bukkit.Location;
++import org.bukkit.TreeType;
++import org.bukkit.block.BlockState;
++import org.bukkit.craftbukkit.block.CapturedBlockState;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.block.CraftBlockState;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.craftbukkit.util.CraftLocation;
++import org.bukkit.entity.Player;
++import org.bukkit.event.block.BlockFertilizeEvent;
++import org.bukkit.event.player.PlayerItemDamageEvent;
++import org.bukkit.event.world.StructureGrowEvent;
++// CraftBukkit end
+ 
+ public final class ItemStack implements DataComponentHolder {
+ 
+     private static final List<Component> OP_NBT_WARNING = List.of(Component.translatable("item.op_warning.line1").withStyle(ChatFormatting.RED, ChatFormatting.BOLD), Component.translatable("item.op_warning.line2").withStyle(ChatFormatting.RED), Component.translatable("item.op_warning.line3").withStyle(ChatFormatting.RED));
+     public static final Codec<ItemStack> CODEC = Codec.lazyInitialized(() -> {
+-        return RecordCodecBuilder.create((instance) -> {
++        return RecordCodecBuilder.<ItemStack>create((instance) -> { // CraftBukkit - decompile error
+             return instance.group(Item.CODEC.fieldOf("id").forGetter(ItemStack::getItemHolder), ExtraCodecs.intRange(1, 99).fieldOf("count").orElse(1).forGetter(ItemStack::getCount), DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter((itemstack) -> {
+                 return itemstack.components.asPatch();
+             })).apply(instance, ItemStack::new);
+         });
+     });
+     public static final Codec<ItemStack> SINGLE_ITEM_CODEC = Codec.lazyInitialized(() -> {
+-        return RecordCodecBuilder.create((instance) -> {
++        return RecordCodecBuilder.<ItemStack>create((instance) -> { // CraftBukkit - decompile error
+             return instance.group(Item.CODEC.fieldOf("id").forGetter(ItemStack::getItemHolder), DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter((itemstack) -> {
+                 return itemstack.components.asPatch();
+             })).apply(instance, (holder, datacomponentpatch) -> {
+@@ -132,19 +161,25 @@
+             if (i <= 0) {
+                 return ItemStack.EMPTY;
+             } else {
+-                Holder<Item> holder = (Holder) null.ITEM_STREAM_CODEC.decode(registryfriendlybytebuf);
++                Holder<Item> holder = (Holder) ITEM_STREAM_CODEC.decode(registryfriendlybytebuf); // CraftBukkit - decompile error
+                 DataComponentPatch datacomponentpatch = (DataComponentPatch) DataComponentPatch.STREAM_CODEC.decode(registryfriendlybytebuf);
+ 
+-                return new ItemStack(holder, i, datacomponentpatch);
++                // CraftBukkit start
++                ItemStack itemstack = new ItemStack(holder, i, datacomponentpatch);
++                if (!datacomponentpatch.isEmpty()) {
++                    CraftItemStack.setItemMeta(itemstack, CraftItemStack.getItemMeta(itemstack));
++                }
++                return itemstack;
++                // CraftBukkit end
+             }
+         }
+ 
+         public void encode(RegistryFriendlyByteBuf registryfriendlybytebuf, ItemStack itemstack) {
+-            if (itemstack.isEmpty()) {
++            if (itemstack.isEmpty() || itemstack.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
+                 registryfriendlybytebuf.writeVarInt(0);
+             } else {
+                 registryfriendlybytebuf.writeVarInt(itemstack.getCount());
+-                null.ITEM_STREAM_CODEC.encode(registryfriendlybytebuf, itemstack.getItemHolder());
++                ITEM_STREAM_CODEC.encode(registryfriendlybytebuf, itemstack.getItemHolder()); // CraftBukkit - decompile error
+                 DataComponentPatch.STREAM_CODEC.encode(registryfriendlybytebuf, itemstack.components.asPatch());
+             }
+         }
+@@ -187,7 +222,7 @@
+ 
+         return dataresult.isError() ? dataresult.map((unit) -> {
+             return stack;
+-        }) : (stack.getCount() > stack.getMaxStackSize() ? DataResult.error(() -> {
++        }) : (stack.getCount() > stack.getMaxStackSize() ? DataResult.<ItemStack>error(() -> { // CraftBukkit - decompile error
+             int i = stack.getCount();
+ 
+             return "Item stack with stack size of " + i + " was larger than maximum: " + stack.getMaxStackSize();
+@@ -294,8 +329,9 @@
+                 j = itemstack.getMaxStackSize();
+             } while (i <= j);
+ 
++            int finalI = i, finalJ = j; // CraftBukkit - decompile error
+             return DataResult.error(() -> {
+-                return "Item stack with count of " + i + " was larger than maximum: " + j;
++                return "Item stack with count of " + finalI + " was larger than maximum: " + finalJ; // CraftBukkit - decompile error
+             });
+         }
+     }
+@@ -370,32 +406,190 @@
+     }
+ 
+     public InteractionResult useOn(UseOnContext context) {
+-        Player entityhuman = context.getPlayer();
++        net.minecraft.world.entity.player.Player entityhuman = context.getPlayer();
+         BlockPos blockposition = context.getClickedPos();
+ 
+         if (entityhuman != null && !entityhuman.getAbilities().mayBuild && !this.canPlaceOnBlockInAdventureMode(new BlockInWorld(context.getLevel(), blockposition, false))) {
+             return InteractionResult.PASS;
+         } else {
+             Item item = this.getItem();
+-            InteractionResult enuminteractionresult = item.useOn(context);
++            // CraftBukkit start - handle all block place event logic here
++            DataComponentPatch oldData = this.components.asPatch();
++            int oldCount = this.getCount();
++            ServerLevel world = (ServerLevel) context.getLevel();
+ 
++            if (!(item instanceof BucketItem || item instanceof SolidBucketItem)) { // if not bucket
++                world.captureBlockStates = true;
++                // special case bonemeal
++                if (item == Items.BONE_MEAL) {
++                    world.captureTreeGeneration = true;
++                }
++            }
++            InteractionResult enuminteractionresult;
++            try {
++                enuminteractionresult = item.useOn(context);
++            } finally {
++                world.captureBlockStates = false;
++            }
++            DataComponentPatch newData = this.components.asPatch();
++            int newCount = this.getCount();
++            this.setCount(oldCount);
++            this.restorePatch(oldData);
++            if (enuminteractionresult.consumesAction() && world.captureTreeGeneration && world.capturedBlockStates.size() > 0) {
++                world.captureTreeGeneration = false;
++                Location location = CraftLocation.toBukkit(blockposition, world.getWorld());
++                TreeType treeType = SaplingBlock.treeType;
++                SaplingBlock.treeType = null;
++                List<CraftBlockState> blocks = new java.util.ArrayList<>(world.capturedBlockStates.values());
++                world.capturedBlockStates.clear();
++                StructureGrowEvent structureEvent = null;
++                if (treeType != null) {
++                    boolean isBonemeal = this.getItem() == Items.BONE_MEAL;
++                    structureEvent = new StructureGrowEvent(location, treeType, isBonemeal, (Player) entityhuman.getBukkitEntity(), (List< BlockState>) (List<? extends BlockState>) blocks);
++                    org.bukkit.Bukkit.getPluginManager().callEvent(structureEvent);
++                }
++
++                BlockFertilizeEvent fertilizeEvent = new BlockFertilizeEvent(CraftBlock.at(world, blockposition), (Player) entityhuman.getBukkitEntity(), (List< BlockState>) (List<? extends BlockState>) blocks);
++                fertilizeEvent.setCancelled(structureEvent != null && structureEvent.isCancelled());
++                org.bukkit.Bukkit.getPluginManager().callEvent(fertilizeEvent);
++
++                if (!fertilizeEvent.isCancelled()) {
++                    // Change the stack to its new contents if it hasn't been tampered with.
++                    if (this.getCount() == oldCount && Objects.equals(this.components.asPatch(), oldData)) {
++                        this.restorePatch(newData);
++                        this.setCount(newCount);
++                    }
++                    for (CraftBlockState blockstate : blocks) {
++                        // SPIGOT-7572 - Move fix for SPIGOT-7248 to CapturedBlockState, to allow bees in bee nest
++                        CapturedBlockState.setBlockState(blockstate);
++                    }
++                    entityhuman.awardStat(Stats.ITEM_USED.get(item)); // SPIGOT-7236 - award stat
++                }
++
++                SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
++                return enuminteractionresult;
++            }
++            world.captureTreeGeneration = false;
++
+             if (entityhuman != null && enuminteractionresult instanceof InteractionResult.Success) {
+                 InteractionResult.Success enuminteractionresult_d = (InteractionResult.Success) enuminteractionresult;
+ 
+                 if (enuminteractionresult_d.wasItemInteraction()) {
+-                    entityhuman.awardStat(Stats.ITEM_USED.get(item));
++                    InteractionHand enumhand = context.getHand();
++                    org.bukkit.event.block.BlockPlaceEvent placeEvent = null;
++                    List<BlockState> blocks = new java.util.ArrayList<>(world.capturedBlockStates.values());
++                    world.capturedBlockStates.clear();
++                    if (blocks.size() > 1) {
++                        placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(world, entityhuman, enumhand, blocks, blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                    } else if (blocks.size() == 1) {
++                        placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(world, entityhuman, enumhand, blocks.get(0), blockposition.getX(), blockposition.getY(), blockposition.getZ());
++                    }
++
++                    if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
++                        enuminteractionresult = InteractionResult.FAIL; // cancel placement
++                        // PAIL: Remove this when MC-99075 fixed
++                        placeEvent.getPlayer().updateInventory();
++                        // revert back all captured blocks
++                        world.preventPoiUpdated = true; // CraftBukkit - SPIGOT-5710
++                        for (BlockState blockstate : blocks) {
++                            blockstate.update(true, false);
++                        }
++                        world.preventPoiUpdated = false;
++
++                        // Brute force all possible updates
++                        BlockPos placedPos = ((CraftBlock) placeEvent.getBlock()).getPosition();
++                        for (Direction dir : Direction.values()) {
++                            ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, placedPos.relative(dir)));
++                        }
++                        SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
++                    } else {
++                        // Change the stack to its new contents if it hasn't been tampered with.
++                        if (this.getCount() == oldCount && Objects.equals(this.components.asPatch(), oldData)) {
++                            this.restorePatch(newData);
++                            this.setCount(newCount);
++                        }
++
++                        for (Map.Entry<BlockPos, BlockEntity> e : world.capturedTileEntities.entrySet()) {
++                            world.setBlockEntity(e.getValue());
++                        }
++
++                        for (BlockState blockstate : blocks) {
++                            int updateFlag = ((CraftBlockState) blockstate).getFlag();
++                            net.minecraft.world.level.block.state.BlockState oldBlock = ((CraftBlockState) blockstate).getHandle();
++                            BlockPos newblockposition = ((CraftBlockState) blockstate).getPosition();
++                            net.minecraft.world.level.block.state.BlockState block = world.getBlockState(newblockposition);
++
++                            if (!(block.getBlock() instanceof BaseEntityBlock)) { // Containers get placed automatically
++                                block.onPlace(world, newblockposition, oldBlock, true, context);
++                            }
++
++                            world.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, world.getBlockState(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point
++                        }
++
++                        if (this.item == Items.WITHER_SKELETON_SKULL) { // Special case skulls to allow wither spawns to be cancelled
++                            BlockPos bp = blockposition;
++                            if (!world.getBlockState(blockposition).canBeReplaced()) {
++                                if (!world.getBlockState(blockposition).isSolid()) {
++                                    bp = null;
++                                } else {
++                                    bp = bp.relative(context.getClickedFace());
++                                }
++                            }
++                            if (bp != null) {
++                                BlockEntity te = world.getBlockEntity(bp);
++                                if (te instanceof SkullBlockEntity) {
++                                    WitherSkullBlock.checkSpawn(world, bp, (SkullBlockEntity) te);
++                                }
++                            }
++                        }
++
++                        // SPIGOT-4678
++                        if (this.item instanceof SignItem && SignItem.openSign != null) {
++                            try {
++                                if (world.getBlockEntity(SignItem.openSign) instanceof SignBlockEntity tileentitysign) {
++                                    if (world.getBlockState(SignItem.openSign).getBlock() instanceof SignBlock blocksign) {
++                                        blocksign.openTextEdit(entityhuman, tileentitysign, true, org.bukkit.event.player.PlayerSignOpenEvent.Cause.PLACE); // Craftbukkit
++                                    }
++                                }
++                            } finally {
++                                SignItem.openSign = null;
++                            }
++                        }
++
++                        // SPIGOT-7315: Moved from BlockBed#setPlacedBy
++                        if (placeEvent != null && this.item instanceof BedItem) {
++                            BlockPos position = ((CraftBlock) placeEvent.getBlock()).getPosition();
++                            net.minecraft.world.level.block.state.BlockState blockData = world.getBlockState(position);
++
++                            if (blockData.getBlock() instanceof BedBlock) {
++                                world.blockUpdated(position, Blocks.AIR);
++                                blockData.updateNeighbourShapes(world, position, 3);
++                            }
++                        }
++
++                        // SPIGOT-1288 - play sound stripped from ItemBlock
++                        if (this.item instanceof BlockItem) {
++                            SoundType soundeffecttype = ((BlockItem) this.item).getBlock().defaultBlockState().getSoundType(); // TODO: not strictly correct, however currently only affects decorated pots
++                            world.playSound(entityhuman, blockposition, soundeffecttype.getPlaceSound(), SoundSource.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
++                        }
++
++                        entityhuman.awardStat(Stats.ITEM_USED.get(item));
++                    }
+                 }
+             }
++            world.capturedTileEntities.clear();
++            world.capturedBlockStates.clear();
++            // CraftBukkit end
+ 
+             return enuminteractionresult;
+         }
+     }
+ 
+-    public float getDestroySpeed(BlockState state) {
++    public float getDestroySpeed(net.minecraft.world.level.block.state.BlockState state) {
+         return this.getItem().getDestroySpeed(this, state);
+     }
+ 
+-    public InteractionResult use(Level world, Player user, InteractionHand hand) {
++    public InteractionResult use(Level world, net.minecraft.world.entity.player.Player user, InteractionHand hand) {
+         ItemStack itemstack = this.copy();
+         boolean flag = this.getUseDuration(user) <= 0;
+         InteractionResult enuminteractionresult = this.getItem().use(world, user, hand);
+@@ -492,7 +686,22 @@
+ 
+     public void hurtAndBreak(int amount, ServerLevel world, @Nullable ServerPlayer player, Consumer<Item> breakCallback) {
+         int j = this.processDurabilityChange(amount, world, player);
++        // CraftBukkit start
++        if (player != null) {
++            PlayerItemDamageEvent event = new PlayerItemDamageEvent(player.getBukkitEntity(), CraftItemStack.asCraftMirror(this), j);
++            event.getPlayer().getServer().getPluginManager().callEvent(event);
+ 
++            if (j != event.getDamage() || event.isCancelled()) {
++                event.getPlayer().updateInventory();
++            }
++            if (event.isCancelled()) {
++                return;
++            }
++
++            j = event.getDamage();
++        }
++        // CraftBukkit end
++
+         if (j != 0) {
+             this.applyDamage(this.getDamageValue() + j, player, breakCallback);
+         }
+@@ -511,6 +720,11 @@
+         this.setDamageValue(damage);
+         if (this.isBroken()) {
+             Item item = this.getItem();
++            // CraftBukkit start - Check for item breaking
++            if (this.count == 1 && player != null) {
++                org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent(player, this);
++            }
++            // CraftBukkit end
+ 
+             this.shrink(1);
+             breakCallback.accept(item);
+@@ -518,7 +732,7 @@
+ 
+     }
+ 
+-    public void hurtWithoutBreaking(int amount, Player player) {
++    public void hurtWithoutBreaking(int amount, net.minecraft.world.entity.player.Player player) {
+         if (player instanceof ServerPlayer entityplayer) {
+             int j = this.processDurabilityChange(amount, entityplayer.serverLevel(), entityplayer);
+ 
+@@ -580,11 +794,11 @@
+         return this.getItem().getBarColor(this);
+     }
+ 
+-    public boolean overrideStackedOnOther(Slot slot, ClickAction clickType, Player player) {
++    public boolean overrideStackedOnOther(Slot slot, ClickAction clickType, net.minecraft.world.entity.player.Player player) {
+         return this.getItem().overrideStackedOnOther(this, slot, clickType, player);
+     }
+ 
+-    public boolean overrideOtherStackedOnMe(ItemStack stack, Slot slot, ClickAction clickType, Player player, SlotAccess cursorStackReference) {
++    public boolean overrideOtherStackedOnMe(ItemStack stack, Slot slot, ClickAction clickType, net.minecraft.world.entity.player.Player player, SlotAccess cursorStackReference) {
+         return this.getItem().overrideOtherStackedOnMe(this, stack, slot, clickType, player, cursorStackReference);
+     }
+ 
+@@ -592,8 +806,8 @@
+         Item item = this.getItem();
+ 
+         if (item.hurtEnemy(this, target, user)) {
+-            if (user instanceof Player) {
+-                Player entityhuman = (Player) user;
++            if (user instanceof net.minecraft.world.entity.player.Player) {
++                net.minecraft.world.entity.player.Player entityhuman = (net.minecraft.world.entity.player.Player) user;
+ 
+                 entityhuman.awardStat(Stats.ITEM_USED.get(item));
+             }
+@@ -608,7 +822,7 @@
+         this.getItem().postHurtEnemy(this, target, user);
+     }
+ 
+-    public void mineBlock(Level world, BlockState state, BlockPos pos, Player miner) {
++    public void mineBlock(Level world, net.minecraft.world.level.block.state.BlockState state, BlockPos pos, net.minecraft.world.entity.player.Player miner) {
+         Item item = this.getItem();
+ 
+         if (item.mineBlock(this, world, state, pos, miner)) {
+@@ -617,11 +831,11 @@
+ 
+     }
+ 
+-    public boolean isCorrectToolForDrops(BlockState state) {
++    public boolean isCorrectToolForDrops(net.minecraft.world.level.block.state.BlockState state) {
+         return this.getItem().isCorrectToolForDrops(this, state);
+     }
+ 
+-    public InteractionResult interactLivingEntity(Player user, LivingEntity entity, InteractionHand hand) {
++    public InteractionResult interactLivingEntity(net.minecraft.world.entity.player.Player user, LivingEntity entity, InteractionHand hand) {
+         return this.getItem().interactLivingEntity(this, user, entity, hand);
+     }
+ 
+@@ -736,7 +950,7 @@
+ 
+     }
+ 
+-    public void onCraftedBy(Level world, Player player, int amount) {
++    public void onCraftedBy(Level world, net.minecraft.world.entity.player.Player player, int amount) {
+         player.awardStat(Stats.ITEM_CRAFTED.get(this.getItem()), amount);
+         this.getItem().onCraftedBy(this, world, player);
+     }
+@@ -770,6 +984,12 @@
+         return this.getItem().useOnRelease(this);
+     }
+ 
++    // CraftBukkit start
++    public void restorePatch(DataComponentPatch datacomponentpatch) {
++        this.components.restorePatch(datacomponentpatch);
++    }
++    // CraftBukkit end
++
+     @Nullable
+     public <T> T set(DataComponentType<? super T> type, @Nullable T value) {
+         return this.components.set(type, value);
+@@ -858,7 +1078,7 @@
+     }
+ 
+     private <T extends TooltipProvider> void addToTooltip(DataComponentType<T> componentType, Item.TooltipContext context, Consumer<Component> textConsumer, TooltipFlag type) {
+-        T t0 = (TooltipProvider) this.get(componentType);
++        T t0 = (T) this.get(componentType); // CraftBukkit - decompile error
+ 
+         if (t0 != null) {
+             t0.addToTooltip(context, textConsumer, type);
+@@ -866,7 +1086,7 @@
+ 
+     }
+ 
+-    public List<Component> getTooltipLines(Item.TooltipContext context, @Nullable Player player, TooltipFlag type) {
++    public List<Component> getTooltipLines(Item.TooltipContext context, @Nullable net.minecraft.world.entity.player.Player player, TooltipFlag type) {
+         boolean flag = this.getItem().shouldPrintOpWarning(this, player);
+ 
+         if (!type.isCreative() && this.has(DataComponents.HIDE_TOOLTIP)) {
+@@ -941,7 +1161,7 @@
+         }
+     }
+ 
+-    private void addAttributeTooltips(Consumer<Component> textConsumer, @Nullable Player player) {
++    private void addAttributeTooltips(Consumer<Component> textConsumer, @Nullable net.minecraft.world.entity.player.Player player) {
+         ItemAttributeModifiers itemattributemodifiers = (ItemAttributeModifiers) this.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+ 
+         if (itemattributemodifiers.showInTooltip()) {
+@@ -966,7 +1186,7 @@
+         }
+     }
+ 
+-    private void addModifierTooltip(Consumer<Component> textConsumer, @Nullable Player player, Holder<Attribute> attribute, AttributeModifier modifier) {
++    private void addModifierTooltip(Consumer<Component> textConsumer, @Nullable net.minecraft.world.entity.player.Player player, Holder<Attribute> attribute, AttributeModifier modifier) {
+         double d0 = modifier.amount();
+         boolean flag = false;
+ 
+@@ -1091,6 +1311,13 @@
+         EnchantmentHelper.forEachModifier(this, slot, attributeModifierConsumer);
+     }
+ 
++    // CraftBukkit start
++    @Deprecated
++    public void setItem(Item item) {
++        this.item = item;
++    }
++    // CraftBukkit end
++
+     public Component getDisplayName() {
+         MutableComponent ichatmutablecomponent = Component.empty().append(this.getHoverName());
+ 
+@@ -1153,7 +1380,7 @@
+     }
+ 
+     public void consume(int amount, @Nullable LivingEntity entity) {
+-        if (entity == null || !entity.hasInfiniteMaterials()) {
++        if ((entity == null || !entity.hasInfiniteMaterials()) && this != ItemStack.EMPTY) { // CraftBukkit
+             this.shrink(amount);
+         }
+ 

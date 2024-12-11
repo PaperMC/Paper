@@ -3,10 +3,11 @@ package org.bukkit;
 import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import net.minecraft.core.EnumDirection;
-import net.minecraft.world.level.block.BlockCake;
-import net.minecraft.world.level.block.BlockChest;
+
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CakeBlock;
+import net.minecraft.world.level.block.ChestBlock;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
@@ -21,7 +22,7 @@ public class BlockDataTest {
 
     @Test
     public void testParsing() {
-        BlockData cakeTest = CraftBlockData.fromData(Blocks.CAKE.defaultBlockState().setValue(BlockCake.BITES, 3));
+        BlockData cakeTest = CraftBlockData.fromData(Blocks.CAKE.defaultBlockState().setValue(CakeBlock.BITES, 3));
 
         BlockData materialString = CraftBlockData.newData(BlockType.CAKE, "[bites=3]");
         assertThat(materialString, is(cakeTest));
@@ -53,7 +54,7 @@ public class BlockDataTest {
 
     @Test
     public void testMistake() {
-        BlockData cakeTest = CraftBlockData.fromData(Blocks.CAKE.defaultBlockState().setValue(BlockCake.BITES, 3));
+        BlockData cakeTest = CraftBlockData.fromData(Blocks.CAKE.defaultBlockState().setValue(CakeBlock.BITES, 3));
 
         assertThrows(IllegalArgumentException.class, () -> CraftBlockData.newData(BlockType.CAKE, cakeTest.toString()));
     }
@@ -65,7 +66,7 @@ public class BlockDataTest {
 
     @Test
     public void testClone() {
-        Cake cakeTest = (Cake) CraftBlockData.fromData(Blocks.CAKE.defaultBlockState().setValue(BlockCake.BITES, 3));
+        Cake cakeTest = (Cake) CraftBlockData.fromData(Blocks.CAKE.defaultBlockState().setValue(CakeBlock.BITES, 3));
         Cake clone = (Cake) cakeTest.clone();
 
         assertNotSame(cakeTest, clone, "Clone did not return new object");
@@ -144,7 +145,7 @@ public class BlockDataTest {
         assertFalse(CraftBlockData.newData(null, "minecraft:trapped_chest[facing=east,waterlogged=false]").matches(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true]")));
         assertTrue(CraftBlockData.newData(null, "minecraft:chest[facing=east,waterlogged=true]").matches(CraftBlockData.newData(null, "minecraft:chest[waterlogged=true,facing=east]")));
 
-        Chest one = (Chest) CraftBlockData.fromData(Blocks.CHEST.defaultBlockState().setValue(BlockChest.FACING, EnumDirection.EAST));
+        Chest one = (Chest) CraftBlockData.fromData(Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.EAST));
         Chest two = (Chest) CraftBlockData.newData(null, "minecraft:chest[waterlogged=false]");
 
         assertTrue(one.matches(two));
@@ -162,7 +163,7 @@ public class BlockDataTest {
 
     @Test
     public void testGetAsString2() {
-        Chest data = (Chest) CraftBlockData.fromData(Blocks.CHEST.defaultBlockState().setValue(BlockChest.FACING, EnumDirection.EAST));
+        Chest data = (Chest) CraftBlockData.fromData(Blocks.CHEST.defaultBlockState().setValue(ChestBlock.FACING, Direction.EAST));
 
         assertThat(data.getAsString(true), is("minecraft:chest[facing=east,type=single,waterlogged=false]"));
         assertThat(data.getAsString(false), is("minecraft:chest[facing=east,type=single,waterlogged=false]"));

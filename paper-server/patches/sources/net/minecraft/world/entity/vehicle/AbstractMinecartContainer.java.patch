@@ -1,0 +1,90 @@
+--- a/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
++++ b/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
+@@ -20,6 +20,14 @@
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.storage.loot.LootTable;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import java.util.List;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.inventory.InventoryHolder;
++// CraftBukkit end
+ 
+ public abstract class AbstractMinecartContainer extends AbstractMinecart implements ContainerEntity {
+ 
+@@ -28,9 +36,50 @@
+     public ResourceKey<LootTable> lootTable;
+     public long lootTableSeed;
+ 
++    // CraftBukkit start
++    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
++    private int maxStack = MAX_STACK;
++
++    public List<ItemStack> getContents() {
++        return this.itemStacks;
++    }
++
++    public void onOpen(CraftHumanEntity who) {
++        this.transaction.add(who);
++    }
++
++    public void onClose(CraftHumanEntity who) {
++        this.transaction.remove(who);
++    }
++
++    public List<HumanEntity> getViewers() {
++        return this.transaction;
++    }
++
++    public InventoryHolder getOwner() {
++        org.bukkit.entity.Entity cart = this.getBukkitEntity();
++        if(cart instanceof InventoryHolder) return (InventoryHolder) cart;
++        return null;
++    }
++
++    @Override
++    public int getMaxStackSize() {
++        return this.maxStack;
++    }
++
++    public void setMaxStackSize(int size) {
++        this.maxStack = size;
++    }
++
++    @Override
++    public Location getLocation() {
++        return this.getBukkitEntity().getLocation();
++    }
++    // CraftBukkit end
++
+     protected AbstractMinecartContainer(EntityType<?> type, Level world) {
+         super(type, world);
+-        this.itemStacks = NonNullList.withSize(36, ItemStack.EMPTY);
++        this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY); // CraftBukkit - SPIGOT-3513
+     }
+ 
+     @Override
+@@ -74,11 +123,18 @@
+ 
+     @Override
+     public void remove(Entity.RemovalReason reason) {
+-        if (!this.level().isClientSide && reason.shouldDestroy()) {
++        // CraftBukkit start - add Bukkit remove cause
++        this.remove(reason, null);
++    }
++
++    @Override
++    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++        // CraftBukkit end
++        if (!this.level().isClientSide && entity_removalreason.shouldDestroy()) {
+             Containers.dropContents(this.level(), (Entity) this, (Container) this);
+         }
+ 
+-        super.remove(reason);
++        super.remove(entity_removalreason, cause); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     @Override

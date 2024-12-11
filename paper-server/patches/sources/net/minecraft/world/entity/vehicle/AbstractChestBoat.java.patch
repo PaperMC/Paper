@@ -1,0 +1,91 @@
+--- a/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
++++ b/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
+@@ -27,6 +27,15 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.storage.loot.LootTable;
+ 
++// CraftBukkit start
++import java.util.List;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.inventory.InventoryHolder;
++// CraftBukkit end
++
+ public abstract class AbstractChestBoat extends AbstractBoat implements HasCustomInventoryScreen, ContainerEntity {
+ 
+     private static final int CONTAINER_SIZE = 27;
+@@ -70,11 +79,18 @@
+ 
+     @Override
+     public void remove(Entity.RemovalReason reason) {
+-        if (!this.level().isClientSide && reason.shouldDestroy()) {
++        // CraftBukkit start - add Bukkit remove cause
++        this.remove(reason, null);
++    }
++
++    @Override
++    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++        // CraftBukkit end
++        if (!this.level().isClientSide && entity_removalreason.shouldDestroy()) {
+             Containers.dropContents(this.level(), (Entity) this, (Container) this);
+         }
+ 
+-        super.remove(reason);
++        super.remove(entity_removalreason, cause); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     @Override
+@@ -212,4 +228,51 @@
+     public void stopOpen(Player player) {
+         this.level().gameEvent((Holder) GameEvent.CONTAINER_CLOSE, this.position(), GameEvent.Context.of((Entity) player));
+     }
++
++    // CraftBukkit start
++    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
++    private int maxStack = MAX_STACK;
++
++    @Override
++    public List<ItemStack> getContents() {
++        return this.itemStacks;
++    }
++
++    @Override
++    public void onOpen(CraftHumanEntity who) {
++        this.transaction.add(who);
++    }
++
++    @Override
++    public void onClose(CraftHumanEntity who) {
++        this.transaction.remove(who);
++    }
++
++    @Override
++    public List<HumanEntity> getViewers() {
++        return this.transaction;
++    }
++
++    @Override
++    public InventoryHolder getOwner() {
++        org.bukkit.entity.Entity entity = this.getBukkitEntity();
++        if (entity instanceof InventoryHolder) return (InventoryHolder) entity;
++        return null;
++    }
++
++    @Override
++    public int getMaxStackSize() {
++        return this.maxStack;
++    }
++
++    @Override
++    public void setMaxStackSize(int size) {
++        this.maxStack = size;
++    }
++
++    @Override
++    public Location getLocation() {
++        return this.getBukkitEntity().getLocation();
++    }
++    // CraftBukkit end
+ }

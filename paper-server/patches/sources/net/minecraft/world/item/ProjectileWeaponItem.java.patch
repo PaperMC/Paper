@@ -1,0 +1,31 @@
+--- a/net/minecraft/world/item/ProjectileWeaponItem.java
++++ b/net/minecraft/world/item/ProjectileWeaponItem.java
+@@ -54,9 +54,25 @@
+                 float f6 = f4 + f5 * (float) ((i + 1) / 2) * f3;
+ 
+                 f5 = -f5;
+-                Projectile.spawnProjectile(this.createProjectile(world, shooter, stack, itemstack1, critical), world, itemstack1, (iprojectile) -> {
+-                    this.shootProjectile(shooter, iprojectile, i, speed, divergence, f6, target);
+-                });
++                // CraftBukkit start
++                Projectile iprojectile = this.createProjectile(world, shooter, stack, itemstack1, critical);
++                this.shootProjectile(shooter, iprojectile, i, speed, divergence, f6, target);
++
++                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, stack, itemstack1, iprojectile, hand, speed, true);
++                if (event.isCancelled()) {
++                    event.getProjectile().remove();
++                    return;
++                }
++
++                if (event.getProjectile() == iprojectile.getBukkitEntity()) {
++                    if (Projectile.spawnProjectile(iprojectile, world, itemstack1).isRemoved()) {
++                        if (shooter instanceof net.minecraft.server.level.ServerPlayer) {
++                            ((net.minecraft.server.level.ServerPlayer) shooter).getBukkitEntity().updateInventory();
++                        }
++                        return;
++                    }
++                }
++                // CraftBukkit end
+                 stack.hurtAndBreak(this.getDurabilityUse(itemstack1), shooter, LivingEntity.getSlotForHand(hand));
+                 if (stack.isEmpty()) {
+                     break;

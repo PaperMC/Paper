@@ -1,0 +1,52 @@
+--- a/net/minecraft/core/dispenser/EquipmentDispenseItemBehavior.java
++++ b/net/minecraft/core/dispenser/EquipmentDispenseItemBehavior.java
+@@ -7,8 +7,13 @@
+ import net.minecraft.world.entity.LivingEntity;
+ import net.minecraft.world.entity.Mob;
+ import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.DispenserBlock;
+ import net.minecraft.world.phys.AABB;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockDispenseArmorEvent;
++// CraftBukkit end
+ 
+ public class EquipmentDispenseItemBehavior extends DefaultDispenseItemBehavior {
+ 
+@@ -34,7 +39,34 @@
+             EquipmentSlot enumitemslot = entityliving.getEquipmentSlotForItem(stack);
+             ItemStack itemstack1 = stack.split(1);
+ 
+-            entityliving.setItemSlot(enumitemslot, itemstack1);
++            // CraftBukkit start
++            Level world = pointer.level();
++            org.bukkit.block.Block block = CraftBlock.at(world, pointer.pos());
++            CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemstack1);
++
++            BlockDispenseArmorEvent event = new BlockDispenseArmorEvent(block, craftItem.clone(), (org.bukkit.craftbukkit.entity.CraftLivingEntity) entityliving.getBukkitEntity());
++            if (!DispenserBlock.eventFired) {
++                world.getCraftServer().getPluginManager().callEvent(event);
++            }
++
++            if (event.isCancelled()) {
++                stack.grow(1);
++                return false;
++            }
++
++            if (!event.getItem().equals(craftItem)) {
++                stack.grow(1);
++                // Chain to handler for new item
++                ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
++                DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
++                if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != EquipmentDispenseItemBehavior.INSTANCE) {
++                    idispensebehavior.dispense(pointer, eventStack);
++                    return true;
++                }
++            }
++
++            entityliving.setItemSlot(enumitemslot, CraftItemStack.asNMSCopy(event.getItem()));
++            // CraftBukkit end
+             if (entityliving instanceof Mob) {
+                 Mob entityinsentient = (Mob) entityliving;
+ 

@@ -12,34 +12,34 @@ import org.bukkit.inventory.EquipmentSlot;
 
 public class CraftAttributeInstance implements AttributeInstance {
 
-    private final net.minecraft.world.entity.ai.attributes.AttributeModifiable handle;
+    private final net.minecraft.world.entity.ai.attributes.AttributeInstance handle;
     private final Attribute attribute;
 
-    public CraftAttributeInstance(net.minecraft.world.entity.ai.attributes.AttributeModifiable handle, Attribute attribute) {
+    public CraftAttributeInstance(net.minecraft.world.entity.ai.attributes.AttributeInstance handle, Attribute attribute) {
         this.handle = handle;
         this.attribute = attribute;
     }
 
     @Override
     public Attribute getAttribute() {
-        return attribute;
+        return this.attribute;
     }
 
     @Override
     public double getBaseValue() {
-        return handle.getBaseValue();
+        return this.handle.getBaseValue();
     }
 
     @Override
     public void setBaseValue(double d) {
-        handle.setBaseValue(d);
+        this.handle.setBaseValue(d);
     }
 
     @Override
     public Collection<AttributeModifier> getModifiers() {
         List<AttributeModifier> result = new ArrayList<AttributeModifier>();
-        for (net.minecraft.world.entity.ai.attributes.AttributeModifier nms : handle.getModifiers()) {
-            result.add(convert(nms));
+        for (net.minecraft.world.entity.ai.attributes.AttributeModifier nms : this.handle.getModifiers()) {
+            result.add(CraftAttributeInstance.convert(nms));
         }
 
         return result;
@@ -48,23 +48,23 @@ public class CraftAttributeInstance implements AttributeInstance {
     @Override
     public void addModifier(AttributeModifier modifier) {
         Preconditions.checkArgument(modifier != null, "modifier");
-        handle.addPermanentModifier(convert(modifier));
+        this.handle.addPermanentModifier(CraftAttributeInstance.convert(modifier));
     }
 
     @Override
     public void removeModifier(AttributeModifier modifier) {
         Preconditions.checkArgument(modifier != null, "modifier");
-        handle.removeModifier(convert(modifier));
+        this.handle.removeModifier(CraftAttributeInstance.convert(modifier));
     }
 
     @Override
     public double getValue() {
-        return handle.getValue();
+        return this.handle.getValue();
     }
 
     @Override
     public double getDefaultValue() {
-       return handle.getAttribute().value().getDefaultValue();
+       return this.handle.getAttribute().value().getDefaultValue();
     }
 
     public static net.minecraft.world.entity.ai.attributes.AttributeModifier convert(AttributeModifier bukkit) {

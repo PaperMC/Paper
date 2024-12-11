@@ -25,27 +25,27 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
 
     @Override
     public String getText() {
-        return CraftChatMessage.fromComponent(getHandle().getText());
+        return CraftChatMessage.fromComponent(this.getHandle().getText());
     }
 
     @Override
     public void setText(String text) {
-        getHandle().setText(CraftChatMessage.fromString(text, true)[0]);
+        this.getHandle().setText(CraftChatMessage.fromString(text, true)[0]);
     }
 
     @Override
     public int getLineWidth() {
-        return getHandle().getLineWidth();
+        return this.getHandle().getLineWidth();
     }
 
     @Override
     public void setLineWidth(int width) {
-        getHandle().getEntityData().set(Display.TextDisplay.DATA_LINE_WIDTH_ID, width);
+        this.getHandle().getEntityData().set(Display.TextDisplay.DATA_LINE_WIDTH_ID, width);
     }
 
     @Override
     public Color getBackgroundColor() {
-        int color = getHandle().getBackgroundColor();
+        int color = this.getHandle().getBackgroundColor();
 
         return (color == -1) ? null : Color.fromARGB(color);
     }
@@ -53,55 +53,55 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
     @Override
     public void setBackgroundColor(Color color) {
         if (color == null) {
-            getHandle().getEntityData().set(Display.TextDisplay.DATA_BACKGROUND_COLOR_ID, -1);
+            this.getHandle().getEntityData().set(Display.TextDisplay.DATA_BACKGROUND_COLOR_ID, -1);
         } else {
-            getHandle().getEntityData().set(Display.TextDisplay.DATA_BACKGROUND_COLOR_ID, color.asARGB());
+            this.getHandle().getEntityData().set(Display.TextDisplay.DATA_BACKGROUND_COLOR_ID, color.asARGB());
         }
     }
 
     @Override
     public byte getTextOpacity() {
-        return getHandle().getTextOpacity();
+        return this.getHandle().getTextOpacity();
     }
 
     @Override
     public void setTextOpacity(byte opacity) {
-        getHandle().setTextOpacity(opacity);
+        this.getHandle().setTextOpacity(opacity);
     }
 
     @Override
     public boolean isShadowed() {
-        return getFlag(Display.TextDisplay.FLAG_SHADOW);
+        return this.getFlag(Display.TextDisplay.FLAG_SHADOW);
     }
 
     @Override
     public void setShadowed(boolean shadow) {
-        setFlag(Display.TextDisplay.FLAG_SHADOW, shadow);
+        this.setFlag(Display.TextDisplay.FLAG_SHADOW, shadow);
     }
 
     @Override
     public boolean isSeeThrough() {
-        return getFlag(Display.TextDisplay.FLAG_SEE_THROUGH);
+        return this.getFlag(Display.TextDisplay.FLAG_SEE_THROUGH);
     }
 
     @Override
     public void setSeeThrough(boolean seeThrough) {
-        setFlag(Display.TextDisplay.FLAG_SEE_THROUGH, seeThrough);
+        this.setFlag(Display.TextDisplay.FLAG_SEE_THROUGH, seeThrough);
     }
 
     @Override
     public boolean isDefaultBackground() {
-        return getFlag(Display.TextDisplay.FLAG_USE_DEFAULT_BACKGROUND);
+        return this.getFlag(Display.TextDisplay.FLAG_USE_DEFAULT_BACKGROUND);
     }
 
     @Override
     public void setDefaultBackground(boolean defaultBackground) {
-        setFlag(Display.TextDisplay.FLAG_USE_DEFAULT_BACKGROUND, defaultBackground);
+        this.setFlag(Display.TextDisplay.FLAG_USE_DEFAULT_BACKGROUND, defaultBackground);
     }
 
     @Override
     public TextAlignment getAlignment() {
-        Display.TextDisplay.Align nms = Display.TextDisplay.getAlign(getHandle().getFlags());
+        Display.TextDisplay.Align nms = Display.TextDisplay.getAlign(this.getHandle().getFlags());
         return TextAlignment.valueOf(nms.name());
     }
 
@@ -111,16 +111,16 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
 
         switch (alignment) {
             case LEFT:
-                setFlag(Display.TextDisplay.FLAG_ALIGN_LEFT, true);
-                setFlag(Display.TextDisplay.FLAG_ALIGN_RIGHT, false);
+                this.setFlag(Display.TextDisplay.FLAG_ALIGN_LEFT, true);
+                this.setFlag(Display.TextDisplay.FLAG_ALIGN_RIGHT, false);
                 break;
             case RIGHT:
-                setFlag(Display.TextDisplay.FLAG_ALIGN_LEFT, false);
-                setFlag(Display.TextDisplay.FLAG_ALIGN_RIGHT, true);
+                this.setFlag(Display.TextDisplay.FLAG_ALIGN_LEFT, false);
+                this.setFlag(Display.TextDisplay.FLAG_ALIGN_RIGHT, true);
                 break;
             case CENTER:
-                setFlag(Display.TextDisplay.FLAG_ALIGN_LEFT, false);
-                setFlag(Display.TextDisplay.FLAG_ALIGN_RIGHT, false);
+                this.setFlag(Display.TextDisplay.FLAG_ALIGN_LEFT, false);
+                this.setFlag(Display.TextDisplay.FLAG_ALIGN_RIGHT, false);
                 break;
             default:
                 throw new IllegalArgumentException("Unknown alignment " + alignment);
@@ -128,11 +128,11 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
     }
 
     private boolean getFlag(int flag) {
-        return (getHandle().getFlags() & flag) != 0;
+        return (this.getHandle().getFlags() & flag) != 0;
     }
 
     private void setFlag(int flag, boolean set) {
-        byte flagBits = getHandle().getFlags();
+        byte flagBits = this.getHandle().getFlags();
 
         if (set) {
             flagBits |= flag;
@@ -140,6 +140,6 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
             flagBits &= ~flag;
         }
 
-        getHandle().setFlags(flagBits);
+        this.getHandle().setFlags(flagBits);
     }
 }

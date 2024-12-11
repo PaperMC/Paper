@@ -1,0 +1,95 @@
+--- a/net/minecraft/world/level/NaturalSpawner.java
++++ b/net/minecraft/world/level/NaturalSpawner.java
+@@ -47,8 +47,13 @@
+ import net.minecraft.world.level.levelgen.structure.Structure;
+ import net.minecraft.world.level.levelgen.structure.structures.NetherFortressStructure;
+ import net.minecraft.world.level.material.FluidState;
++import net.minecraft.world.level.storage.LevelData;
+ import net.minecraft.world.phys.Vec3;
+ import org.slf4j.Logger;
++import org.bukkit.craftbukkit.util.CraftSpawnCategory;
++import org.bukkit.entity.SpawnCategory;
++import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
++// CraftBukkit end
+ 
+ public final class NaturalSpawner {
+ 
+@@ -107,15 +112,31 @@
+         return (Biome) chunk.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ())).value();
+     }
+ 
+-    public static List<MobCategory> getFilteredSpawningCategories(NaturalSpawner.SpawnState info, boolean spawnAnimals, boolean spawnMonsters, boolean rare) {
++    // CraftBukkit start - add server
++    public static List<MobCategory> getFilteredSpawningCategories(NaturalSpawner.SpawnState spawnercreature_d, boolean flag, boolean flag1, boolean flag2, ServerLevel worldserver) {
++        LevelData worlddata = worldserver.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
++        // CraftBukkit end
+         List<MobCategory> list = new ArrayList(NaturalSpawner.SPAWNING_CATEGORIES.length);
+         MobCategory[] aenumcreaturetype = NaturalSpawner.SPAWNING_CATEGORIES;
+         int i = aenumcreaturetype.length;
+ 
+         for (int j = 0; j < i; ++j) {
+             MobCategory enumcreaturetype = aenumcreaturetype[j];
++            // CraftBukkit start - Use per-world spawn limits
++            boolean spawnThisTick = true;
++            int limit = enumcreaturetype.getMaxInstancesPerChunk();
++            SpawnCategory spawnCategory = CraftSpawnCategory.toBukkit(enumcreaturetype);
++            if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
++                spawnThisTick = worldserver.ticksPerSpawnCategory.getLong(spawnCategory) != 0 && worlddata.getGameTime() % worldserver.ticksPerSpawnCategory.getLong(spawnCategory) == 0;
++                limit = worldserver.getWorld().getSpawnLimit(spawnCategory);
++            }
+ 
+-            if ((spawnAnimals || !enumcreaturetype.isFriendly()) && (spawnMonsters || enumcreaturetype.isFriendly()) && (rare || !enumcreaturetype.isPersistent()) && info.canSpawnForCategoryGlobal(enumcreaturetype)) {
++            if (!spawnThisTick || limit == 0) {
++                continue;
++            }
++
++            if ((flag || !enumcreaturetype.isFriendly()) && (flag1 || enumcreaturetype.isFriendly()) && (flag2 || !enumcreaturetype.isPersistent()) && spawnercreature_d.canSpawnForCategoryGlobal(enumcreaturetype, limit)) {
++                // CraftBukkit end
+                 list.add(enumcreaturetype);
+             }
+         }
+@@ -217,10 +238,15 @@
+                                         entityinsentient.moveTo(d0, (double) i, d1, world.random.nextFloat() * 360.0F, 0.0F);
+                                         if (NaturalSpawner.isValidPositionForMob(world, entityinsentient, d2)) {
+                                             groupdataentity = entityinsentient.finalizeSpawn(world, world.getCurrentDifficultyAt(entityinsentient.blockPosition()), EntitySpawnReason.NATURAL, groupdataentity);
+-                                            ++j;
+-                                            ++k1;
+-                                            world.addFreshEntityWithPassengers(entityinsentient);
+-                                            runner.run(entityinsentient, chunk);
++                                            // CraftBukkit start
++                                            // SPIGOT-7045: Give ocelot babies back their special spawn reason. Note: This is the only modification required as ocelots count as monsters which means they only spawn during normal chunk ticking and do not spawn during chunk generation as starter mobs.
++                                            world.addFreshEntityWithPassengers(entityinsentient, (entityinsentient instanceof net.minecraft.world.entity.animal.Ocelot && !((org.bukkit.entity.Ageable) entityinsentient.getBukkitEntity()).isAdult()) ? SpawnReason.OCELOT_BABY : SpawnReason.NATURAL);
++                                            if (!entityinsentient.isRemoved()) {
++                                                ++j;
++                                                ++k1;
++                                                runner.run(entityinsentient, chunk);
++                                            }
++                                            // CraftBukkit end
+                                             if (j >= entityinsentient.getMaxSpawnClusterSize()) {
+                                                 return;
+                                             }
+@@ -369,7 +395,7 @@
+ 
+                                     if (entityinsentient.checkSpawnRules(world, EntitySpawnReason.CHUNK_GENERATION) && entityinsentient.checkSpawnObstruction(world)) {
+                                         groupdataentity = entityinsentient.finalizeSpawn(world, world.getCurrentDifficultyAt(entityinsentient.blockPosition()), EntitySpawnReason.CHUNK_GENERATION, groupdataentity);
+-                                        world.addFreshEntityWithPassengers(entityinsentient);
++                                        world.addFreshEntityWithPassengers(entityinsentient, SpawnReason.CHUNK_GEN); // CraftBukkit
+                                         flag = true;
+                                     }
+                                 }
+@@ -482,10 +508,12 @@
+             return this.unmodifiableMobCategoryCounts;
+         }
+ 
+-        boolean canSpawnForCategoryGlobal(MobCategory group) {
+-            int i = group.getMaxInstancesPerChunk() * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
++        // CraftBukkit start
++        boolean canSpawnForCategoryGlobal(MobCategory enumcreaturetype, int limit) {
++            int i = limit * this.spawnableChunkCount / NaturalSpawner.MAGIC_NUMBER;
++            // CraftBukkit end
+ 
+-            return this.mobCategoryCounts.getInt(group) < i;
++            return this.mobCategoryCounts.getInt(enumcreaturetype) < i;
+         }
+ 
+         boolean canSpawnForCategoryLocal(MobCategory group, ChunkPos chunkPos) {

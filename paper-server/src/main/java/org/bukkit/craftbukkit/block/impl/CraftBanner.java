@@ -9,17 +9,17 @@ public final class CraftBanner extends org.bukkit.craftbukkit.block.data.CraftBl
         super();
     }
 
-    public CraftBanner(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftBanner(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftRotatable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger ROTATION = getInteger(net.minecraft.world.level.block.BlockBanner.class, "rotation");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty ROTATION = getInteger(net.minecraft.world.level.block.BannerBlock.class, "rotation");
 
     @Override
     public org.bukkit.block.BlockFace getRotation() {
-        int data = get(ROTATION);
+        int data = this.get(CraftBanner.ROTATION);
         switch (data) {
             case 0x0:
                 return org.bukkit.block.BlockFace.SOUTH;
@@ -113,6 +113,6 @@ public final class CraftBanner extends org.bukkit.craftbukkit.block.data.CraftBl
             default:
                 throw new IllegalArgumentException("Illegal rotation " + rotation);
         }
-        set(ROTATION, val);
+        this.set(CraftBanner.ROTATION, val);
     }
 }

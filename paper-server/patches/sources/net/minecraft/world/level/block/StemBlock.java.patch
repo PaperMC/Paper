@@ -1,0 +1,41 @@
+--- a/net/minecraft/world/level/block/StemBlock.java
++++ b/net/minecraft/world/level/block/StemBlock.java
+@@ -26,6 +26,7 @@
+ import net.minecraft.world.level.block.state.properties.IntegerProperty;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
+ 
+ public class StemBlock extends BushBlock implements BonemealableBlock {
+ 
+@@ -79,7 +80,7 @@
+ 
+                 if (i < 7) {
+                     state = (BlockState) state.setValue(StemBlock.AGE, i + 1);
+-                    world.setBlock(pos, state, 2);
++                    CraftEventFactory.handleBlockGrowEvent(world, pos, state, 2); // CraftBukkit
+                 } else {
+                     Direction enumdirection = Direction.Plane.HORIZONTAL.getRandomDirection(random);
+                     BlockPos blockposition1 = pos.relative(enumdirection);
+@@ -91,7 +92,11 @@
+                         Optional<Block> optional1 = iregistry.getOptional(this.attachedStem);
+ 
+                         if (optional.isPresent() && optional1.isPresent()) {
+-                            world.setBlockAndUpdate(blockposition1, ((Block) optional.get()).defaultBlockState());
++                            // CraftBukkit start
++                            if (!CraftEventFactory.handleBlockGrowEvent(world, blockposition1, ((Block) optional.get()).defaultBlockState())) {
++                                return;
++                            }
++                            // CraftBukkit end
+                             world.setBlockAndUpdate(pos, (BlockState) ((Block) optional1.get()).defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, enumdirection));
+                         }
+                     }
+@@ -121,7 +126,7 @@
+         int i = Math.min(7, (Integer) state.getValue(StemBlock.AGE) + Mth.nextInt(world.random, 2, 5));
+         BlockState iblockdata1 = (BlockState) state.setValue(StemBlock.AGE, i);
+ 
+-        world.setBlock(pos, iblockdata1, 2);
++        CraftEventFactory.handleBlockGrowEvent(world, pos, iblockdata1, 2); // CraftBukkit
+         if (i == 7) {
+             iblockdata1.randomTick(world, pos, world.random);
+         }

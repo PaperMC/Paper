@@ -1,0 +1,64 @@
+--- a/net/minecraft/world/level/block/DropperBlock.java
++++ b/net/minecraft/world/level/block/DropperBlock.java
+@@ -8,6 +8,7 @@
+ import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
+ import net.minecraft.core.dispenser.DispenseItemBehavior;
+ import net.minecraft.server.level.ServerLevel;
++import net.minecraft.world.CompoundContainer;
+ import net.minecraft.world.Container;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.Level;
+@@ -19,12 +20,15 @@
+ import net.minecraft.world.level.block.state.BlockBehaviour;
+ import net.minecraft.world.level.block.state.BlockState;
+ import org.slf4j.Logger;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.inventory.InventoryMoveItemEvent;
++// CraftBukkit end
+ 
+ public class DropperBlock extends DispenserBlock {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public static final MapCodec<DropperBlock> CODEC = simpleCodec(DropperBlock::new);
+-    private static final DispenseItemBehavior DISPENSE_BEHAVIOUR = new DefaultDispenseItemBehavior();
++    private static final DispenseItemBehavior DISPENSE_BEHAVIOUR = new DefaultDispenseItemBehavior(true); // CraftBukkit
+ 
+     @Override
+     public MapCodec<DropperBlock> codec() {
+@@ -47,7 +51,7 @@
+ 
+     @Override
+     public void dispenseFrom(ServerLevel world, BlockState state, BlockPos pos) {
+-        DispenserBlockEntity tileentitydispenser = (DispenserBlockEntity) world.getBlockEntity(pos, BlockEntityType.DROPPER).orElse((Object) null);
++        DispenserBlockEntity tileentitydispenser = (DispenserBlockEntity) world.getBlockEntity(pos, BlockEntityType.DROPPER).orElse(null); // CraftBukkit - decompile error
+ 
+         if (tileentitydispenser == null) {
+             DropperBlock.LOGGER.warn("Ignoring dispensing attempt for Dropper without matching block entity at {}", pos);
+@@ -68,8 +72,25 @@
+                     if (iinventory == null) {
+                         itemstack1 = DropperBlock.DISPENSE_BEHAVIOUR.dispense(sourceblock, itemstack);
+                     } else {
+-                        itemstack1 = HopperBlockEntity.addItem(tileentitydispenser, iinventory, itemstack.copyWithCount(1), enumdirection.getOpposite());
+-                        if (itemstack1.isEmpty()) {
++                        // CraftBukkit start - Fire event when pushing items into other inventories
++                        CraftItemStack oitemstack = CraftItemStack.asCraftMirror(itemstack.copyWithCount(1));
++
++                        org.bukkit.inventory.Inventory destinationInventory;
++                        // Have to special case large chests as they work oddly
++                        if (iinventory instanceof CompoundContainer) {
++                            destinationInventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((CompoundContainer) iinventory);
++                        } else {
++                            destinationInventory = iinventory.getOwner().getInventory();
++                        }
++
++                        InventoryMoveItemEvent event = new InventoryMoveItemEvent(tileentitydispenser.getOwner().getInventory(), oitemstack, destinationInventory, true);
++                        world.getCraftServer().getPluginManager().callEvent(event);
++                        if (event.isCancelled()) {
++                            return;
++                        }
++                        itemstack1 = HopperBlockEntity.addItem(tileentitydispenser, iinventory, CraftItemStack.asNMSCopy(event.getItem()), enumdirection.getOpposite());
++                        if (event.getItem().equals(oitemstack) && itemstack1.isEmpty()) {
++                            // CraftBukkit end
+                             itemstack1 = itemstack.copy();
+                             itemstack1.shrink(1);
+                         } else {

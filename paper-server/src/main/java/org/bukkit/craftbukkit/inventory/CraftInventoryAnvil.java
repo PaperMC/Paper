@@ -2,7 +2,7 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import java.util.function.Consumer;
-import net.minecraft.world.IInventory;
+import net.minecraft.world.Container;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.inventory.view.CraftAnvilView;
 import org.bukkit.entity.HumanEntity;
@@ -20,53 +20,53 @@ public class CraftInventoryAnvil extends CraftResultInventory implements AnvilIn
     private int repairCostAmount;
     private int maximumRepairCost;
 
-    public CraftInventoryAnvil(Location location, IInventory inventory, IInventory resultInventory) {
+    public CraftInventoryAnvil(Location location, Container inventory, Container resultInventory) {
         super(inventory, resultInventory);
         this.location = location;
         this.renameText = null;
-        this.repairCost = DEFAULT_REPAIR_COST;
-        this.repairCostAmount = DEFAULT_REPAIR_COST_AMOUNT;
-        this.maximumRepairCost = DEFAULT_MAXIMUM_REPAIR_COST;
+        this.repairCost = CraftInventoryAnvil.DEFAULT_REPAIR_COST;
+        this.repairCostAmount = CraftInventoryAnvil.DEFAULT_REPAIR_COST_AMOUNT;
+        this.maximumRepairCost = CraftInventoryAnvil.DEFAULT_MAXIMUM_REPAIR_COST;
     }
 
     @Override
     public Location getLocation() {
-        return location;
+        return this.location;
     }
 
     @Override
     public String getRenameText() {
-        syncWithArbitraryViewValue((cav) -> this.renameText = cav.getRenameText());
+        this.syncWithArbitraryViewValue((cav) -> this.renameText = cav.getRenameText());
         return this.renameText;
     }
 
     @Override
     public int getRepairCostAmount() {
-        syncWithArbitraryViewValue((cav) -> this.repairCostAmount = cav.getRepairItemCountCost());
+        this.syncWithArbitraryViewValue((cav) -> this.repairCostAmount = cav.getRepairItemCountCost());
         return this.repairCostAmount;
     }
 
     @Override
     public void setRepairCostAmount(int amount) {
         this.repairCostAmount = amount;
-        syncViews((cav) -> cav.setRepairItemCountCost(amount));
+        this.syncViews((cav) -> cav.setRepairItemCountCost(amount));
     }
 
     @Override
     public int getRepairCost() {
-        syncWithArbitraryViewValue((cav) -> this.repairCost = cav.getRepairCost());
+        this.syncWithArbitraryViewValue((cav) -> this.repairCost = cav.getRepairCost());
         return this.repairCost;
     }
 
     @Override
     public void setRepairCost(int i) {
         this.repairCost = i;
-        syncViews((cav) -> cav.setRepairCost(i));
+        this.syncViews((cav) -> cav.setRepairCost(i));
     }
 
     @Override
     public int getMaximumRepairCost() {
-        syncWithArbitraryViewValue((cav) -> this.maximumRepairCost = cav.getMaximumRepairCost());
+        this.syncWithArbitraryViewValue((cav) -> this.maximumRepairCost = cav.getMaximumRepairCost());
         return this.maximumRepairCost;
     }
 
@@ -74,24 +74,24 @@ public class CraftInventoryAnvil extends CraftResultInventory implements AnvilIn
     public void setMaximumRepairCost(int levels) {
         Preconditions.checkArgument(levels >= 0, "Maximum repair cost must be positive (or 0)");
         this.maximumRepairCost = levels;
-        syncViews((cav) -> cav.setMaximumRepairCost(levels));
+        this.syncViews((cav) -> cav.setMaximumRepairCost(levels));
     }
 
     public boolean isRepairCostSet() {
-        return this.repairCost != DEFAULT_REPAIR_COST;
+        return this.repairCost != CraftInventoryAnvil.DEFAULT_REPAIR_COST;
     }
 
     public boolean isRepairCostAmountSet() {
-        return this.repairCostAmount != DEFAULT_REPAIR_COST_AMOUNT;
+        return this.repairCostAmount != CraftInventoryAnvil.DEFAULT_REPAIR_COST_AMOUNT;
     }
 
     public boolean isMaximumRepairCostSet() {
-        return this.maximumRepairCost != DEFAULT_MAXIMUM_REPAIR_COST;
+        return this.maximumRepairCost != CraftInventoryAnvil.DEFAULT_MAXIMUM_REPAIR_COST;
     }
 
     // used to lazily update and apply values from the view to the inventory
     private void syncViews(Consumer<CraftAnvilView> consumer) {
-        for (HumanEntity viewer : getViewers()) {
+        for (HumanEntity viewer : this.getViewers()) {
             if (viewer.getOpenInventory() instanceof CraftAnvilView cav) {
                 consumer.accept(cav);
             }
@@ -105,10 +105,10 @@ public class CraftInventoryAnvil extends CraftResultInventory implements AnvilIn
      * not the inventory.
      */
     private void syncWithArbitraryViewValue(Consumer<CraftAnvilView> consumer) {
-        if (getViewers().isEmpty()) {
+        if (this.getViewers().isEmpty()) {
             return;
         }
-        final HumanEntity entity = getViewers().get(0);
+        final HumanEntity entity = this.getViewers().get(0);
         if (entity != null && entity.getOpenInventory() instanceof CraftAnvilView cav) {
             consumer.accept(cav);
         }

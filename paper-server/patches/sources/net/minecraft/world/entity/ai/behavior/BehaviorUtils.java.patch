@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
++++ b/net/minecraft/world/entity/ai/behavior/BehaviorUtils.java
+@@ -60,7 +60,7 @@
+     }
+ 
+     public static void lookAtEntity(LivingEntity entity, LivingEntity target) {
+-        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new EntityTracker(target, true)));
++        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (new EntityTracker(target, true))); // CraftBukkit - decompile error
+     }
+ 
+     private static void setWalkAndLookTargetMemoriesToEachOther(LivingEntity first, LivingEntity second, float speed, int completionRange) {
+@@ -79,8 +79,8 @@
+     public static void setWalkAndLookTargetMemories(LivingEntity entity, PositionTracker target, float speed, int completionRange) {
+         WalkTarget memorytarget = new WalkTarget(target, speed, completionRange);
+ 
+-        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (Object) target);
+-        entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET, (Object) memorytarget);
++        entity.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, target); // CraftBukkit - decompile error
++        entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET, memorytarget); // CraftBukkit - decompile error
+     }
+ 
+     public static void throwItem(LivingEntity entity, ItemStack stack, Vec3 targetLocation) {
+@@ -90,6 +90,7 @@
+     }
+ 
+     public static void throwItem(LivingEntity entity, ItemStack stack, Vec3 targetLocation, Vec3 velocityFactor, float yOffset) {
++        if (stack.isEmpty()) return; // CraftBukkit - SPIGOT-4940: no empty loot
+         double d0 = entity.getEyeY() - (double) yOffset;
+         ItemEntity entityitem = new ItemEntity(entity.level(), entity.getX(), d0, entity.getZ(), stack);
+ 
+@@ -99,12 +100,19 @@
+         vec3d2 = vec3d2.normalize().multiply(velocityFactor.x, velocityFactor.y, velocityFactor.z);
+         entityitem.setDeltaMovement(vec3d2);
+         entityitem.setDefaultPickUpDelay();
++        // CraftBukkit start
++        org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(entity.getBukkitEntity(), (org.bukkit.entity.Item) entityitem.getBukkitEntity());
++        entityitem.level().getCraftServer().getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            return;
++        }
++        // CraftBukkit end
+         entity.level().addFreshEntity(entityitem);
+     }
+ 
+     public static SectionPos findSectionClosestToVillage(ServerLevel world, SectionPos center, int radius) {
+         int j = world.sectionsToVillage(center);
+-        Stream stream = SectionPos.cube(center, radius).filter((sectionposition1) -> {
++        Stream<SectionPos> stream = SectionPos.cube(center, radius).filter((sectionposition1) -> { // CraftBukkit - decompile error
+             return world.sectionsToVillage(sectionposition1) < j;
+         });
+ 

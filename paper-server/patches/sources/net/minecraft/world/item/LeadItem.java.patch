@@ -1,0 +1,92 @@
+--- a/net/minecraft/world/item/LeadItem.java
++++ b/net/minecraft/world/item/LeadItem.java
+@@ -18,6 +18,11 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.phys.AABB;
++// CraftBukkit start
++import org.bukkit.craftbukkit.CraftEquipmentSlot;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.event.hanging.HangingPlaceEvent;
++// CraftBukkit end
+ 
+ public class LeadItem extends Item {
+ 
+@@ -35,37 +40,70 @@
+             Player entityhuman = context.getPlayer();
+ 
+             if (!world.isClientSide && entityhuman != null) {
+-                return LeadItem.bindPlayerMobs(entityhuman, world, blockposition);
++                return LeadItem.bindPlayerMobs(entityhuman, world, blockposition, context.getHand()); // CraftBukkit - Pass hand
+             }
+         }
+ 
+         return InteractionResult.PASS;
+     }
+ 
+-    public static InteractionResult bindPlayerMobs(Player player, Level world, BlockPos pos) {
++    public static InteractionResult bindPlayerMobs(Player entityhuman, Level world, BlockPos blockposition, net.minecraft.world.InteractionHand enumhand) { // CraftBukkit - Add EnumHand
+         LeashFenceKnotEntity entityleash = null;
+-        List<Leashable> list = LeadItem.leashableInArea(world, pos, (leashable) -> {
+-            return leashable.getLeashHolder() == player;
++        List<Leashable> list = LeadItem.leashableInArea(world, blockposition, (leashable) -> {
++            return leashable.getLeashHolder() == entityhuman;
+         });
+ 
+         Leashable leashable;
+ 
+-        for (Iterator iterator = list.iterator(); iterator.hasNext(); leashable.setLeashedTo(entityleash, true)) {
++        for (Iterator iterator = list.iterator(); iterator.hasNext();) { // CraftBukkit - handle setLeashedTo at end of loop
+             leashable = (Leashable) iterator.next();
+             if (entityleash == null) {
+-                entityleash = LeashFenceKnotEntity.getOrCreateKnot(world, pos);
++                entityleash = LeashFenceKnotEntity.getOrCreateKnot(world, blockposition);
++
++                // CraftBukkit start - fire HangingPlaceEvent
++                org.bukkit.inventory.EquipmentSlot hand = CraftEquipmentSlot.getHand(enumhand);
++                HangingPlaceEvent event = new HangingPlaceEvent((org.bukkit.entity.Hanging) entityleash.getBukkitEntity(), entityhuman != null ? (org.bukkit.entity.Player) entityhuman.getBukkitEntity() : null, CraftBlock.at(world, blockposition), org.bukkit.block.BlockFace.SELF, hand);
++                world.getCraftServer().getPluginManager().callEvent(event);
++
++                if (event.isCancelled()) {
++                    entityleash.discard(null); // CraftBukkit - add Bukkit remove cause
++                    return InteractionResult.PASS;
++                }
++                // CraftBukkit end
+                 entityleash.playPlacementSound();
+             }
++
++            // CraftBukkit start
++            if (leashable instanceof Entity leashed) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLeashEntityEvent(leashed, entityleash, entityhuman, enumhand).isCancelled()) {
++                    iterator.remove();
++                    continue;
++                }
++            }
++
++            leashable.setLeashedTo(entityleash, true);
++            // CraftBukkit end
+         }
+ 
+         if (!list.isEmpty()) {
+-            world.gameEvent((Holder) GameEvent.BLOCK_ATTACH, pos, GameEvent.Context.of((Entity) player));
++            world.gameEvent((Holder) GameEvent.BLOCK_ATTACH, blockposition, GameEvent.Context.of((Entity) entityhuman));
+             return InteractionResult.SUCCESS_SERVER;
+         } else {
++            // CraftBukkit start- remove leash if we do not leash any entity because of the cancelled event
++            if (entityleash != null) {
++                entityleash.discard(null);
++            }
++            // CraftBukkit end
+             return InteractionResult.PASS;
+         }
+     }
+ 
++    // CraftBukkit start
++    public static InteractionResult bindPlayerMobs(Player player, Level world, BlockPos pos) {
++        return LeadItem.bindPlayerMobs(player, world, pos, net.minecraft.world.InteractionHand.MAIN_HAND);
++    }
++    // CraftBukkit end
++
+     public static List<Leashable> leashableInArea(Level world, BlockPos pos, Predicate<Leashable> predicate) {
+         double d0 = 7.0D;
+         int i = pos.getX();

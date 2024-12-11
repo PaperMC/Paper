@@ -1,0 +1,48 @@
+--- a/net/minecraft/world/level/block/BasePressurePlateBlock.java
++++ b/net/minecraft/world/level/block/BasePressurePlateBlock.java
+@@ -22,6 +22,7 @@
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
+ 
+ public abstract class BasePressurePlateBlock extends Block {
+ 
+@@ -91,6 +92,19 @@
+         boolean flag = output > 0;
+         boolean flag1 = j > 0;
+ 
++        // CraftBukkit start - Interact Pressure Plate
++        org.bukkit.World bworld = world.getWorld();
++        org.bukkit.plugin.PluginManager manager = world.getCraftServer().getPluginManager();
++
++        if (flag != flag1) {
++            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()), output, j);
++            manager.callEvent(eventRedstone);
++
++            flag1 = eventRedstone.getNewCurrent() > 0;
++            j = eventRedstone.getNewCurrent();
++        }
++        // CraftBukkit end
++
+         if (output != j) {
+             BlockState iblockdata1 = this.setSignalForState(state, j);
+ 
+@@ -145,9 +159,15 @@
+     }
+ 
+     protected static int getEntityCount(Level world, AABB box, Class<? extends Entity> entityClass) {
+-        return world.getEntitiesOfClass(entityClass, box, EntitySelector.NO_SPECTATORS.and((entity) -> {
++        // CraftBukkit start
++        return BasePressurePlateBlock.getEntities(world, box, entityClass).size();
++    }
++
++    protected static <T extends Entity> java.util.List<T> getEntities(Level world, AABB axisalignedbb, Class<T> oclass) {
++        // CraftBukkit end
++        return world.getEntitiesOfClass(oclass, axisalignedbb, EntitySelector.NO_SPECTATORS.and((entity) -> {
+             return !entity.isIgnoringBlockTriggers();
+-        })).size();
++        })); // CraftBukkit
+     }
+ 
+     protected abstract int getSignalStrength(Level world, BlockPos pos);

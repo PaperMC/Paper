@@ -13,12 +13,12 @@ public abstract class CraftChestBoat extends CraftBoat implements org.bukkit.ent
 
     public CraftChestBoat(CraftServer server, AbstractChestBoat entity) {
         super(server, entity);
-        inventory = new CraftInventory(entity);
+        this.inventory = new CraftInventory(entity);
     }
 
     @Override
     public AbstractChestBoat getHandle() {
-        return (AbstractChestBoat) entity;
+        return (AbstractChestBoat) this.entity;
     }
 
     @Override
@@ -28,31 +28,31 @@ public abstract class CraftChestBoat extends CraftBoat implements org.bukkit.ent
 
     @Override
     public Inventory getInventory() {
-        return inventory;
+        return this.inventory;
     }
 
     @Override
     public void setLootTable(LootTable table) {
-        setLootTable(table, getSeed());
+        this.setLootTable(table, this.getSeed());
     }
 
     @Override
     public LootTable getLootTable() {
-        return CraftLootTable.minecraftToBukkit(getHandle().getContainerLootTable());
+        return CraftLootTable.minecraftToBukkit(this.getHandle().getContainerLootTable());
     }
 
     @Override
     public void setSeed(long seed) {
-        setLootTable(getLootTable(), seed);
+        this.setLootTable(this.getLootTable(), seed);
     }
 
     @Override
     public long getSeed() {
-        return getHandle().getContainerLootTableSeed();
+        return this.getHandle().getContainerLootTableSeed();
     }
 
     private void setLootTable(LootTable table, long seed) {
-        getHandle().setContainerLootTable(CraftLootTable.bukkitToMinecraft(table));
-        getHandle().setContainerLootTableSeed(seed);
+        this.getHandle().setContainerLootTable(CraftLootTable.bukkitToMinecraft(table));
+        this.getHandle().setContainerLootTableSeed(seed);
     }
 }

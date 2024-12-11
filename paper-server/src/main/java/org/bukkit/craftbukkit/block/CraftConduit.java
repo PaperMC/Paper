@@ -2,10 +2,9 @@ package org.bukkit.craftbukkit.block;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import net.minecraft.core.BlockPosition;
-import net.minecraft.world.entity.EntityLiving;
-import net.minecraft.world.level.block.entity.TileEntityConduit;
-import net.minecraft.world.phys.AxisAlignedBB;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.ConduitBlockEntity;
+import net.minecraft.world.phys.AABB;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -14,9 +13,9 @@ import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.util.BoundingBox;
 
-public class CraftConduit extends CraftBlockEntityState<TileEntityConduit> implements Conduit {
+public class CraftConduit extends CraftBlockEntityState<ConduitBlockEntity> implements Conduit {
 
-    public CraftConduit(World world, TileEntityConduit tileEntity) {
+    public CraftConduit(World world, ConduitBlockEntity tileEntity) {
         super(world, tileEntity);
     }
 
@@ -36,27 +35,27 @@ public class CraftConduit extends CraftBlockEntityState<TileEntityConduit> imple
 
     @Override
     public boolean isActive() {
-        ensureNoWorldGeneration();
-        TileEntityConduit conduit = (TileEntityConduit) getTileEntityFromWorld();
+        this.ensureNoWorldGeneration();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
         return conduit != null && conduit.isActive();
     }
 
     @Override
     public boolean isHunting() {
-        ensureNoWorldGeneration();
-        TileEntityConduit conduit = (TileEntityConduit) getTileEntityFromWorld();
+        this.ensureNoWorldGeneration();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
         return conduit != null && conduit.isHunting();
     }
 
     @Override
     public Collection<Block> getFrameBlocks() {
-        ensureNoWorldGeneration();
+        this.ensureNoWorldGeneration();
         Collection<Block> blocks = new ArrayList<>();
 
-        TileEntityConduit conduit = (TileEntityConduit) getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
         if (conduit != null) {
-            for (BlockPosition position : conduit.effectBlocks) {
-                blocks.add(CraftBlock.at(getWorldHandle(), position));
+            for (BlockPos position : conduit.effectBlocks) {
+                blocks.add(CraftBlock.at(this.getWorldHandle(), position));
             }
         }
 
@@ -65,26 +64,26 @@ public class CraftConduit extends CraftBlockEntityState<TileEntityConduit> imple
 
     @Override
     public int getFrameBlockCount() {
-        ensureNoWorldGeneration();
-        TileEntityConduit conduit = (TileEntityConduit) getTileEntityFromWorld();
+        this.ensureNoWorldGeneration();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
         return (conduit != null) ? conduit.effectBlocks.size() : 0;
     }
 
     @Override
     public int getRange() {
-        ensureNoWorldGeneration();
-        TileEntityConduit conduit = (TileEntityConduit) getTileEntityFromWorld();
-        return (conduit != null) ? TileEntityConduit.getRange(conduit.effectBlocks) : 0;
+        this.ensureNoWorldGeneration();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
+        return (conduit != null) ? ConduitBlockEntity.getRange(conduit.effectBlocks) : 0;
     }
 
     @Override
     public boolean setTarget(LivingEntity target) {
-        TileEntityConduit conduit = (TileEntityConduit) getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
         if (conduit == null) {
             return false;
         }
 
-        EntityLiving currentTarget = conduit.destroyTarget;
+        net.minecraft.world.entity.LivingEntity currentTarget = conduit.destroyTarget;
 
         if (target == null) {
             if (currentTarget == null) {
@@ -102,30 +101,30 @@ public class CraftConduit extends CraftBlockEntityState<TileEntityConduit> imple
             conduit.destroyTargetUUID = target.getUniqueId();
         }
 
-        TileEntityConduit.updateDestroyTarget(conduit.getLevel(), getPosition(), data, conduit.effectBlocks, conduit, false);
+        ConduitBlockEntity.updateDestroyTarget(conduit.getLevel(), this.getPosition(), this.data, conduit.effectBlocks, conduit, false);
         return true;
     }
 
     @Override
     public LivingEntity getTarget() {
-        TileEntityConduit conduit = (TileEntityConduit) getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
         if (conduit == null) {
             return null;
         }
 
-        EntityLiving nmsEntity = conduit.destroyTarget;
+        net.minecraft.world.entity.LivingEntity nmsEntity = conduit.destroyTarget;
         return (nmsEntity != null) ? (LivingEntity) nmsEntity.getBukkitEntity() : null;
     }
 
     @Override
     public boolean hasTarget() {
-        TileEntityConduit conduit = (TileEntityConduit) getTileEntityFromWorld();
+        ConduitBlockEntity conduit = (ConduitBlockEntity) this.getTileEntityFromWorld();
         return conduit != null && conduit.destroyTarget != null && conduit.destroyTarget.isAlive();
     }
 
     @Override
     public BoundingBox getHuntingArea() {
-        AxisAlignedBB bounds = TileEntityConduit.getDestroyRangeAABB(getPosition());
+        AABB bounds = ConduitBlockEntity.getDestroyRangeAABB(this.getPosition());
         return new BoundingBox(bounds.minX, bounds.minY, bounds.minZ, bounds.maxX, bounds.maxY, bounds.maxZ);
     }
 }

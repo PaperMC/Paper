@@ -4,8 +4,8 @@ import com.google.common.net.InetAddresses;
 import java.net.InetAddress;
 import java.time.Instant;
 import java.util.Date;
-import net.minecraft.server.players.IpBanEntry;
 import net.minecraft.server.players.IpBanList;
+import net.minecraft.server.players.IpBanListEntry;
 import org.bukkit.BanEntry;
 
 public final class CraftIpBanEntry implements BanEntry<InetAddress> {
@@ -17,7 +17,7 @@ public final class CraftIpBanEntry implements BanEntry<InetAddress> {
     private Date expiration;
     private String reason;
 
-    public CraftIpBanEntry(String target, IpBanEntry entry, IpBanList list) {
+    public CraftIpBanEntry(String target, IpBanListEntry entry, IpBanList list) {
         this.list = list;
         this.target = target;
         this.created = entry.getCreated() != null ? new Date(entry.getCreated().getTime()) : null;
@@ -63,7 +63,7 @@ public final class CraftIpBanEntry implements BanEntry<InetAddress> {
 
     @Override
     public void setExpiration(Date expiration) {
-        if (expiration != null && expiration.getTime() == minorDate.getTime()) {
+        if (expiration != null && expiration.getTime() == CraftIpBanEntry.minorDate.getTime()) {
             expiration = null; // Forces "forever"
         }
 
@@ -82,12 +82,12 @@ public final class CraftIpBanEntry implements BanEntry<InetAddress> {
 
     @Override
     public void save() {
-        IpBanEntry entry = new IpBanEntry(this.target, this.created, this.source, this.expiration, this.reason);
+        IpBanListEntry entry = new IpBanListEntry(this.target, this.created, this.source, this.expiration, this.reason);
         this.list.add(entry);
     }
 
     @Override
     public void remove() {
-        this.list.remove(target);
+        this.list.remove(this.target);
     }
 }

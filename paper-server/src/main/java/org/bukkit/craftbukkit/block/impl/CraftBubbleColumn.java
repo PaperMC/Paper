@@ -9,21 +9,21 @@ public final class CraftBubbleColumn extends org.bukkit.craftbukkit.block.data.C
         super();
     }
 
-    public CraftBubbleColumn(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftBubbleColumn(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftBubbleColumn
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean DRAG = getBoolean(net.minecraft.world.level.block.BlockBubbleColumn.class, "drag");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty DRAG = getBoolean(net.minecraft.world.level.block.BubbleColumnBlock.class, "drag");
 
     @Override
     public boolean isDrag() {
-        return get(DRAG);
+        return this.get(CraftBubbleColumn.DRAG);
     }
 
     @Override
     public void setDrag(boolean drag) {
-        set(DRAG, drag);
+        this.set(CraftBubbleColumn.DRAG, drag);
     }
 }

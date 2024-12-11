@@ -1,0 +1,87 @@
+--- a/net/minecraft/world/entity/monster/Slime.java
++++ b/net/minecraft/world/entity/monster/Slime.java
+@@ -46,6 +46,14 @@
+ import net.minecraft.world.level.levelgen.WorldgenRandom;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.scores.PlayerTeam;
++// CraftBukkit start
++import java.util.ArrayList;
++import java.util.List;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.entity.EntityTransformEvent;
++import org.bukkit.event.entity.SlimeSplitEvent;
++// CraftBukkit end
+ 
+ public class Slime extends Mob implements Enemy {
+ 
+@@ -197,11 +205,18 @@
+ 
+     @Override
+     public EntityType<? extends Slime> getType() {
+-        return super.getType();
++        return (EntityType<? extends Slime>) super.getType(); // CraftBukkit - decompile error
+     }
+ 
+     @Override
+     public void remove(Entity.RemovalReason reason) {
++        // CraftBukkit start - add Bukkit remove cause
++        this.remove(reason, null);
++    }
++
++    @Override
++    public void remove(Entity.RemovalReason entity_removalreason, EntityRemoveEvent.Cause cause) {
++        // CraftBukkit end
+         int i = this.getSize();
+ 
+         if (!this.level().isClientSide && i > 1 && this.isDeadOrDying()) {
+@@ -210,19 +225,46 @@
+             int j = i / 2;
+             int k = 2 + this.random.nextInt(3);
+             PlayerTeam scoreboardteam = this.getTeam();
++
++            // CraftBukkit start
++            SlimeSplitEvent event = new SlimeSplitEvent((org.bukkit.entity.Slime) this.getBukkitEntity(), k);
++            this.level().getCraftServer().getPluginManager().callEvent(event);
++
++            if (!event.isCancelled() && event.getCount() > 0) {
++                k = event.getCount();
++            } else {
++                super.remove(entity_removalreason, cause); // CraftBukkit - add Bukkit remove cause
++                return;
++            }
++            List<LivingEntity> slimes = new ArrayList<>(j);
++            // CraftBukkit end
+ 
+             for (int l = 0; l < k; ++l) {
+                 float f2 = ((float) (l % 2) - 0.5F) * f1;
+                 float f3 = ((float) (l / 2) - 0.5F) * f1;
+ 
+-                this.convertTo(this.getType(), new ConversionParams(ConversionType.SPLIT_ON_DEATH, false, false, scoreboardteam), EntitySpawnReason.TRIGGERED, (entityslime) -> {
++                Slime converted = this.convertTo(this.getType(), new ConversionParams(ConversionType.SPLIT_ON_DEATH, false, false, scoreboardteam), EntitySpawnReason.TRIGGERED, (entityslime) -> { // CraftBukkit
+                     entityslime.setSize(j, true);
+                     entityslime.moveTo(this.getX() + (double) f2, this.getY() + 0.5D, this.getZ() + (double) f3, this.random.nextFloat() * 360.0F, 0.0F);
+-                });
++                // CraftBukkit start
++                }, null, null);
++                if (converted != null) {
++                    slimes.add(converted);
++                }
++                // CraftBukkit end
+             }
++            // CraftBukkit start
++            if (CraftEventFactory.callEntityTransformEvent(this, slimes, EntityTransformEvent.TransformReason.SPLIT).isCancelled()) {
++                super.remove(entity_removalreason, cause); // CraftBukkit - add Bukkit remove cause
++                return;
++            }
++            for (LivingEntity living : slimes) {
++                this.level().addFreshEntity(living, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SLIME_SPLIT); // CraftBukkit - SpawnReason
++            }
++            // CraftBukkit end
+         }
+ 
+-        super.remove(reason);
++        super.remove(entity_removalreason, cause); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     @Override

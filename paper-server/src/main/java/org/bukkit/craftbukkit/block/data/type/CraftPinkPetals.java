@@ -5,20 +5,20 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftPinkPetals extends CraftBlockData implements PinkPetals {
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger FLOWER_AMOUNT = getInteger("flower_amount");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty FLOWER_AMOUNT = getInteger("flower_amount");
 
     @Override
     public int getFlowerAmount() {
-        return get(FLOWER_AMOUNT);
+        return this.get(CraftPinkPetals.FLOWER_AMOUNT);
     }
 
     @Override
     public void setFlowerAmount(int flower_amount) {
-        set(FLOWER_AMOUNT, flower_amount);
+        this.set(CraftPinkPetals.FLOWER_AMOUNT, flower_amount);
     }
 
     @Override
     public int getMaximumFlowerAmount() {
-        return getMax(FLOWER_AMOUNT);
+        return getMax(CraftPinkPetals.FLOWER_AMOUNT);
     }
 }

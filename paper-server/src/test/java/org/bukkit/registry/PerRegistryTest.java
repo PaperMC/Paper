@@ -23,7 +23,7 @@ public class PerRegistryTest {
 
     @BeforeAll
     public static void init() {
-        random = new Random();
+        PerRegistryTest.random = new Random();
     }
 
     public static Stream<Arguments> data() {
@@ -63,12 +63,12 @@ public class PerRegistryTest {
         registry.forEach(element -> {
             NamespacedKey key = element.getKey();
 
-            assertSameMatchWithKeyMessage(registry, element, key.toString()); // namespace:key
-            assertSameMatchWithKeyMessage(registry, element, key.getKey()); // key
-            assertSameMatchWithKeyMessage(registry, element, key.toString().replace('_', ' ')); // namespace:key with space
-            assertSameMatchWithKeyMessage(registry, element, key.getKey().replace('_', ' ')); // key with space
-            assertSameMatchWithKeyMessage(registry, element, randomizeCase(key.toString())); // nAmeSPaCe:kEY
-            assertSameMatchWithKeyMessage(registry, element, randomizeCase(key.getKey())); // kEy
+            this.assertSameMatchWithKeyMessage(registry, element, key.toString()); // namespace:key
+            this.assertSameMatchWithKeyMessage(registry, element, key.getKey()); // key
+            this.assertSameMatchWithKeyMessage(registry, element, key.toString().replace('_', ' ')); // namespace:key with space
+            this.assertSameMatchWithKeyMessage(registry, element, key.getKey().replace('_', ' ')); // key with space
+            this.assertSameMatchWithKeyMessage(registry, element, this.randomizeCase(key.toString())); // nAmeSPaCe:kEY
+            this.assertSameMatchWithKeyMessage(registry, element, this.randomizeCase(key.getKey())); // kEy
         });
     }
 
@@ -82,7 +82,7 @@ public class PerRegistryTest {
 
         for (int i = 0; i < size; i++) {
             char character = input.charAt(i);
-            builder.append(random.nextBoolean() ? Character.toUpperCase(character) : character);
+            builder.append(PerRegistryTest.random.nextBoolean() ? Character.toUpperCase(character) : character);
         }
 
         return builder.toString();

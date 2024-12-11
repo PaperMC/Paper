@@ -1,0 +1,39 @@
+--- a/net/minecraft/world/entity/monster/Shulker.java
++++ b/net/minecraft/world/entity/monster/Shulker.java
+@@ -58,6 +58,12 @@
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.Vec3;
+ import org.joml.Vector3f;
++
++// CraftBukkit start
++import org.bukkit.craftbukkit.util.CraftLocation;
++import org.bukkit.event.entity.EntityTeleportEvent;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++// CraftBukkit end
+ 
+ public class Shulker extends AbstractGolem implements VariantHolder<Optional<DyeColor>>, Enemy {
+ 
+@@ -402,6 +408,14 @@
+                     Direction enumdirection = this.findAttachableSurface(blockposition1);
+ 
+                     if (enumdirection != null) {
++                        // CraftBukkit start
++                        EntityTeleportEvent teleportEvent = CraftEventFactory.callEntityTeleportEvent(this, blockposition1.getX(), blockposition1.getY(), blockposition1.getZ());
++                        if (teleportEvent.isCancelled()) {
++                            return false;
++                        } else {
++                            blockposition1 = CraftLocation.toBlockPosition(teleportEvent.getTo());
++                        }
++                        // CraftBukkit end
+                         this.unRide();
+                         this.setAttachFace(enumdirection);
+                         this.playSound(SoundEvents.SHULKER_TELEPORT, 1.0F, 1.0F);
+@@ -472,7 +486,7 @@
+                 if (entityshulker != null) {
+                     entityshulker.setVariant(this.getVariant());
+                     entityshulker.moveTo(vec3d);
+-                    this.level().addFreshEntity(entityshulker);
++                    this.level().addFreshEntity(entityshulker, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - the mysteries of life
+                 }
+ 
+             }

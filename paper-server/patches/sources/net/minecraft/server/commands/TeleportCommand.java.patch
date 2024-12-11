@@ -1,0 +1,54 @@
+--- a/net/minecraft/server/commands/TeleportCommand.java
++++ b/net/minecraft/server/commands/TeleportCommand.java
+@@ -22,6 +22,7 @@
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.util.Mth;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.LivingEntity;
+@@ -30,6 +31,11 @@
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.Vec2;
+ import net.minecraft.world.phys.Vec3;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.CraftWorld;
++import org.bukkit.event.entity.EntityTeleportEvent;
++import org.bukkit.event.player.PlayerTeleportEvent;
++// CraftBukkit end
+ 
+ public class TeleportCommand {
+ 
+@@ -167,7 +173,30 @@
+             float f4 = Mth.wrapDegrees(f2);
+             float f5 = Mth.wrapDegrees(f3);
+ 
+-            if (target.teleportTo(world, d3, d4, d5, movementFlags, f4, f5, true)) {
++            // CraftBukkit start - Teleport event
++            boolean result;
++            if (target instanceof ServerPlayer player) {
++                result = player.teleportTo(world, d3, d4, d5, movementFlags, f4, f5, true, PlayerTeleportEvent.TeleportCause.COMMAND);
++            } else {
++                Location to = new Location(world.getWorld(), d3, d4, d5, f4, f5);
++                EntityTeleportEvent event = new EntityTeleportEvent(target.getBukkitEntity(), target.getBukkitEntity().getLocation(), to);
++                world.getCraftServer().getPluginManager().callEvent(event);
++                if (event.isCancelled()) {
++                    return;
++                }
++
++                d3 = to.getX();
++                d4 = to.getY();
++                d5 = to.getZ();
++                f4 = to.getYaw();
++                f5 = to.getPitch();
++                world = ((CraftWorld) to.getWorld()).getHandle();
++
++                result = target.teleportTo(world, d3, d4, d5, movementFlags, f4, f5, true);
++            }
++
++            if (result) {
++                // CraftBukkit end
+                 if (facingLocation != null) {
+                     facingLocation.perform(source, target);
+                 }

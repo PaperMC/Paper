@@ -21,7 +21,7 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
 
     @Override
     public Frog getHandle() {
-        return (Frog) entity;
+        return (Frog) this.entity;
     }
 
     @Override
@@ -31,28 +31,28 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
 
     @Override
     public Entity getTongueTarget() {
-        return getHandle().getTongueTarget().map(net.minecraft.world.entity.Entity::getBukkitEntity).orElse(null);
+        return this.getHandle().getTongueTarget().map(net.minecraft.world.entity.Entity::getBukkitEntity).orElse(null);
     }
 
     @Override
     public void setTongueTarget(Entity target) {
         if (target == null) {
-            getHandle().eraseTongueTarget();
+            this.getHandle().eraseTongueTarget();
         } else {
-            getHandle().setTongueTarget(((CraftEntity) target).getHandle());
+            this.getHandle().setTongueTarget(((CraftEntity) target).getHandle());
         }
     }
 
     @Override
     public Variant getVariant() {
-        return CraftVariant.minecraftHolderToBukkit(getHandle().getVariant());
+        return CraftVariant.minecraftHolderToBukkit(this.getHandle().getVariant());
     }
 
     @Override
     public void setVariant(Variant variant) {
         Preconditions.checkArgument(variant != null, "variant");
 
-        getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
+        this.getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }
 
     public static class CraftVariant implements Variant, Handleable<FrogVariant> {
@@ -63,7 +63,7 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
         }
 
         public static Variant minecraftHolderToBukkit(Holder<FrogVariant> minecraft) {
-            return minecraftToBukkit(minecraft.value());
+            return CraftVariant.minecraftToBukkit(minecraft.value());
         }
 
         public static FrogVariant bukkitToMinecraft(Variant bukkit) {
@@ -91,38 +91,38 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
             } else {
                 this.name = key.toString();
             }
-            this.ordinal = count++;
+            this.ordinal = CraftVariant.count++;
         }
 
         @Override
         public FrogVariant getHandle() {
-            return frogVariant;
+            return this.frogVariant;
         }
 
         @Override
         public NamespacedKey getKey() {
-            return key;
+            return this.key;
         }
 
         @Override
         public int compareTo(Variant variant) {
-            return ordinal - variant.ordinal();
+            return this.ordinal - variant.ordinal();
         }
 
         @Override
         public String name() {
-            return name;
+            return this.name;
         }
 
         @Override
         public int ordinal() {
-            return ordinal;
+            return this.ordinal;
         }
 
         @Override
         public String toString() {
             // For backwards compatibility
-            return name();
+            return this.name();
         }
 
         @Override
@@ -135,12 +135,12 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
                 return false;
             }
 
-            return getKey().equals(((Variant) other).getKey());
+            return this.getKey().equals(((Variant) other).getKey());
         }
 
         @Override
         public int hashCode() {
-            return getKey().hashCode();
+            return this.getKey().hashCode();
         }
     }
 }

@@ -5,8 +5,8 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.MinecraftKey;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
 
@@ -17,10 +17,10 @@ public class EntityTypesTest {
     public void testMaps() {
         Set<EntityType> allBukkit = Arrays.stream(EntityType.values()).filter((b) -> b.getName() != null).collect(Collectors.toSet());
 
-        for (EntityTypes<?> nms : BuiltInRegistries.ENTITY_TYPE) {
-            MinecraftKey key = EntityTypes.getKey(nms);
+        for (EntityType<?> nms : BuiltInRegistries.ENTITY_TYPE) {
+            ResourceLocation key = EntityType.getKey(nms);
 
-            EntityType bukkit = EntityType.fromName(key.getPath());
+            org.bukkit.entity.EntityType bukkit = org.bukkit.entity.EntityType.fromName(key.getPath());
             assertNotNull(bukkit, "Missing nms->bukkit " + key);
 
             assertTrue(allBukkit.remove(bukkit), "Duplicate entity nms->" + bukkit);
@@ -31,7 +31,7 @@ public class EntityTypesTest {
 
     @Test
     public void testTranslationKey() {
-        for (EntityType entityType : EntityType.values()) {
+        for (org.bukkit.entity.EntityType entityType : org.bukkit.entity.EntityType.values()) {
             // Currently EntityType#getTranslationKey has a validation for null name then for test skip this and check correct names.
             if (entityType.getName() != null) {
                 assertNotNull(entityType.getTranslationKey(), "Nulllable translation key for " + entityType);

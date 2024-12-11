@@ -32,16 +32,16 @@ public class CraftStructure extends Structure implements Handleable<net.minecraf
 
     @Override
     public net.minecraft.world.level.levelgen.structure.Structure getHandle() {
-        return structure;
+        return this.structure;
     }
 
     @Override
     public StructureType getStructureType() {
-        return structureType.get();
+        return this.structureType.get();
     }
 
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 }

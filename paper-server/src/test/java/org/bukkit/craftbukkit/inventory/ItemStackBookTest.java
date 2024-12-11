@@ -12,7 +12,7 @@ import org.junit.jupiter.params.provider.Arguments;
 public class ItemStackBookTest extends ItemStackTest {
 
     public static Stream<Arguments> data() {
-        return StackProvider.compound(operators(), "%s %s", NAME_PARAMETER, Material.WRITTEN_BOOK, Material.WRITABLE_BOOK);
+        return StackProvider.compound(ItemStackBookTest.operators(), "%s %s", NAME_PARAMETER, Material.WRITTEN_BOOK, Material.WRITABLE_BOOK);
     }
 
     @SuppressWarnings("unchecked")

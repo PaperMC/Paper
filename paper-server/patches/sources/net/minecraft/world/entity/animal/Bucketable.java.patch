@@ -1,0 +1,47 @@
+--- a/net/minecraft/world/entity/animal/Bucketable.java
++++ b/net/minecraft/world/entity/animal/Bucketable.java
+@@ -16,6 +16,11 @@
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.item.component.CustomData;
+ import net.minecraft.world.level.Level;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.entity.EntityRemoveEvent;
++import org.bukkit.event.player.PlayerBucketEntityEvent;
++// CraftBukkit end
+ 
+ public interface Bucketable {
+ 
+@@ -93,10 +98,22 @@
+         ItemStack itemstack = player.getItemInHand(hand);
+ 
+         if (itemstack.getItem() == Items.WATER_BUCKET && entity.isAlive()) {
+-            entity.playSound(((Bucketable) entity).getPickupSound(), 1.0F, 1.0F);
++            // CraftBukkit start
++            // t0.playSound(((Bucketable) t0).getPickupSound(), 1.0F, 1.0F); // CraftBukkit - moved down
+             ItemStack itemstack1 = ((Bucketable) entity).getBucketItemStack();
+ 
+             ((Bucketable) entity).saveToBucketTag(itemstack1);
++
++            PlayerBucketEntityEvent playerBucketFishEvent = CraftEventFactory.callPlayerFishBucketEvent(entity, player, itemstack, itemstack1, hand);
++            itemstack1 = CraftItemStack.asNMSCopy(playerBucketFishEvent.getEntityBucket());
++            if (playerBucketFishEvent.isCancelled()) {
++                ((ServerPlayer) player).containerMenu.sendAllDataToRemote(); // We need to update inventory to resync client's bucket
++                entity.getBukkitEntity().update((ServerPlayer) player); // We need to play out these packets as the client assumes the fish is gone
++                entity.refreshEntityData((ServerPlayer) player); // Need to send data such as the display name to client
++                return Optional.of(InteractionResult.FAIL);
++            }
++            entity.playSound(((Bucketable) entity).getPickupSound(), 1.0F, 1.0F);
++            // CraftBukkit end
+             ItemStack itemstack2 = ItemUtils.createFilledResult(itemstack, player, itemstack1, false);
+ 
+             player.setItemInHand(hand, itemstack2);
+@@ -106,7 +123,7 @@
+                 CriteriaTriggers.FILLED_BUCKET.trigger((ServerPlayer) player, itemstack1);
+             }
+ 
+-            entity.discard();
++            entity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+             return Optional.of(InteractionResult.SUCCESS);
+         } else {
+             return Optional.empty();

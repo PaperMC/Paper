@@ -11,8 +11,8 @@ public class RequirePluginVersionTest extends AbstractRerouteTest {
 
     @Test
     public void testRequirePluginVersion() {
-        test(RequirePluginVersionTestData.class, Map.of(
-                        "()Ljava/util/List;getList", create(
+        this.test(RequirePluginVersionTestData.class, Map.of(
+                        "()Ljava/util/List;getList", this.create(
                                 "()Ljava/util/List;getList",
                                 "()Ljava/util/List;",
                                 "java/lang/Object",
@@ -21,8 +21,8 @@ public class RequirePluginVersionTest extends AbstractRerouteTest {
                                 "(Ljava/lang/Object;)Ljava/util/List;",
                                 "org/bukkit/craftbukkit/legacy/reroute/RequirePluginVersionTest$RequirePluginVersionTestData",
                                 "getList",
-                                create(
-                                        create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null)
+                                this.create(
+                                        this.create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null)
                                 ),
                                 "Ljava/util/List;",
                                 true,

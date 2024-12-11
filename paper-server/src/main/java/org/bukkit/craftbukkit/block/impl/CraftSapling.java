@@ -9,26 +9,26 @@ public final class CraftSapling extends org.bukkit.craftbukkit.block.data.CraftB
         super();
     }
 
-    public CraftSapling(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftSapling(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftSapling
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger STAGE = getInteger(net.minecraft.world.level.block.BlockSapling.class, "stage");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty STAGE = getInteger(net.minecraft.world.level.block.SaplingBlock.class, "stage");
 
     @Override
     public int getStage() {
-        return get(STAGE);
+        return this.get(CraftSapling.STAGE);
     }
 
     @Override
     public void setStage(int stage) {
-        set(STAGE, stage);
+        this.set(CraftSapling.STAGE, stage);
     }
 
     @Override
     public int getMaximumStage() {
-        return getMax(STAGE);
+        return getMax(CraftSapling.STAGE);
     }
 }

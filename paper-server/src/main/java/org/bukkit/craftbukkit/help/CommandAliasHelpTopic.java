@@ -22,8 +22,8 @@ public class CommandAliasHelpTopic extends HelpTopic {
     @Override
     public String getFullText(CommandSender forWho) {
         Preconditions.checkArgument(forWho != null, "CommandServer forWho cannot be null");
-        StringBuilder sb = new StringBuilder(shortText);
-        HelpTopic aliasForTopic = helpMap.getHelpTopic(aliasFor);
+        StringBuilder sb = new StringBuilder(this.shortText);
+        HelpTopic aliasForTopic = this.helpMap.getHelpTopic(this.aliasFor);
         if (aliasForTopic != null) {
             sb.append("\n");
             sb.append(aliasForTopic.getFullText(forWho));
@@ -34,15 +34,15 @@ public class CommandAliasHelpTopic extends HelpTopic {
     @Override
     public boolean canSee(CommandSender commandSender) {
         Preconditions.checkArgument(commandSender != null, "CommandServer cannot be null");
-        if (amendedPermission == null) {
-            HelpTopic aliasForTopic = helpMap.getHelpTopic(aliasFor);
+        if (this.amendedPermission == null) {
+            HelpTopic aliasForTopic = this.helpMap.getHelpTopic(this.aliasFor);
             if (aliasForTopic != null) {
                 return aliasForTopic.canSee(commandSender);
             } else {
                 return false;
             }
         } else {
-            return commandSender.hasPermission(amendedPermission);
+            return commandSender.hasPermission(this.amendedPermission);
         }
     }
 }

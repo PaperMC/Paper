@@ -1,0 +1,64 @@
+--- a/net/minecraft/world/level/block/TntBlock.java
++++ b/net/minecraft/world/level/block/TntBlock.java
+@@ -28,6 +28,10 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.redstone.Orientation;
+ import net.minecraft.world.phys.BlockHitResult;
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.block.TNTPrimeEvent.PrimeCause;
++// CraftBukkit end
+ 
+ public class TntBlock extends Block {
+ 
+@@ -47,7 +51,7 @@
+     @Override
+     protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
+         if (!oldState.is(state.getBlock())) {
+-            if (world.hasNeighborSignal(pos)) {
++            if (world.hasNeighborSignal(pos) && CraftEventFactory.callTNTPrimeEvent(world, pos, PrimeCause.REDSTONE, null, null)) { // CraftBukkit - TNTPrimeEvent
+                 TntBlock.explode(world, pos);
+                 world.removeBlock(pos, false);
+             }
+@@ -57,7 +61,7 @@
+ 
+     @Override
+     protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, @Nullable Orientation wireOrientation, boolean notify) {
+-        if (world.hasNeighborSignal(pos)) {
++        if (world.hasNeighborSignal(pos) && CraftEventFactory.callTNTPrimeEvent(world, pos, PrimeCause.REDSTONE, null, null)) { // CraftBukkit - TNTPrimeEvent
+             TntBlock.explode(world, pos);
+             world.removeBlock(pos, false);
+         }
+@@ -66,7 +70,7 @@
+ 
+     @Override
+     public BlockState playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
+-        if (!world.isClientSide() && !player.isCreative() && (Boolean) state.getValue(TntBlock.UNSTABLE)) {
++        if (!world.isClientSide() && !player.isCreative() && (Boolean) state.getValue(TntBlock.UNSTABLE) && CraftEventFactory.callTNTPrimeEvent(world, pos, PrimeCause.BLOCK_BREAK, player, null)) { // CraftBukkit - TNTPrimeEvent
+             TntBlock.explode(world, pos);
+         }
+ 
+@@ -101,6 +105,11 @@
+         if (!stack.is(Items.FLINT_AND_STEEL) && !stack.is(Items.FIRE_CHARGE)) {
+             return super.useItemOn(stack, state, world, pos, player, hand, hit);
+         } else {
++            // CraftBukkit start - TNTPrimeEvent
++            if (!CraftEventFactory.callTNTPrimeEvent(world, pos, PrimeCause.PLAYER, player, null)) {
++                return InteractionResult.CONSUME;
++            }
++            // CraftBukkit end
+             TntBlock.explode(world, pos, player);
+             world.setBlock(pos, Blocks.AIR.defaultBlockState(), 11);
+             Item item = stack.getItem();
+@@ -123,6 +132,11 @@
+             Entity entity = projectile.getOwner();
+ 
+             if (projectile.isOnFire() && projectile.mayInteract(worldserver, blockposition)) {
++                // CraftBukkit start
++                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, Blocks.AIR.defaultBlockState()) || !CraftEventFactory.callTNTPrimeEvent(world, blockposition, PrimeCause.PROJECTILE, projectile, null)) {
++                    return;
++                }
++                // CraftBukkit end
+                 TntBlock.explode(world, blockposition, entity instanceof LivingEntity ? (LivingEntity) entity : null);
+                 world.removeBlock(blockposition, false);
+             }

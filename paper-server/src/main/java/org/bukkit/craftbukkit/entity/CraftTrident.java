@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
-import net.minecraft.world.entity.projectile.EntityThrownTrident;
+import net.minecraft.world.entity.projectile.ThrownTrident;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Trident;
@@ -8,23 +8,23 @@ import org.bukkit.inventory.ItemStack;
 
 public class CraftTrident extends CraftAbstractArrow implements Trident {
 
-    public CraftTrident(CraftServer server, EntityThrownTrident entity) {
+    public CraftTrident(CraftServer server, ThrownTrident entity) {
         super(server, entity);
     }
 
     @Override
-    public EntityThrownTrident getHandle() {
-        return (EntityThrownTrident) super.getHandle();
+    public ThrownTrident getHandle() {
+        return (ThrownTrident) super.getHandle();
     }
 
     @Override
     public ItemStack getItem() {
-        return CraftItemStack.asBukkitCopy(getHandle().pickupItemStack);
+        return CraftItemStack.asBukkitCopy(this.getHandle().pickupItemStack);
     }
 
     @Override
     public void setItem(ItemStack itemStack) {
-        getHandle().pickupItemStack = CraftItemStack.asNMSCopy(itemStack);
+        this.getHandle().pickupItemStack = CraftItemStack.asNMSCopy(itemStack);
     }
 
     @Override

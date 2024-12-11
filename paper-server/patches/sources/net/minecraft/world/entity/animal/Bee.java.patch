@@ -1,0 +1,144 @@
+--- a/net/minecraft/world/entity/animal/Bee.java
++++ b/net/minecraft/world/entity/animal/Bee.java
+@@ -92,6 +92,11 @@
+ import net.minecraft.world.level.pathfinder.Path;
+ import net.minecraft.world.level.pathfinder.PathType;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityPotionEffectEvent;
++import org.bukkit.event.entity.EntityTargetEvent;
++// CraftBukkit end
+ 
+ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+ 
+@@ -198,21 +203,28 @@
+ 
+     @Override
+     public void addAdditionalSaveData(CompoundTag nbt) {
+-        super.addAdditionalSaveData(nbt);
+-        if (this.hasHive()) {
+-            nbt.put("hive_pos", NbtUtils.writeBlockPos(this.getHivePos()));
++        // CraftBukkit start - selectively save data
++        this.addAdditionalSaveData(nbt, true);
++    }
++
++    @Override
++    public void addAdditionalSaveData(CompoundTag nbttagcompound, boolean includeAll) {
++        // CraftBukkit end
++        super.addAdditionalSaveData(nbttagcompound);
++        if (includeAll && this.hasHive()) { // CraftBukkit - selectively save hive
++            nbttagcompound.put("hive_pos", NbtUtils.writeBlockPos(this.getHivePos()));
+         }
+ 
+-        if (this.hasSavedFlowerPos()) {
+-            nbt.put("flower_pos", NbtUtils.writeBlockPos(this.getSavedFlowerPos()));
++        if (includeAll && this.hasSavedFlowerPos()) { // CraftBukkit - selectively save flower
++            nbttagcompound.put("flower_pos", NbtUtils.writeBlockPos(this.getSavedFlowerPos()));
+         }
+ 
+-        nbt.putBoolean("HasNectar", this.hasNectar());
+-        nbt.putBoolean("HasStung", this.hasStung());
+-        nbt.putInt("TicksSincePollination", this.ticksWithoutNectarSinceExitingHive);
+-        nbt.putInt("CannotEnterHiveTicks", this.stayOutOfHiveCountdown);
+-        nbt.putInt("CropsGrownSincePollination", this.numCropsGrownSincePollination);
+-        this.addPersistentAngerSaveData(nbt);
++        nbttagcompound.putBoolean("HasNectar", this.hasNectar());
++        nbttagcompound.putBoolean("HasStung", this.hasStung());
++        nbttagcompound.putInt("TicksSincePollination", this.ticksWithoutNectarSinceExitingHive);
++        nbttagcompound.putInt("CannotEnterHiveTicks", this.stayOutOfHiveCountdown);
++        nbttagcompound.putInt("CropsGrownSincePollination", this.numCropsGrownSincePollination);
++        this.addPersistentAngerSaveData(nbttagcompound);
+     }
+ 
+     @Override
+@@ -223,8 +235,8 @@
+         this.ticksWithoutNectarSinceExitingHive = nbt.getInt("TicksSincePollination");
+         this.stayOutOfHiveCountdown = nbt.getInt("CannotEnterHiveTicks");
+         this.numCropsGrownSincePollination = nbt.getInt("CropsGrownSincePollination");
+-        this.hivePos = (BlockPos) NbtUtils.readBlockPos(nbt, "hive_pos").orElse((Object) null);
+-        this.savedFlowerPos = (BlockPos) NbtUtils.readBlockPos(nbt, "flower_pos").orElse((Object) null);
++        this.hivePos = (BlockPos) NbtUtils.readBlockPos(nbt, "hive_pos").orElse(null); // CraftBukkit - decompile error
++        this.savedFlowerPos = (BlockPos) NbtUtils.readBlockPos(nbt, "flower_pos").orElse(null); // CraftBukkit - decompile error
+         this.readPersistentAngerSaveData(this.level(), nbt);
+     }
+ 
+@@ -248,7 +260,7 @@
+                 }
+ 
+                 if (b0 > 0) {
+-                    entityliving.addEffect(new MobEffectInstance(MobEffects.POISON, b0 * 20, 0), this);
++                    entityliving.addEffect(new MobEffectInstance(MobEffects.POISON, b0 * 20, 0), this, EntityPotionEffectEvent.Cause.ATTACK); // CraftBukkit
+                 }
+             }
+ 
+@@ -506,7 +518,7 @@
+ 
+     @Nullable
+     BeehiveBlockEntity getBeehiveBlockEntity() {
+-        return this.hivePos == null ? null : (this.isTooFarAway(this.hivePos) ? null : (BeehiveBlockEntity) this.level().getBlockEntity(this.hivePos, BlockEntityType.BEEHIVE).orElse((Object) null));
++        return this.hivePos == null ? null : (this.isTooFarAway(this.hivePos) ? null : (BeehiveBlockEntity) this.level().getBlockEntity(this.hivePos, BlockEntityType.BEEHIVE).orElse(null)); // CraftBukkit - decompile error
+     }
+ 
+     boolean isHiveValid() {
+@@ -671,8 +683,14 @@
+         if (this.isInvulnerableTo(world, source)) {
+             return false;
+         } else {
++            // CraftBukkit start - Only stop pollinating if entity was damaged
++            boolean result = super.hurtServer(world, source, amount);
++            if (!result) {
++                return result;
++            }
++            // CraftBukkit end
+             this.beePollinateGoal.stopPollinating();
+-            return super.hurtServer(world, source, amount);
++            return result; // CraftBukkit
+         }
+     }
+ 
+@@ -1082,7 +1100,7 @@
+ 
+         BeeGoToHiveGoal() {
+             super();
+-            this.travellingTicks = Bee.this.level().random.nextInt(10);
++            this.travellingTicks = Bee.this.random.nextInt(10); // CraftBukkit - SPIGOT-7495: Give Bees another chance and let them use their own random, avoid concurrency issues
+             this.blacklistedTargets = Lists.newArrayList();
+             this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+         }
+@@ -1196,7 +1214,7 @@
+ 
+         BeeGoToKnownFlowerGoal() {
+             super();
+-            this.travellingTicks = Bee.this.level().random.nextInt(10);
++            this.travellingTicks = Bee.this.random.nextInt(10); // CraftBukkit - SPIGOT-7495: Give Bees another chance and let them use their own random, avoid concurrency issues
+             this.setFlags(EnumSet.of(Goal.Flag.MOVE));
+         }
+ 
+@@ -1301,7 +1319,7 @@
+                             }
+                         }
+ 
+-                        if (iblockdata1 != null) {
++                        if (iblockdata1 != null && CraftEventFactory.callEntityChangeBlockEvent(Bee.this, blockposition, iblockdata1)) { // CraftBukkit
+                             Bee.this.level().levelEvent(2011, blockposition, 15);
+                             Bee.this.level().setBlockAndUpdate(blockposition, iblockdata1);
+                             Bee.this.incrementNumCropsGrownSincePollination();
+@@ -1378,7 +1396,7 @@
+         @Override
+         protected void alertOther(Mob mob, LivingEntity target) {
+             if (mob instanceof Bee && this.mob.hasLineOfSight(target)) {
+-                mob.setTarget(target);
++                mob.setTarget(target, EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY, true); // CraftBukkit - reason
+             }
+ 
+         }
+@@ -1387,7 +1405,7 @@
+     private static class BeeBecomeAngryTargetGoal extends NearestAttackableTargetGoal<Player> {
+ 
+         BeeBecomeAngryTargetGoal(Bee bee) {
+-            Objects.requireNonNull(bee);
++            // Objects.requireNonNull(entitybee); // CraftBukkit - decompile error
+             super(bee, Player.class, 10, true, false, bee::isAngryAt);
+         }
+ 

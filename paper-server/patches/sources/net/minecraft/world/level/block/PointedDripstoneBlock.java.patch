@@ -1,0 +1,81 @@
+--- a/net/minecraft/world/level/block/PointedDripstoneBlock.java
++++ b/net/minecraft/world/level/block/PointedDripstoneBlock.java
+@@ -136,6 +136,11 @@
+                 ServerLevel worldserver = (ServerLevel) world;
+ 
+                 if (projectile.mayInteract(worldserver, blockposition) && projectile.mayBreak(worldserver) && projectile instanceof ThrownTrident && projectile.getDeltaMovement().length() > 0.6D) {
++                    // CraftBukkit start
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, Blocks.AIR.defaultBlockState())) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     world.destroyBlock(blockposition, true);
+                 }
+             }
+@@ -146,7 +151,7 @@
+     @Override
+     public void fallOn(Level world, BlockState state, BlockPos pos, Entity entity, float fallDistance) {
+         if (state.getValue(PointedDripstoneBlock.TIP_DIRECTION) == Direction.UP && state.getValue(PointedDripstoneBlock.THICKNESS) == DripstoneThickness.TIP) {
+-            entity.causeFallDamage(fallDistance + 2.0F, 2.0F, world.damageSources().stalagmite());
++            entity.causeFallDamage(fallDistance + 2.0F, 2.0F, world.damageSources().stalagmite().directBlock(world, pos)); // CraftBukkit
+         } else {
+             super.fallOn(world, state, pos, entity, fallDistance);
+         }
+@@ -391,15 +396,15 @@
+         if (PointedDripstoneBlock.isUnmergedTipWithDirection(iblockdata, direction.getOpposite())) {
+             PointedDripstoneBlock.createMergedTips(iblockdata, world, blockposition1);
+         } else if (iblockdata.isAir() || iblockdata.is(Blocks.WATER)) {
+-            PointedDripstoneBlock.createDripstone(world, blockposition1, direction, DripstoneThickness.TIP);
++            PointedDripstoneBlock.createDripstone(world, blockposition1, direction, DripstoneThickness.TIP, pos); // CraftBukkit
+         }
+ 
+     }
+ 
+-    private static void createDripstone(LevelAccessor world, BlockPos pos, Direction direction, DripstoneThickness thickness) {
+-        BlockState iblockdata = (BlockState) ((BlockState) ((BlockState) Blocks.POINTED_DRIPSTONE.defaultBlockState().setValue(PointedDripstoneBlock.TIP_DIRECTION, direction)).setValue(PointedDripstoneBlock.THICKNESS, thickness)).setValue(PointedDripstoneBlock.WATERLOGGED, world.getFluidState(pos).getType() == Fluids.WATER);
++    private static void createDripstone(LevelAccessor generatoraccess, BlockPos blockposition, Direction enumdirection, DripstoneThickness dripstonethickness, BlockPos source) { // CraftBukkit
++        BlockState iblockdata = (BlockState) ((BlockState) ((BlockState) Blocks.POINTED_DRIPSTONE.defaultBlockState().setValue(PointedDripstoneBlock.TIP_DIRECTION, enumdirection)).setValue(PointedDripstoneBlock.THICKNESS, dripstonethickness)).setValue(PointedDripstoneBlock.WATERLOGGED, generatoraccess.getFluidState(blockposition).getType() == Fluids.WATER);
+ 
+-        world.setBlock(pos, iblockdata, 3);
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(generatoraccess, source, blockposition, iblockdata, 3); // CraftBukkit
+     }
+ 
+     private static void createMergedTips(BlockState state, LevelAccessor world, BlockPos pos) {
+@@ -414,8 +419,8 @@
+             blockposition1 = pos.below();
+         }
+ 
+-        PointedDripstoneBlock.createDripstone(world, blockposition2, Direction.DOWN, DripstoneThickness.TIP_MERGE);
+-        PointedDripstoneBlock.createDripstone(world, blockposition1, Direction.UP, DripstoneThickness.TIP_MERGE);
++        PointedDripstoneBlock.createDripstone(world, blockposition2, Direction.DOWN, DripstoneThickness.TIP_MERGE, pos); // CraftBukkit
++        PointedDripstoneBlock.createDripstone(world, blockposition1, Direction.UP, DripstoneThickness.TIP_MERGE, pos); // CraftBukkit
+     }
+ 
+     public static void spawnDripParticle(Level world, BlockPos pos, BlockState state) {
+@@ -448,7 +453,7 @@
+ 
+             return (BlockPos) PointedDripstoneBlock.findBlockVertical(world, pos, enumdirection.getAxisDirection(), bipredicate, (iblockdata1) -> {
+                 return PointedDripstoneBlock.isTip(iblockdata1, allowMerged);
+-            }, range).orElse((Object) null);
++            }, range).orElse(null); // CraftBukkit - decompile error
+         }
+     }
+ 
+@@ -564,7 +569,7 @@
+             return PointedDripstoneBlock.canDripThrough(world, blockposition1, iblockdata);
+         };
+ 
+-        return (BlockPos) PointedDripstoneBlock.findBlockVertical(world, pos, Direction.DOWN.getAxisDirection(), bipredicate, predicate, 11).orElse((Object) null);
++        return (BlockPos) PointedDripstoneBlock.findBlockVertical(world, pos, Direction.DOWN.getAxisDirection(), bipredicate, predicate, 11).orElse(null); // CraftBukkit - decompile error
+     }
+ 
+     @Nullable
+@@ -573,7 +578,7 @@
+             return PointedDripstoneBlock.canDripThrough(world, blockposition1, iblockdata);
+         };
+ 
+-        return (BlockPos) PointedDripstoneBlock.findBlockVertical(world, pos, Direction.UP.getAxisDirection(), bipredicate, PointedDripstoneBlock::canDrip, 11).orElse((Object) null);
++        return (BlockPos) PointedDripstoneBlock.findBlockVertical(world, pos, Direction.UP.getAxisDirection(), bipredicate, PointedDripstoneBlock::canDrip, 11).orElse(null); // CraftBukkit - decompile error
+     }
+ 
+     public static Fluid getCauldronFillFluidType(ServerLevel world, BlockPos pos) {

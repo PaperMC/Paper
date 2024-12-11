@@ -1,0 +1,105 @@
+--- a/net/minecraft/world/level/block/entity/BlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BlockEntity.java
+@@ -26,8 +26,18 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
++import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
++import org.bukkit.inventory.InventoryHolder;
++// CraftBukkit end
++
+ public abstract class BlockEntity {
+ 
++    // CraftBukkit start - data containers
++    private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
++    public CraftPersistentDataContainer persistentDataContainer;
++    // CraftBukkit end
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final BlockEntityType<?> type;
+     @Nullable
+@@ -74,8 +84,17 @@
+         return this.level != null;
+     }
+ 
+-    protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registries) {}
++    // CraftBukkit start - read container
++    protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
++        this.persistentDataContainer = new CraftPersistentDataContainer(BlockEntity.DATA_TYPE_REGISTRY);
+ 
++        net.minecraft.nbt.Tag persistentDataTag = nbt.get("PublicBukkitValues");
++        if (persistentDataTag instanceof CompoundTag) {
++            this.persistentDataContainer.putAll((CompoundTag) persistentDataTag);
++        }
++    }
++    // CraftBukkit end
++
+     public final void loadWithComponents(CompoundTag nbt, HolderLookup.Provider registries) {
+         this.loadAdditional(nbt, registries);
+         BlockEntity.ComponentHelper.COMPONENTS_CODEC.parse(registries.createSerializationContext(NbtOps.INSTANCE), nbt).resultOrPartial((s) -> {
+@@ -114,6 +133,11 @@
+         }).ifPresent((nbtbase) -> {
+             nbttagcompound.merge((CompoundTag) nbtbase);
+         });
++        // CraftBukkit start - store container
++        if (this.persistentDataContainer != null && !this.persistentDataContainer.isEmpty()) {
++            nbttagcompound.put("PublicBukkitValues", this.persistentDataContainer.toTagCompound());
++        }
++        // CraftBukkit end
+         return nbttagcompound;
+     }
+ 
+@@ -263,13 +287,19 @@
+     }
+ 
+     public final void applyComponents(DataComponentMap defaultComponents, DataComponentPatch components) {
++        // CraftBukkit start
++        this.applyComponentsSet(defaultComponents, components);
++    }
++
++    public final Set<DataComponentType<?>> applyComponentsSet(DataComponentMap datacomponentmap, DataComponentPatch datacomponentpatch) {
++        // CraftBukkit end
+         final Set<DataComponentType<?>> set = new HashSet();
+ 
+         set.add(DataComponents.BLOCK_ENTITY_DATA);
+         set.add(DataComponents.BLOCK_STATE);
+-        final PatchedDataComponentMap patcheddatacomponentmap = PatchedDataComponentMap.fromPatch(defaultComponents, components);
++        final PatchedDataComponentMap patcheddatacomponentmap = PatchedDataComponentMap.fromPatch(datacomponentmap, datacomponentpatch);
+ 
+-        this.applyImplicitComponents(new BlockEntity.DataComponentInput(this) {
++        this.applyImplicitComponents(new BlockEntity.DataComponentInput() { // CraftBukkit - decompile error
+             @Nullable
+             @Override
+             public <T> T get(DataComponentType<T> type) {
+@@ -284,9 +314,13 @@
+             }
+         });
+         Objects.requireNonNull(set);
+-        DataComponentPatch datacomponentpatch1 = components.forget(set::contains);
++        DataComponentPatch datacomponentpatch1 = datacomponentpatch.forget(set::contains);
+ 
+         this.components = datacomponentpatch1.split().added();
++        // CraftBukkit start
++        set.remove(DataComponents.BLOCK_ENTITY_DATA); // Remove as never actually added by applyImplicitComponents
++        return set;
++        // CraftBukkit end
+     }
+ 
+     protected void collectImplicitComponents(DataComponentMap.Builder builder) {}
+@@ -321,6 +355,15 @@
+         }
+     }
+ 
++    // CraftBukkit start - add method
++    public InventoryHolder getOwner() {
++        if (this.level == null) return null;
++        org.bukkit.block.BlockState state = this.level.getWorld().getBlockAt(this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ()).getState();
++        if (state instanceof InventoryHolder) return (InventoryHolder) state;
++        return null;
++    }
++    // CraftBukkit end
++
+     private static class ComponentHelper {
+ 
+         public static final Codec<DataComponentMap> COMPONENTS_CODEC = DataComponentMap.CODEC.optionalFieldOf("components", DataComponentMap.EMPTY).codec();

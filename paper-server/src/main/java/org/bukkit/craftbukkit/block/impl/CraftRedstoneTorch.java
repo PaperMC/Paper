@@ -9,21 +9,21 @@ public final class CraftRedstoneTorch extends org.bukkit.craftbukkit.block.data.
         super();
     }
 
-    public CraftRedstoneTorch(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftRedstoneTorch(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftLightable
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean LIT = getBoolean(net.minecraft.world.level.block.BlockRedstoneTorch.class, "lit");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty LIT = getBoolean(net.minecraft.world.level.block.RedstoneTorchBlock.class, "lit");
 
     @Override
     public boolean isLit() {
-        return get(LIT);
+        return this.get(CraftRedstoneTorch.LIT);
     }
 
     @Override
     public void setLit(boolean lit) {
-        set(LIT, lit);
+        this.set(CraftRedstoneTorch.LIT, lit);
     }
 }

@@ -46,7 +46,7 @@ public class MaterialReroutingTest {
     private static JarFile jarFile = null;
 
     public static Stream<Arguments> bukkitData() {
-        return jarFile
+        return MaterialReroutingTest.jarFile
                 .stream()
                 .filter(entry -> entry.getName().endsWith(".class"))
                  // Add class exceptions here
@@ -58,7 +58,7 @@ public class MaterialReroutingTest {
                 .filter(entry -> !entry.getName().startsWith("org/bukkit/material"))
                 .map(entry -> {
                     try {
-                        return jarFile.getInputStream(entry);
+                        return MaterialReroutingTest.jarFile.getInputStream(entry);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -67,7 +67,7 @@ public class MaterialReroutingTest {
 
     @BeforeAll
     public static void beforeAll() throws IOException {
-        jarFile = new JarFile(new File(BUKKIT_CLASSES));
+        MaterialReroutingTest.jarFile = new JarFile(new File(MaterialReroutingTest.BUKKIT_CLASSES));
     }
 
     @ParameterizedTest
@@ -94,7 +94,7 @@ public class MaterialReroutingTest {
                         }
                     }
 
-                    if (!Commodore.rerouteMethods(ApiVersion.CURRENT, MATERIAL_METHOD_REROUTE, (methodNode.access & Opcodes.ACC_STATIC) != 0, classNode.name, methodNode.name, methodNode.desc, a -> { })) {
+                    if (!Commodore.rerouteMethods(ApiVersion.CURRENT, MaterialReroutingTest.MATERIAL_METHOD_REROUTE, (methodNode.access & Opcodes.ACC_STATIC) != 0, classNode.name, methodNode.name, methodNode.desc, a -> { })) {
                         missingReroute.add(methodNode.name + " " + methodNode.desc + " " + methodNode.signature);
                     }
                 }
@@ -111,8 +111,8 @@ public class MaterialReroutingTest {
 
     @AfterAll
     public static void clear() throws IOException {
-        if (jarFile != null) {
-            jarFile.close();
+        if (MaterialReroutingTest.jarFile != null) {
+            MaterialReroutingTest.jarFile.close();
         }
     }
 }

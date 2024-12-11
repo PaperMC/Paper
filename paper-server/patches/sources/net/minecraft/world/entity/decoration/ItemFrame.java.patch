@@ -1,0 +1,62 @@
+--- a/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -91,9 +91,15 @@
+ 
+     @Override
+     protected AABB calculateBoundingBox(BlockPos pos, Direction side) {
++        // CraftBukkit start - break out BB calc into own method
++        return ItemFrame.calculateBoundingBoxStatic(pos, side);
++    }
++
++    public static AABB calculateBoundingBoxStatic(BlockPos blockposition, Direction enumdirection) {
++        // CraftBukkit end
+         float f = 0.46875F;
+-        Vec3 vec3d = Vec3.atCenterOf(pos).relative(side, -0.46875D);
+-        Direction.Axis enumdirection_enumaxis = side.getAxis();
++        Vec3 vec3d = Vec3.atCenterOf(blockposition).relative(enumdirection, -0.46875D);
++        Direction.Axis enumdirection_enumaxis = enumdirection.getAxis();
+         double d0 = enumdirection_enumaxis == Direction.Axis.X ? 0.0625D : 0.75D;
+         double d1 = enumdirection_enumaxis == Direction.Axis.Y ? 0.0625D : 0.75D;
+         double d2 = enumdirection_enumaxis == Direction.Axis.Z ? 0.0625D : 0.75D;
+@@ -155,6 +161,11 @@
+             if (this.isInvulnerableToBase(source)) {
+                 return false;
+             } else if (this.shouldDamageDropItem(source)) {
++                // CraftBukkit start - fire EntityDamageEvent
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, source, amount, false) || this.isRemoved()) {
++                    return true;
++                }
++                // CraftBukkit end
+                 this.dropItem(world, source.getEntity(), false);
+                 this.gameEvent(GameEvent.BLOCK_CHANGE, source.getEntity());
+                 this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
+@@ -267,17 +278,23 @@
+     }
+ 
+     public void setItem(ItemStack value, boolean update) {
+-        if (!value.isEmpty()) {
+-            value = value.copyWithCount(1);
++        // CraftBukkit start
++        this.setItem(value, update, true);
++    }
++
++    public void setItem(ItemStack itemstack, boolean flag, boolean playSound) {
++        // CraftBukkit end
++        if (!itemstack.isEmpty()) {
++            itemstack = itemstack.copyWithCount(1);
+         }
+ 
+-        this.onItemChanged(value);
+-        this.getEntityData().set(ItemFrame.DATA_ITEM, value);
+-        if (!value.isEmpty()) {
++        this.onItemChanged(itemstack);
++        this.getEntityData().set(ItemFrame.DATA_ITEM, itemstack);
++        if (!itemstack.isEmpty() && playSound) { // CraftBukkit
+             this.playSound(this.getAddItemSound(), 1.0F, 1.0F);
+         }
+ 
+-        if (update && this.pos != null) {
++        if (flag && this.pos != null) {
+             this.level().updateNeighbourForOutputSignal(this.pos, Blocks.AIR);
+         }
+ 

@@ -1,8 +1,8 @@
 package org.bukkit.craftbukkit.persistence;
 
 import java.util.Map;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +15,7 @@ public final class DirtyCraftPersistentDataContainer extends CraftPersistentData
 
     private boolean dirty;
 
-    public DirtyCraftPersistentDataContainer(Map<String, NBTBase> customTags, CraftPersistentDataTypeRegistry registry) {
+    public DirtyCraftPersistentDataContainer(Map<String, Tag> customTags, CraftPersistentDataTypeRegistry registry) {
         super(customTags, registry);
     }
 
@@ -44,19 +44,19 @@ public final class DirtyCraftPersistentDataContainer extends CraftPersistentData
     }
 
     @Override
-    public void put(String key, NBTBase base) {
+    public void put(String key, Tag base) {
         super.put(key, base);
         this.dirty(true);
     }
 
     @Override
-    public void putAll(NBTTagCompound compound) {
+    public void putAll(CompoundTag compound) {
         super.putAll(compound);
         this.dirty(true);
     }
 
     @Override
-    public void putAll(Map<String, NBTBase> map) {
+    public void putAll(Map<String, Tag> map) {
         super.putAll(map);
         this.dirty(true);
     }

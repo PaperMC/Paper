@@ -9,45 +9,45 @@ public final class CraftSeaPickle extends org.bukkit.craftbukkit.block.data.Craf
         super();
     }
 
-    public CraftSeaPickle(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftSeaPickle(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftSeaPickle
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger PICKLES = getInteger(net.minecraft.world.level.block.BlockSeaPickle.class, "pickles");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty PICKLES = getInteger(net.minecraft.world.level.block.SeaPickleBlock.class, "pickles");
 
     @Override
     public int getPickles() {
-        return get(PICKLES);
+        return this.get(CraftSeaPickle.PICKLES);
     }
 
     @Override
     public void setPickles(int pickles) {
-        set(PICKLES, pickles);
+        this.set(CraftSeaPickle.PICKLES, pickles);
     }
 
     @Override
     public int getMinimumPickles() {
-        return getMin(PICKLES);
+        return getMin(CraftSeaPickle.PICKLES);
     }
 
     @Override
     public int getMaximumPickles() {
-        return getMax(PICKLES);
+        return getMax(CraftSeaPickle.PICKLES);
     }
 
     // org.bukkit.craftbukkit.block.data.CraftWaterlogged
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean WATERLOGGED = getBoolean(net.minecraft.world.level.block.BlockSeaPickle.class, "waterlogged");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty WATERLOGGED = getBoolean(net.minecraft.world.level.block.SeaPickleBlock.class, "waterlogged");
 
     @Override
     public boolean isWaterlogged() {
-        return get(WATERLOGGED);
+        return this.get(CraftSeaPickle.WATERLOGGED);
     }
 
     @Override
     public void setWaterlogged(boolean waterlogged) {
-        set(WATERLOGGED, waterlogged);
+        this.set(CraftSeaPickle.WATERLOGGED, waterlogged);
     }
 }

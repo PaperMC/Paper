@@ -1,0 +1,230 @@
+--- a/net/minecraft/world/level/block/entity/SignBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/SignBlockEntity.java
+@@ -22,12 +22,12 @@
+ import net.minecraft.network.chat.Style;
+ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+ import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.server.network.FilteredText;
+ import net.minecraft.sounds.SoundEvent;
+ import net.minecraft.sounds.SoundEvents;
+ import net.minecraft.util.Mth;
+ import net.minecraft.world.entity.Entity;
+-import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.SignBlock;
+@@ -35,6 +35,12 @@
+ import net.minecraft.world.phys.Vec2;
+ import net.minecraft.world.phys.Vec3;
+ import org.slf4j.Logger;
++import org.bukkit.block.sign.Side;
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++import org.bukkit.entity.Player;
++import org.bukkit.event.block.SignChangeEvent;
++// CraftBukkit end
+ 
+ public class SignBlockEntity extends BlockEntity {
+ 
+@@ -61,7 +67,7 @@
+         return new SignText();
+     }
+ 
+-    public boolean isFacingFrontText(Player player) {
++    public boolean isFacingFrontText(net.minecraft.world.entity.player.Player player) {
+         Block block = this.getBlockState().getBlock();
+ 
+         if (block instanceof SignBlock blocksign) {
+@@ -101,7 +107,7 @@
+     protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
+         super.saveAdditional(nbt, registries);
+         DynamicOps<Tag> dynamicops = registries.createSerializationContext(NbtOps.INSTANCE);
+-        DataResult dataresult = SignText.DIRECT_CODEC.encodeStart(dynamicops, this.frontText);
++        DataResult<Tag> dataresult = SignText.DIRECT_CODEC.encodeStart(dynamicops, this.frontText); // CraftBukkit - decompile error
+         Logger logger = SignBlockEntity.LOGGER;
+ 
+         Objects.requireNonNull(logger);
+@@ -121,7 +127,7 @@
+     protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registries) {
+         super.loadAdditional(nbt, registries);
+         DynamicOps<Tag> dynamicops = registries.createSerializationContext(NbtOps.INSTANCE);
+-        DataResult dataresult;
++        DataResult<SignText> dataresult; // CraftBukkit - decompile error
+         Logger logger;
+ 
+         if (nbt.contains("front_text")) {
+@@ -161,7 +167,7 @@
+ 
+         if (world instanceof ServerLevel worldserver) {
+             try {
+-                return ComponentUtils.updateForEntity(SignBlockEntity.createCommandSourceStack((Player) null, worldserver, this.worldPosition), text, (Entity) null, 0);
++                return ComponentUtils.updateForEntity(this.createCommandSourceStack((net.minecraft.world.entity.player.Player) null, worldserver, this.worldPosition), text, (Entity) null, 0);
+             } catch (CommandSyntaxException commandsyntaxexception) {
+                 ;
+             }
+@@ -170,15 +176,16 @@
+         return text;
+     }
+ 
+-    public void updateSignText(Player player, boolean front, List<FilteredText> messages) {
++    public void updateSignText(net.minecraft.world.entity.player.Player player, boolean front, List<FilteredText> messages) {
+         if (!this.isWaxed() && player.getUUID().equals(this.getPlayerWhoMayEdit()) && this.level != null) {
+             this.updateText((signtext) -> {
+-                return this.setMessages(player, messages, signtext);
++                return this.setMessages(player, messages, signtext, front); // CraftBukkit
+             }, front);
+             this.setAllowedPlayerEditor((UUID) null);
+             this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3);
+         } else {
+             SignBlockEntity.LOGGER.warn("Player {} just tried to change non-editable sign", player.getName().getString());
++            ((ServerPlayer) player).connection.send(this.getUpdatePacket()); // CraftBukkit
+         }
+     }
+ 
+@@ -188,19 +195,43 @@
+         return this.setText((SignText) textChanger.apply(signtext), front);
+     }
+ 
+-    private SignText setMessages(Player player, List<FilteredText> messages, SignText text) {
+-        for (int i = 0; i < messages.size(); ++i) {
+-            FilteredText filteredtext = (FilteredText) messages.get(i);
+-            Style chatmodifier = text.getMessage(i, player.isTextFilteringEnabled()).getStyle();
++    private SignText setMessages(net.minecraft.world.entity.player.Player entityhuman, List<FilteredText> list, SignText signtext, boolean front) { // CraftBukkit
++        SignText originalText = signtext; // CraftBukkit
++        for (int i = 0; i < list.size(); ++i) {
++            FilteredText filteredtext = (FilteredText) list.get(i);
++            Style chatmodifier = signtext.getMessage(i, entityhuman.isTextFilteringEnabled()).getStyle();
+ 
+-            if (player.isTextFilteringEnabled()) {
+-                text = text.setMessage(i, Component.literal(filteredtext.filteredOrEmpty()).setStyle(chatmodifier));
++            if (entityhuman.isTextFilteringEnabled()) {
++                signtext = signtext.setMessage(i, Component.literal(filteredtext.filteredOrEmpty()).setStyle(chatmodifier));
+             } else {
+-                text = text.setMessage(i, Component.literal(filteredtext.raw()).setStyle(chatmodifier), Component.literal(filteredtext.filteredOrEmpty()).setStyle(chatmodifier));
++                signtext = signtext.setMessage(i, Component.literal(filteredtext.raw()).setStyle(chatmodifier), Component.literal(filteredtext.filteredOrEmpty()).setStyle(chatmodifier));
+             }
+         }
+ 
+-        return text;
++        // CraftBukkit start
++        Player player = ((ServerPlayer) entityhuman).getBukkitEntity();
++        String[] lines = new String[4];
++
++        for (int i = 0; i < list.size(); ++i) {
++            lines[i] = CraftChatMessage.fromComponent(signtext.getMessage(i, entityhuman.isTextFilteringEnabled()));
++        }
++
++        SignChangeEvent event = new SignChangeEvent(CraftBlock.at(this.level, this.worldPosition), player, lines.clone(), (front) ? Side.FRONT : Side.BACK);
++        entityhuman.level().getCraftServer().getPluginManager().callEvent(event);
++
++        if (event.isCancelled()) {
++            return originalText;
++        }
++
++        Component[] components = org.bukkit.craftbukkit.block.CraftSign.sanitizeLines(event.getLines());
++        for (int i = 0; i < components.length; i++) {
++            if (!Objects.equals(lines[i], event.getLine(i))) {
++                signtext = signtext.setMessage(i, components[i]);
++            }
++        }
++        // CraftBukkit end
++
++        return signtext;
+     }
+ 
+     public boolean setText(SignText text, boolean front) {
+@@ -227,11 +258,11 @@
+         }
+     }
+ 
+-    public boolean canExecuteClickCommands(boolean front, Player player) {
++    public boolean canExecuteClickCommands(boolean front, net.minecraft.world.entity.player.Player player) {
+         return this.isWaxed() && this.getText(front).hasAnyClickCommands(player);
+     }
+ 
+-    public boolean executeClickCommandsIfPresent(Player player, Level world, BlockPos pos, boolean front) {
++    public boolean executeClickCommandsIfPresent(net.minecraft.world.entity.player.Player player, Level world, BlockPos pos, boolean front) {
+         boolean flag1 = false;
+         Component[] aichatbasecomponent = this.getText(front).getMessages(player.isTextFilteringEnabled());
+         int i = aichatbasecomponent.length;
+@@ -242,7 +273,7 @@
+             ClickEvent chatclickable = chatmodifier.getClickEvent();
+ 
+             if (chatclickable != null && chatclickable.getAction() == ClickEvent.Action.RUN_COMMAND) {
+-                player.getServer().getCommands().performPrefixedCommand(SignBlockEntity.createCommandSourceStack(player, world, pos), chatclickable.getValue());
++                player.getServer().getCommands().performPrefixedCommand(this.createCommandSourceStack(player, world, pos), chatclickable.getValue());
+                 flag1 = true;
+             }
+         }
+@@ -250,11 +281,40 @@
+         return flag1;
+     }
+ 
+-    private static CommandSourceStack createCommandSourceStack(@Nullable Player player, Level world, BlockPos pos) {
++    // CraftBukkit start
++    private final CommandSource commandSource = new CommandSource() {
++
++        @Override
++        public void sendSystemMessage(Component message) {}
++
++        @Override
++        public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
++            return wrapper.getEntity() != null ? wrapper.getEntity().getBukkitEntity() : new org.bukkit.craftbukkit.command.CraftBlockCommandSender(wrapper, SignBlockEntity.this);
++        }
++
++        @Override
++        public boolean acceptsSuccess() {
++            return false;
++        }
++
++        @Override
++        public boolean acceptsFailure() {
++            return false;
++        }
++
++        @Override
++        public boolean shouldInformAdmins() {
++            return false;
++        }
++    };
++
++    private CommandSourceStack createCommandSourceStack(@Nullable net.minecraft.world.entity.player.Player player, Level world, BlockPos pos) {
++        // CraftBukkit end
+         String s = player == null ? "Sign" : player.getName().getString();
+         Object object = player == null ? Component.literal("Sign") : player.getDisplayName();
+ 
+-        return new CommandSourceStack(CommandSource.NULL, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel) world, 2, s, (Component) object, world.getServer(), player);
++        // CraftBukkit - commandSource
++        return new CommandSourceStack(this.commandSource, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel) world, 2, s, (Component) object, world.getServer(), player);
+     }
+ 
+     @Override
+@@ -273,12 +333,17 @@
+ 
+     @Nullable
+     public UUID getPlayerWhoMayEdit() {
++        // CraftBukkit start - unnecessary sign ticking removed, so do this lazily
++        if (this.level != null && this.playerWhoMayEdit != null) {
++            this.clearInvalidPlayerWhoMayEdit(this, this.level, this.playerWhoMayEdit);
++        }
++        // CraftBukkit end
+         return this.playerWhoMayEdit;
+     }
+ 
+     private void markUpdated() {
+         this.setChanged();
+-        this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3);
++        if (this.level != null) this.level.sendBlockUpdated(this.getBlockPos(), this.getBlockState(), this.getBlockState(), 3); // CraftBukkit - skip notify if world is null (SPIGOT-5122)
+     }
+ 
+     public boolean isWaxed() {
+@@ -296,7 +361,7 @@
+     }
+ 
+     public boolean playerIsTooFarAwayToEdit(UUID uuid) {
+-        Player entityhuman = this.level.getPlayerByUUID(uuid);
++        net.minecraft.world.entity.player.Player entityhuman = this.level.getPlayerByUUID(uuid);
+ 
+         return entityhuman == null || !entityhuman.canInteractWithBlock(this.getBlockPos(), 4.0D);
+     }

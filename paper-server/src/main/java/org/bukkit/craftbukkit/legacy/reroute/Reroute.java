@@ -45,7 +45,7 @@ public class Reroute {
     (Although some load time testing could be done)
      */
     public boolean apply(ApiVersion pluginVersion, String owner, String name, String desc, boolean staticCall, Consumer<RerouteMethodData> consumer) {
-        RerouteDataHolder rerouteData = rerouteDataMap.get(desc + name);
+        RerouteDataHolder rerouteData = this.rerouteDataMap.get(desc + name);
         if (rerouteData == null) {
             return false;
         }
@@ -100,21 +100,21 @@ public class Reroute {
         final Map<String, RerouteMethodData> rerouteMethodDataMap = new HashMap<>();
 
         public RerouteMethodData get(Class<?> clazz) {
-            return rerouteMethodDataMap.get(Type.getInternalName(clazz));
+            return this.rerouteMethodDataMap.get(Type.getInternalName(clazz));
         }
 
         private RerouteMethodData get(Type owner) {
-            return rerouteMethodDataMap.get(owner.getInternalName());
+            return this.rerouteMethodDataMap.get(owner.getInternalName());
         }
 
         void add(RerouteMethodData value) {
-            RerouteMethodData rerouteMethodData = get(value.sourceOwner());
+            RerouteMethodData rerouteMethodData = this.get(value.sourceOwner());
 
             if (rerouteMethodData != null) {
                 throw new IllegalStateException("Reroute method data already exists: " + rerouteMethodData);
             }
 
-            rerouteMethodDataMap.put(value.sourceOwner().getInternalName(), value);
+            this.rerouteMethodDataMap.put(value.sourceOwner().getInternalName(), value);
         }
     }
 }

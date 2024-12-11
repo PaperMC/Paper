@@ -20,23 +20,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
-import net.minecraft.commands.CommandDispatcher;
-import net.minecraft.commands.arguments.item.ArgumentParserItemStack;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.item.ItemParser;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.DynamicOpsNBT;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagString;
-import net.minecraft.resources.MinecraftKey;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.datafix.DataConverterRegistry;
-import net.minecraft.util.datafix.fixes.DataConverterTypes;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.util.datafix.DataFixers;
+import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.alchemy.PotionRegistry;
+import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.IBlockData;
-import net.minecraft.world.level.storage.SavedFile;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.LevelResource;
 import org.bukkit.Bukkit;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Keyed;
@@ -81,16 +80,16 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     private CraftMagicNumbers() {}
 
-    public static IBlockData getBlock(MaterialData material) {
-        return getBlock(material.getItemType(), material.getData());
+    public static BlockState getBlock(MaterialData material) {
+        return CraftMagicNumbers.getBlock(material.getItemType(), material.getData());
     }
 
-    public static IBlockData getBlock(Material material, byte data) {
+    public static BlockState getBlock(Material material, byte data) {
         return CraftLegacy.fromLegacyData(CraftLegacy.toLegacy(material), data);
     }
 
-    public static MaterialData getMaterial(IBlockData data) {
-        return CraftLegacy.toLegacy(getMaterial(data.getBlock())).getNewData(toLegacyData(data));
+    public static MaterialData getMaterial(BlockState data) {
+        return CraftLegacy.toLegacy(CraftMagicNumbers.getMaterial(data.getBlock())).getNewData(CraftMagicNumbers.toLegacyData(data));
     }
 
     public static Item getItem(Material material, short data) {
@@ -98,11 +97,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
             return CraftLegacy.fromLegacyData(CraftLegacy.toLegacy(material), data);
         }
 
-        return getItem(material);
+        return CraftMagicNumbers.getItem(material);
     }
 
     public static MaterialData getMaterialData(Item item) {
-        return CraftLegacy.toLegacyData(getMaterial(item));
+        return CraftLegacy.toLegacyData(CraftMagicNumbers.getMaterial(item));
     }
 
     // ========================================================================
@@ -125,22 +124,22 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 continue;
             }
 
-            MinecraftKey key = key(material);
+            ResourceLocation key = key(material);
             BuiltInRegistries.ITEM.getOptional(key).ifPresent((item) -> {
-                MATERIAL_ITEM.put(material, item);
+                CraftMagicNumbers.MATERIAL_ITEM.put(material, item);
             });
             BuiltInRegistries.BLOCK.getOptional(key).ifPresent((block) -> {
-                MATERIAL_BLOCK.put(material, block);
+                CraftMagicNumbers.MATERIAL_BLOCK.put(material, block);
             });
         }
     }
 
     public static Material getMaterial(Block block) {
-        return BLOCK_MATERIAL.get(block);
+        return CraftMagicNumbers.BLOCK_MATERIAL.get(block);
     }
 
     public static Material getMaterial(Item item) {
-        return ITEM_MATERIAL.getOrDefault(item, Material.AIR);
+        return CraftMagicNumbers.ITEM_MATERIAL.getOrDefault(item, Material.AIR);
     }
 
     public static Item getItem(Material material) {
@@ -148,7 +147,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             material = CraftLegacy.fromLegacy(material);
         }
 
-        return MATERIAL_ITEM.get(material);
+        return CraftMagicNumbers.MATERIAL_ITEM.get(material);
     }
 
     public static Block getBlock(Material material) {
@@ -156,15 +155,15 @@ public final class CraftMagicNumbers implements UnsafeValues {
             material = CraftLegacy.fromLegacy(material);
         }
 
-        return MATERIAL_BLOCK.get(material);
+        return CraftMagicNumbers.MATERIAL_BLOCK.get(material);
     }
 
-    public static MinecraftKey key(Material mat) {
+    public static ResourceLocation key(Material mat) {
         return CraftNamespacedKey.toMinecraft(mat.getKey());
     }
     // ========================================================================
 
-    public static byte toLegacyData(IBlockData data) {
+    public static byte toLegacyData(BlockState data) {
         return CraftLegacy.toLegacyData(data);
     }
 
@@ -194,7 +193,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public BlockData fromLegacy(Material material, byte data) {
-        return CraftBlockData.fromData(getBlock(material, data));
+        return CraftBlockData.fromData(CraftMagicNumbers.getBlock(material, data));
     }
 
     @Override
@@ -207,11 +206,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
             return Material.getMaterial(material);
         }
 
-        Dynamic<NBTBase> name = new Dynamic<>(DynamicOpsNBT.INSTANCE, NBTTagString.valueOf("minecraft:" + material.toLowerCase(Locale.ROOT)));
-        Dynamic<NBTBase> converted = DataConverterRegistry.getDataFixer().update(DataConverterTypes.ITEM_NAME, name, version, this.getDataVersion());
+        Dynamic<Tag> name = new Dynamic<>(NbtOps.INSTANCE, StringTag.valueOf("minecraft:" + material.toLowerCase(Locale.ROOT)));
+        Dynamic<Tag> converted = DataFixers.getDataFixer().update(References.ITEM_NAME, name, version, this.getDataVersion());
 
         if (name.equals(converted)) {
-            converted = DataConverterRegistry.getDataFixer().update(DataConverterTypes.BLOCK_NAME, name, version, this.getDataVersion());
+            converted = DataFixers.getDataFixer().update(References.BLOCK_NAME, name, version, this.getDataVersion());
         }
 
         return Material.matchMaterial(converted.asString(""));
@@ -246,7 +245,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(stack);
 
         try {
-            nmsStack.applyComponents(new ArgumentParserItemStack(CommandDispatcher.createValidationContext(MinecraftServer.getDefaultRegistryAccess())).parse(new StringReader(arguments)).components());
+            nmsStack.applyComponents(new ItemParser(Commands.createValidationContext(MinecraftServer.getDefaultRegistryAccess())).parse(new StringReader(arguments)).components());
         } catch (CommandSyntaxException ex) {
             Logger.getLogger(CraftMagicNumbers.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -257,13 +256,13 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     private static File getBukkitDataPackFolder() {
-        return new File(MinecraftServer.getServer().getWorldPath(SavedFile.DATAPACK_DIR).toFile(), "bukkit");
+        return new File(MinecraftServer.getServer().getWorldPath(LevelResource.DATAPACK_DIR).toFile(), "bukkit");
     }
 
     @Override
     public Advancement loadAdvancement(NamespacedKey key, String advancement) {
         Preconditions.checkArgument(Bukkit.getAdvancement(key) == null, "Advancement %s already exists", key);
-        MinecraftKey minecraftkey = CraftNamespacedKey.toMinecraft(key);
+        ResourceLocation minecraftkey = CraftNamespacedKey.toMinecraft(key);
 
         JsonElement jsonelement = JsonParser.parseString(advancement);
         net.minecraft.advancements.Advancement nms = net.minecraft.advancements.Advancement.CODEC.parse(JsonOps.INSTANCE, jsonelement).getOrThrow(JsonParseException::new);
@@ -272,7 +271,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
             Advancement bukkit = Bukkit.getAdvancement(key);
 
             if (bukkit != null) {
-                File file = new File(getBukkitDataPackFolder(), "data" + File.separator + key.getNamespace() + File.separator + "advancements" + File.separator + key.getKey() + ".json");
+                File file = new File(CraftMagicNumbers.getBukkitDataPackFolder(), "data" + File.separator + key.getNamespace() + File.separator + "advancements" + File.separator + key.getKey() + ".json");
                 file.getParentFile().mkdirs();
 
                 try {
@@ -292,7 +291,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public boolean removeAdvancement(NamespacedKey key) {
-        File file = new File(getBukkitDataPackFolder(), "data" + File.separator + key.getNamespace() + File.separator + "advancements" + File.separator + key.getKey() + ".json");
+        File file = new File(CraftMagicNumbers.getBukkitDataPackFolder(), "data" + File.separator + key.getNamespace() + File.separator + "advancements" + File.separator + key.getKey() + ".json");
         return file.delete();
     }
 
@@ -327,7 +326,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public byte[] processClass(PluginDescriptionFile pdf, String path, byte[] clazz) {
         try {
-            clazz = commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()), ((CraftServer) Bukkit.getServer()).activeCompatibilities);
+            clazz = this.commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()), ((CraftServer) Bukkit.getServer()).activeCompatibilities);
         } catch (Exception ex) {
             Bukkit.getLogger().log(Level.SEVERE, "Fatal error trying to convert " + pdf.getFullName() + ":" + path, ex);
         }
@@ -358,7 +357,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public String getTranslationKey(EntityType entityType) {
         Preconditions.checkArgument(entityType.getName() != null, "Invalid name of EntityType %s for translation key", entityType);
-        return EntityTypes.byString(entityType.getName()).map(EntityTypes::getDescriptionId).orElseThrow();
+        return net.minecraft.world.entity.EntityType.byString(entityType.getName()).map(net.minecraft.world.entity.EntityType::getDescriptionId).orElseThrow();
     }
 
     @Override
@@ -380,7 +379,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public PotionType.InternalPotionData getInternalPotionData(NamespacedKey namespacedKey) {
-        PotionRegistry potionRegistry = CraftRegistry.getMinecraftRegistry(Registries.POTION)
+        Potion potionRegistry = CraftRegistry.getMinecraftRegistry(Registries.POTION)
                 .getOptional(CraftNamespacedKey.toMinecraft(namespacedKey)).orElseThrow();
 
         return new CraftPotionType(namespacedKey, potionRegistry);
@@ -415,11 +414,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
     private Biome customBiome;
     @Override
     public Biome getCustomBiome() {
-        if (customBiome == null) {
-            customBiome = new CraftBiome(NamespacedKey.minecraft("custom"), null);
+        if (this.customBiome == null) {
+            this.customBiome = new CraftBiome(NamespacedKey.minecraft("custom"), null);
         }
 
-        return customBiome;
+        return this.customBiome;
     }
 
     /**

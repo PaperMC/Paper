@@ -1,9 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.entity.animal.horse.EntityHorse;
-import net.minecraft.world.entity.animal.horse.HorseColor;
-import net.minecraft.world.entity.animal.horse.HorseStyle;
+import net.minecraft.world.entity.animal.horse.Markings;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftInventoryHorse;
 import org.bukkit.entity.Horse;
@@ -11,13 +9,13 @@ import org.bukkit.inventory.HorseInventory;
 
 public class CraftHorse extends CraftAbstractHorse implements Horse {
 
-    public CraftHorse(CraftServer server, EntityHorse entity) {
+    public CraftHorse(CraftServer server, net.minecraft.world.entity.animal.horse.Horse entity) {
         super(server, entity);
     }
 
     @Override
-    public EntityHorse getHandle() {
-        return (EntityHorse) super.getHandle();
+    public net.minecraft.world.entity.animal.horse.Horse getHandle() {
+        return (net.minecraft.world.entity.animal.horse.Horse) super.getHandle();
     }
 
     @Override
@@ -27,24 +25,24 @@ public class CraftHorse extends CraftAbstractHorse implements Horse {
 
     @Override
     public Color getColor() {
-        return Color.values()[getHandle().getVariant().getId()];
+        return Color.values()[this.getHandle().getVariant().getId()];
     }
 
     @Override
     public void setColor(Color color) {
         Preconditions.checkArgument(color != null, "Color cannot be null");
-        getHandle().setVariantAndMarkings(HorseColor.byId(color.ordinal()), getHandle().getMarkings());
+        this.getHandle().setVariantAndMarkings(net.minecraft.world.entity.animal.horse.Variant.byId(color.ordinal()), this.getHandle().getMarkings());
     }
 
     @Override
     public Style getStyle() {
-        return Style.values()[getHandle().getMarkings().getId()];
+        return Style.values()[this.getHandle().getMarkings().getId()];
     }
 
     @Override
     public void setStyle(Style style) {
         Preconditions.checkArgument(style != null, "Style cannot be null");
-        getHandle().setVariantAndMarkings(getHandle().getVariant(), HorseStyle.byId(style.ordinal()));
+        this.getHandle().setVariantAndMarkings(this.getHandle().getVariant(), Markings.byId(style.ordinal()));
     }
 
     @Override
@@ -59,11 +57,11 @@ public class CraftHorse extends CraftAbstractHorse implements Horse {
 
     @Override
     public HorseInventory getInventory() {
-        return new CraftInventoryHorse(getHandle().inventory, getHandle().getBodyArmorAccess());
+        return new CraftInventoryHorse(this.getHandle().inventory, this.getHandle().getBodyArmorAccess());
     }
 
     @Override
     public String toString() {
-        return "CraftHorse{variant=" + getVariant() + ", owner=" + getOwner() + '}';
+        return "CraftHorse{variant=" + this.getVariant() + ", owner=" + this.getOwner() + '}';
     }
 }

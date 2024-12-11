@@ -1,0 +1,72 @@
+--- a/net/minecraft/world/entity/LightningBolt.java
++++ b/net/minecraft/world/entity/LightningBolt.java
+@@ -30,6 +30,10 @@
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityRemoveEvent;
++// CraftBukkit end
+ 
+ public class LightningBolt extends Entity {
+ 
+@@ -120,7 +124,7 @@
+                     }
+                 }
+ 
+-                this.discard();
++                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+             } else if (this.life < -this.random.nextInt(10)) {
+                 --this.flashes;
+                 this.life = 1;
+@@ -129,7 +133,7 @@
+             }
+         }
+ 
+-        if (this.life >= 0) {
++        if (this.life >= 0 && !this.visualOnly) { // CraftBukkit - add !this.visualOnly
+             if (!(this.level() instanceof ServerLevel)) {
+                 this.level().setSkyFlashTime(2);
+             } else if (!this.visualOnly) {
+@@ -169,8 +173,12 @@
+                     BlockState iblockdata = BaseFireBlock.getState(this.level(), blockposition);
+ 
+                     if (this.level().getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level(), blockposition)) {
+-                        this.level().setBlockAndUpdate(blockposition, iblockdata);
+-                        ++this.blocksSetOnFire;
++                        // CraftBukkit start - add "!visualOnly"
++                        if (!this.visualOnly && !CraftEventFactory.callBlockIgniteEvent(this.level(), blockposition, this).isCancelled()) {
++                            this.level().setBlockAndUpdate(blockposition, iblockdata);
++                            ++this.blocksSetOnFire;
++                        }
++                        // CraftBukkit end
+                     }
+ 
+                     for (int j = 0; j < spreadAttempts; ++j) {
+@@ -178,8 +186,12 @@
+ 
+                         iblockdata = BaseFireBlock.getState(this.level(), blockposition1);
+                         if (this.level().getBlockState(blockposition1).isAir() && iblockdata.canSurvive(this.level(), blockposition1)) {
+-                            this.level().setBlockAndUpdate(blockposition1, iblockdata);
+-                            ++this.blocksSetOnFire;
++                            // CraftBukkit start - add "!visualOnly"
++                            if (!this.visualOnly && !CraftEventFactory.callBlockIgniteEvent(this.level(), blockposition1, this).isCancelled()) {
++                                this.level().setBlockAndUpdate(blockposition1, iblockdata);
++                                ++this.blocksSetOnFire;
++                            }
++                            // CraftBukkit end
+                         }
+                     }
+ 
+@@ -247,8 +259,9 @@
+             iblockdata = world.getBlockState(blockposition1);
+         } while (!(iblockdata.getBlock() instanceof WeatheringCopper));
+ 
++        BlockPos blockposition1Final = blockposition1; // CraftBukkit - decompile error
+         WeatheringCopper.getPrevious(iblockdata).ifPresent((iblockdata1) -> {
+-            world.setBlockAndUpdate(blockposition1, iblockdata1);
++            world.setBlockAndUpdate(blockposition1Final, iblockdata1); // CraftBukkit - decompile error
+         });
+         world.levelEvent(3002, blockposition1, -1);
+         return Optional.of(blockposition1);

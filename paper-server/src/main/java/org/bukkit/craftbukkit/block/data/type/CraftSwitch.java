@@ -5,15 +5,15 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftSwitch extends CraftBlockData implements Switch {
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateEnum<?> FACE = getEnum("face");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> FACE = getEnum("face");
 
     @Override
     public org.bukkit.block.data.type.Switch.Face getFace() {
-        return get(FACE, org.bukkit.block.data.type.Switch.Face.class);
+        return this.get(CraftSwitch.FACE, org.bukkit.block.data.type.Switch.Face.class);
     }
 
     @Override
     public void setFace(org.bukkit.block.data.type.Switch.Face face) {
-        set(FACE, face);
+        this.set(CraftSwitch.FACE, face);
     }
 }

@@ -1,10 +1,10 @@
 package org.bukkit.craftbukkit.generator;
 
 import java.util.UUID;
-import net.minecraft.world.level.dimension.DimensionManager;
-import net.minecraft.world.level.storage.Convertable;
-import net.minecraft.world.level.storage.IWorldDataServer;
-import net.minecraft.world.level.storage.WorldDataServer;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.storage.LevelStorageSource;
+import net.minecraft.world.level.storage.PrimaryLevelData;
+import net.minecraft.world.level.storage.ServerLevelData;
 import org.bukkit.World;
 import org.bukkit.craftbukkit.util.WorldUUID;
 import org.bukkit.generator.WorldInfo;
@@ -18,11 +18,11 @@ public class CraftWorldInfo implements WorldInfo {
     private final int minHeight;
     private final int maxHeight;
 
-    public CraftWorldInfo(IWorldDataServer worldDataServer, Convertable.ConversionSession session, World.Environment environment, DimensionManager dimensionManager) {
+    public CraftWorldInfo(ServerLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager) {
         this.name = worldDataServer.getLevelName();
         this.uuid = WorldUUID.getUUID(session.levelDirectory.path().toFile());
         this.environment = environment;
-        this.seed = ((WorldDataServer) worldDataServer).worldGenOptions().seed();
+        this.seed = ((PrimaryLevelData) worldDataServer).worldGenOptions().seed();
         this.minHeight = dimensionManager.minY();
         this.maxHeight = dimensionManager.minY() + dimensionManager.height();
     }
@@ -38,31 +38,31 @@ public class CraftWorldInfo implements WorldInfo {
 
     @Override
     public String getName() {
-        return name;
+        return this.name;
     }
 
     @Override
     public UUID getUID() {
-        return uuid;
+        return this.uuid;
     }
 
     @Override
     public World.Environment getEnvironment() {
-        return environment;
+        return this.environment;
     }
 
     @Override
     public long getSeed() {
-        return seed;
+        return this.seed;
     }
 
     @Override
     public int getMinHeight() {
-        return minHeight;
+        return this.minHeight;
     }
 
     @Override
     public int getMaxHeight() {
-        return maxHeight;
+        return this.maxHeight;
     }
 }

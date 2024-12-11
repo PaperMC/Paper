@@ -1,0 +1,152 @@
+--- a/net/minecraft/server/level/ServerEntity.java
++++ b/net/minecraft/server/level/ServerEntity.java
+@@ -31,7 +31,6 @@
+ import net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket;
+ import net.minecraft.network.protocol.game.VecDeltaCodec;
+ import net.minecraft.network.syncher.SynchedEntityData;
+-import net.minecraft.util.Mth;
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EquipmentSlot;
+ import net.minecraft.world.entity.Leashable;
+@@ -50,6 +49,13 @@
+ import net.minecraft.world.phys.Vec3;
+ import org.slf4j.Logger;
+ 
++// CraftBukkit start
++import net.minecraft.server.network.ServerPlayerConnection;
++import net.minecraft.util.Mth;
++import org.bukkit.entity.Player;
++import org.bukkit.event.player.PlayerVelocityEvent;
++// CraftBukkit end
++
+ public class ServerEntity {
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -74,13 +80,17 @@
+     private boolean wasOnGround;
+     @Nullable
+     private List<SynchedEntityData.DataValue<?>> trackedDataValues;
++    // CraftBukkit start
++    private final Set<ServerPlayerConnection> trackedPlayers;
+ 
+-    public ServerEntity(ServerLevel world, Entity entity, int tickInterval, boolean alwaysUpdateVelocity, Consumer<Packet<?>> receiver) {
+-        this.level = world;
+-        this.broadcast = receiver;
++    public ServerEntity(ServerLevel worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, Set<ServerPlayerConnection> trackedPlayers) {
++        this.trackedPlayers = trackedPlayers;
++        // CraftBukkit end
++        this.level = worldserver;
++        this.broadcast = consumer;
+         this.entity = entity;
+-        this.updateInterval = tickInterval;
+-        this.trackDelta = alwaysUpdateVelocity;
++        this.updateInterval = i;
++        this.trackDelta = flag;
+         this.positionCodec.setBase(entity.trackingPosition());
+         this.lastSentMovement = entity.getDeltaMovement();
+         this.lastSentYRot = Mth.packDegrees(entity.getYRot());
+@@ -94,7 +104,7 @@
+         List<Entity> list = this.entity.getPassengers();
+ 
+         if (!list.equals(this.lastPassengers)) {
+-            this.broadcast.accept(new ClientboundSetPassengersPacket(this.entity));
++            this.broadcastAndSend(new ClientboundSetPassengersPacket(this.entity)); // CraftBukkit
+             ServerEntity.removedPassengers(list, this.lastPassengers).forEach((entity) -> {
+                 if (entity instanceof ServerPlayer entityplayer) {
+                     entityplayer.connection.teleport(entityplayer.getX(), entityplayer.getY(), entityplayer.getZ(), entityplayer.getYRot(), entityplayer.getXRot());
+@@ -107,18 +117,18 @@
+         Entity entity = this.entity;
+ 
+         if (entity instanceof ItemFrame entityitemframe) {
+-            if (this.tickCount % 10 == 0) {
++            if (true || this.tickCount % 10 == 0) { // CraftBukkit - Moved below, should always enter this block
+                 ItemStack itemstack = entityitemframe.getItem();
+ 
+-                if (itemstack.getItem() instanceof MapItem) {
++                if (this.tickCount % 10 == 0 && itemstack.getItem() instanceof MapItem) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks
+                     MapId mapid = (MapId) itemstack.get(DataComponents.MAP_ID);
+                     MapItemSavedData worldmap = MapItem.getSavedData(mapid, this.level);
+ 
+                     if (worldmap != null) {
+-                        Iterator iterator = this.level.players().iterator();
++                        Iterator<ServerPlayerConnection> iterator = this.trackedPlayers.iterator(); // CraftBukkit
+ 
+                         while (iterator.hasNext()) {
+-                            ServerPlayer entityplayer = (ServerPlayer) iterator.next();
++                            ServerPlayer entityplayer = iterator.next().getPlayer(); // CraftBukkit
+ 
+                             worldmap.tickCarriedBy(entityplayer, itemstack);
+                             Packet<?> packet = worldmap.getUpdatePacket(mapid, entityplayer);
+@@ -248,6 +258,27 @@
+ 
+         ++this.tickCount;
+         if (this.entity.hurtMarked) {
++            // CraftBukkit start - Create PlayerVelocity event
++            boolean cancelled = false;
++
++            if (this.entity instanceof ServerPlayer) {
++                Player player = (Player) this.entity.getBukkitEntity();
++                org.bukkit.util.Vector velocity = player.getVelocity();
++
++                PlayerVelocityEvent event = new PlayerVelocityEvent(player, velocity.clone());
++                this.entity.level().getCraftServer().getPluginManager().callEvent(event);
++
++                if (event.isCancelled()) {
++                    cancelled = true;
++                } else if (!velocity.equals(event.getVelocity())) {
++                    player.setVelocity(event.getVelocity());
++                }
++            }
++
++            if (cancelled) {
++                return;
++            }
++            // CraftBukkit end
+             this.entity.hurtMarked = false;
+             this.broadcastAndSend(new ClientboundSetEntityMotionPacket(this.entity));
+         }
+@@ -298,7 +329,10 @@
+ 
+     public void sendPairingData(ServerPlayer player, Consumer<Packet<ClientGamePacketListener>> sender) {
+         if (this.entity.isRemoved()) {
+-            ServerEntity.LOGGER.warn("Fetching packet for removed entity {}", this.entity);
++            // CraftBukkit start - Remove useless error spam, just return
++            // EntityTrackerEntry.LOGGER.warn("Fetching packet for removed entity {}", this.entity);
++            return;
++            // CraftBukkit end
+         }
+ 
+         Packet<ClientGamePacketListener> packet = this.entity.getAddEntityPacket(this);
+@@ -313,6 +347,12 @@
+         if (this.entity instanceof LivingEntity) {
+             Collection<AttributeInstance> collection = ((LivingEntity) this.entity).getAttributes().getSyncableAttributes();
+ 
++            // CraftBukkit start - If sending own attributes send scaled health instead of current maximum health
++            if (this.entity.getId() == player.getId()) {
++                ((ServerPlayer) this.entity).getBukkitEntity().injectScaledMaxHealth(collection, false);
++            }
++            // CraftBukkit end
++
+             if (!collection.isEmpty()) {
+                 sender.accept(new ClientboundUpdateAttributesPacket(this.entity.getId(), collection));
+             }
+@@ -344,6 +384,7 @@
+             if (!list.isEmpty()) {
+                 sender.accept(new ClientboundSetEquipmentPacket(this.entity.getId(), list));
+             }
++            ((LivingEntity) this.entity).detectEquipmentUpdatesPublic(); // CraftBukkit - SPIGOT-3789: sync again immediately after sending
+         }
+ 
+         if (!this.entity.getPassengers().isEmpty()) {
+@@ -396,6 +437,11 @@
+             Set<AttributeInstance> set = ((LivingEntity) this.entity).getAttributes().getAttributesToSync();
+ 
+             if (!set.isEmpty()) {
++                // CraftBukkit start - Send scaled max health
++                if (this.entity instanceof ServerPlayer) {
++                    ((ServerPlayer) this.entity).getBukkitEntity().injectScaledMaxHealth(set, false);
++                }
++                // CraftBukkit end
+                 this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), set));
+             }
+ 

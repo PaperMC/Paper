@@ -1,0 +1,93 @@
+--- a/net/minecraft/world/inventory/TransientCraftingContainer.java
++++ b/net/minecraft/world/inventory/TransientCraftingContainer.java
+@@ -3,11 +3,21 @@
+ import java.util.Iterator;
+ import java.util.List;
+ import net.minecraft.core.NonNullList;
++import net.minecraft.world.Container;
+ import net.minecraft.world.ContainerHelper;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.entity.player.StackedItemContents;
+ import net.minecraft.world.item.ItemStack;
+ 
++// CraftBukkit start
++import java.util.List;
++import net.minecraft.world.item.crafting.RecipeHolder;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.event.inventory.InventoryType;
++// CraftBukkit end
++
+ public class TransientCraftingContainer implements CraftingContainer {
+ 
+     private final NonNullList<ItemStack> items;
+@@ -15,6 +25,68 @@
+     private final int height;
+     private final AbstractContainerMenu menu;
+ 
++    // CraftBukkit start - add fields
++    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
++    private RecipeHolder<?> currentRecipe;
++    public Container resultInventory;
++    private Player owner;
++    private int maxStack = MAX_STACK;
++
++    public List<ItemStack> getContents() {
++        return this.items;
++    }
++
++    public void onOpen(CraftHumanEntity who) {
++        this.transaction.add(who);
++    }
++
++    public InventoryType getInvType() {
++        return this.items.size() == 4 ? InventoryType.CRAFTING : InventoryType.WORKBENCH;
++    }
++
++    public void onClose(CraftHumanEntity who) {
++        this.transaction.remove(who);
++    }
++
++    public List<HumanEntity> getViewers() {
++        return this.transaction;
++    }
++
++    public org.bukkit.inventory.InventoryHolder getOwner() {
++        return (this.owner == null) ? null : this.owner.getBukkitEntity();
++    }
++
++    @Override
++    public int getMaxStackSize() {
++        return this.maxStack;
++    }
++
++    public void setMaxStackSize(int size) {
++        this.maxStack = size;
++        this.resultInventory.setMaxStackSize(size);
++    }
++
++    @Override
++    public Location getLocation() {
++        return this.menu instanceof CraftingMenu ? ((CraftingMenu) this.menu).access.getLocation() : this.owner.getBukkitEntity().getLocation();
++    }
++
++    @Override
++    public RecipeHolder<?> getCurrentRecipe() {
++        return this.currentRecipe;
++    }
++
++    @Override
++    public void setCurrentRecipe(RecipeHolder<?> currentRecipe) {
++        this.currentRecipe = currentRecipe;
++    }
++
++    public TransientCraftingContainer(AbstractContainerMenu container, int i, int j, Player player) {
++        this(container, i, j);
++        this.owner = player;
++    }
++    // CraftBukkit end
++
+     public TransientCraftingContainer(AbstractContainerMenu handler, int width, int height) {
+         this(handler, width, height, NonNullList.withSize(width * height, ItemStack.EMPTY));
+     }

@@ -1,0 +1,33 @@
+--- a/net/minecraft/world/item/BoatItem.java
++++ b/net/minecraft/world/item/BoatItem.java
+@@ -58,6 +58,13 @@
+             }
+ 
+             if (movingobjectpositionblock.getType() == HitResult.Type.BLOCK) {
++                // CraftBukkit start - Boat placement
++                org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(user, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), itemstack, false, hand, movingobjectpositionblock.getLocation());
++
++                if (event.isCancelled()) {
++                    return InteractionResult.PASS;
++                }
++                // CraftBukkit end
+                 AbstractBoat abstractboat = this.getBoat(world, movingobjectpositionblock, itemstack, user);
+ 
+                 if (abstractboat == null) {
+@@ -68,7 +75,15 @@
+                         return InteractionResult.FAIL;
+                     } else {
+                         if (!world.isClientSide) {
+-                            world.addFreshEntity(abstractboat);
++                            // CraftBukkit start
++                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(world, movingobjectpositionblock.getBlockPos(), movingobjectpositionblock.getDirection(), user, abstractboat, hand).isCancelled()) {
++                                return InteractionResult.FAIL;
++                            }
++
++                            if (!world.addFreshEntity(abstractboat)) {
++                                return InteractionResult.PASS;
++                            }
++                            // CraftBukkit end
+                             world.gameEvent((Entity) user, (Holder) GameEvent.ENTITY_PLACE, movingobjectpositionblock.getLocation());
+                             itemstack.consume(1, user);
+                         }

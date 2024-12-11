@@ -1,0 +1,52 @@
+--- a/net/minecraft/world/level/block/RedstoneTorchBlock.java
++++ b/net/minecraft/world/level/block/RedstoneTorchBlock.java
+@@ -22,6 +22,8 @@
+ import net.minecraft.world.level.redstone.ExperimentalRedstoneUtils;
+ import net.minecraft.world.level.redstone.Orientation;
+ 
++import org.bukkit.event.block.BlockRedstoneEvent; // CraftBukkit
++
+ public class RedstoneTorchBlock extends BaseTorchBlock {
+ 
+     public static final MapCodec<RedstoneTorchBlock> CODEC = simpleCodec(RedstoneTorchBlock::new);
+@@ -85,8 +87,24 @@
+             list.remove(0);
+         }
+ 
++        // CraftBukkit start
++        org.bukkit.plugin.PluginManager manager = world.getCraftServer().getPluginManager();
++        org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++        int oldCurrent = ((Boolean) state.getValue(RedstoneTorchBlock.LIT)).booleanValue() ? 15 : 0;
++
++        BlockRedstoneEvent event = new BlockRedstoneEvent(block, oldCurrent, oldCurrent);
++        // CraftBukkit end
+         if ((Boolean) state.getValue(RedstoneTorchBlock.LIT)) {
+             if (flag) {
++                // CraftBukkit start
++                if (oldCurrent != 0) {
++                    event.setNewCurrent(0);
++                    manager.callEvent(event);
++                    if (event.getNewCurrent() != 0) {
++                        return;
++                    }
++                }
++                // CraftBukkit end
+                 world.setBlock(pos, (BlockState) state.setValue(RedstoneTorchBlock.LIT, false), 3);
+                 if (RedstoneTorchBlock.isToggledTooFrequently(world, pos, true)) {
+                     world.levelEvent(1502, pos, 0);
+@@ -94,6 +112,15 @@
+                 }
+             }
+         } else if (!flag && !RedstoneTorchBlock.isToggledTooFrequently(world, pos, false)) {
++            // CraftBukkit start
++            if (oldCurrent != 15) {
++                event.setNewCurrent(15);
++                manager.callEvent(event);
++                if (event.getNewCurrent() != 15) {
++                    return;
++                }
++            }
++            // CraftBukkit end
+             world.setBlock(pos, (BlockState) state.setValue(RedstoneTorchBlock.LIT, true), 3);
+         }
+ 

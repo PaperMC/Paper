@@ -10,7 +10,7 @@ public class DoNotRerouteTest extends AbstractRerouteTest {
 
     @Test
     public void testDoNotReroute() {
-        test(DoNotRerouteTestData.class, Map.of());
+        this.test(DoNotRerouteTestData.class, Map.of());
     }
 
     public static class DoNotRerouteTestData {

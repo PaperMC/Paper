@@ -11,11 +11,11 @@ import org.objectweb.asm.Type;
 public abstract class AbstractRerouteTest {
 
     void test(Class<?> testClass, Map<String, RerouteMethodData> dataMap) {
-        test(testClass, Predicates.alwaysTrue(), dataMap);
+        this.test(testClass, Predicates.alwaysTrue(), dataMap);
     }
 
     void test(Class<?> testClass, Predicate<String> predicate, Map<String, RerouteMethodData> dataMap) {
-        test(testClass, Predicates.and(predicate), dataMap.entrySet().stream().map(entry -> new TestDataHolder(entry.getKey(), List.of(entry.getValue()))).toList());
+        this.test(testClass, Predicates.and(predicate), dataMap.entrySet().stream().map(entry -> new TestDataHolder(entry.getKey(), List.of(entry.getValue()))).toList());
     }
 
     void test(Class<?> testClass, Predicate<String> predicate, List<TestDataHolder> dataList) {
@@ -34,7 +34,7 @@ public abstract class AbstractRerouteTest {
                 RerouteMethodData actual = holder.rerouteMethodDataMap.get(testData.sourceOwner().getInternalName());
                 assertNotNull(actual, String.format("No reroute method data found for %s", testData));
 
-                check(actual, testData);
+                this.check(actual, testData);
             }
         }
     }

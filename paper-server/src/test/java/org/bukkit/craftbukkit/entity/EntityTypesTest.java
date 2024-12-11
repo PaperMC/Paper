@@ -132,11 +132,11 @@ public class EntityTypesTest {
     private static JarFile jarFile = null;
 
     public static Stream<Arguments> excludedData() {
-        return EXCLUDE.stream().map(Arguments::arguments);
+        return EntityTypesTest.EXCLUDE.stream().map(Arguments::arguments);
     }
 
     public static Stream<Arguments> data() {
-        return jarFile
+        return EntityTypesTest.jarFile
                 .stream()
                 .map(ZipEntry::getName)
                 .filter(name -> name.endsWith(".class"))
@@ -151,13 +151,13 @@ public class EntityTypesTest {
                     }
                 })
                 .filter(Entity.class::isAssignableFrom)
-                .filter(clazz -> !EXCLUDE.contains(clazz))
+                .filter(clazz -> !EntityTypesTest.EXCLUDE.contains(clazz))
                 .map(Arguments::arguments);
     }
 
     @BeforeAll
     public static void beforeAll() throws IOException {
-        jarFile = new JarFile(new File(BUKKIT_CLASSES));
+        EntityTypesTest.jarFile = new JarFile(new File(EntityTypesTest.BUKKIT_CLASSES));
     }
 
     @ParameterizedTest
@@ -183,8 +183,8 @@ public class EntityTypesTest {
 
     @AfterAll
     public static void clear() throws IOException {
-        if (jarFile != null) {
-            jarFile.close();
+        if (EntityTypesTest.jarFile != null) {
+            EntityTypesTest.jarFile.close();
         }
     }
 }

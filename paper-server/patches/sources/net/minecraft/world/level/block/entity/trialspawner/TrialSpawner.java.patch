@@ -1,0 +1,52 @@
+--- a/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
++++ b/net/minecraft/world/level/block/entity/trialspawner/TrialSpawner.java
+@@ -46,6 +46,11 @@
+ import net.minecraft.world.phys.HitResult;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.phys.shapes.CollisionContext;
++// CraftBukkit start
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.craftbukkit.inventory.CraftItemStack;
++import org.bukkit.event.block.BlockDispenseLootEvent;
++// CraftBukkit end
+ 
+ public final class TrialSpawner {
+ 
+@@ -219,14 +224,19 @@
+                                 }
+ 
+                                 entityinsentient.setPersistenceRequired();
+-                                Optional optional1 = mobspawnerdata.getEquipment();
++                                Optional<net.minecraft.world.entity.EquipmentTable> optional1 = mobspawnerdata.getEquipment(); // CraftBukkit - decompile error
+ 
+                                 Objects.requireNonNull(entityinsentient);
+                                 optional1.ifPresent(entityinsentient::equip);
+                             }
+ 
+-                            if (!world.tryAddFreshEntityWithPassengers(entity)) {
++                            // CraftBukkit start
++                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callTrialSpawnerSpawnEvent(entity, pos).isCancelled()) {
+                                 return Optional.empty();
++                            }
++                            if (!world.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.TRIAL_SPAWNER)) {
++                                // CraftBukkit end
++                                return Optional.empty();
+                             } else {
+                                 TrialSpawner.FlameParticle trialspawner_a = this.isOminous ? TrialSpawner.FlameParticle.OMINOUS : TrialSpawner.FlameParticle.NORMAL;
+ 
+@@ -248,6 +258,15 @@
+         ObjectArrayList<ItemStack> objectarraylist = loottable.getRandomItems(lootparams);
+ 
+         if (!objectarraylist.isEmpty()) {
++            // CraftBukkit start
++            BlockDispenseLootEvent spawnerDispenseLootEvent = CraftEventFactory.callBlockDispenseLootEvent(world, pos, null, objectarraylist);
++            if (spawnerDispenseLootEvent.isCancelled()) {
++                return;
++            }
++
++            objectarraylist = new ObjectArrayList<>(spawnerDispenseLootEvent.getDispensedLoot().stream().map(CraftItemStack::asNMSCopy).toList());
++            // CraftBukkit end
++
+             ObjectListIterator objectlistiterator = objectarraylist.iterator();
+ 
+             while (objectlistiterator.hasNext()) {

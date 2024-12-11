@@ -2,9 +2,7 @@ package org.bukkit.craftbukkit.block;
 
 import java.util.Locale;
 import net.minecraft.core.Holder;
-import net.minecraft.core.IRegistry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.level.biome.BiomeBase;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.block.Biome;
@@ -12,19 +10,19 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftBiome implements Biome, Handleable<BiomeBase> {
+public class CraftBiome implements Biome, Handleable<net.minecraft.world.level.biome.Biome> {
 
     private static int count = 0;
 
-    public static Biome minecraftToBukkit(BiomeBase minecraft) {
+    public static Biome minecraftToBukkit(net.minecraft.world.level.biome.Biome minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.BIOME, Registry.BIOME);
     }
 
-    public static Biome minecraftHolderToBukkit(Holder<BiomeBase> minecraft) {
-        return minecraftToBukkit(minecraft.value());
+    public static Biome minecraftHolderToBukkit(Holder<net.minecraft.world.level.biome.Biome> minecraft) {
+        return CraftBiome.minecraftToBukkit(minecraft.value());
     }
 
-    public static BiomeBase bukkitToMinecraft(Biome bukkit) {
+    public static net.minecraft.world.level.biome.Biome bukkitToMinecraft(Biome bukkit) {
         if (bukkit == Biome.CUSTOM) {
             return null;
         }
@@ -32,14 +30,14 @@ public class CraftBiome implements Biome, Handleable<BiomeBase> {
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
 
-    public static Holder<BiomeBase> bukkitToMinecraftHolder(Biome bukkit) {
+    public static Holder<net.minecraft.world.level.biome.Biome> bukkitToMinecraftHolder(Biome bukkit) {
         if (bukkit == Biome.CUSTOM) {
             return null;
         }
 
-        IRegistry<BiomeBase> registry = CraftRegistry.getMinecraftRegistry(Registries.BIOME);
+        net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> registry = CraftRegistry.getMinecraftRegistry(Registries.BIOME);
 
-        if (registry.wrapAsHolder(bukkitToMinecraft(bukkit)) instanceof Holder.c<BiomeBase> holder) {
+        if (registry.wrapAsHolder(CraftBiome.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<net.minecraft.world.level.biome.Biome> holder) {
             return holder;
         }
 
@@ -48,11 +46,11 @@ public class CraftBiome implements Biome, Handleable<BiomeBase> {
     }
 
     private final NamespacedKey key;
-    private final BiomeBase biomeBase;
+    private final net.minecraft.world.level.biome.Biome biomeBase;
     private final String name;
     private final int ordinal;
 
-    public CraftBiome(NamespacedKey key, BiomeBase biomeBase) {
+    public CraftBiome(NamespacedKey key, net.minecraft.world.level.biome.Biome biomeBase) {
         this.key = key;
         this.biomeBase = biomeBase;
         // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
@@ -64,40 +62,40 @@ public class CraftBiome implements Biome, Handleable<BiomeBase> {
         } else {
             this.name = key.toString();
         }
-        this.ordinal = count++;
+        this.ordinal = CraftBiome.count++;
     }
 
     @Override
-    public BiomeBase getHandle() {
-        return biomeBase;
+    public net.minecraft.world.level.biome.Biome getHandle() {
+        return this.biomeBase;
     }
 
     @NotNull
     @Override
     public NamespacedKey getKey() {
-        return key;
+        return this.key;
     }
 
     @Override
     public int compareTo(@NotNull Biome biome) {
-        return ordinal - biome.ordinal();
+        return this.ordinal - biome.ordinal();
     }
 
     @NotNull
     @Override
     public String name() {
-        return name;
+        return this.name;
     }
 
     @Override
     public int ordinal() {
-        return ordinal;
+        return this.ordinal;
     }
 
     @Override
     public String toString() {
         // For backwards compatibility
-        return name();
+        return this.name();
     }
 
     @Override
@@ -110,11 +108,11 @@ public class CraftBiome implements Biome, Handleable<BiomeBase> {
             return false;
         }
 
-        return getKey().equals(otherBiome.getKey());
+        return this.getKey().equals(otherBiome.getKey());
     }
 
     @Override
     public int hashCode() {
-        return getKey().hashCode();
+        return this.getKey().hashCode();
     }
 }

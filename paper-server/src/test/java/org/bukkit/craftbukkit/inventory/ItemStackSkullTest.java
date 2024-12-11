@@ -12,7 +12,7 @@ import org.junit.jupiter.params.provider.Arguments;
 public class ItemStackSkullTest extends ItemStackTest {
 
     public static Stream<Arguments> data() {
-        return StackProvider.compound(operators(), "%s %s", NAME_PARAMETER, Material.PLAYER_HEAD);
+        return StackProvider.compound(ItemStackSkullTest.operators(), "%s %s", NAME_PARAMETER, Material.PLAYER_HEAD);
     }
 
     @SuppressWarnings("unchecked")

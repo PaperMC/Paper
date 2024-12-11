@@ -1,0 +1,123 @@
+--- a/net/minecraft/world/damagesource/DamageSource.java
++++ b/net/minecraft/world/damagesource/DamageSource.java
+@@ -21,7 +21,120 @@
+     private final Entity directEntity;
+     @Nullable
+     private final Vec3 damageSourcePosition;
++    // CraftBukkit start
++    @Nullable
++    private org.bukkit.block.Block directBlock; // The block that caused the damage. damageSourcePosition is not used for all block damages
++    @Nullable
++    private org.bukkit.block.BlockState directBlockState; // The block state of the block relevant to this damage source
++    private boolean sweep = false;
++    private boolean melting = false;
++    private boolean poison = false;
++    private Entity customEntityDamager = null; // This field is a helper for when direct entity damage is not set by vanilla
++    private Entity customCausingEntityDamager = null; // This field is a helper for when causing entity damage is not set by vanilla
+ 
++    public DamageSource sweep() {
++        this.sweep = true;
++        return this;
++    }
++
++    public boolean isSweep() {
++        return this.sweep;
++    }
++
++    public DamageSource melting() {
++        this.melting = true;
++        return this;
++    }
++
++    public boolean isMelting() {
++        return this.melting;
++    }
++
++    public DamageSource poison() {
++        this.poison = true;
++        return this;
++    }
++
++    public boolean isPoison() {
++        return this.poison;
++    }
++
++    public Entity getDamager() {
++        return (this.customEntityDamager != null) ? this.customEntityDamager : this.directEntity;
++    }
++
++    public Entity getCausingDamager() {
++        return (this.customCausingEntityDamager != null) ? this.customCausingEntityDamager : this.causingEntity;
++    }
++
++    public DamageSource customEntityDamager(Entity entity) {
++        // This method is not intended for change the causing entity if is already set
++        // also is only necessary if the entity passed is not the direct entity or different from the current causingEntity
++        if (this.customEntityDamager != null || this.directEntity == entity || this.causingEntity == entity) {
++            return this;
++        }
++        DamageSource damageSource = this.cloneInstance();
++        damageSource.customEntityDamager = entity;
++        return damageSource;
++    }
++
++    public DamageSource customCausingEntityDamager(Entity entity) {
++        // This method is not intended for change the causing entity if is already set
++        // also is only necessary if the entity passed is not the direct entity or different from the current causingEntity
++        if (this.customCausingEntityDamager != null || this.directEntity == entity || this.causingEntity == entity) {
++            return this;
++        }
++        DamageSource damageSource = this.cloneInstance();
++        damageSource.customCausingEntityDamager = entity;
++        return damageSource;
++    }
++
++    public org.bukkit.block.Block getDirectBlock() {
++        return this.directBlock;
++    }
++
++    public DamageSource directBlock(net.minecraft.world.level.Level world, net.minecraft.core.BlockPos blockPosition) {
++        if (blockPosition == null || world == null) {
++            return this;
++        }
++        return this.directBlock(org.bukkit.craftbukkit.block.CraftBlock.at(world, blockPosition));
++    }
++
++    public DamageSource directBlock(org.bukkit.block.Block block) {
++        if (block == null) {
++            return this;
++        }
++        // Cloning the instance lets us return unique instances of DamageSource without affecting constants defined in DamageSources
++        DamageSource damageSource = this.cloneInstance();
++        damageSource.directBlock = block;
++        return damageSource;
++    }
++
++    public org.bukkit.block.BlockState getDirectBlockState() {
++        return this.directBlockState;
++    }
++
++    public DamageSource directBlockState(org.bukkit.block.BlockState blockState) {
++        if (blockState == null) {
++            return this;
++        }
++        // Cloning the instance lets us return unique instances of DamageSource without affecting constants defined in DamageSources
++        DamageSource damageSource = this.cloneInstance();
++        damageSource.directBlockState = blockState;
++        return damageSource;
++    }
++
++    private DamageSource cloneInstance() {
++        DamageSource damageSource = new DamageSource(this.type, this.directEntity, this.causingEntity, this.damageSourcePosition);
++        damageSource.directBlock = this.getDirectBlock();
++        damageSource.directBlockState = this.getDirectBlockState();
++        damageSource.sweep = this.isSweep();
++        damageSource.poison = this.isPoison();
++        damageSource.melting = this.isMelting();
++        return damageSource;
++    }
++    // CraftBukkit end
++
+     public String toString() {
+         return "DamageSource (" + this.type().msgId() + ")";
+     }

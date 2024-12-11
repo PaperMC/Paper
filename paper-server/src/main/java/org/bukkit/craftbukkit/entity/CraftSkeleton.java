@@ -1,13 +1,12 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.entity.monster.EntitySkeleton;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Skeleton;
 
 public class CraftSkeleton extends CraftAbstractSkeleton implements Skeleton {
 
-    public CraftSkeleton(CraftServer server, EntitySkeleton entity) {
+    public CraftSkeleton(CraftServer server, net.minecraft.world.entity.monster.Skeleton entity) {
         super(server, entity);
     }
 
@@ -26,15 +25,15 @@ public class CraftSkeleton extends CraftAbstractSkeleton implements Skeleton {
     public void setConversionTime(int time) {
         if (time < 0) {
             this.getHandle().conversionTime = -1;
-            this.getHandle().getEntityData().set(EntitySkeleton.DATA_STRAY_CONVERSION_ID, false);
+            this.getHandle().getEntityData().set(net.minecraft.world.entity.monster.Skeleton.DATA_STRAY_CONVERSION_ID, false);
         } else {
             this.getHandle().startFreezeConversion(time);
         }
     }
 
     @Override
-    public EntitySkeleton getHandle() {
-        return (EntitySkeleton) entity;
+    public net.minecraft.world.entity.monster.Skeleton getHandle() {
+        return (net.minecraft.world.entity.monster.Skeleton) this.entity;
     }
 
     @Override

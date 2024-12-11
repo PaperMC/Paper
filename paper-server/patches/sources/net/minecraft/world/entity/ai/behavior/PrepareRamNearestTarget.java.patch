@@ -1,0 +1,73 @@
+--- a/net/minecraft/world/entity/ai/behavior/PrepareRamNearestTarget.java
++++ b/net/minecraft/world/entity/ai/behavior/PrepareRamNearestTarget.java
+@@ -13,6 +13,7 @@
+ import net.minecraft.core.BlockPos;
+ import net.minecraft.core.Direction;
+ import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.sounds.SoundEvent;
+ import net.minecraft.sounds.SoundSource;
+ import net.minecraft.util.Mth;
+@@ -30,6 +31,10 @@
+ import net.minecraft.world.level.pathfinder.Path;
+ import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
+ import net.minecraft.world.phys.Vec3;
++import org.bukkit.craftbukkit.entity.CraftLivingEntity;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.EntityTargetEvent;
++// CraftBukkit end
+ 
+ public class PrepareRamNearestTarget<E extends PathfinderMob> extends Behavior<E> {
+ 
+@@ -63,6 +68,13 @@
+                 return this.ramTargeting.test(worldserver, entitycreature, entityliving);
+             });
+         }).ifPresent((entityliving) -> {
++            // CraftBukkit start
++            EntityTargetEvent event = CraftEventFactory.callEntityTargetLivingEvent(entitycreature, entityliving, (entityliving instanceof ServerPlayer) ? EntityTargetEvent.TargetReason.CLOSEST_PLAYER : EntityTargetEvent.TargetReason.CLOSEST_ENTITY);
++            if (event.isCancelled() || event.getTarget() == null) {
++                return;
++            }
++            entityliving = ((CraftLivingEntity) event.getTarget()).getHandle();
++            // CraftBukkit end
+             this.chooseRamPosition(entitycreature, entityliving);
+         });
+     }
+@@ -72,7 +84,7 @@
+ 
+         if (!behaviorcontroller.hasMemoryValue(MemoryModuleType.RAM_TARGET)) {
+             world.broadcastEntityEvent(entity, (byte) 59);
+-            behaviorcontroller.setMemory(MemoryModuleType.RAM_COOLDOWN_TICKS, (Object) this.getCooldownOnFail.applyAsInt(entity));
++            behaviorcontroller.setMemory(MemoryModuleType.RAM_COOLDOWN_TICKS, this.getCooldownOnFail.applyAsInt(entity)); // CraftBukkit - decompile error
+         }
+ 
+     }
+@@ -83,8 +95,8 @@
+ 
+     protected void tick(ServerLevel worldserver, E e0, long i) {
+         if (!this.ramCandidate.isEmpty()) {
+-            e0.getBrain().setMemory(MemoryModuleType.WALK_TARGET, (Object) (new WalkTarget(((PrepareRamNearestTarget.RamCandidate) this.ramCandidate.get()).getStartPosition(), this.walkSpeed, 0)));
+-            e0.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (Object) (new EntityTracker(((PrepareRamNearestTarget.RamCandidate) this.ramCandidate.get()).getTarget(), true)));
++            e0.getBrain().setMemory(MemoryModuleType.WALK_TARGET, (new WalkTarget(((PrepareRamNearestTarget.RamCandidate) this.ramCandidate.get()).getStartPosition(), this.walkSpeed, 0))); // CraftBukkit - decompile error
++            e0.getBrain().setMemory(MemoryModuleType.LOOK_TARGET, (new EntityTracker(((PrepareRamNearestTarget.RamCandidate) this.ramCandidate.get()).getTarget(), true))); // CraftBukkit - decompile error
+             boolean flag = !((PrepareRamNearestTarget.RamCandidate) this.ramCandidate.get()).getTarget().blockPosition().equals(((PrepareRamNearestTarget.RamCandidate) this.ramCandidate.get()).getTargetPosition());
+ 
+             if (flag) {
+@@ -101,7 +113,7 @@
+                     }
+ 
+                     if (i - (Long) this.reachedRamPositionTimestamp.get() >= (long) this.ramPrepareTime) {
+-                        e0.getBrain().setMemory(MemoryModuleType.RAM_TARGET, (Object) this.getEdgeOfBlock(blockposition, ((PrepareRamNearestTarget.RamCandidate) this.ramCandidate.get()).getTargetPosition()));
++                        e0.getBrain().setMemory(MemoryModuleType.RAM_TARGET, this.getEdgeOfBlock(blockposition, ((PrepareRamNearestTarget.RamCandidate) this.ramCandidate.get()).getTargetPosition())); // CraftBukkit - decompile error
+                         worldserver.playSound((Player) null, (Entity) e0, (SoundEvent) this.getPrepareRamSound.apply(e0), SoundSource.NEUTRAL, 1.0F, e0.getVoicePitch());
+                         this.ramCandidate = Optional.empty();
+                     }
+@@ -153,7 +165,7 @@
+             }
+ 
+             PathNavigation navigationabstract = entity.getNavigation();
+-            Stream stream = list.stream();
++            Stream<BlockPos> stream = list.stream(); // CraftBukkit - decompile error
+             BlockPos blockposition1 = entity.blockPosition();
+ 
+             Objects.requireNonNull(blockposition1);

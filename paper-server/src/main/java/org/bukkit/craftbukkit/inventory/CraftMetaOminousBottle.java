@@ -21,21 +21,21 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
             return;
         }
         CraftMetaOminousBottle bottleMeta = (CraftMetaOminousBottle) meta;
-        ominousBottleAmplifier = bottleMeta.ominousBottleAmplifier;
+        this.ominousBottleAmplifier = bottleMeta.ominousBottleAmplifier;
     }
 
     CraftMetaOminousBottle(DataComponentPatch tag) {
         super(tag);
-        getOrEmpty(tag, OMINOUS_BOTTLE_AMPLIFIER).ifPresent((amplifier) -> {
-            ominousBottleAmplifier = amplifier.value();
+        getOrEmpty(tag, CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER).ifPresent((amplifier) -> {
+            this.ominousBottleAmplifier = amplifier.value();
         });
     }
 
     CraftMetaOminousBottle(Map<String, Object> map) {
         super(map);
-        Integer ominousBottleAmplifier = SerializableMeta.getObject(Integer.class, map, OMINOUS_BOTTLE_AMPLIFIER.BUKKIT, true);
+        Integer ominousBottleAmplifier = SerializableMeta.getObject(Integer.class, map, CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.BUKKIT, true);
         if (ominousBottleAmplifier != null) {
-            setAmplifier(ominousBottleAmplifier);
+            this.setAmplifier(ominousBottleAmplifier);
         }
     }
 
@@ -43,18 +43,18 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
     void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
-        if (hasAmplifier()) {
-            tag.put(OMINOUS_BOTTLE_AMPLIFIER, new OminousBottleAmplifier(ominousBottleAmplifier));
+        if (this.hasAmplifier()) {
+            tag.put(CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER, new OminousBottleAmplifier(this.ominousBottleAmplifier));
         }
     }
 
     @Override
     boolean isEmpty() {
-        return super.isEmpty() && isBottleEmpty();
+        return super.isEmpty() && this.isBottleEmpty();
     }
 
     boolean isBottleEmpty() {
-        return !(hasAmplifier());
+        return !(this.hasAmplifier());
     }
 
     @Override
@@ -65,12 +65,12 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
 
     @Override
     public boolean hasAmplifier() {
-        return ominousBottleAmplifier != null;
+        return this.ominousBottleAmplifier != null;
     }
 
     @Override
     public int getAmplifier() {
-        return ominousBottleAmplifier;
+        return this.ominousBottleAmplifier;
     }
 
     @Override
@@ -83,8 +83,8 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
     int applyHash() {
         final int original;
         int hash = original = super.applyHash();
-        if (hasAmplifier()) {
-            hash = 61 * hash + ominousBottleAmplifier.hashCode();
+        if (this.hasAmplifier()) {
+            hash = 61 * hash + this.ominousBottleAmplifier.hashCode();
         }
 
         return original != hash ? CraftMetaOminousBottle.class.hashCode() ^ hash : hash;
@@ -98,22 +98,22 @@ public class CraftMetaOminousBottle extends CraftMetaItem implements OminousBott
         if (meta instanceof CraftMetaOminousBottle) {
             CraftMetaOminousBottle that = (CraftMetaOminousBottle) meta;
 
-            return (hasAmplifier() ? that.hasAmplifier() && this.ominousBottleAmplifier.equals(that.ominousBottleAmplifier) : !that.hasAmplifier());
+            return (this.hasAmplifier() ? that.hasAmplifier() && this.ominousBottleAmplifier.equals(that.ominousBottleAmplifier) : !that.hasAmplifier());
         }
         return true;
     }
 
     @Override
     boolean notUncommon(CraftMetaItem meta) {
-        return super.notUncommon(meta) && (meta instanceof CraftMetaOminousBottle || isBottleEmpty());
+        return super.notUncommon(meta) && (meta instanceof CraftMetaOminousBottle || this.isBottleEmpty());
     }
 
     @Override
     Builder<String, Object> serialize(Builder<String, Object> builder) {
         super.serialize(builder);
 
-        if (hasAmplifier()) {
-            builder.put(OMINOUS_BOTTLE_AMPLIFIER.BUKKIT, ominousBottleAmplifier);
+        if (this.hasAmplifier()) {
+            builder.put(CraftMetaOminousBottle.OMINOUS_BOTTLE_AMPLIFIER.BUKKIT, this.ominousBottleAmplifier);
         }
 
         return builder;

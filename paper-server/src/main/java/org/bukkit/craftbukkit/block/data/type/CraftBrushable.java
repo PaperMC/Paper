@@ -5,20 +5,20 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftBrushable extends CraftBlockData implements Brushable {
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateInteger DUSTED = getInteger("dusted");
+    private static final net.minecraft.world.level.block.state.properties.IntegerProperty DUSTED = getInteger("dusted");
 
     @Override
     public int getDusted() {
-        return get(DUSTED);
+        return this.get(CraftBrushable.DUSTED);
     }
 
     @Override
     public void setDusted(int dusted) {
-        set(DUSTED, dusted);
+        this.set(CraftBrushable.DUSTED, dusted);
     }
 
     @Override
     public int getMaximumDusted() {
-        return getMax(DUSTED);
+        return getMax(CraftBrushable.DUSTED);
     }
 }

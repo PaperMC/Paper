@@ -1,0 +1,125 @@
+--- a/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerStatusPacketListenerImpl.java
+@@ -9,6 +9,19 @@
+ import net.minecraft.network.protocol.status.ServerStatus;
+ import net.minecraft.network.protocol.status.ServerStatusPacketListener;
+ import net.minecraft.network.protocol.status.ServerboundStatusRequestPacket;
++// CraftBukkit start
++import com.mojang.authlib.GameProfile;
++import java.net.InetSocketAddress;
++import java.util.Collections;
++import java.util.Iterator;
++import java.util.Optional;
++import net.minecraft.SharedConstants;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.level.ServerPlayer;
++import org.bukkit.craftbukkit.util.CraftChatMessage;
++import org.bukkit.craftbukkit.util.CraftIconCache;
++import org.bukkit.entity.Player;
++// CraftBukkit end
+ 
+ public class ServerStatusPacketListenerImpl implements ServerStatusPacketListener {
+ 
+@@ -36,7 +49,101 @@
+             this.connection.disconnect(ServerStatusPacketListenerImpl.DISCONNECT_REASON);
+         } else {
+             this.hasRequestedStatus = true;
+-            this.connection.send(new ClientboundStatusResponsePacket(this.status));
++            // CraftBukkit start
++            // this.connection.send(new PacketStatusOutServerInfo(this.status));
++            MinecraftServer server = MinecraftServer.getServer();
++            final Object[] players = server.getPlayerList().players.toArray();
++            class ServerListPingEvent extends org.bukkit.event.server.ServerListPingEvent {
++
++                CraftIconCache icon = server.server.getServerIcon();
++
++                ServerListPingEvent() {
++                    super(ServerStatusPacketListenerImpl.this.connection.hostname, ((InetSocketAddress) ServerStatusPacketListenerImpl.this.connection.getRemoteAddress()).getAddress(), server.getMotd(), server.getPlayerList().getMaxPlayers());
++                }
++
++                @Override
++                public void setServerIcon(org.bukkit.util.CachedServerIcon icon) {
++                    if (!(icon instanceof CraftIconCache)) {
++                        throw new IllegalArgumentException(icon + " was not created by " + org.bukkit.craftbukkit.CraftServer.class);
++                    }
++                    this.icon = (CraftIconCache) icon;
++                }
++
++                @Override
++                public Iterator<Player> iterator() throws UnsupportedOperationException {
++                    return new Iterator<Player>() {
++                        int i;
++                        int ret = Integer.MIN_VALUE;
++                        ServerPlayer player;
++
++                        @Override
++                        public boolean hasNext() {
++                            if (this.player != null) {
++                                return true;
++                            }
++                            final Object[] currentPlayers = players;
++                            for (int length = currentPlayers.length, i = this.i; i < length; i++) {
++                                final ServerPlayer player = (ServerPlayer) currentPlayers[i];
++                                if (player != null) {
++                                    this.i = i + 1;
++                                    this.player = player;
++                                    return true;
++                                }
++                            }
++                            return false;
++                        }
++
++                        @Override
++                        public Player next() {
++                            if (!this.hasNext()) {
++                                throw new java.util.NoSuchElementException();
++                            }
++                            final ServerPlayer player = this.player;
++                            this.player = null;
++                            this.ret = this.i - 1;
++                            return player.getBukkitEntity();
++                        }
++
++                        @Override
++                        public void remove() {
++                            final Object[] currentPlayers = players;
++                            final int i = this.ret;
++                            if (i < 0 || currentPlayers[i] == null) {
++                                throw new IllegalStateException();
++                            }
++                            currentPlayers[i] = null;
++                        }
++                    };
++                }
++            }
++
++            ServerListPingEvent event = new ServerListPingEvent();
++            server.server.getPluginManager().callEvent(event);
++
++            java.util.List<GameProfile> profiles = new java.util.ArrayList<GameProfile>(players.length);
++            for (Object player : players) {
++                if (player != null) {
++                    ServerPlayer entityPlayer = ((ServerPlayer) player);
++                    if (entityPlayer.allowsListing()) {
++                        profiles.add(entityPlayer.getGameProfile());
++                    } else {
++                        profiles.add(MinecraftServer.ANONYMOUS_PLAYER_PROFILE);
++                    }
++                }
++            }
++
++            ServerStatus.Players playerSample = new ServerStatus.Players(event.getMaxPlayers(), event.getNumPlayers(), (server.hidesOnlinePlayers()) ? Collections.emptyList() : profiles);
++
++            ServerStatus ping = new ServerStatus(
++                    CraftChatMessage.fromString(event.getMotd(), true)[0],
++                    Optional.of(playerSample),
++                    Optional.of(new ServerStatus.Version(server.getServerModName() + " " + server.getServerVersion(), SharedConstants.getCurrentVersion().getProtocolVersion())),
++                    (event.icon.value != null) ? Optional.of(new ServerStatus.Favicon(event.icon.value)) : Optional.empty(),
++                    server.enforceSecureProfile()
++            );
++
++            this.connection.send(new ClientboundStatusResponsePacket(ping));
++            // CraftBukkit end
+         }
+     }
+ 

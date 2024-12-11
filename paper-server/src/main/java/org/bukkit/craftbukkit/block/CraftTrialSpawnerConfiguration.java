@@ -8,12 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.random.SimpleWeightedRandomList;
-import net.minecraft.util.random.WeightedEntry.b;
-import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.level.MobSpawnerData;
+import net.minecraft.util.random.WeightedEntry.Wrapper;
+import net.minecraft.world.level.SpawnData;
 import net.minecraft.world.level.block.entity.TrialSpawnerBlockEntity;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerConfig;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerData;
@@ -36,7 +35,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     private float totalMobsAddedPerPlayer;
     private float simultaneousMobsAddedPerPlayer;
     private int ticksBetweenSpawn;
-    private SimpleWeightedRandomList<MobSpawnerData> spawnPotentialsDefinition;
+    private SimpleWeightedRandomList<SpawnData> spawnPotentialsDefinition;
     private SimpleWeightedRandomList<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> lootTablesToEject;
     private ResourceKey<net.minecraft.world.level.storage.loot.LootTable> itemsToDropWhenOminous;
 
@@ -56,84 +55,84 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
     @Override
     public EntityType getSpawnedType() {
-       if (spawnPotentialsDefinition.isEmpty()) {
+       if (this.spawnPotentialsDefinition.isEmpty()) {
            return null;
        }
 
-       Optional<EntityTypes<?>> type = EntityTypes.by(spawnPotentialsDefinition.unwrap().get(0).data().getEntityToSpawn());
+       Optional<net.minecraft.world.entity.EntityType<?>> type = net.minecraft.world.entity.EntityType.by(this.spawnPotentialsDefinition.unwrap().get(0).data().getEntityToSpawn());
        return type.map(CraftEntityType::minecraftToBukkit).orElse(null);
     }
 
     @Override
     public void setSpawnedType(EntityType entityType) {
         if (entityType == null) {
-            getTrialData().nextSpawnData = Optional.empty();
-            spawnPotentialsDefinition = SimpleWeightedRandomList.empty(); // need clear the spawnPotentials to avoid nextSpawnData being replaced later
+            this.getTrialData().nextSpawnData = Optional.empty();
+            this.spawnPotentialsDefinition = SimpleWeightedRandomList.empty(); // need clear the spawnPotentials to avoid nextSpawnData being replaced later
             return;
         }
         Preconditions.checkArgument(entityType != EntityType.UNKNOWN, "Can't spawn EntityType %s from mob spawners!", entityType);
 
-        MobSpawnerData data = new MobSpawnerData();
+        SpawnData data = new SpawnData();
         data.getEntityToSpawn().putString("id", BuiltInRegistries.ENTITY_TYPE.getKey(CraftEntityType.bukkitToMinecraft(entityType)).toString());
-        getTrialData().nextSpawnData = Optional.of(data);
-        spawnPotentialsDefinition = SimpleWeightedRandomList.single(data);
+        this.getTrialData().nextSpawnData = Optional.of(data);
+        this.spawnPotentialsDefinition = SimpleWeightedRandomList.single(data);
     }
 
     @Override
     public float getBaseSpawnsBeforeCooldown() {
-        return totalMobs;
+        return this.totalMobs;
     }
 
     @Override
     public void setBaseSpawnsBeforeCooldown(float amount) {
-        totalMobs = amount;
+        this.totalMobs = amount;
     }
 
     @Override
     public float getBaseSimultaneousEntities() {
-        return simultaneousMobs;
+        return this.simultaneousMobs;
     }
 
     @Override
     public void setBaseSimultaneousEntities(float amount) {
-        simultaneousMobs = amount;
+        this.simultaneousMobs = amount;
     }
 
     @Override
     public float getAdditionalSpawnsBeforeCooldown() {
-        return totalMobsAddedPerPlayer;
+        return this.totalMobsAddedPerPlayer;
     }
 
     @Override
     public void setAdditionalSpawnsBeforeCooldown(float amount) {
-        totalMobsAddedPerPlayer = amount;
+        this.totalMobsAddedPerPlayer = amount;
     }
 
     @Override
     public float getAdditionalSimultaneousEntities() {
-        return simultaneousMobsAddedPerPlayer;
+        return this.simultaneousMobsAddedPerPlayer;
     }
 
     @Override
     public void setAdditionalSimultaneousEntities(float amount) {
-        simultaneousMobsAddedPerPlayer = amount;
+        this.simultaneousMobsAddedPerPlayer = amount;
     }
 
     @Override
     public int getDelay() {
-      return ticksBetweenSpawn;
+      return this.ticksBetweenSpawn;
     }
 
     @Override
     public void setDelay(int delay) {
         Preconditions.checkArgument(delay >= 0, "Delay cannot be less than 0");
 
-        ticksBetweenSpawn = delay;
+        this.ticksBetweenSpawn = delay;
     }
 
     @Override
     public int getSpawnRange() {
-        return spawnRange;
+        return this.spawnRange;
     }
 
     @Override
@@ -143,7 +142,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
     @Override
     public EntitySnapshot getSpawnedEntity() {
-        SimpleWeightedRandomList<MobSpawnerData> potentials = spawnPotentialsDefinition;
+        SimpleWeightedRandomList<SpawnData> potentials = this.spawnPotentialsDefinition;
         if (potentials.isEmpty()) {
             return null;
         }
@@ -153,70 +152,70 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
     @Override
     public void setSpawnedEntity(EntitySnapshot snapshot) {
-        setSpawnedEntity(snapshot, null, null);
+        this.setSpawnedEntity(snapshot, null, null);
     }
 
     @Override
     public void setSpawnedEntity(SpawnerEntry spawnerEntry) {
         Preconditions.checkArgument(spawnerEntry != null, "Entry cannot be null");
 
-        setSpawnedEntity(spawnerEntry.getSnapshot(), spawnerEntry.getSpawnRule(), spawnerEntry.getEquipment());
+        this.setSpawnedEntity(spawnerEntry.getSnapshot(), spawnerEntry.getSpawnRule(), spawnerEntry.getEquipment());
     }
 
     private void setSpawnedEntity(EntitySnapshot snapshot, SpawnRule spawnRule, SpawnerEntry.Equipment equipment) {
         if (snapshot == null) {
-            getTrialData().nextSpawnData = Optional.empty();
-            spawnPotentialsDefinition = SimpleWeightedRandomList.empty(); // need clear the spawnPotentials to avoid nextSpawnData being replaced later
+            this.getTrialData().nextSpawnData = Optional.empty();
+            this.spawnPotentialsDefinition = SimpleWeightedRandomList.empty(); // need clear the spawnPotentials to avoid nextSpawnData being replaced later
             return;
         }
 
-        NBTTagCompound compoundTag = ((CraftEntitySnapshot) snapshot).getData();
-        MobSpawnerData data = new MobSpawnerData(compoundTag, Optional.ofNullable(CraftCreatureSpawner.toMinecraftRule(spawnRule)), CraftCreatureSpawner.getEquipment(equipment));
+        CompoundTag compoundTag = ((CraftEntitySnapshot) snapshot).getData();
+        SpawnData data = new SpawnData(compoundTag, Optional.ofNullable(CraftCreatureSpawner.toMinecraftRule(spawnRule)), CraftCreatureSpawner.getEquipment(equipment));
 
-        getTrialData().nextSpawnData = Optional.of(data);
-        spawnPotentialsDefinition = SimpleWeightedRandomList.single(data);
+        this.getTrialData().nextSpawnData = Optional.of(data);
+        this.spawnPotentialsDefinition = SimpleWeightedRandomList.single(data);
     }
 
     @Override
     public void addPotentialSpawn(EntitySnapshot snapshot, int weight, SpawnRule spawnRule) {
-        addPotentialSpawn(snapshot, weight, spawnRule, null);
+        this.addPotentialSpawn(snapshot, weight, spawnRule, null);
     }
 
     private void addPotentialSpawn(EntitySnapshot snapshot, int weight, SpawnRule spawnRule, SpawnerEntry.Equipment equipment) {
         Preconditions.checkArgument(snapshot != null, "Snapshot cannot be null");
 
-        NBTTagCompound compoundTag = ((CraftEntitySnapshot) snapshot).getData();
+        CompoundTag compoundTag = ((CraftEntitySnapshot) snapshot).getData();
 
-        SimpleWeightedRandomList.a<MobSpawnerData> builder = SimpleWeightedRandomList.builder(); // PAIL rename Builder
-        spawnPotentialsDefinition.unwrap().forEach(entry -> builder.add(entry.data(), entry.getWeight().asInt()));
-        builder.add(new MobSpawnerData(compoundTag, Optional.ofNullable(CraftCreatureSpawner.toMinecraftRule(spawnRule)), CraftCreatureSpawner.getEquipment(equipment)), weight);
-        spawnPotentialsDefinition = builder.build();
+        SimpleWeightedRandomList.Builder<SpawnData> builder = SimpleWeightedRandomList.builder(); // PAIL rename Builder
+        this.spawnPotentialsDefinition.unwrap().forEach(entry -> builder.add(entry.data(), entry.getWeight().asInt()));
+        builder.add(new SpawnData(compoundTag, Optional.ofNullable(CraftCreatureSpawner.toMinecraftRule(spawnRule)), CraftCreatureSpawner.getEquipment(equipment)), weight);
+        this.spawnPotentialsDefinition = builder.build();
     }
 
     @Override
     public void addPotentialSpawn(SpawnerEntry spawnerEntry) {
         Preconditions.checkArgument(spawnerEntry != null, "Entry cannot be null");
 
-        addPotentialSpawn(spawnerEntry.getSnapshot(), spawnerEntry.getSpawnWeight(), spawnerEntry.getSpawnRule(), spawnerEntry.getEquipment());
+        this.addPotentialSpawn(spawnerEntry.getSnapshot(), spawnerEntry.getSpawnWeight(), spawnerEntry.getSpawnRule(), spawnerEntry.getEquipment());
     }
 
     @Override
     public void setPotentialSpawns(Collection<SpawnerEntry> entries) {
         Preconditions.checkArgument(entries != null, "Entries cannot be null");
 
-        SimpleWeightedRandomList.a<MobSpawnerData> builder = SimpleWeightedRandomList.builder();
+        SimpleWeightedRandomList.Builder<SpawnData> builder = SimpleWeightedRandomList.builder();
         for (SpawnerEntry spawnerEntry : entries) {
-            NBTTagCompound compoundTag = ((CraftEntitySnapshot) spawnerEntry.getSnapshot()).getData();
-            builder.add(new MobSpawnerData(compoundTag, Optional.ofNullable(CraftCreatureSpawner.toMinecraftRule(spawnerEntry.getSpawnRule())), CraftCreatureSpawner.getEquipment(spawnerEntry.getEquipment())), spawnerEntry.getSpawnWeight());
+            CompoundTag compoundTag = ((CraftEntitySnapshot) spawnerEntry.getSnapshot()).getData();
+            builder.add(new SpawnData(compoundTag, Optional.ofNullable(CraftCreatureSpawner.toMinecraftRule(spawnerEntry.getSpawnRule())), CraftCreatureSpawner.getEquipment(spawnerEntry.getEquipment())), spawnerEntry.getSpawnWeight());
         }
-        spawnPotentialsDefinition = builder.build();
+        this.spawnPotentialsDefinition = builder.build();
     }
 
     @Override
     public List<SpawnerEntry> getPotentialSpawns() {
         List<SpawnerEntry> entries = new ArrayList<>();
 
-        for (b<MobSpawnerData> entry : spawnPotentialsDefinition.unwrap()) { // PAIL rename Wrapper
+        for (Wrapper<SpawnData> entry : this.spawnPotentialsDefinition.unwrap()) { // PAIL rename Wrapper
             CraftEntitySnapshot snapshot = CraftEntitySnapshot.create(entry.data().getEntityToSpawn());
 
             if (snapshot != null) {
@@ -231,7 +230,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
     public Map<LootTable, Integer> getPossibleRewards() {
         Map<LootTable, Integer> tables = new HashMap<>();
 
-        for (b<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> entry : lootTablesToEject.unwrap()) {
+        for (Wrapper<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> entry : this.lootTablesToEject.unwrap()) {
             LootTable table = CraftLootTable.minecraftToBukkit(entry.data());
             if (table != null) {
                 tables.put(table, entry.getWeight().asInt());
@@ -246,10 +245,10 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
         Preconditions.checkArgument(table != null, "Table cannot be null");
         Preconditions.checkArgument(weight >= 1, "Weight must be at least 1");
 
-        SimpleWeightedRandomList.a<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> builder = SimpleWeightedRandomList.builder();
-        lootTablesToEject.unwrap().forEach(entry -> builder.add(entry.data(), entry.getWeight().asInt()));
+        SimpleWeightedRandomList.Builder<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> builder = SimpleWeightedRandomList.builder();
+        this.lootTablesToEject.unwrap().forEach(entry -> builder.add(entry.data(), entry.getWeight().asInt()));
         builder.add(CraftLootTable.bukkitToMinecraft(table), weight);
-        lootTablesToEject = builder.build();
+        this.lootTablesToEject = builder.build();
     }
 
     @Override
@@ -257,24 +256,24 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
         Preconditions.checkArgument(table != null, "Key cannot be null");
 
         ResourceKey<net.minecraft.world.level.storage.loot.LootTable> minecraftKey = CraftLootTable.bukkitToMinecraft(table);
-        SimpleWeightedRandomList.a<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> builder = SimpleWeightedRandomList.builder();
+        SimpleWeightedRandomList.Builder<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> builder = SimpleWeightedRandomList.builder();
 
-        for (b<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> entry : lootTablesToEject.unwrap()) {
+        for (Wrapper<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> entry : this.lootTablesToEject.unwrap()) {
             if (!entry.data().equals(minecraftKey)) {
                 builder.add(entry.data(), entry.getWeight().asInt());
             }
         }
-        lootTablesToEject = builder.build();
+        this.lootTablesToEject = builder.build();
     }
 
     @Override
     public void setPossibleRewards(Map<LootTable, Integer> rewards) {
         if (rewards == null || rewards.isEmpty()) {
-            lootTablesToEject = SimpleWeightedRandomList.empty();
+            this.lootTablesToEject = SimpleWeightedRandomList.empty();
             return;
         }
 
-        SimpleWeightedRandomList.a<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> builder = SimpleWeightedRandomList.builder();
+        SimpleWeightedRandomList.Builder<ResourceKey<net.minecraft.world.level.storage.loot.LootTable>> builder = SimpleWeightedRandomList.builder();
         rewards.forEach((table, weight) -> {
             Preconditions.checkArgument(table != null, "Table cannot be null");
             Preconditions.checkArgument(weight >= 1, "Weight must be at least 1");
@@ -282,24 +281,24 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
             builder.add(CraftLootTable.bukkitToMinecraft(table), weight);
         });
 
-        lootTablesToEject = builder.build();
+        this.lootTablesToEject = builder.build();
     }
 
     @Override
     public int getRequiredPlayerRange() {
-      return snapshot.trialSpawner.getRequiredPlayerRange();
+      return this.snapshot.trialSpawner.getRequiredPlayerRange();
     }
 
     @Override
     public void setRequiredPlayerRange(int requiredPlayerRange) {
-        snapshot.trialSpawner.requiredPlayerRange = requiredPlayerRange;
+        this.snapshot.trialSpawner.requiredPlayerRange = requiredPlayerRange;
     }
 
     private TrialSpawnerData getTrialData() {
-        return snapshot.getTrialSpawner().getData();
+        return this.snapshot.getTrialSpawner().getData();
     }
 
     protected TrialSpawnerConfig toMinecraft() {
-        return new TrialSpawnerConfig(spawnRange, totalMobs, simultaneousMobs, totalMobsAddedPerPlayer, simultaneousMobsAddedPerPlayer, ticksBetweenSpawn, spawnPotentialsDefinition, lootTablesToEject, itemsToDropWhenOminous);
+        return new TrialSpawnerConfig(this.spawnRange, this.totalMobs, this.simultaneousMobs, this.totalMobsAddedPerPlayer, this.simultaneousMobsAddedPerPlayer, this.ticksBetweenSpawn, this.spawnPotentialsDefinition, this.lootTablesToEject, this.itemsToDropWhenOminous);
     }
 }

@@ -1,11 +1,12 @@
 package org.bukkit.craftbukkit.block;
 
 import static org.junit.jupiter.api.Assertions.*;
-import net.minecraft.core.BlockPosition;
+
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.ITileEntity;
-import net.minecraft.world.level.block.entity.TileEntity;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import org.bukkit.Material;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
@@ -20,12 +21,12 @@ public class BlockStateTest {
             Class<?> blockStateType = CraftBlockStates.getBlockStateType(material);
             boolean isCraftBlockEntityState = CraftBlockEntityState.class.isAssignableFrom(blockStateType);
 
-            if (block instanceof ITileEntity) {
+            if (block instanceof EntityBlock) {
                 assertTrue(isCraftBlockEntityState, material + " has BlockState of type " + blockStateType.getName() + ", but expected subtype of CraftBlockEntityState");
 
                 // check tile entity type
-                TileEntity tileEntity = ((ITileEntity) block).newBlockEntity(BlockPosition.ZERO, block.defaultBlockState());
-                TileEntity materialTileEntity = CraftBlockStates.createNewTileEntity(material);
+                BlockEntity tileEntity = ((EntityBlock) block).newBlockEntity(BlockPos.ZERO, block.defaultBlockState());
+                BlockEntity materialTileEntity = CraftBlockStates.createNewTileEntity(material);
 
                 if (tileEntity == null) {
                     if (CraftBlockStates.isTileEntityOptional(material)) {

@@ -8,7 +8,7 @@ public final class CraftExplosionResult {
 
     private CraftExplosionResult() {}
 
-    public static ExplosionResult toBukkit(Explosion.Effect effect) {
+    public static ExplosionResult toBukkit(Explosion.BlockInteraction effect) {
         Preconditions.checkArgument(effect != null, "explosion effect cannot be null");
 
         switch (effect) {

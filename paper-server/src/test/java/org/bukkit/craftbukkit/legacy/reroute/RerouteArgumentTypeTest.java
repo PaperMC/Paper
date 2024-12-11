@@ -10,8 +10,8 @@ public class RerouteArgumentTypeTest extends AbstractRerouteTest {
 
     @Test
     public void testRerouteArgumentType() {
-        test(RerouteArgumentTypeTestData.class, Map.of(
-                        "()Ljava/util/List;getList", create(
+        this.test(RerouteArgumentTypeTestData.class, Map.of(
+                        "()Ljava/util/List;getList", this.create(
                                 "()Ljava/util/List;getList",
                                 "()Ljava/util/List;",
                                 "java/util/Map",
@@ -20,8 +20,8 @@ public class RerouteArgumentTypeTest extends AbstractRerouteTest {
                                 "(Ljava/lang/Object;)Ljava/util/List;",
                                 "org/bukkit/craftbukkit/legacy/reroute/RerouteArgumentTypeTest$RerouteArgumentTypeTestData",
                                 "getList",
-                                create(
-                                        create("Ljava/lang/Object;", "Ljava/util/Map;", false, false, null)
+                                this.create(
+                                        this.create("Ljava/lang/Object;", "Ljava/util/Map;", false, false, null)
                                 ),
                                 "Ljava/util/List;",
                                 true,
@@ -33,8 +33,8 @@ public class RerouteArgumentTypeTest extends AbstractRerouteTest {
 
     @Test
     public void testRerouteArgumentTypeSecond() {
-        test(RerouteArgumentTypeSecondTestData.class, Map.of(
-                        "(Ljava/lang/String;)Ljava/util/List;getList", create(
+        this.test(RerouteArgumentTypeSecondTestData.class, Map.of(
+                        "(Ljava/lang/String;)Ljava/util/List;getList", this.create(
                                 "(Ljava/lang/String;)Ljava/util/List;getList",
                                 "(Ljava/lang/String;)Ljava/util/List;",
                                 "java/lang/Object",
@@ -43,9 +43,9 @@ public class RerouteArgumentTypeTest extends AbstractRerouteTest {
                                 "(Ljava/lang/Object;Ljava/util/Map;)Ljava/util/List;",
                                 "org/bukkit/craftbukkit/legacy/reroute/RerouteArgumentTypeTest$RerouteArgumentTypeSecondTestData",
                                 "getList",
-                                create(
-                                        create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null),
-                                        create("Ljava/util/Map;", "Ljava/lang/String;", false, false, null)
+                                this.create(
+                                        this.create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null),
+                                        this.create("Ljava/util/Map;", "Ljava/lang/String;", false, false, null)
                                 ),
                                 "Ljava/util/List;",
                                 true,

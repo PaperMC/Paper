@@ -1,0 +1,58 @@
+--- a/net/minecraft/world/entity/animal/Sheep.java
++++ b/net/minecraft/world/entity/animal/Sheep.java
+@@ -41,7 +41,6 @@
+ import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+ import net.minecraft.world.entity.item.ItemEntity;
+ import net.minecraft.world.entity.player.Player;
+-import net.minecraft.world.item.DyeColor;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.level.Level;
+@@ -49,6 +48,12 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.storage.loot.BuiltInLootTables;
++import net.minecraft.world.item.DyeColor;
++// CraftBukkit start
++import net.minecraft.world.item.Item;
++import org.bukkit.craftbukkit.event.CraftEventFactory;
++import org.bukkit.event.entity.SheepRegrowWoolEvent;
++// CraftBukkit end
+ 
+ public class Sheep extends Animal implements Shearable {
+ 
+@@ -160,6 +165,11 @@
+                 ServerLevel worldserver = (ServerLevel) world;
+ 
+                 if (this.readyForShearing()) {
++                    // CraftBukkit start
++                    if (!CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand)) {
++                        return InteractionResult.PASS;
++                    }
++                    // CraftBukkit end
+                     this.shear(worldserver, SoundSource.PLAYERS, itemstack);
+                     this.gameEvent(GameEvent.SHEAR, player);
+                     itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
+@@ -178,7 +188,9 @@
+         world.playSound((Player) null, (Entity) this, SoundEvents.SHEEP_SHEAR, shearedSoundCategory, 1.0F, 1.0F);
+         this.dropFromShearingLootTable(world, BuiltInLootTables.SHEAR_SHEEP, shears, (worldserver1, itemstack1) -> {
+             for (int i = 0; i < itemstack1.getCount(); ++i) {
++                this.forceDrops = true; // CraftBukkit
+                 ItemEntity entityitem = this.spawnAtLocation(worldserver1, itemstack1.copyWithCount(1), 1.0F);
++                this.forceDrops = false; // CraftBukkit
+ 
+                 if (entityitem != null) {
+                     entityitem.setDeltaMovement(entityitem.getDeltaMovement().add((double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F), (double) (this.random.nextFloat() * 0.05F), (double) ((this.random.nextFloat() - this.random.nextFloat()) * 0.1F)));
+@@ -276,6 +288,12 @@
+ 
+     @Override
+     public void ate() {
++        // CraftBukkit start
++        SheepRegrowWoolEvent event = new SheepRegrowWoolEvent((org.bukkit.entity.Sheep) this.getBukkitEntity());
++        this.level().getCraftServer().getPluginManager().callEvent(event);
++
++        if (event.isCancelled()) return;
++        // CraftBukkit end
+         super.ate();
+         this.setSheared(false);
+         if (this.isBaby()) {

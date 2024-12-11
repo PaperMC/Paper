@@ -1,0 +1,119 @@
+--- a/net/minecraft/world/inventory/GrindstoneMenu.java
++++ b/net/minecraft/world/inventory/GrindstoneMenu.java
+@@ -10,7 +10,6 @@
+ import net.minecraft.world.SimpleContainer;
+ import net.minecraft.world.entity.ExperienceOrb;
+ import net.minecraft.world.entity.player.Inventory;
+-import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.Items;
+ import net.minecraft.world.item.enchantment.Enchantment;
+@@ -19,9 +18,30 @@
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.phys.Vec3;
++// CraftBukkit start
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.inventory.CraftInventoryGrindstone;
++import org.bukkit.craftbukkit.inventory.CraftInventoryView;
++import org.bukkit.entity.Player;
++// CraftBukkit end
+ 
+ public class GrindstoneMenu extends AbstractContainerMenu {
+ 
++    // CraftBukkit start
++    private CraftInventoryView bukkitEntity = null;
++    private Player player;
++
++    @Override
++    public CraftInventoryView getBukkitView() {
++        if (this.bukkitEntity != null) {
++            return this.bukkitEntity;
++        }
++
++        CraftInventoryGrindstone inventory = new CraftInventoryGrindstone(this.repairSlots, this.resultSlots);
++        this.bukkitEntity = new CraftInventoryView(this.player, inventory, this);
++        return this.bukkitEntity;
++    }
++    // CraftBukkit end
+     public static final int MAX_NAME_LENGTH = 35;
+     public static final int INPUT_SLOT = 0;
+     public static final int ADDITIONAL_SLOT = 1;
+@@ -46,16 +66,23 @@
+             public void setChanged() {
+                 super.setChanged();
+                 GrindstoneMenu.this.slotsChanged(this);
++            }
++
++            // CraftBukkit start
++            @Override
++            public Location getLocation() {
++                return context.getLocation();
+             }
++            // CraftBukkit end
+         };
+         this.access = context;
+-        this.addSlot(new Slot(this, this.repairSlots, 0, 49, 19) {
++        this.addSlot(new Slot(this.repairSlots, 0, 49, 19) { // CraftBukkit - decompile error
+             @Override
+             public boolean mayPlace(ItemStack stack) {
+                 return stack.isDamageableItem() || EnchantmentHelper.hasAnyEnchantments(stack);
+             }
+         });
+-        this.addSlot(new Slot(this, this.repairSlots, 1, 49, 40) {
++        this.addSlot(new Slot(this.repairSlots, 1, 49, 40) { // CraftBukkit - decompile error
+             @Override
+             public boolean mayPlace(ItemStack stack) {
+                 return stack.isDamageableItem() || EnchantmentHelper.hasAnyEnchantments(stack);
+@@ -68,7 +95,7 @@
+             }
+ 
+             @Override
+-            public void onTake(Player player, ItemStack stack) {
++            public void onTake(net.minecraft.world.entity.player.Player player, ItemStack stack) {
+                 context.execute((world, blockposition) -> {
+                     if (world instanceof ServerLevel) {
+                         ExperienceOrb.award((ServerLevel) world, Vec3.atCenterOf(blockposition), this.getExperienceAmount(world));
+@@ -113,6 +140,7 @@
+             }
+         });
+         this.addStandardInventorySlots(playerInventory, 8, 84);
++        this.player = (Player) playerInventory.player.getBukkitEntity(); // CraftBukkit
+     }
+ 
+     @Override
+@@ -125,7 +153,8 @@
+     }
+ 
+     private void createResult() {
+-        this.resultSlots.setItem(0, this.computeResult(this.repairSlots.getItem(0), this.repairSlots.getItem(1)));
++        org.bukkit.craftbukkit.event.CraftEventFactory.callPrepareGrindstoneEvent(this.getBukkitView(), this.computeResult(this.repairSlots.getItem(0), this.repairSlots.getItem(1))); // CraftBukkit
++        this.sendAllDataToRemote(); // CraftBukkit - SPIGOT-6686: Always send completed inventory to stay in sync with client
+         this.broadcastChanges();
+     }
+ 
+@@ -218,7 +247,7 @@
+     }
+ 
+     @Override
+-    public void removed(Player player) {
++    public void removed(net.minecraft.world.entity.player.Player player) {
+         super.removed(player);
+         this.access.execute((world, blockposition) -> {
+             this.clearContainer(player, this.repairSlots);
+@@ -226,12 +255,13 @@
+     }
+ 
+     @Override
+-    public boolean stillValid(Player player) {
++    public boolean stillValid(net.minecraft.world.entity.player.Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return stillValid(this.access, player, Blocks.GRINDSTONE);
+     }
+ 
+     @Override
+-    public ItemStack quickMoveStack(Player player, int slot) {
++    public ItemStack quickMoveStack(net.minecraft.world.entity.player.Player player, int slot) {
+         ItemStack itemstack = ItemStack.EMPTY;
+         Slot slot1 = (Slot) this.slots.get(slot);
+ 

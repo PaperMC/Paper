@@ -1,0 +1,128 @@
+--- a/net/minecraft/world/entity/EntityType.java
++++ b/net/minecraft/world/entity/EntityType.java
+@@ -176,6 +176,7 @@
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.phys.shapes.Shapes;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++import org.bukkit.event.entity.CreatureSpawnEvent;
+ import org.slf4j.Logger;
+ 
+ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeTest<Entity, T> {
+@@ -191,7 +192,7 @@
+         return Items.ACACIA_CHEST_BOAT;
+     }), MobCategory.MISC).noLootTable().sized(1.375F, 0.5625F).eyeHeight(0.5625F).clientTrackingRange(10));
+     public static final EntityType<Allay> ALLAY = EntityType.register("allay", EntityType.Builder.of(Allay::new, MobCategory.CREATURE).sized(0.35F, 0.6F).eyeHeight(0.36F).ridingOffset(0.04F).clientTrackingRange(8).updateInterval(2));
+-    public static final EntityType<AreaEffectCloud> AREA_EFFECT_CLOUD = EntityType.register("area_effect_cloud", EntityType.Builder.of(AreaEffectCloud::new, MobCategory.MISC).noLootTable().fireImmune().sized(6.0F, 0.5F).clientTrackingRange(10).updateInterval(Integer.MAX_VALUE));
++    public static final EntityType<AreaEffectCloud> AREA_EFFECT_CLOUD = EntityType.register("area_effect_cloud", EntityType.Builder.of(AreaEffectCloud::new, MobCategory.MISC).noLootTable().fireImmune().sized(6.0F, 0.5F).clientTrackingRange(10).updateInterval(10)); // CraftBukkit - SPIGOT-3729: track area effect clouds
+     public static final EntityType<Armadillo> ARMADILLO = EntityType.register("armadillo", EntityType.Builder.of(Armadillo::new, MobCategory.CREATURE).sized(0.7F, 0.65F).eyeHeight(0.26F).clientTrackingRange(10));
+     public static final EntityType<ArmorStand> ARMOR_STAND = EntityType.register("armor_stand", EntityType.Builder.of(ArmorStand::new, MobCategory.MISC).sized(0.5F, 1.975F).eyeHeight(1.7775F).clientTrackingRange(10));
+     public static final EntityType<Arrow> ARROW = EntityType.register("arrow", EntityType.Builder.of(Arrow::new, MobCategory.MISC).noLootTable().sized(0.5F, 0.5F).eyeHeight(0.13F).clientTrackingRange(4).updateInterval(20));
+@@ -399,7 +400,7 @@
+         return ResourceKey.create(Registries.ENTITY_TYPE, ResourceLocation.withDefaultNamespace(id));
+     }
+ 
+-    private static <T extends Entity> EntityType<T> register(String id, EntityType.Builder<T> type) {
++    private static <T extends Entity> EntityType<T> register(String id, EntityType.Builder type) { // CraftBukkit - decompile error
+         return EntityType.register(EntityType.vanillaEntityId(id), type);
+     }
+ 
+@@ -431,16 +432,23 @@
+ 
+     @Nullable
+     public T spawn(ServerLevel world, @Nullable ItemStack stack, @Nullable Player player, BlockPos pos, EntitySpawnReason spawnReason, boolean alignPosition, boolean invertY) {
+-        Consumer consumer;
++        // CraftBukkit start
++        return this.spawn(world, stack, player, pos, spawnReason, alignPosition, invertY, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.SPAWNER_EGG);
++    }
+ 
+-        if (stack != null) {
+-            consumer = EntityType.createDefaultStackConfig(world, stack, player);
++    @Nullable
++    public T spawn(ServerLevel worldserver, @Nullable ItemStack itemstack, @Nullable Player entityhuman, BlockPos blockposition, EntitySpawnReason entityspawnreason, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        // CraftBukkit end
++        Consumer<T> consumer; // CraftBukkit - decompile error
++
++        if (itemstack != null) {
++            consumer = EntityType.createDefaultStackConfig(worldserver, itemstack, entityhuman);
+         } else {
+             consumer = (entity) -> {
+             };
+         }
+ 
+-        return this.spawn(world, consumer, pos, spawnReason, alignPosition, invertY);
++        return this.spawn(worldserver, consumer, blockposition, entityspawnreason, flag, flag1, spawnReason); // CraftBukkit
+     }
+ 
+     public static <T extends Entity> Consumer<T> createDefaultStackConfig(Level world, ItemStack stack, @Nullable Player player) {
+@@ -464,21 +472,40 @@
+         CustomData customdata = (CustomData) stack.getOrDefault(DataComponents.ENTITY_DATA, CustomData.EMPTY);
+ 
+         return !customdata.isEmpty() ? chained.andThen((entity) -> {
+-            EntityType.updateCustomEntityTag(world, player, entity, customdata);
++            try { EntityType.updateCustomEntityTag(world, player, entity, customdata); } catch (Throwable t) { EntityType.LOGGER.warn("Error loading spawn egg NBT", t); } // CraftBukkit - SPIGOT-5665
+         }) : chained;
+     }
+ 
+     @Nullable
+     public T spawn(ServerLevel world, BlockPos pos, EntitySpawnReason reason) {
+-        return this.spawn(world, (Consumer) null, pos, reason, false, false);
++        // CraftBukkit start
++        return this.spawn(world, pos, reason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
+     }
+ 
+     @Nullable
++    public T spawn(ServerLevel worldserver, BlockPos blockposition, EntitySpawnReason entityspawnreason, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        return this.spawn(worldserver, (Consumer<T>) null, blockposition, entityspawnreason, false, false, spawnReason); // CraftBukkit - decompile error
++        // CraftBukkit end
++    }
++
++    @Nullable
+     public T spawn(ServerLevel world, @Nullable Consumer<T> afterConsumer, BlockPos pos, EntitySpawnReason reason, boolean alignPosition, boolean invertY) {
+-        T t0 = this.create(world, afterConsumer, pos, reason, alignPosition, invertY);
++        // CraftBukkit start
++        return this.spawn(world, afterConsumer, pos, reason, alignPosition, invertY, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    @Nullable
++    public T spawn(ServerLevel worldserver, @Nullable Consumer<T> consumer, BlockPos blockposition, EntitySpawnReason entityspawnreason, boolean flag, boolean flag1, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        // CraftBukkit end
++        T t0 = this.create(worldserver, consumer, blockposition, entityspawnreason, flag, flag1);
+ 
+         if (t0 != null) {
+-            world.addFreshEntityWithPassengers(t0);
++            // CraftBukkit start
++            worldserver.addFreshEntityWithPassengers(t0, spawnReason);
++            if (t0.isRemoved()) {
++                return null; // Don't return an entity when CreatureSpawnEvent is canceled
++            }
++            // CraftBukkit end
+             if (t0 instanceof Mob) {
+                 Mob entityinsentient = (Mob) t0;
+ 
+@@ -657,7 +684,7 @@
+             }
+ 
+             return entity;
+-        }).orElse((Object) null);
++        }).orElse(null); // CraftBukkit - decompile error
+     }
+ 
+     public static Stream<Entity> loadEntitiesRecursive(final List<? extends Tag> entityNbtList, final Level world, final EntitySpawnReason reason) {
+@@ -718,7 +745,7 @@
+ 
+     @Nullable
+     public T tryCast(Entity obj) {
+-        return obj.getType() == this ? obj : null;
++        return obj.getType() == this ? (T) obj : null; // CraftBukkit - decompile error
+     }
+ 
+     @Override
+@@ -791,7 +818,7 @@
+             this.canSpawnFarFromPlayer = spawnGroup == MobCategory.CREATURE || spawnGroup == MobCategory.MISC;
+         }
+ 
+-        public static <T extends Entity> EntityType.Builder<T> of(EntityType.EntityFactory<T> factory, MobCategory spawnGroup) {
++        public static <T extends Entity> EntityType.Builder<T> of(EntityType.EntityFactory factory, MobCategory spawnGroup) { // CraftBukkit - decompile error
+             return new EntityType.Builder<>(factory, spawnGroup);
+         }
+ 

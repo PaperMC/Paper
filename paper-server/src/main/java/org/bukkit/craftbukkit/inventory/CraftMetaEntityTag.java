@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.Set;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.component.CustomData;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
@@ -25,7 +25,7 @@ public class CraftMetaEntityTag extends CraftMetaItem {
     );
 
     static final ItemMetaKeyType<CustomData> ENTITY_TAG = new ItemMetaKeyType<>(DataComponents.ENTITY_DATA, "EntityTag", "entity-tag");
-    NBTTagCompound entityTag;
+    CompoundTag entityTag;
 
     CraftMetaEntityTag(CraftMetaItem meta) {
         super(meta);
@@ -41,8 +41,8 @@ public class CraftMetaEntityTag extends CraftMetaItem {
     CraftMetaEntityTag(DataComponentPatch tag) {
         super(tag);
 
-        getOrEmpty(tag, ENTITY_TAG).ifPresent((nbt) -> {
-            entityTag = nbt.copyTag();
+        getOrEmpty(tag, CraftMetaEntityTag.ENTITY_TAG).ifPresent((nbt) -> {
+            this.entityTag = nbt.copyTag();
         });
     }
 
@@ -51,18 +51,18 @@ public class CraftMetaEntityTag extends CraftMetaItem {
     }
 
     @Override
-    void deserializeInternal(NBTTagCompound tag, Object context) {
+    void deserializeInternal(CompoundTag tag, Object context) {
         super.deserializeInternal(tag, context);
 
-        if (tag.contains(ENTITY_TAG.NBT)) {
-            entityTag = tag.getCompound(ENTITY_TAG.NBT);
+        if (tag.contains(CraftMetaEntityTag.ENTITY_TAG.NBT)) {
+            this.entityTag = tag.getCompound(CraftMetaEntityTag.ENTITY_TAG.NBT);
         }
     }
 
     @Override
-    void serializeInternal(Map<String, NBTBase> internalTags) {
-        if (entityTag != null && !entityTag.isEmpty()) {
-            internalTags.put(ENTITY_TAG.NBT, entityTag);
+    void serializeInternal(Map<String, Tag> internalTags) {
+        if (this.entityTag != null && !this.entityTag.isEmpty()) {
+            internalTags.put(CraftMetaEntityTag.ENTITY_TAG.NBT, this.entityTag);
         }
     }
 
@@ -70,23 +70,23 @@ public class CraftMetaEntityTag extends CraftMetaItem {
     void applyToItem(CraftMetaItem.Applicator tag) {
         super.applyToItem(tag);
 
-        if (entityTag != null) {
-            tag.put(ENTITY_TAG, CustomData.of(entityTag));
+        if (this.entityTag != null) {
+            tag.put(CraftMetaEntityTag.ENTITY_TAG, CustomData.of(this.entityTag));
         }
     }
 
     @Override
     boolean applicableTo(Material type) {
-        return ENTITY_TAGGABLE_MATERIALS.contains(type);
+        return CraftMetaEntityTag.ENTITY_TAGGABLE_MATERIALS.contains(type);
     }
 
     @Override
     boolean isEmpty() {
-        return super.isEmpty() && isEntityTagEmpty();
+        return super.isEmpty() && this.isEntityTagEmpty();
     }
 
     boolean isEntityTagEmpty() {
-        return !(entityTag != null);
+        return !(this.entityTag != null);
     }
 
     @Override
@@ -97,14 +97,14 @@ public class CraftMetaEntityTag extends CraftMetaItem {
         if (meta instanceof CraftMetaEntityTag) {
             CraftMetaEntityTag that = (CraftMetaEntityTag) meta;
 
-            return entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : entityTag == null;
+            return this.entityTag != null ? that.entityTag != null && this.entityTag.equals(that.entityTag) : this.entityTag == null;
         }
         return true;
     }
 
     @Override
     boolean notUncommon(CraftMetaItem meta) {
-        return super.notUncommon(meta) && (meta instanceof CraftMetaEntityTag || isEntityTagEmpty());
+        return super.notUncommon(meta) && (meta instanceof CraftMetaEntityTag || this.isEntityTagEmpty());
     }
 
     @Override
@@ -112,8 +112,8 @@ public class CraftMetaEntityTag extends CraftMetaItem {
         final int original;
         int hash = original = super.applyHash();
 
-        if (entityTag != null) {
-            hash = 73 * hash + entityTag.hashCode();
+        if (this.entityTag != null) {
+            hash = 73 * hash + this.entityTag.hashCode();
         }
 
         return original != hash ? CraftMetaEntityTag.class.hashCode() ^ hash : hash;
@@ -130,8 +130,8 @@ public class CraftMetaEntityTag extends CraftMetaItem {
     public CraftMetaEntityTag clone() {
         CraftMetaEntityTag clone = (CraftMetaEntityTag) super.clone();
 
-        if (entityTag != null) {
-            clone.entityTag = entityTag.copy();
+        if (this.entityTag != null) {
+            clone.entityTag = this.entityTag.copy();
         }
 
         return clone;

@@ -21,31 +21,31 @@ public class CraftGoat extends CraftAnimals implements Goat {
 
     @Override
     public boolean hasLeftHorn() {
-        return getHandle().hasLeftHorn();
+        return this.getHandle().hasLeftHorn();
     }
 
     @Override
     public void setLeftHorn(boolean hasHorn) {
-        getHandle().getEntityData().set(net.minecraft.world.entity.animal.goat.Goat.DATA_HAS_LEFT_HORN, hasHorn);
+        this.getHandle().getEntityData().set(net.minecraft.world.entity.animal.goat.Goat.DATA_HAS_LEFT_HORN, hasHorn);
     }
 
     @Override
     public boolean hasRightHorn() {
-        return getHandle().hasRightHorn();
+        return this.getHandle().hasRightHorn();
     }
 
     @Override
     public void setRightHorn(boolean hasHorn) {
-        getHandle().getEntityData().set(net.minecraft.world.entity.animal.goat.Goat.DATA_HAS_RIGHT_HORN, hasHorn);
+        this.getHandle().getEntityData().set(net.minecraft.world.entity.animal.goat.Goat.DATA_HAS_RIGHT_HORN, hasHorn);
     }
 
     @Override
     public boolean isScreaming() {
-        return getHandle().isScreamingGoat();
+        return this.getHandle().isScreamingGoat();
     }
 
     @Override
     public void setScreaming(boolean screaming) {
-        getHandle().setScreamingGoat(screaming);
+        this.getHandle().setScreamingGoat(screaming);
     }
 }

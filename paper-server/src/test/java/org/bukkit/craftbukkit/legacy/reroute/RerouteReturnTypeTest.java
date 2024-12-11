@@ -10,8 +10,8 @@ public class RerouteReturnTypeTest extends AbstractRerouteTest {
 
     @Test
     public void testRerouteReturnType() {
-        test(RerouteReturnTypeTestData.class, Map.of(
-                        "()Ljava/util/Map;getList", create(
+        this.test(RerouteReturnTypeTestData.class, Map.of(
+                        "()Ljava/util/Map;getList", this.create(
                                 "()Ljava/util/Map;getList",
                                 "()Ljava/util/Map;",
                                 "java/lang/Object",
@@ -20,8 +20,8 @@ public class RerouteReturnTypeTest extends AbstractRerouteTest {
                                 "(Ljava/lang/Object;)Ljava/util/List;",
                                 "org/bukkit/craftbukkit/legacy/reroute/RerouteReturnTypeTest$RerouteReturnTypeTestData",
                                 "getList",
-                                create(
-                                        create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null)
+                                this.create(
+                                        this.create("Ljava/lang/Object;", "Ljava/lang/Object;", false, false, null)
                                 ),
                                 "Ljava/util/List;",
                                 true,

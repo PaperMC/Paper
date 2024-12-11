@@ -1,6 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
-import net.minecraft.world.entity.EnumCreatureType;
+import net.minecraft.world.entity.MobCategory;
 import org.bukkit.entity.SpawnCategory;
 
 public class CraftSpawnCategory {
@@ -43,7 +43,7 @@ public class CraftSpawnCategory {
         };
     }
 
-    public static SpawnCategory toBukkit(EnumCreatureType enumCreatureType) {
+    public static SpawnCategory toBukkit(MobCategory enumCreatureType) {
         return switch (enumCreatureType) {
             case MONSTER -> SpawnCategory.MONSTER;
             case CREATURE -> SpawnCategory.ANIMAL;
@@ -57,16 +57,16 @@ public class CraftSpawnCategory {
         };
     }
 
-    public static EnumCreatureType toNMS(SpawnCategory spawnCategory) {
+    public static MobCategory toNMS(SpawnCategory spawnCategory) {
         return switch (spawnCategory) {
-            case MONSTER -> EnumCreatureType.MONSTER;
-            case ANIMAL -> EnumCreatureType.CREATURE;
-            case AMBIENT -> EnumCreatureType.AMBIENT;
-            case AXOLOTL -> EnumCreatureType.AXOLOTLS;
-            case WATER_ANIMAL -> EnumCreatureType.WATER_CREATURE;
-            case WATER_AMBIENT -> EnumCreatureType.WATER_AMBIENT;
-            case WATER_UNDERGROUND_CREATURE -> EnumCreatureType.UNDERGROUND_WATER_CREATURE;
-            case MISC -> EnumCreatureType.MISC;
+            case MONSTER -> MobCategory.MONSTER;
+            case ANIMAL -> MobCategory.CREATURE;
+            case AMBIENT -> MobCategory.AMBIENT;
+            case AXOLOTL -> MobCategory.AXOLOTLS;
+            case WATER_ANIMAL -> MobCategory.WATER_CREATURE;
+            case WATER_AMBIENT -> MobCategory.WATER_AMBIENT;
+            case WATER_UNDERGROUND_CREATURE -> MobCategory.UNDERGROUND_WATER_CREATURE;
+            case MISC -> MobCategory.MISC;
             default -> throw new UnsupportedOperationException("Unknown SpawnCategory " + spawnCategory + " for EnumCreatureType");
         };
     }

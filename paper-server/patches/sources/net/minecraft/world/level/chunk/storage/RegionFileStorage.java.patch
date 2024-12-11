@@ -1,0 +1,62 @@
+--- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
++++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+@@ -32,8 +32,8 @@
+         this.info = storageKey;
+     }
+ 
+-    private RegionFile getRegionFile(ChunkPos pos) throws IOException {
+-        long i = ChunkPos.asLong(pos.getRegionX(), pos.getRegionZ());
++    private RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
++        long i = ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
+         RegionFile regionfile = (RegionFile) this.regionCache.getAndMoveToFirst(i);
+ 
+         if (regionfile != null) {
+@@ -45,8 +45,9 @@
+ 
+             FileUtil.createDirectoriesSafe(this.folder);
+             Path path = this.folder;
+-            int j = pos.getRegionX();
+-            Path path1 = path.resolve("r." + j + "." + pos.getRegionZ() + ".mca");
++            int j = chunkcoordintpair.getRegionX();
++            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
++            if (existingOnly && !java.nio.file.Files.exists(path1)) return null; // CraftBukkit
+             RegionFile regionfile1 = new RegionFile(this.info, path1, this.folder, this.sync);
+ 
+             this.regionCache.putAndMoveToFirst(i, regionfile1);
+@@ -56,7 +57,12 @@
+ 
+     @Nullable
+     public CompoundTag read(ChunkPos pos) throws IOException {
+-        RegionFile regionfile = this.getRegionFile(pos);
++        // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
++        RegionFile regionfile = this.getRegionFile(pos, true);
++        if (regionfile == null) {
++            return null;
++        }
++        // CraftBukkit end
+         DataInputStream datainputstream = regionfile.getChunkDataInputStream(pos);
+ 
+         CompoundTag nbttagcompound;
+@@ -96,7 +102,12 @@
+     }
+ 
+     public void scanChunk(ChunkPos chunkPos, StreamTagVisitor scanner) throws IOException {
+-        RegionFile regionfile = this.getRegionFile(chunkPos);
++        // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
++        RegionFile regionfile = this.getRegionFile(chunkPos, true);
++        if (regionfile == null) {
++            return;
++        }
++        // CraftBukkit end
+         DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkPos);
+ 
+         try {
+@@ -122,7 +133,7 @@
+     }
+ 
+     protected void write(ChunkPos pos, @Nullable CompoundTag nbt) throws IOException {
+-        RegionFile regionfile = this.getRegionFile(pos);
++        RegionFile regionfile = this.getRegionFile(pos, false); // CraftBukkit
+ 
+         if (nbt == null) {
+             regionfile.clear(pos);

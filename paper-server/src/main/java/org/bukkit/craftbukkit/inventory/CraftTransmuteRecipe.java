@@ -30,8 +30,8 @@ public class CraftTransmuteRecipe extends TransmuteRecipe implements CraftRecipe
                 new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()),
                         new net.minecraft.world.item.crafting.TransmuteRecipe(this.getGroup(),
                                 CraftRecipe.getCategory(this.getCategory()),
-                                toNMS(this.getInput(), true),
-                                toNMS(this.getMaterial(), true),
+                                this.toNMS(this.getInput(), true),
+                                this.toNMS(this.getMaterial(), true),
                                 Holder.direct(CraftItemType.bukkitToMinecraft(this.getResult().getType()))
                         )
                 )

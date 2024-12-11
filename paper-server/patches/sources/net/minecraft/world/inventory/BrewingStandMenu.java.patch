@@ -1,0 +1,58 @@
+--- a/net/minecraft/world/inventory/BrewingStandMenu.java
++++ b/net/minecraft/world/inventory/BrewingStandMenu.java
+@@ -16,6 +16,10 @@
+ import net.minecraft.world.item.alchemy.Potion;
+ import net.minecraft.world.item.alchemy.PotionBrewing;
+ import net.minecraft.world.item.alchemy.PotionContents;
++// CraftBukkit start
++import org.bukkit.craftbukkit.inventory.CraftInventoryBrewer;
++import org.bukkit.craftbukkit.inventory.view.CraftBrewingStandView;
++// CraftBukkit end
+ 
+ public class BrewingStandMenu extends AbstractContainerMenu {
+ 
+@@ -35,12 +39,18 @@
+     public final ContainerData brewingStandData;
+     private final Slot ingredientSlot;
+ 
++    // CraftBukkit start
++    private CraftBrewingStandView bukkitEntity = null;
++    private Inventory player;
++    // CraftBukkit end
++
+     public BrewingStandMenu(int syncId, Inventory playerInventory) {
+         this(syncId, playerInventory, new SimpleContainer(5), new SimpleContainerData(2));
+     }
+ 
+     public BrewingStandMenu(int syncId, Inventory playerInventory, Container inventory, ContainerData propertyDelegate) {
+         super(MenuType.BREWING_STAND, syncId);
++        this.player = playerInventory; // CraftBukkit
+         checkContainerSize(inventory, 5);
+         checkContainerDataCount(propertyDelegate, 2);
+         this.brewingStand = inventory;
+@@ -58,6 +68,7 @@
+ 
+     @Override
+     public boolean stillValid(Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return this.brewingStand.stillValid(player);
+     }
+ 
+@@ -198,4 +209,17 @@
+             return BrewingStandMenu.EMPTY_SLOT_FUEL;
+         }
+     }
++
++    // CraftBukkit start
++    @Override
++    public CraftBrewingStandView getBukkitView() {
++        if (this.bukkitEntity != null) {
++            return this.bukkitEntity;
++        }
++
++        CraftInventoryBrewer inventory = new CraftInventoryBrewer(this.brewingStand);
++        this.bukkitEntity = new CraftBrewingStandView(this.player.player.getBukkitEntity(), inventory, this);
++        return this.bukkitEntity;
++    }
++    // CraftBukkit end
+ }

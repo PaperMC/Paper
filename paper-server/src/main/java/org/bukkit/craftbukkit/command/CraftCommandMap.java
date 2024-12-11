@@ -12,6 +12,6 @@ public class CraftCommandMap extends SimpleCommandMap {
     }
 
     public Map<String, Command> getKnownCommands() {
-        return knownCommands;
+        return this.knownCommands;
     }
 }

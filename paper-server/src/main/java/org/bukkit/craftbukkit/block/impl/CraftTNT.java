@@ -9,21 +9,21 @@ public final class CraftTNT extends org.bukkit.craftbukkit.block.data.CraftBlock
         super();
     }
 
-    public CraftTNT(net.minecraft.world.level.block.state.IBlockData state) {
+    public CraftTNT(net.minecraft.world.level.block.state.BlockState state) {
         super(state);
     }
 
     // org.bukkit.craftbukkit.block.data.type.CraftTNT
 
-    private static final net.minecraft.world.level.block.state.properties.BlockStateBoolean UNSTABLE = getBoolean(net.minecraft.world.level.block.BlockTNT.class, "unstable");
+    private static final net.minecraft.world.level.block.state.properties.BooleanProperty UNSTABLE = getBoolean(net.minecraft.world.level.block.TntBlock.class, "unstable");
 
     @Override
     public boolean isUnstable() {
-        return get(UNSTABLE);
+        return this.get(CraftTNT.UNSTABLE);
     }
 
     @Override
     public void setUnstable(boolean unstable) {
-        set(UNSTABLE, unstable);
+        this.set(CraftTNT.UNSTABLE, unstable);
     }
 }

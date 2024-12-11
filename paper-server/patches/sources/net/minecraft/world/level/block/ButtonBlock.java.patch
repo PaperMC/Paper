@@ -1,0 +1,71 @@
+--- a/net/minecraft/world/level/block/ButtonBlock.java
++++ b/net/minecraft/world/level/block/ButtonBlock.java
+@@ -34,6 +34,10 @@
+ import net.minecraft.world.phys.BlockHitResult;
+ import net.minecraft.world.phys.shapes.CollisionContext;
+ import net.minecraft.world.phys.shapes.VoxelShape;
++// CraftBukkit start
++import org.bukkit.event.block.BlockRedstoneEvent;
++import org.bukkit.event.entity.EntityInteractEvent;
++// CraftBukkit end
+ 
+ public class ButtonBlock extends FaceAttachedHorizontalDirectionalBlock {
+ 
+@@ -126,6 +130,19 @@
+         if ((Boolean) state.getValue(ButtonBlock.POWERED)) {
+             return InteractionResult.CONSUME;
+         } else {
++            // CraftBukkit start
++            boolean powered = ((Boolean) state.getValue(ButtonBlock.POWERED));
++            org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            int old = (powered) ? 15 : 0;
++            int current = (!powered) ? 15 : 0;
++
++            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, old, current);
++            world.getCraftServer().getPluginManager().callEvent(eventRedstone);
++
++            if ((eventRedstone.getNewCurrent() > 0) != (!powered)) {
++                return InteractionResult.SUCCESS;
++            }
++            // CraftBukkit end
+             this.press(state, world, pos, player);
+             return InteractionResult.SUCCESS;
+         }
+@@ -197,11 +214,36 @@
+     }
+ 
+     protected void checkPressed(BlockState state, Level world, BlockPos pos) {
+-        AbstractArrow entityarrow = this.type.canButtonBeActivatedByArrows() ? (AbstractArrow) world.getEntitiesOfClass(AbstractArrow.class, state.getShape(world, pos).bounds().move(pos)).stream().findFirst().orElse((Object) null) : null;
++        AbstractArrow entityarrow = this.type.canButtonBeActivatedByArrows() ? (AbstractArrow) world.getEntitiesOfClass(AbstractArrow.class, state.getShape(world, pos).bounds().move(pos)).stream().findFirst().orElse(null) : null; // CraftBukkit - decompile error
+         boolean flag = entityarrow != null;
+         boolean flag1 = (Boolean) state.getValue(ButtonBlock.POWERED);
+ 
++        // CraftBukkit start - Call interact event when arrows turn on wooden buttons
++        if (flag1 != flag && flag) {
++            org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            EntityInteractEvent event = new EntityInteractEvent(entityarrow.getBukkitEntity(), block);
++            world.getCraftServer().getPluginManager().callEvent(event);
++
++            if (event.isCancelled()) {
++                return;
++            }
++        }
++        // CraftBukkit end
++
+         if (flag != flag1) {
++            // CraftBukkit start
++            boolean powered = flag1;
++            org.bukkit.block.Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            int old = (powered) ? 15 : 0;
++            int current = (!powered) ? 15 : 0;
++
++            BlockRedstoneEvent eventRedstone = new BlockRedstoneEvent(block, old, current);
++            world.getCraftServer().getPluginManager().callEvent(eventRedstone);
++
++            if ((flag && eventRedstone.getNewCurrent() <= 0) || (!flag && eventRedstone.getNewCurrent() > 0)) {
++                return;
++            }
++            // CraftBukkit end
+             world.setBlock(pos, (BlockState) state.setValue(ButtonBlock.POWERED, flag), 3);
+             this.updateNeighbours(state, world, pos);
+             this.playSound((Player) null, world, pos, flag);
