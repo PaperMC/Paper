@@ -1,0 +1,231 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 24 Nov 2024 02:38:50 -0800
+Subject: [PATCH] RegistryValue API
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistries.java b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+index 3ebc3dbc86f3f448f0c555366b55a77876ef5d6f..2242288e2c9c1382828eeec5d772cba6986c1338 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperRegistries.java
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistries.java
+@@ -7,13 +7,16 @@ import io.papermc.paper.datacomponent.PaperDataComponentType;
+ import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
+ import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
+ import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
++import io.papermc.paper.registry.entry.CraftRegistryEntry;
+ import io.papermc.paper.registry.entry.RegistryEntry;
+ import io.papermc.paper.registry.tag.TagKey;
++import io.papermc.paper.util.Holderable;
+ import java.util.Collections;
+ import java.util.IdentityHashMap;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Objects;
++import net.minecraft.core.Holder;
+ import net.minecraft.core.Registry;
+ import net.minecraft.core.registries.Registries;
+ import net.minecraft.resources.ResourceKey;
+@@ -164,6 +167,30 @@ public final class PaperRegistries {
+         return net.minecraft.tags.TagKey.create((ResourceKey<? extends Registry<M>>) registryToNms(tagKey.registryKey()), PaperAdventure.asVanilla(tagKey.key()));
+     }
+ 
++    @SuppressWarnings("unchecked")
++    public static <A, M> Holder<M> toNms(final RegistryValue<A> registryValue) {
++        if (registryValue instanceof ReferenceRegistryValue<A, ?>) {
++            return ((ReferenceRegistryValue<A, M>) registryValue).holder();
++        } else {
++            final A apiValue = ((RegistryValue.Direct<A>) registryValue).value();
++            // only Holderable is supported inside RegistryValue.Direct
++            return ((Holderable<M>) apiValue).getHolder();
++        }
++    }
++
++    public static <A extends Keyed, M> RegistryValue<A> fromNms(final RegistryKey<A> registryKey, final Holder<M> holder) { // TODO remove Keyed
++        if (holder instanceof final Holder.Reference<M> reference) {
++            return new ReferenceRegistryValue<>(reference);
++        } else {
++            final RegistryEntry<M, A> entry = getEntry(registryKey);
++            if (!(entry instanceof final CraftRegistryEntry<M, A> craftRegistryEntry)) {
++                throw new UnsupportedOperationException("Cannot create a direct value for " + registryKey);
++            }
++            return new DirectRegistryValue<>(craftRegistryEntry.minecraftToBukkit.convertDirectHolder(holder));
++        }
++
++    }
++
+     private PaperRegistries() {
+     }
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistryUtilProvider.java b/src/main/java/io/papermc/paper/registry/PaperRegistryUtilProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3ee9e5bf92baa643252bdf3ea6a52d058e7e2acc
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistryUtilProvider.java
+@@ -0,0 +1,19 @@
++package io.papermc.paper.registry;
++
++import net.minecraft.core.Holder;
++import org.bukkit.craftbukkit.util.Handleable;
++import org.jspecify.annotations.NullMarked;
++
++@NullMarked
++public class PaperRegistryUtilProvider implements RegistryUtilProvider {
++
++    @Override
++    public <V> boolean isValidForDirectHolder(final V value) {
++        if (!(value instanceof final Handleable<?> handleable)) {
++            return false;
++        }
++        final Holder<?> holder = handleable.getHandleHolder();
++        if (holder == null) return false;
++        return holder.kind() == Holder.Kind.DIRECT;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/ReferenceRegistryValue.java b/src/main/java/io/papermc/paper/registry/ReferenceRegistryValue.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..8784004e5698866ca8ef78ba9b856797fbd00682
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/ReferenceRegistryValue.java
+@@ -0,0 +1,13 @@
++package io.papermc.paper.registry;
++
++import net.minecraft.core.Holder;
++import org.jspecify.annotations.NullMarked;
++
++@NullMarked
++public record ReferenceRegistryValue<A, M>(Holder.Reference<M> holder) implements RegistryValue.Reference<A> {
++
++    @Override
++    public TypedKey<A> key() {
++        return PaperRegistries.fromNms(this.holder.key());
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
+index d8b28e823adb98061dd126a79df2fdf75c3f374d..dc1ea23f2fd6e77f483863ad49cc5a6cb78fa402 100644
+--- a/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
++++ b/src/main/java/io/papermc/paper/registry/entry/CraftRegistryEntry.java
+@@ -19,7 +19,7 @@ public class CraftRegistryEntry<M, B extends Keyed> extends BaseRegistryEntry<M,
+     private static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> EMPTY = (namespacedKey, apiVersion) -> namespacedKey;
+ 
+     protected final Class<?> classToPreload;
+-    protected final RegistryTypeMapper<M, B> minecraftToBukkit;
++    public final RegistryTypeMapper<M, B> minecraftToBukkit; // TODO not public, add a method to some interface
+     protected BiFunction<NamespacedKey, ApiVersion, NamespacedKey> updater = EMPTY;
+ 
+     protected CraftRegistryEntry(
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryCreationLookupEventHolder.java b/src/main/java/io/papermc/paper/registry/event/RegistryCreationLookupEventHolder.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..7cd783431adf7e6e3c1eda7e3fb5d99b23c2d9aa
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryCreationLookupEventHolder.java
+@@ -0,0 +1,35 @@
++package io.papermc.paper.registry.event;
++
++import io.papermc.paper.registry.PaperRegistries;
++import io.papermc.paper.registry.ReferenceRegistryValue;
++import io.papermc.paper.registry.RegistryCreationLookup;
++import io.papermc.paper.registry.RegistryValue;
++import io.papermc.paper.registry.TypedKey;
++import io.papermc.paper.registry.data.util.Conversions;
++import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
++import io.papermc.paper.registry.tag.Tag;
++import io.papermc.paper.registry.tag.TagKey;
++import net.minecraft.core.HolderGetter;
++import net.minecraft.core.HolderSet;
++import net.minecraft.resources.RegistryOps;
++import org.bukkit.Keyed;
++import org.jspecify.annotations.NullMarked;
++
++@NullMarked
++public interface RegistryCreationLookupEventHolder extends RegistryCreationLookup {
++
++    Conversions conversions();
++
++    @Override
++    default <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
++        final RegistryOps.RegistryInfo<Object> registryInfo = this.conversions().lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
++        final HolderSet.Named<?> tagSet = registryInfo.getter().getOrThrow(PaperRegistries.toNms(tagKey));
++        return new NamedRegistryKeySetImpl<>(tagKey, tagSet);
++    }
++
++    @Override
++    default <V> RegistryValue.Reference<V> getOrCreateValue(final TypedKey<V> typedKey) {
++        final HolderGetter<?> holderGetter = this.conversions().lookup().lookup(PaperRegistries.registryToNms(typedKey.registryKey())).orElseThrow().getter();
++        return new ReferenceRegistryValue<>(holderGetter.getOrThrow(PaperRegistries.toNms(typedKey)));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEventImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEventImpl.java
+index 332829c65ef45966dffcf5f1c59422a801179759..cfd63e721e15a982f449f42ff06954982255aa49 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEventImpl.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEventImpl.java
+@@ -1,29 +1,15 @@
+ package io.papermc.paper.registry.event;
+ 
+ import io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEvent;
+-import io.papermc.paper.registry.PaperRegistries;
+ import io.papermc.paper.registry.RegistryBuilder;
+ import io.papermc.paper.registry.RegistryKey;
+ import io.papermc.paper.registry.TypedKey;
+ import io.papermc.paper.registry.data.util.Conversions;
+-import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
+-import io.papermc.paper.registry.tag.Tag;
+-import io.papermc.paper.registry.tag.TagKey;
+-import net.minecraft.core.HolderSet;
+-import net.minecraft.resources.RegistryOps;
+-import org.bukkit.Keyed;
+ 
+ public record RegistryEntryAddEventImpl<T, B extends RegistryBuilder<T>>(
+     TypedKey<T> key,
+     B builder,
+     RegistryKey<T> registryKey,
+     Conversions conversions
+-) implements RegistryEntryAddEvent<T, B>, PaperLifecycleEvent {
+-
+-    @Override
+-    public <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
+-        final RegistryOps.RegistryInfo<Object> registryInfo = this.conversions.lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
+-        final HolderSet.Named<?> tagSet = registryInfo.getter().getOrThrow(PaperRegistries.toNms(tagKey));
+-        return new NamedRegistryKeySetImpl<>(tagKey, tagSet);
+-    }
++) implements RegistryEntryAddEvent<T, B>, PaperLifecycleEvent, RegistryCreationLookupEventHolder {
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java
+index 1b45802f9afc97fd59c6dc77964dedea1016cd6c..94d0dd305b055910f90fa88438a9089fc7715a7e 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEventImpl.java
+@@ -1,27 +1,13 @@
+ package io.papermc.paper.registry.event;
+ 
+ import io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEvent;
+-import io.papermc.paper.registry.PaperRegistries;
+ import io.papermc.paper.registry.RegistryBuilder;
+ import io.papermc.paper.registry.RegistryKey;
+ import io.papermc.paper.registry.data.util.Conversions;
+-import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
+-import io.papermc.paper.registry.tag.Tag;
+-import io.papermc.paper.registry.tag.TagKey;
+-import net.minecraft.core.HolderSet;
+-import net.minecraft.resources.RegistryOps;
+-import org.bukkit.Keyed;
+ 
+ public record RegistryFreezeEventImpl<T, B extends RegistryBuilder<T>>(
+     RegistryKey<T> registryKey,
+     WritableRegistry<T, B> registry,
+     Conversions conversions
+-) implements RegistryFreezeEvent<T, B>, PaperLifecycleEvent {
+-
+-    @Override
+-    public <V extends Keyed> Tag<V> getOrCreateTag(final TagKey<V> tagKey) {
+-        final RegistryOps.RegistryInfo<Object> registryInfo = this.conversions.lookup().lookup(PaperRegistries.registryToNms(tagKey.registryKey())).orElseThrow();
+-        final HolderSet.Named<?> tagSet = registryInfo.getter().getOrThrow(PaperRegistries.toNms(tagKey));
+-        return new NamedRegistryKeySetImpl<>(tagKey, tagSet);
+-    }
++) implements RegistryFreezeEvent<T, B>, PaperLifecycleEvent, RegistryCreationLookupEventHolder {
+ }
+diff --git a/src/main/resources/META-INF/services/io.papermc.paper.registry.RegistryUtilProvider b/src/main/resources/META-INF/services/io.papermc.paper.registry.RegistryUtilProvider
+new file mode 100644
+index 0000000000000000000000000000000000000000..a7170f37c03830b8f1432575c127fe2d943b8cf3
+--- /dev/null
++++ b/src/main/resources/META-INF/services/io.papermc.paper.registry.RegistryUtilProvider
+@@ -0,0 +1 @@
++io.papermc.paper.registry.PaperRegistryUtilProvider
