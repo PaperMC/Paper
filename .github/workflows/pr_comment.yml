@@ -1,0 +1,84 @@
+# This workflow run on the completion of the
+# build workflow but only does anything if the
+# triggering workflow uploaded an artifact.
+#
+# Do note that it is then the trigger workflow that
+# determines if this will update the PR text body. All
+# this workflow does is check if an uploaded artifact
+# exists and there is a PR tied to the previous workflow.
+
+name: Comment on pull request
+on:
+  workflow_run:
+    workflows: ['Build Paper']
+    types: [completed]
+jobs:
+  pr_comment:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          BRANCH_NAME: "${{ github.event.workflow_run.head_branch }}"
+          PR_OWNER: "${{ github.event.workflow_run.head_repository.owner.login }}"
+          PR_SHA: "${{ github.event.workflow_run.head_sha }}"
+          RUN_ID: "${{ github.event.workflow_run.id }}"
+          REPO_ID: "${{ github.event.repository.id }}"
+          EVENT_TYPE: "${{ github.event.workflow_run.event}}"
+          PULL_REQUESTS: "${{ toJSON(github.event.workflow_run.pull_requests) }}"
+        with:
+          # This snippet is public-domain, taken from
+          # https://github.com/oprypin/nightly.link/blob/master/.github/workflows/pr-comment.yml
+          # Modified extensively by Machine_Maker
+          script: |
+            async function updatePR(owner, repo, issue_number, purpose, body) {
+              const { data } = await github.rest.issues.get({ owner, repo, issue_number });
+              core.debug(JSON.stringify(data, null, 2));
+
+              const marker = `<!-- bot: ${purpose} -->`;
+
+              let new_body = data.body ? data.body.trim().split(marker)[0].trim() : "";
+              new_body += `\n${marker}\n---\n${body}`;
+
+              core.info(`Updating the text body of PR #${issue_number} in ${owner}/${repo}`);
+              await github.rest.issues.update({ owner, repo, issue_number, body: new_body });
+            }
+
+            const { owner, repo } = context.repo;
+            const run_id = `${process.env.RUN_ID}`;
+            const repo_id = `${process.env.REPO_ID}`;
+
+            let pulls = [];
+            const event_type = `${process.env.EVENT_TYPE}`;
+            if (event_type === "push") { // if push, it's from the same repo which means `pull_requests` is populated
+              pulls = JSON.parse(`${process.env.PULL_REQUESTS}`);
+            } else {
+              const pr_branch = `${process.env.BRANCH_NAME}`;
+              const pr_sha = `${process.env.PR_SHA}`;
+              const pr_owner = `${process.env.PR_OWNER}`;
+              const { data } = await github.rest.pulls.list({ owner, repo, head: `${pr_owner}:${pr_branch}`, state: "open" });
+              core.debug(JSON.stringify(data, null, 2));
+              pulls = data.filter((pr) => pr.head.sha === pr_sha && pr.labels.find((l) => l.name === "build-pr-jar"));
+            }
+
+            if (!pulls.length) {
+              return core.notice("This workflow doesn't have any pull requests!");
+            } else if (pulls.length > 1) {
+              core.info(JSON.stringify(pulls, null, 2));
+              return core.error("Found multiple matching PRs");
+            }
+            const pull_request = pulls[0];
+
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, { owner, repo, run_id });
+            if (!artifacts.length) {
+              return core.info("Skipping comment due to no artifact found");
+            }
+            const artifact = artifacts.find((art) => art.name === `paper-${pull_request.number}`);
+            if (!artifact) {
+              return core.info("Skipping comment to no matching artifact found");
+            }
+
+            const link = `https://nightly.link/${owner}/${repo}/actions/artifacts/${artifact.id}.zip`;
+            const body = `Download the paperclip jar for this pull request: [${artifact.name}.zip](${link})`;
+            core.info(`Adding a link to ${link}`);
+            await updatePR(owner, repo, pull_request.number, "paperclip-pr-build", body);

@@ -1,0 +1,27 @@
+name: Close invalid PRs
+
+on:
+  pull_request_target:
+    types: [ opened ]
+
+jobs:
+  run:
+    if: |
+      github.repository != github.event.pull_request.head.repo.full_name &&
+      (
+        github.head_ref == 'master' ||
+        github.event.pull_request.head.repo.owner.type != 'User'
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - uses: superbrothers/close-pull-request@v3
+        id: "master_branch"
+        if: github.head_ref == 'master'
+        with:
+          comment: "Please do not open pull requests from the `master` branch, create a new branch instead."
+
+      - uses: superbrothers/close-pull-request@v3
+        id: "org_account"
+        if: github.event.pull_request.head.repo.owner.type != 'User' && steps.master_branch.outcome == 'skipped'
+        with:
+          comment: "Please do not open pull requests from non-user accounts like organizations. Create a fork on a user account instead."

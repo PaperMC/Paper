@@ -1,0 +1,116 @@
+# Here lie dragons!
+#
+# This action either builds the server or
+# builds a paperclip jar to be updated in the body
+# of the PR relating to this action.
+
+name: Build Paper
+on:
+  push:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+
+jobs:
+  build:
+    # Run on all label events (won't be duplicated) or all push events or on PR syncs not from the same repo
+    if: (github.event_name == 'pull_request' && github.event.action == 'labeled') || github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [21]
+      fail-fast: true
+    steps:
+      - if: ${{ github.event_name == 'push' }}
+        uses: actions/checkout@v4
+      - if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'zulu'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Configure Build
+        uses: actions/github-script@v7
+        id: determine
+        env:
+          REF_NAME: "${{ github.ref_name }}"
+          REF_TYPE: "${{ github.ref_type }}"
+          EVENT: "${{ toJSON(github.event) }}"
+          EVENT_TYPE: "${{ github.event_name }}"
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const event_name = `${process.env.EVENT_TYPE}`;
+            const event = JSON.parse(`${process.env.EVENT}`);
+            const ref_type = `${process.env.REF_TYPE}`;
+            const ref_name = `${process.env.REF_NAME}`;
+            const result = {
+              action: "build"
+            };
+
+            if (event_name === "push" && ref_type === "branch") {
+              const {data: pulls} = await github.rest.pulls.list({ owner, repo, head: `${owner}:${ref_name}`, state: "open" });
+              const pull = pulls.find((pr) => !!pr.labels.find((l) => l.name === "build-pr-jar"));
+              if (pull) {
+                result["pr"] = pull.number;
+                result["action"] = "paperclip";
+                core.notice(`This is a push action but to a branch with an open PR with the build paperclip label (${JSON.stringify(result)})`);
+                return result;
+              }
+            } else if (event_name === "pull_request" && event.pull_request.labels.find((l) => l.name === "build-pr-jar")) {
+              result["pr"] = event.pull_request.number;
+              result["action"] = "paperclip";
+              core.notice(`This is a pull request action with a build paperclip label (${JSON.stringify(result)})`);
+              return result;
+            }
+            core.notice("This will not build a paperclip jar");
+            return result;
+
+      - name: Apply Patches
+        run: |
+          git config --global user.email "no-reply@github.com"
+          git config --global user.name "GitHub Actions"
+          ./gradlew applyPatches --stacktrace
+
+      - name: Build
+        run: ./gradlew build --stacktrace
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Test Results (${{ matrix.java }})
+          path: |
+            **/build/test-results/test/TEST-*.xml
+
+      - name: Create Paperclip Jar
+        if: fromJSON(steps.determine.outputs.result).action == 'paperclip'
+        run: ./gradlew createMojmapPaperclipJar --stacktrace
+
+      - name: Upload Paperclip Jar
+        if: fromJSON(steps.determine.outputs.result).action == 'paperclip'
+        uses: actions/upload-artifact@v4
+        with:
+          name: paper-${{ fromJSON(steps.determine.outputs.result).pr }}
+          path: build/libs/paper-paperclip-*-mojmap.jar
+  event_file:
+    name: "Event File"
+    # Only run on PRs if the source branch is on someone else's repo
+    if: ${{ github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: Event File
+          path: ${{ github.event_path }}

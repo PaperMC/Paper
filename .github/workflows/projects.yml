@@ -1,0 +1,76 @@
+name: Update Projects
+
+on:
+  issues:
+    types:
+      - labeled
+      - unlabeled
+      - closed
+      - reopened
+
+jobs:
+  bugs:
+    if: "github.event_name == 'issues' && contains(github.event.*.labels.*.name, 'type: bug')"
+    concurrency:
+      group: update-bugs-project-${{ github.event.issue.number }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: "authenticate"
+        id: "authenticate"
+        uses: "tibdex/github-app-token@b62528385c34dbc9f38e5f4225ac829252d1ea92" # v1
+        with:
+          app_id: "${{ secrets.PROJECTS_APP_ID }}"
+          installation_id: "36153445"
+          private_key: "${{ secrets.PROJECTS_PRIVATE_KEY }}"
+
+      - uses: PaperMC/update-projects-action@v0.2.0
+        name: Update open issue
+        if: github.event.issue.state == 'open'
+        with:
+          github-token: "${{ steps.authenticate.outputs.token }}"
+          project-url: https://github.com/orgs/PaperMC/projects/5/views/2
+          column-field: Status
+          label-to-column-map: |
+            {
+              "resolution: awaiting response": "⌛ Awaiting Response",
+              "resolution: cannot reproduce": "Invalid",
+              "resolution: duplicate": "Invalid",
+              "resolution: incomplete": "Invalid",
+              "resolution: invalid": "Invalid",
+              "resolution: superseded": "Invalid",
+              "resolution: unsupported": "Invalid",
+              "resolution: won't fix": "Invalid",
+              "resolution: works as intended": "Invalid",
+              "status: accepted": "✅ Accepted",
+              "status: blocked": "Needs Work",
+              "status: defer upstream": "Needs Work",
+              "status: in progress": "Needs Work",
+              "status: input wanted": "Needs Work",
+              "status: needs triage": "🕑 Needs Triage",
+              "status: rebase required": "Needs Work",
+              "status: unlikely": "✅ Accepted"
+            }
+
+      - uses: PaperMC/update-projects-action@v0.2.0
+        name: Update closed issue
+        if: github.event.issue.state == 'closed'
+        with:
+          github-token: "${{ steps.authenticate.outputs.token }}"
+          project-url: https://github.com/orgs/PaperMC/projects/5/views/2
+          column-field: Status
+          clear-on-no-match: false
+          # include "status: needs triage" below to catch any closed issues without setting a resolution
+          label-to-column-map: |
+            {
+              "resolution: cannot reproduce": "Invalid",
+              "resolution: duplicate": "Invalid",
+              "resolution: incomplete": "Invalid",
+              "resolution: invalid": "Invalid",
+              "resolution: superseded": "Invalid",
+              "resolution: unsupported": "Invalid",
+              "resolution: won't fix": "Invalid",
+              "resolution: works as intended": "Invalid",
+              "status: accepted": "Done",
+              "status: needs triage": "Invalid"
+            }

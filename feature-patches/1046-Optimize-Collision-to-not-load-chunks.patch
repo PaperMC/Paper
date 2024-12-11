@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Thu, 2 Apr 2020 02:37:57 -0400
+Subject: [PATCH] Optimize Collision to not load chunks
+
+The collision code takes an AABB and generates a cuboid of checks rather
+than a cylinder, so at high velocity this can generate a lot of chunk checks.
+
+Treat an unloaded chunk as a collision for entities, and also for players if
+the "prevent moving into unloaded chunks" setting is enabled.
+
+If that serting is not enabled, collisions will be ignored for players, since
+movement will load only the chunk the player enters anyways and avoids loading
+massive amounts of surrounding chunks due to large AABB lookups.
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -0,0 +0,0 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     // Paper end - Share random for entities to make them more random
+     public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
+ 
++    public boolean collisionLoadChunks = false; // Paper
+     private CraftEntity bukkitEntity;
+ 
+     public CraftEntity getBukkitEntity() {
+diff --git a/src/main/java/net/minecraft/world/level/BlockCollisions.java b/src/main/java/net/minecraft/world/level/BlockCollisions.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/BlockCollisions.java
++++ b/src/main/java/net/minecraft/world/level/BlockCollisions.java
+@@ -0,0 +0,0 @@ public class BlockCollisions<T> extends AbstractIterator<T> {
+     @Override
+     protected T computeNext() {
+         while (this.cursor.advance()) {
+-            int i = this.cursor.nextX();
+-            int j = this.cursor.nextY();
+-            int k = this.cursor.nextZ();
++            int i = this.cursor.nextX(); final int x = i; // Paper - OBFHELPER
++            int j = this.cursor.nextY(); final int y = j; // Paper - OBFHELPER
++            int k = this.cursor.nextZ(); final int z = k; // Paper - OBFHELPER
+             int l = this.cursor.getNextType();
+             if (l != 3) {
+-                BlockGetter blockGetter = this.getChunk(i, k);
+-                if (blockGetter != null) {
+-                    this.pos.set(i, j, k);
+-                    BlockState blockState = blockGetter.getBlockState(this.pos);
+-                    if ((!this.onlySuffocatingBlocks || blockState.isSuffocating(blockGetter, this.pos))
++                // Paper start - ensure we don't load chunks
++                // BlockGetter blockGetter = this.getChunk(i, k);
++                if (true) {
++                    final @Nullable Entity source = this.context instanceof net.minecraft.world.phys.shapes.EntityCollisionContext entityContext ? entityContext.getEntity() : null;
++                    boolean far = source != null && io.papermc.paper.util.MCUtil.distanceSq(source.getX(), y, source.getZ(), x, y, z) > 14;
++                    this.pos.set(x, y, z);
++                    BlockState blockState;
++                    if (this.collisionGetter instanceof net.minecraft.server.level.WorldGenRegion) {
++                        BlockGetter blockGetter = this.getChunk(x, z);
++                        if (blockGetter == null) {
++                            continue;
++                        }
++                        blockState = blockGetter.getBlockState(this.pos);
++                    } else if ((!far && source instanceof net.minecraft.server.level.ServerPlayer) || (source != null && source.collisionLoadChunks)) {
++                        blockState = this.collisionGetter.getBlockState(this.pos);
++                    } else {
++                        blockState = this.collisionGetter.getBlockStateIfLoaded(this.pos);
++                    }
++                    if (blockState == null) {
++                        if (!(source instanceof net.minecraft.server.level.ServerPlayer) || source.level().paperConfig().chunks.preventMovingIntoUnloadedChunks) {
++                            return this.resultProvider.apply(new BlockPos.MutableBlockPos(x, y, z), Shapes.create(far ? source.getBoundingBox() : new AABB(new BlockPos(x, y, z))));
++                        }
++                        continue;
++                    }
++                    if (true // onlySuffocatingBlocks is only true on the client, so we don't care about it here
++                    // Paper end - ensure we don't load chunks
+                         && (l != 1 || blockState.hasLargeCollisionShape())
+                         && (l != 2 || blockState.is(Blocks.MOVING_PISTON))) {
+                         VoxelShape voxelShape = this.context.getCollisionShape(blockState, this.collisionGetter, this.pos);
+diff --git a/src/main/java/net/minecraft/world/level/CollisionGetter.java b/src/main/java/net/minecraft/world/level/CollisionGetter.java
+index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
+--- a/src/main/java/net/minecraft/world/level/CollisionGetter.java
++++ b/src/main/java/net/minecraft/world/level/CollisionGetter.java
+@@ -0,0 +0,0 @@ public interface CollisionGetter extends BlockGetter {
+     }
+ 
+     default boolean noCollision(@Nullable Entity entity, AABB box, boolean checkFluid) {
+-        for (VoxelShape voxelShape : checkFluid ? this.getBlockAndLiquidCollisions(entity, box) : this.getBlockCollisions(entity, box)) {
++        try { if (entity != null) entity.collisionLoadChunks = true; // Paper
++            for (VoxelShape voxelShape : checkFluid ? this.getBlockAndLiquidCollisions(entity, box) : this.getBlockCollisions(entity, box)) {
+             if (!voxelShape.isEmpty()) {
+                 return false;
+             }
+         }
++        } finally { if (entity != null) entity.collisionLoadChunks = false; } // Paper
+ 
+         if (!this.getEntityCollisions(entity, box).isEmpty()) {
+             return false;
