@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: 96DarkCode96 <96darkcode96@gmail.com>
+Date: Tue, 10 Dec 2024 15:45:47 +0100
+Subject: [PATCH] Fix Player.setPlayerListOrder to send update to clients
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index d5dc10cf9440f2394e6548c6a3e0160df13c9cae..e9df37ff66700278bc94ea1e42135b92d97d03f7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -606,6 +606,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         Preconditions.checkArgument(order >= 0, "order cannot be negative");
+ 
+         this.getHandle().listOrder = order;
++        // Paper start - Send update packet
++        if (getHandle().connection == null) return; // Updates are possible before the player has fully joined
++        for (ServerPlayer player : server.getHandle().players) {
++            if (player.getBukkitEntity().canSee(this)) {
++                player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LIST_ORDER, getHandle()));
++            }
++        }
++        // Paper end - Send update packet
+     }
+ 
+     private net.kyori.adventure.text.Component playerListHeader; // Paper - Adventure
