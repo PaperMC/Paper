@@ -1,0 +1,93 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Thu, 8 Dec 2022 18:52:05 +0100
+Subject: [PATCH] Don't teleport player rider
+
+In the PlayerMoveEvent, the rider Y from the to location is wrong,
+but since mojang hasn't exposed a good way
+to get the rider offset at a given instant t,
+then there's no way to do it without emulating
+the positionRider which isn't long term viable (cc camel)
+and doesn't solve the stats issue.
+In this patch i have at least mitigated the rider Y offset but
+that will not always works for some action/entity like the horse jump
+etc...
+This patch also prevent the teleportation that upstream
+do to sync the rider with its vehicle, thus the
+movement statistics of the player will not increase
+without any real move.
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 316740b2ba4c85828f544249c8cdd6fa1b525d3f..b467e0a777f6315a28a19d5a332700a534ee2b6c 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -696,7 +696,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                 Location curPos = this.getCraftPlayer().getLocation(); // Spigot
+ 
+                 entity.absMoveTo(d3, d4, d5, f, f1);
+-                this.player.absMoveTo(d3, d4, d5, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
++                // this.player.absMoveTo(d3, d4, d5, this.player.getYRot(), this.player.getXRot()); // CraftBukkit // Paper don't teleport
+ 
+                 // Paper start - optimise out extra getCubes
+                 boolean teleportBack = flag2; // violating this is always a fail
+@@ -709,7 +709,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                 }
+                 if (teleportBack) { // Paper end - optimise out extra getCubes
+                     entity.absMoveTo(d0, d1, d2, f, f1);
+-                    this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
++                    // this.player.absMoveTo(d0, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit // Paper don't teleport
+                     this.connection.send(new ClientboundMoveVehiclePacket(entity));
+                     return;
+                 }
+@@ -717,7 +717,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                 // CraftBukkit start - fire PlayerMoveEvent
+                 Player player = this.getCraftPlayer();
+                 // Spigot Start
+-                if ( !this.hasMoved )
++                if ( false && !this.hasMoved ) // Paper unneeded and will works only the first time
+                 {
+                     this.lastPosX = curPos.getX();
+                     this.lastPosY = curPos.getY();
+@@ -732,7 +732,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+                 // If the packet contains movement information then we update the To location with the correct XYZ.
+                 to.setX(packet.getX());
+-                to.setY(packet.getY());
++                to.setY(packet.getY() + entity.getPassengersRidingOffset() + this.player.getMyRidingOffset()); // Paper - mitigate the rider Y offset
+                 to.setZ(packet.getZ());
+ 
+ 
+@@ -754,6 +754,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                     // Skip the first time we do this
+                     if (true) { // Spigot - don't skip any move events
+                         Location oldTo = to.clone();
++                        Location currentPos = player.getLocation(); // Paper
+                         PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
+                         this.cserver.getPluginManager().callEvent(event);
+ 
+@@ -773,7 +774,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+                         // Check to see if the Players Location has some how changed during the call of the event.
+                         // This can happen due to a plugin teleporting the player instead of using .setTo()
+-                        if (!from.equals(this.getCraftPlayer().getLocation()) && this.justTeleported) {
++                        if (!currentPos.equals(this.getCraftPlayer().getLocation()) && this.justTeleported) { // Paper - fix this being called one time on the first ride even if the event does nothing
+                             this.justTeleported = false;
+                             return;
+                         }
+@@ -1603,6 +1604,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                                     // Skip the first time we do this
+                                     if (from.getX() != Double.MAX_VALUE) {
+                                         Location oldTo = to.clone();
++                                        Location currentPos = player.getLocation(); // Paper
+                                         PlayerMoveEvent event = new PlayerMoveEvent(player, from, to);
+                                         this.cserver.getPluginManager().callEvent(event);
+ 
+@@ -1622,7 +1624,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+ 
+                                         // Check to see if the Players Location has some how changed during the call of the event.
+                                         // This can happen due to a plugin teleporting the player instead of using .setTo()
+-                                        if (!from.equals(this.getCraftPlayer().getLocation()) && this.justTeleported) {
++                                        if (!currentPos.equals(this.getCraftPlayer().getLocation()) && this.justTeleported) { // Paper - fix this being triggered for almost any teleportation (outside the event)
+                                             this.justTeleported = false;
+                                             return;
+                                         }
