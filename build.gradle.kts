@@ -71,18 +71,21 @@ subprojects {
 }
 
 tasks.register("printMinecraftVersion") {
+    val mcVersion = providers.gradleProperty("mcVersion")
     doLast {
-        println(providers.gradleProperty("mcVersion").get().trim())
+        println(mcVersion.get().trim())
     }
 }
 
 tasks.register("printPaperVersion") {
+    val paperVersion = provider { project.version }
     doLast {
-        println(project.version)
+        println(paperVersion.get())
     }
 }
 
 tasks.register("gibWork") {
+    notCompatibleWithConfigurationCache("This task is interactive")
     @OptIn(ExperimentalPathApi::class)
     doLast {
         val issue = providers.gradleProperty("updateTaskListIssue").get()
@@ -109,6 +112,7 @@ tasks.register("gibWork") {
 }
 
 tasks.register("showWork") {
+    notCompatibleWithConfigurationCache("This task is interactive")
     doLast {
         val parent = layout.projectDirectory.dir("paper-server/patches/unapplied/").convertToPath()
         Files.walkFileTree(parent, object : SimpleFileVisitor<Path>() {
@@ -123,11 +127,16 @@ tasks.register("showWork") {
 }
 
 tasks.register("checkWork") {
+    notCompatibleWithConfigurationCache("This task is interactive")
+    fun expandUserHome(path: String): Path {
+        return Path.of(path.replaceFirst("^~".toRegex(), System.getProperty("user.home")))
+    }
+
     doLast {
         val input = project.findProperty("input") as String?
             ?: error("Input property is required. Use gradlew checkWork -Pinput=net/minecraft/server/MinecraftServer.java")
         val file = layout.projectDirectory.file("paper-server/src/vanilla/java/").convertToPath().resolve(input)
-        val target = Path.of(providers.gradleProperty("cleanPaperRepo").get()).resolve(input)
+        val target = expandUserHome(providers.gradleProperty("cleanPaperRepo").get()).resolve(input)
         file.copyTo(target, overwrite = true)
         println("Copied $file to $target")
         println("Make it compile, then press enter to copy it back!")
