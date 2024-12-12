@@ -85,10 +85,12 @@ tasks.register("printPaperVersion") {
 }
 
 tasks.register("gibWork") {
-    notCompatibleWithConfigurationCache("This task is interactive")
+    val issue = providers.gradleProperty("updateTaskListIssue").get()
+    val patchesFolder = layout.projectDirectory.dir("paper-server/patches/").convertToPath()
+    val storage = layout.cache.resolve("last-updating-folder").also { it.parent.createDirectories() }
+
     @OptIn(ExperimentalPathApi::class)
     doLast {
-        val issue = providers.gradleProperty("updateTaskListIssue").get()
         val html = URI(issue).toURL().readText()
 
         val beginMarker = "```[tasklist]"
@@ -99,26 +101,30 @@ tasks.register("gibWork") {
         val next = taskList.split("\\n").first { it.startsWith("- [ ]") }.replace("- [ ] ", "")
 
         println("checking out $next...")
-        val dir = layout.projectDirectory.dir("paper-server/patches/unapplied/").convertToPath().resolve(next)
+        val dir = patchesFolder.resolve("unapplied").resolve(next)
+        if (!dir.exists()) {
+            error("Unapplied patch folder $next does not exist, did someone else already check it out and forgot to mark it?")
+        }
         dir.copyToRecursively(
-            layout.projectDirectory.dir("paper-server/patches/sources").convertToPath().resolve(next)
+            patchesFolder.resolve("sources").resolve(next)
                 .also { it.createDirectories() }, overwrite = true, followLinks = false
         )
         dir.deleteRecursively()
 
+        storage.writeText(next)
         println("please tick the box in the issue: $issue")
         println("if you don't finish it, uncheck the task again after you commited")
     }
 }
 
 tasks.register("showWork") {
-    notCompatibleWithConfigurationCache("This task is interactive")
+    val patchDir = layout.projectDirectory.dir("paper-server/patches/unapplied/").convertToPath()
+
     doLast {
-        val parent = layout.projectDirectory.dir("paper-server/patches/unapplied/").convertToPath()
-        Files.walkFileTree(parent, object : SimpleFileVisitor<Path>() {
+        Files.walkFileTree(patchDir, object : SimpleFileVisitor<Path>() {
             override fun postVisitDirectory(dir: Path?, exc: IOException?): FileVisitResult {
                 dir?.takeIf { it.listDirectoryEntries("*.patch").isNotEmpty() }?.let {
-                    println("- [ ] ${parent.relativize(it).pathString.replace("\\", "/")}")
+                    println("- [ ] ${patchDir.relativize(it).pathString.replace("\\", "/")}")
                 }
                 return FileVisitResult.CONTINUE
             }
@@ -127,21 +133,38 @@ tasks.register("showWork") {
 }
 
 tasks.register("checkWork") {
-    notCompatibleWithConfigurationCache("This task is interactive")
     fun expandUserHome(path: String): Path {
         return Path.of(path.replaceFirst("^~".toRegex(), System.getProperty("user.home")))
     }
 
+    val input = layout.cache.resolve("last-updating-folder").readText()
+    val patchFolder = layout.projectDirectory.file("paper-server/patches/sources").convertToPath().resolve(input)
+    val sourceFolder = layout.projectDirectory.file("paper-server/src/vanilla/java/").convertToPath().resolve(input)
+    val targetFolder = expandUserHome(
+        providers.gradleProperty("cleanPaperRepo").orNull
+            ?: error("cleanPaperRepo is required, define it in gradle.properties")
+    ).resolve(input)
+
+    fun copy(back: Boolean = false) {
+        patchFolder.listDirectoryEntries().forEach {
+            val relative = patchFolder.relativize(it).toString().replace(".patch", "")
+            val source = sourceFolder.resolve(relative)
+            val target = targetFolder.resolve(relative)
+            if (back) {
+                target.copyTo(source, overwrite = true)
+            } else {
+                source.copyTo(target, overwrite = true)
+            }
+        }
+    }
+
     doLast {
-        val input = project.findProperty("input") as String?
-            ?: error("Input property is required. Use gradlew checkWork -Pinput=net/minecraft/server/MinecraftServer.java")
-        val file = layout.projectDirectory.file("paper-server/src/vanilla/java/").convertToPath().resolve(input)
-        val target = expandUserHome(providers.gradleProperty("cleanPaperRepo").get()).resolve(input)
-        file.copyTo(target, overwrite = true)
-        println("Copied $file to $target")
-        println("Make it compile, then press enter to copy it back!")
+        copy()
+        val files = patchFolder.listDirectoryEntries().map { it.fileName.toString().replace(".patch", "") }
+        println("Copied $files from $sourceFolder to $targetFolder")
+        println("Make the files compile, then press enter to copy them back!")
         System.`in`.read()
-        target.copyTo(file, overwrite = true)
+        copy(back = true)
         println("copied back!")
     }
 }
