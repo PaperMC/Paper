@@ -1,0 +1,174 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 13 Jun 2023 23:42:05 -0700
+Subject: [PATCH] OperatorInteractEvents - WIP
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+index 106a312aba249d1e83e4b535fc6e741e04ccfd14..7b691cf2715ef5a094a8a61148b41dfc70e842bb 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayerGameMode.java
+@@ -409,7 +409,11 @@ public class ServerPlayerGameMode {
+             BlockEntity tileentity = this.level.getBlockEntity(pos);
+             Block block = iblockdata.getBlock();
+ 
+-            if (block instanceof GameMasterBlock && !this.player.canUseGameMasterBlocks() && !(block instanceof net.minecraft.world.level.block.CommandBlock && (this.player.isCreative() && this.player.getBukkitEntity().hasPermission("minecraft.commandblock")))) { // Paper - command block permission
++            // Paper start - operator interact event
++            final it.unimi.dsi.fastutil.Pair<Boolean, net.minecraft.network.chat.@org.jetbrains.annotations.Nullable Component> pair;
++            if (block instanceof GameMasterBlock && !(pair = CraftEventFactory.callOpBlockInteractEvent(this.player, this.level, pos, io.papermc.paper.event.player.OperatorInteractEvent.Action.DESTROY, () -> this.player.canUseGameMasterBlocks() || (block instanceof net.minecraft.world.level.block.CommandBlock && this.player.isCreative() && this.player.getBukkitEntity().hasPermission("minecraft.commandblock")), null)).left()) { // Paper - command block permission
++                if (pair.right() != null) this.player.sendSystemMessage(pair.right());
++                // Paper end - operator interact event
+                 this.level.sendBlockUpdated(pos, iblockdata, iblockdata, 3);
+                 return false;
+             } else if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 65bb221993147a558995b36fb835f7b82e0eb4bd..542807f5e352b3ce6b51c355fa2bd7c59486f80a 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -848,9 +848,22 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+         if (!this.server.isCommandBlockEnabled()) {
+             this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
+-        } else if (!this.player.canUseGameMasterBlocks() && (!this.player.isCreative() || !this.player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
+-            this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
+         } else {
++            // Paper start - operator interact event
++            final it.unimi.dsi.fastutil.Pair<Boolean, net.minecraft.network.chat.@org.jetbrains.annotations.Nullable Component> pair =
++                CraftEventFactory.callOpBlockInteractEvent(
++                    this.player,
++                    this.player.serverLevel(),
++                    packet.getPos(),
++                    io.papermc.paper.event.player.OperatorInteractEvent.Action.CHANGE,
++                    () -> this.player.canUseGameMasterBlocks() || (this.player.isCreative() && this.player.getBukkitEntity().hasPermission("minecraft.commandblock")),
++                    Component.translatable("advMode.notAllowed")
++                );
++            if (!pair.left()) {
++                if (pair.right() != null) this.player.sendSystemMessage(pair.right());
++                return;
++            }
++            // Paper end - operator interact event
+             BaseCommandBlock commandblocklistenerabstract = null;
+             CommandBlockEntity tileentitycommand = null;
+             BlockPos blockposition = packet.getPos();
+@@ -915,12 +928,26 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+         if (!this.server.isCommandBlockEnabled()) {
+             this.player.sendSystemMessage(Component.translatable("advMode.notEnabled"));
+-        } else if (!this.player.canUseGameMasterBlocks() && (!this.player.isCreative() || !this.player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission
+-            this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
++        // } else if (!this.player.canUseGameMasterBlocks() && (!this.player.isCreative() || !this.player.getBukkitEntity().hasPermission("minecraft.commandblock"))) { // Paper - command block permission // Paper - move check below
++        //     this.player.sendSystemMessage(Component.translatable("advMode.notAllowed"));
+         } else {
+             BaseCommandBlock commandblocklistenerabstract = packet.getCommandBlock(this.player.level());
+ 
+             if (commandblocklistenerabstract != null) {
++                // Paper start - operator interact events
++                final it.unimi.dsi.fastutil.Pair<Boolean, net.minecraft.network.chat.@org.jetbrains.annotations.Nullable Component> pair =
++                    CraftEventFactory.callOpEntityInteractEvent(
++                        this.player,
++                        ((net.minecraft.world.entity.vehicle.MinecartCommandBlock.MinecartCommandBase) commandblocklistenerabstract).getMinecart(),
++                        io.papermc.paper.event.player.OperatorInteractEvent.Action.CHANGE,
++                        () -> this.player.canUseGameMasterBlocks() || (this.player.isCreative() && this.player.getBukkitEntity().hasPermission("minecraft.commandblock")),
++                        Component.translatable("advMode.notAllowed")
++                    );
++                if (!pair.left()) {
++                    if (pair.right() != null) this.player.sendSystemMessage(pair.right());
++                    return;
++                }
++                // Paper end - operator interact events
+                 commandblocklistenerabstract.setCommand(packet.getCommand());
+                 commandblocklistenerabstract.setTrackOutput(packet.isTrackOutput());
+                 if (!packet.isTrackOutput()) {
+@@ -996,7 +1023,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     @Override
+     public void handleSetStructureBlock(ServerboundSetStructureBlockPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+-        if (this.player.canUseGameMasterBlocks()) {
++        // Paper start - operator interact event
++        final it.unimi.dsi.fastutil.Pair<Boolean, net.minecraft.network.chat.@org.jetbrains.annotations.Nullable Component> pair =
++            CraftEventFactory.callOpBlockInteractEvent(
++                this.player,
++                this.player.serverLevel(),
++                packet.getPos(),
++                io.papermc.paper.event.player.OperatorInteractEvent.Action.CHANGE,
++                this.player::canUseGameMasterBlocks,
++                null
++            );
++        if (!pair.left()) {
++            if (pair.right() != null) this.player.sendSystemMessage(pair.right());
++        } else {
++        // Paper end - operator interact event
+             BlockPos blockposition = packet.getPos();
+             BlockState iblockdata = this.player.level().getBlockState(blockposition);
+             BlockEntity tileentity = this.player.level().getBlockEntity(blockposition);
+@@ -1054,7 +1094,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     @Override
+     public void handleSetJigsawBlock(ServerboundSetJigsawBlockPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+-        if (this.player.canUseGameMasterBlocks()) {
++        // Paper start - operator interact event
++        final it.unimi.dsi.fastutil.Pair<Boolean, net.minecraft.network.chat.@org.jetbrains.annotations.Nullable Component> pair =
++            CraftEventFactory.callOpBlockInteractEvent(
++                this.player,
++                this.player.serverLevel(),
++                packet.getPos(),
++                io.papermc.paper.event.player.OperatorInteractEvent.Action.CHANGE,
++                this.player::canUseGameMasterBlocks,
++                null
++            );
++        if (!pair.left()) {
++            if (pair.right() != null) this.player.sendSystemMessage(pair.right());
++        } else {
++            // Paper end - operator interact event
+             BlockPos blockposition = packet.getPos();
+             BlockState iblockdata = this.player.level().getBlockState(blockposition);
+             BlockEntity tileentity = this.player.level().getBlockEntity(blockposition);
+@@ -1077,7 +1130,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     @Override
+     public void handleJigsawGenerate(ServerboundJigsawGeneratePacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+-        if (this.player.canUseGameMasterBlocks()) {
++        // Paper start - operator interact event
++        final it.unimi.dsi.fastutil.Pair<Boolean, net.minecraft.network.chat.@org.jetbrains.annotations.Nullable Component> pair =
++            CraftEventFactory.callOpBlockInteractEvent(
++                this.player,
++                this.player.serverLevel(),
++                packet.getPos(),
++                io.papermc.paper.event.player.OperatorInteractEvent.Action.CHANGE,
++                this.player::canUseGameMasterBlocks,
++                null
++            );
++        if (!pair.left()) {
++            if (pair.right() != null) this.player.sendSystemMessage(pair.right());
++        } else {
++            // Paper end - operator interact event
+             BlockPos blockposition = packet.getPos();
+             BlockEntity tileentity = this.player.level().getBlockEntity(blockposition);
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 5dc160b743534665c6b3efb10b10f7c36e2da5ab..6e4328dca4703832739441f4ee349c21904be30a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -2166,4 +2166,22 @@ public class CraftEventFactory {
+         return event;
+     }
+     // Paper end - add EntityFertilizeEggEvent
++
++    // Paper start
++    public static it.unimi.dsi.fastutil.Pair<Boolean, net.minecraft.network.chat.@org.jetbrains.annotations.Nullable Component> callOpBlockInteractEvent(final ServerPlayer serverPlayer, final Level world, final BlockPos blockPos, final io.papermc.paper.event.player.OperatorInteractEvent.Action action, final java.util.function.BooleanSupplier defaultCheck, @Nullable final net.minecraft.network.chat.Component denialMessage) {
++        final CraftBlock block = CraftBlock.at(world, blockPos);
++        final io.papermc.paper.event.player.OperatorInteractEvent event = new io.papermc.paper.event.player.OperatorBlockInteractEvent(serverPlayer.getBukkitEntity(), action, block, denialMessage == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(denialMessage));
++        return callOperatorInteractEvent(event, defaultCheck);
++    }
++
++    public static it.unimi.dsi.fastutil.Pair<Boolean, net.minecraft.network.chat.@org.jetbrains.annotations.Nullable Component> callOpEntityInteractEvent(final ServerPlayer serverPlayer, final Entity entity, final io.papermc.paper.event.player.OperatorInteractEvent.Action action, final java.util.function.BooleanSupplier defaultCheck, @Nullable final net.minecraft.network.chat.Component denialMessage) {
++        final io.papermc.paper.event.player.OperatorInteractEvent event = new io.papermc.paper.event.player.OperatorEntityInteractEvent(serverPlayer.getBukkitEntity(), action, entity.getBukkitEntity(), denialMessage == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(denialMessage));
++        return callOperatorInteractEvent(event, defaultCheck);
++    }
++
++    private static it.unimi.dsi.fastutil.Pair<Boolean, net.minecraft.network.chat.@org.jetbrains.annotations.Nullable Component> callOperatorInteractEvent(final io.papermc.paper.event.player.OperatorInteractEvent event, final java.util.function.BooleanSupplier defaultCheck) {
++        final boolean result = event.callEvent() && (event.getResult() == org.bukkit.event.Event.Result.ALLOW || defaultCheck.getAsBoolean());
++        return it.unimi.dsi.fastutil.Pair.of(result, io.papermc.paper.adventure.PaperAdventure.asVanilla(event.denialMessage()));
++    }
++    // Paper end
+ }
