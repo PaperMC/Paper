@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 18 Dec 2022 13:40:05 -0800
+Subject: [PATCH] More DragonBattle API
+
+== AT ==
+public net.minecraft.world.level.dimension.end.EndDragonFight GATEWAY_COUNT
+public net.minecraft.world.level.dimension.end.EndDragonFight gateways
+public net.minecraft.world.level.dimension.end.EndDragonFight respawnCrystals
+public net.minecraft.world.level.dimension.end.EndDragonFight spawnNewGateway(Lnet/minecraft/core/BlockPos;)V
+
+diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+index 390542c42fe957e8e2d21c879c1c8908c8970b44..b2a57cb75916d2724f18779c922005ef9bcc0b0e 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
++++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+@@ -439,6 +439,24 @@ public class EndDragonFight {
+         this.gateways.clear();
+     }
+ 
++    // Paper start
++    public boolean spawnNewGatewayIfPossible() {
++        if (!this.gateways.isEmpty()) {
++            this.spawnNewGateway();
++            return true;
++        }
++        return false;
++    }
++
++    public List<EndCrystal> getSpikeCrystals() {
++        final List<EndCrystal> endCrystals = new java.util.ArrayList<>();
++        for (final SpikeFeature.EndSpike spike : SpikeFeature.getSpikesForLevel(this.level)) {
++            endCrystals.addAll(this.level.getEntitiesOfClass(EndCrystal.class, spike.getTopBoundingBox()));
++        }
++        return endCrystals;
++    }
++    // Paper end
++
+     private void spawnNewGateway() {
+         if (!this.gateways.isEmpty()) {
+             int i = (Integer) this.gateways.remove(this.gateways.size() - 1);
+diff --git a/src/main/java/org/bukkit/craftbukkit/boss/CraftDragonBattle.java b/src/main/java/org/bukkit/craftbukkit/boss/CraftDragonBattle.java
+index 58f1562373bab8d082172e4a5db22493fb913ca8..716327137c3528a74871d2aad4849812d7113d22 100644
+--- a/src/main/java/org/bukkit/craftbukkit/boss/CraftDragonBattle.java
++++ b/src/main/java/org/bukkit/craftbukkit/boss/CraftDragonBattle.java
+@@ -132,4 +132,46 @@ public class CraftDragonBattle implements DragonBattle {
+     private DragonRespawnAnimation toNMSRespawnPhase(RespawnPhase phase) {
+         return (phase != RespawnPhase.NONE) ? DragonRespawnAnimation.values()[phase.ordinal()] : null;
+     }
++    // Paper start
++    @Override
++    public int getGatewayCount() {
++        return EndDragonFight.GATEWAY_COUNT - this.handle.gateways.size();
++    }
++
++    @Override
++    public boolean spawnNewGateway() {
++        return this.handle.spawnNewGatewayIfPossible();
++    }
++
++    @Override
++    public void spawnNewGateway(final io.papermc.paper.math.Position position) {
++        this.handle.spawnNewGateway(io.papermc.paper.util.MCUtil.toBlockPos(position));
++    }
++
++    @Override
++    public java.util.List<org.bukkit.entity.EnderCrystal> getRespawnCrystals() {
++        if (this.handle.respawnCrystals == null) {
++            return java.util.Collections.emptyList();
++        }
++
++        final java.util.List<org.bukkit.entity.EnderCrystal> enderCrystals = new java.util.ArrayList<>();
++        for (final net.minecraft.world.entity.boss.enderdragon.EndCrystal endCrystal : this.handle.respawnCrystals) {
++            if (!endCrystal.isRemoved() && endCrystal.isAlive() && endCrystal.valid) {
++                enderCrystals.add(((org.bukkit.entity.EnderCrystal) endCrystal.getBukkitEntity()));
++            }
++        }
++        return java.util.Collections.unmodifiableList(enderCrystals);
++    }
++
++    @Override
++    public java.util.List<org.bukkit.entity.EnderCrystal> getHealingCrystals() {
++        final java.util.List<org.bukkit.entity.EnderCrystal> enderCrystals = new java.util.ArrayList<>();
++        for (final net.minecraft.world.entity.boss.enderdragon.EndCrystal endCrystal : this.handle.getSpikeCrystals()) {
++            if (!endCrystal.isRemoved() && endCrystal.isAlive() && endCrystal.valid) {
++                enderCrystals.add(((org.bukkit.entity.EnderCrystal) endCrystal.getBukkitEntity()));
++            }
++        }
++        return java.util.Collections.unmodifiableList(enderCrystals);
++    }
++    // Paper end
+ }
