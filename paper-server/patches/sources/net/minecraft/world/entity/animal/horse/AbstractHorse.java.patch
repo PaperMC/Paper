@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/horse/AbstractHorse.java
 +++ b/net/minecraft/world/entity/animal/horse/AbstractHorse.java
-@@ -79,6 +79,17 @@
+@@ -77,6 +_,17 @@
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.ticks.ContainerSingleItem;
  
@@ -16,13 +16,12 @@
 +// CraftBukkit end
 +
  public abstract class AbstractHorse extends Animal implements ContainerListener, HasCustomInventoryScreen, OwnableEntity, PlayerRideableJumping, Saddleable {
- 
      public static final int EQUIPMENT_SLOT_OFFSET = 400;
-@@ -166,8 +177,54 @@
-         @Override
+     public static final int CHEST_SLOT_OFFSET = 499;
+@@ -145,7 +_,53 @@
          public boolean stillValid(Player player) {
-             return player.getVehicle() == AbstractHorse.this || player.canInteractWithEntity((Entity) AbstractHorse.this, 4.0D);
-+        }
+             return player.getVehicle() == AbstractHorse.this || player.canInteractWithEntity(AbstractHorse.this, 4.0);
+         }
 +
 +        // CraftBukkit start - add fields and methods
 +        public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
@@ -66,14 +65,14 @@
 +        @Override
 +        public Location getLocation() {
 +            return AbstractHorse.this.getBukkitEntity().getLocation();
-         }
++        }
 +        // CraftBukkit end
      };
 +    public int maxDomestication = 100; // CraftBukkit - store max domestication value
  
-     protected AbstractHorse(EntityType<? extends AbstractHorse> type, Level world) {
-         super(type, world);
-@@ -312,7 +369,7 @@
+     protected AbstractHorse(EntityType<? extends AbstractHorse> entityType, Level level) {
+         super(entityType, level);
+@@ -284,7 +_,7 @@
      }
  
      @Override
@@ -82,16 +81,16 @@
          return !this.isVehicle();
      }
  
-@@ -366,7 +423,7 @@
-     public void createInventory() {
-         SimpleContainer inventorysubcontainer = this.inventory;
+@@ -340,7 +_,7 @@
  
+     protected void createInventory() {
+         SimpleContainer simpleContainer = this.inventory;
 -        this.inventory = new SimpleContainer(this.getInventorySize());
 +        this.inventory = new SimpleContainer(this.getInventorySize(), (org.bukkit.entity.AbstractHorse) this.getBukkitEntity()); // CraftBukkit
-         if (inventorysubcontainer != null) {
-             inventorysubcontainer.removeListener(this);
-             int i = Math.min(inventorysubcontainer.getContainerSize(), this.inventory.getContainerSize());
-@@ -470,7 +527,7 @@
+         if (simpleContainer != null) {
+             simpleContainer.removeListener(this);
+             int min = Math.min(simpleContainer.getContainerSize(), this.inventory.getContainerSize());
+@@ -448,7 +_,7 @@
      }
  
      public int getMaxTemper() {
@@ -100,21 +99,21 @@
      }
  
      @Override
-@@ -528,7 +585,7 @@
-             b0 = 5;
+@@ -503,7 +_,7 @@
+             i1 = 5;
              if (!this.level().isClientSide && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
                  flag = true;
 -                this.setInLove(player);
-+                this.setInLove(player, item.copy()); // Paper - Fix EntityBreedEvent copying
++                this.setInLove(player, stack.copy()); // Paper - Fix EntityBreedEvent copying
              }
-         } else if (item.is(Items.GOLDEN_APPLE) || item.is(Items.ENCHANTED_GOLDEN_APPLE)) {
+         } else if (stack.is(Items.GOLDEN_APPLE) || stack.is(Items.ENCHANTED_GOLDEN_APPLE)) {
              f = 10.0F;
-@@ -536,12 +593,12 @@
-             b0 = 10;
+@@ -511,12 +_,12 @@
+             i1 = 10;
              if (!this.level().isClientSide && this.isTamed() && this.getAge() == 0 && !this.isInLove()) {
                  flag = true;
 -                this.setInLove(player);
-+                this.setInLove(player, item.copy()); // Paper - Fix EntityBreedEvent copying
++                this.setInLove(player, stack.copy()); // Paper - Fix EntityBreedEvent copying
              }
          }
  
@@ -124,34 +123,33 @@
              flag = true;
          }
  
-@@ -618,7 +675,7 @@
-         if (world instanceof ServerLevel worldserver) {
-             if (this.isAlive()) {
-                 if (this.random.nextInt(900) == 0 && this.deathTime == 0) {
--                    this.heal(1.0F);
-+                    this.heal(1.0F, EntityRegainHealthEvent.RegainReason.REGEN); // CraftBukkit
-                 }
- 
-                 if (this.canEatGrass()) {
-@@ -720,7 +777,16 @@
+@@ -587,7 +_,7 @@
+         super.aiStep();
+         if (this.level() instanceof ServerLevel serverLevel && this.isAlive()) {
+             if (this.random.nextInt(900) == 0 && this.deathTime == 0) {
+-                this.heal(1.0F);
++                this.heal(1.0F, EntityRegainHealthEvent.RegainReason.REGEN); // CraftBukkit
              }
-         }
  
-+    }
-+
+             if (this.canEatGrass()) {
+@@ -690,6 +_,15 @@
+         }
+     }
+ 
 +    // Paper start - Horse API
 +    public void setMouthOpen(boolean open) {
 +        this.setFlag(FLAG_OPEN_MOUTH, open);
 +    }
 +    public boolean isMouthOpen() {
 +        return this.getFlag(FLAG_OPEN_MOUTH);
-     }
++    }
 +    // Paper end - Horse API
- 
++
      @Override
      public InteractionResult mobInteract(Player player, InteractionHand hand) {
-@@ -764,6 +830,11 @@
-         this.setFlag(16, eatingGrass);
+         if (this.isVehicle() || this.isBaby()) {
+@@ -727,6 +_,11 @@
+         this.setFlag(16, eating);
      }
  
 +    // Paper start - Horse API
@@ -159,40 +157,39 @@
 +        this.setFlag(FLAG_STANDING, standing);
 +    }
 +    // Paper end - Horse API
-     public void setStanding(boolean angry) {
-         if (angry) {
+     public void setStanding(boolean standing) {
+         if (standing) {
              this.setEating(false);
-@@ -883,6 +954,7 @@
+@@ -838,6 +_,7 @@
          if (this.getOwnerUUID() != null) {
-             nbt.putUUID("Owner", this.getOwnerUUID());
+             compound.putUUID("Owner", this.getOwnerUUID());
          }
-+        nbt.putInt("Bukkit.MaxDomestication", this.maxDomestication); // CraftBukkit
++        compound.putInt("Bukkit.MaxDomestication", this.maxDomestication); // CraftBukkit
  
          if (!this.inventory.getItem(0).isEmpty()) {
-             nbt.put("SaddleItem", this.inventory.getItem(0).save(this.registryAccess()));
-@@ -909,7 +981,12 @@
- 
+             compound.put("SaddleItem", this.inventory.getItem(0).save(this.registryAccess()));
+@@ -862,6 +_,11 @@
          if (uuid != null) {
              this.setOwnerUUID(uuid);
-+        }
-+        // CraftBukkit start
-+        if (nbt.contains("Bukkit.MaxDomestication")) {
-+            this.maxDomestication = nbt.getInt("Bukkit.MaxDomestication");
          }
++        // CraftBukkit start
++        if (compound.contains("Bukkit.MaxDomestication")) {
++            this.maxDomestication = compound.getInt("Bukkit.MaxDomestication");
++        }
 +        // CraftBukkit end
  
-         if (nbt.contains("SaddleItem", 10)) {
-             ItemStack itemstack = (ItemStack) ItemStack.parse(this.registryAccess(), nbt.getCompound("SaddleItem")).orElse(ItemStack.EMPTY);
-@@ -1012,6 +1089,17 @@
+         if (compound.contains("SaddleItem", 10)) {
+             ItemStack itemStack = ItemStack.parse(this.registryAccess(), compound.getCompound("SaddleItem")).orElse(ItemStack.EMPTY);
+@@ -959,6 +_,17 @@
  
      @Override
-     public void handleStartJump(int height) {
+     public void handleStartJump(int jumpPower) {
 +        // CraftBukkit start
 +        float power;
-+        if (height >= 90) {
++        if (jumpPower >= 90) {
 +            power = 1.0F;
 +        } else {
-+            power = 0.4F + 0.4F * (float) height / 90.0F;
++            power = 0.4F + 0.4F * (float) jumpPower / 90.0F;
 +        }
 +        if (!CraftEventFactory.callHorseJumpEvent(this, power)) {
 +            return;

@@ -18,17 +18,17 @@
          }
      }
 @@ -122,12 +_,14 @@
-     public void addAdditionalSaveData(CompoundTag tag) {
-         super.addAdditionalSaveData(tag);
-         tag.putInt("Age", this.age);
-+        tag.putBoolean("AgeLocked", this.ageLocked); // Paper
+     public void addAdditionalSaveData(CompoundTag compound) {
+         super.addAdditionalSaveData(compound);
+         compound.putInt("Age", this.age);
++        compound.putBoolean("AgeLocked", this.ageLocked); // Paper
      }
  
      @Override
-     public void readAdditionalSaveData(CompoundTag tag) {
-         super.readAdditionalSaveData(tag);
-         this.setAge(tag.getInt("Age"));
-+        this.ageLocked = tag.getBoolean("AgeLocked"); // Paper
+     public void readAdditionalSaveData(CompoundTag compound) {
+         super.readAdditionalSaveData(compound);
+         this.setAge(compound.getInt("Age"));
++        this.ageLocked = compound.getBoolean("AgeLocked"); // Paper
      }
  
      @Nullable
@@ -67,18 +67,18 @@
      private void ageUp() {
          if (this.level() instanceof ServerLevel serverLevel) {
 -            this.convertTo(EntityType.FROG, ConversionParams.single(this, false, false), mob -> {
-+            Frog converted = this.convertTo(EntityType.FROG, ConversionParams.single(this, false, false), mob -> { // Paper
++            Frog converted = this.convertTo(EntityType.FROG, ConversionParams.single(this, false, false), mob -> { // CraftBukkit
                  mob.finalizeSpawn(serverLevel, this.level().getCurrentDifficultyAt(mob.blockPosition()), EntitySpawnReason.CONVERSION, null);
                  mob.setPersistenceRequired();
                  mob.fudgePositionAfterSizeChange(this.getDimensions(this.getPose()));
                  this.playSound(SoundEvents.TADPOLE_GROW_UP, 0.15F, 1.0F);
 -            });
-+            // Paper start
++            // CraftBukkit start
 +            }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.METAMORPHOSIS, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.METAMORPHOSIS);
 +            if (converted == null) {
 +                this.setAge(0); // Sets the age to 0 for avoid a loop if the event is canceled
 +            }
-+            // Paper end
++            // CraftBukkit end
          }
      }
  
