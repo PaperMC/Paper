@@ -1,64 +1,64 @@
 --- a/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 +++ b/net/minecraft/world/entity/ai/navigation/PathNavigation.java
-@@ -125,8 +125,14 @@
+@@ -125,7 +_,13 @@
  
      @Nullable
-     public Path createPath(BlockPos target, int distance) {
--        return this.createPath(ImmutableSet.of(target), 8, false, distance);
+     public Path createPath(BlockPos pos, int accuracy) {
+-        return this.createPath(ImmutableSet.of(pos), 8, false, accuracy);
 +        // Paper start - EntityPathfindEvent
-+        return this.createPath(target, null, distance);
-     }
-+    @Nullable
-+    public Path createPath(BlockPos target, @Nullable Entity entity, int distance) {
-+        return this.createPath(ImmutableSet.of(target), entity, 8, false, distance);
-+        // Paper end - EntityPathfindEvent
++        return this.createPath(pos, null, accuracy);
 +    }
- 
-     @Nullable
-     public Path createPath(BlockPos target, int minDistance, int maxDistance) {
-@@ -135,7 +141,7 @@
- 
-     @Nullable
-     public Path createPath(Entity entity, int distance) {
--        return this.createPath(ImmutableSet.of(entity.blockPosition()), 16, true, distance);
-+        return this.createPath(ImmutableSet.of(entity.blockPosition()), entity, 16, true, distance); // Paper - EntityPathfindEvent
++    @Nullable
++    public Path createPath(BlockPos target, @Nullable Entity entity, int accuracy) {
++        return this.createPath(ImmutableSet.of(target), entity, 8, false, accuracy);
++        // Paper end - EntityPathfindEvent
      }
  
      @Nullable
-@@ -145,6 +151,17 @@
+@@ -135,7 +_,7 @@
  
      @Nullable
-     protected Path createPath(Set<BlockPos> positions, int range, boolean useHeadPos, int distance, float followRange) {
+     public Path createPath(Entity entity, int accuracy) {
+-        return this.createPath(ImmutableSet.of(entity.blockPosition()), 16, true, accuracy);
++        return this.createPath(ImmutableSet.of(entity.blockPosition()), entity, 16, true, accuracy); // Paper - EntityPathfindEvent
+     }
+ 
+     @Nullable
+@@ -145,6 +_,18 @@
+ 
+     @Nullable
+     protected Path createPath(Set<BlockPos> targets, int regionOffset, boolean offsetUpward, int accuracy, float followRange) {
 +        // Paper start - EntityPathfindEvent
-+        return this.createPath(positions, null, range, useHeadPos, distance, followRange);
++        return this.createPath(targets, null, regionOffset, offsetUpward, accuracy, followRange);
 +    }
 +
 +    @Nullable
-+    protected Path createPath(Set<BlockPos> positions, @Nullable Entity target, int range, boolean useHeadPos, int distance) {
-+        return this.createPath(positions, target, range, useHeadPos, distance, (float) this.mob.getAttributeValue(Attributes.FOLLOW_RANGE));
++    protected Path createPath(Set<BlockPos> targets, @Nullable Entity target, int regionOffset, boolean offsetUpward, int accuracy) {
++        return this.createPath(targets, target, regionOffset, offsetUpward, accuracy, (float) this.mob.getAttributeValue(Attributes.FOLLOW_RANGE));
 +    }
 +
-+    @Nullable protected Path createPath(Set<BlockPos> positions, @Nullable Entity target, int range, boolean useHeadPos, int distance, float followRange) {
++    @Nullable
++    protected Path createPath(Set<BlockPos> targets, @Nullable Entity target, int regionOffset, boolean offsetUpward, int accuracy, float followRange) {
 +        // Paper end - EntityPathfindEvent
-         if (positions.isEmpty()) {
+         if (targets.isEmpty()) {
              return null;
-         } else if (this.mob.getY() < (double)this.level.getMinY()) {
-@@ -154,6 +171,23 @@
-         } else if (this.path != null && !this.path.isDone() && positions.contains(this.targetPos)) {
+         } else if (this.mob.getY() < this.level.getMinY()) {
+@@ -154,6 +_,23 @@
+         } else if (this.path != null && !this.path.isDone() && targets.contains(this.targetPos)) {
              return this.path;
          } else {
 +            // Paper start - EntityPathfindEvent
 +            boolean copiedSet = false;
-+            for (BlockPos possibleTarget : positions) {
++            for (BlockPos possibleTarget : targets) {
 +                if (!this.mob.getCommandSenderWorld().getWorldBorder().isWithinBounds(possibleTarget) || !new com.destroystokyo.paper.event.entity.EntityPathfindEvent(this.mob.getBukkitEntity(), // Paper - don't path out of world border
 +                    io.papermc.paper.util.MCUtil.toLocation(this.mob.level(), possibleTarget), target == null ? null : target.getBukkitEntity()).callEvent()) {
 +                    if (!copiedSet) {
 +                        copiedSet = true;
-+                        positions = new java.util.HashSet<>(positions);
++                        targets = new java.util.HashSet<>(targets);
 +                    }
 +                    // note: since we copy the set this remove call is safe, since we're iterating over the old copy
-+                    positions.remove(possibleTarget);
-+                    if (positions.isEmpty()) {
++                    targets.remove(possibleTarget);
++                    if (targets.isEmpty()) {
 +                        return null;
 +                    }
 +                }
@@ -66,9 +66,9 @@
 +            // Paper end - EntityPathfindEvent
              ProfilerFiller profilerFiller = Profiler.get();
              profilerFiller.push("pathfind");
-             BlockPos blockPos = useHeadPos ? this.mob.blockPosition().above() : this.mob.blockPosition();
-@@ -175,13 +209,33 @@
-         return this.moveTo(this.createPath(x, y, z, 1), speed);
+             BlockPos blockPos = offsetUpward ? this.mob.blockPosition().above() : this.mob.blockPosition();
+@@ -171,6 +_,11 @@
+         }
      }
  
 +    // Paper start - Perf: Optimise pathfinding
@@ -76,8 +76,10 @@
 +    private int pathfindFailures = 0;
 +    // Paper end - Perf: Optimise pathfinding
 +
-     public boolean moveTo(double x, double y, double z, int distance, double speed) {
-         return this.moveTo(this.createPath(x, y, z, distance), speed);
+     public boolean moveTo(double x, double y, double z, double speed) {
+         return this.moveTo(this.createPath(x, y, z, 1), speed);
+     }
+@@ -180,8 +_,23 @@
      }
  
      public boolean moveTo(Entity entity, double speed) {
@@ -101,4 +103,4 @@
 +        // Paper end - Perf: Optimise pathfinding
      }
  
-     public boolean moveTo(@Nullable Path path, double speed) {
+     public boolean moveTo(@Nullable Path pathentity, double speed) {
