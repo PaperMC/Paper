@@ -162,7 +162,7 @@ import org.yaml.snakeyaml.representer.Representer;
  *depend: [NewFire, FlameWire]
  *api-version: 1.13
  *libraries:
-    - com.squareup.okhttp3:okhttp:4.9.0
+ *   - com.squareup.okhttp3:okhttp:4.9.0
  *
  *commands:
  *  flagrate:
