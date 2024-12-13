@@ -90,7 +90,6 @@ tasks.register("gibWork") {
     val patchesFolder = layout.projectDirectory.dir("paper-server/patches/").convertToPath()
     val storage = layout.cache.resolve("last-updating-folder").also { it.parent.createDirectories() }
 
-    @OptIn(ExperimentalPathApi::class)
     doLast {
         val html = URI(issue).toURL().readText()
 
@@ -112,11 +111,13 @@ tasks.register("gibWork") {
         if (!dir.exists()) {
             error("Unapplied patch folder $next does not exist, did someone else already check it out and forgot to mark it?")
         }
-        dir.copyToRecursively(
-            patchesFolder.resolve("sources").resolve(next)
-                .also { it.createDirectories() }, overwrite = true, followLinks = false
-        )
-        dir.deleteRecursively()
+        dir.listDirectoryEntries("*.patch").forEach { patch ->
+            patch.copyTo(patchesFolder.resolve("sources").resolve(next).resolve(patch.fileName).also { it.createDirectories() }, overwrite = true)
+            patch.deleteIfExists()
+        }
+        if (dir.listDirectoryEntries().isEmpty()) {
+            dir.deleteIfExists()
+        }
 
         storage.writeText(next)
         println("please tick the box in the issue: $issue")
