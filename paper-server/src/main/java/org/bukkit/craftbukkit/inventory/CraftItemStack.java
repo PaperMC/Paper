@@ -467,6 +467,13 @@ public final class CraftItemStack extends ItemStack {
         return true;
     }
 
+    // Paper start - add ItemStack#effectiveName
+    @Override
+    public net.kyori.adventure.text.Component effectiveName() {
+        return this.handle == null ? net.kyori.adventure.text.Component.empty() : io.papermc.paper.adventure.PaperAdventure.asAdventure(this.handle.getStyledHoverName());
+    }
+    // Paper end - add ItemStack#effectiveName
+
     @Override
     public boolean isSimilar(ItemStack stack) {
         if (stack == null) {

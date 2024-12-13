@@ -711,6 +711,17 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
+     * Gets the effective name of this item stack shown to player in inventory.
+     * It takes into account the display name (with italics) from the item meta,
+     * the potion effect, translatable name, rarity etc.
+     *
+     * @return the effective name of this item stack
+     */
+    public net.kyori.adventure.text.@NotNull Component effectiveName() {
+        return this.craftDelegate.effectiveName();
+    }
+
+    /**
      * Minecraft updates are converting simple item stacks into more complex NBT oriented Item Stacks.
      *
      * Use this method to ensure any desired data conversions are processed.
