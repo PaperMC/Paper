@@ -8,6 +8,7 @@ import java.nio.file.Files
 import java.nio.file.SimpleFileVisitor
 import kotlin.io.path.*
 import java.nio.file.Path
+import kotlin.random.Random
 
 plugins {
     id("io.papermc.paperweight.core") version "2.0.0-SNAPSHOT" apply false
@@ -98,7 +99,13 @@ tasks.register("gibWork") {
         val end = html.indexOf("```", start + beginMarker.length)
         val taskList = html.substring(start + beginMarker.length, end)
 
-        val next = taskList.split("\\n").first { it.startsWith("- [ ]") }.replace("- [ ] ", "")
+        // Extract all incomplete tasks and select a random one
+        val incompleteTasks = taskList.split("\\n").filter { it.startsWith("- [ ]") }.map { it.replace("- [ ] ", "") }
+        if (incompleteTasks.isEmpty()) {
+            error("No incomplete tasks found in the task list.")
+        }
+
+        val next = incompleteTasks[Random.nextInt(incompleteTasks.size)]
 
         println("checking out $next...")
         val dir = patchesFolder.resolve("unapplied").resolve(next)
