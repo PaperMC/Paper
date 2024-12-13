@@ -1,0 +1,18 @@
+--- a/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java
++++ b/net/minecraft/world/level/gameevent/vibrations/VibrationSystem.java
+@@ -214,7 +_,14 @@
+                     return false;
+                 } else {
+                     Vec3 vec3 = position.get();
+-                    if (!vibrationUser.canReceiveVibration(level, BlockPos.containing(pos), gameEvent, context)) {
++                    // CraftBukkit start
++                    boolean defaultCancel = !vibrationUser.canReceiveVibration(level, BlockPos.containing(pos), gameEvent, context);
++                    Entity entity = context.sourceEntity();
++                    org.bukkit.event.block.BlockReceiveGameEvent event1 = new org.bukkit.event.block.BlockReceiveGameEvent(org.bukkit.craftbukkit.CraftGameEvent.minecraftToBukkit(gameEvent.value()), org.bukkit.craftbukkit.block.CraftBlock.at(level, BlockPos.containing(vec3)), (entity == null) ? null : entity.getBukkitEntity());
++                    event1.setCancelled(defaultCancel);
++                    level.getCraftServer().getPluginManager().callEvent(event1);
++                    if (event1.isCancelled()) {
++                        // CraftBukkit end
+                         return false;
+                     } else if (isOccluded(level, pos, vec3)) {
+                         return false;

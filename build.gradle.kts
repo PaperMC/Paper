@@ -141,6 +141,7 @@ tasks.register("showWork") {
 }
 
 tasks.register("checkWork") {
+    notCompatibleWithConfigurationCache("This task is interactive")
     fun expandUserHome(path: String): Path {
         return Path.of(path.replaceFirst("^~".toRegex(), System.getProperty("user.home")))
     }
