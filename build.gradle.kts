@@ -157,6 +157,7 @@ tasks.register("checkWork") {
             val relative = patchFolder.relativize(it).toString().replace(".patch", "")
             val source = sourceFolder.resolve(relative)
             val target = targetFolder.resolve(relative)
+            if (target.isDirectory()) { return@forEach }
             if (back) {
                 target.copyTo(source, overwrite = true)
             } else {
