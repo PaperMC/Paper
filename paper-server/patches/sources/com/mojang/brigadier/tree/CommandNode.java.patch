@@ -1,6 +1,6 @@
 --- a/com/mojang/brigadier/tree/CommandNode.java
 +++ b/com/mojang/brigadier/tree/CommandNode.java
-@@ -3,6 +3,7 @@
+@@ -3,6 +_,7 @@
  
  package com.mojang.brigadier.tree;
  
@@ -8,7 +8,7 @@
  import com.mojang.brigadier.AmbiguityConsumer;
  import com.mojang.brigadier.Command;
  import com.mojang.brigadier.RedirectModifier;
-@@ -22,6 +23,7 @@
+@@ -22,6 +_,7 @@
  import java.util.Set;
  import java.util.concurrent.CompletableFuture;
  import java.util.function.Predicate;
@@ -16,7 +16,7 @@
  
  public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
      private final Map<String, CommandNode<S>> children = new LinkedHashMap<>();
-@@ -32,6 +34,16 @@
+@@ -32,6 +_,16 @@
      private final RedirectModifier<S> modifier;
      private final boolean forks;
      private Command<S> command;
@@ -33,12 +33,12 @@
  
      protected CommandNode(final Command<S> command, final Predicate<S> requirement, final CommandNode<S> redirect, final RedirectModifier<S> modifier, final boolean forks) {
          this.command = command;
-@@ -61,7 +73,17 @@
-         return this.modifier;
+@@ -61,7 +_,17 @@
+         return modifier;
      }
  
 -    public boolean canUse(final S source) {
-+    // CraftBukkit start
++    // Paper start
 +    public synchronized boolean canUse(final S source) {
 +        if (source instanceof CommandSourceStack) {
 +            try {
@@ -48,28 +48,28 @@
 +                ((CommandSourceStack) source).currentCommand.remove(Thread.currentThread()); // Paper - Thread Safe Vanilla Command permission checking
 +            }
 +        }
-+        // CraftBukkit end
-         return this.requirement.test(source);
++        // Paper end
+         return requirement.test(source);
      }
  
-@@ -151,6 +173,12 @@
+@@ -151,6 +_,12 @@
      protected abstract String getSortedKey();
  
      public Collection<? extends CommandNode<S>> getRelevantNodes(final StringReader input) {
-+        // Paper start - prioritize mc commands in function parsing
++    // Paper start - prioritize mc commands in function parsing
 +        return this.getRelevantNodes(input, null);
 +    }
 +    @org.jetbrains.annotations.ApiStatus.Internal
 +    public Collection<? extends CommandNode<S>> getRelevantNodes(final StringReader input, final Object source) {
-+        // Paper end - prioritize mc commands in function parsing
-         if (this.literals.size() > 0) {
++     // Paper end - prioritize mc commands in function parsing
+         if (literals.size() > 0) {
              final int cursor = input.getCursor();
              while (input.canRead() && input.peek() != ' ') {
-@@ -158,7 +186,21 @@
+@@ -158,7 +_,21 @@
              }
              final String text = input.getString().substring(cursor, input.getCursor());
              input.setCursor(cursor);
--            final LiteralCommandNode<S> literal = this.literals.get(text);
+-            final LiteralCommandNode<S> literal = literals.get(text);
 +            // Paper start - prioritize mc commands in function parsing
 +            LiteralCommandNode<S> literal = null;
 +            if (source instanceof CommandSourceStack css && css.source == net.minecraft.commands.CommandSource.NULL) {
@@ -88,7 +88,7 @@
              if (literal != null) {
                  return Collections.singleton(literal);
              } else {
-@@ -183,4 +225,11 @@
+@@ -183,4 +_,11 @@
      }
  
      public abstract Collection<String> getExamples();
