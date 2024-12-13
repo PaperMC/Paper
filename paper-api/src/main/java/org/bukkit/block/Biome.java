@@ -3,6 +3,8 @@ package org.bukkit.block;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.Locale;
+import io.papermc.paper.world.biome.BiomeClimate;
+import io.papermc.paper.world.biome.BiomeSpecialEffects;
 import org.bukkit.Bukkit;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Keyed;
@@ -129,6 +131,20 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
     }
 
     // Paper start
+    /**
+     * Get the biome's special effects.
+     *
+     * @return the biome's special effects
+     */
+    @NotNull BiomeSpecialEffects specialEffects();
+
+    /**
+     * Get the biome's climate.
+     *
+     * @return the biome's climate
+     */
+    @NotNull BiomeClimate climate();
+
     @Override
     default @NotNull String translationKey() {
         return "biome.minecraft." + this.getKey().getKey();
