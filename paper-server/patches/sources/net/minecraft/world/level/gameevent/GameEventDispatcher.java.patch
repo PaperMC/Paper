@@ -1,0 +1,40 @@
+--- a/net/minecraft/world/level/gameevent/GameEventDispatcher.java
++++ b/net/minecraft/world/level/gameevent/GameEventDispatcher.java
+@@ -11,6 +_,13 @@
+ import net.minecraft.world.level.chunk.ChunkAccess;
+ import net.minecraft.world.phys.Vec3;
+ 
++// CraftBukkit start
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.CraftGameEvent;
++import org.bukkit.craftbukkit.util.CraftLocation;
++import org.bukkit.event.world.GenericGameEvent;
++// CraftBukkit end
++
+ public class GameEventDispatcher {
+     private final ServerLevel level;
+ 
+@@ -21,6 +_,14 @@
+     public void post(Holder<GameEvent> gameEvent, Vec3 pos, GameEvent.Context context) {
+         int notificationRadius = gameEvent.value().notificationRadius();
+         BlockPos blockPos = BlockPos.containing(pos);
++        // CraftBukkit start
++        GenericGameEvent apiEvent = new GenericGameEvent(CraftGameEvent.minecraftToBukkit(gameEvent.value()), CraftLocation.toBukkit(blockPos, this.level.getWorld()), (context.sourceEntity() == null) ? null : context.sourceEntity().getBukkitEntity(), notificationRadius, !Bukkit.isPrimaryThread());
++        this.level.getCraftServer().getPluginManager().callEvent(apiEvent);
++        if (apiEvent.isCancelled()) {
++            return;
++        }
++        notificationRadius = apiEvent.getRadius();
++        // CraftBukkit end
+         int sectionPosCoord = SectionPos.blockToSectionCoord(blockPos.getX() - notificationRadius);
+         int sectionPosCoord1 = SectionPos.blockToSectionCoord(blockPos.getY() - notificationRadius);
+         int sectionPosCoord2 = SectionPos.blockToSectionCoord(blockPos.getZ() - notificationRadius);
+@@ -39,7 +_,7 @@
+ 
+         for (int i = sectionPosCoord; i <= sectionPosCoord3; i++) {
+             for (int i1 = sectionPosCoord2; i1 <= sectionPosCoord5; i1++) {
+-                ChunkAccess chunkNow = this.level.getChunkSource().getChunkNow(i, i1);
++                ChunkAccess chunkNow = this.level.getChunkIfLoadedImmediately(i, i1); // Paper - Use getChunkIfLoadedImmediately
+                 if (chunkNow != null) {
+                     for (int i2 = sectionPosCoord1; i2 <= sectionPosCoord4; i2++) {
+                         flag |= chunkNow.getListenerRegistry(i2).visitInRangeListeners(gameEvent, pos, context, listenerVisitor);

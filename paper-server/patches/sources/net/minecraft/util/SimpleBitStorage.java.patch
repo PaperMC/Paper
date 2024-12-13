@@ -1,6 +1,6 @@
 --- a/net/minecraft/util/SimpleBitStorage.java
 +++ b/net/minecraft/util/SimpleBitStorage.java
-@@ -204,8 +204,8 @@
+@@ -204,8 +_,8 @@
      private final long mask;
      private final int size;
      private final int valuesPerLong;
@@ -10,28 +10,26 @@
 +    private final int divideAdd; private final long divideAddUnsigned; // Paper - Perf: Optimize SimpleBitStorage
      private final int divideShift;
  
-     public SimpleBitStorage(int elementBits, int size, int[] data) {
-@@ -248,8 +248,8 @@
-         this.mask = (1L << elementBits) - 1L;
-         this.valuesPerLong = (char)(64 / elementBits);
+     public SimpleBitStorage(int bits, int size, int[] data) {
+@@ -248,8 +_,8 @@
+         this.mask = (1L << bits) - 1L;
+         this.valuesPerLong = (char)(64 / bits);
          int i = 3 * (this.valuesPerLong - 1);
 -        this.divideMul = MAGIC[i + 0];
 -        this.divideAdd = MAGIC[i + 1];
 +        this.divideMul = MAGIC[i + 0]; this.divideMulUnsigned = Integer.toUnsignedLong(this.divideMul); // Paper - Perf: Optimize SimpleBitStorage
 +        this.divideAdd = MAGIC[i + 1]; this.divideAddUnsigned = Integer.toUnsignedLong(this.divideAdd); // Paper - Perf: Optimize SimpleBitStorage
          this.divideShift = MAGIC[i + 2];
-         int j = (size + this.valuesPerLong - 1) / this.valuesPerLong;
+         int i1 = (size + this.valuesPerLong - 1) / this.valuesPerLong;
          if (data != null) {
-@@ -264,15 +264,15 @@
+@@ -264,15 +_,11 @@
      }
  
      private int cellIndex(int index) {
 -        long l = Integer.toUnsignedLong(this.divideMul);
--        long m = Integer.toUnsignedLong(this.divideAdd);
--        return (int)((long)index * l + m >> 32 >> this.divideShift);
-+        //long l = Integer.toUnsignedLong(this.divideMul); // Paper - Perf: Optimize SimpleBitStorage
-+        //long m = Integer.toUnsignedLong(this.divideAdd); // Paper - Perf: Optimize SimpleBitStorage
-+        return (int) (index * this.divideMulUnsigned + this.divideAddUnsigned >> 32 >> this.divideShift); // Paper - Perf: Optimize SimpleBitStorage
+-        long l1 = Integer.toUnsignedLong(this.divideAdd);
+-        return (int)(index * l + l1 >> 32 >> this.divideShift);
++        return (int)(index * this.divideMulUnsigned + this.divideAddUnsigned >> 32 >> this.divideShift); // Paper - Perf: Optimize SimpleBitStorage
      }
  
      @Override
@@ -39,12 +37,10 @@
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 -        Validate.inclusiveBetween(0L, this.mask, (long)value);
 +    public final int getAndSet(int index, int value) { // Paper - Perf: Optimize SimpleBitStorage
-+        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper - Perf: Optimize SimpleBitStorage
-+        //Validate.inclusiveBetween(0L, this.mask, (long)value); // Paper - Perf: Optimize SimpleBitStorage
          int i = this.cellIndex(index);
          long l = this.data[i];
-         int j = (index - i * this.valuesPerLong) * this.bits;
-@@ -282,9 +282,9 @@
+         int i1 = (index - i * this.valuesPerLong) * this.bits;
+@@ -282,9 +_,7 @@
      }
  
      @Override
@@ -52,19 +48,16 @@
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 -        Validate.inclusiveBetween(0L, this.mask, (long)value);
 +    public final void set(int index, int value) { // Paper - Perf: Optimize SimpleBitStorage
-+        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper - Perf: Optimize SimpleBitStorage
-+        //Validate.inclusiveBetween(0L, this.mask, (long)value); // Paper - Perf: Optimize SimpleBitStorage
          int i = this.cellIndex(index);
          long l = this.data[i];
-         int j = (index - i * this.valuesPerLong) * this.bits;
-@@ -292,8 +292,8 @@
+         int i1 = (index - i * this.valuesPerLong) * this.bits;
+@@ -292,8 +_,7 @@
      }
  
      @Override
 -    public int get(int index) {
 -        Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index);
 +    public final int get(int index) { // Paper - Perf: Optimize SimpleBitStorage
-+        //Validate.inclusiveBetween(0L, (long)(this.size - 1), (long)index); // Paper - Perf: Optimize SimpleBitStorage
          int i = this.cellIndex(index);
          long l = this.data[i];
-         int j = (index - i * this.valuesPerLong) * this.bits;
+         int i1 = (index - i * this.valuesPerLong) * this.bits;
