@@ -1,33 +1,24 @@
 --- a/net/minecraft/core/component/DataComponentPatch.java
 +++ b/net/minecraft/core/component/DataComponentPatch.java
-@@ -61,7 +61,7 @@
-             }
+@@ -125,7 +_,13 @@
          }
  
--        return reference2objectmap;
-+        return (Reference2ObjectMap) reference2objectmap; // CraftBukkit - decompile error
-     });
-     public static final StreamCodec<RegistryFriendlyByteBuf, DataComponentPatch> STREAM_CODEC = new StreamCodec<RegistryFriendlyByteBuf, DataComponentPatch>() {
-         public DataComponentPatch decode(RegistryFriendlyByteBuf registryfriendlybytebuf) {
-@@ -144,7 +144,13 @@
-         }
- 
-         private static <T> void encodeComponent(RegistryFriendlyByteBuf buf, DataComponentType<T> type, Object value) {
--            type.streamCodec().encode(buf, value);
+         private static <T> void encodeComponent(RegistryFriendlyByteBuf buffer, DataComponentType<T> component, Object value) {
+-            component.streamCodec().encode(buffer, (T)value);
 +            // Paper start - codec errors of random anonymous classes are useless
 +            try {
-+            type.streamCodec().encode(buf, (T) value); // CraftBukkit - decompile error
++                component.streamCodec().encode(buffer, (T) value); // CraftBukkit - decompile error
 +            } catch (final Exception e) {
-+                throw new RuntimeException("Error encoding component " + type, e);
++                throw new RuntimeException("Error encoding component " + component, e);
 +            }
 +            // Paper end - codec errors of random anonymous classes are useless
          }
      };
      private static final String REMOVED_PREFIX = "!";
-@@ -270,7 +276,43 @@
-         private final Reference2ObjectMap<DataComponentType<?>, Optional<?>> map = new Reference2ObjectArrayMap();
+@@ -230,6 +_,42 @@
  
-         Builder() {}
+         Builder() {
+         }
 +
 +        // CraftBukkit start
 +        public void copy(DataComponentPatch orig) {
@@ -45,7 +36,7 @@
 +        public boolean isEmpty() {
 +            return this.map.isEmpty();
 +        }
- 
++
 +        @Override
 +        public boolean equals(Object object) {
 +            if (this == object) {
@@ -64,7 +55,6 @@
 +            return this.map.hashCode();
 +        }
 +        // CraftBukkit end
-+
-         public <T> DataComponentPatch.Builder set(DataComponentType<T> type, T value) {
-             this.map.put(type, Optional.of(value));
-             return this;
+ 
+         public <T> DataComponentPatch.Builder set(DataComponentType<T> component, T value) {
+             this.map.put(component, Optional.of(value));
