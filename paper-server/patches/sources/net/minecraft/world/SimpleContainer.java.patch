@@ -1,24 +1,11 @@
 --- a/net/minecraft/world/SimpleContainer.java
 +++ b/net/minecraft/world/SimpleContainer.java
-@@ -14,18 +14,98 @@
- import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
- 
-+// CraftBukkit start
-+import org.bukkit.Location;
-+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-+import org.bukkit.entity.HumanEntity;
-+// CraftBukkit end
-+
- public class SimpleContainer implements Container, StackedContentsCompatible {
- 
-     private final int size;
-     public final NonNullList<ItemStack> items;
+@@ -19,7 +_,84 @@
      @Nullable
      private List<ContainerListener> listeners;
-+
-+    // CraftBukkit start - add fields and methods
-+    public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
+ 
++    // Paper start - add fields and methods
++    public List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
 +    private int maxStack = MAX_STACK;
 +    protected @Nullable org.bukkit.inventory.InventoryHolder bukkitOwner; // Paper - annotation
 +
@@ -26,15 +13,15 @@
 +        return this.items;
 +    }
 +
-+    public void onOpen(CraftHumanEntity who) {
++    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
 +        this.transaction.add(who);
 +    }
 +
-+    public void onClose(CraftHumanEntity who) {
++    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
 +        this.transaction.remove(who);
 +    }
 +
-+    public List<HumanEntity> getViewers() {
++    public List<org.bukkit.entity.HumanEntity> getViewers() {
 +        return this.transaction;
 +    }
 +
@@ -55,9 +42,9 @@
 +        // Paper end - Add missing InventoryHolders
 +        return this.bukkitOwner;
 +    }
- 
++
 +    @Override
-+    public Location getLocation() {
++    public org.bukkit.Location getLocation() {
 +        // Paper start - Fix inventories returning null Locations
 +        // When the block inventory does not have a tile state that implements getLocation, e. g. composters
 +        if (this.bukkitOwner instanceof org.bukkit.inventory.BlockInventoryHolder blockInventoryHolder) {
@@ -77,27 +64,24 @@
 +            this.items.set(slot, original.items.get(slot).copy());
 +        }
 +    }
++    // Paper end
 +
      public SimpleContainer(int size) {
--        this.size = size;
--        this.items = NonNullList.withSize(size, ItemStack.EMPTY);
 +        this(size, null);
 +    }
++
 +    // Paper start - Add missing InventoryHolders
 +    private @Nullable java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> bukkitOwnerCreator;
++
 +    public SimpleContainer(java.util.function.Supplier<? extends org.bukkit.inventory.InventoryHolder> bukkitOwnerCreator, int size) {
 +        this(size);
 +        this.bukkitOwnerCreator = bukkitOwnerCreator;
-     }
-+    // Paper end - Add missing InventoryHolders
- 
-+    public SimpleContainer(int i, org.bukkit.inventory.InventoryHolder owner) {
-+        this.bukkitOwner = owner;
-+        // CraftBukkit end
-+        this.size = i;
-+        this.items = NonNullList.withSize(i, ItemStack.EMPTY);
 +    }
++    // Paper end - Add missing InventoryHolders
 +
-     public SimpleContainer(ItemStack... items) {
-         this.size = items.length;
-         this.items = NonNullList.of(ItemStack.EMPTY, items);
++    public SimpleContainer(int size, org.bukkit.inventory.InventoryHolder owner) {
++        this.bukkitOwner = owner;
++        // Paper end
+         this.size = size;
+         this.items = NonNullList.withSize(size, ItemStack.EMPTY);
+     }
