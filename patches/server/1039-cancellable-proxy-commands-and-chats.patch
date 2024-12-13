@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Joo200 <github@joo200.de>
+Date: Wed, 4 Oct 2023 21:01:01 +0200
+Subject: [PATCH] cancellable proxy commands and chats
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 8bd243a8d5a4be54f907af2b02e96ea833cee62f..f8ea8265d322dfb985e1f9776e608ed00fc47c2b 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -2257,6 +2257,34 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         }
+     }
+ 
++    // Paper start - allow proxy to ignore signed chat messages and commands
++    @Override
++    public void handleCustomPayload(net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket packet) {
++        if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) {
++            ResourceLocation identifier = packet.payload().id();
++            io.netty.buffer.ByteBuf payload = ((net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket.UnknownPayload)packet.payload()).data();
++            try {
++                if (identifier.toString().equalsIgnoreCase("velocity:command_cancelled")) {
++                    ServerGamePacketListenerImpl.LOGGER.debug("Received forwarding cancelled command from proxy.");
++                    ServerboundChatCommandPacket converted = new ServerboundChatCommandPacket(new net.minecraft.network.FriendlyByteBuf(payload));
++                    this.tryHandleChat(converted.command(), converted.timeStamp(), converted.lastSeenMessages());
++                    return;
++                }
++                if (identifier.toString().equalsIgnoreCase("velocity:chat_cancelled")) {
++                    ServerGamePacketListenerImpl.LOGGER.debug("Received forwarding cancelled chat message from proxy.");
++                    ServerboundChatPacket converted = new ServerboundChatPacket(new net.minecraft.network.FriendlyByteBuf(payload));
++                    this.tryHandleChat(converted.message(), converted.timeStamp(), converted.lastSeenMessages());
++                    return;
++                }
++            } catch (Exception ex) {
++                ServerGamePacketListenerImpl.LOGGER.error("Couldn't parse velocity payload", ex);
++                this.disconnect("Invalid velocity payload!", org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD);
++            }
++        }
++        super.handleCustomPayload(packet);
++    }
++    // Paper end
++
+     private Optional<LastSeenMessages> unpackAndApplyLastSeen(LastSeenMessages.Update acknowledgment) {
+         LastSeenMessagesValidator lastseenmessagesvalidator = this.lastSeenMessages;
+ 
