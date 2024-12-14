@@ -1,18 +1,19 @@
 --- a/net/minecraft/server/commands/ReloadCommand.java
 +++ b/net/minecraft/server/commands/ReloadCommand.java
-@@ -20,7 +20,7 @@
-     public ReloadCommand() {}
+@@ -16,7 +_,7 @@
+     private static final Logger LOGGER = LogUtils.getLogger();
  
-     public static void reloadPacks(Collection<String> dataPacks, CommandSourceStack source) {
--        source.getServer().reloadResources(dataPacks).exceptionally((throwable) -> {
-+        source.getServer().reloadResources(dataPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.COMMAND).exceptionally((throwable) -> { // Paper - Add ServerResourcesReloadedEvent
-             ReloadCommand.LOGGER.warn("Failed to execute reload", throwable);
+     public static void reloadPacks(Collection<String> selectedIds, CommandSourceStack source) {
+-        source.getServer().reloadResources(selectedIds).exceptionally(throwable -> {
++        source.getServer().reloadResources(selectedIds, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.COMMAND).exceptionally(throwable -> { // Paper - Add ServerResourcesReloadedEvent
+             LOGGER.warn("Failed to execute reload", throwable);
              source.sendFailure(Component.translatable("commands.reload.failure"));
              return null;
-@@ -44,6 +44,16 @@
-         return collection1;
-     }
+@@ -36,6 +_,16 @@
  
+         return list;
+     }
++
 +    // CraftBukkit start
 +    public static void reload(MinecraftServer minecraftserver) {
 +        PackRepository resourcepackrepository = minecraftserver.getPackRepository();
@@ -22,7 +23,6 @@
 +        minecraftserver.reloadResources(collection1, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.PLUGIN); // Paper - Add ServerResourcesReloadedEvent
 +    }
 +    // CraftBukkit end
-+
+ 
      public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-         dispatcher.register((LiteralArgumentBuilder) ((LiteralArgumentBuilder) net.minecraft.commands.Commands.literal("reload").requires((commandlistenerwrapper) -> {
-             return commandlistenerwrapper.hasPermission(2);
+         dispatcher.register(Commands.literal("reload").requires(source -> source.hasPermission(2)).executes(context -> {
