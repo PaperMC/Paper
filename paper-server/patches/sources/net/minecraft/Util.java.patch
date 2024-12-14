@@ -1,6 +1,6 @@
 --- a/net/minecraft/Util.java
 +++ b/net/minecraft/Util.java
-@@ -92,9 +92,26 @@
+@@ -92,9 +_,26 @@
      private static final int DEFAULT_MAX_THREADS = 255;
      private static final int DEFAULT_SAFE_FILE_OPERATION_RETRIES = 10;
      private static final String MAX_THREADS_SYSTEM_PROPERTY = "max.bg.threads";
@@ -28,7 +28,7 @@
      private static final DateTimeFormatter FILENAME_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH.mm.ss", Locale.ROOT);
      public static final int LINEAR_LOOKUP_THRESHOLD = 8;
      private static final Set<String> ALLOWED_UNTRUSTED_LINK_PROTOCOLS = Set.of("http", "https");
-@@ -136,7 +153,7 @@
+@@ -135,7 +_,7 @@
      }
  
      public static long getNanos() {
@@ -37,36 +37,37 @@
      }
  
      public static long getEpochMillis() {
-@@ -147,15 +164,16 @@
+@@ -146,15 +_,17 @@
          return FILENAME_DATE_TIME_FORMATTER.format(ZonedDateTime.now());
      }
  
 -    private static TracingExecutor makeExecutor(String name) {
 +    private static TracingExecutor makeExecutor(String name, final int priorityModifier) { // Paper - Perf: add priority
          int i = maxAllowedExecutorThreads();
--        ExecutorService executorService;
+-        ExecutorService directExecutorService;
 +        // Paper start - Perf: use simpler thread pool that allows 1 thread and reduce worldgen thread worker count for low core count CPUs
-+        final ExecutorService executorService;
++        final ExecutorService directExecutorService;
          if (i <= 0) {
-             executorService = MoreExecutors.newDirectExecutorService();
+             directExecutorService = MoreExecutors.newDirectExecutorService();
          } else {
--            AtomicInteger atomicInteger = new AtomicInteger(1);
--            executorService = new ForkJoinPool(i, pool -> {
--                final String string2 = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
-+            executorService = Executors.newFixedThreadPool(i, target -> new io.papermc.paper.util.ServerWorkerThread(target, name, priorityModifier));
+             AtomicInteger atomicInteger = new AtomicInteger(1);
+-            directExecutorService = new ForkJoinPool(i, forkJoinPool -> {
+-                final String string = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
++            directExecutorService = Executors.newFixedThreadPool(i, target -> new io.papermc.paper.util.ServerWorkerThread(target, name, priorityModifier));
 +        }
-+        /*      final String string2 = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
-                 ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(pool) {
++        /*  final String string = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
+                 ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(forkJoinPool) {
                      @Override
                      protected void onStart() {
-@@ -177,13 +195,26 @@
-                 forkJoinWorkerThread.setName(string2);
+@@ -176,13 +_,27 @@
+                 forkJoinWorkerThread.setName(string);
                  return forkJoinWorkerThread;
              }, Util::onThreadException, true);
 -        }
 +        }*/
++        // Paper end
  
-         return new TracingExecutor(executorService);
+         return new TracingExecutor(directExecutorService);
      }
  
      public static int maxAllowedExecutorThreads() {
@@ -88,15 +89,10 @@
      }
  
      private static int getMaxThreads() {
-@@ -229,10 +260,25 @@
-             TracyClient.setThreadName(string2, namePrefix.hashCode());
-             thread.setName(string2);
-             thread.setDaemon(daemon);
-+            thread.setUncaughtExceptionHandler(Util::onThreadException);
-+            return thread;
-+        }));
-+    }
-+
+@@ -233,6 +_,21 @@
+         }));
+     }
+ 
 +    // Paper start - Separate dimension data IO pool
 +    private static TracingExecutor makeExtraIoExecutor(String namePrefix) {
 +        AtomicInteger atomicInteger = new AtomicInteger(1);
@@ -106,24 +102,16 @@
 +            TracyClient.setThreadName(string2, namePrefix.hashCode());
 +            thread.setName(string2);
 +            thread.setDaemon(false);
-             thread.setUncaughtExceptionHandler(Util::onThreadException);
-             return thread;
-         }));
-     }
++            thread.setUncaughtExceptionHandler(Util::onThreadException);
++            return thread;
++        }));
++    }
 +    // Paper end - Separate dimension data IO pool
- 
-     public static void throwAsRuntime(Throwable t) {
-         throw t instanceof RuntimeException ? (RuntimeException)t : new RuntimeException(t);
-@@ -537,7 +583,7 @@
-     public static <K extends Enum<K>, V> EnumMap<K, V> makeEnumMap(Class<K> enumClass, Function<K, V> mapper) {
-         EnumMap<K, V> enumMap = new EnumMap<>(enumClass);
- 
--        for (K enum_ : (Enum[])enumClass.getEnumConstants()) {
-+        for (K enum_ : enumClass.getEnumConstants()) { // Paper - decompile error
-             enumMap.put(enum_, mapper.apply(enum_));
-         }
- 
-@@ -1057,16 +1103,7 @@
++
+     public static void throwAsRuntime(Throwable throwable) {
+         throw throwable instanceof RuntimeException ? (RuntimeException)throwable : new RuntimeException(throwable);
+     }
+@@ -1075,16 +_,7 @@
          }
  
          public void openUri(URI uri) {
