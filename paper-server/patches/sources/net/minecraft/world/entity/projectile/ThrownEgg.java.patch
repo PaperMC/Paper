@@ -1,0 +1,63 @@
+--- a/net/minecraft/world/entity/projectile/ThrownEgg.java
++++ b/net/minecraft/world/entity/projectile/ThrownEgg.java
+@@ -59,22 +_,56 @@
+     protected void onHit(HitResult result) {
+         super.onHit(result);
+         if (!this.level().isClientSide) {
+-            if (this.random.nextInt(8) == 0) {
++            // CraftBukkit start
++            boolean hatching = this.random.nextInt(8) == 0;
++            if (true) {
++            // CraftBukkit end
+                 int i = 1;
+                 if (this.random.nextInt(32) == 0) {
+                     i = 4;
+                 }
++                // CraftBukkit start
++                org.bukkit.entity.EntityType hatchingType = org.bukkit.entity.EntityType.CHICKEN;
++
++                net.minecraft.world.entity.Entity shooter = this.getOwner();
++                if (!hatching) {
++                    i = 0;
++                }
++                if (shooter instanceof net.minecraft.server.level.ServerPlayer) {
++                    org.bukkit.event.player.PlayerEggThrowEvent event = new org.bukkit.event.player.PlayerEggThrowEvent((org.bukkit.entity.Player) shooter.getBukkitEntity(), (org.bukkit.entity.Egg) this.getBukkitEntity(), hatching, (byte) i, hatchingType);
++                    this.level().getCraftServer().getPluginManager().callEvent(event);
++
++                    i = event.getNumHatches();
++                    hatching = event.isHatching();
++                    hatchingType = event.getHatchingType();
++                    // If hatching is set to false, ensure child count is 0
++                    if (!hatching) {
++                        i = 0;
++                    }
++                }
++                // CraftBukkit end
++                // Paper start - Add ThrownEggHatchEvent
++                com.destroystokyo.paper.event.entity.ThrownEggHatchEvent event = new com.destroystokyo.paper.event.entity.ThrownEggHatchEvent((org.bukkit.entity.Egg) getBukkitEntity(), hatching, (byte) i, hatchingType);
++                event.callEvent();
++                hatching = event.isHatching();
++                i = hatching ? event.getNumHatches() : 0; // If hatching is set to false, ensure child count is 0
++                hatchingType = event.getHatchingType();
++                // Paper end - Add ThrownEggHatchEvent
+ 
+                 for (int i1 = 0; i1 < i; i1++) {
+-                    Chicken chicken = EntityType.CHICKEN.create(this.level(), EntitySpawnReason.TRIGGERED);
++                    net.minecraft.world.entity.Entity chicken = this.level().getWorld().makeEntity(new org.bukkit.Location(this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F), hatchingType.getEntityClass()); // CraftBukkit
+                     if (chicken != null) {
+-                        chicken.setAge(-24000);
++                        // CraftBukkit start
++                        if (chicken.getBukkitEntity() instanceof org.bukkit.entity.Ageable ageable) {
++                            ageable.setBaby();
++                        }
++                        // CraftBukkit end
+                         chicken.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F);
+                         if (!chicken.fudgePositionAfterSizeChange(ZERO_SIZED_DIMENSIONS)) {
+                             break;
+                         }
+ 
+-                        this.level().addFreshEntity(chicken);
++                        this.level().addFreshEntity(chicken, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // CraftBukkit
+                     }
+                 }
+             }
