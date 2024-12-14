@@ -146,7 +146,7 @@ tasks.register("checkWork") {
         return Path.of(path.replaceFirst("^~".toRegex(), System.getProperty("user.home")))
     }
 
-    val input = layout.cache.resolve("last-updating-folder").readText()
+    val input = layout.cache.resolve("last-updating-folder").readText().trim()
     val patchFolder = layout.projectDirectory.file("paper-server/patches/sources").convertToPath().resolve(input)
     val sourceFolder = layout.projectDirectory.file("paper-server/src/vanilla/java/").convertToPath().resolve(input)
     val targetFolder = expandUserHome(
