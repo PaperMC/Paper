@@ -1,0 +1,39 @@
+--- a/net/minecraft/world/inventory/AbstractCraftingMenu.java
++++ b/net/minecraft/world/inventory/AbstractCraftingMenu.java
+@@ -12,14 +_,17 @@
+ public abstract class AbstractCraftingMenu extends RecipeBookMenu {
+     private final int width;
+     private final int height;
+-    public final CraftingContainer craftSlots;
++    public final TransientCraftingContainer craftSlots; // CraftBukkit
+     public final ResultContainer resultSlots = new ResultContainer();
+ 
+-    public AbstractCraftingMenu(MenuType<?> menuType, int containerId, int width, int height) {
++    public AbstractCraftingMenu(MenuType<?> menuType, int containerId, int width, int height, Inventory playerInventory) { // CraftBukkit
+         super(menuType, containerId);
+         this.width = width;
+         this.height = height;
+-        this.craftSlots = new TransientCraftingContainer(this, width, height);
++        // CraftBukkit start
++        this.craftSlots = new TransientCraftingContainer(this, width, height, playerInventory.player); // CraftBukkit - pass player
++        this.craftSlots.resultInventory = this.resultSlots; // CraftBukkit - let InventoryCrafting know about its result slot
++        // CraftBukkit end
+     }
+ 
+     protected Slot addResultSlot(Player player, int x, int y) {
+@@ -35,13 +_,13 @@
+     }
+ 
+     @Override
+-    public RecipeBookMenu.PostPlaceAction handlePlacement(
++    public PostPlaceAction handlePlacement(
+         boolean useMaxItems, boolean isCreative, RecipeHolder<?> recipe, ServerLevel level, Inventory playerInventory
+     ) {
+         RecipeHolder<CraftingRecipe> recipeHolder = (RecipeHolder<CraftingRecipe>)recipe;
+         this.beginPlacingRecipe();
+ 
+-        RecipeBookMenu.PostPlaceAction var8;
++        PostPlaceAction var8;
+         try {
+             List<Slot> inputGridSlots = this.getInputGridSlots();
+             var8 = ServerPlaceRecipe.placeRecipe(new ServerPlaceRecipe.CraftingMenuAccess<CraftingRecipe>() {

@@ -1,0 +1,83 @@
+--- a/net/minecraft/world/inventory/MerchantMenu.java
++++ b/net/minecraft/world/inventory/MerchantMenu.java
+@@ -30,6 +_,18 @@
+     private int merchantLevel;
+     private boolean showProgressBar;
+     private boolean canRestock;
++    // CraftBukkit start
++    private org.bukkit.craftbukkit.inventory.view.CraftMerchantView bukkitEntity = null;
++    private Inventory player;
++
++    @Override
++    public org.bukkit.craftbukkit.inventory.view.CraftMerchantView getBukkitView() {
++        if (this.bukkitEntity == null) {
++            this.bukkitEntity = new org.bukkit.craftbukkit.inventory.view.CraftMerchantView(this.player.player.getBukkitEntity(), new org.bukkit.craftbukkit.inventory.CraftInventoryMerchant(this.trader, this.tradeContainer), this, this.trader);
++        }
++        return this.bukkitEntity;
++    }
++    // CraftBukkit end
+ 
+     public MerchantMenu(int containerId, Inventory playerInventory) {
+         this(containerId, playerInventory, new ClientSideMerchant(playerInventory.player));
+@@ -42,6 +_,7 @@
+         this.addSlot(new Slot(this.tradeContainer, 0, 136, 37));
+         this.addSlot(new Slot(this.tradeContainer, 1, 162, 37));
+         this.addSlot(new MerchantResultSlot(playerInventory.player, trader, this.tradeContainer, 2, 220, 37));
++        this.player = playerInventory; // CraftBukkit - save player
+         this.addStandardInventorySlots(playerInventory, 108, 84);
+     }
+ 
+@@ -105,12 +_,12 @@
+             ItemStack item = slot.getItem();
+             itemStack = item.copy();
+             if (index == 2) {
+-                if (!this.moveItemStackTo(item, 3, 39, true)) {
++                if (!this.moveItemStackTo(item, 3, 39, true, true)) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
+                     return ItemStack.EMPTY;
+                 }
+ 
+-                slot.onQuickCraft(item, itemStack);
+-                this.playTradeSound();
++                // slot.onQuickCraft(item, itemStack); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; moved to after the non-check moveItemStackTo call
++                // this.playTradeSound();
+             } else if (index != 0 && index != 1) {
+                 if (index >= 3 && index < 30) {
+                     if (!this.moveItemStackTo(item, 30, 39, false)) {
+@@ -123,6 +_,7 @@
+                 return ItemStack.EMPTY;
+             }
+ 
++            if (index != 2) { // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent; moved down for slot 2
+             if (item.isEmpty()) {
+                 slot.setByPlayer(ItemStack.EMPTY);
+             } else {
+@@ -134,13 +_,28 @@
+             }
+ 
+             slot.onTake(player, item);
++            } // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent; handle slot 2
++            if (index == 2) { // is merchant result slot
++                slot.onTake(player, item);
++                if (item.isEmpty()) {
++                    slot.set(ItemStack.EMPTY);
++                    return ItemStack.EMPTY;
++                }
++
++                this.moveItemStackTo(item, 3, 39, true, false); // This should always succeed because it's checked above
++
++                slot.onQuickCraft(item, itemStack);
++                this.playTradeSound();
++                slot.set(ItemStack.EMPTY); // item should ALWAYS be empty
++            }
++            // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
+         }
+ 
+         return itemStack;
+     }
+ 
+     private void playTradeSound() {
+-        if (!this.trader.isClientSide()) {
++        if (!this.trader.isClientSide() && this.trader instanceof Entity) { // CraftBukkit - SPIGOT-5035
+             Entity entity = (Entity)this.trader;
+             entity.level()
+                 .playLocalSound(entity.getX(), entity.getY(), entity.getZ(), this.trader.getNotifyTradeSound(), SoundSource.NEUTRAL, 1.0F, 1.0F, false);
