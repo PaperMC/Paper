@@ -1,0 +1,49 @@
+--- a/net/minecraft/world/entity/EntitySelector.java
++++ b/net/minecraft/world/entity/EntitySelector.java
+@@ -16,6 +_,23 @@
+     public static final Predicate<Entity> NO_SPECTATORS = entity -> !entity.isSpectator();
+     public static final Predicate<Entity> CAN_BE_COLLIDED_WITH = NO_SPECTATORS.and(Entity::canBeCollidedWith);
+     public static final Predicate<Entity> CAN_BE_PICKED = NO_SPECTATORS.and(Entity::isPickable);
++    // Paper start - Ability to control player's insomnia and phantoms
++    public static Predicate<Player> IS_INSOMNIAC = (player) -> {
++        net.minecraft.server.level.ServerPlayer serverPlayer = (net.minecraft.server.level.ServerPlayer) player;
++        int playerInsomniaTicks = serverPlayer.level().paperConfig().entities.behavior.playerInsomniaStartTicks;
++
++        if (playerInsomniaTicks <= 0) {
++            return false;
++        }
++
++        return net.minecraft.util.Mth.clamp(serverPlayer.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.TIME_SINCE_REST)), 1, Integer.MAX_VALUE) >= playerInsomniaTicks;
++    };
++    // Paper end - Ability to control player's insomnia and phantoms
++    // Paper start - Affects Spawning API
++    public static final Predicate<Entity> PLAYER_AFFECTS_SPAWNING = (entity) -> {
++        return !entity.isSpectator() && entity.isAlive() && entity instanceof Player player && player.affectsSpawning;
++    };
++    // Paper end - Affects Spawning API
+ 
+     private EntitySelector() {
+     }
+@@ -26,15 +_,20 @@
+     }
+ 
+     public static Predicate<Entity> pushableBy(Entity entity) {
++        // Paper start - Climbing should not bypass cramming gamerule
++        return pushable(entity, false);
++    }
++    public static Predicate<Entity> pushable(Entity entity, boolean ignoreClimbing) {
++        // Paper end - Climbing should not bypass cramming gamerule
+         Team team = entity.getTeam();
+         Team.CollisionRule collisionRule = team == null ? Team.CollisionRule.ALWAYS : team.getCollisionRule();
+         return (Predicate<Entity>)(collisionRule == Team.CollisionRule.NEVER
+             ? Predicates.alwaysFalse()
+             : NO_SPECTATORS.and(
+                 pushedEntity -> {
+-                    if (!pushedEntity.isPushable()) {
++                    if (!pushedEntity.isCollidable(ignoreClimbing) || !pushedEntity.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(pushedEntity)) { // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
+                         return false;
+-                    } else if (!entity.level().isClientSide || pushedEntity instanceof Player && ((Player)pushedEntity).isLocalPlayer()) {
++                    } else if (pushedEntity instanceof Player && entity instanceof Player && !io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions) { // Paper - Configurable player collision
+                         Team team1 = pushedEntity.getTeam();
+                         Team.CollisionRule collisionRule1 = team1 == null ? Team.CollisionRule.ALWAYS : team1.getCollisionRule();
+                         if (collisionRule1 == Team.CollisionRule.NEVER) {
