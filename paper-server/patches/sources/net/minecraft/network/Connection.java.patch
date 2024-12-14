@@ -1,23 +1,23 @@
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -82,13 +82,13 @@
-         marker.add(Connection.PACKET_MARKER);
-     });
-     public static final Supplier<NioEventLoopGroup> NETWORK_WORKER_GROUP = Suppliers.memoize(() -> {
--        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).build());
-+        return new NioEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
-     });
-     public static final Supplier<EpollEventLoopGroup> NETWORK_EPOLL_WORKER_GROUP = Suppliers.memoize(() -> {
--        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).build());
-+        return new EpollEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
-     });
-     public static final Supplier<DefaultEventLoopGroup> LOCAL_WORKER_GROUP = Suppliers.memoize(() -> {
--        return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).build());
-+        return new DefaultEventLoopGroup(0, (new ThreadFactoryBuilder()).setNameFormat("Netty Local Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()); // Paper
-     });
+@@ -74,13 +_,13 @@
+     public static final Marker PACKET_RECEIVED_MARKER = Util.make(MarkerFactory.getMarker("PACKET_RECEIVED"), marker -> marker.add(PACKET_MARKER));
+     public static final Marker PACKET_SENT_MARKER = Util.make(MarkerFactory.getMarker("PACKET_SENT"), marker -> marker.add(PACKET_MARKER));
+     public static final Supplier<NioEventLoopGroup> NETWORK_WORKER_GROUP = Suppliers.memoize(
+-        () -> new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Client IO #%d").setDaemon(true).build())
++        () -> new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()) // Paper
+     );
+     public static final Supplier<EpollEventLoopGroup> NETWORK_EPOLL_WORKER_GROUP = Suppliers.memoize(
+-        () -> new EpollEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).build())
++        () -> new EpollEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Epoll Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()) // Paper
+     );
+     public static final Supplier<DefaultEventLoopGroup> LOCAL_WORKER_GROUP = Suppliers.memoize(
+-        () -> new DefaultEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Local Client IO #%d").setDaemon(true).build())
++        () -> new DefaultEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Local Client IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()) // Paper
+     );
      private static final ProtocolInfo<ServerHandshakePacketListener> INITIAL_PROTOCOL = HandshakeProtocols.SERVERBOUND;
      private final PacketFlow receiving;
-@@ -96,6 +96,11 @@
+@@ -88,6 +_,11 @@
      private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
      public Channel channel;
      public SocketAddress address;
@@ -29,7 +29,7 @@
      @Nullable
      private volatile PacketListener disconnectListener;
      @Nullable
-@@ -114,7 +119,42 @@
+@@ -106,6 +_,40 @@
      private volatile DisconnectionDetails delayedDisconnect;
      @Nullable
      BandwidthDebugMonitor bandwidthDebugMonitor;
@@ -39,7 +39,6 @@
 +    public java.net.InetSocketAddress virtualHost;
 +    private static boolean enableExplicitFlush = Boolean.getBoolean("paper.explicit-flush"); // Paper - Disable explicit network manager flushing
 +    // Paper end
- 
 +    // Paper start - add utility methods
 +    public final net.minecraft.server.level.ServerPlayer getPlayer() {
 +        if (this.packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl impl) {
@@ -68,13 +67,12 @@
 +    }
 +    // Paper end - packet limiter
 +    @Nullable public SocketAddress haProxyAddress; // Paper - Add API to get player's proxy address
-+
-     public Connection(PacketFlow side) {
-         this.receiving = side;
-     }
-@@ -123,6 +163,9 @@
-         super.channelActive(channelhandlercontext);
-         this.channel = channelhandlercontext.channel();
+ 
+     public Connection(PacketFlow receiving) {
+         this.receiving = receiving;
+@@ -116,6 +_,9 @@
+         super.channelActive(context);
+         this.channel = context.channel();
          this.address = this.channel.remoteAddress();
 +        // Spigot Start
 +        this.preparing = false;
@@ -82,62 +80,61 @@
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -134,6 +177,21 @@
-     }
+@@ -128,14 +_,31 @@
  
-     public void exceptionCaught(ChannelHandlerContext channelhandlercontext, Throwable throwable) {
+     @Override
+     public void exceptionCaught(ChannelHandlerContext context, Throwable exception) {
 +        // Paper start - Handle large packets disconnecting client
-+        if (throwable instanceof io.netty.handler.codec.EncoderException && throwable.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
++        if (exception instanceof io.netty.handler.codec.EncoderException && exception.getCause() instanceof PacketEncoder.PacketTooLargeException packetTooLargeException) {
 +            final Packet<?> packet = packetTooLargeException.getPacket();
 +            if (packet.packetTooLarge(this)) {
-+                ProtocolSwapHandler.handleOutboundTerminalPacket(channelhandlercontext, packet);
++                ProtocolSwapHandler.handleOutboundTerminalPacket(context, packet);
 +                return;
 +            } else if (packet.isSkippable()) {
-+                Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
-+                ProtocolSwapHandler.handleOutboundTerminalPacket(channelhandlercontext, packet);
++                Connection.LOGGER.debug("Skipping packet due to errors", exception.getCause());
++                ProtocolSwapHandler.handleOutboundTerminalPacket(context, packet);
 +                return;
 +            } else {
-+                throwable = throwable.getCause();
++                exception = exception.getCause();
 +            }
 +        }
 +        // Paper end - Handle large packets disconnecting client
-         if (throwable instanceof SkipPacketException) {
-             Connection.LOGGER.debug("Skipping packet due to errors", throwable.getCause());
+         if (exception instanceof SkipPacketException) {
+             LOGGER.debug("Skipping packet due to errors", exception.getCause());
          } else {
-@@ -141,8 +199,10 @@
- 
+             boolean flag = !this.handlingFault;
              this.handlingFault = true;
              if (this.channel.isOpen()) {
 +                net.minecraft.server.level.ServerPlayer player = this.getPlayer(); // Paper - Add API for quit reason
-                 if (throwable instanceof TimeoutException) {
-                     Connection.LOGGER.debug("Timeout", throwable);
+                 if (exception instanceof TimeoutException) {
+                     LOGGER.debug("Timeout", exception);
 +                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.TIMED_OUT; // Paper - Add API for quit reason
-                     this.disconnect((Component) Component.translatable("disconnect.timeout"));
+                     this.disconnect(Component.translatable("disconnect.timeout"));
                  } else {
-                     MutableComponent ichatmutablecomponent = Component.translatable("disconnect.genericReason", "Internal Exception: " + String.valueOf(throwable));
-@@ -155,9 +215,11 @@
-                         disconnectiondetails = new DisconnectionDetails(ichatmutablecomponent);
+                     Component component = Component.translatable("disconnect.genericReason", "Internal Exception: " + exception);
+@@ -147,9 +_,11 @@
+                         disconnectionDetails = new DisconnectionDetails(component);
                      }
  
 +                    if (player != null) player.quitReason = org.bukkit.event.player.PlayerQuitEvent.QuitReason.ERRONEOUS_STATE; // Paper - Add API for quit reason
                      if (flag) {
-                         Connection.LOGGER.debug("Failed to sent packet", throwable);
+                         LOGGER.debug("Failed to sent packet", exception);
 -                        if (this.getSending() == PacketFlow.CLIENTBOUND) {
 +                        boolean doesDisconnectExist = this.packetListener.protocol() != ConnectionProtocol.STATUS && this.packetListener.protocol() != ConnectionProtocol.HANDSHAKING; // Paper
 +                        if (this.getSending() == PacketFlow.CLIENTBOUND && doesDisconnectExist) { // Paper
-                             Packet<?> packet = this.sendLoginDisconnect ? new ClientboundLoginDisconnectPacket(ichatmutablecomponent) : new ClientboundDisconnectPacket(ichatmutablecomponent);
- 
-                             this.send((Packet) packet, PacketSendListener.thenRun(() -> {
-@@ -176,6 +238,7 @@
- 
+                             Packet<?> packet = (Packet<?>)(this.sendLoginDisconnect
+                                 ? new ClientboundLoginDisconnectPacket(component)
+                                 : new ClientboundDisconnectPacket(component));
+@@ -166,6 +_,7 @@
+                 }
              }
          }
-+        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) io.papermc.paper.util.TraceUtil.printStackTrace(throwable); // Spigot // Paper
++        if (net.minecraft.server.MinecraftServer.getServer().isDebugging()) io.papermc.paper.util.TraceUtil.printStackTrace(exception); // Spigot // Paper
      }
  
-     protected void channelRead0(ChannelHandlerContext channelhandlercontext, Packet<?> packet) {
-@@ -185,11 +248,61 @@
-             if (packetlistener == null) {
+     @Override
+@@ -175,10 +_,60 @@
+             if (packetListener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
              } else {
 +                // Paper start - packet limiter
@@ -189,25 +186,15 @@
 +                    }
 +                }
 +                // Paper end - packet limiter
-                 if (packetlistener.shouldHandleMessage(packet)) {
+                 if (packetListener.shouldHandleMessage(packet)) {
                      try {
-                         Connection.genericsFtw(packet, packetlistener);
-                     } catch (RunningOnDifferentThreadException cancelledpackethandleexception) {
-                         ;
+                         genericsFtw(packet, packetListener);
+                     } catch (RunningOnDifferentThreadException var5) {
 +                    } catch (io.papermc.paper.util.ServerStopRejectedExecutionException ignored) { // Paper - do not prematurely disconnect players on stop
-                     } catch (RejectedExecutionException rejectedexecutionexception) {
-                         this.disconnect((Component) Component.translatable("multiplayer.disconnect.server_shutdown"));
-                     } catch (ClassCastException classcastexception) {
-@@ -205,7 +318,7 @@
-     }
- 
-     private static <T extends PacketListener> void genericsFtw(Packet<T> packet, PacketListener listener) {
--        packet.handle(listener);
-+        packet.handle((T) listener); // CraftBukkit - decompile error
-     }
- 
-     private void validateListener(ProtocolInfo<?> state, PacketListener listener) {
-@@ -418,12 +531,26 @@
+                     } catch (RejectedExecutionException var6) {
+                         this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
+                     } catch (ClassCastException var7) {
+@@ -385,10 +_,24 @@
          }
      }
  
@@ -222,19 +209,17 @@
 +            Connection.joinAttemptsThisTick = 0;
 +        }
 +        // Paper end - Buffer joins to world
-         PacketListener packetlistener = this.packetListener;
- 
-         if (packetlistener instanceof TickablePacketListener tickablepacketlistener) {
+         if (this.packetListener instanceof TickablePacketListener tickablePacketListener) {
 +            // Paper start - Buffer joins to world
 +            if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
 +                || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.VERIFYING
 +                || Connection.joinAttemptsThisTick++ < MAX_PER_TICK) {
-             tickablepacketlistener.tick();
+             tickablePacketListener.tick();
 +            } // Paper end - Buffer joins to world
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -431,7 +558,7 @@
+@@ -396,7 +_,7 @@
          }
  
          if (this.channel != null) {
@@ -243,34 +228,25 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -464,12 +591,15 @@
+@@ -432,12 +_,15 @@
      }
  
-     public void disconnect(DisconnectionDetails disconnectionInfo) {
+     public void disconnect(DisconnectionDetails disconnectionDetails) {
 +        // Spigot Start
 +        this.preparing = false;
 +        // Spigot End
          if (this.channel == null) {
-             this.delayedDisconnect = disconnectionInfo;
+             this.delayedDisconnect = disconnectionDetails;
          }
  
          if (this.isConnected()) {
 -            this.channel.close().awaitUninterruptibly();
 +            this.channel.close(); // We can't wait as this may be called from an event loop.
-             this.disconnectionDetails = disconnectionInfo;
+             this.disconnectionDetails = disconnectionDetails;
          }
- 
-@@ -537,7 +667,7 @@
      }
- 
-     public void configurePacketHandler(ChannelPipeline pipeline) {
--        pipeline.addLast("hackfix", new ChannelOutboundHandlerAdapter(this) {
-+        pipeline.addLast("hackfix", new ChannelOutboundHandlerAdapter() { // CraftBukkit - decompile error
-             public void write(ChannelHandlerContext channelhandlercontext, Object object, ChannelPromise channelpromise) throws Exception {
-                 super.write(channelhandlercontext, object, channelpromise);
-             }
-@@ -613,6 +743,14 @@
- 
+@@ -584,6 +_,13 @@
+         }
      }
  
 +    // Paper start - add proper async disconnect
@@ -280,33 +256,31 @@
 +        }
 +    }
 +    // Paper end - add proper async disconnect
-+
-     public void setupCompression(int compressionThreshold, boolean rejectsBadPackets) {
-         if (compressionThreshold >= 0) {
-             ChannelHandler channelhandler = this.channel.pipeline().get("decompress");
-@@ -633,6 +771,7 @@
+     public void setupCompression(int threshold, boolean validateDecompressed) {
+         if (threshold >= 0) {
+             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder compressionDecoder) {
+@@ -597,6 +_,7 @@
              } else {
-                 this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(compressionThreshold));
+                 this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(threshold));
              }
 +            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper - Add Channel initialization listeners
          } else {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
                  this.channel.pipeline().remove("decompress");
-@@ -641,6 +780,7 @@
+@@ -605,6 +_,7 @@
              if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
                  this.channel.pipeline().remove("compress");
              }
 +            this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_DISABLED); // Paper - Add Channel initialization listeners
          }
- 
      }
-@@ -661,6 +801,27 @@
  
-                     packetlistener1.onDisconnect(disconnectiondetails);
+@@ -622,6 +_,26 @@
+                     );
+                     packetListener1.onDisconnect(disconnectionDetails);
                  }
 +                this.pendingActions.clear(); // Free up packet queue.
 +                // Paper start - Add PlayerConnectionCloseEvent
-+                final PacketListener packetListener = this.getPacketListener();
 +                if (packetListener instanceof net.minecraft.server.network.ServerCommonPacketListenerImpl commonPacketListener) {
 +                    /* Player was logged in, either game listener or configuration listener */
 +                    final com.mojang.authlib.GameProfile profile = commonPacketListener.getOwner();
@@ -325,6 +299,6 @@
 +                    }
 +                }
 +                // Paper end - Add PlayerConnectionCloseEvent
- 
              }
          }
+     }
