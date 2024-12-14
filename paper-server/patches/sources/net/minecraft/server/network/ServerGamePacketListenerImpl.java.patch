@@ -147,7 +147,7 @@
 +        }
 +        // Paper start - Prevent causing expired keys from impacting new joins
 +        if (!this.hasLoggedExpiry && this.chatSession != null && this.chatSession.profilePublicKey().data().hasExpired()) {
-+            LOGGER.info("Player profile key for {} has expired!", this.player.getGameProfile().getName());
++            LOGGER.info("Player profile key for {} has expired!", this.player.getName().getString());
 +            this.hasLoggedExpiry = true;
 +        }
 +        // Paper end - Prevent causing expired keys from impacting new joins
@@ -374,7 +374,7 @@
          this.player.getRecipeBook().setBookSetting(packet.getBookType(), packet.isOpen(), packet.isFiltering());
      }
  
-@@ -536,14 +_,84 @@
+@@ -536,25 +_,110 @@
          }
      }
  
@@ -386,7 +386,7 @@
      @Override
      public void handleCustomCommandSuggestions(ServerboundCommandSuggestionPacket packet) {
 -        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
-+        // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
++        // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
 +        // CraftBukkit start
 +        if (!this.tabSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) { // Paper - configurable tab spam limits
 +            this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - Kick event cause // Paper - add proper async disconnect
@@ -458,9 +458,16 @@
 +    private void sendServerSuggestions(final ServerboundCommandSuggestionPacket packet, final StringReader stringReader) {
 +        // Paper end - AsyncTabCompleteEvent
          ParseResults<CommandSourceStack> parseResults = this.server.getCommands().getDispatcher().parse(stringReader, this.player.createCommandSourceStack());
++        // Paper start - Handle non-recoverable exceptions
++        if (!parseResults.getExceptions().isEmpty()
++            && parseResults.getExceptions().values().stream().anyMatch(e -> e instanceof io.papermc.paper.brigadier.TagParseCommandSyntaxException)) {
++            this.disconnect(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM);
++            return;
++        }
++        // Paper end - Handle non-recoverable exceptions
          this.server
              .getCommands()
-@@ -551,10 +_,18 @@
+             .getDispatcher()
              .getCompletionSuggestions(parseResults)
              .thenAccept(
                  suggestions -> {
@@ -802,7 +809,7 @@
                              d3 = d - this.player.getX();
                              d4 = d1 - this.player.getY();
                              if (d4 > -0.5 || d4 < 0.5) {
-@@ -970,21 +_,106 @@
+@@ -970,20 +_,104 @@
  
                              d5 = d2 - this.player.getZ();
                              d7 = d3 * d3 + d4 * d4 + d5 * d5;
@@ -815,21 +822,20 @@
                                  && !this.player.gameMode.isCreative()
                                  && this.player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR) {
 -                                flag2 = true;
--                                LOGGER.warn("{} moved wrongly!", this.player.getName().getString());
--                            }
--
--                            if (this.player.noPhysics
--                                || this.player.isSleeping()
--                                || (!flag2 || !serverLevel.noCollision(this.player, boundingBox))
--                                    && !this.isPlayerCollidingWithAnythingNew(serverLevel, boundingBox, d, d1, d2)) {
 +                                // Paper start - Add fail move event
 +                                io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_WRONGLY,
 +                                    toX, toY, toZ, toYaw, toPitch, true);
 +                                if (!event.isAllowed()) {
 +                                    movedWrongly = true;
 +                                    if (event.getLogWarning())
-+                                        // Paper end
-+                                        LOGGER.warn("{} moved wrongly!", this.player.getName().getString());
++                                    // Paper end
+                                 LOGGER.warn("{} moved wrongly!", this.player.getName().getString());
+-                            }
+-
+-                            if (this.player.noPhysics
+-                                || this.player.isSleeping()
+-                                || (!flag2 || !serverLevel.noCollision(this.player, boundingBox))
+-                                    && !this.isPlayerCollidingWithAnythingNew(serverLevel, boundingBox, d, d1, d2)) {
 +                                } // Paper
 +                            }
 +
@@ -915,18 +921,8 @@
 +                                }
 +                                // CraftBukkit end
                                  this.player.absMoveTo(d, d1, d2, f, f1);
-+
                                  boolean isAutoSpinAttack = this.player.isAutoSpinAttack();
                                  this.clientIsFloating = d4 >= -0.03125
-                                     && !flag1
-@@ -996,6 +_,7 @@
-                                     && !isAutoSpinAttack
-                                     && this.noBlocksAround(this.player);
-                                 this.player.serverLevel().getChunkSource().move(this.player);
-+
-                                 Vec3 vec3 = new Vec3(this.player.getX() - x, this.player.getY() - y, this.player.getZ() - z);
-                                 this.player.setOnGroundWithMovement(packet.isOnGround(), packet.horizontalCollision(), vec3);
-                                 this.player.doCheckFallDamage(vec3.x, vec3.y, vec3.z, packet.isOnGround());
 @@ -1018,9 +_,6 @@
                                  this.lastGoodX = this.player.getX();
                                  this.lastGoodY = this.player.getY();
@@ -945,12 +941,11 @@
  
              return true;
          } else {
-@@ -1076,10 +_,78 @@
+@@ -1076,10 +_,77 @@
      }
  
      public void teleport(double x, double y, double z, float yaw, float pitch) {
 -        this.teleport(new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, yaw, pitch), Collections.emptySet());
-+        //this.teleport(new PositionMoveRotation(new Vec3(x, y, z), Vec3.ZERO, yaw, pitch), Collections.emptySet());
 +        // CraftBukkit start - Delegate to teleport(Location)
 +        this.teleport(x, y, z, yaw, pitch, PlayerTeleportEvent.TeleportCause.UNKNOWN);
 +    }
@@ -1412,7 +1407,7 @@
          ParseResults<CommandSourceStack> parseResults = this.parseCommand(command);
          if (this.server.enforceSecureProfile() && SignableCommand.hasSignableArguments(parseResults)) {
              LOGGER.error(
-@@ -1335,13 +_,29 @@
+@@ -1335,26 +_,55 @@
          Optional<LastSeenMessages> optional = this.unpackAndApplyLastSeen(packet.lastSeenMessages());
          if (!optional.isEmpty()) {
              this.tryHandleChat(packet.command(), () -> {
@@ -1440,14 +1435,18 @@
 +        this.cserver.getPluginManager().callEvent(event);
 +        command = event.getMessage().substring(1);
 +
-+        // Paper start - Fix cancellation and message changing
          ParseResults<CommandSourceStack> parseResults = this.parseCommand(packet.command());
  
          Map<String, PlayerChatMessage> map;
-@@ -1352,9 +_,21 @@
+         try {
++            // Paper - Always parse the original command to add to the chat chain
+             map = this.collectSignedArguments(packet, SignableCommand.of(parseResults), lastSeenMessages);
+         } catch (SignedMessageChain.DecodeException var6) {
+             this.handleMessageDecodeFailure(var6);
              return;
          }
  
++        // Paper start - Fix cancellation and message changing
 +        if (event.isCancelled()) {
 +            // Only now are we actually good to return
 +            return;
@@ -1492,6 +1491,15 @@
          }
      }
  
+@@ -1434,7 +_,7 @@
+             Optional<LastSeenMessages> optional = this.lastSeenMessages.applyUpdate(update);
+             if (optional.isEmpty()) {
+                 LOGGER.warn("Failed to validate message acknowledgements from {}", this.player.getName().getString());
+-                this.disconnect(CHAT_VALIDATION_FAILED);
++                this.disconnectAsync(CHAT_VALIDATION_FAILED, org.bukkit.event.player.PlayerKickEvent.Cause.CHAT_VALIDATION_FAILED); // Paper - kick event causes & add proper async disconnect
+             }
+ 
+             return optional;
 @@ -1451,22 +_,155 @@
          return false;
      }
@@ -1818,7 +1826,7 @@
  
                  AABB boundingBox = target.getBoundingBox();
 -                if (this.player.canInteractWithEntity(boundingBox, 3.0)) {
-+                if (this.player.canInteractWithEntity(boundingBox, io.papermc.paper.configuration.GlobalConfiguration.get().misc.clientInteractionLeniencyDistance.or(3.0D))) { // Paper - configurable lenience value for interact range
++                if (this.player.canInteractWithEntity(boundingBox, io.papermc.paper.configuration.GlobalConfiguration.get().misc.clientInteractionLeniencyDistance.or(3.0))) { // Paper - configurable lenience value for interact range
                      packet.dispatch(
                          new ServerboundInteractPacket.Handler() {
 -                            private void performInteraction(InteractionHand hand, ServerGamePacketListenerImpl.EntityInteraction entityInteraction) {
@@ -2068,7 +2076,7 @@
 +                                }
 +                            }
 +                            break;
-+                            // TODO check on updates
++                        // TODO check on updates
 +                        case QUICK_MOVE:
 +                            if (packet.getButtonNum() == 0) {
 +                                click = ClickType.SHIFT_LEFT;
@@ -2289,13 +2297,13 @@
 +                                        break;
 +                                    // Modified cursor only
 +                                    case DROP_ALL_CURSOR:
-+                                        case DROP_ONE_CURSOR:
-+                                        case CLONE_STACK:
++                                    case DROP_ONE_CURSOR:
++                                    case CLONE_STACK:
 +                                        this.player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetCursorItemPacket(this.player.containerMenu.getCarried().copy())); // Paper - correctly set cursor
 +                                        break;
 +                                    // Nothing
 +                                    case NOTHING:
-+                                    break;
++                                        break;
 +                                }
 +                        }
 +

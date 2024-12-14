@@ -26,26 +26,24 @@
          byteBuf.markReaderIndex();
          boolean flag = true;
  
-@@ -33,9 +_,21 @@
+@@ -33,9 +_,19 @@
  
                  SocketAddress socketAddress = context.channel().remoteAddress();
                  int i = byteBuf.readableBytes();
 +                String string = null; // Paper
-+                // org.bukkit.event.server.ServerListPingEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callServerListPingEvent(socketAddress, this.server.getMotd(), this.server.getPlayerCount(), this.server.getMaxPlayers()); // CraftBukkit // Paper
-+                com.destroystokyo.paper.event.server.PaperServerListPingEvent event; // Paper
                  if (i == 0) {
 -                    LOGGER.debug("Ping: (<1.3.x) from {}", socketAddress);
 -                    String string = createVersion0Response(this.server);
 +                    LOGGER.debug("Ping: (<1.3.x) from {}", net.minecraft.server.MinecraftServer.getServer().logIPs() ? socketAddress: "<ip address withheld>"); // Paper - Respect logIPs option
 +                    // Paper start - Call PaperServerListPingEvent and use results
-+                    event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socketAddress, 39, null);
++                    com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socketAddress, 39, null);
 +                    if (event == null) {
 +                        context.close();
 +                        byteBuf.release();
 +                        flag = false;
 +                        return;
 +                    }
-+                    string = String.format(Locale.ROOT, "%s\u00a7%d\u00a7%d", com.destroystokyo.paper.network.PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
++                    string = String.format(Locale.ROOT, "%s§%d§%d", com.destroystokyo.paper.network.PaperLegacyStatusClient.getUnformattedMotd(event), event.getNumPlayers(), event.getMaxPlayers());
 +                    // Paper end - Call PaperServerListPingEvent and use results
                      sendFlushAndClose(context, createLegacyDisconnectPacket(context.alloc(), string));
                  } else {
@@ -74,7 +72,7 @@
 +
 +                    if (string == null) {
 +                        // Paper start - Call PaperServerListPingEvent and use results
-+                        event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socketAddress, 127, null); // Paper
++                        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socketAddress, 127, null); // Paper
 +                        if (event == null) {
 +                            context.close();
 +                            byteBuf.release();
@@ -85,7 +83,7 @@
 -                        LOGGER.debug("Ping: (1.6) from {}", socketAddress);
 -                    } else {
 -                        LOGGER.debug("Ping: (1.4-1.5.x) from {}", socketAddress);
-+                        string = String.format(Locale.ROOT, "\u00a71\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", event.getProtocolVersion(), this.server.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
++                        string = String.format(Locale.ROOT, "§1\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d", event.getProtocolVersion(), this.server.getServerVersion(), event.getMotd(), event.getNumPlayers(), event.getMaxPlayers()); // CraftBukkit
 +                        // Paper end - Call PaperServerListPingEvent and use results
                      }
 -
@@ -93,25 +91,11 @@
                      sendFlushAndClose(context, createLegacyDisconnectPacket(context.alloc(), string));
                  }
  
-@@ -95,21 +_,97 @@
-         }
+@@ -110,6 +_,98 @@
+             server.getMaxPlayers()
+         );
      }
- 
--    private static String createVersion0Response(ServerInfo server) {
--        return String.format(Locale.ROOT, "%s§%d§%d", server.getMotd(), server.getPlayerCount(), server.getMaxPlayers());
--    }
--
--    private static String createVersion1Response(ServerInfo server) {
--        return String.format(
--            Locale.ROOT,
--            "§1\u0000%d\u0000%s\u0000%s\u0000%d\u0000%d",
--            127,
--            server.getServerVersion(),
--            server.getMotd(),
--            server.getPlayerCount(),
--            server.getMaxPlayers()
--        );
--    }
++
 +    // Paper start
 +    private static String readLegacyString(ByteBuf buf) {
 +        int size = buf.readShort() * Character.BYTES;
