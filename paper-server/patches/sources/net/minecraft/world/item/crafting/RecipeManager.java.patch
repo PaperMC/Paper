@@ -1,0 +1,64 @@
+--- a/net/minecraft/world/item/crafting/RecipeManager.java
++++ b/net/minecraft/world/item/crafting/RecipeManager.java
+@@ -87,7 +_,26 @@
+         LOGGER.info("Loaded {} recipes", object.values().size());
+     }
+ 
++    // CraftBukkit start
++    public void addRecipe(RecipeHolder<?> irecipe) {
++        org.spigotmc.AsyncCatcher.catchOp("Recipe Add"); // Spigot
++        this.recipes.addRecipe(irecipe);
++        this.finalizeRecipeLoading();
++    }
++
++    private FeatureFlagSet featureflagset;
++
++    public void finalizeRecipeLoading() {
++        if (this.featureflagset != null) {
++            this.finalizeRecipeLoading(this.featureflagset);
++
++            net.minecraft.server.MinecraftServer.getServer().getPlayerList().reloadRecipes();
++        }
++    }
++
+     public void finalizeRecipeLoading(FeatureFlagSet enabledFeatures) {
++        this.featureflagset = enabledFeatures;
++        // CraftBukkit end
+         List<SelectableRecipe.SingleInputEntry<StonecutterRecipe>> list = new ArrayList<>();
+         List<RecipeManager.IngredientCollector> list1 = RECIPE_PROPERTY_SETS.entrySet()
+             .stream()
+@@ -147,7 +_,10 @@
+     }
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> Optional<RecipeHolder<T>> getRecipeFor(RecipeType<T> recipeType, I input, Level level) {
+-        return this.recipes.getRecipesFor(recipeType, input, level).findFirst();
++        // CraftBukkit start
++        List<RecipeHolder<T>> list = this.recipes.getRecipesFor(recipeType, input, level).toList();
++        return (list.isEmpty()) ? Optional.empty() : Optional.of(list.getLast()); // CraftBukkit - SPIGOT-4638: last recipe gets priority
++        // CraftBukkit end
+     }
+ 
+     public Optional<RecipeHolder<?>> byKey(ResourceKey<Recipe<?>> key) {
+@@ -199,6 +_,22 @@
+         Recipe<?> recipe1 = Recipe.CODEC.parse(registries.createSerializationContext(JsonOps.INSTANCE), json).getOrThrow(JsonParseException::new);
+         return new RecipeHolder<>(recipe, recipe1);
+     }
++
++    // CraftBukkit start
++    public boolean removeRecipe(ResourceKey<Recipe<?>> mcKey) {
++        boolean removed = this.recipes.removeRecipe((ResourceKey<Recipe<RecipeInput>>) (ResourceKey) mcKey); // Paper - generic fix
++        if (removed) {
++            this.finalizeRecipeLoading();
++        }
++
++        return removed;
++    }
++
++    public void clearRecipes() {
++        this.recipes = RecipeMap.create(java.util.Collections.emptyList());
++        this.finalizeRecipeLoading();
++    }
++    // CraftBukkit end
+ 
+     public static <I extends RecipeInput, T extends Recipe<I>> RecipeManager.CachedCheck<I, T> createCheck(final RecipeType<T> recipeType) {
+         return new RecipeManager.CachedCheck<I, T>() {
