@@ -1,0 +1,30 @@
+--- a/net/minecraft/world/entity/ai/behavior/HarvestFarmland.java
++++ b/net/minecraft/world/entity/ai/behavior/HarvestFarmland.java
+@@ -110,7 +_,11 @@
+                 Block block = blockState.getBlock();
+                 Block block1 = level.getBlockState(this.aboveFarmlandPos.below()).getBlock();
+                 if (block instanceof CropBlock && ((CropBlock)block).isMaxAge(blockState)) {
+-                    level.destroyBlock(this.aboveFarmlandPos, true, owner);
++                    // CraftBukkit start
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(owner, this.aboveFarmlandPos, blockState.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
++                        level.destroyBlock(this.aboveFarmlandPos, true, owner);
++                    }
++                    // CraftBukkit end
+                 }
+ 
+                 if (blockState.isAir() && block1 instanceof FarmBlock && owner.hasFarmSeeds()) {
+@@ -121,9 +_,11 @@
+                         boolean flag = false;
+                         if (!item.isEmpty() && item.is(ItemTags.VILLAGER_PLANTABLE_SEEDS) && item.getItem() instanceof BlockItem blockItem) {
+                             BlockState blockState1 = blockItem.getBlock().defaultBlockState();
+-                            level.setBlockAndUpdate(this.aboveFarmlandPos, blockState1);
+-                            level.gameEvent(GameEvent.BLOCK_PLACE, this.aboveFarmlandPos, GameEvent.Context.of(owner, blockState1));
+-                            flag = true;
++                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(owner, this.aboveFarmlandPos, blockState1)) { // CraftBukkit
++                                level.setBlockAndUpdate(this.aboveFarmlandPos, blockState1);
++                                level.gameEvent(GameEvent.BLOCK_PLACE, this.aboveFarmlandPos, GameEvent.Context.of(owner, blockState1));
++                                flag = true;
++                            } // CraftBukkit
+                         }
+ 
+                         if (flag) {

@@ -1,0 +1,25 @@
+--- a/net/minecraft/world/entity/ai/behavior/VillagerMakeLove.java
++++ b/net/minecraft/world/entity/ai/behavior/VillagerMakeLove.java
+@@ -111,12 +_,18 @@
+         if (breedOffspring == null) {
+             return Optional.empty();
+         } else {
+-            parent.setAge(6000);
+-            partner.setAge(6000);
+             breedOffspring.setAge(-24000);
+             breedOffspring.moveTo(parent.getX(), parent.getY(), parent.getZ(), 0.0F, 0.0F);
+-            level.addFreshEntityWithPassengers(breedOffspring);
+-            level.broadcastEntityEvent(breedOffspring, (byte)12);
++            // CraftBukkit start - call EntityBreedEvent
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(breedOffspring, parent, partner, null, null, 0).isCancelled()) {
++                return Optional.empty();
++            }
++            // Move age setting down
++            parent.setAge(6000);
++            partner.setAge(6000);
++            level.addFreshEntityWithPassengers(breedOffspring, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING);
++            // CraftBukkit end
++            level.broadcastEntityEvent(breedOffspring, (byte) 12);
+             return Optional.of(breedOffspring);
+         }
+     }

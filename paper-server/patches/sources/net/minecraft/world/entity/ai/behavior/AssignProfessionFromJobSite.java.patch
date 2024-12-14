@@ -1,0 +1,39 @@
+--- a/net/minecraft/world/entity/ai/behavior/AssignProfessionFromJobSite.java
++++ b/net/minecraft/world/entity/ai/behavior/AssignProfessionFromJobSite.java
+@@ -2,12 +_,10 @@
+ 
+ import java.util.Optional;
+ import net.minecraft.core.GlobalPos;
+-import net.minecraft.core.Holder;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.server.MinecraftServer;
+ import net.minecraft.world.entity.ai.behavior.declarative.BehaviorBuilder;
+ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+-import net.minecraft.world.entity.ai.village.poi.PoiType;
+ import net.minecraft.world.entity.npc.Villager;
+ import net.minecraft.world.entity.npc.VillagerProfession;
+ 
+@@ -34,11 +_,22 @@
+                                     .flatMap(
+                                         poi -> BuiltInRegistries.VILLAGER_PROFESSION
+                                             .stream()
+-                                            .filter(profession -> profession.heldJobSite().test((Holder<PoiType>)poi))
++                                            .filter(profession -> profession.heldJobSite().test(poi))
+                                             .findFirst()
+                                     )
+                                     .ifPresent(profession -> {
+                                         villager.setVillagerData(villager.getVillagerData().setProfession(profession));
++                                        // CraftBukkit start - Fire VillagerCareerChangeEvent where Villager gets employed
++                                        org.bukkit.event.entity.VillagerCareerChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callVillagerCareerChangeEvent(
++                                            villager, org.bukkit.craftbukkit.entity.CraftVillager.CraftProfession.minecraftToBukkit(profession),
++                                            org.bukkit.event.entity.VillagerCareerChangeEvent.ChangeReason.EMPLOYED
++                                        );
++                                        if (event.isCancelled()) {
++                                            return;
++                                        }
++
++                                        villager.setVillagerData(villager.getVillagerData().setProfession(org.bukkit.craftbukkit.entity.CraftVillager.CraftProfession.bukkitToMinecraft(event.getProfession())));
++                                        // CraftBukkit end
+                                         villager.refreshBrain(level);
+                                     });
+                                 return true;
