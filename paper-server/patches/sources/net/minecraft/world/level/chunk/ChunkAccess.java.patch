@@ -1,43 +1,45 @@
 --- a/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/net/minecraft/world/level/chunk/ChunkAccess.java
-@@ -65,7 +65,7 @@
+@@ -64,7 +_,7 @@
      protected final ShortList[] postProcessing;
      private volatile boolean unsaved;
      private volatile boolean isLightCorrect;
 -    protected final ChunkPos chunkPos;
 +    protected final ChunkPos chunkPos; public final long coordinateKey; public final int locX; public final int locZ; // Paper - cache coordinate key
      private long inhabitedTime;
-     /** @deprecated */
      @Nullable
-@@ -85,8 +85,14 @@
+     @Deprecated
+@@ -82,6 +_,11 @@
+     public final Map<BlockPos, BlockEntity> blockEntities = new Object2ObjectOpenHashMap<>();
      protected final LevelHeightAccessor levelHeightAccessor;
      protected final LevelChunkSection[] sections;
- 
 +    // CraftBukkit start - SPIGOT-6814: move to IChunkAccess to account for 1.17 to 1.18 chunk upgrading.
 +    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
 +    public org.bukkit.craftbukkit.persistence.DirtyCraftPersistentDataContainer persistentDataContainer = new org.bukkit.craftbukkit.persistence.DirtyCraftPersistentDataContainer(ChunkAccess.DATA_TYPE_REGISTRY);
 +    // CraftBukkit end
-+
-     public ChunkAccess(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor heightLimitView, Registry<Biome> biomeRegistry, long inhabitedTime, @Nullable LevelChunkSection[] sectionArray, @Nullable BlendingData blendingData) {
--        this.chunkPos = pos;
-+        this.locX = pos.x; this.locZ = pos.z; // Paper - reduce need for field lookups
-+        this.chunkPos = pos; this.coordinateKey = ChunkPos.asLong(locX, locZ); // Paper - cache long key
++    public final Registry<Biome> biomeRegistry; // CraftBukkit
+ 
+     public ChunkAccess(
+         ChunkPos chunkPos,
+@@ -92,7 +_,8 @@
+         @Nullable LevelChunkSection[] sections,
+         @Nullable BlendingData blendingData
+     ) {
+-        this.chunkPos = chunkPos;
++        this.locX = chunkPos.x; this.locZ = chunkPos.z; // Paper - reduce need for field lookups
++        this.chunkPos = chunkPos; this.coordinateKey = ChunkPos.asLong(locX, locZ); // Paper - cache long key
          this.upgradeData = upgradeData;
-         this.levelHeightAccessor = heightLimitView;
-         this.sections = new LevelChunkSection[heightLimitView.getSectionsCount()];
-@@ -103,7 +109,11 @@
+         this.levelHeightAccessor = levelHeightAccessor;
+         this.sections = new LevelChunkSection[levelHeightAccessor.getSectionsCount()];
+@@ -109,6 +_,7 @@
          }
  
-         ChunkAccess.replaceMissingSections(biomeRegistry, this.sections);
-+        // CraftBukkit start
-+        this.biomeRegistry = biomeRegistry;
+         replaceMissingSections(biomeRegistry, this.sections);
++        this.biomeRegistry = biomeRegistry; // Craftbukkit
      }
-+    public final Registry<Biome> biomeRegistry;
-+    // CraftBukkit end
  
-     private static void replaceMissingSections(Registry<Biome> biomeRegistry, LevelChunkSection[] sectionArray) {
-         for (int i = 0; i < sectionArray.length; ++i) {
-@@ -275,6 +285,7 @@
+     private static void replaceMissingSections(Registry<Biome> biomeRegistry, LevelChunkSection[] sections) {
+@@ -273,6 +_,7 @@
      public boolean tryMarkSaved() {
          if (this.unsaved) {
              this.unsaved = false;
@@ -45,7 +47,7 @@
              return true;
          } else {
              return false;
-@@ -282,7 +293,7 @@
+@@ -280,7 +_,7 @@
      }
  
      public boolean isUnsaved() {
@@ -54,15 +56,10 @@
      }
  
      public abstract ChunkStatus getPersistedStatus();
-@@ -458,10 +469,31 @@
- 
-             crashreportsystemdetails.setDetail("Location", () -> {
-                 return CrashReportCategory.formatLocation(this, biomeX, biomeY, biomeZ);
-+            });
-+            throw new ReportedException(crashreport);
-+        }
-+    }
-+
+@@ -446,6 +_,26 @@
+             throw new ReportedException(crashReport);
+         }
+     }
 +    // CraftBukkit start
 +    public void setBiome(int i, int j, int k, Holder<Biome> biome) {
 +        try {
@@ -78,11 +75,11 @@
 +
 +            crashreportsystemdetails.setDetail("Location", () -> {
 +                return CrashReportCategory.formatLocation(this, i, j, k);
-             });
-             throw new ReportedException(crashreport);
-         }
-     }
++            });
++            throw new ReportedException(crashreport);
++        }
++    }
 +    // CraftBukkit end
  
-     public void fillBiomesFromNoise(BiomeResolver biomeSupplier, Climate.Sampler sampler) {
-         ChunkPos chunkcoordintpair = this.getPos();
+     public void fillBiomesFromNoise(BiomeResolver resolver, Climate.Sampler sampler) {
+         ChunkPos pos = this.getPos();
