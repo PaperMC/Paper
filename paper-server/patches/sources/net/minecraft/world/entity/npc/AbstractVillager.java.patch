@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/npc/AbstractVillager.java
 +++ b/net/minecraft/world/entity/npc/AbstractVillager.java
-@@ -40,8 +40,21 @@
+@@ -37,7 +_,20 @@
  import net.minecraft.world.phys.Vec3;
  import org.slf4j.Logger;
  
@@ -12,7 +12,6 @@
 +// CraftBukkit end
 +
  public abstract class AbstractVillager extends AgeableMob implements InventoryCarrier, Npc, Merchant {
- 
 +    // CraftBukkit start
 +    @Override
 +    public CraftMerchant getCraftMerchant() {
@@ -22,16 +21,16 @@
      private static final EntityDataAccessor<Integer> DATA_UNHAPPY_COUNTER = SynchedEntityData.defineId(AbstractVillager.class, EntityDataSerializers.INT);
      private static final Logger LOGGER = LogUtils.getLogger();
      public static final int VILLAGER_SLOT_OFFSET = 300;
-@@ -50,7 +63,7 @@
+@@ -46,7 +_,7 @@
      private Player tradingPlayer;
      @Nullable
      protected MerchantOffers offers;
 -    private final SimpleContainer inventory = new SimpleContainer(8);
-+    private final SimpleContainer inventory = new SimpleContainer(8, (org.bukkit.craftbukkit.entity.CraftAbstractVillager) this.getBukkitEntity()); // CraftBukkit add argument
++    private final SimpleContainer inventory = new SimpleContainer(8, (org.bukkit.craftbukkit.entity.CraftAbstractVillager) this.getBukkitEntity()); // CraftBukkit - add argument
  
-     public AbstractVillager(EntityType<? extends AbstractVillager> type, Level world) {
-         super(type, world);
-@@ -101,6 +114,13 @@
+     public AbstractVillager(EntityType<? extends AbstractVillager> entityType, Level level) {
+         super(entityType, level);
+@@ -99,6 +_,13 @@
          return this.tradingPlayer != null;
      }
  
@@ -45,50 +44,40 @@
      @Override
      public MerchantOffers getOffers() {
          if (this.level().isClientSide) {
-@@ -121,11 +141,24 @@
-     @Override
-     public void overrideXp(int experience) {}
+@@ -121,11 +_,24 @@
+     public void overrideXp(int xp) {
+     }
  
 +    // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
-     @Override
--    public void notifyTrade(MerchantOffer offer) {
--        offer.increaseUses();
-+    public void processTrade(MerchantOffer recipe, @Nullable io.papermc.paper.event.player.PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
++    @Override
++    public void processTrade(MerchantOffer offer, @Nullable io.papermc.paper.event.player.PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
 +        if (event == null || event.willIncreaseTradeUses()) {
-+            recipe.increaseUses();
++            offer.increaseUses();
 +        }
 +        if (event == null || event.isRewardingExp()) {
-+            this.rewardTradeXp(recipe);
++                this.rewardTradeXp(offer);
 +        }
-+        this.notifyTrade(recipe);
++        this.notifyTrade(offer);
 +    }
 +    // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
 +
-+    @Override
-+    public void notifyTrade(MerchantOffer offer) {
+     @Override
+     public void notifyTrade(MerchantOffer offer) {
+-        offer.increaseUses();
 +        // offer.increaseUses(); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
          this.ambientSoundTime = -this.getAmbientSoundInterval();
 -        this.rewardTradeXp(offer);
 +        // this.rewardTradeXp(offer); // Paper - Add PlayerTradeEvent and PlayerPurchaseEvent
          if (this.tradingPlayer instanceof ServerPlayer) {
-             CriteriaTriggers.TRADE.trigger((ServerPlayer) this.tradingPlayer, this, offer.getResult());
+             CriteriaTriggers.TRADE.trigger((ServerPlayer)this.tradingPlayer, this, offer.getResult());
          }
-@@ -179,7 +212,7 @@
-     public void readAdditionalSaveData(CompoundTag nbt) {
-         super.readAdditionalSaveData(nbt);
-         if (nbt.contains("Offers")) {
--            DataResult dataresult = MerchantOffers.CODEC.parse(this.registryAccess().createSerializationContext(NbtOps.INSTANCE), nbt.get("Offers"));
-+            DataResult<MerchantOffers> dataresult = MerchantOffers.CODEC.parse(this.registryAccess().createSerializationContext(NbtOps.INSTANCE), nbt.get("Offers")); // CraftBukkit - decompile error
-             Logger logger = AbstractVillager.LOGGER;
- 
-             Objects.requireNonNull(logger);
-@@ -246,7 +279,20 @@
-             MerchantOffer merchantrecipe = ((VillagerTrades.ItemListing) arraylist.remove(this.random.nextInt(arraylist.size()))).getOffer(this, this.random);
- 
-             if (merchantrecipe != null) {
--                recipeList.add(merchantrecipe);
+@@ -236,7 +_,20 @@
+         while (i < maxNumbers && !list.isEmpty()) {
+             MerchantOffer offer = list.remove(this.random.nextInt(list.size())).getOffer(this, this.random);
+             if (offer != null) {
+-                givenMerchantOffers.add(offer);
 +                // CraftBukkit start
-+                VillagerAcquireTradeEvent event = new VillagerAcquireTradeEvent((org.bukkit.entity.AbstractVillager) this.getBukkitEntity(), merchantrecipe.asBukkit());
++                VillagerAcquireTradeEvent event = new VillagerAcquireTradeEvent((org.bukkit.entity.AbstractVillager) this.getBukkitEntity(), offer.asBukkit());
 +                // Suppress during worldgen
 +                if (this.valid) {
 +                    Bukkit.getPluginManager().callEvent(event);
@@ -97,10 +86,10 @@
 +                    // Paper start - Fix crash from invalid ingredient list
 +                    final CraftMerchantRecipe craftMerchantRecipe = CraftMerchantRecipe.fromBukkit(event.getRecipe());
 +                    if (craftMerchantRecipe.getIngredients().isEmpty()) return;
-+                    recipeList.add(craftMerchantRecipe.toMinecraft());
++                    givenMerchantOffers.add(craftMerchantRecipe.toMinecraft());
 +                    // Paper end - Fix crash from invalid ingredient list
 +                }
 +                // CraftBukkit end
-                 ++j;
+                 i++;
              }
          }
