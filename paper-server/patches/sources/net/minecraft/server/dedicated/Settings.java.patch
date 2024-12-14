@@ -1,0 +1,181 @@
+--- a/net/minecraft/server/dedicated/Settings.java
++++ b/net/minecraft/server/dedicated/Settings.java
+@@ -25,16 +_,39 @@
+ 
+ public abstract class Settings<T extends Settings<T>> {
+     private static final Logger LOGGER = LogUtils.getLogger();
++    private static final boolean skipComments = Boolean.getBoolean("Paper.skipServerPropertiesComments"); // Paper - allow skipping server.properties comments
+     public final Properties properties;
++    // CraftBukkit start
++    private joptsimple.OptionSet options;
+ 
+-    public Settings(Properties properties) {
++    public Settings(Properties properties, final joptsimple.OptionSet options) {
+         this.properties = properties;
+-    }
++        this.options = options;
++    }
++
++    private String getOverride(String name, String value) {
++        if ((this.options != null) && (this.options.has(name))) {
++            return String.valueOf(this.options.valueOf(name));
++        }
++
++        return value;
++    }
++    // CraftBukkit end
+ 
+     public static Properties loadFromFile(Path path) {
++        // CraftBukkit start - SPIGOT-7465, MC-264979: Don't load if file doesn't exist
++        // Paper start - rewrite CB's don't load block
++        // if (!path.toFile().exists()) {
++        //     return new Properties();
++        // }
++        if (!Files.exists(path)) {
++            return new Properties();
++        }
++        // Paper end
++        // CraftBukkit end
+         try {
+             try {
+-                Properties var13;
++                Properties properties;
+                 try (InputStream inputStream = Files.newInputStream(path)) {
+                     CharsetDecoder charsetDecoder = StandardCharsets.UTF_8
+                         .newDecoder()
+@@ -42,34 +_,81 @@
+                         .onUnmappableCharacter(CodingErrorAction.REPORT);
+                     Properties map = new Properties();
+                     map.load(new InputStreamReader(inputStream, charsetDecoder));
+-                    var13 = map;
++                    properties = map;
+                 }
+ 
+-                return var13;
++                return properties;
+             } catch (CharacterCodingException var9) {
+                 LOGGER.info("Failed to load properties as UTF-8 from file {}, trying ISO_8859_1", path);
+ 
+-                Properties var4;
++                Properties properties;
+                 try (Reader bufferedReader = Files.newBufferedReader(path, StandardCharsets.ISO_8859_1)) {
+                     Properties map = new Properties();
+                     map.load(bufferedReader);
+-                    var4 = map;
++                    properties = map;
+                 }
+ 
+-                return var4;
++                return properties;
+             }
+-        } catch (IOException var10) {
+-            LOGGER.error("Failed to load properties from file: {}", path, var10);
++        } catch (IOException exception) {
++            LOGGER.error("Failed to load properties from file: {}", path, exception);
+             return new Properties();
+         }
+     }
+ 
+     public void store(Path path) {
+-        try (Writer bufferedWriter = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+-            this.properties.store(bufferedWriter, "Minecraft server properties");
+-        } catch (IOException var7) {
++        // CraftBukkit start - Don't attempt writing to file if it's read only
++        if (Files.exists(path) && Files.isWritable(path)) { // Paper - NIO
++            Settings.LOGGER.warn("Can not write to file {}, skipping.", path); // Paper - log message file is read-only
++            return;
++        }
++        // CraftBukkit end
++        // Paper start - allow skipping server.properties comments
++        try {
++            java.io.OutputStream outputstream = Files.newOutputStream(path);
++            java.io.BufferedOutputStream bufferedOutputStream = !skipComments ? new java.io.BufferedOutputStream(outputstream) : new java.io.BufferedOutputStream(outputstream) {
++                private boolean isRightAfterNewline = true; // If last written char was newline
++                private boolean isComment = false; // Are we writing comment currently?
++
++                @Override
++                public void write(byte @org.jetbrains.annotations.NotNull [] b) throws IOException {
++                    this.write(b, 0, b.length);
++                }
++
++                @Override
++                public void write(byte @org.jetbrains.annotations.NotNull [] bbuf, int off, int len) throws IOException {
++                    int latest_offset = off; // The latest offset, updated when comment ends
++                    for (int index = off; index < off + len; ++index) {
++                        byte c = bbuf[index];
++                        boolean isNewline = (c == '\n' || c == '\r');
++                        if (isNewline && this.isComment) {
++                            // Comment has ended
++                            this.isComment = false;
++                            latest_offset = index + 1;
++                        }
++                        if (c == '#' && this.isRightAfterNewline) {
++                            this.isComment = true;
++                            if (index != latest_offset) {
++                                // We got some non-comment data earlier
++                                super.write(bbuf, latest_offset, index - latest_offset);
++                            }
++                        }
++                        this.isRightAfterNewline = isNewline; // Store for next iteration
++
++                    }
++                    if (latest_offset < off + len && !this.isComment) {
++                        // We have some unwritten data, that isn't part of a comment
++                        super.write(bbuf, latest_offset, (off + len) - latest_offset);
++                    }
++                }
++            };
++            try (Writer bufferedWriter = new java.io.BufferedWriter(new java.io.OutputStreamWriter(bufferedOutputStream, StandardCharsets.UTF_8.newEncoder()))) {
++                this.properties.store(bufferedWriter, "Minecraft server properties");
++            }
++        } catch (final IOException e) {
+             LOGGER.error("Failed to store properties to file: {}", path);
+         }
++        // Paper end
+     }
+ 
+     private static <V extends Number> Function<String, V> wrapNumberDeserializer(Function<String, V> parseFunc) {
+@@ -94,7 +_,7 @@
+ 
+     @Nullable
+     public String getStringRaw(String key) {
+-        return (String)this.properties.get(key);
++        return this.getOverride(key, this.properties.getProperty(key)); // CraftBukkit
+     }
+ 
+     @Nullable
+@@ -109,6 +_,16 @@
+     }
+ 
+     protected <V> V get(String key, Function<String, V> serializer, Function<V, String> deserializer, V defaultValue) {
++        // CraftBukkit start
++        try {
++            return this.get0(key, serializer, deserializer, defaultValue);
++        } catch (Exception e) {
++            throw new RuntimeException("Could not load invalidly configured property '" + key + "'", e);
++        }
++    }
++
++    private <V> V get0(String key, Function<String, V> serializer, Function<V, String> deserializer, V defaultValue) {
++        // CraftBukkit end
+         String stringRaw = this.getStringRaw(key);
+         V object = MoreObjects.firstNonNull(stringRaw != null ? serializer.apply(stringRaw) : null, defaultValue);
+         this.properties.put(key, deserializer.apply(object));
+@@ -181,7 +_,7 @@
+         return map;
+     }
+ 
+-    protected abstract T reload(RegistryAccess registryAccess, Properties properties);
++    protected abstract T reload(RegistryAccess registryAccess, Properties properties, joptsimple.OptionSet options); // CraftBukkit
+ 
+     public class MutableValue<V> implements Supplier<V> {
+         private final String key;
+@@ -202,7 +_,7 @@
+         public T update(RegistryAccess registryAccess, V newValue) {
+             Properties map = Settings.this.cloneProperties();
+             map.put(this.key, this.serializer.apply(newValue));
+-            return Settings.this.reload(registryAccess, map);
++            return Settings.this.reload(registryAccess, map, Settings.this.options);
+         }
+     }
+ }
