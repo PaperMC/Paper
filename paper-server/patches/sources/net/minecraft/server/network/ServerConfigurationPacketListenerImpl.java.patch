@@ -1,0 +1,71 @@
+--- a/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
+@@ -48,8 +_,10 @@
+     @Nullable
+     private SynchronizeRegistriesTask synchronizeRegistriesTask;
+ 
+-    public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
+-        super(server, connection, cookie);
++    // CraftBukkit start
++    public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie, ServerPlayer player) {
++        super(server, connection, cookie, player);
++        // CraftBukkit end
+         this.gameProfile = cookie.gameProfile();
+         this.clientInformation = cookie.clientInformation();
+     }
+@@ -61,6 +_,10 @@
+ 
+     @Override
+     public void onDisconnect(DisconnectionDetails details) {
++        // Paper start - Debugging
++        if (this.server.isDebugging()) {
++            ServerConfigurationPacketListenerImpl.LOGGER.info("{} lost connection: {}, while in configuration phase {}", this.gameProfile, details.reason().getString(), this.currentTask != null ? this.currentTask.type().id() : "null");
++        } else // Paper end
+         LOGGER.info("{} lost connection: {}", this.gameProfile, details.reason().getString());
+         super.onDisconnect(details);
+     }
+@@ -73,6 +_,12 @@
+     public void startConfiguration() {
+         this.send(new ClientboundCustomPayloadPacket(new BrandPayload(this.server.getServerModName())));
+         ServerLinks serverLinks = this.server.serverLinks();
++        // CraftBukkit start
++        org.bukkit.craftbukkit.CraftServerLinks wrapper = new org.bukkit.craftbukkit.CraftServerLinks(serverLinks);
++        org.bukkit.event.player.PlayerLinksSendEvent event = new org.bukkit.event.player.PlayerLinksSendEvent(this.player.getBukkitEntity(), wrapper);
++        this.cserver.getPluginManager().callEvent(event);
++        serverLinks = wrapper.getServerLinks();
++        // CraftBukkit end
+         if (!serverLinks.isEmpty()) {
+             this.send(new ClientboundServerLinksPacket(serverLinks.untrust()));
+         }
+@@ -105,6 +_,7 @@
+     @Override
+     public void handleClientInformation(ServerboundClientInformationPacket packet) {
+         this.clientInformation = packet.information();
++        this.connection.channel.attr(io.papermc.paper.adventure.PaperAdventure.LOCALE_ATTRIBUTE).set(net.kyori.adventure.translation.Translator.parseLocale(packet.information().language())); // Paper
+     }
+ 
+     @Override
+@@ -139,16 +_,21 @@
+                 return;
+             }
+ 
+-            Component component = playerList.canPlayerLogin(this.connection.getRemoteAddress(), this.gameProfile);
++            Component component = null; // CraftBukkit - login checks already completed
+             if (component != null) {
+                 this.disconnect(component);
+                 return;
+             }
+ 
+-            ServerPlayer playerForLogin = playerList.getPlayerForLogin(this.gameProfile, this.clientInformation);
++            ServerPlayer playerForLogin = playerList.getPlayerForLogin(this.gameProfile, this.clientInformation, this.player); // CraftBukkit
+             playerList.placeNewPlayer(this.connection, playerForLogin, this.createCookie(this.clientInformation));
+         } catch (Exception var5) {
+             LOGGER.error("Couldn't place player in world", (Throwable)var5);
++            // Paper start - Debugging
++            if (this.server.isDebugging()) {
++                var5.printStackTrace();
++            }
++            // Paper end - Debugging
+             this.connection.send(new ClientboundDisconnectPacket(DISCONNECT_REASON_INVALID_DATA));
+             this.connection.disconnect(DISCONNECT_REASON_INVALID_DATA);
+         }
