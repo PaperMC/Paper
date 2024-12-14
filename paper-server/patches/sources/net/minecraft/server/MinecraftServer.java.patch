@@ -1,41 +1,5 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -3,6 +_,9 @@
- import com.google.common.base.Preconditions;
- import com.google.common.base.Splitter;
- import com.google.common.collect.ImmutableList;
-+import co.aikar.timings.Timings;
-+import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
-+import com.google.common.base.Stopwatch;
- import com.google.common.collect.Lists;
- import com.google.common.collect.Maps;
- import com.google.common.collect.Sets;
-@@ -80,17 +_,6 @@
- import net.minecraft.obfuscate.DontObfuscate;
- import net.minecraft.resources.ResourceKey;
- import net.minecraft.resources.ResourceLocation;
--import net.minecraft.server.bossevents.CustomBossEvents;
--import net.minecraft.server.level.DemoMode;
--import net.minecraft.server.level.PlayerRespawnLogic;
--import net.minecraft.server.level.ServerChunkCache;
--import net.minecraft.server.level.ServerLevel;
--import net.minecraft.server.level.ServerPlayer;
--import net.minecraft.server.level.ServerPlayerGameMode;
--import net.minecraft.server.level.progress.ChunkProgressListener;
--import net.minecraft.server.level.progress.ChunkProgressListenerFactory;
--import net.minecraft.server.network.ServerConnectionListener;
--import net.minecraft.server.network.TextFilter;
- import net.minecraft.server.packs.PackType;
- import net.minecraft.server.packs.repository.Pack;
- import net.minecraft.server.packs.repository.PackRepository;
-@@ -111,6 +_,7 @@
- import net.minecraft.util.RandomSource;
- import net.minecraft.util.SignatureValidator;
- import net.minecraft.util.TimeUtil;
-+import net.minecraft.util.datafix.DataFixers;
- import net.minecraft.util.debugchart.RemoteDebugSampleType;
- import net.minecraft.util.debugchart.SampleLogger;
- import net.minecraft.util.debugchart.TpsDebugDimensions;
 @@ -174,11 +_,13 @@
  import org.slf4j.Logger;
  
@@ -51,23 +15,8 @@
      private static final int OVERLOADED_TICKS_THRESHOLD = 20;
      private static final long OVERLOADED_WARNING_INTERVAL_NANOS = 10L * TimeUtil.NANOSECONDS_PER_SECOND;
      private static final int OVERLOADED_TICKS_WARNING_INTERVAL = 100;
-@@ -204,8 +_,8 @@
-     @Nullable
-     private MinecraftServer.TimeProfiler debugCommandProfiler;
-     private boolean debugCommandProfilerDelayStart;
--    private ServerConnectionListener connection;
--    public final ChunkProgressListenerFactory progressListenerFactory;
-+    private net.minecraft.server.network.ServerConnectionListener connection;
-+    public final net.minecraft.server.level.progress.ChunkProgressListenerFactory progressListenerFactory;
-     @Nullable
-     private ServerStatus status;
-     @Nullable
-@@ -215,9 +_,10 @@
-     private String localIp;
-     private int port = -1;
-     private final LayeredRegistryAccess<RegistryLayer> registries;
--    private Map<ResourceKey<Level>, ServerLevel> levels = Maps.newLinkedHashMap();
-+    private Map<ResourceKey<Level>, net.minecraft.server.level.ServerLevel> levels = Maps.newLinkedHashMap();
+@@ -218,6 +_,7 @@
+     private Map<ResourceKey<Level>, ServerLevel> levels = Maps.newLinkedHashMap();
      private PlayerList playerList;
      private volatile boolean running = true;
 +    private volatile boolean isRestarting = false; // Paper - flag to signify we're attempting to restart
@@ -92,15 +41,6 @@
      @Nullable
      private KeyPair keyPair;
      @Nullable
-@@ -252,7 +_,7 @@
-     private final ServerScoreboard scoreboard = new ServerScoreboard(this);
-     @Nullable
-     private CommandStorage commandStorage;
--    private final CustomBossEvents customBossEvents = new CustomBossEvents();
-+    private final net.minecraft.server.bossevents.CustomBossEvents customBossEvents = new net.minecraft.server.bossevents.CustomBossEvents();
-     private final ServerFunctionManager functionManager;
-     private boolean enforceWhitelist;
-     private float smoothedTickTimeMillis;
 @@ -271,10 +_,33 @@
      private final SuppressedExceptionCollector suppressedExceptions = new SuppressedExceptionCollector();
      private final DiscontinuousFrame tickFrame;
@@ -146,12 +86,8 @@
          Thread serverThread,
          LevelStorageSource.LevelStorageAccess storageSource,
          PackRepository packRepository,
-@@ -293,12 +_,13 @@
-         Proxy proxy,
-         DataFixer fixerUpper,
-         Services services,
--        ChunkProgressListenerFactory progressListenerFactory
-+        net.minecraft.server.level.progress.ChunkProgressListenerFactory progressListenerFactory
+@@ -296,9 +_,10 @@
+         ChunkProgressListenerFactory progressListenerFactory
      ) {
          super("Server");
 +        SERVER = this; // Paper - better singleton
@@ -260,7 +196,7 @@
 +        Registry<LevelStem> dimensions = iregistrycustom_dimension.lookupOrThrow(Registries.LEVEL_STEM);
 +        for (LevelStem worldDimension : dimensions) {
 +            ResourceKey<LevelStem> dimensionKey = dimensions.getResourceKey(worldDimension).get();
-+            net.minecraft.server.level.ServerLevel world;
++            ServerLevel world;
 +            int dimension = 0;
 +
 +            if (dimensionKey == LevelStem.NETHER) {
@@ -419,15 +355,15 @@
 +                this.worldData = worlddata;
 +                this.worldData.setGameType(((net.minecraft.server.dedicated.DedicatedServer) this).getProperties().gamemode); // From DedicatedServer.init
 +
-+                net.minecraft.server.level.progress.ChunkProgressListener worldloadlistener = this.progressListenerFactory.create(this.worldData.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS));
++                ChunkProgressListener worldloadlistener = this.progressListenerFactory.create(this.worldData.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS));
 +
-+                world = new net.minecraft.server.level.ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, worlddimension, worldloadlistener, flag, j, list, true, (RandomSequences) null, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
++                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, worlddimension, worldloadlistener, flag, j, list, true, (RandomSequences) null, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
 +                DimensionDataStorage worldpersistentdata = world.getDataStorage();
 +                this.readScoreboard(worldpersistentdata);
 +                this.server.scoreboardManager = new org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager(this, world.getScoreboard());
 +                this.commandStorage = new CommandStorage(worldpersistentdata);
 +            } else {
-+                net.minecraft.server.level.progress.ChunkProgressListener worldloadlistener = this.progressListenerFactory.create(this.worldData.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS));
++                ChunkProgressListener worldloadlistener = this.progressListenerFactory.create(this.worldData.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS));
 +                // Paper start - option to use the dimension_type to check if spawners should be added. I imagine mojang will add some datapack-y way of managing this in the future.
 +                final List<CustomSpawner> spawners;
 +                if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.useDimensionTypeForCustomSpawners && this.registryAccess().lookupOrThrow(Registries.DIMENSION_TYPE).getResourceKey(worlddimension.type().value()).orElseThrow() == net.minecraft.world.level.dimension.BuiltinDimensionTypes.OVERWORLD) {
@@ -435,7 +371,7 @@
 +                } else {
 +                    spawners = Collections.emptyList();
 +                }
-+                world = new net.minecraft.server.level.ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, worlddimension, worldloadlistener, flag, j, spawners, true, this.overworld().getRandomSequences(), org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
++                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, worlddimension, worldloadlistener, flag, j, spawners, true, this.overworld().getRandomSequences(), org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
 +                // Paper end - option to use the dimension_type to check if spawners should be added
 +            }
 +
@@ -451,7 +387,7 @@
 +            }
 +        }
 +        this.forceDifficulty();
-+        for (net.minecraft.server.level.ServerLevel serverLevel : this.getAllLevels()) {
++        for (ServerLevel serverLevel : this.getAllLevels()) {
 +            this.prepareLevels(serverLevel.getChunkSource().chunkMap.progressListener, serverLevel);
 +            serverLevel.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
 +            this.server.getPluginManager().callEvent(new org.bukkit.event.world.WorldLoadEvent(serverLevel.getWorld()));
@@ -482,7 +418,7 @@
 +        this.connection.acceptConnections();
 +    }
 +
-+    public void initWorld(net.minecraft.server.level.ServerLevel serverLevel, ServerLevelData serverLevelData, WorldData saveData, WorldOptions worldOptions) {
++    public void initWorld(ServerLevel serverLevel, ServerLevelData serverLevelData, WorldData saveData, WorldOptions worldOptions) {
 +        boolean isDebugWorld = saveData.isDebugWorld();
 +        if (serverLevel.generator != null) {
 +            serverLevel.getWorld().getPopulators().addAll(serverLevel.generator.getDefaultPopulators(serverLevel.getWorld()));
@@ -535,14 +471,12 @@
      }
 +    // CraftBukkit end
  
--    private static void setInitialSpawn(ServerLevel level, ServerLevelData levelData, boolean generateBonusChest, boolean debug) {
-+    private static void setInitialSpawn(net.minecraft.server.level.ServerLevel level, ServerLevelData levelData, boolean generateBonusChest, boolean debug) {
+     private static void setInitialSpawn(ServerLevel level, ServerLevelData levelData, boolean generateBonusChest, boolean debug) {
          if (debug) {
              levelData.setSpawn(BlockPos.ZERO.above(80), 0.0F);
          } else {
--            ServerChunkCache chunkSource = level.getChunkSource();
+             ServerChunkCache chunkSource = level.getChunkSource();
 -            ChunkPos chunkPos = new ChunkPos(chunkSource.randomState().sampler().findSpawnPosition());
-+            net.minecraft.server.level.ServerChunkCache chunkSource = level.getChunkSource();
 +            // CraftBukkit start
 +            if (level.generator != null) {
 +                java.util.Random rand = new java.util.Random(level.getSeed());
@@ -562,15 +496,6 @@
              int spawnHeight = chunkSource.getGenerator().getSpawnHeight(level);
              if (spawnHeight < level.getMinY()) {
                  BlockPos worldPosition = chunkPos.getWorldPosition();
-@@ -458,7 +_,7 @@
- 
-             for (int i4 = 0; i4 < Mth.square(11); i4++) {
-                 if (i >= -5 && i <= 5 && i1 >= -5 && i1 <= 5) {
--                    BlockPos spawnPosInChunk = PlayerRespawnLogic.getSpawnPosInChunk(level, new ChunkPos(chunkPos.x + i, chunkPos.z + i1));
-+                    BlockPos spawnPosInChunk = net.minecraft.server.level.PlayerRespawnLogic.getSpawnPosInChunk(level, new ChunkPos(chunkPos.x + i, chunkPos.z + i1));
-                     if (spawnPosInChunk != null) {
-                         levelData.setSpawn(spawnPosInChunk, 0.0F);
-                         break;
 @@ -495,26 +_,31 @@
          serverLevelData.setGameType(GameType.SPECTATOR);
      }
@@ -578,20 +503,18 @@
 -    public void prepareLevels(ChunkProgressListener listener) {
 -        ServerLevel serverLevel = this.overworld();
 +    // CraftBukkit start
-+    public void prepareLevels(net.minecraft.server.level.progress.ChunkProgressListener listener, net.minecraft.server.level.ServerLevel serverLevel) {
++    public void prepareLevels(ChunkProgressListener listener, ServerLevel serverLevel) {
 +        this.forceTicks = true;
 +        // CraftBukkit end
          LOGGER.info("Preparing start region for dimension {}", serverLevel.dimension().location());
          BlockPos sharedSpawnPos = serverLevel.getSharedSpawnPos();
          listener.updateSpawnPos(new ChunkPos(sharedSpawnPos));
--        ServerChunkCache chunkSource = serverLevel.getChunkSource();
-+        net.minecraft.server.level.ServerChunkCache chunkSource = serverLevel.getChunkSource();
+         ServerChunkCache chunkSource = serverLevel.getChunkSource();
          this.nextTickTimeNanos = Util.getNanos();
          serverLevel.setDefaultSpawnPos(sharedSpawnPos, serverLevel.getSharedSpawnAngle());
 -        int _int = this.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS);
--        int i = _int > 0 ? Mth.square(ChunkProgressListener.calculateDiameter(_int)) : 0;
 +        int _int = serverLevel.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS); // CraftBukkit - per-world
-+        int i = _int > 0 ? Mth.square(net.minecraft.server.level.progress.ChunkProgressListener.calculateDiameter(_int)) : 0;
+         int i = _int > 0 ? Mth.square(ChunkProgressListener.calculateDiameter(_int)) : 0;
  
          while (chunkSource.getTickingGenerated() < i) {
 -            this.nextTickTimeNanos = Util.getNanos() + PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
@@ -608,7 +531,7 @@
  
 -        for (ServerLevel serverLevel1 : this.levels.values()) {
 +        if (true) {
-+            net.minecraft.server.level.ServerLevel serverLevel1 = serverLevel;
++            ServerLevel serverLevel1 = serverLevel;
 +            // CraftBukkit end
              ForcedChunksSavedData forcedChunksSavedData = serverLevel1.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
              if (forcedChunksSavedData != null) {
@@ -634,16 +557,7 @@
      }
  
      public GameType getDefaultGameType() {
-@@ -550,7 +_,7 @@
-     public boolean saveAllChunks(boolean suppressLog, boolean flush, boolean forced) {
-         boolean flag = false;
- 
--        for (ServerLevel serverLevel : this.getAllLevels()) {
-+        for (net.minecraft.server.level.ServerLevel serverLevel : this.getAllLevels()) {
-             if (!suppressLog) {
-                 LOGGER.info("Saving chunks for level '{}'/{}", serverLevel, serverLevel.dimension().location());
-             }
-@@ -559,13 +_,16 @@
+@@ -559,11 +_,14 @@
              flag = true;
          }
  
@@ -656,12 +570,9 @@
 +         */
 +        // CraftBukkit end
          if (flush) {
--            for (ServerLevel serverLevel2 : this.getAllLevels()) {
-+            for (net.minecraft.server.level.ServerLevel serverLevel2 : this.getAllLevels()) {
+             for (ServerLevel serverLevel2 : this.getAllLevels()) {
                  LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", serverLevel2.getChunkSource().chunkMap.getStorageName());
-             }
- 
-@@ -593,23 +_,51 @@
+@@ -593,18 +_,46 @@
          this.stopServer();
      }
  
@@ -709,30 +620,6 @@
          }
  
          LOGGER.info("Saving worlds");
- 
--        for (ServerLevel serverLevel : this.getAllLevels()) {
-+        for (net.minecraft.server.level.ServerLevel serverLevel : this.getAllLevels()) {
-             if (serverLevel != null) {
-                 serverLevel.noSave = false;
-             }
-@@ -618,7 +_,7 @@
-         while (this.levels.values().stream().anyMatch(level -> level.getChunkSource().chunkMap.hasWork())) {
-             this.nextTickTimeNanos = Util.getNanos() + TimeUtil.NANOSECONDS_PER_MILLISECOND;
- 
--            for (ServerLevel serverLevelx : this.getAllLevels()) {
-+            for (net.minecraft.server.level.ServerLevel serverLevelx : this.getAllLevels()) {
-                 serverLevelx.getChunkSource().removeTicketsOnClosing();
-                 serverLevelx.getChunkSource().tick(() -> true, false);
-             }
-@@ -628,7 +_,7 @@
- 
-         this.saveAllChunks(false, true, false);
- 
--        for (ServerLevel serverLevelx : this.getAllLevels()) {
-+        for (net.minecraft.server.level.ServerLevel serverLevelx : this.getAllLevels()) {
-             if (serverLevelx != null) {
-                 try {
-                     serverLevelx.close();
 @@ -646,6 +_,15 @@
          } catch (IOException var4) {
              LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), var4);
@@ -930,8 +817,7 @@
          } else {
 +            boolean ret = false; // Paper - force execution of all worlds, do not just bias the first
              if (this.tickRateManager.isSprinting() || this.haveTime()) {
--                for (ServerLevel serverLevel : this.getAllLevels()) {
-+                for (net.minecraft.server.level.ServerLevel serverLevel : this.getAllLevels()) {
+                 for (ServerLevel serverLevel : this.getAllLevels()) {
                      if (serverLevel.getChunkSource().pollTask()) {
 -                        return true;
 +                        ret = true; // Paper - force execution of all worlds, do not just bias the first
@@ -973,7 +859,7 @@
 +                while ((task = this.processQueue.poll()) != null) {
 +                    task.run();
 +                }
-+                for (final net.minecraft.server.level.ServerLevel level : this.levels.values()) {
++                for (final ServerLevel level : this.levels.values()) {
 +                    // process unloads
 +                    level.getChunkSource().tick(() -> true, false);
 +                }
@@ -1039,13 +925,7 @@
              Optional.of(players),
              Optional.of(ServerStatus.Version.current()),
              Optional.ofNullable(this.statusIcon),
-@@ -1024,17 +_,17 @@
-     }
- 
-     private ServerStatus.Players buildPlayerStatus() {
--        List<ServerPlayer> players = this.playerList.getPlayers();
-+        List<net.minecraft.server.level.ServerPlayer> players = this.playerList.getPlayers();
-         int maxPlayers = this.getMaxPlayers();
+@@ -1029,7 +_,7 @@
          if (this.hidesOnlinePlayers()) {
              return new ServerStatus.Players(maxPlayers, players.size(), List.of());
          } else {
@@ -1053,12 +933,6 @@
 +            int min = Math.min(players.size(), org.spigotmc.SpigotConfig.playerSample); // Paper - PaperServerListPingEvent
              ObjectArrayList<GameProfile> list = new ObjectArrayList<>(min);
              int randomInt = Mth.nextInt(this.random, 0, players.size() - min);
- 
-             for (int i = 0; i < min; i++) {
--                ServerPlayer serverPlayer = players.get(randomInt + i);
-+                net.minecraft.server.level.ServerPlayer serverPlayer = players.get(randomInt + i);
-                 list.add(serverPlayer.allowsListing() ? serverPlayer.getGameProfile() : ANONYMOUS_PLAYER_PROFILE);
-             }
  
 @@ -1046,17 +_,64 @@
      protected void tickChildren(BooleanSupplier hasTimeLeft) {
@@ -1084,7 +958,6 @@
          this.getFunctions().tick();
          profilerFiller.popPush("levels");
  
--        for (ServerLevel serverLevel : this.getAllLevels()) {
 +        // CraftBukkit start
 +        // Run tasks that are waiting on processing
 +        while (!this.processQueue.isEmpty()) {
@@ -1093,16 +966,16 @@
 +
 +        // Send time updates to everyone, it will get the right time from the world the player is in.
 +        // Paper start - Perf: Optimize time updates
-+        for (final net.minecraft.server.level.ServerLevel level : this.getAllLevels()) {
++        for (final ServerLevel level : this.getAllLevels()) {
 +            final boolean doDaylight = level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT);
 +            final long dayTime = level.getDayTime();
 +            long worldTime = level.getGameTime();
 +            final ClientboundSetTimePacket worldPacket = new ClientboundSetTimePacket(worldTime, dayTime, doDaylight);
 +            for (Player entityhuman : level.players()) {
-+                if (!(entityhuman instanceof net.minecraft.server.level.ServerPlayer) || (tickCount + entityhuman.getId()) % 20 != 0) {
++                if (!(entityhuman instanceof ServerPlayer) || (tickCount + entityhuman.getId()) % 20 != 0) {
 +                    continue;
 +                }
-+                net.minecraft.server.level.ServerPlayer entityplayer = (net.minecraft.server.level.ServerPlayer) entityhuman;
++                ServerPlayer entityplayer = (ServerPlayer) entityhuman;
 +                long playerTime = entityplayer.getPlayerTime();
 +                ClientboundSetTimePacket packet = (playerTime == dayTime) ? worldPacket :
 +                    new ClientboundSetTimePacket(worldTime, playerTime, doDaylight);
@@ -1112,7 +985,7 @@
 +        }
 +
 +        this.isIteratingOverLevels = true; // Paper - Throw exception on world create while being ticked
-+        for (net.minecraft.server.level.ServerLevel serverLevel : this.getAllLevels()) {
+         for (ServerLevel serverLevel : this.getAllLevels()) {
 +            serverLevel.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
 +            serverLevel.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
              profilerFiller.push(() -> serverLevel + " " + serverLevel.dimension().location());
@@ -1136,59 +1009,21 @@
  
          profilerFiller.popPush("connection");
          this.tickConnection();
-@@ -1088,7 +_,7 @@
- 
-         profilerFiller.popPush("send chunks");
- 
--        for (ServerPlayer serverPlayer : this.playerList.getPlayers()) {
-+        for (net.minecraft.server.level.ServerPlayer serverPlayer : this.playerList.getPlayers()) {
-             serverPlayer.connection.chunkSender.sendNextChunks(serverPlayer);
-             serverPlayer.connection.resumeFlushing();
-         }
-@@ -1100,7 +_,7 @@
-         this.getConnection().tick();
-     }
- 
--    private void synchronizeTime(ServerLevel level) {
-+    private void synchronizeTime(net.minecraft.server.level.ServerLevel level) {
-         this.playerList
-             .broadcastAll(
-                 new ClientboundSetTimePacket(level.getGameTime(), level.getDayTime(), level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)),
-@@ -1112,7 +_,7 @@
-         ProfilerFiller profilerFiller = Profiler.get();
-         profilerFiller.push("timeSync");
- 
--        for (ServerLevel serverLevel : this.getAllLevels()) {
-+        for (net.minecraft.server.level.ServerLevel serverLevel : this.getAllLevels()) {
-             this.synchronizeTime(serverLevel);
-         }
- 
-@@ -1139,20 +_,36 @@
-         return this.getServerDirectory().resolve(path);
-     }
- 
--    public final ServerLevel overworld() {
-+    public final net.minecraft.server.level.ServerLevel overworld() {
-         return this.levels.get(Level.OVERWORLD);
-     }
- 
-     @Nullable
--    public ServerLevel getLevel(ResourceKey<Level> dimension) {
-+    public net.minecraft.server.level.ServerLevel getLevel(ResourceKey<Level> dimension) {
+@@ -1148,6 +_,22 @@
          return this.levels.get(dimension);
      }
  
 +    // CraftBukkit start
-+    public void addLevel(net.minecraft.server.level.ServerLevel level) {
-+        Map<ResourceKey<Level>, net.minecraft.server.level.ServerLevel> oldLevels = this.levels;
-+        Map<ResourceKey<Level>, net.minecraft.server.level.ServerLevel> newLevels = Maps.newLinkedHashMap(oldLevels);
++    public void addLevel(ServerLevel level) {
++        Map<ResourceKey<Level>, ServerLevel> oldLevels = this.levels;
++        Map<ResourceKey<Level>, ServerLevel> newLevels = Maps.newLinkedHashMap(oldLevels);
 +        newLevels.put(level.dimension(), level);
 +        this.levels = Collections.unmodifiableMap(newLevels);
 +    }
 +
-+    public void removeLevel(net.minecraft.server.level.ServerLevel level) {
-+        Map<ResourceKey<Level>, net.minecraft.server.level.ServerLevel> oldLevels = this.levels;
-+        Map<ResourceKey<Level>, net.minecraft.server.level.ServerLevel> newLevels = Maps.newLinkedHashMap(oldLevels);
++    public void removeLevel(ServerLevel level) {
++        Map<ResourceKey<Level>, ServerLevel> oldLevels = this.levels;
++        Map<ResourceKey<Level>, ServerLevel> newLevels = Maps.newLinkedHashMap(oldLevels);
 +        newLevels.remove(level.dimension());
 +        this.levels = Collections.unmodifiableMap(newLevels);
 +    }
@@ -1197,12 +1032,6 @@
      public Set<ResourceKey<Level>> levelKeys() {
          return this.levels.keySet();
      }
- 
--    public Iterable<ServerLevel> getAllLevels() {
-+    public Iterable<net.minecraft.server.level.ServerLevel> getAllLevels() {
-         return this.levels.values();
-     }
- 
 @@ -1177,7 +_,7 @@
  
      @DontObfuscate
@@ -1231,7 +1060,7 @@
 -            this.updateMobSpawningFlags();
 -            this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
 +    // Paper start - per level difficulty
-+    public void setDifficulty(net.minecraft.server.level.ServerLevel level, Difficulty difficulty, boolean forceUpdate) {
++    public void setDifficulty(ServerLevel level, Difficulty difficulty, boolean forceUpdate) {
 +        net.minecraft.world.level.storage.PrimaryLevelData worldData = level.serverLevelData;
 +        if (forceUpdate || !worldData.isDifficultyLocked()) {
 +            worldData.setDifficulty(worldData.isHardcore() ? Difficulty.HARD : difficulty);
@@ -1241,26 +1070,15 @@
          }
      }
  
-@@ -1263,8 +_,8 @@
-     }
+@@ -1264,7 +_,7 @@
  
      private void updateMobSpawningFlags() {
--        for (ServerLevel serverLevel : this.getAllLevels()) {
+         for (ServerLevel serverLevel : this.getAllLevels()) {
 -            serverLevel.setSpawnSettings(this.isSpawningMonsters());
-+        for (net.minecraft.server.level.ServerLevel serverLevel : this.getAllLevels()) {
 +            serverLevel.setSpawnSettings(serverLevel.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && ((net.minecraft.server.dedicated.DedicatedServer) this).settings.getProperties().spawnMonsters); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
          }
      }
  
-@@ -1273,7 +_,7 @@
-         this.getPlayerList().getPlayers().forEach(this::sendDifficultyUpdate);
-     }
- 
--    private void sendDifficultyUpdate(ServerPlayer player) {
-+    private void sendDifficultyUpdate(net.minecraft.server.level.ServerPlayer player) {
-         LevelData levelData = player.level().getLevelData();
-         player.connection.send(new ClientboundChangeDifficultyPacket(levelData.getDifficulty(), levelData.isDifficultyLocked()));
-     }
 @@ -1340,10 +_,20 @@
  
      @Override
@@ -1283,26 +1101,15 @@
          this.motd = motd;
      }
  
-@@ -1365,8 +_,8 @@
-         this.worldData.setGameType(gameMode);
+@@ -1366,7 +_,7 @@
      }
  
--    public ServerConnectionListener getConnection() {
+     public ServerConnectionListener getConnection() {
 -        return this.connection;
-+    public net.minecraft.server.network.ServerConnectionListener getConnection() {
-+        return this.connection == null ? this.connection = new net.minecraft.server.network.ServerConnectionListener(this) : this.connection; // Spigot
++        return this.connection == null ? this.connection = new ServerConnectionListener(this) : this.connection; // Spigot
      }
  
      public boolean isReady() {
-@@ -1389,7 +_,7 @@
-         return 16;
-     }
- 
--    public boolean isUnderSpawnProtection(ServerLevel level, BlockPos pos, Player player) {
-+    public boolean isUnderSpawnProtection(net.minecraft.server.level.ServerLevel level, BlockPos pos, Player player) {
-         return false;
-     }
- 
 @@ -1452,7 +_,7 @@
      @Override
      public void executeIfPossible(Runnable task) {
@@ -1312,15 +1119,6 @@
          } else {
              super.executeIfPossible(task);
          }
-@@ -1479,7 +_,7 @@
-         return this.fixerUpper;
-     }
- 
--    public int getSpawnRadius(@Nullable ServerLevel level) {
-+    public int getSpawnRadius(@Nullable net.minecraft.server.level.ServerLevel level) {
-         return level != null ? level.getGameRules().getInt(GameRules.RULE_SPAWN_RADIUS) : 10;
-     }
- 
 @@ -1491,7 +_,13 @@
          return this.functionManager;
      }
@@ -1382,42 +1180,14 @@
              UserWhiteList whiteList = playerList.getWhiteList();
 +            if (!((net.minecraft.server.dedicated.DedicatedServer) getServer()).getProperties().whiteList.get()) return; // Paper - whitelist not enabled
  
--            for (ServerPlayer serverPlayer : Lists.newArrayList(playerList.getPlayers())) {
+             for (ServerPlayer serverPlayer : Lists.newArrayList(playerList.getPlayers())) {
 -                if (!whiteList.isWhiteListed(serverPlayer.getGameProfile())) {
 -                    serverPlayer.connection.disconnect(Component.translatable("multiplayer.disconnect.not_whitelisted"));
-+            for (net.minecraft.server.level.ServerPlayer serverPlayer : Lists.newArrayList(playerList.getPlayers())) {
 +                if (!whiteList.isWhiteListed(serverPlayer.getGameProfile()) && !this.getPlayerList().isOp(serverPlayer.getGameProfile())) { // Paper - Fix kicking ops when whitelist is reloaded (MC-171420)
 +                    serverPlayer.connection.disconnect(net.kyori.adventure.text.Component.text(org.spigotmc.SpigotConfig.whitelistMessage), org.bukkit.event.player.PlayerKickEvent.Cause.WHITELIST); // Paper - use configurable message & kick event cause
                  }
              }
          }
-@@ -1670,7 +_,7 @@
-     }
- 
-     public CommandSourceStack createCommandSourceStack() {
--        ServerLevel serverLevel = this.overworld();
-+        net.minecraft.server.level.ServerLevel serverLevel = this.overworld();
-         return new CommandSourceStack(
-             this,
-             serverLevel == null ? Vec3.ZERO : Vec3.atLowerCornerOf(serverLevel.getSharedSpawnPos()),
-@@ -1717,7 +_,7 @@
-         return this.overworld().getGameRules();
-     }
- 
--    public CustomBossEvents getCustomBossEvents() {
-+    public net.minecraft.server.bossevents.CustomBossEvents getCustomBossEvents() {
-         return this.customBossEvents;
-     }
- 
-@@ -1771,7 +_,7 @@
-         Path path1 = path.resolve("levels");
- 
-         try {
--            for (Entry<ResourceKey<Level>, ServerLevel> entry : this.levels.entrySet()) {
-+            for (Entry<ResourceKey<Level>, net.minecraft.server.level.ServerLevel> entry : this.levels.entrySet()) {
-                 ResourceLocation resourceLocation = entry.getKey().location();
-                 Path path2 = path1.resolve(resourceLocation.getNamespace()).resolve(resourceLocation.getPath());
-                 Files.createDirectories(path2);
 @@ -1859,6 +_,22 @@
          }
      }
@@ -1441,20 +1211,12 @@
      private ProfilerFiller createProfiler() {
          if (this.willStartRecordingMetrics) {
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(
-@@ -1936,12 +_,12 @@
-         return this.resources.managers.fullRegistries();
+@@ -1941,7 +_,7 @@
      }
  
--    public TextFilter createTextFilterForPlayer(ServerPlayer player) {
--        return TextFilter.DUMMY;
-+    public net.minecraft.server.network.TextFilter createTextFilterForPlayer(net.minecraft.server.level.ServerPlayer player) {
-+        return net.minecraft.server.network.TextFilter.DUMMY;
-     }
- 
--    public ServerPlayerGameMode createGameModeForPlayer(ServerPlayer player) {
+     public ServerPlayerGameMode createGameModeForPlayer(ServerPlayer player) {
 -        return (ServerPlayerGameMode)(this.isDemo() ? new DemoMode(player) : new ServerPlayerGameMode(player));
-+    public net.minecraft.server.level.ServerPlayerGameMode createGameModeForPlayer(net.minecraft.server.level.ServerPlayer player) {
-+        return (net.minecraft.server.level.ServerPlayerGameMode)(this.isDemo() ? new net.minecraft.server.level.DemoMode(player) : new net.minecraft.server.level.ServerPlayerGameMode(player));
++        return (this.isDemo() ? new DemoMode(player) : new ServerPlayerGameMode(player));
      }
  
      @Nullable
@@ -1489,7 +1251,7 @@
      }
  
 -    public void subscribeToDebugSample(ServerPlayer player, RemoteDebugSampleType sampleType) {
-+    public void subscribeToDebugSample(net.minecraft.server.level.ServerPlayer player, RemoteDebugSampleType sampleType) {
++    public void subscribeToDebugSample(ServerPlaye player, RemoteDebugSampleType sampleType) {
      }
  
      public boolean acceptsTransfers() {
