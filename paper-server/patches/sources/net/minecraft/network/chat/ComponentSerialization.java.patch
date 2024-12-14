@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/chat/ComponentSerialization.java
 +++ b/net/minecraft/network/chat/ComponentSerialization.java
-@@ -37,9 +37,31 @@
+@@ -37,9 +_,31 @@
  
  public class ComponentSerialization {
      public static final Codec<Component> CODEC = Codec.recursive("Component", ComponentSerialization::createCodec);
@@ -34,8 +34,8 @@
      public static final StreamCodec<RegistryFriendlyByteBuf, Optional<Component>> TRUSTED_OPTIONAL_STREAM_CODEC = TRUSTED_STREAM_CODEC.apply(
          ByteBufCodecs::optional
      );
-@@ -100,7 +122,27 @@
-         return ExtraCodecs.orCompressed(mapCodec3, mapCodec2);
+@@ -102,7 +_,25 @@
+         return ExtraCodecs.orCompressed(mapCodec2, mapCodec1);
      }
  
 +    // Paper start - adventure; create separate codec for each locale
@@ -48,23 +48,21 @@
 +        return LOCALIZED_CODECS.computeIfAbsent(locale,
 +            loc -> Codec.recursive("Component", selfCodec -> createCodec(selfCodec, loc)));
 +    }
-+
-+
 +    // Paper end - adventure; create separate codec for each locale
 +
-     private static Codec<Component> createCodec(Codec<Component> selfCodec) {
+     private static Codec<Component> createCodec(Codec<Component> codec) {
 +        // Paper start - adventure; create separate codec for each locale
-+        return createCodec(selfCodec, null);
++        return createCodec(codec, null);
 +    }
 +
-+    private static Codec<Component> createCodec(Codec<Component> selfCodec, @javax.annotation.Nullable java.util.Locale locale) {
++    private static Codec<Component> createCodec(Codec<Component> codec, @javax.annotation.Nullable java.util.Locale locale) {
 +        // Paper end - adventure; create separate codec for each locale
          ComponentContents.Type<?>[] types = new ComponentContents.Type[]{
              PlainTextContents.TYPE, TranslatableContents.TYPE, KeybindContents.TYPE, ScoreContents.TYPE, SelectorContents.TYPE, NbtContents.TYPE
          };
-@@ -113,6 +155,34 @@
-                     )
-                     .apply(instance, MutableComponent::new)
+@@ -115,6 +_,34 @@
+                 )
+                 .apply(instance, MutableComponent::new)
          );
 +        // Paper start - adventure; create separate codec for each locale
 +        final Codec<Component> origCodec = codec;
@@ -94,6 +92,6 @@
 +            }
 +        };
 +        // Paper end - adventure; create separate codec for each locale
-         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(selfCodec.listOf())), codec)
-             .xmap(either -> either.map(either2 -> either2.map(Component::literal, ComponentSerialization::createFromList), text -> (Component)text), text -> {
-                 String string = text.tryCollapseToString();
+         return Codec.either(Codec.either(Codec.STRING, ExtraCodecs.nonEmptyList(codec.listOf())), codec1)
+             .xmap(
+                 either -> either.map(either1 -> either1.map(Component::literal, ComponentSerialization::createFromList), component -> (Component)component),
