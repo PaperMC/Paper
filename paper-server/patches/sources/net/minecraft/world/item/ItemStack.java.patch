@@ -1,0 +1,404 @@
+--- a/net/minecraft/world/item/ItemStack.java
++++ b/net/minecraft/world/item/ItemStack.java
+@@ -22,6 +_,7 @@
+ import net.minecraft.ChatFormatting;
+ import net.minecraft.advancements.CriteriaTriggers;
+ import net.minecraft.core.BlockPos;
++import net.minecraft.core.Direction;
+ import net.minecraft.core.Holder;
+ import net.minecraft.core.HolderLookup;
+ import net.minecraft.core.HolderSet;
+@@ -45,10 +_,12 @@
+ import net.minecraft.network.chat.MutableComponent;
+ import net.minecraft.network.codec.ByteBufCodecs;
+ import net.minecraft.network.codec.StreamCodec;
++import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
+ import net.minecraft.resources.RegistryOps;
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.sounds.SoundEvent;
++import net.minecraft.sounds.SoundSource;
+ import net.minecraft.stats.Stats;
+ import net.minecraft.tags.TagKey;
+ import net.minecraft.util.ExtraCodecs;
+@@ -136,18 +_,35 @@
+             } else {
+                 Holder<Item> holder = ITEM_STREAM_CODEC.decode(buffer);
+                 DataComponentPatch dataComponentPatch = DataComponentPatch.STREAM_CODEC.decode(buffer);
+-                return new ItemStack(holder, varInt, dataComponentPatch);
++                // CraftBukkit start
++                ItemStack stack = new ItemStack(holder, varInt, dataComponentPatch);
++                if (false && !dataComponentPatch.isEmpty()) { // Paper - This is no longer needed with raw NBT being handled in metadata
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.setItemMeta(stack, org.bukkit.craftbukkit.inventory.CraftItemStack.getItemMeta(stack));
++                }
++                return stack;
++                // CraftBukkit end
+             }
+         }
+ 
+         @Override
+         public void encode(RegistryFriendlyByteBuf buffer, ItemStack value) {
+-            if (value.isEmpty()) {
++            if (value.isEmpty() || value.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
+                 buffer.writeVarInt(0);
+             } else {
+                 buffer.writeVarInt(value.getCount());
+                 ITEM_STREAM_CODEC.encode(buffer, value.getItemHolder());
++                // Spigot start - filter
++                // value = value.copy();
++                // CraftItemStack.setItemMeta(value, CraftItemStack.getItemMeta(value)); // Paper - This is no longer with raw NBT being handled in metadata
++                // Paper start - adventure; conditionally render translatable components
++                boolean prev = net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.get();
++                try {
++                    net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(true);
+                 DataComponentPatch.STREAM_CODEC.encode(buffer, value.components.asPatch());
++                } finally {
++                    net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(prev);
++                }
++                // Paper end - adventure; conditionally render translatable components
+             }
+         }
+     };
+@@ -365,10 +_,180 @@
+             return InteractionResult.PASS;
+         } else {
+             Item item = this.getItem();
+-            InteractionResult interactionResult = item.useOn(context);
++            // InteractionResult interactionResult = item.useOn(context);
++            // CraftBukkit start - handle all block place event logic here
++            DataComponentPatch oldData = this.components.asPatch();
++            int oldCount = this.getCount();
++            ServerLevel serverLevel = (ServerLevel) context.getLevel();
++
++            if (!(item instanceof BucketItem/* || item instanceof SolidBucketItem*/)) { // if not bucket // Paper - Fix cancelled powdered snow bucket placement
++                serverLevel.captureBlockStates = true;
++                // special case bonemeal
++                if (item == Items.BONE_MEAL) {
++                    serverLevel.captureTreeGeneration = true;
++                }
++            }
++            InteractionResult interactionResult;
++            try {
++                interactionResult = item.useOn(context);
++            } finally {
++                serverLevel.captureBlockStates = false;
++            }
++            DataComponentPatch newData = this.components.asPatch();
++            int newCount = this.getCount();
++            this.setCount(oldCount);
++            this.restorePatch(oldData);
++            if (interactionResult.consumesAction() && serverLevel.captureTreeGeneration && serverLevel.capturedBlockStates.size() > 0) {
++                serverLevel.captureTreeGeneration = false;
++                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(clickedPos, serverLevel.getWorld());
++                org.bukkit.TreeType treeType = net.minecraft.world.level.block.SaplingBlock.treeType;
++                net.minecraft.world.level.block.SaplingBlock.treeType = null;
++                List<org.bukkit.craftbukkit.block.CraftBlockState> blocks = new java.util.ArrayList<>(serverLevel.capturedBlockStates.values());
++                serverLevel.capturedBlockStates.clear();
++                org.bukkit.event.world.StructureGrowEvent structureEvent = null;
++                if (treeType != null) {
++                    boolean isBonemeal = this.getItem() == Items.BONE_MEAL;
++                    structureEvent = new org.bukkit.event.world.StructureGrowEvent(location, treeType, isBonemeal, (org.bukkit.entity.Player) player.getBukkitEntity(), (List<org.bukkit.block.BlockState>) (List<? extends org.bukkit.block.BlockState>) blocks);
++                    org.bukkit.Bukkit.getPluginManager().callEvent(structureEvent);
++                }
++
++                org.bukkit.event.block.BlockFertilizeEvent fertilizeEvent = new org.bukkit.event.block.BlockFertilizeEvent(org.bukkit.craftbukkit.block.CraftBlock.at(serverLevel, clickedPos), (org.bukkit.entity.Player) player.getBukkitEntity(), (List<org.bukkit.block.BlockState>) (List<? extends org.bukkit.block.BlockState>) blocks);
++                fertilizeEvent.setCancelled(structureEvent != null && structureEvent.isCancelled());
++                org.bukkit.Bukkit.getPluginManager().callEvent(fertilizeEvent);
++
++                if (!fertilizeEvent.isCancelled()) {
++                    // Change the stack to its new contents if it hasn't been tampered with.
++                    if (this.getCount() == oldCount && Objects.equals(this.components.asPatch(), oldData)) {
++                        this.restorePatch(newData);
++                        this.setCount(newCount);
++                    }
++                    for (org.bukkit.craftbukkit.block.CraftBlockState blockstate : blocks) {
++                        // SPIGOT-7572 - Move fix for SPIGOT-7248 to CapturedBlockState, to allow bees in bee nest
++                        org.bukkit.craftbukkit.block.CapturedBlockState.setBlockState(blockstate);
++                        serverLevel.checkCapturedTreeStateForObserverNotify(clickedPos, blockstate); // Paper - notify observers even if grow failed
++                    }
++                    player.awardStat(Stats.ITEM_USED.get(item)); // SPIGOT-7236 - award stat
++                }
++
++                SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
++                return interactionResult;
++            }
++            serverLevel.captureTreeGeneration = false;
+             if (player != null && interactionResult instanceof InteractionResult.Success success && success.wasItemInteraction()) {
+-                player.awardStat(Stats.ITEM_USED.get(item));
++                // player.awardStat(Stats.ITEM_USED.get(item));
++                InteractionHand enumhand = context.getHand();
++                org.bukkit.event.block.BlockPlaceEvent placeEvent = null;
++                List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(serverLevel.capturedBlockStates.values());
++                serverLevel.capturedBlockStates.clear();
++                if (blocks.size() > 1) {
++                    placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(serverLevel, player, enumhand, blocks, clickedPos.getX(), clickedPos.getY(), clickedPos.getZ());
++                } else if (blocks.size() == 1 && item != Items.POWDER_SNOW_BUCKET) { // Paper - Fix cancelled powdered snow bucket placement
++                    placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(serverLevel, player, enumhand, blocks.get(0), clickedPos.getX(), clickedPos.getY(), clickedPos.getZ());
++                }
++
++                if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
++                    interactionResult = InteractionResult.FAIL; // cancel placement
++                    // PAIL: Remove this when MC-99075 fixed
++                    placeEvent.getPlayer().updateInventory();
++                    serverLevel.capturedTileEntities.clear(); // Paper - Allow chests to be placed with NBT data; clear out block entities as chests and such will pop loot
++                    // revert back all captured blocks
++                    serverLevel.preventPoiUpdated = true; // CraftBukkit - SPIGOT-5710
++                serverLevel.isBlockPlaceCancelled = true; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
++                    for (org.bukkit.block.BlockState blockstate : blocks) {
++                        blockstate.update(true, false);
++                    }
++                serverLevel.isBlockPlaceCancelled = false; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
++                    serverLevel.preventPoiUpdated = false;
++
++                    // Brute force all possible updates
++                    // Paper start - Don't resync blocks
++                    // BlockPos placedPos = ((CraftBlock) placeEvent.getBlock()).getPosition();
++                    // for (Direction dir : Direction.values()) {
++                    //     ((ServerPlayer) entityhuman).connection.send(new ClientboundBlockUpdatePacket(world, placedPos.relative(dir)));
++                    // }
++                    // Paper end - Don't resync blocks
++                    SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
++                } else {
++                    // Change the stack to its new contents if it hasn't been tampered with.
++                    if (this.getCount() == oldCount && Objects.equals(this.components.asPatch(), oldData)) {
++                        this.restorePatch(newData);
++                        this.setCount(newCount);
++                    }
++
++                    for (java.util.Map.Entry<BlockPos, net.minecraft.world.level.block.entity.BlockEntity> e : serverLevel.capturedTileEntities.entrySet()) {
++                        serverLevel.setBlockEntity(e.getValue());
++                    }
++
++                    for (org.bukkit.block.BlockState blockstate : blocks) {
++                        int updateFlag = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getFlag();
++                        net.minecraft.world.level.block.state.BlockState oldBlock = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getHandle();
++                        BlockPos newblockposition = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getPosition();
++                        net.minecraft.world.level.block.state.BlockState block = serverLevel.getBlockState(newblockposition);
++
++                        if (!(block.getBlock() instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // Containers get placed automatically
++                            block.onPlace(serverLevel, newblockposition, oldBlock, true, context);
++                        }
++
++                        serverLevel.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, serverLevel.getBlockState(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point
++                    }
++
++                    if (this.item == Items.WITHER_SKELETON_SKULL) { // Special case skulls to allow wither spawns to be cancelled
++                        BlockPos bp = clickedPos;
++                        if (!serverLevel.getBlockState(clickedPos).canBeReplaced()) {
++                            if (!serverLevel.getBlockState(clickedPos).isSolid()) {
++                                bp = null;
++                            } else {
++                                bp = bp.relative(context.getClickedFace());
++                            }
++                        }
++                        if (bp != null) {
++                            net.minecraft.world.level.block.entity.BlockEntity te = serverLevel.getBlockEntity(bp);
++                            if (te instanceof net.minecraft.world.level.block.entity.SkullBlockEntity) {
++                                net.minecraft.world.level.block.WitherSkullBlock.checkSpawn(serverLevel, bp, (net.minecraft.world.level.block.entity.SkullBlockEntity) te);
++                            }
++                        }
++                    }
++
++                    // SPIGOT-4678
++                    if (this.item instanceof SignItem && SignItem.openSign != null) {
++                        try {
++                            if (serverLevel.getBlockEntity(SignItem.openSign) instanceof net.minecraft.world.level.block.entity.SignBlockEntity tileentitysign) {
++                                if (serverLevel.getBlockState(SignItem.openSign).getBlock() instanceof net.minecraft.world.level.block.SignBlock blocksign) {
++                                    blocksign.openTextEdit(player, tileentitysign, true, io.papermc.paper.event.player.PlayerOpenSignEvent.Cause.PLACE); // Craftbukkit // Paper - Add PlayerOpenSignEvent
++                                }
++                            }
++                        } finally {
++                            SignItem.openSign = null;
++                        }
++                    }
++
++                    // SPIGOT-7315: Moved from BlockBed#setPlacedBy
++                    if (placeEvent != null && this.item instanceof BedItem) {
++                        BlockPos position = ((org.bukkit.craftbukkit.block.CraftBlock) placeEvent.getBlock()).getPosition();
++                        net.minecraft.world.level.block.state.BlockState blockData = serverLevel.getBlockState(position);
++
++                        if (blockData.getBlock() instanceof net.minecraft.world.level.block.BedBlock) {
++                            serverLevel.blockUpdated(position, net.minecraft.world.level.block.Blocks.AIR);
++                            blockData.updateNeighbourShapes(serverLevel, position, 3);
++                        }
++                    }
++
++                    // SPIGOT-1288 - play sound stripped from ItemBlock
++                    if (this.item instanceof BlockItem) {
++                    // Paper start - Fix spigot sound playing for BlockItem ItemStacks
++                    BlockPos position = new net.minecraft.world.item.context.BlockPlaceContext(context).getClickedPos();
++                    net.minecraft.world.level.block.state.BlockState blockData = serverLevel.getBlockState(position);
++                    net.minecraft.world.level.block.SoundType soundeffecttype = blockData.getSoundType();
++                    // Paper end - Fix spigot sound playing for BlockItem ItemStacks
++                        serverLevel.playSound(player, clickedPos, soundeffecttype.getPlaceSound(), SoundSource.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
++                    }
++
++                    player.awardStat(Stats.ITEM_USED.get(item));
++                }
+             }
++            serverLevel.capturedTileEntities.clear();
++            serverLevel.capturedBlockStates.clear();
++            // CraftBukkit end
+ 
+             return interactionResult;
+         }
+@@ -470,30 +_,69 @@
+     }
+ 
+     public void hurtAndBreak(int damage, ServerLevel level, @Nullable ServerPlayer player, Consumer<Item> onBreak) {
+-        int i = this.processDurabilityChange(damage, level, player);
++        // Paper start - add force boolean overload
++        this.hurtAndBreak(damage, level, player, onBreak, false);
++    }
++    public void hurtAndBreak(int damage, ServerLevel level, @Nullable LivingEntity player, Consumer<Item> onBreak, boolean force) {  // Paper - Add EntityDamageItemEvent
++        // Paper end
++        final int originalDamage = damage; // Paper - Expand PlayerItemDamageEvent
++        int i = this.processDurabilityChange(damage, level, player, force); // Paper
++        // CraftBukkit start
++        if (player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
++            org.bukkit.event.player.PlayerItemDamageEvent event = new org.bukkit.event.player.PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this), i, originalDamage); // Paper - Add EntityDamageItemEvent
++            event.getPlayer().getServer().getPluginManager().callEvent(event);
++
++            if (i != event.getDamage() || event.isCancelled()) {
++                event.getPlayer().updateInventory();
++            }
++            if (event.isCancelled()) {
++                return;
++            }
++
++            i = event.getDamage();
++            // Paper start - Add EntityDamageItemEvent
++        } else if (player != null) {
++            io.papermc.paper.event.entity.EntityDamageItemEvent event = new io.papermc.paper.event.entity.EntityDamageItemEvent(player.getBukkitLivingEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this), i);
++            if (!event.callEvent()) {
++                return;
++            }
++            i = event.getDamage();
++            // Paper end - Add EntityDamageItemEvent
++        }
++        // CraftBukkit end
+         if (i != 0) {
+             this.applyDamage(this.getDamageValue() + i, player, onBreak);
+         }
+     }
+ 
+-    private int processDurabilityChange(int damage, ServerLevel level, @Nullable ServerPlayer player) {
++    private int processDurabilityChange(int damage, ServerLevel level, @Nullable LivingEntity player) { // Paper - Add EntityDamageItemEvent
++        // Paper start - itemstack damage api
++        return processDurabilityChange(damage, level, player, false);
++    }
++    private int processDurabilityChange(int damage, ServerLevel level, @Nullable LivingEntity player, boolean force) {
++        // Paper end - itemstack damage api
+         if (!this.isDamageableItem()) {
+             return 0;
+-        } else if (player != null && player.hasInfiniteMaterials()) {
++        } else if (player instanceof ServerPlayer && player.hasInfiniteMaterials() && !force) { // Paper - Add EntityDamageItemEvent
+             return 0;
+         } else {
+             return damage > 0 ? EnchantmentHelper.processDurabilityChange(level, this, damage) : damage;
+         }
+     }
+ 
+-    private void applyDamage(int damage, @Nullable ServerPlayer player, Consumer<Item> onBreak) {
+-        if (player != null) {
+-            CriteriaTriggers.ITEM_DURABILITY_CHANGED.trigger(player, this, damage);
++    private void applyDamage(int damage, @Nullable LivingEntity player, Consumer<Item> onBreak) { // Paper - Add EntityDamageItemEvent
++        if (player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
++            CriteriaTriggers.ITEM_DURABILITY_CHANGED.trigger(serverPlayer, this, damage); // Paper - Add EntityDamageItemEvent
+         }
+ 
+         this.setDamageValue(damage);
+         if (this.isBroken()) {
+             Item item = this.getItem();
++            // CraftBukkit start - Check for item breaking
++            if (this.count == 1 && player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
++                org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemBreakEvent(serverPlayer, this); // Paper - Add EntityDamageItemEvent
++            }
++            // CraftBukkit end
+             this.shrink(1);
+             onBreak.accept(item);
+         }
+@@ -512,9 +_,14 @@
+     }
+ 
+     public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot) {
++        // Paper start - add param to skip infinite mats check
++        this.hurtAndBreak(amount, entity, slot, false);
++    }
++    public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot, boolean force) {
++        // Paper end - add param to skip infinite mats check
+         if (entity.level() instanceof ServerLevel serverLevel) {
+             this.hurtAndBreak(
+-                amount, serverLevel, entity instanceof ServerPlayer serverPlayer ? serverPlayer : null, item -> entity.onEquippedItemBroken(item, slot)
++                amount, serverLevel, entity, item -> {if (slot != null) entity.onEquippedItemBroken(item, slot); }, force // Paper - Add EntityDamageItemEvent & itemstack damage API - do not process entity related callbacks when damaging from API
+             );
+         }
+     }
+@@ -715,6 +_,12 @@
+         return this.getItem().useOnRelease(this);
+     }
+ 
++    // CraftBukkit start
++    public void restorePatch(DataComponentPatch datacomponentpatch) {
++        this.components.restorePatch(datacomponentpatch);
++    }
++    // CraftBukkit end
++
+     @Nullable
+     public <T> T set(DataComponentType<? super T> component, @Nullable T value) {
+         return this.components.set(component, value);
+@@ -748,6 +_,25 @@
+         }
+     }
+ 
++    // Paper start - (this is just a good no conflict location)
++    public org.bukkit.inventory.ItemStack asBukkitMirror() {
++        return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this);
++    }
++    public org.bukkit.inventory.ItemStack asBukkitCopy() {
++        return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.copy());
++    }
++    public static ItemStack fromBukkitCopy(org.bukkit.inventory.ItemStack itemstack) {
++        return org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemstack);
++    }
++    private org.bukkit.craftbukkit.inventory.CraftItemStack bukkitStack;
++    public org.bukkit.inventory.ItemStack getBukkitStack() {
++        if (bukkitStack == null || bukkitStack.handle != this) {
++            bukkitStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this);
++        }
++        return bukkitStack;
++    }
++    // Paper end
++
+     public void applyComponents(DataComponentPatch components) {
+         this.components.applyPatch(components);
+         this.getItem().verifyComponentsAfterLoad(this);
+@@ -1016,6 +_,19 @@
+         EnchantmentHelper.forEachModifier(this, equipmentSLot, action);
+     }
+ 
++    // CraftBukkit start
++    @Deprecated
++    public void setItem(Item item) {
++        this.bukkitStack = null; // Paper
++        this.item = item;
++        // Paper start - change base component prototype
++        final DataComponentPatch patch = this.getComponentsPatch();
++        this.components = new PatchedDataComponentMap(this.item.components());
++        this.applyComponents(patch);
++        // Paper end - change base component prototype
++    }
++    // CraftBukkit end
++
+     public Component getDisplayName() {
+         MutableComponent mutableComponent = Component.empty().append(this.getHoverName());
+         if (this.has(DataComponents.CUSTOM_NAME)) {
+@@ -1072,7 +_,7 @@
+     }
+ 
+     public void consume(int amount, @Nullable LivingEntity entity) {
+-        if (entity == null || !entity.hasInfiniteMaterials()) {
++        if ((entity == null || !entity.hasInfiniteMaterials()) && this != ItemStack.EMPTY) { // CraftBukkit
+             this.shrink(amount);
+         }
+     }
