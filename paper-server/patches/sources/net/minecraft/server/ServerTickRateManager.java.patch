@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/ServerTickRateManager.java
 +++ b/net/minecraft/server/ServerTickRateManager.java
-@@ -59,8 +59,14 @@
+@@ -58,8 +_,14 @@
      }
  
      public boolean stopSprinting() {
@@ -16,34 +16,31 @@
              return true;
          } else {
              return false;
-@@ -78,7 +84,7 @@
+@@ -76,14 +_,20 @@
          return flag;
      }
  
 -    private void finishTickSprint() {
 +    private void finishTickSprint(boolean sendLog) { // CraftBukkit - add sendLog parameter
-         long i = this.scheduledCurrentSprintTicks - this.remainingSprintTicks;
-         double d0 = Math.max(1.0D, (double) this.sprintTimeSpend) / (double) TimeUtil.NANOSECONDS_PER_MILLISECOND;
-         int j = (int) ((double) (TimeUtil.MILLISECONDS_PER_SECOND * i) / d0);
-@@ -86,9 +92,13 @@
- 
+         long l = this.scheduledCurrentSprintTicks - this.remainingSprintTicks;
+         double d = Math.max(1.0, (double)this.sprintTimeSpend) / TimeUtil.NANOSECONDS_PER_MILLISECOND;
+         int i = (int)(TimeUtil.MILLISECONDS_PER_SECOND * l / d);
+         String string = String.format("%.2f", l == 0L ? this.millisecondsPerTick() : d / l);
          this.scheduledCurrentSprintTicks = 0L;
          this.sprintTimeSpend = 0L;
--        this.server.createCommandSourceStack().sendSuccess(() -> {
--            return Component.translatable("commands.tick.sprint.report", j, s);
--        }, true);
+-        this.server.createCommandSourceStack().sendSuccess(() -> Component.translatable("commands.tick.sprint.report", i, string), true);
 +        // CraftBukkit start - add sendLog parameter
 +        if (sendLog) {
 +            this.server.createCommandSourceStack().sendSuccess(() -> {
-+                return Component.translatable("commands.tick.sprint.report", j, s);
++                return Component.translatable("commands.tick.sprint.report", i, string);
 +            }, true);
 +        }
 +        // CraftBukkit end
          this.remainingSprintTicks = 0L;
          this.setFrozen(this.previousIsFrozen);
          this.server.onTickRateChanged();
-@@ -102,7 +112,7 @@
-             --this.remainingSprintTicks;
+@@ -97,7 +_,7 @@
+             this.remainingSprintTicks--;
              return true;
          } else {
 -            this.finishTickSprint();
