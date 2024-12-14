@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
 +++ b/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
-@@ -38,7 +38,18 @@
+@@ -38,6 +_,17 @@
          this.actions = EnumSet.of(action);
          this.entries = List.of(new ClientboundPlayerInfoUpdatePacket.Entry(player));
      }
@@ -9,20 +9,19 @@
 +        this.actions = actions;
 +        this.entries = entries;
 +    }
- 
++
 +    public ClientboundPlayerInfoUpdatePacket(EnumSet<ClientboundPlayerInfoUpdatePacket.Action> actions, ClientboundPlayerInfoUpdatePacket.Entry entry) {
 +        this.actions = actions;
 +        this.entries = List.of(entry);
 +    }
 +    // Paper end - Add Listing API for Player
-+
-     public static ClientboundPlayerInfoUpdatePacket createPlayerInitializing(Collection<ServerPlayer> players) {
-         EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(
-             ClientboundPlayerInfoUpdatePacket.Action.ADD_PLAYER,
-@@ -53,6 +64,46 @@
-         return new ClientboundPlayerInfoUpdatePacket(enumSet, players);
-     }
  
+     public static ClientboundPlayerInfoUpdatePacket createPlayerInitializing(Collection<ServerPlayer> players) {
+         EnumSet<ClientboundPlayerInfoUpdatePacket.Action> set = EnumSet.of(
+@@ -52,6 +_,46 @@
+         );
+         return new ClientboundPlayerInfoUpdatePacket(set, players);
+     }
 +    // Paper start - Add Listing API for Player
 +    public static ClientboundPlayerInfoUpdatePacket createPlayerInitializing(Collection<ServerPlayer> players, ServerPlayer forPlayer) {
 +        final EnumSet<ClientboundPlayerInfoUpdatePacket.Action> enumSet = EnumSet.of(
@@ -63,14 +62,14 @@
 +        return new ClientboundPlayerInfoUpdatePacket(enumSet, new ClientboundPlayerInfoUpdatePacket.Entry(playerInfoId, listed));
 +    }
 +    // Paper end - Add Listing API for Player
-     private ClientboundPlayerInfoUpdatePacket(RegistryFriendlyByteBuf buf) {
-         this.actions = buf.readEnumSet(ClientboundPlayerInfoUpdatePacket.Action.class);
-         this.entries = buf.readList(buf2 -> {
-@@ -116,7 +167,15 @@
+ 
+     private ClientboundPlayerInfoUpdatePacket(RegistryFriendlyByteBuf buffer) {
+         this.actions = buffer.readEnumSet(ClientboundPlayerInfoUpdatePacket.Action.class);
+@@ -116,7 +_,15 @@
          }),
          INITIALIZE_CHAT(
-             (serialized, buf) -> serialized.chatSession = buf.readNullable(RemoteChatSession.Data::read),
--            (buf, entry) -> buf.writeNullable(entry.chatSession, RemoteChatSession.Data::write)
+             (entryBuilder, buffer) -> entryBuilder.chatSession = buffer.readNullable(RemoteChatSession.Data::read),
+-            (buffer, entry) -> buffer.writeNullable(entry.chatSession, RemoteChatSession.Data::write)
 +            // Paper start - Prevent causing expired keys from impacting new joins
 +            (buf, entry) -> {
 +                RemoteChatSession.Data chatSession = entry.chatSession;
@@ -81,9 +80,9 @@
 +            }
 +            // Paper end - Prevent causing expired keys from impacting new joins
          ),
-         UPDATE_GAME_MODE((serialized, buf) -> serialized.gameMode = GameType.byId(buf.readVarInt()), (buf, entry) -> buf.writeVarInt(entry.gameMode().getId())),
-         UPDATE_LISTED((serialized, buf) -> serialized.listed = buf.readBoolean(), (buf, entry) -> buf.writeBoolean(entry.listed())),
-@@ -157,10 +216,15 @@
+         UPDATE_GAME_MODE(
+             (entryBuilder, buffer) -> entryBuilder.gameMode = GameType.byId(buffer.readVarInt()),
+@@ -160,10 +_,15 @@
          @Nullable RemoteChatSession.Data chatSession
      ) {
          Entry(ServerPlayer player) {
@@ -100,7 +99,7 @@
                  player.connection.latency(),
                  player.gameMode.getGameModeForPlayer(),
                  player.getTabListDisplayName(),
-@@ -169,6 +233,11 @@
+@@ -172,6 +_,11 @@
                  Optionull.map(player.getChatSession(), RemoteChatSession::asData)
              );
          }
