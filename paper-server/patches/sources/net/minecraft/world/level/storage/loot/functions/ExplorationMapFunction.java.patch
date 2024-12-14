@@ -1,0 +1,22 @@
+--- a/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
++++ b/net/minecraft/world/level/storage/loot/functions/ExplorationMapFunction.java
+@@ -89,7 +_,18 @@
+             Vec3 vec3 = context.getOptionalParameter(LootContextParams.ORIGIN);
+             if (vec3 != null) {
+                 ServerLevel level = context.getLevel();
+-                BlockPos blockPos = level.findNearestMapStructure(this.destination, BlockPos.containing(vec3), this.searchRadius, this.skipKnownStructures);
++                // Paper start - Configurable cartographer treasure maps
++                if (!level.paperConfig().environment.treasureMaps.enabled) {
++                    /*
++                     * NOTE: I fear users will just get a plain map as their "treasure"
++                     * This is preferable to disrespecting the config.
++                     */
++                    return stack;
++                }
++                // Paper end - Configurable cartographer treasure maps
++                BlockPos blockPos = level.findNearestMapStructure(this.destination, BlockPos.containing(vec3), this.searchRadius,
++                    !level.paperConfig().environment.treasureMaps.findAlreadyDiscoveredLootTable.or(!this.skipKnownStructures) // Paper - Configurable cartographer treasure maps
++                );
+                 if (blockPos != null) {
+                     ItemStack itemStack = MapItem.create(level, blockPos.getX(), blockPos.getZ(), this.zoom, true, true);
+                     MapItem.renderBiomePreviewMap(level, itemStack);
