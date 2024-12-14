@@ -1,0 +1,69 @@
+--- a/net/minecraft/world/entity/monster/Phantom.java
++++ b/net/minecraft/world/entity/monster/Phantom.java
+@@ -141,7 +_,7 @@
+ 
+     @Override
+     public void aiStep() {
+-        if (this.isAlive() && this.isSunBurnTick()) {
++        if (this.isAlive() && this.shouldBurnInDay && this.isSunBurnTick()) { // Paper - shouldBurnInDay API
+             this.igniteForSeconds(8.0F);
+         }
+ 
+@@ -165,6 +_,14 @@
+         }
+ 
+         this.setPhantomSize(compound.getInt("Size"));
++        // Paper start
++        if (compound.hasUUID("Paper.SpawningEntity")) {
++            this.spawningEntity = compound.getUUID("Paper.SpawningEntity");
++        }
++        if (compound.contains("Paper.ShouldBurnInDay")) {
++            this.shouldBurnInDay = compound.getBoolean("Paper.ShouldBurnInDay");
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -174,6 +_,12 @@
+         compound.putInt("AY", this.anchorPoint.getY());
+         compound.putInt("AZ", this.anchorPoint.getZ());
+         compound.putInt("Size", this.getPhantomSize());
++        // Paper start
++        if (this.spawningEntity != null) {
++            compound.putUUID("Paper.SpawningEntity", this.spawningEntity);
++        }
++        compound.putBoolean("Paper.ShouldBurnInDay", shouldBurnInDay);
++        // Paper end
+     }
+ 
+     @Override
+@@ -222,6 +_,19 @@
+         return targetingConditions.test(level, this, entity);
+     }
+ 
++    // Paper start
++    @Nullable
++    java.util.UUID spawningEntity;
++
++    @Nullable
++    public java.util.UUID getSpawningEntity() {
++        return this.spawningEntity;
++    }
++    public void setSpawningEntity(java.util.UUID entity) { this.spawningEntity = entity; }
++    private boolean shouldBurnInDay = true;
++    public boolean shouldBurnInDay() { return shouldBurnInDay; }
++    public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
++    // Paper end
+     static enum AttackPhase {
+         CIRCLE,
+         SWOOP;
+@@ -247,7 +_,8 @@
+ 
+                     for (Player player : nearbyPlayers) {
+                         if (Phantom.this.canAttack(serverLevel, player, TargetingConditions.DEFAULT)) {
+-                            Phantom.this.setTarget(player);
++                            if (!level().paperConfig().entities.behavior.phantomsOnlyAttackInsomniacs || EntitySelector.IS_INSOMNIAC.test(player)) // Paper - Add phantom creative and insomniac controls
++                            Phantom.this.setTarget(player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit - reason
+                             return true;
+                         }
+                     }

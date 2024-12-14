@@ -1,23 +1,22 @@
 --- a/net/minecraft/world/entity/monster/Witch.java
 +++ b/net/minecraft/world/entity/monster/Witch.java
-@@ -124,9 +124,15 @@
- 
+@@ -122,8 +_,14 @@
+                     ItemStack mainHandItem = this.getMainHandItem();
                      this.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-                     PotionContents potioncontents = (PotionContents) itemstack.get(DataComponents.POTION_CONTENTS);
+                     PotionContents potionContents = mainHandItem.get(DataComponents.POTION_CONTENTS);
 +                    // Paper start - WitchConsumePotionEvent
-+                    if (itemstack.is(Items.POTION)) {
++                    if (mainHandItem.is(Items.POTION)) {
 +                        com.destroystokyo.paper.event.entity.WitchConsumePotionEvent event = new com.destroystokyo.paper.event.entity.WitchConsumePotionEvent((org.bukkit.entity.Witch) this.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack));
-+                        potioncontents = event.callEvent() ? org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getPotion()).get(DataComponents.POTION_CONTENTS) : null;
++                        potionContents = event.callEvent() ? org.bukkit.craftbukkit.inventory.CraftItemStack.unwrap(event.getPotion()).get(DataComponents.POTION_CONTENTS) : null;
 +                    }
 +                    // Paper end - WitchConsumePotionEvent
- 
-                     if (itemstack.is(Items.POTION) && potioncontents != null) {
--                        potioncontents.forEachEffect(this::addEffect);
-+                        potioncontents.forEachEffect((effect) -> this.addEffect(effect, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK)); // CraftBukkit
+                     if (mainHandItem.is(Items.POTION) && potionContents != null) {
+-                        potionContents.forEachEffect(this::addEffect);
++                        potionContents.forEachEffect((effect) -> this.addEffect(effect, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.ATTACK)); // CraftBukkit
                      }
  
                      this.gameEvent(GameEvent.DRINK);
-@@ -146,17 +152,7 @@
+@@ -147,26 +_,7 @@
                  }
  
                  if (holder != null) {
@@ -25,23 +24,30 @@
 -                    this.usingTime = this.getMainHandItem().getUseDuration(this);
 -                    this.setUsingItem(true);
 -                    if (!this.isSilent()) {
--                        this.level().playSound((Player) null, this.getX(), this.getY(), this.getZ(), SoundEvents.WITCH_DRINK, this.getSoundSource(), 1.0F, 0.8F + this.random.nextFloat() * 0.4F);
+-                        this.level()
+-                            .playSound(
+-                                null,
+-                                this.getX(),
+-                                this.getY(),
+-                                this.getZ(),
+-                                SoundEvents.WITCH_DRINK,
+-                                this.getSoundSource(),
+-                                1.0F,
+-                                0.8F + this.random.nextFloat() * 0.4F
+-                            );
 -                    }
 -
--                    AttributeInstance attributemodifiable = this.getAttribute(Attributes.MOVEMENT_SPEED);
--
--                    attributemodifiable.removeModifier(Witch.SPEED_MODIFIER_DRINKING_ID);
--                    attributemodifiable.addTransientModifier(Witch.SPEED_MODIFIER_DRINKING);
+-                    AttributeInstance attribute = this.getAttribute(Attributes.MOVEMENT_SPEED);
+-                    attribute.removeModifier(SPEED_MODIFIER_DRINKING_ID);
+-                    attribute.addTransientModifier(SPEED_MODIFIER_DRINKING);
 +                    this.setDrinkingPotion(PotionContents.createItemStack(Items.POTION, holder)); // Paper - logic moved into setDrinkingPotion, copy exact impl into the method and then comment out
                  }
              }
  
-@@ -166,7 +162,24 @@
-         }
- 
+@@ -178,6 +_,23 @@
          super.aiStep();
-+    }
-+
+     }
+ 
 +    // Paper start - moved to its own method
 +    public void setDrinkingPotion(ItemStack potion) {
 +        potion = org.bukkit.craftbukkit.event.CraftEventFactory.handleWitchReadyPotionEvent(this, potion);
@@ -56,22 +62,23 @@
 +
 +        attributemodifiable.removeModifier(Witch.SPEED_MODIFIER_DRINKING_ID);
 +        attributemodifiable.addTransientModifier(Witch.SPEED_MODIFIER_DRINKING);
-     }
++    }
 +    // Paper end
- 
++
      @Override
      public SoundEvent getCelebrateSound() {
-@@ -231,6 +244,13 @@
-                 ServerLevel worldserver = (ServerLevel) world;
-                 ItemStack itemstack = PotionContents.createItemStack(Items.SPLASH_POTION, holder);
+         return SoundEvents.WITCH_CELEBRATE;
+@@ -244,6 +_,13 @@
  
+             if (this.level() instanceof ServerLevel serverLevel) {
+                 ItemStack itemStack = PotionContents.createItemStack(Items.SPLASH_POTION, holder);
 +                // Paper start - WitchThrowPotionEvent
 +                com.destroystokyo.paper.event.entity.WitchThrowPotionEvent event = new com.destroystokyo.paper.event.entity.WitchThrowPotionEvent((org.bukkit.entity.Witch) this.getBukkitEntity(), (org.bukkit.entity.LivingEntity) target.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack));
 +                if (!event.callEvent()) {
 +                    return;
 +                }
-+                itemstack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion());
-+                // Paper end - WitchThrowPotionEvent
-                 Projectile.spawnProjectileUsingShoot(ThrownPotion::new, worldserver, itemstack, this, d0, d1 + d3 * 0.2D, d2, 0.75F, 8.0F);
++                itemStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getPotion());
++                // Paper end - WitchThrowPotionEven
+                 Projectile.spawnProjectileUsingShoot(ThrownPotion::new, serverLevel, itemStack, this, d, d1 + squareRoot * 0.2, d2, 0.75F, 8.0F);
              }
  
