@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/ai/sensing/Sensor.java
 +++ b/net/minecraft/world/entity/ai/sensing/Sensor.java
-@@ -29,8 +29,19 @@
+@@ -29,8 +_,19 @@
          .ignoreInvisibilityTesting();
      private final int scanRate;
      private long timeToTick;
@@ -8,7 +8,7 @@
 +    private final String configKey;
 +    // Paper end
  
-     public Sensor(int senseInterval) {
+     public Sensor(int scanRate) {
 +        // Paper start - configurable sensor tick rate and timings
 +        String key = io.papermc.paper.util.MappingEnvironment.reobf() ? io.papermc.paper.util.ObfHelper.INSTANCE.deobfClassName(this.getClass().getName()) : this.getClass().getName();
 +        int lastSeparator = key.lastIndexOf('.');
@@ -17,18 +17,17 @@
 +        }
 +        this.configKey = key.toLowerCase(java.util.Locale.ROOT);
 +        // Paper end
-         this.scanRate = senseInterval;
-         this.timeToTick = (long)RANDOM.nextInt(senseInterval);
+         this.scanRate = scanRate;
+         this.timeToTick = RANDOM.nextInt(scanRate);
      }
-@@ -41,8 +52,10 @@
+@@ -41,7 +_,9 @@
  
-     public final void tick(ServerLevel world, E entity) {
+     public final void tick(ServerLevel level, E entity) {
          if (--this.timeToTick <= 0L) {
--            this.timeToTick = (long)this.scanRate;
+-            this.timeToTick = this.scanRate;
 +            // Paper start - configurable sensor tick rate and timings
-+            this.timeToTick = java.util.Objects.requireNonNullElse(world.paperConfig().tickRates.sensor.get(entity.getType(), this.configKey), this.scanRate);
-             this.updateTargetingConditionRanges(entity);
++            this.timeToTick = java.util.Objects.requireNonNullElse(level.paperConfig().tickRates.sensor.get(entity.getType(), this.configKey), this.scanRate);
 +            // Paper end
-             this.doTick(world, entity);
+             this.updateTargetingConditionRanges(entity);
+             this.doTick(level, entity);
          }
-     }
