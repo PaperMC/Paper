@@ -1,0 +1,77 @@
+--- a/net/minecraft/world/entity/animal/Dolphin.java
++++ b/net/minecraft/world/entity/animal/Dolphin.java
+@@ -63,6 +_,12 @@
+ import net.minecraft.world.phys.Vec3;
+ 
+ public class Dolphin extends AgeableWaterCreature {
++    // CraftBukkit start - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
++    @Override
++    public int getDefaultMaxAirSupply() {
++        return TOTAL_AIR_SUPPLY;
++    }
++    // CraftBukkit end
+     private static final EntityDataAccessor<BlockPos> TREASURE_POS = SynchedEntityData.defineId(Dolphin.class, EntityDataSerializers.BLOCK_POS);
+     private static final EntityDataAccessor<Boolean> GOT_FISH = SynchedEntityData.defineId(Dolphin.class, EntityDataSerializers.BOOLEAN);
+     private static final EntityDataAccessor<Integer> MOISTNESS_LEVEL = SynchedEntityData.defineId(Dolphin.class, EntityDataSerializers.INT);
+@@ -196,7 +_,7 @@
+ 
+     @Override
+     public int getMaxAirSupply() {
+-        return 4800;
++        return this.maxAirTicks; // CraftBukkit - SPIGOT-6907: re-implement LivingEntity#setMaximumAir()
+     }
+ 
+     @Override
+@@ -229,11 +_,15 @@
+         if (this.getItemBySlot(EquipmentSlot.MAINHAND).isEmpty()) {
+             ItemStack item = entity.getItem();
+             if (this.canHoldItem(item)) {
++                // CraftBukkit start - call EntityPickupItemEvent
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entity, 0, false).isCancelled()) return;
++                item = entity.getItem(); // CraftBukkit- update ItemStack from event
++                // CraftBukkit end
+                 this.onItemPickup(entity);
+                 this.setItemSlot(EquipmentSlot.MAINHAND, item);
+                 this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
+                 this.take(entity, item.getCount());
+-                entity.discard();
++                entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+             }
+         }
+     }
+@@ -341,7 +_,7 @@
+ 
+     @Nullable
+     @Override
+-    protected SoundEvent getDeathSound() {
++    public SoundEvent getDeathSound() { // Paper - decompile error
+         return SoundEvents.DOLPHIN_DEATH;
+     }
+ 
+@@ -497,7 +_,7 @@
+ 
+         @Override
+         public void start() {
+-            this.player.addEffect(new MobEffectInstance(MobEffects.DOLPHINS_GRACE, 100), this.dolphin);
++            this.player.addEffect(new MobEffectInstance(MobEffects.DOLPHINS_GRACE, 100), this.dolphin, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.DOLPHIN); // CraftBukkit
+         }
+ 
+         @Override
+@@ -516,7 +_,7 @@
+             }
+ 
+             if (this.player.isSwimming() && this.player.level().random.nextInt(6) == 0) {
+-                this.player.addEffect(new MobEffectInstance(MobEffects.DOLPHINS_GRACE, 100), this.dolphin);
++                this.player.addEffect(new MobEffectInstance(MobEffects.DOLPHINS_GRACE, 100), this.dolphin, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.DOLPHIN); // CraftBukkit
+             }
+         }
+     }
+@@ -586,7 +_,7 @@
+                     0.3F * Mth.cos(Dolphin.this.getYRot() * (float) (Math.PI / 180.0)) * Mth.cos(Dolphin.this.getXRot() * (float) (Math.PI / 180.0))
+                         + Mth.sin(f1) * f2
+                 );
+-                Dolphin.this.level().addFreshEntity(itemEntity);
++                Dolphin.this.spawnAtLocation(getServerLevel(Dolphin.this), itemEntity); // Paper - Call EntityDropItemEvent
+             }
+         }
+     }
