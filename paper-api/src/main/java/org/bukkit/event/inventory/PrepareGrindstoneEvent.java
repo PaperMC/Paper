@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when an item is put in a slot for repair or unenchanting in a grindstone.
+ *
+ * @since 1.19.3
  */
 public class PrepareGrindstoneEvent extends com.destroystokyo.paper.event.inventory.PrepareGrindstoneEvent { // Paper
 

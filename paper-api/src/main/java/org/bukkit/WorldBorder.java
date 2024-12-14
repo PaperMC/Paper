@@ -4,6 +4,9 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.8
+ */
 public interface WorldBorder {
 
     /**
@@ -11,6 +14,7 @@ public interface WorldBorder {
      *
      * @return the associated world, or null if this world border is not associated
      * with any specific world, such as those created via {@link Server#createWorldBorder()}
+     * @since 1.18.2
      */
     @Nullable
     public World getWorld();
@@ -54,6 +58,7 @@ public interface WorldBorder {
      * @param time The time in which the border grows or shrinks from the previous size to that being set.
      *
      * @throws IllegalArgumentException if unit is <code>null</code> or newSize is less than 1.0D or greater than {@link #getMaxSize()}
+     * @since 1.19.1
      */
     public void setSize(double newSize, @NotNull TimeUnit unit, long time);
 
@@ -145,6 +150,7 @@ public interface WorldBorder {
      *
      * @param location the location to check
      * @return if this location is inside the border or not
+     * @since 1.11.2
      */
     public boolean isInside(@NotNull Location location);
 
@@ -152,6 +158,7 @@ public interface WorldBorder {
      * Gets the maximum possible size of a WorldBorder.
      *
      * @return The maximum size the WorldBorder
+     * @since 1.19.1
      */
     public double getMaxSize();
 
@@ -160,6 +167,7 @@ public interface WorldBorder {
      * WorldBorder.
      *
      * @return The absolute maximum center coordinate of the WorldBorder
+     * @since 1.19.1
      */
     public double getMaxCenterCoordinate();
 }

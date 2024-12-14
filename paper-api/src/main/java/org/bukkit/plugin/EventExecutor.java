@@ -21,6 +21,8 @@ import com.google.common.base.Preconditions;
 
 /**
  * Interface which defines the class for event call backs to plugins
+ *
+ * @since 1.0.0 R1
  */
 public interface EventExecutor {
     public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException;
@@ -45,6 +47,9 @@ public interface EventExecutor {
         }
     };
 
+    /**
+     * @since 1.9.4
+     */
     @NotNull
     public static EventExecutor create(@NotNull Method m, @NotNull Class<? extends Event> eventClass) {
         Preconditions.checkNotNull(m, "Null method");

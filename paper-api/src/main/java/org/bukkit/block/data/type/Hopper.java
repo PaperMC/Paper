@@ -9,6 +9,8 @@ import org.bukkit.block.data.Powerable;
  * <br>
  * Unlike most other blocks, a hopper is only enabled when it is <b>not</b>
  * receiving any power.
+ *
+ * @since 1.13
  */
 public interface Hopper extends Directional {
 

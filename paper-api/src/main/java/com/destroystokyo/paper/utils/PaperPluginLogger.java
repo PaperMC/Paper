@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Prevents plugins (e.g. Essentials) from changing the parent of the plugin logger.
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class PaperPluginLogger extends Logger {
@@ -18,6 +20,9 @@ public class PaperPluginLogger extends Logger {
         return getLogger((PluginMeta) description);
     }
 
+    /**
+     * @since 1.19.3
+     */
     public static Logger getLogger(final PluginMeta meta) {
         Logger logger = new PaperPluginLogger(meta);
         if (!LogManager.getLogManager().addLogger(logger)) {

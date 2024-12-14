@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * 'mode' represents the different modes in which this structure block may
  * operate.
+ *
+ * @since 1.13
  */
 public interface StructureBlock extends BlockData {
 

@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a Creeper
+ *
+ * @since 1.0.0 R1
  */
 public interface Creeper extends Monster {
 
@@ -28,6 +30,7 @@ public interface Creeper extends Monster {
      * primed state before exploding.
      *
      * @param ticks the new maximum fuse ticks
+     * @since 1.12.2
      */
     public void setMaxFuseTicks(int ticks);
 
@@ -37,6 +40,7 @@ public interface Creeper extends Monster {
      * primed state before exploding.
      *
      * @return the maximum fuse ticks
+     * @since 1.12.2
      */
     public int getMaxFuseTicks();
 
@@ -45,6 +49,7 @@ public interface Creeper extends Monster {
      * time in which a creeper has been in the primed state.
      *
      * @param ticks the new fuse ticks
+     * @since 1.16.5
      */
     public void setFuseTicks(int ticks);
 
@@ -53,6 +58,7 @@ public interface Creeper extends Monster {
      * amount of time in which a creeper has been in the primed state.
      *
      * @return the fuse ticks
+     * @since 1.13.1
      */
     public int getFuseTicks();
 
@@ -60,6 +66,7 @@ public interface Creeper extends Monster {
      * Set the explosion radius in which this Creeper's explosion will affect.
      *
      * @param radius the new explosion radius
+     * @since 1.12.2
      */
     public void setExplosionRadius(int radius);
 
@@ -67,6 +74,7 @@ public interface Creeper extends Monster {
      * Get the explosion radius in which this Creeper's explosion will affect.
      *
      * @return the explosion radius
+     * @since 1.12.2
      */
     public int getExplosionRadius();
 
@@ -76,6 +84,8 @@ public interface Creeper extends Monster {
      * The resulting explosion can be cancelled by an
      * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
      * griefing gamerule.
+     *
+     * @since 1.13.1
      */
     public void explode();
 
@@ -90,6 +100,7 @@ public interface Creeper extends Monster {
      * griefing gamerule.
      *
      * @param entity the entity which ignited the creeper
+     * @since 1.21
      */
     public void ignite(@NotNull Entity entity);
 
@@ -102,6 +113,8 @@ public interface Creeper extends Monster {
      * The resulting explosion can be cancelled by an
      * {@link org.bukkit.event.entity.ExplosionPrimeEvent} and obeys the mob
      * griefing gamerule.
+     *
+     * @since 1.14.2
      */
     public void ignite();
 
@@ -109,6 +122,7 @@ public interface Creeper extends Monster {
      * Gets the entity which ignited the creeper, if available.
      *
      * @return the entity which ignited the creeper (if available) or null
+     * @since 1.21
      */
     @Nullable
     public Entity getIgniter();
@@ -118,6 +132,7 @@ public interface Creeper extends Monster {
      * Set whether creeper is ignited or not (armed to explode)
      *
      * @param ignited New ignited state
+     * @since 1.13.1
      */
     public void setIgnited(boolean ignited);
 
@@ -125,6 +140,7 @@ public interface Creeper extends Monster {
      * Check if creeper is ignited or not (armed to explode)
      *
      * @return Ignited state
+     * @since 1.13.1
      */
     public boolean isIgnited();
     // Paper end

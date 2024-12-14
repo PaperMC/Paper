@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a vault in a trial chamber is about to display an item.
+ *
+ * @since 1.21.1
  */
 @ApiStatus.Experimental
 public class VaultDisplayItemEvent extends BlockEvent implements Cancellable {

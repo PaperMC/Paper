@@ -11,6 +11,9 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.8
+ */
 public interface PatternType extends OldEnum<PatternType>, Keyed {
     PatternType BASE = getType("base");
     PatternType SQUARE_BOTTOM_LEFT = getType("square_bottom_left");
@@ -60,6 +63,7 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#BANNER_PATTERN}. PatternTypes can exist without a key.
+     * @since 1.21.3
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     @Override
@@ -70,6 +74,7 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#BANNER_PATTERN}. PatternTypes can exist without a key.
+     * @since 1.20.4
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     // Paper end - deprecate getKey

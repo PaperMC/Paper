@@ -33,6 +33,8 @@ import org.jetbrains.annotations.Nullable;
  * Care should be taken to check {@link #isAsynchronous()} and treat the event
  * appropriately.
  * <p>
+ *
+ * @since 1.20.2
  */
 @ApiStatus.Experimental
 public class AsyncStructureGenerateEvent extends WorldEvent {

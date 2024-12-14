@@ -4,6 +4,8 @@ import org.jetbrains.annotations.Nullable; // Paper
 
 /**
  * Interface to the inventory of a Grindstone.
+ *
+ * @since 1.14
  */
 public interface GrindstoneInventory extends Inventory {
 
@@ -12,6 +14,7 @@ public interface GrindstoneInventory extends Inventory {
      * Gets the upper input item.
      *
      * @return upper input item
+     * @since 1.15.2
      */
     @Nullable
     default ItemStack getUpperItem() {
@@ -22,6 +25,7 @@ public interface GrindstoneInventory extends Inventory {
      * Sets the upper input item.
      *
      * @param upperItem item to set
+     * @since 1.15.2
      */
     default void setUpperItem(@Nullable ItemStack upperItem) {
         setItem(0, upperItem);
@@ -31,6 +35,7 @@ public interface GrindstoneInventory extends Inventory {
      * Gets the lower input item.
      *
      * @return lower input item
+     * @since 1.15.2
      */
     @Nullable
     default ItemStack getLowerItem() {
@@ -41,6 +46,7 @@ public interface GrindstoneInventory extends Inventory {
      * Sets the lower input item.
      *
      * @param lowerItem item to set
+     * @since 1.15.2
      */
     default void setLowerItem(@Nullable ItemStack lowerItem) {
         setItem(1, lowerItem);
@@ -50,6 +56,7 @@ public interface GrindstoneInventory extends Inventory {
      * Gets the result.
      *
      * @return result
+     * @since 1.15.2
      */
     @Nullable
     default ItemStack getResult() {
@@ -60,6 +67,7 @@ public interface GrindstoneInventory extends Inventory {
      * Sets the result.
      *
      * @param result item to set
+     * @since 1.15.2
      */
     default void setResult(@Nullable ItemStack result) {
         setItem(2, result);

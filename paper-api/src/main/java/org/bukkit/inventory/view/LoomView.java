@@ -9,9 +9,14 @@ import org.jetbrains.annotations.NotNull;
 /**
  * An instance of {@link InventoryView} which provides extra methods related to
  * loom view data.
+ *
+ * @since 1.21
  */
 public interface LoomView extends InventoryView {
 
+    /**
+     * @since 1.21.1
+     */
     @NotNull
     @Override
     LoomInventory getTopInventory();

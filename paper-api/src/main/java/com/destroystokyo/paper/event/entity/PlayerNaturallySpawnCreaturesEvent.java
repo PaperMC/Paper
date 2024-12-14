@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when the server is calculating what chunks to try to spawn monsters in every Monster Spawn Tick event
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class PlayerNaturallySpawnCreaturesEvent extends PlayerEvent implements Cancellable {

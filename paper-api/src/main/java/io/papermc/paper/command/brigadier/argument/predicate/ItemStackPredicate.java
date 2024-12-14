@@ -8,6 +8,7 @@ import org.jetbrains.annotations.ApiStatus;
  * A predicate for ItemStack.
  *
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#itemPredicate()
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

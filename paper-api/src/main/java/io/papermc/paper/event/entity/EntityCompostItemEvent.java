@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when an item is about to be composted by an entity.
+ *
+ * @since 1.19.3
  */
 @NullMarked
 public class EntityCompostItemEvent extends CompostItemEvent implements Cancellable {

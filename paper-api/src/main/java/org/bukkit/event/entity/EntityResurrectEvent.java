@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
  * Called when an entity dies and may have the opportunity to be resurrected.
  * Will be called in a cancelled state if the entity does not have a totem
  * equipped.
+ *
+ * @since 1.11
  */
 public class EntityResurrectEvent extends EntityEvent implements Cancellable {
 
@@ -41,6 +43,7 @@ public class EntityResurrectEvent extends EntityEvent implements Cancellable {
      * entity did not have a totem of undying.
      *
      * @return the hand, or null
+     * @since 1.19.2
      */
     @Nullable
     public EquipmentSlot getHand() {

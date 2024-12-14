@@ -12,6 +12,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * @since 1.9.4
+ */
 @ApiStatus.Internal
 @NullMarked
 public class MethodHandleEventExecutor implements EventExecutor {
@@ -47,6 +50,9 @@ public class MethodHandleEventExecutor implements EventExecutor {
         }
     }
 
+    /**
+     * @since 1.19.2
+     */
     @Override
     public String toString() {
         return "MethodHandleEventExecutor['" + this.method + "']";

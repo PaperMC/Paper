@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Stores data for pigs being zapped
+ *
+ * @since 1.0.0 R1
  */
 public class PigZapEvent extends com.destroystokyo.paper.event.entity.EntityZapEvent implements Cancellable { // Paper
     // private static final HandlerList handlers = new HandlerList(); // Paper - moved in the super class
@@ -34,6 +36,9 @@ public class PigZapEvent extends com.destroystokyo.paper.event.entity.EntityZapE
         canceled = cancel;
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     @Override
     public Pig getEntity() {

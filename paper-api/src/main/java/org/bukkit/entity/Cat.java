@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Meow.
+ *
+ * @since 1.14
  */
 public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarColorable { // Paper - CollarColorable
 
@@ -49,6 +51,8 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
 
     /**
      * Represents the various different cat types there are.
+     *
+     * @since 1.14
      */
     interface Type extends OldEnum<Type>, Keyed {
 
@@ -99,6 +103,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
      * This is visual and does not affect the behaviour of the cat.
      *
      * @param lyingDown whether the cat should lie down
+     * @since 1.17.1
      */
     public void setLyingDown(boolean lyingDown);
 
@@ -106,6 +111,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
      * Gets if the cat is lying down.
      *
      * @return whether the cat is lying down
+     * @since 1.17.1
      */
     public boolean isLyingDown();
 
@@ -114,6 +120,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
      * This is visual and does not affect the behaviour of the cat.
      *
      * @param headUp head is up
+     * @since 1.17.1
      */
     public void setHeadUp(boolean headUp);
 
@@ -121,6 +128,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
      * Gets if the cat has its head up.
      *
      * @return head is up
+     * @since 1.17.1
      */
     public boolean isHeadUp();
     // Paper end - More cat api

@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
  * Fired when a shulker duplicates itself by spawning a new shulker.
  * <p>
  * The event is fired prior to the newly created shulker, accessible via {@link #getEntity()}, being added to the world.
+ *
+ * @since 1.20.4
  */
 @NullMarked
 public class ShulkerDuplicateEvent extends EntityEvent implements Cancellable {

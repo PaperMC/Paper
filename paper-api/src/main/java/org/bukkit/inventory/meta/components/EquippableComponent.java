@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a component which can turn any item into equippable armor.
+ *
+ * @since 1.21.3
  */
 @ApiStatus.Experimental
 public interface EquippableComponent extends ConfigurationSerializable {

@@ -5,6 +5,8 @@ import org.bukkit.block.data.BlockData;
 /**
  * 'bloom' indicates whether the sculk catalyst is actively spreading the sculk
  * or not.
+ *
+ * @since 1.19
  */
 public interface SculkCatalyst extends BlockData {
 

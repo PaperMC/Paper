@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * EulerAngle is used to represent 3 angles, one for each
  * axis (x, y, z). The angles are in radians
+ *
+ * @since 1.8
  */
 public class EulerAngle {
 

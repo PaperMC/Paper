@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * Represents a structure placed in the world.
  *
  * @see StructurePiece
+ * @since 1.20.4
  */
 public interface GeneratedStructure extends PersistentDataHolder {
 

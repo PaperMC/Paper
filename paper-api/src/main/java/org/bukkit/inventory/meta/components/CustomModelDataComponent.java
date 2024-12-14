@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a component which adds custom model data.
+ *
+ * @since 1.21.4
  */
 @ApiStatus.Experimental
 public interface CustomModelDataComponent extends ConfigurationSerializable {

@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 'orientation' is the direction the block is facing.
+ *
+ * @since 1.16.1
  */
 public interface Jigsaw extends BlockData {
 

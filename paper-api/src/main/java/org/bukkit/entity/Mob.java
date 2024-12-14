@@ -7,9 +7,14 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a Mob. Mobs are living entities with simple AI.
+ *
+ * @since 1.13
  */
 public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Leashable { // Paper - Leashable API
 
+    /**
+     * @since 1.17.1
+     */
     // Paper start
     @Override
     org.bukkit.inventory.@org.jetbrains.annotations.NotNull EntityEquipment getEquipment();
@@ -17,6 +22,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
     /**
      * Enables access to control the pathing of an Entity
      * @return Pathfinding Manager for this entity
+     * @since 1.13.1
      */
     @NotNull
     com.destroystokyo.paper.entity.Pathfinder getPathfinder();
@@ -25,6 +31,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * Check if this mob is exposed to daylight
      *
      * @return True if mob is exposed to daylight
+     * @since 1.13.1
      */
     boolean isInDaylight();
 
@@ -34,6 +41,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * Useful when implementing custom mob goals
      *
      * @param location location to look at
+     * @since 1.16.5
      */
     void lookAt(@NotNull org.bukkit.Location location);
 
@@ -45,6 +53,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * @param location location to look at
      * @param headRotationSpeed head rotation speed
      * @param maxHeadPitch max head pitch rotation
+     * @since 1.16.5
      */
     void lookAt(@NotNull org.bukkit.Location location, float headRotationSpeed, float maxHeadPitch);
 
@@ -56,6 +65,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * Useful when implementing custom mob goals
      *
      * @param entity entity to look at
+     * @since 1.16.5
      */
     void lookAt(@NotNull Entity entity);
 
@@ -69,6 +79,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * @param entity entity to look at
      * @param headRotationSpeed head rotation speed
      * @param maxHeadPitch max head pitch rotation
+     * @since 1.16.5
      */
     void lookAt(@NotNull Entity entity, float headRotationSpeed, float maxHeadPitch);
 
@@ -80,6 +91,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * @param x x coordinate
      * @param y y coordinate
      * @param z z coordinate
+     * @since 1.16.5
      */
     void lookAt(double x, double y, double z);
 
@@ -93,6 +105,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * @param z z coordinate
      * @param headRotationSpeed head rotation speed
      * @param maxHeadPitch max head pitch rotation
+     * @since 1.16.5
      */
     void lookAt(double x, double y, double z, float headRotationSpeed, float maxHeadPitch);
 
@@ -100,6 +113,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * Gets the head rotation speed
      *
      * @return the head rotation speed
+     * @since 1.16.5
      */
     int getHeadRotationSpeed();
 
@@ -107,6 +121,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * Gets the max head pitch rotation
      *
      * @return the max head pitch rotation
+     * @since 1.16.5
      */
     int getMaxHeadPitch();
     // Paper end
@@ -136,6 +151,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * unspecified behaviours disabled, such as drowning.
      *
      * @param aware whether the mob is aware
+     * @since 1.15.2
      */
     public void setAware(boolean aware);
 
@@ -147,6 +163,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * unspecified behaviours disabled, such as drowning.
      *
      * @return whether the mob is aware
+     * @since 1.15.2
      */
     public boolean isAware();
 
@@ -159,10 +176,14 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * ambient noise while sleeping.
      *
      * @return the ambient sound, or null if this entity is ambiently quiet
+     * @since 1.19.2
      */
     @Nullable
     public Sound getAmbientSound();
 
+    /**
+     * @since 1.20.6
+     */
     // Paper start - LootTable API
     @Override
     default void setLootTable(final @Nullable org.bukkit.loot.LootTable table, final long seed) {
@@ -192,6 +213,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * aggressive if their combined {@link Panda.Gene} is {@link Panda.Gene#AGGRESSIVE}.
      *
      * @return wether the mob is aggressive or not
+     * @since 1.20.2
      */
     boolean isAggressive();
 
@@ -201,6 +223,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      *
      * @param aggressive wether the mob should be aggressive or not
      * @see #isAggressive()
+     * @since 1.20.2
      */
     void setAggressive(boolean aggressive);
     // Paper end - Missing Entity API
@@ -210,6 +233,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * Check if Mob is left-handed
      *
      * @return True if left-handed
+     * @since 1.17.1
      */
     public boolean isLeftHanded();
 
@@ -217,6 +241,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
       * Set if Mob is left-handed
       *
       * @param leftHanded True if left-handed
+     * @since 1.17.1
       */
     public void setLeftHanded(boolean leftHanded);
     // Paper end - left-handed API
@@ -226,6 +251,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * Gets the amount of experience the mob will possibly drop. This value is randomized and it can give different results
      *
      * @return the amount of experience the mob will possibly drop
+     * @since 1.19.4
      */
     public int getPossibleExperienceReward();
     // Paper end - mob xp reward API

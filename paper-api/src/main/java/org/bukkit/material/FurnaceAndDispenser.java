@@ -7,6 +7,7 @@ import org.bukkit.Material;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
+ * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class FurnaceAndDispenser extends DirectionalContainer {
@@ -25,6 +26,9 @@ public class FurnaceAndDispenser extends DirectionalContainer {
         super(type, data);
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @Override
     public FurnaceAndDispenser clone() {
         return (FurnaceAndDispenser) super.clone();

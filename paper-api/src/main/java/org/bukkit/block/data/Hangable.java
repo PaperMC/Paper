@@ -2,6 +2,8 @@ package org.bukkit.block.data;
 
 /**
  * 'hanging' denotes whether the lantern is hanging from a block.
+ *
+ * @since 1.19
  */
 public interface Hangable extends BlockData {
 

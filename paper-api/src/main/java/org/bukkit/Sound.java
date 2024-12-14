@@ -19,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
  * Minecraft itself! There is no guarantee the sounds will play. There is no
  * guarantee values will not be removed from this interface. As such, you should not
  * depend on the ordinal values of this class.
+ *
+ * @since 1.3.2 R1.0
  */
 public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
 
@@ -1708,6 +1710,7 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     /**
      * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#SOUNDS}. Sounds
      * can exist without a key.
+     * @since 1.16.4
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     @Override
@@ -1728,6 +1731,7 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     /**
      * @deprecated use {@link Registry#getKey(Keyed)} and {@link Registry#SOUNDS}. Sounds
      * can exist without a key.
+     * @since 1.16.5
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     @Override

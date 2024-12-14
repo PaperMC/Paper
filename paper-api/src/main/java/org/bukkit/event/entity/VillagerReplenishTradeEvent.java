@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * If this event passes, the villager will reset the
  * {@link MerchantRecipe#getUses() uses} of the affected {@link #getRecipe()
  * MerchantRecipe} to <code>0</code>.
+ *
+ * @since 1.9.4
  */
 public class VillagerReplenishTradeEvent extends EntityEvent implements Cancellable {
 

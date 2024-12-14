@@ -22,6 +22,7 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <T> custom type
  * @param <N> type with an argument native to vanilla Minecraft (from {@link ArgumentTypes})
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @NullMarked

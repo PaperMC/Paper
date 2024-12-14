@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 'attachment' denotes how the bell is attached to its block.
+ *
+ * @since 1.14
  */
 public interface Bell extends Directional, Powerable {
 

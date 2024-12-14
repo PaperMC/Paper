@@ -4,6 +4,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a block, entity, or other object that may receive a custom name.
+ *
+ * @since 1.11
  */
 public interface Nameable {
 
@@ -14,6 +16,7 @@ public interface Nameable {
      * <p>This value has no effect on players, they will always use their real name.</p>
      *
      * @return the custom name
+     * @since 1.16.5
      */
     net.kyori.adventure.text.@Nullable Component customName();
 
@@ -27,6 +30,7 @@ public interface Nameable {
      * <p>This value has no effect on players, they will always use their real name.</p>
      *
      * @param customName the custom name to set
+     * @since 1.16.5
      */
     void customName(final net.kyori.adventure.text.@Nullable Component customName);
     // Paper end

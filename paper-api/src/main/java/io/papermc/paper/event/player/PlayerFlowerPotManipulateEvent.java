@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player places an item in or takes an item out of a flowerpot.
+ *
+ * @since 1.16.4
  */
 @NullMarked
 public class PlayerFlowerPotManipulateEvent extends PlayerEvent implements Cancellable {

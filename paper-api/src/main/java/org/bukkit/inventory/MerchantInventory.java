@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
  * <br>
  * The holder of this Inventory is the owning Villager, or null if the player is
  * trading with a merchant created by a plugin.
+ *
+ * @since 1.3.1 R1.0
  */
 public interface MerchantInventory extends Inventory {
 
@@ -15,6 +17,7 @@ public interface MerchantInventory extends Inventory {
      * Get the index of the currently selected recipe.
      *
      * @return the index of the currently selected recipe
+     * @since 1.9.4
      */
     int getSelectedRecipeIndex();
 
@@ -28,6 +31,7 @@ public interface MerchantInventory extends Inventory {
      * for a matching recipe to activate.
      *
      * @return the currently active recipe
+     * @since 1.9.4
      */
     @Nullable
     MerchantRecipe getSelectedRecipe();
@@ -36,6 +40,7 @@ public interface MerchantInventory extends Inventory {
      * Gets the Merchant associated with this inventory.
      *
      * @return merchant
+     * @since 1.14
      */
     @NotNull
     Merchant getMerchant();

@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents the built-in Minecraft font.
+ *
+ * @since 1.0.0 R1
  */
 public class MinecraftFont extends MapFont {
 

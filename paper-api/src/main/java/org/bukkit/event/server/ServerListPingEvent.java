@@ -16,6 +16,8 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * <b>Note:</b> The players in {@link #iterator()} will not be shown in the
  * server info if {@link Bukkit#getHideOnlinePlayers()} is true.
+ *
+ * @since 1.0.0 R1
  */
 public class ServerListPingEvent extends ServerEvent implements Iterable<Player> {
     private static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
@@ -106,6 +108,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * Get the message of the day message.
      *
      * @return the message of the day
+     * @since 1.16.5
      */
     public net.kyori.adventure.text.@NotNull Component motd() {
         return motd;
@@ -114,6 +117,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * Change the message of the day message.
      *
      * @param motd the message of the day
+     * @since 1.16.5
      */
     public void motd(net.kyori.adventure.text.@NotNull Component motd) {
         this.motd = motd;
@@ -125,6 +129,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * blank if unknown
      *
      * @return The hostname
+     * @since 1.19.2
      */
     @NotNull
     public String getHostname() {
@@ -195,6 +200,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      *
      * @return true if chat preview is enabled, false otherwise
      * @deprecated chat previews have been removed
+     * @since 1.19
      */
     @Deprecated(since = "1.19.3")
     public boolean shouldSendChatPreviews() {
@@ -219,17 +225,24 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      *     implementations
      * @throws UnsupportedOperationException if the caller of this event does
      *     not support setting the server icon
+     * @since 1.7.2 R0.2
      */
     public void setServerIcon(@UndefinedNullability("implementation dependent") CachedServerIcon icon) throws IllegalArgumentException, UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
@@ -249,6 +262,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @throws UnsupportedOperationException if the caller of this event does
      *     not support removing players
      * @deprecated the Iterable interface will be removed at some point
+     * @since 1.7.10
      */
     @NotNull
     @Override

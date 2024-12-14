@@ -10,6 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
  *
  * @param <T> resolved type
  * @see <a href="https://minecraft.wiki/w/Target_selectors">Target Selectors</a>
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

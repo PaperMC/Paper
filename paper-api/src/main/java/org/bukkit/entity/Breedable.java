@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents an entity that can age and breed.
+ *
+ * @since 1.16.2
  */
 public interface Breedable extends Ageable {
 

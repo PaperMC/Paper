@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
  * Represents a captured state of a block which stores entities.
  *
  * @param <T> Entity this block can store
+ * @since 1.15.2
  */
 public interface EntityBlockStorage<T extends Entity> extends TileState {
 
@@ -57,6 +58,8 @@ public interface EntityBlockStorage<T extends Entity> extends TileState {
     // Paper start - Add EntityBlockStorage clearEntities
     /**
      * Clear all currently stored entities in the block.
+     *
+     * @since 1.16.5
      */
     void clearEntities();
     // Paper end

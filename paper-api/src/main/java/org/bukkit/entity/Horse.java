@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Horse.
+ *
+ * @since 1.6.1 R0.1
  */
 public interface Horse extends AbstractHorse {
 
@@ -113,6 +115,7 @@ public interface Horse extends AbstractHorse {
      * or undead horses.
      *
      * @return a {@link Color} representing the horse's group
+     * @since 1.6.2 R1.1
      */
     @NotNull
     public Color getColor();
@@ -135,6 +138,7 @@ public interface Horse extends AbstractHorse {
      * or undead horses.
      *
      * @return a {@link Style} representing the horse's style
+     * @since 1.6.2 R1.1
      */
     @NotNull
     public Style getStyle();
@@ -153,6 +157,7 @@ public interface Horse extends AbstractHorse {
     /**
      * @return carrying chest status
      * @deprecated see {@link ChestedHorse}
+     * @since 1.6.2 R1.1
      */
     @Deprecated(since = "1.11")
     public boolean isCarryingChest();
@@ -160,10 +165,14 @@ public interface Horse extends AbstractHorse {
     /**
      * @param chest chest
      * @deprecated see {@link ChestedHorse}
+     * @since 1.6.2 R1.1
      */
     @Deprecated(since = "1.11")
     public void setCarryingChest(boolean chest);
 
+    /**
+     * @since 1.6.2 R1.1
+     */
     @NotNull
     @Override
     public HorseInventory getInventory();

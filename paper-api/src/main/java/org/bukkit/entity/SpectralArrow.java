@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a spectral arrow.
+ *
+ * @since 1.9.4
  */
 public interface SpectralArrow extends AbstractArrow {
 

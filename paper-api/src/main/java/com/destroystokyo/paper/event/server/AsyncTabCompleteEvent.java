@@ -51,6 +51,8 @@ import org.jspecify.annotations.Nullable;
  * However, the synchronous TabCompleteEvent will fire with the Async results.
  * <p>
  * Only 1 process will be allowed to provide completions, the Async Event, or the standard process.
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class AsyncTabCompleteEvent extends Event implements Cancellable {
@@ -141,6 +143,7 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
      * or current player names will not be called.
      *
      * @return a list of offered completions
+     * @since 1.16.5
      */
     public List<Completion> completions() {
         return this.completions;
@@ -155,6 +158,7 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
      * The passed collection will be cloned to a new {@code List}. You must call {@link #completions()} to mutate from here
      *
      * @param newCompletions the new completions
+     * @since 1.16.5
      */
     public void completions(final List<Completion> newCompletions) {
         Preconditions.checkArgument(newCompletions != null, "new completions cannot be null");
@@ -240,6 +244,8 @@ public class AsyncTabCompleteEvent extends Event implements Cancellable {
 
     /**
      * A rich tab completion, consisting of a string suggestion, and a nullable {@link Component} tooltip.
+     *
+     * @since 1.16.5
      */
     public interface Completion extends Examinable {
 

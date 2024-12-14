@@ -7,6 +7,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents an entity that can be bucketed.
+ *
+ * @since 1.18.1
  */
 @NullMarked
 public interface Bucketable extends Entity {

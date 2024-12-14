@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * StringPrompt is the base class for any prompt that accepts an arbitrary
  * string from the user.
+ *
+ * @since 1.1.0 R5
  */
 public abstract class StringPrompt implements Prompt {
 

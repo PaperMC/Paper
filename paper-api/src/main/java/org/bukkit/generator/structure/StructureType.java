@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * server there might be additional structure types present (for example
  * structure types added by data packs), which can be received via
  * {@link Registry#STRUCTURE_TYPE}.
+ *
+ * @since 1.19
  */
 public abstract class StructureType implements Keyed {
 

@@ -24,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @see #getContents()
  * @see #getStorageContents()
+ * @since 1.0.0 R1
  */
 public interface Inventory extends Iterable<ItemStack> {
 
@@ -38,6 +39,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * Returns the maximum stack size for an ItemStack in this inventory.
      *
      * @return The maximum size for an ItemStack in this inventory.
+     * @since 1.2.5 R0.1
      */
     public int getMaxStackSize();
 
@@ -56,6 +58,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * </ul>
      *
      * @param size The new maximum stack size for items in this inventory.
+     * @since 1.2.5 R0.1
      */
     public void setMaxStackSize(int size);
 
@@ -185,6 +188,9 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @return inventory storage contents. Individual items may be null.
      */
+    /**
+     * @since 1.9.4
+     */
     public @Nullable ItemStack @NotNull [] getStorageContents(); // Paper - make array elements nullable instead array
 
     /**
@@ -193,6 +199,9 @@ public interface Inventory extends Iterable<ItemStack> {
      * @param items The ItemStacks to use as storage contents
      * @throws IllegalArgumentException If the array has more items than the
      * inventory.
+     */
+    /**
+     * @since 1.9.4
      */
     public void setStorageContents(@Nullable ItemStack @NotNull [] items) throws IllegalArgumentException; // Paper - make array elements nullable instead array
 
@@ -256,6 +265,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * @param amount the minimum amount
      * @return false if item is null, true if amount less than 1, true if
      *     enough ItemStacks were found to add to the given amount
+     * @since 1.4.5 R1.0
      */
     @Contract("null, _ -> false")
     public boolean containsAtLeast(@Nullable ItemStack item, int amount);
@@ -322,6 +332,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * to be empty if there are no ItemStacks in any slot of this inventory.
      *
      * @return true if empty, false otherwise
+     * @since 1.16.2
      */
     public boolean isEmpty();
 
@@ -360,6 +371,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * Closes the inventory for all viewers.
      *
      * @return the number of viewers the inventory was closed for
+     * @since 1.16.5
      */
     public int close();
     // Paper end
@@ -374,6 +386,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * never be assumed to be non-empty.
      *
      * @return A list of HumanEntities who are viewing this Inventory.
+     * @since 1.1.0 R5
      */
     @NotNull
     public List<HumanEntity> getViewers();
@@ -382,6 +395,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * Returns what type of inventory this is.
      *
      * @return The InventoryType representing the type of inventory.
+     * @since 1.1.0 R5
      */
     @NotNull
     public InventoryType getType();
@@ -390,6 +404,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * Gets the block or entity belonging to the open inventory
      *
      * @return The holder of the inventory; null if it has no holder.
+     * @since 1.1.0 R5
      */
     @Nullable
     public InventoryHolder getHolder();
@@ -400,11 +415,15 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @param useSnapshot Create a snapshot if the holder is a tile entity
      * @return The holder of the inventory; null if it has no holder.
+     * @since 1.15.2
      */
     @Nullable
     public InventoryHolder getHolder(boolean useSnapshot);
     // Paper end
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     @Override
     public ListIterator<ItemStack> iterator();
@@ -417,6 +436,7 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @param index The index.
      * @return An iterator.
+     * @since 1.2.5 R0.1
      */
     @NotNull
     public ListIterator<ItemStack> iterator(int index);
@@ -426,6 +446,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * was custom created or is a virtual / subcontainer.
      *
      * @return location or null if not applicable.
+     * @since 1.9.4
      */
     @Nullable
     public Location getLocation();

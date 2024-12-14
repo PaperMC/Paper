@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
  * Base type for all registry events.
  *
  * @param <T> registry entry type
+ * @since 1.21
  */
 @ApiStatus.Experimental
 @NullMarked

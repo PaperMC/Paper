@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Raised when a vehicle receives damage.
+ *
+ * @since 1.0.0 R1
  */
 public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -45,6 +47,7 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
      * Sets the damage done to the vehicle
      *
      * @param damage The damage
+     * @since 1.6.1 R0.1
      */
     public void setDamage(double damage) {
         this.damage = damage;
@@ -60,12 +63,18 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

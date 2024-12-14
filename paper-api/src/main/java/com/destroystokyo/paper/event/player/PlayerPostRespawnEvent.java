@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired after a player has respawned
+ *
+ * @since 1.13.2
  */
 @NullMarked
 public class PlayerPostRespawnEvent extends PlayerEvent {

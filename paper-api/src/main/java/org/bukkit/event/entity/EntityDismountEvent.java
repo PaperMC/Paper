@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity stops riding another entity.
+ *
+ * @since 1.20.4
  */
 public class EntityDismountEvent extends EntityEvent implements Cancellable {
 

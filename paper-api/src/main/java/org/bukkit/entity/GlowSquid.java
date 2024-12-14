@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * A Glow Squid.
+ *
+ * @since 1.17
  */
 public interface GlowSquid extends Squid {
 

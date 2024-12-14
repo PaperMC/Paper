@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when one Entity breeds with another Entity.
+ *
+ * @since 1.10.2
  */
 public class EntityBreedEvent extends EntityEvent implements Cancellable {
 

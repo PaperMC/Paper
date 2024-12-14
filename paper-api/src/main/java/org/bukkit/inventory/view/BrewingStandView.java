@@ -7,9 +7,14 @@ import org.jetbrains.annotations.NotNull;
 /**
  * An instance of {@link InventoryView} which provides extra methods related to
  * brewing stand view data.
+ *
+ * @since 1.21
  */
 public interface BrewingStandView extends InventoryView {
 
+    /**
+     * @since 1.21.1
+     */
     @NotNull
     @Override
     BrewerInventory getTopInventory();
@@ -54,6 +59,7 @@ public interface BrewingStandView extends InventoryView {
      *
      * @param recipeBrewTime recipe brew time (in ticks)
      * @throws IllegalArgumentException if the recipe brew time is non-positive
+     * @since 1.21.1
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     void setRecipeBrewTime(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int recipeBrewTime);
@@ -64,6 +70,7 @@ public interface BrewingStandView extends InventoryView {
      * {@link #getBrewingTicks()}.
      *
      * @return recipe brew time (in ticks)
+     * @since 1.21.1
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     @org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int getRecipeBrewTime();

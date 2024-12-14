@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called when either the server startup or reload has completed.
+ *
+ * @since 1.13.1
  */
 public class ServerLoadEvent extends ServerEvent {
 

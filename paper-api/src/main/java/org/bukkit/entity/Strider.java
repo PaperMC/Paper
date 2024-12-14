@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a Strider.
+ *
+ * @since 1.16.1
  */
 public interface Strider extends Steerable, Vehicle {
 

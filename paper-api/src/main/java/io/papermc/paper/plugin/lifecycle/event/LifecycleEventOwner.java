@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
  * the types that implement this interface also provide
  * a {@link LifecycleEventManager} where you can register
  * event handlers.
+ *
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 @NullMarked

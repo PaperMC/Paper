@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * be obtained through the {@link Registry#DAMAGE_TYPE}.
  *
  * @see <a href="https://minecraft.wiki/w/Damage_type">Minecraft Wiki</a>
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 public interface DamageType extends Keyed, Translatable {

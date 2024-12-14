@@ -8,6 +8,8 @@ import static com.google.common.base.Preconditions.*;
 
 /**
  * Exception thrown when a server event listener throws an exception
+ *
+ * @since 1.9.4
  */
 public class ServerEventException extends ServerPluginException {
 

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown when an entity creates an item drop.
+ *
+ * @since 1.13
  */
 public class EntityDropItemEvent extends EntityEvent implements Cancellable {
 

@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
  * <b>This event behaves similarly to {@link io.papermc.paper.event.player.AsyncChatEvent} in that it
  * should be async if fired from an async thread. Please see that event for
  * further information.</b>
+ *
+ * @since 1.12
  */
 public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
 
@@ -51,6 +53,7 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
      * Get the broadcast message.
      *
      * @return Message to broadcast
+     * @since 1.16.5
      */
     public net.kyori.adventure.text.@NotNull Component message() {
         return this.message;
@@ -60,6 +63,7 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
      * Set the broadcast message.
      *
      * @param message New message to broadcast
+     * @since 1.16.5
      */
     public void message(net.kyori.adventure.text.@NotNull Component message) {
         this.message = message;

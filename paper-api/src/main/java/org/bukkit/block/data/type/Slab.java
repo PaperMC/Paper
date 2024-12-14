@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * 'type' represents what state the slab is in - either top, bottom, or a double
  * slab occupying the full block.
+ *
+ * @since 1.13
  */
 public interface Slab extends Waterlogged {
 

@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a Zoglin.
+ *
+ * @since 1.16.1
  */
 public interface Zoglin extends Monster, Ageable {
 

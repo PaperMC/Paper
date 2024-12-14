@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A type of {@link ConfigurationSection} that is stored in memory.
+ *
+ * @since 1.0.0 R1
  */
 public class MemorySection implements ConfigurationSection {
     protected final Map<String, SectionPathData> map = new LinkedHashMap<String, SectionPathData>();
@@ -116,6 +118,9 @@ public class MemorySection implements ConfigurationSection {
         return contains(path, false);
     }
 
+    /**
+     * @since 1.9.4
+     */
     @Override
     public boolean contains(@NotNull String path, boolean ignoreDefault) {
         return ((ignoreDefault) ? get(path, null) : get(path)) != null;
@@ -708,6 +713,9 @@ public class MemorySection implements ConfigurationSection {
         return result;
     }
 
+    /**
+     * @since 1.13.2
+     */
     // Bukkit
     @Nullable
     @Override
@@ -726,6 +734,9 @@ public class MemorySection implements ConfigurationSection {
         return (val != null && clazz.isInstance(val)) ? clazz.cast(val) : def;
     }
 
+    /**
+     * @since 1.12.2
+     */
     @Nullable
     @Override
     public <T extends ConfigurationSerializable> T getSerializable(@NotNull String path, @NotNull Class<T> clazz) {
@@ -793,12 +804,18 @@ public class MemorySection implements ConfigurationSection {
         return getSerializable(path, ItemStack.class) != null;
     }
 
+    /**
+     * @since 1.4.5 R1.0
+     */
     @Override
     @Nullable
     public Color getColor(@NotNull String path) {
         return getSerializable(path, Color.class);
     }
 
+    /**
+     * @since 1.4.5 R1.0
+     */
     @Override
     @Contract("_, !null -> !null")
     @Nullable
@@ -806,17 +823,26 @@ public class MemorySection implements ConfigurationSection {
         return getSerializable(path, Color.class, def);
     }
 
+    /**
+     * @since 1.4.5 R1.0
+     */
     @Override
     public boolean isColor(@NotNull String path) {
         return getSerializable(path, Color.class) != null;
     }
 
+    /**
+     * @since 1.14.4
+     */
     @Override
     @Nullable
     public Location getLocation(@NotNull String path) {
         return getSerializable(path, Location.class);
     }
 
+    /**
+     * @since 1.14.4
+     */
     @Override
     @Contract("_, !null -> !null")
     @Nullable
@@ -824,6 +850,9 @@ public class MemorySection implements ConfigurationSection {
         return getSerializable(path, Location.class, def);
     }
 
+    /**
+     * @since 1.14.4
+     */
     @Override
     public boolean isLocation(@NotNull String path) {
         return getSerializable(path, Location.class) != null;
@@ -967,6 +996,9 @@ public class MemorySection implements ConfigurationSection {
         return builder.toString();
     }
 
+    /**
+     * @since 1.18.1
+     */
     @Override
     @NotNull
     public List<String> getComments(@NotNull final String path) {
@@ -974,6 +1006,9 @@ public class MemorySection implements ConfigurationSection {
         return pathData == null ? Collections.emptyList() : pathData.getComments();
     }
 
+    /**
+     * @since 1.18.1
+     */
     @Override
     @NotNull
     public List<String> getInlineComments(@NotNull final String path) {
@@ -981,6 +1016,9 @@ public class MemorySection implements ConfigurationSection {
         return pathData == null ? Collections.emptyList() : pathData.getInlineComments();
     }
 
+    /**
+     * @since 1.18.1
+     */
     @Override
     public void setComments(@NotNull final String path, @Nullable final List<String> comments) {
         final SectionPathData pathData = getSectionPathData(path);
@@ -989,6 +1027,9 @@ public class MemorySection implements ConfigurationSection {
         }
     }
 
+    /**
+     * @since 1.18.1
+     */
     @Override
     public void setInlineComments(@NotNull final String path, @Nullable final List<String> comments) {
         final SectionPathData pathData = getSectionPathData(path);

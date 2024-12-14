@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  *
  * Most structures, like the ones generated with structure blocks, only have a
  * single variant.
+ *
+ * @since 1.17.1
  */
 public interface Palette {
 

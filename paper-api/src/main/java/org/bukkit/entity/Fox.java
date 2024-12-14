@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * What does the fox say?
+ *
+ * @since 1.14
  */
 public interface Fox extends Animals, Sittable {
 
@@ -48,6 +50,7 @@ public interface Fox extends Animals, Sittable {
      * Gets the first trusted player.
      *
      * @return the owning AnimalTamer, or null if not owned
+     * @since 1.15.1
      */
     @Nullable
     public AnimalTamer getFirstTrustedPlayer();
@@ -58,6 +61,7 @@ public interface Fox extends Animals, Sittable {
      * The first trusted player may only be removed after the second.
      *
      * @param player the AnimalTamer to be trusted
+     * @since 1.15.1
      */
     public void setFirstTrustedPlayer(@Nullable AnimalTamer player);
 
@@ -65,6 +69,7 @@ public interface Fox extends Animals, Sittable {
      * Gets the second trusted player.
      *
      * @return the owning AnimalTamer, or null if not owned
+     * @since 1.15.1
      */
     @Nullable
     public AnimalTamer getSecondTrustedPlayer();
@@ -75,6 +80,7 @@ public interface Fox extends Animals, Sittable {
      * The second trusted player may only be added after the first.
      *
      * @param player the AnimalTamer to be trusted
+     * @since 1.15.1
      */
     public void setSecondTrustedPlayer(@Nullable AnimalTamer player);
 
@@ -82,6 +88,7 @@ public interface Fox extends Animals, Sittable {
      * Gets whether the fox is faceplanting the ground
      *
      * @return Whether the fox is faceplanting the ground
+     * @since 1.17
      */
     boolean isFaceplanted();
 
@@ -98,6 +105,7 @@ public interface Fox extends Animals, Sittable {
      * Sets if the fox is interested.
      *
      * @param interested is interested
+     * @since 1.17
      */
     public void setInterested(boolean interested);
 
@@ -105,6 +113,7 @@ public interface Fox extends Animals, Sittable {
      * Gets if the fox is interested.
      *
      * @return fox is interested
+     * @since 1.17
      */
     public boolean isInterested();
 
@@ -112,6 +121,7 @@ public interface Fox extends Animals, Sittable {
      * Sets if the fox is leaping.
      *
      * @param leaping is leaping
+     * @since 1.17
      */
     public void setLeaping(boolean leaping);
 
@@ -119,6 +129,7 @@ public interface Fox extends Animals, Sittable {
      * Gets if the fox is leaping.
      *
      * @return fox is leaping
+     * @since 1.17
      */
     public boolean isLeaping();
 
@@ -126,6 +137,7 @@ public interface Fox extends Animals, Sittable {
      * Sets if the fox is defending.
      *
      * @param defending is defending
+     * @since 1.17
      */
     public void setDefending(boolean defending);
 
@@ -133,6 +145,7 @@ public interface Fox extends Animals, Sittable {
      * Gets if the fox is defending.
      *
      * @return fox is defending
+     * @since 1.17
      */
     public boolean isDefending();
 
@@ -140,6 +153,7 @@ public interface Fox extends Animals, Sittable {
      * Sets if the fox face planted.
      *
      * @param faceplanted face planted
+     * @since 1.17
      */
     public void setFaceplanted(boolean faceplanted);
     // Paper end - Add more fox behavior API

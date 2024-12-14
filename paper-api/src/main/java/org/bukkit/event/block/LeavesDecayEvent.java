@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * Called when leaves are decaying naturally.
  * <p>
  * If a Leaves Decay event is cancelled, the leaves will not decay.
+ *
+ * @since 1.0.0 R1
  */
 public class LeavesDecayEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -28,12 +30,18 @@ public class LeavesDecayEvent extends BlockEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

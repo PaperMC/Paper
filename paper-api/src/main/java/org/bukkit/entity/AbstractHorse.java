@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Horse-like creature.
+ *
+ * @since 1.11
  */
 public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
 
@@ -107,6 +109,7 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
      *
      * @return true if eating hay
      * @deprecated use {@link #isEatingGrass()}, this name is incorrect
+     * @since 1.18.1
      */
     @Deprecated // Paper - Horse API
     boolean isEatingHaystack();
@@ -116,10 +119,14 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
      *
      * @param eatingHaystack new hay grazing status
      * @deprecated use {@link #setEatingGrass(boolean)}, this name is incorrect
+     * @since 1.18.1
      */
     @Deprecated // Paper - Horse API
     void setEatingHaystack(boolean eatingHaystack);
 
+    /**
+     * @since 1.12.2
+     */
     @NotNull
     @Override
     public AbstractHorseInventory getInventory();
@@ -129,6 +136,7 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
      * Gets if a horse is in their eating grass animation.
      *
      * @return eating grass animation is active
+     * @since 1.17.1
      */
     public boolean isEatingGrass();
 
@@ -138,6 +146,7 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
      * <p>When true, the horse will lower its neck.</p>
      *
      * @param eating eating grass animation is active
+     * @since 1.17.1
      */
     public void setEatingGrass(boolean eating);
 
@@ -145,6 +154,7 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
      * Gets if a horse is in their rearing animation.
      *
      * @return rearing animation is active
+     * @since 1.17.1
      */
     public boolean isRearing();
 
@@ -154,6 +164,7 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
      * <p>When true, the horse will stand on its hind legs.</p>
      *
      * @param rearing rearing animation is active
+     * @since 1.17.1
      */
     public void setRearing(boolean rearing);
 
@@ -161,6 +172,7 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
      * Gets if a horse is in their eating animation.
      *
      * @return eating animation is active
+     * @since 1.17.1
      */
     public boolean isEating();
 
@@ -170,6 +182,7 @@ public interface AbstractHorse extends Vehicle, InventoryHolder, Tameable {
      * <p>When true, the horse will bob its head.</p>
      *
      * @param eating eating animation is active
+     * @since 1.17.1
      */
     public void setEating(boolean eating);
     // Paper end - Horse API

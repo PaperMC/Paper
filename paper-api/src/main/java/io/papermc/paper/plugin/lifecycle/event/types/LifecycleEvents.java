@@ -14,6 +14,8 @@ import org.jspecify.annotations.NullMarked;
  * Holds various types of lifecycle events for
  * use when creating event handler configurations
  * in {@link LifecycleEventManager}.
+ *
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 @NullMarked

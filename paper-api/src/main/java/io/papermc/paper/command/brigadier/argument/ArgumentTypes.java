@@ -39,6 +39,8 @@ import static io.papermc.paper.command.brigadier.argument.VanillaArgumentProvide
  * <p>This class allows creating instances of these types for use in plugin commands, with friendly API result types.</p>
  *
  * <p>{@link CustomArgumentType} is provided for customizing parsing or result types server-side, while sending the vanilla argument type to the client.</p>
+ *
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @NullMarked
@@ -108,6 +110,7 @@ public final class ArgumentTypes {
      *
      * @return fine position argument
      * @see #finePosition(boolean) to center whole numbers
+     * @since 1.21
      */
     public static ArgumentType<FinePositionResolver> finePosition() {
         return finePosition(false);
@@ -118,6 +121,7 @@ public final class ArgumentTypes {
      *
      * @param centerIntegers if whole numbers should be centered (+0.5)
      * @return fine position argument
+     * @since 1.21
      */
     public static ArgumentType<FinePositionResolver> finePosition(final boolean centerIntegers) {
         return provider().finePosition(centerIntegers);

@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a shootable entity.
+ *
+ * @since 1.0.0 R1
  */
 public interface Projectile extends Entity {
 
@@ -21,6 +23,7 @@ public interface Projectile extends Entity {
      * Set the shooter of this projectile.
      *
      * @param source the {@link ProjectileSource} that shot this projectile
+     * @since 1.7.10
      */
     public void setShooter(@Nullable ProjectileSource source);
 
@@ -49,6 +52,7 @@ public interface Projectile extends Entity {
      * hitbox of their shooter and can now hit entities.
      *
      * @return has left shooter's hitbox
+     * @since 1.19.2
      */
     boolean hasLeftShooter();
 
@@ -59,6 +63,7 @@ public interface Projectile extends Entity {
      * This is recalculated each tick if the projectile has a shooter.
      *
      * @param leftShooter has left shooter's hitbox
+     * @since 1.19.2
      */
     void setHasLeftShooter(boolean leftShooter);
 
@@ -68,6 +73,7 @@ public interface Projectile extends Entity {
      * shot game event.
      *
      * @return has been shot into the world
+     * @since 1.19.2
      */
     boolean hasBeenShot();
 
@@ -80,6 +86,7 @@ public interface Projectile extends Entity {
      * to fire and the value to be set back to true.
      *
      * @param beenShot has been in shot into the world
+     * @since 1.19.2
      */
     void setHasBeenShot(boolean beenShot);
 
@@ -95,6 +102,7 @@ public interface Projectile extends Entity {
      *
      * @param entity the entity to check if this projectile can hit
      * @return true if this projectile can damage the entity, false otherwise
+     * @since 1.19.3
      */
     boolean canHitEntity(@org.jetbrains.annotations.NotNull Entity entity);
 
@@ -105,6 +113,7 @@ public interface Projectile extends Entity {
      * @param entity the entity to hit
      * @see #hitEntity(Entity, org.bukkit.util.Vector)
      * @see #canHitEntity(Entity) 
+     * @since 1.19.3
      */
     void hitEntity(@org.jetbrains.annotations.NotNull Entity entity);
 
@@ -115,6 +124,7 @@ public interface Projectile extends Entity {
      * @param vector the direction to hit from
      * @see #hitEntity(Entity)
      * @see #canHitEntity(Entity) 
+     * @since 1.19.3
      */
     void hitEntity(@org.jetbrains.annotations.NotNull Entity entity, @org.jetbrains.annotations.NotNull org.bukkit.util.Vector vector);
 
@@ -123,6 +133,7 @@ public interface Projectile extends Entity {
      *
      * @return the owner's UUID, or null if not owned
      * @see #getShooter()
+     * @since 1.19.4
      */
     @Nullable
     java.util.UUID getOwnerUniqueId();

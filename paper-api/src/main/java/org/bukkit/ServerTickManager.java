@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * To learn more about the features surrounding this interface.
  *
  * @see <a href="https://minecraft.wiki/w/Commands/tick">Tick Command</a>
+ * @since 1.20.4
  */
 public interface ServerTickManager {
 

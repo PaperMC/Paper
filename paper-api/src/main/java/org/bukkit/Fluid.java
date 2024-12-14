@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a fluid type.
+ *
+ * @since 1.16.3
  */
 public interface Fluid extends OldEnum<Fluid>, Keyed {
 

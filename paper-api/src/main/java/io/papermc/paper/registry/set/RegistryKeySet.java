@@ -9,6 +9,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.21
+ */
 @ApiStatus.Experimental
 @NullMarked
 @ApiStatus.NonExtendable

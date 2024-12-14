@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
  * Specific configuration for {@link io.papermc.paper.registry.event.RegistryEntryAddEvent}s.
  *
  * @param <T> registry entry type
+ * @since 1.21
  */
 @NullMarked
 public interface RegistryEntryAddConfiguration<T> extends PrioritizedLifecycleEventHandlerConfiguration<BootstrapContext> {

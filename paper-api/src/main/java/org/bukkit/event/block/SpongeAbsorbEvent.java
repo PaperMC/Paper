@@ -16,6 +16,8 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * As this is a physics based event it may be called multiple times for "the
  * same" changes.
+ *
+ * @since 1.13
  */
 public class SpongeAbsorbEvent extends BlockEvent implements Cancellable {
 

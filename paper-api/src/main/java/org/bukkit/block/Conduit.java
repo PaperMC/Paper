@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a conduit.
+ *
+ * @since 1.13
  */
 public interface Conduit extends TileState {
 
@@ -20,6 +22,7 @@ public interface Conduit extends TileState {
      * will activate, start spinning, and apply effects to nearby players.
      *
      * @return true if active, false otherwise
+     * @since 1.20.4
      */
     public boolean isActive();
 
@@ -34,6 +37,7 @@ public interface Conduit extends TileState {
      * will be damaged every 2 seconds.
      *
      * @return true if hunting, false otherwise
+     * @since 1.20.6
      */
     public boolean isHunting();
 
@@ -46,6 +50,7 @@ public interface Conduit extends TileState {
      * are surrounding the conduit at the time of invocation.
      *
      * @return the frame blocks
+     * @since 1.20.6
      */
     @NotNull
     public Collection<Block> getFrameBlocks();
@@ -55,6 +60,7 @@ public interface Conduit extends TileState {
      * conduit.
      *
      * @return the frame block count
+     * @since 1.20.6
      */
     public int getFrameBlockCount();
 
@@ -63,6 +69,7 @@ public interface Conduit extends TileState {
      * conduit's benefits.
      *
      * @return the conduit range
+     * @since 1.20.4
      */
     public int getRange();
 
@@ -81,6 +88,7 @@ public interface Conduit extends TileState {
      * @param target the target entity, or null to remove the target
      *
      * @return true if the target was changed, false if the target was the same
+     * @since 1.20.6
      */
     public boolean setTarget(@Nullable LivingEntity target);
 
@@ -88,6 +96,7 @@ public interface Conduit extends TileState {
      * Get the conduit's hunting target.
      *
      * @return the hunting target, or null if the conduit does not have a target
+     * @since 1.20.4
      */
     @Nullable
     public LivingEntity getTarget();
@@ -96,6 +105,7 @@ public interface Conduit extends TileState {
      * Check whether or not this conduit has an active (alive) hunting target.
      *
      * @return true if has a hunting target, false otherwise
+     * @since 1.20.6
      */
     public boolean hasTarget();
 
@@ -104,6 +114,7 @@ public interface Conduit extends TileState {
      * the conduit will search for hostile entities to target.
      *
      * @return the hunting area bounding box
+     * @since 1.20.6
      */
     @NotNull
     public BoundingBox getHuntingArea();

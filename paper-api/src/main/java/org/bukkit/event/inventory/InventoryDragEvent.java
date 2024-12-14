@@ -53,6 +53,8 @@ import org.jetbrains.annotations.Nullable;
  * should be cancelled and the changes applied. Alternatively, scheduling a
  * task using {@link BukkitScheduler#runTask(Plugin, Runnable)}, which would
  * execute the task on the next tick, would work as well.
+ *
+ * @since 1.6.1 R0.1
  */
 public class InventoryDragEvent extends InventoryInteractEvent {
     private static final HandlerList handlers = new HandlerList();

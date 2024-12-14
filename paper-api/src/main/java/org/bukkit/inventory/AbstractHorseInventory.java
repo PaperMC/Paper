@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * An interface to the inventory of an {@link AbstractHorse}.
+ *
+ * @since 1.12.2
  */
 public interface AbstractHorseInventory extends Inventory {
 

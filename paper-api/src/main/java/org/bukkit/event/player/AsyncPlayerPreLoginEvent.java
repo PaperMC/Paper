@@ -17,6 +17,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * Consider rendering any translatable yourself with {@link net.kyori.adventure.translation.GlobalTranslator#render}
  * if the client's language is known.
+ *
+ * @since 1.3.1 R1.0
  */
 public class AsyncPlayerPreLoginEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
@@ -70,6 +72,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * Gets the current result of the login, as an enum
      *
      * @return Current Result of the login
+     * @since 1.3.2 R3.0
      */
     @NotNull
     public Result getLoginResult() {
@@ -118,6 +121,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * Result.ALLOWED
      *
      * @return Current kick message
+     * @since 1.16.5
      */
     @NotNull
     public net.kyori.adventure.text.Component kickMessage() {
@@ -128,6 +132,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * Sets the kick message to display if getResult() != Result.ALLOWED
      *
      * @param message New kick message
+     * @since 1.16.5
      */
     public void kickMessage(@NotNull final net.kyori.adventure.text.Component message) {
         this.message = message;
@@ -243,6 +248,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * Gets the player's unique ID.
      *
      * @return The unique ID
+     * @since 1.7.10
      */
     @NotNull
     public UUID getUniqueId() {
@@ -253,6 +259,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
     /**
      * Gets the PlayerProfile of the player logging in
      * @return The Profile
+     * @since 1.12.2
      */
     @NotNull
     public com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile() {
@@ -262,6 +269,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
     /**
      * Changes the PlayerProfile the player will login as
      * @param profile The profile to use
+     * @since 1.12.2
      */
     public void setPlayerProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile) {
         this.profile = profile;
@@ -270,6 +278,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
     /**
      * Gets the raw address of the player logging in
      * @return The address
+     * @since 1.16.5
      */
     @NotNull
     public InetAddress getRawAddress() {
@@ -281,6 +290,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * blank if unknown
      *
      * @return The hostname
+     * @since 1.18.1
      */
     @NotNull
     public String getHostname() {
@@ -292,6 +302,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * Gets if this connection has been transferred from another server.
      *
      * @return true if the connection has been transferred
+     * @since 1.20.6
      */
     public boolean isTransferred() {
         return transferred;

@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
  * Represents a canvas for drawing to a map. Each canvas is associated with a
  * specific {@link MapRenderer} and represents that renderer's layer on the
  * map.
+ *
+ * @since 1.0.0 R1
  */
 public interface MapCanvas {
 
@@ -51,6 +53,7 @@ public interface MapCanvas {
      * @param x The x coordinate, from 0 to 127.
      * @param y The y coordinate, from 0 to 127.
      * @param color The color.
+     * @since 1.19
      */
     void setPixelColor(int x, int y, @Nullable Color color);
 
@@ -64,6 +67,7 @@ public interface MapCanvas {
      * @param x The x coordinate, from 0 to 127.
      * @param y The y coordinate, from 0 to 127.
      * @return The color, or null if no color is set.
+     * @since 1.19
      */
     @Nullable
     Color getPixelColor(int x, int y);
@@ -74,6 +78,7 @@ public interface MapCanvas {
      * @param x The x coordinate, from 0 to 127.
      * @param y The y coordinate, from 0 to 127.
      * @return The color.
+     * @since 1.19
      */
     @NotNull
     Color getBasePixelColor(int x, int y);

@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a song which may play in a Jukebox.
+ *
+ * @since 1.21
  */
 @ApiStatus.Experimental
 public interface JukeboxSong extends Keyed, Translatable {

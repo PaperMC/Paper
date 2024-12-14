@@ -27,6 +27,8 @@ import org.jspecify.annotations.Nullable;
  *     <li>{@link World#locateNearestStructure(Location, StructureType, int, boolean)} is invoked.</li>
  *     <li>{@link World#locateNearestStructure(Location, Structure, int, boolean)} is invoked.</li>
  * </ul>
+ *
+ * @since 1.18.2
  */
 @NullMarked
 public class StructuresLocateEvent extends WorldEvent implements Cancellable {
@@ -86,6 +88,7 @@ public class StructuresLocateEvent extends WorldEvent implements Cancellable {
      * Gets an unmodifiable list of Structures that are valid targets for the search.
      *
      * @return an unmodifiable list of Structures
+     * @since 1.19.3
      */
     public @UnmodifiableView List<Structure> getStructures() {
         return Collections.unmodifiableList(this.structures);
@@ -95,6 +98,7 @@ public class StructuresLocateEvent extends WorldEvent implements Cancellable {
      * Sets the list of Structures that are valid targets for the search.
      *
      * @param structures a list of Structures targets
+     * @since 1.19.3
      */
     public void setStructures(final List<Structure> structures) {
         this.structures = structures;

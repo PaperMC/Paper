@@ -17,6 +17,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * The event isn't called if the {@link org.bukkit.GameRule#MOB_GRIEFING}
  * is disabled as no block interaction will occur.
+ *
+ * @since 1.8.8
  */
 public class BlockExplodeEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -49,6 +51,7 @@ public class BlockExplodeEvent extends BlockEvent implements Cancellable {
      * Returns the result of the explosion if it is not cancelled.
      *
      * @return the result of the explosion
+     * @since 1.21
      */
     @NotNull
     public ExplosionResult getExplosionResult() {
@@ -59,6 +62,7 @@ public class BlockExplodeEvent extends BlockEvent implements Cancellable {
      * Returns the captured BlockState of the block that exploded.
      *
      * @return the block state
+     * @since 1.19.3
      */
     @NotNull
     public BlockState getExplodedBlockState() {

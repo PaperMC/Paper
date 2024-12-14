@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This interface represents the context in which the {@link PersistentDataType} can
  * serialize and deserialize the passed values.
+ *
+ * @since 1.14
  */
 public interface PersistentDataAdapterContext {
 

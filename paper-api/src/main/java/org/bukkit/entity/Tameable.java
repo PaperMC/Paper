@@ -3,6 +3,9 @@ package org.bukkit.entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.0.0 R1
+ */
 public interface Tameable extends Animals {
 
     /**
@@ -31,6 +34,7 @@ public interface Tameable extends Animals {
      * Gets the owners UUID
      *
      * @return the owners UUID, or null if not owned
+     * @since 1.12.2
      */
     @Nullable
     public java.util.UUID getOwnerUniqueId();

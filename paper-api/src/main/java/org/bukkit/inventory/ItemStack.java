@@ -26,6 +26,8 @@ import org.jetbrains.annotations.Nullable;
  * <b>IMPORTANT: An <i>Item</i>Stack is only designed to contain <i>items</i>. Do not
  * use this class to encapsulate Materials for which {@link Material#isItem()}
  * returns false.</b>
+ *
+ * @since 1.0.0 R1
  */
 public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.persistence.PersistentDataViewHolder { // Paper
     private ItemStack craftDelegate; // Paper - always delegate to server-backed stack
@@ -38,6 +40,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param type the item type to use
      * @return a new itemstack
      * @throws IllegalArgumentException if the Material provided is not an item ({@link Material#isItem()})
+     * @since 1.21
      */
     @org.jetbrains.annotations.Contract(value = "_ -> new", pure = true)
     public static @NotNull ItemStack of(final @NotNull Material type) {
@@ -52,6 +55,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return a new itemstack
      * @throws IllegalArgumentException if the Material provided is not an item ({@link Material#isItem()})
      * @throws IllegalArgumentException if the amount is less than 1
+     * @since 1.21
      */
     @org.jetbrains.annotations.Contract(value = "_, _ -> new", pure = true)
     public static @NotNull ItemStack of(final @NotNull Material type, final int amount) {
@@ -61,6 +65,9 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
     // Paper end
 
+    /**
+     * @since 1.21
+     */
     // Paper start - pdc
     @Override
     public io.papermc.paper.persistence.@NotNull PersistentDataContainerView getPersistentDataContainer() {
@@ -204,6 +211,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param type The Material type of the new ItemStack.
      * @return A new ItemStack instance with the specified Material type.
+     * @since 1.20.4
      */
     @NotNull
     @org.jetbrains.annotations.Contract(value = "_ -> new", pure = true)
@@ -332,6 +340,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param stack the item stack to compare to
      * @return true if the two stacks are equal, ignoring the amount
+     * @since 1.4.5 R1.0
      */
     public boolean isSimilar(@Nullable ItemStack stack) {
         return this.craftDelegate.isSimilar(stack); // Paper - delegate
@@ -353,6 +362,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param ench Enchantment to test
      * @return True if this has the given enchantment
+     * @since 1.1.0 R1
      */
     public boolean containsEnchantment(@NotNull Enchantment ench) {
         return this.craftDelegate.containsEnchantment(ench); // Paper - delegate
@@ -363,6 +373,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param ench Enchantment to check
      * @return Level of the enchantment, or 0
+     * @since 1.1.0 R1
      */
     public int getEnchantmentLevel(@NotNull Enchantment ench) {
         return this.craftDelegate.getEnchantmentLevel(ench); // Paper - delegate
@@ -372,6 +383,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Gets a map containing all enchantments and their levels on this item.
      *
      * @return Map of enchantments.
+     * @since 1.1.0 R1
      */
     @NotNull
     public Map<Enchantment, Integer> getEnchantments() {
@@ -390,6 +402,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @throws IllegalArgumentException if any specific enchantment or level
      *     is null. <b>Warning</b>: Some enchantments may be added before this
      *     exception is thrown.
+     * @since 1.1.0 R1
      */
     @Utility
     public void addEnchantments(@NotNull Map<Enchantment, Integer> enchantments) {
@@ -409,6 +422,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param level Level of the enchantment
      * @throws IllegalArgumentException if enchantment null, or enchantment is
      *     not applicable
+     * @since 1.1.0 R1
      */
     @Utility
     public void addEnchantment(@NotNull Enchantment ench, int level) {
@@ -430,6 +444,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * each element of the map.
      *
      * @param enchantments Enchantments to add
+     * @since 1.1.0 R1
      */
     @Utility
     public void addUnsafeEnchantments(@NotNull Map<Enchantment, Integer> enchantments) {
@@ -449,6 +464,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param ench Enchantment to add
      * @param level Level of the enchantment
+     * @since 1.1.0 R1
      */
     public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
         this.craftDelegate.addUnsafeEnchantment(ench, level); // Paper - delegate
@@ -460,6 +476,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param ench Enchantment to remove
      * @return Previous level, or 0
+     * @since 1.1.0 R1
      */
     public int removeEnchantment(@NotNull Enchantment ench) {
         return this.craftDelegate.removeEnchantment(ench); // Paper - delegate
@@ -467,6 +484,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
 
     /**
      * Removes all enchantments on this ItemStack.
+     *
+     * @since 1.20.4
      */
     public void removeEnchantments() {
         this.craftDelegate.removeEnchantments(); // Paper - delegate
@@ -587,6 +606,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param consumer the meta consumer
      * @return {@code true} if the edit was successful, {@code false} otherwise
+     * @since 1.16.5
      */
     public boolean editMeta(final @NotNull java.util.function.Consumer<? super ItemMeta> consumer) {
         return editMeta(ItemMeta.class, consumer);
@@ -606,6 +626,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param consumer the meta consumer
      * @param <M> the meta type
      * @return {@code true} if the edit was successful, {@code false} otherwise
+     * @since 1.17.1
      */
     public <M extends ItemMeta> boolean editMeta(final @NotNull Class<M> metaClass, final @NotNull java.util.function.Consumer<@NotNull ? super M> consumer) {
         final @Nullable ItemMeta meta = this.getItemMeta();
@@ -622,6 +643,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Get a copy of this ItemStack's {@link ItemMeta}.
      *
      * @return a copy of the current ItemStack's ItemData
+     * @since 1.4.5 R1.0
      */
     @UndefinedNullability // Paper
     public ItemMeta getItemMeta() {
@@ -632,6 +654,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Checks to see if any meta data has been defined.
      *
      * @return Returns true if some meta data has been set for this item
+     * @since 1.4.5 R1.0
      */
     public boolean hasItemMeta() {
         return this.craftDelegate.hasItemMeta(); // Paper - delegate
@@ -645,12 +668,16 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *     ItemFactory#isApplicable(ItemMeta, ItemStack)}
      * @throws IllegalArgumentException if the item meta was not created by
      *     the {@link ItemFactory}
+     * @since 1.4.5 R1.0
      */
     public boolean setItemMeta(@Nullable ItemMeta itemMeta) {
         return this.craftDelegate.setItemMeta(itemMeta); // Paper - delegate
     }
 
     // Paper - delegate
+    /**
+     * @since 1.16.5
+     */
 
     @Override
     @NotNull
@@ -672,6 +699,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param random {@link java.util.Random} instance to use for enchanting
      * @return enchanted copy of the provided ItemStack
      * @throws IllegalArgumentException on bad arguments
+     * @since 1.18.2
      */
     @NotNull
     public ItemStack enchantWithLevels(final @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, final boolean allowTreasure, final @NotNull java.util.Random random) {
@@ -690,11 +718,15 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param random {@link java.util.Random} instance to use for enchanting
      * @return enchanted copy of the provided ItemStack
      * @throws IllegalArgumentException on bad arguments
+     * @since 1.21.1
      */
     public @NotNull ItemStack enchantWithLevels(final @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, final @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, final @NotNull java.util.Random random) {
         return Bukkit.getItemFactory().enchantWithLevels(this, levels, keySet, random);
     }
 
+    /**
+     * @since 1.16.5
+     */
     @NotNull
     @Override
     public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
@@ -705,6 +737,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Get the formatted display name of the {@link ItemStack}.
      *
      * @return display name of the {@link ItemStack}
+     * @since 1.16.5
      */
     public net.kyori.adventure.text.@NotNull Component displayName() {
         return Bukkit.getServer().getItemFactory().displayName(this);
@@ -717,6 +750,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * The input itemstack will not be the same as the returned itemstack.
      *
      * @return A potentially Data Converted ItemStack
+     * @since 1.12
      */
     @NotNull
     public ItemStack ensureServerConversions() {
@@ -731,6 +765,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * the {@link #serializeAsBytes()} API returned.
      * @param bytes bytes representing an item in NBT
      * @return ItemStack migrated to this version of Minecraft if needed.
+     * @since 1.15.2
      */
     @NotNull
     public static ItemStack deserializeBytes(@NotNull byte[] bytes) {
@@ -741,6 +776,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Serializes this itemstack to raw bytes in NBT. NBT is safer for data migrations as it will
      * use the built in data converter instead of bukkits dangerous serialization system.
      * @return bytes representing this item in NBT.
+     * @since 1.15.2
      */
     @NotNull
     public byte[] serializeAsBytes() {
@@ -761,6 +797,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param items items to serialize
      * @return bytes representing the items in NBT
      * @see #serializeAsBytes()
+     * @since 1.21.1
      */
     public static byte @NotNull [] serializeItemsAsBytes(java.util.@NotNull Collection<ItemStack> items) {
         try (final java.io.ByteArrayOutputStream outputStream = new java.io.ByteArrayOutputStream()) {
@@ -792,6 +829,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param items items to serialize
      * @return bytes representing the items in NBT
      * @see #serializeAsBytes()
+     * @since 1.21.1
      */
     public static byte @NotNull [] serializeItemsAsBytes(@Nullable ItemStack @NotNull [] items) {
         return serializeItemsAsBytes(java.util.Arrays.asList(items));
@@ -805,6 +843,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param bytes bytes representing an item in NBT
      * @return ItemStack array migrated to this version of Minecraft if needed
      * @see #deserializeBytes(byte[])
+     * @since 1.21.1
      */
     public static @NotNull ItemStack @NotNull [] deserializeItemsFromBytes(final byte @NotNull [] bytes) {
         try (final java.io.ByteArrayInputStream inputStream = new java.io.ByteArrayInputStream(bytes)) {
@@ -842,6 +881,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return Display name of Item
      * @deprecated {@link ItemStack} implements {@link net.kyori.adventure.translation.Translatable}; use that and
      * {@link net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)} instead.
+     * @since 1.12
      */
     @Nullable
     @Deprecated
@@ -851,12 +891,16 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
 
     /**
      * @deprecated use {@link #getMaxItemUseDuration(org.bukkit.entity.LivingEntity)}; crossbows, later possibly more items require an entity parameter
+     * @since 1.12.2
      */
     @Deprecated(forRemoval = true)
     public int getMaxItemUseDuration() {
         return getMaxItemUseDuration(null);
     }
 
+    /**
+     * @since 1.21
+     */
     public int getMaxItemUseDuration(@NotNull final org.bukkit.entity.LivingEntity entity) {
         return this.craftDelegate.getMaxItemUseDuration(entity); // Paper - delegate
     }
@@ -864,6 +908,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     /**
      * Clones the itemstack and returns it a single quantity.
      * @return The new itemstack with 1 quantity
+     * @since 1.12.2
      */
     @NotNull
     public ItemStack asOne() {
@@ -874,6 +919,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Clones the itemstack and returns it as the specified quantity
      * @param qty The quantity of the cloned item
      * @return The new itemstack with specified quantity
+     * @since 1.12.2
      */
     @NotNull
     public ItemStack asQuantity(int qty) {
@@ -885,6 +931,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     /**
      * Adds 1 to this itemstack. Will not go over the items max stack size.
      * @return The same item (not a clone)
+     * @since 1.12.2
      */
     @NotNull
     public ItemStack add() {
@@ -896,6 +943,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param qty The amount to add
      * @return The same item (not a clone)
+     * @since 1.12.2
      */
     @NotNull
     public ItemStack add(int qty) {
@@ -906,6 +954,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     /**
      * Subtracts 1 to this itemstack.  Going to 0 or less will invalidate the item.
      * @return The same item (not a clone)
+     * @since 1.12.2
      */
     @NotNull
     public ItemStack subtract() {
@@ -917,6 +966,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param qty The amount to add
      * @return The same item (not a clone)
+     * @since 1.12.2
      */
     @NotNull
     public ItemStack subtract(int qty) {
@@ -928,6 +978,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * If the item has lore, returns it, else it will return null
      * @return The lore, or null
      * @deprecated in favor of {@link #lore()}
+     * @since 1.12.2
      */
     @Deprecated
     public @Nullable java.util.List<String> getLore() {
@@ -944,6 +995,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     /**
      * If the item has lore, returns it, else it will return null
      * @return The lore, or null
+     * @since 1.16.5
      */
     public @Nullable java.util.List<net.kyori.adventure.text.Component> lore() {
         if (!this.hasItemMeta()) {
@@ -962,6 +1014,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param lore the lore that will be set
      * @deprecated in favour of {@link #lore(java.util.List)}
+     * @since 1.12.2
      */
     @Deprecated
     public void setLore(@Nullable java.util.List<String> lore) {
@@ -978,6 +1031,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Removes lore when given null.
      *
      * @param lore the lore that will be set
+     * @since 1.16.5
      */
     public void lore(@Nullable java.util.List<? extends net.kyori.adventure.text.Component> lore) {
         ItemMeta itemMeta = getItemMeta();
@@ -1020,6 +1074,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Get current set itemFlags. The collection returned is unmodifiable.
      *
      * @return A set of all itemFlags set
+     * @since 1.12.2
      */
     @NotNull
     public java.util.Set<ItemFlag> getItemFlags() {
@@ -1035,6 +1090,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param flag the flag to check
      * @return if it is present
+     * @since 1.12.2
      */
     public boolean hasItemFlag(@NotNull ItemFlag flag) {
         ItemMeta itemMeta = getItemMeta();
@@ -1046,6 +1102,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * <p>
      * This is not the same as getting the translation key
      * for the material of this itemstack.
+     *
+     * @since 1.17.1
      */
     @Override
     public @NotNull String translationKey() {
@@ -1057,6 +1115,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @return the itemstack rarity
      * @deprecated Use {@link ItemMeta#hasRarity()} and {@link ItemMeta#getRarity()}
+     * @since 1.16.5
      */
     @NotNull
     @Deprecated(forRemoval = true, since = "1.20.5")
@@ -1070,6 +1129,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param repairMaterial the repair material
      * @return true if it is repairable by, false if not
+     * @since 1.16.5
      */
     public boolean isRepairableBy(@NotNull ItemStack repairMaterial) {
         return Bukkit.getUnsafe().isValidRepairItemStack(this, repairMaterial);
@@ -1081,6 +1141,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param toBeRepaired the itemstack to be repaired
      * @return true if it can repair, false if not
+     * @since 1.16.5
      */
     public boolean canRepair(@NotNull ItemStack toBeRepaired) {
         return Bukkit.getUnsafe().isValidRepairItemStack(toBeRepaired, this);
@@ -1095,6 +1156,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param livingEntity the entity related to the damage
      * @return the damaged itemstack or an empty one if it broke. May return the same instance of ItemStack
      * @see org.bukkit.entity.LivingEntity#damageItemStack(EquipmentSlot, int) to damage itemstacks in equipment slots
+     * @since 1.19.2
      */
     public @NotNull ItemStack damage(int amount, @NotNull org.bukkit.entity.LivingEntity livingEntity) {
         return livingEntity.damageItemStack(this, amount);
@@ -1105,6 +1167,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * Any item stack with a material of air or a stack size of 0 is seen
      * as being empty by {@link ItemStack#isEmpty}.
+     *
+     * @since 1.20.1
      */
     @NotNull
     public static ItemStack empty() {
@@ -1115,6 +1179,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     /**
      * Returns whether this item stack is empty and contains no item. This means
      * it is either air or the stack has a size of 0.
+     *
+     * @since 1.20.1
      */
     public boolean isEmpty() {
         return this.craftDelegate.isEmpty(); // Paper - delegate
@@ -1131,6 +1197,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param tooltipContext the tooltip context
      * @param player a player for player-specific tooltip lines
      * @return an immutable list of components (can be empty)
+     * @since 1.20.4
      */
     @SuppressWarnings("deprecation") // abusing unsafe as a bridge
     public java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<net.kyori.adventure.text.Component> computeTooltipLines(final @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final @Nullable org.bukkit.entity.Player player) {
@@ -1175,6 +1242,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param type the data component type
      * @return {@code true} if set, {@code false} otherwise
+     * @since 1.21.3
      */
     @org.jetbrains.annotations.Contract(pure = true)
     @org.jetbrains.annotations.ApiStatus.Experimental
@@ -1186,6 +1254,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Gets all the data component types set on this stack.
      *
      * @return an immutable set of data component types
+     * @since 1.21.3
      */
     @org.jetbrains.annotations.Contract("-> new")
     @org.jetbrains.annotations.ApiStatus.Experimental
@@ -1262,6 +1331,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Marks this data component as removed for this itemstack.
      *
      * @param type the data component type
+     * @since 1.21.3
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     public void unsetData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
@@ -1273,6 +1343,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * value for the item type from {@link Material#getDefaultData(io.papermc.paper.datacomponent.DataComponentType.Valued)}.
      *
      * @param type the data component type
+     * @since 1.21.3
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     public void resetData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
@@ -1285,6 +1356,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param type the data component type
      * @return {@code true} if the data type is overridden
+     * @since 1.21.3
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     public boolean isDataOverridden(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
@@ -1298,6 +1370,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param item the item to compare
      * @param excludeTypes the data component types to ignore
      * @return {@code true} if the provided item is equal, ignoring the provided components
+     * @since 1.21.3
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull java.util.Set<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes) {
@@ -1312,6 +1385,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param excludeTypes the data component types to ignore
      * @param ignoreCount ignore the count of the item
      * @return {@code true} if the provided item is equal, ignoring the provided components
+     * @since 1.21.3
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     public boolean matchesWithoutData(final @NotNull ItemStack item, final @NotNull java.util.Set<io.papermc.paper.datacomponent.@NotNull DataComponentType> excludeTypes, final boolean ignoreCount) {

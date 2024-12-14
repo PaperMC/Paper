@@ -9,6 +9,8 @@ import org.jspecify.annotations.Nullable;
  * An <b>internal</b> utility type that holds logic for loading a provider-like type from a classloaders.
  * Provides, at least in the context of this utility, define themselves as implementations of a specific parent
  * interface/type, e.g. {@link org.bukkit.plugin.java.JavaPlugin} and implement a no-args constructor.
+ *
+ * @since 1.19.3
  */
 @NullMarked
 @ApiStatus.Internal

@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Raised when a vehicle moves.
+ *
+ * @since 1.0.0 R1
  */
 public class VehicleMoveEvent extends VehicleEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -40,6 +42,9 @@ public class VehicleMoveEvent extends VehicleEvent {
         return to.clone(); // Paper - clone to avoid changes
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
 
     @NotNull
     @Override
@@ -47,6 +52,9 @@ public class VehicleMoveEvent extends VehicleEvent {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

@@ -42,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
  * may not be reflected in this entry.
  *
  * @param <T> The ban target
+ * @since 1.7.10
  */
 public interface BanEntry<T> {
 
@@ -60,6 +61,7 @@ public interface BanEntry<T> {
      * Gets the target involved.
      *
      * @return the target profile or IP address
+     * @since 1.20.1
      */
     @NotNull
     public T getBanTarget();
@@ -147,6 +149,8 @@ public interface BanEntry<T> {
 
     /**
      * Removes this ban entry from the appropriate ban list.
+     *
+     * @since 1.20.1
      */
     public void remove();
 }

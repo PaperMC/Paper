@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents all the map cursors on a {@link MapCanvas}. Like MapCanvas, a
  * MapCursorCollection is linked to a specific {@link MapRenderer}.
+ *
+ * @since 1.0.0 R1
  */
 public final class MapCursorCollection {
     private List<MapCursor> cursors = new ArrayList<MapCursor>();
@@ -111,6 +113,7 @@ public final class MapCursorCollection {
      * @param caption banner caption
      * @return The newly added MapCursor.
      * @deprecated Magic value
+     * @since 1.13
      */
     @Deprecated(since = "1.13")
     @NotNull
@@ -129,6 +132,7 @@ public final class MapCursorCollection {
      * @param caption banner caption
      * @return The newly added MapCursor.
      * @deprecated Magic value
+     * @since 1.16.5
      */
     @Deprecated
     public @NotNull MapCursor addCursor(int x, int y, byte direction, byte type, boolean visible, net.kyori.adventure.text.@Nullable Component caption) {

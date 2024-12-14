@@ -8,12 +8,15 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an {@link Entity} that has health and can take damage.
+ *
+ * @since 1.4.6 R0.3
  */
 public interface Damageable extends Entity {
     /**
      * Deals the given amount of damage to this entity.
      *
      * @param amount Amount of damage to deal
+     * @since 1.6.1 R0.1
      */
     void damage(double amount);
 
@@ -23,6 +26,7 @@ public interface Damageable extends Entity {
      *
      * @param amount amount of damage to deal
      * @param source entity to which the damage should be attributed
+     * @since 1.6.1 R0.1
      */
     void damage(double amount, @Nullable Entity source);
 
@@ -32,6 +36,7 @@ public interface Damageable extends Entity {
      *
      * @param amount amount of damage to deal
      * @param damageSource source to which the damage should be attributed
+     * @since 1.20.4
      */
     @ApiStatus.Experimental
     void damage(double amount, @NotNull DamageSource damageSource);
@@ -50,6 +55,7 @@ public interface Damageable extends Entity {
      * @param health New health represented from 0 to max
      * @throws IllegalArgumentException Thrown if the health is {@literal < 0 or >}
      *     {@link #getMaxHealth()}
+     * @since 1.6.1 R0.1
      */
     void setHealth(double health);
 
@@ -58,6 +64,7 @@ public interface Damageable extends Entity {
      * Heal this entity by the given amount. This will call {@link org.bukkit.event.entity.EntityRegainHealthEvent}.
      *
      * @param amount heal amount
+     * @since 1.20.6
      */
     default void heal(final double amount) {
         this.heal(amount, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.CUSTOM);
@@ -76,6 +83,7 @@ public interface Damageable extends Entity {
      * Gets the entity's absorption amount.
      *
      * @return absorption amount from 0
+     * @since 1.14.4
      */
     double getAbsorptionAmount();
 
@@ -89,6 +97,7 @@ public interface Damageable extends Entity {
      * @param amount new absorption amount from 0
      * @throws IllegalArgumentException thrown if health is {@literal < 0} or
      * non-finite.
+     * @since 1.14.4
      */
     void setAbsorptionAmount(double amount);
 
@@ -112,6 +121,7 @@ public interface Damageable extends Entity {
      *
      * @param health amount of health to set the maximum to
      * @deprecated use {@link Attribute#MAX_HEALTH}.
+     * @since 1.6.1 R0.1
      */
     @Deprecated(since = "1.11")
     void setMaxHealth(double health);

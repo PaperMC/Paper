@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
  * Called when resources such as datapacks are reloaded (e.g. /minecraft:reload)
  * <p>
  * Intended for use to re-register custom recipes, advancements that may be lost during a reload like this.
+ *
+ * @since 1.16.4
  */
 @NullMarked
 public class ServerResourcesReloadedEvent extends ServerEvent {

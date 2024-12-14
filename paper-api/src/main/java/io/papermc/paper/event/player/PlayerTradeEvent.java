@@ -8,6 +8,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player trades with a villager or wandering trader
+ *
+ * @since 1.16.4
  */
 @NullMarked
 public class PlayerTradeEvent extends PlayerPurchaseEvent {

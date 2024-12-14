@@ -11,6 +11,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A data-centric version-specific registry entry for the {@link Art} type.
+ *
+ * @since 1.21.3
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

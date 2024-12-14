@@ -7,6 +7,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Utilities for extracting registry-related arguments from a {@link CommandContext}.
+ *
+ * @since 1.20.6
  */
 @NullMarked
 public final class RegistryArgumentExtractor {

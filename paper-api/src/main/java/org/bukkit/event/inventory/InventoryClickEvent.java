@@ -48,6 +48,8 @@ import org.jetbrains.annotations.Nullable;
  * Alternatively, scheduling a task using {@link BukkitScheduler#runTask(
  * Plugin, Runnable)}, which would execute the task on the next tick, would
  * work as well.
+ *
+ * @since 1.1.0 R5
  */
 public class InventoryClickEvent extends InventoryInteractEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -171,6 +173,7 @@ public class InventoryClickEvent extends InventoryInteractEvent {
      *
      * @return inventory, or null if clicked outside
      * @see InventoryView#getInventory(int)
+     * @since 1.6.2 R0.1
      */
     @Nullable
     public Inventory getClickedInventory() {
@@ -204,6 +207,7 @@ public class InventoryClickEvent extends InventoryInteractEvent {
      *
      * @return the number on the key minus 1 (range 0-8); or -1 if not
      *     a NUMBER_KEY action
+     * @since 1.6.1 R0.1
      */
     public int getHotbarButton() {
         return hotbarKey;
@@ -217,6 +221,7 @@ public class InventoryClickEvent extends InventoryInteractEvent {
      * InventoryClickEvent, changes must be manually applied.
      *
      * @return the InventoryAction that triggered this event.
+     * @since 1.6.1 R0.1
      */
     @NotNull
     public InventoryAction getAction() {
@@ -229,6 +234,7 @@ public class InventoryClickEvent extends InventoryInteractEvent {
      * This is insulated against changes to the inventory by other plugins.
      *
      * @return the type of inventory click
+     * @since 1.6.1 R0.1
      */
     @NotNull
     public ClickType getClick() {

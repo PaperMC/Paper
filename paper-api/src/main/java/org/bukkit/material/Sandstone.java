@@ -8,6 +8,7 @@ import org.bukkit.SandstoneType;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
+ * @since 1.2.5 R0.1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Sandstone extends MaterialData {

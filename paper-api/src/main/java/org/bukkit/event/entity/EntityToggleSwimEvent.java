@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Sent when an entity's swimming status is toggled.
+ *
+ * @since 1.13
  */
 public class EntityToggleSwimEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

@@ -7,6 +7,7 @@ import org.bukkit.Material;
  * Represents a Wool/Cloth block
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
+ * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Wool extends MaterialData implements Colorable {
@@ -58,6 +59,9 @@ public class Wool extends MaterialData implements Colorable {
         return getColor() + " " + super.toString();
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @Override
     public Wool clone() {
         return (Wool) super.clone();

@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface to the inventory of a DecoratedPot.
+ *
+ * @since 1.20.4
  */
 public interface DecoratedPotInventory extends Inventory {
 

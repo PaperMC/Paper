@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
  * Keys may only contain lowercase alphanumeric characters, periods,
  * underscores, hyphens, and forward slashes.
  *
+ * @since 1.13.2
  */
 // Paper - entire class, based on org.bukkit.NamespacedKey
 @Deprecated(forRemoval = true, since = "1.20.6")

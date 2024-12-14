@@ -4,6 +4,8 @@ import org.bukkit.block.data.BlockData;
 
 /**
  * 'charges' represents the amount of times the anchor may still be used.
+ *
+ * @since 1.16.1
  */
 public interface RespawnAnchor extends BlockData {
 

@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a trial spawner.
+ *
+ * @since 1.20.4
  */
 public interface TrialSpawner extends TileState {
 
@@ -16,6 +18,7 @@ public interface TrialSpawner extends TileState {
      * Gets the length in ticks the spawner will stay in cooldown for.
      *
      * @return the number of ticks
+     * @since 1.21
      */
     public int getCooldownLength();
 
@@ -23,6 +26,7 @@ public interface TrialSpawner extends TileState {
      * Sets the length in ticks the spawner will stay in cooldown for.
      *
      * @param ticks the number of ticks
+     * @since 1.21
      */
     public void setCooldownLength(int ticks);
 
@@ -37,6 +41,7 @@ public interface TrialSpawner extends TileState {
      *
      * @return the maximum distance(squared) a player can be in order for this
      * spawner to be active.
+     * @since 1.21
      */
     public int getRequiredPlayerRange();
 
@@ -49,6 +54,7 @@ public interface TrialSpawner extends TileState {
      *
      * @param requiredPlayerRange the maximum distance (squared) a player can be
      * in order for this spawner to be active.
+     * @since 1.21
      */
     public void setRequiredPlayerRange(int requiredPlayerRange);
 
@@ -61,6 +67,7 @@ public interface TrialSpawner extends TileState {
      *
      * @return a collection of players this spawner is tracking or an empty
      *         collection if there aren't any
+     * @since 1.21
      */
     @NotNull
     public Collection<Player> getTrackedPlayers();
@@ -70,6 +77,7 @@ public interface TrialSpawner extends TileState {
      *
      * @param player the player
      * @return true if this spawner is tracking the provided player
+     * @since 1.21
      */
     public boolean isTrackingPlayer(@NotNull Player player);
 
@@ -80,6 +88,7 @@ public interface TrialSpawner extends TileState {
      * time.
      *
      * @param player the player
+     * @since 1.21
      */
     public void startTrackingPlayer(@NotNull Player player);
 
@@ -90,6 +99,7 @@ public interface TrialSpawner extends TileState {
      * any given time.
      *
      * @param player the player
+     * @since 1.21
      */
     public void stopTrackingPlayer(@NotNull Player player);
 
@@ -102,6 +112,7 @@ public interface TrialSpawner extends TileState {
      *
      * @return a collection of entities this spawner is tracking or an empty
      *         collection if there aren't any
+     * @since 1.21
      */
     @NotNull
     public Collection<Entity> getTrackedEntities();
@@ -111,6 +122,7 @@ public interface TrialSpawner extends TileState {
      *
      * @param entity the entity
      * @return true if this spawner is tracking the provided entity
+     * @since 1.21
      */
     public boolean isTrackingEntity(@NotNull Entity entity);
 
@@ -121,6 +133,7 @@ public interface TrialSpawner extends TileState {
      * time.
      *
      * @param entity the entity
+     * @since 1.21
      */
     public void startTrackingEntity(@NotNull Entity entity);
 
@@ -131,6 +144,7 @@ public interface TrialSpawner extends TileState {
      * any given time.
      *
      * @param entity the entity
+     * @since 1.21
      */
     public void stopTrackingEntity(@NotNull Entity entity);
 
@@ -139,6 +153,7 @@ public interface TrialSpawner extends TileState {
      * {@link TrialSpawnerConfiguration}.
      *
      * @return true is using the ominous configuration
+     * @since 1.21
      */
     public boolean isOminous();
 
@@ -148,6 +163,7 @@ public interface TrialSpawner extends TileState {
      *
      * @param ominous true to use the ominous TrialSpawnerConfiguration, false to
      *                use the normal one.
+     * @since 1.21
      */
     public void setOminous(boolean ominous);
 
@@ -156,6 +172,7 @@ public interface TrialSpawner extends TileState {
      * false.
      *
      * @return the TrialSpawnerConfiguration
+     * @since 1.21
      */
     @NotNull
     public TrialSpawnerConfiguration getNormalConfiguration();
@@ -165,6 +182,7 @@ public interface TrialSpawner extends TileState {
      * true.
      *
      * @return the TrialSpawnerConfiguration
+     * @since 1.21
      */
     @NotNull
     public TrialSpawnerConfiguration getOminousConfiguration();

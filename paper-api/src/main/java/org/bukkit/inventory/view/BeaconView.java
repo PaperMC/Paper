@@ -9,9 +9,14 @@ import org.jetbrains.annotations.Nullable;
 /**
  * An instance of {@link InventoryView} which provides extra methods related to
  * beacon view data.
+ *
+ * @since 1.21
  */
 public interface BeaconView extends InventoryView {
 
+    /**
+     * @since 1.21.1
+     */
     @NotNull
     @Override
     BeaconInventory getTopInventory();

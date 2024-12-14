@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a Vindicator.
+ *
+ * @since 1.11
  */
 public interface Vindicator extends Illager {
 
@@ -11,6 +13,7 @@ public interface Vindicator extends Illager {
      * When this mode is active, vindicators will be hostile to all mobs.
      *
      * @return true if johnny
+     * @since 1.13.1
      */
     boolean isJohnny();
 
@@ -18,6 +21,7 @@ public interface Vindicator extends Illager {
      * Sets the Johnny state of a vindicator.
      *
      * @param johnny new johnny state
+     * @since 1.13.1
      */
     void setJohnny(boolean johnny);
 }

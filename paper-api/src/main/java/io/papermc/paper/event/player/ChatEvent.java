@@ -16,6 +16,7 @@ import org.jspecify.annotations.NullMarked;
  *
  * @deprecated Listening to this event forces chat to wait for the main thread, delaying chat messages.
  * It is recommended to use {@link AsyncChatEvent} instead, wherever possible.
+ * @since 1.16.5
  */
 @Deprecated
 @Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")

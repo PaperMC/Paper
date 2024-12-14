@@ -11,6 +11,8 @@ import java.util.function.Consumer;
  * The global region is responsible for maintaining world day time, world game time, weather cycle,
  * sleep night skipping, executing commands for console, and other misc. tasks that do not belong to any specific region.
  * </p>
+ *
+ * @since 1.20.1
  */
 public interface GlobalRegionScheduler {
 

@@ -7,6 +7,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Context for computing itemstack tooltips via
  * {@link org.bukkit.inventory.ItemStack#computeTooltipLines(TooltipContext, Player)}
+ *
+ * @since 1.20.4
  */
 @NullMarked
 public interface TooltipContext {

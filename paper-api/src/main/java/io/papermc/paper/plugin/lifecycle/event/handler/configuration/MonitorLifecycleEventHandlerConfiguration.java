@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
  * Handler configuration for event types that allow "monitor" handlers.
  *
  * @param <O> the required owner type
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 @NullMarked

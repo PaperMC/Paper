@@ -45,6 +45,8 @@ import org.jetbrains.annotations.Nullable;
  * integer value greater than or equal to 0, and the special price, and then
  * constraining the resulting value between <code>1</code> and the item stack's
  * {@link ItemStack#getMaxStackSize() maximum stack size}.
+ *
+ * @since 1.9.4
  */
 public class MerchantRecipe implements Recipe {
 
@@ -139,6 +141,7 @@ public class MerchantRecipe implements Recipe {
      * @return the adjusted first ingredient, or <code>null</code> if this
      * recipe has no ingredients
      * @see #adjust(ItemStack)
+     * @since 1.18.1
      */
     @Nullable
     public ItemStack getAdjustedIngredient1() {
@@ -165,6 +168,7 @@ public class MerchantRecipe implements Recipe {
      * maximum stack size}.
      *
      * @param itemStack the item to adjust
+     * @since 1.18.1
      */
     public void adjust(@Nullable ItemStack itemStack) {
         if (itemStack == null || itemStack.getType() == Material.AIR || itemStack.getAmount() <= 0) {
@@ -180,6 +184,7 @@ public class MerchantRecipe implements Recipe {
      * Get the demand for this trade.
      *
      * @return the demand
+     * @since 1.18.1
      */
     public int getDemand() {
         return demand;
@@ -189,6 +194,7 @@ public class MerchantRecipe implements Recipe {
      * Set the demand for this trade.
      *
      * @param demand the new demand
+     * @since 1.18.1
      */
     public void setDemand(int demand) {
         this.demand = demand;
@@ -198,6 +204,7 @@ public class MerchantRecipe implements Recipe {
      * Get the special price for this trade.
      *
      * @return special price value
+     * @since 1.18.1
      */
     public int getSpecialPrice() {
         return specialPrice;
@@ -207,6 +214,7 @@ public class MerchantRecipe implements Recipe {
      * Set the special price for this trade.
      *
      * @param specialPrice special price value
+     * @since 1.18.1
      */
     public void setSpecialPrice(int specialPrice) {
         this.specialPrice = specialPrice;
@@ -272,6 +280,7 @@ public class MerchantRecipe implements Recipe {
      * Gets the amount of experience the villager earns from this trade.
      *
      * @return villager experience
+     * @since 1.14
      */
     public int getVillagerExperience() {
         return villagerExperience;
@@ -281,6 +290,7 @@ public class MerchantRecipe implements Recipe {
      * Sets the amount of experience the villager earns from this trade.
      *
      * @param villagerExperience new experience amount
+     * @since 1.14
      */
     public void setVillagerExperience(int villagerExperience) {
         this.villagerExperience = villagerExperience;
@@ -290,6 +300,7 @@ public class MerchantRecipe implements Recipe {
      * Gets the price multiplier for the cost of this trade.
      *
      * @return price multiplier
+     * @since 1.14
      */
     public float getPriceMultiplier() {
         return priceMultiplier;
@@ -299,6 +310,7 @@ public class MerchantRecipe implements Recipe {
      * Sets the price multiplier for the cost of this trade.
      *
      * @param priceMultiplier new price multiplier
+     * @since 1.14
      */
     public void setPriceMultiplier(float priceMultiplier) {
         this.priceMultiplier = priceMultiplier;
@@ -307,6 +319,7 @@ public class MerchantRecipe implements Recipe {
     // Paper start
     /**
      * @return Whether all discounts on this trade should be ignored.
+     * @since 1.16.4
      */
     public boolean shouldIgnoreDiscounts() {
         return ignoreDiscounts;
@@ -314,6 +327,7 @@ public class MerchantRecipe implements Recipe {
 
     /**
      * @param ignoreDiscounts Whether all discounts on this trade should be ignored.
+     * @since 1.16.4
      */
     public void setIgnoreDiscounts(boolean ignoreDiscounts) {
         this.ignoreDiscounts = ignoreDiscounts;

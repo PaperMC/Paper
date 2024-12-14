@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a Camel.
+ *
+ * @since 1.19.3
  */
 public interface Camel extends AbstractHorse, Sittable {
 

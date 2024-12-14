@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player changes recipe book settings.
+ *
+ * @since 1.20.2
  */
 public class PlayerRecipeBookSettingsChangeEvent extends PlayerEvent {
 

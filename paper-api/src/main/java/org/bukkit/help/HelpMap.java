@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
  *     objects to create topics
  * <li>Topic contents are amended as directed in help.yml
  * </ol>
+ *
+ * @since 1.1.0 R5
  */
 public interface HelpMap {
     /**
@@ -33,6 +35,7 @@ public interface HelpMap {
      * Returns a collection of all the registered help topics.
      *
      * @return All the registered help topics.
+     * @since 1.2.5 R0.1
      */
     @NotNull
     public Collection<HelpTopic> getHelpTopics();
@@ -78,6 +81,7 @@ public interface HelpMap {
      * server administrator's expectations.
      *
      * @return A list of plugins that should be excluded from the help index.
+     * @since 1.2.5 R0.1
      */
     @NotNull
     public List<String> getIgnoredPlugins();

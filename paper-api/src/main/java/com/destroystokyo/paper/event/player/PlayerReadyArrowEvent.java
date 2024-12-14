@@ -32,6 +32,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player is firing a bow and the server is choosing an arrow to use.
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class PlayerReadyArrowEvent extends PlayerEvent implements Cancellable {

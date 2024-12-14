@@ -20,6 +20,8 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * No guarantees are made about thread execution context for this event. If you need to know, check
  * {@link Event#isAsynchronous()}
+ *
+ * @since 1.12
  */
 @NullMarked
 public class PreLookupProfileEvent extends Event {
@@ -69,6 +71,7 @@ public class PreLookupProfileEvent extends Event {
     /**
      * @return The currently pending pre-populated properties.
      * Any property in this Set will be automatically prefilled on this Profile
+     * @since 1.12.2
      */
     public Set<ProfileProperty> getProfileProperties() {
         return this.properties;
@@ -79,6 +82,7 @@ public class PreLookupProfileEvent extends Event {
      * Any property in this Set will be automatically prefilled on this Profile
      *
      * @param properties The properties to add
+     * @since 1.12.2
      */
     public void setProfileProperties(final Set<ProfileProperty> properties) {
         this.properties = new HashSet<>();
@@ -90,6 +94,7 @@ public class PreLookupProfileEvent extends Event {
      * Any property in this Set will be automatically prefilled on this Profile
      *
      * @param properties The properties to add
+     * @since 1.12.2
      */
     public void addProfileProperties(final Set<ProfileProperty> properties) {
         this.properties.addAll(properties);

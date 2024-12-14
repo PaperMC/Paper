@@ -28,6 +28,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>If your logic is not safe to run asynchronously, only react to the synchronous version.</p>
  *
  * <p>This is a draft/experimental API and is subject to change.</p>
+ *
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @NullMarked

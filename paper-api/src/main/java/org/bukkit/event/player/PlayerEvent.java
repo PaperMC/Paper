@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a player related event
+ *
+ * @since 1.0.0 R1
  */
 public abstract class PlayerEvent extends Event {
     protected Player player;

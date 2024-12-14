@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Manager of Scoreboards
+ *
+ * @since 1.5.1 R0.2
  */
 public interface ScoreboardManager {
 

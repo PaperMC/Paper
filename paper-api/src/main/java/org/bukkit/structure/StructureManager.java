@@ -9,6 +9,9 @@ import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.17.1
+ */
 public interface StructureManager {
 
     /**

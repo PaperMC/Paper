@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an ItemStack is successfully cooked in a block.
+ *
+ * @since 1.14
  */
 public class BlockCookEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -75,6 +77,7 @@ public class BlockCookEvent extends BlockEvent implements Cancellable {
      * Gets the cooking recipe associated with this event.
      *
      * @return the recipe
+     * @since 1.16.5
      */
     @org.jetbrains.annotations.Nullable
     public org.bukkit.inventory.CookingRecipe<?> getRecipe() {

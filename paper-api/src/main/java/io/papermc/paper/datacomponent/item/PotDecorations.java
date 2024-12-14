@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Holds the item types for the decorations on a flower pot.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#POT_DECORATIONS
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

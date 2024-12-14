@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A wild tameable cat
+ *
+ * @since 1.2.2 R0.1
  */
 public interface Ocelot extends Animals {
 
@@ -13,6 +15,7 @@ public interface Ocelot extends Animals {
      * Checks if this ocelot trusts players.
      *
      * @return true if it trusts players
+     * @since 1.17
      */
     public boolean isTrusting();
 
@@ -20,6 +23,7 @@ public interface Ocelot extends Animals {
      * Sets if this ocelot trusts players.
      *
      * @param trust true if it trusts players
+     * @since 1.17
      */
     public void setTrusting(boolean trust);
 

@@ -5,6 +5,8 @@ package org.bukkit.block.data;
  * transmitted via this block.
  * <br>
  * May not be over 9000 or {@link #getMaximumPower()} (usually 15).
+ *
+ * @since 1.13
  */
 public interface AnaloguePowerable extends BlockData {
 

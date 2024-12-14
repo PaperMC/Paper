@@ -14,6 +14,7 @@ import java.util.List;
 
 /**
  * @deprecated Timings will be removed in the future
+ * @since 1.11.2
  */
 @Deprecated(forRemoval = true)
 @SuppressWarnings("WeakerAccess")
@@ -60,11 +61,17 @@ public class TimingsReportListener implements net.kyori.adventure.audience.Forwa
         }
     }
 
+    /**
+     * @since 1.16.5
+     */
     @Override
     public void sendMessage(final @NotNull net.kyori.adventure.identity.Identity source, final @NotNull net.kyori.adventure.text.Component message, final @NotNull net.kyori.adventure.audience.MessageType type) {
         net.kyori.adventure.audience.ForwardingAudience.super.sendMessage(source, message, type);
     }
 
+    /**
+     * @since 1.16.5
+     */
     @NotNull
     @Override
     public Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {

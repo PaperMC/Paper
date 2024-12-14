@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents an immutable copy of an entity's state. Can be used at any time to
  * create an instance of the stored entity.
+ *
+ * @since 1.20.4
  */
 public interface EntitySnapshot {
 
@@ -44,6 +46,7 @@ public interface EntitySnapshot {
      * This string should not be relied upon as a serializable value.
      *
      * @return the NBT string
+     * @since 1.20.6
      */
     @NotNull
     @ApiStatus.Experimental

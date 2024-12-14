@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents events related to raids.
+ *
+ * @since 1.14.4
  */
 public abstract class RaidEvent extends WorldEvent {
 

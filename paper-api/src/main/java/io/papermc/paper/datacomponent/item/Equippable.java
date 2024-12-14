@@ -14,6 +14,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Holds the equippable properties of an item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#EQUIPPABLE
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental
@@ -51,6 +52,7 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
      * Gets the asset id if present.
      *
      * @return the asset id or null
+     * @since 1.21.4
      */
     @Contract(pure = true)
     @Nullable Key assetId();
@@ -98,6 +100,8 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
 
     /**
      * Builder for {@link Equippable}.
+     *
+     * @since 1.21.3
      */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
@@ -117,6 +121,7 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
          *
          * @param assetId the asset id, nullable
          * @return the builder for chaining
+         * @since 1.21.4
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder assetId(@Nullable Key assetId);

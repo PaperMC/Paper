@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
  *     <li>the client has disconnected the leash</li>
  * </ul>
  * will have no effect.
+ *
+ * @since 1.6.2 R1.1
  */
 public class EntityUnleashEvent extends EntityEvent implements org.bukkit.event.Cancellable { // Paper
     private static final HandlerList handlers = new HandlerList();
@@ -49,6 +51,7 @@ public class EntityUnleashEvent extends EntityEvent implements org.bukkit.event.
      * Returns whether a leash item will be dropped.
      *
      * @return Whether the leash item will be dropped
+     * @since 1.16.5
      */
     public boolean isDropLeash() {
         return dropLeash;
@@ -58,16 +61,23 @@ public class EntityUnleashEvent extends EntityEvent implements org.bukkit.event.
      * Sets whether a leash item should be dropped.
      *
      * @param dropLeash Whether the leash item should be dropped
+     * @since 1.16.5
      */
     public void setDropLeash(boolean dropLeash) {
         this.dropLeash = dropLeash;
     }
 
+    /**
+     * @since 1.17.1
+     */
     @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    /**
+     * @since 1.17.1
+     */
     @Override
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;

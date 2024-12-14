@@ -5,6 +5,8 @@ import org.bukkit.entity.Player;
 /**
  * Represents an object that may become a server operator, such as a {@link
  * Player}
+ *
+ * @since 1.0.0 R1
  */
 public interface ServerOperator {
 

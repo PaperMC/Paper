@@ -2,6 +2,9 @@ package org.bukkit.inventory;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.1.0 R5
+ */
 public interface InventoryHolder {
 
     /**

@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * range.
  *
  * @see Player#showEntity(org.bukkit.plugin.Plugin, org.bukkit.entity.Entity)
+ * @since 1.18.1
  */
 public class PlayerShowEntityEvent extends PlayerEvent {
 

@@ -14,6 +14,8 @@ import org.jspecify.annotations.NullMarked;
  * Holds information for living entity movement events
  * <p>
  * Does not fire for players; use {@link PlayerMoveEvent} for player movement.
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class EntityMoveEvent extends EntityEvent implements Cancellable {

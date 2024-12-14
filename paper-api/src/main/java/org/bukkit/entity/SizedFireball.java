@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a sized fireball.
+ *
+ * @since 1.15.2
  */
 public interface SizedFireball extends Fireball {
 

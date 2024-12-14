@@ -5,6 +5,8 @@ import org.bukkit.command.CommandSender;
 
 /**
  * Called when a tab-complete request throws an exception
+ *
+ * @since 1.9.4
  */
 public class ServerTabCompleteException extends ServerCommandException {
 

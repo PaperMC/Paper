@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
  * 'vault_state' indicates the current operational phase of the vault block.
  * <br>
  * 'ominous' indicates if the block has ominous effects.
+ *
+ * @since 1.20.6
  */
 public interface Vault extends Directional {
 
@@ -14,6 +16,7 @@ public interface Vault extends Directional {
      * Gets the value of the 'vault_state' property.
      *
      * @return the 'vault_state' value
+     * @since 1.21.3
      */
     @NotNull
     State getVaultState();

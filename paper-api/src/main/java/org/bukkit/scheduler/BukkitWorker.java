@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
  * the Thread object for the task, owner of the task and the taskId.
  * <p>
  * Workers are used to execute async tasks.
+ *
+ * @since 1.0.0 R1
  */
 public interface BukkitWorker {
 

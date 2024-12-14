@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * <li>A Brewing-Stand starts brewing {@link BrewingStartEvent}</li>
  * <li>A Campfire starts cooking {@link CampfireStartEvent}</li>
  * </ul>
+ *
+ * @since 1.19.3
  */
 public class InventoryBlockStartEvent extends BlockEvent {
 

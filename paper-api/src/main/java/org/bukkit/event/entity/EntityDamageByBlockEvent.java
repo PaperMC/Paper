@@ -16,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
  * For explosions, the Block returned by {@link #getDamager()} has
  * already been cleared. See {@link #getDamagerBlockState()} for a snapshot
  * of the block if it has already been changed.
+ *
+ * @since 1.0.0 R1
  */
 public class EntityDamageByBlockEvent extends EntityDamageEvent {
     private final Block damager;
@@ -60,6 +62,7 @@ public class EntityDamageByBlockEvent extends EntityDamageEvent {
      * will be false.
      *
      * @return the block state
+     * @since 1.20.1
      */
     @Nullable
     public BlockState getDamagerBlockState() {

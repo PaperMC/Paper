@@ -31,6 +31,8 @@ import org.jetbrains.annotations.Nullable;
  * Note that parts of this class which require access to the world at large
  * (i.e. lighting and power) may not be able to be safely accessed during world
  * generation when used in cases like BlockPhysicsEvent!!!!
+ *
+ * @since 1.0.0 R1
  */
 public interface Block extends Metadatable, Translatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
 
@@ -47,6 +49,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Gets the complete block data for this block
      *
      * @return block specific data
+     * @since 1.13
      */
     @NotNull
     BlockData getBlockData();
@@ -115,6 +118,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * be ignored.
      *
      * @return Sky light level
+     * @since 1.1.0 R1
      */
     byte getLightFromSky();
 
@@ -124,6 +128,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Any light given from other sources (such as the sun) will be ignored.
      *
      * @return Block light level
+     * @since 1.1.0 R1
      */
     byte getLightFromBlocks();
 
@@ -163,6 +168,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @see Block#getBlockKey(int, int, int)
      * @return This block's x, y, and z coordinates packed into a long value
      * @deprecated see {@link #getBlockKey(int, int, int)}
+     * @since 1.12.2
      */
     @Deprecated(since = "1.18.1")
     public default long getBlockKey() {
@@ -189,6 +195,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @return This block's x, y, and z coordinates packed into a long value
      * @deprecated only encodes y block ranges from -512 to 511 and represents an already changed implementation detail
+     * @since 1.13.2
      */
     @Deprecated(since = "1.18.1")
     public static long getBlockKey(int x, int y, int z) {
@@ -201,6 +208,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @see Block#getBlockKey(int, int, int)
      * @return The x component from the packed value.
      * @deprecated see {@link #getBlockKey(int, int, int)}
+     * @since 1.13.2
      */
     @Deprecated(since = "1.18.1")
     public static int getBlockKeyX(long packed) {
@@ -213,6 +221,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @see Block#getBlockKey(int, int, int)
      * @return The y component from the packed value.
      * @deprecated see {@link #getBlockKey(int, int, int)}
+     * @since 1.13.2
      */
     @Deprecated(since = "1.18.1")
     public static int getBlockKeyY(long packed) {
@@ -225,6 +234,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @see Block#getBlockKey(int, int, int)
      * @return The z component from the packed value.
      * @deprecated see {@link #getBlockKey(int, int, int)}
+     * @since 1.13.2
      */
     @Deprecated(since = "1.18.1")
     public static int getBlockKeyZ(long packed) {
@@ -240,6 +250,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param itemStack The (tool) itemstack
      * @return whether the block will drop items
      * @deprecated partially replaced by {@link Block#isPreferredTool(ItemStack)}
+     * @since 1.16.5
      */
     @Deprecated(since = "1.21", forRemoval = true) // Paper
     boolean isValidTool(@NotNull ItemStack itemStack);
@@ -261,6 +272,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param loc the location to copy into
      * @return The Location object provided or null
+     * @since 1.4.5 R1.0
      */
     @Contract("null -> null; !null -> !null")
     @Nullable
@@ -278,6 +290,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Sets the complete data for this block
      *
      * @param data new block specific data
+     * @since 1.13
      */
     void setBlockData(@NotNull BlockData data);
 
@@ -299,6 +312,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param data new block specific data
      * @param applyPhysics false to cancel physics from the changed block
+     * @since 1.13
      */
     void setBlockData(@NotNull BlockData data, boolean applyPhysics);
 
@@ -327,6 +341,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param type Material to change this block to
      * @param applyPhysics False to cancel physics on the changed block.
+     * @since 1.8
      */
     void setType(@NotNull Material type, boolean applyPhysics);
 
@@ -366,6 +381,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @see #getState() optionally disables use of snapshot, to operate on real block data
      * @param useSnapshot if this block is a TE, should we create a fully copy of the TileEntity
      * @return BlockState with the current state of this block
+     * @since 1.12.2
      */
     @NotNull
     BlockState getState(boolean useSnapshot);
@@ -386,6 +402,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @return computed biome at the location of this Block.
      * @see org.bukkit.RegionAccessor#getComputedBiome(int, int, int)
+     * @since 1.18.2
      */
     @NotNull
     Biome getComputedBiome();
@@ -395,6 +412,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Sets the biome that this block resides in
      *
      * @param bio new Biome type for this block
+     * @since 1.2.5 R0.1
      */
     void setBiome(@NotNull Biome bio);
 
@@ -472,6 +490,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * An example of a non buildable block would be liquids, flowers, or fire
      *
      * @return true if block is buildable
+     * @since 1.16.4
      */
     boolean isBuildable();
     /**
@@ -480,6 +499,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Determined by Minecraft, typically a block that fire can destroy (Wool, Wood)
      *
      * @return true if block is burnable
+     * @since 1.16.4
      */
     boolean isBurnable();
     /**
@@ -487,6 +507,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * <p>
      * Determined by Minecraft, representing a block that is not AIR that you can still place a new block at, such as flowers.
      * @return true if block is replaceable
+     * @since 1.16.4
      */
     boolean isReplaceable();
     /**
@@ -496,6 +517,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * This API is faster than accessing Material#isSolid as it avoids a material lookup and switch statement.
      * @return true if block is solid
+     * @since 1.16.4
      */
     boolean isSolid();
 
@@ -503,6 +525,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Checks if this block is collidable.
      *
      * @return true if collidable
+     * @since 1.17.1
      */
     boolean isCollidable();
     // Paper end
@@ -537,6 +560,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * of the tool.
      *
      * @return true if the block was destroyed
+     * @since 1.1.0 R1
      */
     boolean breakNaturally();
 
@@ -546,6 +570,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param tool The tool or item in hand used for digging
      * @return true if the block was destroyed
+     * @since 1.1.0 R1
      */
     boolean breakNaturally(@Nullable ItemStack tool);
 
@@ -556,6 +581,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param triggerEffect Play the block break particle effect and sound
      * @return true if the block was destroyed
      * @see #breakNaturally(boolean, boolean) to trigger exp drops
+     * @since 1.17.1
      */
     default boolean breakNaturally(boolean triggerEffect) {
         return this.breakNaturally(triggerEffect, false);
@@ -567,6 +593,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param triggerEffect Play the block break particle effect and sound
      * @param dropExperience drop exp if the block normally does so
      * @return true if the block was destroyed
+     * @since 1.19.3
      */
     boolean breakNaturally(boolean triggerEffect, boolean dropExperience);
 
@@ -578,6 +605,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param triggerEffect Play the block break particle effect and sound
      * @return true if the block was destroyed
      * @see #breakNaturally(ItemStack, boolean, boolean) to trigger exp drops
+     * @since 1.15.1
      */
     default boolean breakNaturally(@NotNull ItemStack tool, boolean triggerEffect) {
         return this.breakNaturally(tool, triggerEffect, false);
@@ -591,6 +619,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param triggerEffect Play the block break particle effect and sound
      * @param dropExperience drop exp if the block normally does so
      * @return true if the block was destroyed
+     * @since 1.19.3
      */
     boolean breakNaturally(@NotNull ItemStack tool, boolean triggerEffect, boolean dropExperience);
 
@@ -602,6 +631,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * This method may directly fire events relating to block ticking.
      *
      * @see #fluidTick()
+     * @since 1.19.1
      */
     void tick();
 
@@ -613,6 +643,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * This method may directly fire events relating to fluid ticking.
      *
      * @see #tick()
+     * @since 1.20.4
      */
     void fluidTick();
 
@@ -626,6 +657,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @see #tick()
      * @see #fluidTick()
+     * @since 1.19.1
      */
     void randomTick();
     // Paper end
@@ -636,6 +668,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param face the face on which bonemeal should be applied
      *
      * @return true if the block was bonemealed, false otherwise
+     * @since 1.16.2
      */
     boolean applyBoneMeal(@NotNull BlockFace face);
 
@@ -646,6 +679,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * method as this just uses the block type's loot table.
      *
      * @return a list of dropped items for this type of block
+     * @since 1.1.0 R1
      */
     @NotNull
     Collection<ItemStack> getDrops();
@@ -659,6 +693,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param tool The tool or item in hand used for digging
      * @return a list of dropped items for this type of block
+     * @since 1.1.0 R1
      */
     @NotNull
     Collection<ItemStack> getDrops(@Nullable ItemStack tool);
@@ -673,6 +708,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param tool The tool or item in hand used for digging
      * @param entity the entity destroying the block
      * @return a list of dropped items for this type of block
+     * @since 1.15.2
      */
     @NotNull
     Collection<ItemStack> getDrops(@Nullable ItemStack tool, @Nullable Entity entity); // Paper
@@ -685,6 +721,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param tool The tool or item used for breaking this block
      * @return true if the tool is preferred for breaking this block.
+     * @since 1.16.5
      */
     boolean isPreferredTool(@NotNull ItemStack tool);
 
@@ -701,6 +738,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param player player breaking the block
      * @return the speed at which the player breaks this block
+     * @since 1.17
      */
     float getBreakSpeed(@NotNull Player player);
 
@@ -715,6 +753,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * can be collided with.
      *
      * @return <code>true</code> if passable
+     * @since 1.13.1
      */
     boolean isPassable();
 
@@ -727,6 +766,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param maxDistance the maximum distance
      * @param fluidCollisionMode the fluid collision mode
      * @return the ray trace hit result, or <code>null</code> if there is no hit
+     * @since 1.13.2
      */
     @Nullable
     RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode);
@@ -744,6 +784,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * the block is empty (such as air blocks).
      *
      * @return the approximate bounding box of the block
+     * @since 1.13.2
      */
     @NotNull
     BoundingBox getBoundingBox();
@@ -753,6 +794,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @return a {@link VoxelShape} representing the collision shape of this
      * block.
+     * @since 1.17
      */
     @NotNull
     VoxelShape getCollisionShape();
@@ -763,6 +805,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param data the block data to check
      * @return <code>true</code> if the block data can be placed here
+     * @since 1.18
      */
     boolean canPlace(@NotNull BlockData data);
 
@@ -774,6 +817,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @return the sound group for this block
      * @deprecated use {@link #getBlockSoundGroup()}
+     * @since 1.14.2
      */
     @NotNull
     @Deprecated(forRemoval = true, since = "1.18.2")
@@ -783,11 +827,13 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Gets the {@link org.bukkit.SoundGroup} for this block.
      *
      * @return the sound group for this block
+     * @since 1.18.2
      */
     @NotNull org.bukkit.SoundGroup getBlockSoundGroup();
 
     /**
      * @deprecated use {@link #translationKey()}
+     * @since 1.16.2
      */
     @NotNull
     @Deprecated(forRemoval = true)
@@ -802,6 +848,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param itemStack {@link ItemStack} used to mine this Block
      * @return the speed that this Block will be mined by the given {@link ItemStack}
+     * @since 1.16.4
      */
     default float getDestroySpeed(final @NotNull ItemStack itemStack) {
         return this.getBlockData().getDestroySpeed(itemStack);
@@ -815,6 +862,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param itemStack {@link ItemStack} used to mine this Block
      * @param considerEnchants true to look at enchants on the itemstack
      * @return the speed that this Block will be mined by the given {@link ItemStack}
+     * @since 1.16.5
      */
     default float getDestroySpeed(@NotNull ItemStack itemStack, boolean considerEnchants) {
         return this.getBlockData().getDestroySpeed(itemStack, considerEnchants);

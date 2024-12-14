@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player fills a bucket
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerBucketFillEvent extends PlayerBucketEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -29,12 +31,18 @@ public class PlayerBucketFillEvent extends PlayerBucketEvent {
         super(who, block, blockClicked, blockFace, bucket, itemInHand, hand);
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

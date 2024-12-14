@@ -12,6 +12,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Called when an {@link ItemFrame} is having an item rotated, added, or removed from it.
+ *
+ * @since 1.18
  */
 @NullMarked
 public class PlayerItemFrameChangeEvent extends PlayerEvent implements Cancellable {

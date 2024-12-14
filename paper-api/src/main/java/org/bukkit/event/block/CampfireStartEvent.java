@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a Campfire starts to cook.
+ *
+ * @since 1.19.3
  */
 @org.jetbrains.annotations.ApiStatus.Experimental // Paper
 public class CampfireStartEvent extends InventoryBlockStartEvent {

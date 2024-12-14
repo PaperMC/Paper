@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of an end gateway.
+ *
+ * @since 1.9.4
  */
 public interface EndGateway extends TileState {
 
@@ -53,6 +55,7 @@ public interface EndGateway extends TileState {
      * if it is a multiple of 2400 ticks a purple beam will be emitted.
      *
      * @return age in ticks
+     * @since 1.13.2
      */
     long getAge();
 
@@ -63,6 +66,7 @@ public interface EndGateway extends TileState {
      * if it is a multiple of 2400 ticks a purple beam will be emitted.
      *
      * @param age new age in ticks
+     * @since 1.13.2
      */
     void setAge(long age);
 }

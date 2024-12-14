@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * Called when an entity explodes interacting with blocks. The
  * event isn't called if the {@link org.bukkit.GameRule#MOB_GRIEFING}
  * is disabled as no block interaction will occur.
+ *
+ * @since 1.0.0 R1
  */
 public class EntityExplodeEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -45,6 +47,7 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
      * Returns the result of the explosion if it is not cancelled.
      *
      * @return the result of the explosion
+     * @since 1.21
      */
     @NotNull
     public ExplosionResult getExplosionResult() {
@@ -93,12 +96,18 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
         this.yield = yield;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

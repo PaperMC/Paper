@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Fired any time an entity is being removed from a world for any reason (including a chunk unloading).
  * Note: The entity is updated prior to this event being called, as such, the entity's world may not be equal to {@link #getWorld()}.
+ *
+ * @since 1.9.4
  */
 @NullMarked
 public class EntityRemoveFromWorldEvent extends EntityEvent {
@@ -26,6 +28,7 @@ public class EntityRemoveFromWorldEvent extends EntityEvent {
 
     /**
      * @return The world that the entity is being removed from
+     * @since 1.20.4
      */
     public World getWorld() {
         return this.world;

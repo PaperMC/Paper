@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when the recipe of an Item is completed inside a cartography table.
+ *
+ * @since 1.20.4
  */
 @NullMarked
 public class CartographyItemEvent extends InventoryClickEvent {

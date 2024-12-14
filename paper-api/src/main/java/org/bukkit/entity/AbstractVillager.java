@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a villager NPC
+ *
+ * @since 1.14
  */
 public interface AbstractVillager extends Breedable, NPC, InventoryHolder, Merchant {
 
@@ -25,6 +27,8 @@ public interface AbstractVillager extends Breedable, NPC, InventoryHolder, Merch
     // Paper start
     /**
      * Reset this villager's trade offers
+     *
+     * @since 1.16.4
      */
     public void resetOffers();
     // Paper end

@@ -7,9 +7,14 @@ import org.jetbrains.annotations.NotNull;
 /**
  * An instance of {@link InventoryView} which provides extra methods related to
  * crafter view data.
+ *
+ * @since 1.21
  */
 public interface CrafterView extends InventoryView {
 
+    /**
+     * @since 1.21.1
+     */
     @NotNull
     @Override
     CrafterInventory getTopInventory();

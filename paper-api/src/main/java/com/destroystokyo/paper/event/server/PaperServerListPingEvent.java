@@ -31,6 +31,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Extended version of {@link ServerListPingEvent} that allows full control
  * of the response sent to the client.
+ *
+ * @since 1.12.2
  */
 public class PaperServerListPingEvent extends ServerListPingEvent implements Cancellable {
 
@@ -169,6 +171,7 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
      * player count with the mouse.
      *
      * @return The mutable player sample list
+     * @since 1.20.6
      */
     @NotNull
     public List<ListedPlayerInfo> getListedPlayers() {

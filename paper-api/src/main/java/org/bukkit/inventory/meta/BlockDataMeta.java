@@ -4,6 +4,9 @@ import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.14
+ */
 public interface BlockDataMeta extends ItemMeta {
 
     /**

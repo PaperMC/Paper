@@ -12,6 +12,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Fired when a witch throws a potion at a player
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class WitchThrowPotionEvent extends EntityEvent implements Cancellable {

@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
  * is <i>first</i> opened.
  * <br>
  * Entities will only generate loot upon death.
+ *
+ * @since 1.13
  */
 public interface Lootable {
 

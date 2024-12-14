@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable; // Paper
 
 /**
  * Represents an Experience Orb.
+ *
+ * @since 1.0.0 R1
  */
 public interface ExperienceOrb extends Entity {
 
@@ -27,6 +29,7 @@ public interface ExperienceOrb extends Entity {
      * Get the stacked count for this experience orb.
      *
      * @return the count
+     * @since 1.20.6
      */
     int getCount();
 
@@ -34,6 +37,7 @@ public interface ExperienceOrb extends Entity {
      * Sets the stacked count for this experience orb.
      *
      * @param count the new count
+     * @since 1.20.6
      */
     void setCount(int count);
     // Paper end
@@ -44,6 +48,7 @@ public interface ExperienceOrb extends Entity {
      *
      * @return if orb was spawned from a bottle
      * @deprecated Use getSpawnReason() == EXP_BOTTLE
+     * @since 1.11.2
      */
     @Deprecated
     default boolean isFromBottle() {
@@ -109,6 +114,7 @@ public interface ExperienceOrb extends Entity {
      * In the case of an entity being killed, this will be the killers UUID.
      *
      * @return UUID of the player that triggered this orb to drop, or null if unknown/no triggering entity
+     * @since 1.12.2
      */
     @Nullable java.util.UUID getTriggerEntityId();
 
@@ -121,6 +127,7 @@ public interface ExperienceOrb extends Entity {
      * In the case of an entity being killed, this will be the dead entities UUID.
      *
      * @return The UUID of the entity that sourced this experience orb
+     * @since 1.12.2
      */
     @Nullable java.util.UUID getSourceEntityId();
 
@@ -128,6 +135,7 @@ public interface ExperienceOrb extends Entity {
      * Gets the reason that this experience orb was spawned. For any case that we
      * do not know, such as orbs spawned before this API was added, UNKNOWN is returned.
      * @return The reason for this orb being spawned.
+     * @since 1.12.2
      */
     @NotNull
     SpawnReason getSpawnReason();

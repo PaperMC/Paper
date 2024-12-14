@@ -16,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Controls the behavior of the item as a tool.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#TOOL
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

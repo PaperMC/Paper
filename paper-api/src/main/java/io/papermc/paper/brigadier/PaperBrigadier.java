@@ -12,6 +12,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
  * @deprecated for removal. See {@link MessageComponentSerializer} for a direct replacement of functionality found in
  * this class.
  * As a general entrypoint to brigadier on paper, see {@link io.papermc.paper.command.brigadier.Commands}.
+ * @since 1.20.6
  */
 @Deprecated(forRemoval = true, since = "1.20.6")
 public final class PaperBrigadier {

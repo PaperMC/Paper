@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents the Boss Entity.
+ *
+ * @since 1.13.2
  */
 public interface Boss extends Entity {
 

@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * are not required to securely remove all traces of the command. If secure
  * removal of commands is required, then the command should be assigned a
  * permission which is not granted to the player.
+ *
+ * @since 1.13
  */
 public class PlayerCommandSendEvent extends PlayerEvent {
 

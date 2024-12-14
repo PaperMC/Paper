@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
  * Called when an entity is spawned into a world.
  * <p>
  * If an Entity Spawn event is cancelled, the entity will not spawn.
+ *
+ * @since 1.6.1 R0.1
  */
 public class EntitySpawnEvent extends EntityEvent implements Cancellable {
 

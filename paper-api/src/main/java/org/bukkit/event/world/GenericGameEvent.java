@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
  *
  * Specific Bukkit events should be used where possible, this event is mainly
  * used internally by Sculk sensors.
+ *
+ * @since 1.17
  */
 public class GenericGameEvent extends WorldEvent implements Cancellable {
 

@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when a teleport is triggered for an End Gateway
+ *
+ * @since 1.11.2
  */
 @NullMarked
 public class PlayerTeleportEndGatewayEvent extends PlayerTeleportEvent {

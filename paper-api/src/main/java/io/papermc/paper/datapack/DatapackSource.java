@@ -4,6 +4,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Source of a datapack.
+ *
+ * @since 1.21.1
  */
 @NullMarked
 public sealed interface DatapackSource permits DatapackSourceImpl {

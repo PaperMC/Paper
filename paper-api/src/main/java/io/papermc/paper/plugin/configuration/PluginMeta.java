@@ -11,6 +11,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * This class acts as an abstraction for a plugin configuration.
+ *
+ * @since 1.19.3
  */
 @ApiStatus.Experimental // Subject to change!
 @NullMarked

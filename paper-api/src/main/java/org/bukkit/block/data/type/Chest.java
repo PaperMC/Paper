@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * 'type' represents which part of a double chest this block is, or if it is a
  * single chest.
+ *
+ * @since 1.13
  */
 public interface Chest extends Directional, Waterlogged {
 

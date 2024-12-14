@@ -6,6 +6,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents an entity that can be sheared.
+ *
+ * @since 1.19.4
  */
 @NullMarked
 public interface Shearable extends Entity {

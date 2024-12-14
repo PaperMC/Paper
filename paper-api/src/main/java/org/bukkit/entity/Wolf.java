@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Wolf
+ *
+ * @since 1.0.0 R1
  */
 public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.CollarColorable { // Paper - CollarColorable
 
@@ -32,6 +34,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      * Get the collar color of this wolf
      *
      * @return the color of the collar
+     * @since 1.4.5 R1.0
      */
     @NotNull
     @Override // Paper
@@ -41,6 +44,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      * Set the collar color of this wolf
      *
      * @param color the color to apply
+     * @since 1.4.5 R1.0
      */
     @Override // Paper
     public void setCollarColor(@NotNull DyeColor color);
@@ -49,6 +53,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      * Gets whether the wolf is wet
      *
      * @return Whether the wolf is wet
+     * @since 1.19
      */
     public boolean isWet();
 
@@ -56,6 +61,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      * Gets the wolf's tail angle in radians
      *
      * @return The angle of the wolf's tail in radians
+     * @since 1.19
      */
     public float getTailAngle();
 
@@ -63,6 +69,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      * Gets if the wolf is interested
      *
      * @return Whether the wolf is interested
+     * @since 1.18.2
      */
     public boolean isInterested();
 
@@ -70,6 +77,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      * Set wolf to be interested
      *
      * @param interested Whether the wolf is interested
+     * @since 1.18.2
      */
     public void setInterested(boolean interested);
 
@@ -77,6 +85,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      * Get the variant of this wolf.
      *
      * @return wolf variant
+     * @since 1.20.6
      */
     @NotNull
     Variant getVariant();
@@ -90,6 +99,8 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
 
     /**
      * Represents the variant of a wolf.
+     *
+     * @since 1.20.6
      */
     interface Variant extends Keyed {
 

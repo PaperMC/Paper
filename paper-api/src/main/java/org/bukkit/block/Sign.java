@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of either a SignPost or a WallSign.
+ *
+ * @since 1.0.0 R1
  */
 public interface Sign extends TileState, Colorable {
     // Paper start
@@ -18,6 +20,7 @@ public interface Sign extends TileState, Colorable {
      *
      * @return List of components containing each line of text
      * @deprecated A sign may have multiple writable sides now. Use {@link Sign#getSide(Side)} and {@link SignSide#lines()}.
+     * @since 1.16.5
      */
     @NotNull
     @Deprecated
@@ -32,6 +35,7 @@ public interface Sign extends TileState, Colorable {
      * @throws IndexOutOfBoundsException Thrown when the line does not exist
      * @return Text on the given line
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int)}.
+     * @since 1.16.5
      */
     @NotNull
     @Deprecated
@@ -47,6 +51,7 @@ public interface Sign extends TileState, Colorable {
      * @param line New text to set at the specified index
      * @throws IndexOutOfBoundsException If the index is out of the range 0..3
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#line(int, net.kyori.adventure.text.Component)}.
+     * @since 1.16.5
      */
     @Deprecated
     public void line(int index, net.kyori.adventure.text.@NotNull Component line) throws IndexOutOfBoundsException;
@@ -95,6 +100,7 @@ public interface Sign extends TileState, Colorable {
      *
      * @return if this sign is currently editable
      * @deprecated use {@link #isWaxed()} instead
+     * @since 1.13.1
      */
     @Deprecated(since = "1.20.1")
     public boolean isEditable();
@@ -104,6 +110,7 @@ public interface Sign extends TileState, Colorable {
      *
      * @param editable if this sign is currently editable
      * @deprecated use {@link #setWaxed(boolean)} instead
+     * @since 1.13.1
      */
     @Deprecated(since = "1.20.1")
     public void setEditable(boolean editable);
@@ -113,6 +120,7 @@ public interface Sign extends TileState, Colorable {
      * cannot be edited by a player.
      *
      * @return if this sign is waxed
+     * @since 1.20
      */
     public boolean isWaxed();
 
@@ -121,6 +129,7 @@ public interface Sign extends TileState, Colorable {
      * cannot be edited by a player.
      *
      * @param waxed if this sign is waxed
+     * @since 1.20
      */
     public void setWaxed(boolean waxed);
 
@@ -129,6 +138,7 @@ public interface Sign extends TileState, Colorable {
      *
      * @return if this sign has glowing text
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#isGlowingText()}.
+     * @since 1.17
      */
     @Deprecated(since = "1.20")
     public boolean isGlowingText();
@@ -138,6 +148,7 @@ public interface Sign extends TileState, Colorable {
      *
      * @param glowing if this sign has glowing text
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#setGlowingText(boolean)}.
+     * @since 1.17
      */
     @Deprecated(since = "1.20")
     public void setGlowingText(boolean glowing);
@@ -146,6 +157,7 @@ public interface Sign extends TileState, Colorable {
      * {@inheritDoc}
      *
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#getColor()}.
+     * @since 1.19.4
      */
     @NotNull
     @Override
@@ -156,6 +168,7 @@ public interface Sign extends TileState, Colorable {
      * {@inheritDoc}
      *
      * @deprecated A sign may have multiple writable sides now. Use {@link #getSide(Side)} and {@link SignSide#setColor(org.bukkit.DyeColor)}.
+     * @since 1.19.4
      */
     @Override
     @Deprecated(since = "1.20")
@@ -166,6 +179,7 @@ public interface Sign extends TileState, Colorable {
      *
      * @param side the side of the sign
      * @return the selected side of the sign
+     * @since 1.19.4
      */
     @NotNull
     public SignSide getSide(@NotNull Side side);
@@ -175,6 +189,7 @@ public interface Sign extends TileState, Colorable {
      *
      * @param player the player
      * @return the side the player is standing on
+     * @since 1.20.4
      */
     @NotNull
     public SignSide getTargetSide(@NotNull Player player);
@@ -186,6 +201,7 @@ public interface Sign extends TileState, Colorable {
      * need the player instance as this method will fetch the player from UUID.
      *
      * @return the player allowed to edit this sign, or null
+     * @since 1.20.4
      */
     @Nullable
     public Player getAllowedEditor();
@@ -195,6 +211,7 @@ public interface Sign extends TileState, Colorable {
      * <br>Edits from other players will be rejected if this value is not null.
      *
      * @return the allowed editor's UUID, or null
+     * @since 1.21.1
      */
     @Nullable java.util.UUID getAllowedEditorUniqueId();
 
@@ -204,6 +221,7 @@ public interface Sign extends TileState, Colorable {
      * interact with the sign (is either offline or outside the allowed interaction range).
      *
      * @param uuid the allowed editor's UUID
+     * @since 1.21.1
      */
     void setAllowedEditorUniqueId(@Nullable java.util.UUID uuid);
 
@@ -212,6 +230,7 @@ public interface Sign extends TileState, Colorable {
      *
      * @param entity the entity
      * @return the side it is facing
+     * @since 1.20.1
      */
     default @NotNull Side getInteractableSideFor(org.bukkit.entity.@NotNull Entity entity) {
         return this.getInteractableSideFor(entity.getLocation());
@@ -222,6 +241,7 @@ public interface Sign extends TileState, Colorable {
      *
      * @param position the position
      * @return the side the position is facing
+     * @since 1.20.1
      */
     default @NotNull Side getInteractableSideFor(io.papermc.paper.math.@NotNull Position position) {
         return this.getInteractableSideFor(position.x(), position.z());
@@ -233,6 +253,7 @@ public interface Sign extends TileState, Colorable {
      * @param x the x coord
      * @param z the z coord
      * @return the side the coordinates are facing
+     * @since 1.20.1
      */
     @NotNull Side getInteractableSideFor(double x, double z);
     // Paper end - More Sign Block API

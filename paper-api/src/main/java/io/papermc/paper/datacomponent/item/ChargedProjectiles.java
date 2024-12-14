@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds all projectiles that have been loaded into a Crossbow.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CHARGED_PROJECTILES
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

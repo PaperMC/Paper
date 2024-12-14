@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * This event is called when a player sends updated input to the server.
  *
  * @see Player#getCurrentInput()
+ * @since 1.21.3
  */
 @ApiStatus.Experimental
 public class PlayerInputEvent extends PlayerEvent {

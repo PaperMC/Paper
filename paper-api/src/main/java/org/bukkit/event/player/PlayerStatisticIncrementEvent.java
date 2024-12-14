@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * This event is not called for some high frequency statistics, e.g. movement
  * based statistics.
  *
+ * @since 1.7.10
  */
 public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * @deprecated This class does not represent the structures of a world well. Use
  * {@link org.bukkit.generator.structure.Structure} or
  * {@link org.bukkit.generator.structure.StructureType} instead.
+ * @since 1.13.1
  */
 // Order is retrieved from WorldGenFactory
 @Deprecated(since = "1.19")
@@ -250,6 +251,9 @@ public final class StructureType implements Keyed {
         return ImmutableMap.copyOf(structureTypeMap);
     }
 
+    /**
+     * @since 1.18.1
+     */
     @NotNull
     @Override
     public NamespacedKey getKey() {

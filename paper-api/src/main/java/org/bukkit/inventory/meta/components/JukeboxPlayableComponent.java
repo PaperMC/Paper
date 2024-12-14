@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a component which can be inserted into a jukebox.
+ *
+ * @since 1.21
  */
 @ApiStatus.Experimental
 public interface JukeboxPlayableComponent extends ConfigurationSerializable {

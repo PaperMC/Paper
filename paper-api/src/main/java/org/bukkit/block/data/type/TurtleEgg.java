@@ -4,6 +4,8 @@ import org.bukkit.block.data.Hatchable;
 
 /**
  * 'eggs' is the number of eggs which appear in this block.
+ *
+ * @since 1.13
  */
 public interface TurtleEgg extends Hatchable {
 

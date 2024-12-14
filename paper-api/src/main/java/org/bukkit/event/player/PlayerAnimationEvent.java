@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a player animation event
  * <br>Use {@link io.papermc.paper.event.player.PlayerArmSwingEvent} for determining which arm was swung.
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -50,12 +52,18 @@ public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
         this.isCancelled = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

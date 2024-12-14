@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
  * Represents a Plugin
  * <p>
  * The use of {@link PluginBase} is recommended for actual Implementation
+ *
+ * @since 1.0.0 R1
  */
 public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner { // Paper
     /**
@@ -33,6 +35,7 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
      *
      * @see #getDataFolder()
      * @return The folder
+     * @since 1.21
      */
     default @NotNull java.nio.file.Path getDataPath() {
         return getDataFolder().toPath();
@@ -54,6 +57,7 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
     /**
      * Gets the plugin meta for this plugin.
      * @return configuration
+     * @since 1.19.3
      */
     @NotNull
     io.papermc.paper.plugin.configuration.PluginMeta getPluginMeta();
@@ -89,6 +93,8 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
      * retrievable by {@link #getConfig()}.
      * <p>
      * This should fail silently if the config.yml already exists.
+     *
+     * @since 1.1.0 R1
      */
     public void saveDefaultConfig();
 
@@ -105,6 +111,7 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
      *     contents of an existing file.
      * @throws IllegalArgumentException if the resource path is null, empty,
      *     or points to a nonexistent resource.
+     * @since 1.1.0 R1
      */
     public void saveResource(@NotNull String resourcePath, boolean replace);
 
@@ -190,6 +197,7 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
      * @param id Unique ID, if any, that was specified to indicate which
      *     biome provider was requested
      * @return BiomeProvider for use in the default world generation
+     * @since 1.17.1
      */
     @Nullable
     public BiomeProvider getDefaultBiomeProvider(@NotNull String worldName, @Nullable String id);
@@ -200,10 +208,14 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
      * name.
      *
      * @return Logger associated with this plugin
+     * @since 1.1.0 R1
      */
     @NotNull
     public Logger getLogger();
 
+    /**
+     * @since 1.18.2
+     */
     // Paper start - Adventure component logger
     @NotNull
     default net.kyori.adventure.text.logger.slf4j.ComponentLogger getComponentLogger() {
@@ -211,6 +223,9 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
     }
     // Paper end
 
+    /**
+     * @since 1.12.2
+     */
     // Paper start - Add SLF4J/Log4J loggers
     @NotNull
     default org.slf4j.Logger getSLF4JLogger() {
@@ -219,6 +234,7 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
 
     /**
      * @deprecated use {@link #getSLF4JLogger()}
+     * @since 1.17.1
      */
     @Deprecated
     @NotNull
@@ -234,6 +250,7 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
      * comparison.
      *
      * @return name of the plugin
+     * @since 1.1.0 R5
      */
     @NotNull
     public String getName();
@@ -244,6 +261,7 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
      * for lifecycle events allowed on the {@link Plugin}.
      *
      * @return the lifecycle event manager
+     * @since 1.20.4
      */
     io.papermc.paper.plugin.lifecycle.event.@NotNull LifecycleEventManager<Plugin> getLifecycleManager();
     // Paper end - lifecycle events

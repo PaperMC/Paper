@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
  * are values of the same type as the registry, but will not be found
  * in the registry, hence, anonymous.
  * @param <T> registry value type
+ * @since 1.21
  */
 @ApiStatus.Experimental
 @NullMarked

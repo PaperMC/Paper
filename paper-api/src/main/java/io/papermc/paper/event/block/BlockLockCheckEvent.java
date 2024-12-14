@@ -19,6 +19,8 @@ import org.jspecify.annotations.Nullable;
  * Called when the server tries to check the lock on a lockable block entity.
  * <br>
  * See {@link #setResult(Result)} to change behavior
+ *
+ * @since 1.19.3
  */
 @NullMarked
 public class BlockLockCheckEvent extends BlockEvent {

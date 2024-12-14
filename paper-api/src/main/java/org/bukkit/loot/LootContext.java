@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents additional information a {@link LootTable} can use to modify it's
  * generated loot.
+ *
+ * @since 1.13
  */
 public final class LootContext {
 

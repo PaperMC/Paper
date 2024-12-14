@@ -7,6 +7,8 @@ import org.bukkit.block.data.Powerable;
 /**
  * 'disarmed' denotes that the tripwire was broken with shears and will not
  * subsequently produce a current when destroyed.
+ *
+ * @since 1.13
  */
 public interface Tripwire extends Attachable, MultipleFacing, Powerable {
 

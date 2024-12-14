@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This event is called when a command is received over RCON. See the javadocs
  * of {@link ServerCommandEvent} for more information.
+ *
+ * @since 1.1.0 R5
  */
 public class RemoteServerCommandEvent extends ServerCommandEvent {
     private static final HandlerList handlers = new HandlerList();

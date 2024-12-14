@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
  * Only the hit position is guaranteed to always be available. The availability
  * of the other attributes depends on what got hit and on the context in which
  * the ray trace was performed.
+ *
+ * @since 1.13.2
  */
 public class RayTraceResult {
 

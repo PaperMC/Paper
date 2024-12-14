@@ -8,6 +8,7 @@ import org.bukkit.block.BlockFace;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
+ * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Rails extends MaterialData {
@@ -156,6 +157,9 @@ public class Rails extends MaterialData {
         }
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @Override
     public Rails clone() {
         return (Rails) super.clone();

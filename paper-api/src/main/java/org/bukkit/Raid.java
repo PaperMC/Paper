@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a raid event.
+ *
+ * @since 1.14.4
  */
 public interface Raid extends org.bukkit.persistence.PersistentDataHolder { // Paper
 
@@ -137,6 +139,7 @@ public interface Raid extends org.bukkit.persistence.PersistentDataHolder { // P
      * Gets the id of this raid.
      *
      * @return the raid id
+     * @since 1.20.4
      */
     int getId();
 
@@ -144,6 +147,7 @@ public interface Raid extends org.bukkit.persistence.PersistentDataHolder { // P
      * Get the boss bar to be displayed for this raid.
      *
      * @return the boss bar
+     * @since 1.20.4
      */
     org.bukkit.boss.@NotNull BossBar getBossBar();
     // Paper end

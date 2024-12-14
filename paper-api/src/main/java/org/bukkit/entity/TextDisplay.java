@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a text display entity.
+ *
+ * @since 1.19.4
  */
 public interface TextDisplay extends Display {
 

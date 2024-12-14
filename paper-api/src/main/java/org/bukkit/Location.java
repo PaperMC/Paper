@@ -29,6 +29,8 @@ import org.bukkit.entity.Player;
  * specified in degrees. This means that negative angles or angles of greater
  * magnitude than 360 are valid, but may be normalized to any other equivalent
  * representation by the implementation.
+ *
+ * @since 1.0.0 R1
  */
 public class Location implements Cloneable, ConfigurationSerializable, io.papermc.paper.math.FinePosition { // Paper
     private Reference<World> world;
@@ -85,6 +87,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * Checks if world in this location is present and loaded.
      *
      * @return true if is loaded, otherwise false
+     * @since 1.14
      */
     public boolean isWorldLoaded() {
         if (this.world == null) {
@@ -117,6 +120,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * Gets the chunk at the represented location
      *
      * @return Chunk at the represented location
+     * @since 1.1.0 R1
      */
     @NotNull
     public Chunk getChunk() {
@@ -315,6 +319,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      *
      * @param vector the direction vector
      * @return the same location
+     * @since 1.7.2 R0.2
      */
     @NotNull
     public Location setDirection(@NotNull Vector vector) {
@@ -543,6 +548,9 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         return this;
     }
 
+    /**
+     * @since 1.12.2
+     */
     public boolean isChunkLoaded() { return this.getWorld().isChunkLoaded(locToBlock(x) >> 4, locToBlock(z) >> 4); } // Paper
 
     // Paper start - isGenerated API
@@ -550,6 +558,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * Checks if a {@link Chunk} has been generated at this location.
      *
      * @return true if a chunk has been generated at this location
+     * @since 1.12.2
      */
     public boolean isGenerated() {
         World world = this.getWorld();
@@ -569,6 +578,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param y Y coordinate
      * @param z Z coordinate
      * @return self (not cloned)
+     * @since 1.12.2
      */
     @NotNull
     public Location set(double x, double y, double z) {
@@ -588,6 +598,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param y Y coordinate to add to base
      * @param z Z coordinate to add to base
      * @return self (not cloned)
+     * @since 1.12.2
      */
     @NotNull
     public Location add(@NotNull Location base, double x, double y, double z) {
@@ -604,6 +615,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param y Y coordinate to subtract from base
      * @param z Z coordinate to subtract from base
      * @return self (not cloned)
+     * @since 1.12.2
      */
     @NotNull
     public Location subtract(@NotNull Location base, double x, double y, double z) {
@@ -614,6 +626,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     // Paper start - expand Location API
     /**
      * @return A new location where X/Y/Z are on the Block location (integer value of X/Y/Z)
+     * @since 1.12.2
      */
     @NotNull
     public Location toBlockLocation() {
@@ -629,6 +642,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @return The block key for this location's block location.
      * @see Block#getBlockKey(int, int, int)
      * @deprecated only encodes y block ranges from -512 to 511 and represents an already changed implementation detail
+     * @since 1.12.2
      */
     @Deprecated(since = "1.18.1")
     public long toBlockKey() {
@@ -638,6 +652,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     /**
      * @return A new location where X/Y/Z are the center of the block
+     * @since 1.12.2
      */
     @NotNull
     public Location toCenterLocation() {
@@ -654,6 +669,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * Returns a copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
      * @return A copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
      * @throws NullPointerException if {{@link #getWorld()}} is {@code null}
+     * @since 1.13.2
      */
     @NotNull
     public Location toHighestLocation() {
@@ -664,6 +680,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * Returns a copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ(), heightMap)
      * @param heightMap The heightmap to use for finding the highest y location.
      * @return A copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ(), heightMap)
+     * @since 1.16.4
      */
     @NotNull
     public Location toHighestLocation(@NotNull final HeightMap heightMap) {
@@ -681,6 +698,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      *
      * @param power The power of explosion, where 4F is TNT
      * @return false if explosion was canceled, otherwise true
+     * @since 1.12.2
      */
     public boolean createExplosion(float power) {
         return this.getWorld().createExplosion(this, power);
@@ -695,6 +713,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param power The power of explosion, where 4F is TNT
      * @param setFire Whether to set blocks on fire
      * @return false if explosion was canceled, otherwise true
+     * @since 1.12.2
      */
     public boolean createExplosion(float power, boolean setFire) {
         return this.getWorld().createExplosion(this, power, setFire);
@@ -708,6 +727,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param setFire Whether to set blocks on fire
      * @param breakBlocks Whether to have blocks be destroyed
      * @return false if explosion was canceled, otherwise true
+     * @since 1.12.2
      */
     public boolean createExplosion(float power, boolean setFire, boolean breakBlocks) {
         return this.getWorld().createExplosion(this, power, setFire, breakBlocks);
@@ -721,6 +741,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param source The source entity of the explosion
      * @param power The power of explosion, where 4F is TNT
      * @return false if explosion was canceled, otherwise true
+     * @since 1.12.2
      */
     public boolean createExplosion(@Nullable Entity source, float power) {
         return this.getWorld().createExplosion(source, this, power, true, true);
@@ -736,6 +757,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param power The power of explosion, where 4F is TNT
      * @param setFire Whether to set blocks on fire
      * @return false if explosion was canceled, otherwise true
+     * @since 1.12.2
      */
     public boolean createExplosion(@Nullable Entity source, float power, boolean setFire) {
         return this.getWorld().createExplosion(source, this, power, setFire, true);
@@ -750,6 +772,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param setFire Whether to set blocks on fire
      * @param breakBlocks Whether to have blocks be destroyed
      * @return false if explosion was canceled, otherwise true
+     * @since 1.12.2
      */
     public boolean createExplosion(@Nullable Entity source, float power, boolean setFire, boolean breakBlocks) {
         return this.getWorld().createExplosion(source, this, power, setFire, breakBlocks);
@@ -766,6 +789,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param y 1/2 the size of the box along the y-axis
      * @param z 1/2 the size of the box along the z-axis
      * @return the collection of entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<Entity> getNearbyEntities(final double x, final double y, final double z) {
         final World world = this.getWorld();
@@ -779,6 +803,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * Gets nearby players within the specified radius (bounding box)
      * @param radius X Radius
      * @return the collection of entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double radius) {
         return this.getNearbyEntitiesByType(LivingEntity.class, radius, radius, radius);
@@ -789,6 +814,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param xzRadius X/Z Radius
      * @param yRadius Y Radius
      * @return the collection of living entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double xzRadius, final double yRadius) {
         return this.getNearbyEntitiesByType(LivingEntity.class, xzRadius, yRadius, xzRadius);
@@ -800,6 +826,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param yRadius Y Radius
      * @param zRadius Z radius
      * @return the collection of living entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double xRadius, final double yRadius, final double zRadius) {
         return this.getNearbyEntitiesByType(LivingEntity.class, xRadius, yRadius, zRadius);
@@ -810,6 +837,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param radius Radius
      * @param predicate a predicate used to filter results
      * @return the collection of living entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double radius, final @Nullable Predicate<? super LivingEntity> predicate) {
         return this.getNearbyEntitiesByType(LivingEntity.class, radius, radius, radius, predicate);
@@ -821,6 +849,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param yRadius Y Radius
      * @param predicate a predicate used to filter results
      * @return the collection of living entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double xzRadius, final double yRadius, final @Nullable Predicate<? super LivingEntity> predicate) {
         return this.getNearbyEntitiesByType(LivingEntity.class, xzRadius, yRadius, xzRadius, predicate);
@@ -833,6 +862,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param zRadius Z radius
      * @param predicate a predicate used to filter results
      * @return the collection of living entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<LivingEntity> getNearbyLivingEntities(final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super LivingEntity> predicate) {
         return this.getNearbyEntitiesByType(LivingEntity.class, xRadius, yRadius, zRadius, predicate);
@@ -842,6 +872,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * Gets nearby players within the specified radius (bounding box)
      * @param radius X/Y/Z Radius
      * @return the collection of players near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<Player> getNearbyPlayers(final double radius) {
         return this.getNearbyEntitiesByType(Player.class, radius, radius, radius);
@@ -852,6 +883,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param xzRadius X/Z Radius
      * @param yRadius Y Radius
      * @return the collection of players near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<Player> getNearbyPlayers(final double xzRadius, final double yRadius) {
         return this.getNearbyEntitiesByType(Player.class, xzRadius, yRadius, xzRadius);
@@ -863,6 +895,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param yRadius Y Radius
      * @param zRadius Z Radius
      * @return the collection of players near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<Player> getNearbyPlayers(final double xRadius, final double yRadius, final double zRadius) {
         return this.getNearbyEntitiesByType(Player.class, xRadius, yRadius, zRadius);
@@ -873,6 +906,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param radius X/Y/Z Radius
      * @param predicate a predicate used to filter results
      * @return the collection of players near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<Player> getNearbyPlayers(final double radius, final @Nullable Predicate<? super Player> predicate) {
         return this.getNearbyEntitiesByType(Player.class, radius, radius, radius, predicate);
@@ -884,6 +918,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param yRadius Y Radius
      * @param predicate a predicate used to filter results
      * @return the collection of players near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<Player> getNearbyPlayers(final double xzRadius, final double yRadius, final @Nullable Predicate<? super Player> predicate) {
         return this.getNearbyEntitiesByType(Player.class, xzRadius, yRadius, xzRadius, predicate);
@@ -896,6 +931,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param zRadius Z Radius
      * @param predicate a predicate used to filter results
      * @return the collection of players near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull Collection<Player> getNearbyPlayers(final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super Player> predicate) {
         return this.getNearbyEntitiesByType(Player.class, xRadius, yRadius, zRadius, predicate);
@@ -907,6 +943,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param radius X/Y/Z radius to search within
      * @param <T> the entity type
      * @return the collection of entities of type clazz near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final double radius) {
         return this.getNearbyEntitiesByType(clazz, radius, radius, radius, null);
@@ -919,6 +956,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param yRadius Y radius to search within
      * @param <T> the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final double xzRadius, final double yRadius) {
         return this.getNearbyEntitiesByType(clazz, xzRadius, yRadius, xzRadius, null);
@@ -932,6 +970,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param zRadius Z Radius
      * @param <T> the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final double xRadius, final double yRadius, final double zRadius) {
         return this.getNearbyEntitiesByType(clazz, xRadius, yRadius, zRadius, null);
@@ -944,6 +983,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param predicate a predicate used to filter results
      * @param <T> the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final double radius, final @Nullable Predicate<? super T> predicate) {
         return this.getNearbyEntitiesByType(clazz, radius, radius, radius, predicate);
@@ -957,6 +997,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param predicate a predicate used to filter results
      * @param <T> the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final double xzRadius, final double yRadius, final @Nullable Predicate<? super T> predicate) {
         return this.getNearbyEntitiesByType(clazz, xzRadius, yRadius, xzRadius, predicate);
@@ -971,6 +1012,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param predicate a predicate used to filter results
      * @param <T> the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
+     * @since 1.12.2
      */
     public @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends Entity> clazz, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super T> predicate) {
         final World world = this.getWorld();
@@ -1059,6 +1101,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * Check if each component of this Location is finite.
      *
      * @throws IllegalArgumentException if any component is not finite
+     * @since 1.12
      */
     public void checkFinite() throws IllegalArgumentException {
         NumberConversions.checkFinite(x, "x not finite");
@@ -1079,6 +1122,9 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         return NumberConversions.floor(loc);
     }
 
+    /**
+     * @since 1.8
+     */
     @Override
     @Utility
     @NotNull
@@ -1106,6 +1152,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @return deserialized location
      * @throws IllegalArgumentException if the world don't exists
      * @see ConfigurationSerializable
+     * @since 1.8
      */
     @NotNull
     public static Location deserialize(@NotNull Map<String, Object> args) {
@@ -1127,6 +1174,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param yaw the yaw in degrees
      * @return the normalized yaw in degrees
      * @see Location#getYaw()
+     * @since 1.13.2
      */
     public static float normalizeYaw(float yaw) {
         yaw %= 360.0f;
@@ -1145,6 +1193,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param pitch the pitch in degrees
      * @return the normalized pitch in degrees
      * @see Location#getPitch()
+     * @since 1.13.2
      */
     public static float normalizePitch(float pitch) {
         if (pitch > 90.0f) {
@@ -1155,27 +1204,42 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         return pitch;
     }
 
+    /**
+     * @since 1.19.3
+     */
     // Paper - add Position
     @Override
     public double x() {
         return this.getX();
     }
 
+    /**
+     * @since 1.19.3
+     */
     @Override
     public double y() {
         return this.getY();
     }
 
+    /**
+     * @since 1.19.3
+     */
     @Override
     public double z() {
         return this.getZ();
     }
 
+    /**
+     * @since 1.20.2
+     */
     @Override
     public boolean isFinite() {
         return io.papermc.paper.math.FinePosition.super.isFinite() && Float.isFinite(this.getYaw()) && Float.isFinite(this.getPitch());
     }
 
+    /**
+     * @since 1.19.3
+     */
     @Override
     public @NotNull Location toLocation(@NotNull World world) {
         return new Location(world, this.x(), this.y(), this.z(), this.getYaw(), this.getPitch());

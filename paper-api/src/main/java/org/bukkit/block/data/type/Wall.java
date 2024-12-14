@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * which are used to set the height of a wall.
  *
  * 'up' denotes whether the well has a center post.
+ *
+ * @since 1.16.1
  */
 public interface Wall extends Waterlogged {
 

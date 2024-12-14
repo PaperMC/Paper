@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a beacon effect is being applied to a player.
+ *
+ * @since 1.9.4
  */
 @NullMarked
 public class BeaconEffectEvent extends BlockEvent implements Cancellable {

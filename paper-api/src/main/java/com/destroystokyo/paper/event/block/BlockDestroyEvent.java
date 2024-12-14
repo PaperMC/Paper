@@ -17,6 +17,8 @@ import org.jspecify.annotations.NullMarked;
  * something can be described as "intend to destroy what is there",
  * <p>
  * Events such as leaves decaying, pistons retracting (where the block is moving), does NOT fire this event.
+ *
+ * @since 1.13.2
  */
 @NullMarked
 public class BlockDestroyEvent extends BlockExpEvent implements Cancellable {
@@ -42,6 +44,7 @@ public class BlockDestroyEvent extends BlockExpEvent implements Cancellable {
      * Get the effect that will be played when the block is broken.
      *
      * @return block break effect
+     * @since 1.20.4
      */
     public BlockData getEffectBlock() {
         return this.effectBlock;
@@ -53,6 +56,7 @@ public class BlockDestroyEvent extends BlockExpEvent implements Cancellable {
      * played.
      *
      * @param effectBlock block effect
+     * @since 1.20.4
      */
     public void setEffectBlock(final BlockData effectBlock) {
         this.effectBlock = effectBlock;
@@ -74,6 +78,7 @@ public class BlockDestroyEvent extends BlockExpEvent implements Cancellable {
 
     /**
      * @param willDrop If the server is going to drop the block in question with this destroy event
+     * @since 1.19.2
      */
     public void setWillDrop(final boolean willDrop) {
         this.willDrop = willDrop;

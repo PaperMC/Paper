@@ -5,6 +5,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Rotations is an immutable object that stores rotations
  * in degrees on each axis (X, Y, Z).
+ *
+ * @since 1.19.2
  */
 @NullMarked
 public interface Rotations {

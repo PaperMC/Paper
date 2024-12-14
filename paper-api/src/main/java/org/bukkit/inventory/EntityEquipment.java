@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * An interface to a creatures inventory
+ *
+ * @since 1.4.5 R1.0
  */
 public interface EntityEquipment {
 
@@ -17,6 +19,7 @@ public interface EntityEquipment {
      * @param item the ItemStack to set
      * @throws IllegalArgumentException if the slot is invalid for the entity
      * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
+     * @since 1.15.2
      */
     public void setItem(@NotNull EquipmentSlot slot, @Nullable ItemStack item);
 
@@ -28,6 +31,7 @@ public interface EntityEquipment {
      * @param silent whether the equip sound should be silenced
      * @throws IllegalArgumentException if the slot is invalid for the entity
      * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
+     * @since 1.16.4
      */
     public void setItem(@NotNull EquipmentSlot slot, @Nullable ItemStack item, boolean silent);
 
@@ -38,6 +42,7 @@ public interface EntityEquipment {
      * @return the ItemStack in the given slot
      * @throws IllegalArgumentException if the slot is invalid for the entity
      * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
+     * @since 1.15.2
      */
     @NotNull
     public ItemStack getItem(@NotNull EquipmentSlot slot);
@@ -61,6 +66,7 @@ public interface EntityEquipment {
      * }</pre>
      *
      * @return the currently held item
+     * @since 1.9.4
      */
     @NotNull
     ItemStack getItemInMainHand();
@@ -69,6 +75,7 @@ public interface EntityEquipment {
      * Sets the item the entity is holding in their main hand.
      *
      * @param item The item to put into the entities hand
+     * @since 1.9.4
      */
     void setItemInMainHand(@Nullable ItemStack item);
 
@@ -77,6 +84,7 @@ public interface EntityEquipment {
      *
      * @param item The item to put into the entities hand
      * @param silent whether or not the equip sound should be silenced
+     * @since 1.16.4
      */
     void setItemInMainHand(@Nullable ItemStack item, boolean silent);
 
@@ -99,6 +107,7 @@ public interface EntityEquipment {
      * }</pre>
      *
      * @return the currently held item
+     * @since 1.9.4
      */
     @NotNull
     ItemStack getItemInOffHand();
@@ -107,6 +116,7 @@ public interface EntityEquipment {
      * Sets the item the entity is holding in their off hand.
      *
      * @param item The item to put into the entities hand
+     * @since 1.9.4
      */
     void setItemInOffHand(@Nullable ItemStack item);
 
@@ -115,6 +125,7 @@ public interface EntityEquipment {
      *
      * @param item The item to put into the entities hand
      * @param silent whether or not the equip sound should be silenced
+     * @since 1.16.4
      */
     void setItemInOffHand(@Nullable ItemStack item, boolean silent);
 
@@ -190,6 +201,7 @@ public interface EntityEquipment {
      *
      * @param helmet The helmet to put on the entity
      * @param silent whether or not the equip sound should be silenced
+     * @since 1.16.4
      */
     void setHelmet(@Nullable ItemStack helmet, boolean silent);
 
@@ -226,6 +238,7 @@ public interface EntityEquipment {
      *
      * @param chestplate The chest plate to put on the entity
      * @param silent whether or not the equip sound should be silenced
+     * @since 1.16.4
      */
     void setChestplate(@Nullable ItemStack chestplate, boolean silent);
 
@@ -262,6 +275,7 @@ public interface EntityEquipment {
      *
      * @param leggings The leggings to put on the entity
      * @param silent whether or not the equip sound should be silenced
+     * @since 1.16.4
      */
     void setLeggings(@Nullable ItemStack leggings, boolean silent);
 
@@ -298,6 +312,7 @@ public interface EntityEquipment {
      *
      * @param boots The boots to put on the entity
      * @param silent whether or not the equip sound should be silenced
+     * @since 1.16.4
      */
     void setBoots(@Nullable ItemStack boots, boolean silent);
 
@@ -367,6 +382,7 @@ public interface EntityEquipment {
      * </ul>
      *
      * @return chance of the currently held item being dropped (1 for non-{@link Mob})
+     * @since 1.9.4
      */
     float getItemInMainHandDropChance();
 
@@ -382,6 +398,7 @@ public interface EntityEquipment {
      *
      * @param chance the chance of the main hand item being dropped
      * @throws UnsupportedOperationException when called on non-{@link Mob}
+     * @since 1.9.4
      */
     void setItemInMainHandDropChance(float chance);
 
@@ -396,6 +413,7 @@ public interface EntityEquipment {
      * </ul>
      *
      * @return chance of the off hand item being dropped (1 for non-{@link Mob})
+     * @since 1.9.4
      */
     float getItemInOffHandDropChance();
 
@@ -411,6 +429,7 @@ public interface EntityEquipment {
      *
      * @param chance the chance of off hand item being dropped
      * @throws UnsupportedOperationException when called on non-{@link Mob}
+     * @since 1.9.4
      */
     void setItemInOffHandDropChance(float chance);
 
@@ -545,6 +564,7 @@ public interface EntityEquipment {
      *
      * @param slot the slot to get the drop chance of
      * @return the drop chance for the slot
+     * @since 1.16.5
      */
     float getDropChance(@NotNull EquipmentSlot slot);
 
@@ -560,6 +580,7 @@ public interface EntityEquipment {
      * @param slot the slot to set the drop chance of
      * @param chance the drop chance for the slot
      * @throws UnsupportedOperationException when called on non-{@link Mob} entities
+     * @since 1.16.5
      */
     void setDropChance(@NotNull EquipmentSlot slot, float chance);
     // Paper end

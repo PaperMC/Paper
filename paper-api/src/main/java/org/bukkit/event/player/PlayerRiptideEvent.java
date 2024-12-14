@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * N.B. the riptide action is currently performed client side, so manipulating
  * the player in this event may have undesired effects.
+ *
+ * @since 1.13
  */
 public class PlayerRiptideEvent extends PlayerEvent {
 
@@ -44,6 +46,7 @@ public class PlayerRiptideEvent extends PlayerEvent {
      * Get the velocity applied to the player as a result of this riptide.
      *
      * @return the riptide velocity
+     * @since 1.20.4
      */
     @NotNull
     public Vector getVelocity() {

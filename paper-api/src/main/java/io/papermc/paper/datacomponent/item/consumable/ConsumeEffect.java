@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Effect that occurs when consuming an item.
+ *
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

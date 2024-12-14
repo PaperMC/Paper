@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated This event causes synchronization from the login thread; {@link
  *     AsyncPlayerPreLoginEvent} is preferred to keep the secondary threads
  *     asynchronous.
+ * @since 1.0.0 R1
  */
 @Deprecated(since = "1.3.2")
 @Warning(reason = "This event causes a login thread to synchronize with the main thread")
@@ -69,6 +70,7 @@ public class PlayerPreLoginEvent extends Event {
      * Result.ALLOWED
      *
      * @return Current kick message
+     * @since 1.16.5
      */
     @NotNull
     public net.kyori.adventure.text.Component kickMessage() {
@@ -79,6 +81,7 @@ public class PlayerPreLoginEvent extends Event {
      * Sets the kick message to display if getResult() != Result.ALLOWED
      *
      * @param message New kick message
+     * @since 1.16.5
      */
     public void kickMessage(@NotNull final net.kyori.adventure.text.Component message) {
         this.message = message;
@@ -160,6 +163,9 @@ public class PlayerPreLoginEvent extends Event {
         return ipAddress;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
@@ -170,12 +176,16 @@ public class PlayerPreLoginEvent extends Event {
      * Gets the player's unique ID.
      *
      * @return The unique ID
+     * @since 1.7.10
      */
     @NotNull
     public UUID getUniqueId() {
         return uniqueId;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

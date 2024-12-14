@@ -7,6 +7,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * References the shared map state holding map contents and markers for a Filled Map.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#MAP_ID
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.NonExtendable

@@ -7,6 +7,9 @@ import org.bukkit.util.EulerAngle;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.8
+ */
 public interface ArmorStand extends LivingEntity {
 
     /**
@@ -282,6 +285,7 @@ public interface ArmorStand extends LivingEntity {
      * collision box.
      *
      * @return whether this is a marker
+     * @since 1.8.8
      */
     boolean isMarker();
 
@@ -290,6 +294,7 @@ public interface ArmorStand extends LivingEntity {
      * collision box.
      *
      * @param marker whether this is a marker
+     * @since 1.8.8
      */
     void setMarker(boolean marker);
 
@@ -351,6 +356,7 @@ public interface ArmorStand extends LivingEntity {
      * <p>The default value is {@code true}.</p>
      *
      * @return {@code true} if this armour stand can move, {@code false} otherwise
+     * @since 1.11.2
      */
     boolean canMove();
 
@@ -358,9 +364,13 @@ public interface ArmorStand extends LivingEntity {
      * Sets if this armor stand can move.
      *
      * @param move {@code true} if this armour stand can move, {@code false} otherwise
+     * @since 1.11.2
      */
     void setCanMove(boolean move);
 
+    /**
+     * @since 1.17.1
+     */
     @Override
     org.bukkit.inventory.@NotNull EntityEquipment getEquipment();
 
@@ -370,6 +380,7 @@ public interface ArmorStand extends LivingEntity {
      * <p>The default value is defined in {@code paper.yml}.</p>
      *
      * @return {@code true} if this armour stand can tick, {@code false} otherwise
+     * @since 1.12.2
      */
     boolean canTick();
 
@@ -377,6 +388,7 @@ public interface ArmorStand extends LivingEntity {
      * Sets if this armor stand can tick.
      *
      * @param tick {@code true} if this armour stand can tick, {@code false} otherwise
+     * @since 1.12.2
      */
     void setCanTick(final boolean tick);
 
@@ -387,6 +399,7 @@ public interface ArmorStand extends LivingEntity {
      * @param slot the equipment slot to get
      * @return the ItemStack in the equipment slot
      * @throws IllegalArgumentException if the slot is invalid for the entity
+     * @since 1.13
      */
     @NotNull
     ItemStack getItem(@NotNull final org.bukkit.inventory.EquipmentSlot slot);
@@ -398,6 +411,7 @@ public interface ArmorStand extends LivingEntity {
      * @param slot the equipment slot to set
      * @param item the item to hold
      * @throws IllegalArgumentException if the slot is invalid for the entity
+     * @since 1.13
      */
     void setItem(@NotNull final org.bukkit.inventory.EquipmentSlot slot, @Nullable final ItemStack item);
 
@@ -405,6 +419,7 @@ public interface ArmorStand extends LivingEntity {
      * Get the list of disabled slots
      *
      * @return list of disabled slots
+     * @since 1.13
      */
     @NotNull
     java.util.Set<org.bukkit.inventory.EquipmentSlot> getDisabledSlots();
@@ -445,6 +460,7 @@ public interface ArmorStand extends LivingEntity {
      *
      * @param slot The slot to check
      * @return {@code true} if the slot is disabled, else {@code false}.
+     * @since 1.13
      */
     boolean isSlotDisabled(@NotNull org.bukkit.inventory.EquipmentSlot slot);
 
@@ -453,6 +469,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @return the current rotations
+     * @since 1.19.2
      */
     @NotNull io.papermc.paper.math.Rotations getBodyRotations();
 
@@ -461,6 +478,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @param rotations the current rotations
+     * @since 1.19.2
      */
     void setBodyRotations(@NotNull io.papermc.paper.math.Rotations rotations);
 
@@ -469,6 +487,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @return the current rotations
+     * @since 1.19.2
      */
     @NotNull io.papermc.paper.math.Rotations getLeftArmRotations();
 
@@ -477,6 +496,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @param rotations the current rotations
+     * @since 1.19.2
      */
     void setLeftArmRotations(@NotNull io.papermc.paper.math.Rotations rotations);
 
@@ -485,6 +505,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @return the current rotations
+     * @since 1.19.2
      */
     @NotNull io.papermc.paper.math.Rotations getRightArmRotations();
 
@@ -493,6 +514,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @param rotations the current rotations
+     * @since 1.19.2
      */
     void setRightArmRotations(@NotNull io.papermc.paper.math.Rotations rotations);
 
@@ -501,6 +523,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @return the current rotations
+     * @since 1.19.2
      */
     @NotNull io.papermc.paper.math.Rotations getLeftLegRotations();
 
@@ -509,6 +532,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @param rotations the current rotations
+     * @since 1.19.2
      */
     void setLeftLegRotations(@NotNull io.papermc.paper.math.Rotations rotations);
 
@@ -517,6 +541,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @return the current rotations
+     * @since 1.19.2
      */
     @NotNull io.papermc.paper.math.Rotations getRightLegRotations();
 
@@ -525,6 +550,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @param rotations the current rotations
+     * @since 1.19.2
      */
     void setRightLegRotations(@NotNull io.papermc.paper.math.Rotations rotations);
 
@@ -533,6 +559,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @return the current rotations
+     * @since 1.19.2
      */
     @NotNull io.papermc.paper.math.Rotations getHeadRotations();
 
@@ -541,6 +568,7 @@ public interface ArmorStand extends LivingEntity {
      * {@link io.papermc.paper.math.Rotations}.
      *
      * @param rotations the current rotations
+     * @since 1.19.2
      */
     void setHeadRotations(@NotNull io.papermc.paper.math.Rotations rotations);
     // Paper end

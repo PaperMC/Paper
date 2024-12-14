@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a spawn egg and it's spawned type.
+ *
+ * @since 1.11
  */
 public interface SpawnEggMeta extends ItemMeta {
 
@@ -40,6 +42,7 @@ public interface SpawnEggMeta extends ItemMeta {
      * and velocity. <br>
      *
      * @return the entity snapshot or null if no entity has been set
+     * @since 1.20.4
      */
     @Nullable
     EntitySnapshot getSpawnedEntity();
@@ -51,6 +54,7 @@ public interface SpawnEggMeta extends ItemMeta {
      * health, and velocity. <br>
      *
      * @param snapshot the snapshot
+     * @since 1.20.4
      */
     void setSpawnedEntity(@NotNull EntitySnapshot snapshot);
 
@@ -59,6 +63,7 @@ public interface SpawnEggMeta extends ItemMeta {
      * Get the custom type of entity this egg will spawn.
      *
      * @return the entity type or null if no custom type is set
+     * @since 1.19.4
      */
     @org.jetbrains.annotations.Nullable EntityType getCustomSpawnedType();
 
@@ -66,6 +71,7 @@ public interface SpawnEggMeta extends ItemMeta {
      * Set the custom type of entity this egg will spawn.
      *
      * @param type the entity type or null to clear the custom type
+     * @since 1.19.4
      */
     void setCustomSpawnedType(@org.jetbrains.annotations.Nullable EntityType type);
     // Paper end

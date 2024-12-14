@@ -7,6 +7,7 @@ import org.bukkit.Material;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
+ * @since 1.4.5 R1.0
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Command extends MaterialData implements Redstone {

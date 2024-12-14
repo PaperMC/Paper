@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown when an entity picks an item up from the ground
+ *
+ * @since 1.12
  */
 public class EntityPickupItemEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

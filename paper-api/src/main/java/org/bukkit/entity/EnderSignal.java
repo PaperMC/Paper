@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an EnderSignal, which is created upon throwing an ender eye.
+ *
+ * @since 1.0.0 R1
  */
 public interface EnderSignal extends Entity {
 
@@ -14,6 +16,7 @@ public interface EnderSignal extends Entity {
      * Get the location this EnderSignal is moving towards.
      *
      * @return the {@link Location} this EnderSignal is moving towards.
+     * @since 1.12.2
      */
     @NotNull
     public Location getTargetLocation();
@@ -25,6 +28,7 @@ public interface EnderSignal extends Entity {
      * a random value and the despawn timer gets set back to 0.
      *
      * @param location the new target location
+     * @since 1.12.2
      */
     public void setTargetLocation(@NotNull Location location);
 
@@ -35,6 +39,7 @@ public interface EnderSignal extends Entity {
      * @param location the new target location
      * @param update true to reset the {@link #getDropItem()}
      *               to a random value and {@link #getDespawnTimer()} to 0
+     * @since 1.17.1
      */
     public void setTargetLocation(@NotNull Location location, boolean update);
     // Paper end
@@ -45,6 +50,7 @@ public interface EnderSignal extends Entity {
      *
      * @return true if the EnderSignal will drop an item on death, or false if
      * it will shatter
+     * @since 1.12.2
      */
     public boolean getDropItem();
 
@@ -54,6 +60,7 @@ public interface EnderSignal extends Entity {
      *
      * @param drop true if the EnderSignal should drop an item on death, or
      * false if it should shatter.
+     * @since 1.12.2
      */
     public void setDropItem(boolean drop);
 
@@ -62,6 +69,7 @@ public interface EnderSignal extends Entity {
      * dropped on death.
      *
      * @return the item stack
+     * @since 1.16.2
      */
     @NotNull
     public ItemStack getItem();
@@ -71,6 +79,7 @@ public interface EnderSignal extends Entity {
      * dropped on death.
      *
      * @param item the item to set. If null, resets to the default eye of ender
+     * @since 1.16.2
      */
     public void setItem(@Nullable ItemStack item);
 
@@ -80,6 +89,7 @@ public interface EnderSignal extends Entity {
      * When this number is greater than 80, it will despawn on the next tick.
      *
      * @return the number of ticks this EnderSignal has been alive.
+     * @since 1.12.2
      */
     public int getDespawnTimer();
 
@@ -89,6 +99,7 @@ public interface EnderSignal extends Entity {
      * When this number is greater than 80, it will despawn on the next tick.
      *
      * @param timer how long (in ticks) this EnderSignal has been alive.
+     * @since 1.12.2
      */
     public void setDespawnTimer(int timer);
 }

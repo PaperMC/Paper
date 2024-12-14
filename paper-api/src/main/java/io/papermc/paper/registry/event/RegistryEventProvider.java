@@ -20,6 +20,7 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <T> registry entry type
  * @param <B> registry entry builder type
+ * @since 1.21
  */
 @ApiStatus.Experimental
 @NullMarked

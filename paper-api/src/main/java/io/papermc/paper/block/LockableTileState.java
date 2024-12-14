@@ -6,6 +6,8 @@ import org.bukkit.block.TileState;
 
 /**
  * Interface for tile entities that are lockable.
+ *
+ * @since 1.19.3
  */
 public interface LockableTileState extends TileState, Lockable, Nameable {
 }

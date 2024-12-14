@@ -16,6 +16,8 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * Note that interacting with Armor Stands fires this event only and not its parent and as such users are expressly required
  * to listen to this event for that scenario.
+ *
+ * @since 1.8
  */
 public class PlayerInteractAtEntityEvent extends PlayerInteractEntityEvent {
     private static final HandlerList handlers = new HandlerList();

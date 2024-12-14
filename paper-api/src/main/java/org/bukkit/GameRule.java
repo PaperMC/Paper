@@ -14,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
  * Wiki</a>
  *
  * @param <T> type of rule (Boolean or Integer)
+ * @since 1.13
  */
 public final class GameRule<T> implements net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
@@ -369,6 +370,9 @@ public final class GameRule<T> implements net.kyori.adventure.translation.Transl
         return gameRules.values().toArray(new GameRule<?>[gameRules.size()]);
     }
 
+    /**
+     * @since 1.17.1
+     */
     // Paper start
     @Override
     public @NotNull String translationKey() {

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player throws an egg and it might hatch
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerEggThrowEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -58,6 +60,7 @@ public class PlayerEggThrowEvent extends PlayerEvent {
      * Get the type of the mob being hatched (EntityType.CHICKEN by default)
      *
      * @return The type of the mob being hatched by the egg
+     * @since 1.1.0 R5
      */
     @NotNull
     public EntityType getHatchingType() {
@@ -68,6 +71,7 @@ public class PlayerEggThrowEvent extends PlayerEvent {
      * Change the type of mob being hatched by the egg
      *
      * @param hatchType The type of the mob being hatched by the egg
+     * @since 1.1.0 R5
      */
     public void setHatchingType(@NotNull EntityType hatchType) {
         if (!hatchType.isSpawnable()) throw new IllegalArgumentException("Can't spawn that entity type from an egg!");
@@ -101,12 +105,18 @@ public class PlayerEggThrowEvent extends PlayerEvent {
         this.numHatches = numHatches;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a chest.
+ *
+ * @since 1.0.0 R1
  */
 public interface Chest extends Container, LootableBlockInventory, Lidded { // Paper
 
@@ -24,6 +26,7 @@ public interface Chest extends Container, LootableBlockInventory, Lidded { // Pa
      * inventory snapshot instead.
      *
      * @return the inventory
+     * @since 1.2.5 R0.1
      */
     @NotNull
     Inventory getBlockInventory();
@@ -34,6 +37,7 @@ public interface Chest extends Container, LootableBlockInventory, Lidded { // Pa
      * by either a block above or a sitting cat
      *
      * @return whether this chest is blocked
+     * @since 1.20.6
      */
     boolean isBlocked();
     // Paper end - More Chest Block API

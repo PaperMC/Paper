@@ -17,6 +17,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * <b>This event might be cancelled by default depending on
  * e.g. {@link DragonBattle#hasBeenPreviouslyKilled()} and server configuration.</b>
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class DragonEggFormEvent extends BlockFormEvent {

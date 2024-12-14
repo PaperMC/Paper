@@ -38,6 +38,8 @@ import org.jetbrains.annotations.NotNull;
  * The state of whether or not there is a slash (<code>/</code>) at the
  * beginning of the message should be preserved. If a slash is added or
  * removed, unexpected behavior may result.
+ *
+ * @since 1.0.0 R1
  */
 public class ServerCommandEvent extends ServerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -80,22 +82,34 @@ public class ServerCommandEvent extends ServerEvent implements Cancellable {
         return sender;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }
 
+    /**
+     * @since 1.8.8
+     */
     @Override
     public boolean isCancelled() {
         return cancel;
     }
 
+    /**
+     * @since 1.8.8
+     */
     @Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;

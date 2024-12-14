@@ -8,9 +8,14 @@ import org.jetbrains.annotations.NotNull;
 /**
  * An instance of {@link InventoryView} which provides extra methods related to
  * enchantment table view data.
+ *
+ * @since 1.21
  */
 public interface EnchantmentView extends InventoryView {
 
+    /**
+     * @since 1.21.1
+     */
     @NotNull
     @Override
     EnchantingInventory getTopInventory();
@@ -27,6 +32,7 @@ public interface EnchantmentView extends InventoryView {
      * Sets the random enchantment seed used in this view. Loses its effect once the view is closed.
      *
      * @param seed the random seed to use
+     * @since 1.21.1
      */
     void setEnchantmentSeed(int seed);
     // Paper end - add enchantment seed update API

@@ -1,5 +1,8 @@
 package org.bukkit.block;
 
+/**
+ * @since 1.16.1
+ */
 public interface Lidded {
 
     /**
@@ -19,6 +22,7 @@ public interface Lidded {
      * Checks if the block's animation state.
      *
      * @return true if the block's animation state is set to open.
+     * @since 1.16.5
      */
     boolean isOpen();
     // Paper end - More Lidded Block API

@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
  * from {@link org.bukkit.plugin.Plugin} or {@link io.papermc.paper.plugin.bootstrap.BootstrapContext}.
  *
  * @param <O> the owning type, {@link org.bukkit.plugin.Plugin} or {@link io.papermc.paper.plugin.bootstrap.BootstrapContext}
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 @NullMarked

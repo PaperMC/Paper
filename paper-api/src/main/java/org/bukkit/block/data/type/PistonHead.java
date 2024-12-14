@@ -3,6 +3,8 @@ package org.bukkit.block.data.type;
 /**
  * 'short' denotes this piston head is shorter than the usual amount because it
  * is currently retracting.
+ *
+ * @since 1.13
  */
 public interface PistonHead extends TechnicalPiston {
 

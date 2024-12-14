@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>This is a draft/experimental API and is subject to change.</p>
  * @deprecated For removal, use the new brigadier api.
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @Deprecated(since = "1.20.6")

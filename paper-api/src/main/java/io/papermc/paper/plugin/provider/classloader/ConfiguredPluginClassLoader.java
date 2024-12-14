@@ -13,6 +13,8 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * It implements {@link Closeable} to define the ability to shutdown and close the classloader that implements this
  * interface.
+ *
+ * @since 1.19.3
  */
 @NullMarked
 @ApiStatus.Internal

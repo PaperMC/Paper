@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface to the inventory of a Furnace.
+ *
+ * @since 1.1.0 R5
  */
 public interface FurnaceInventory extends Inventory {
 
@@ -59,6 +61,7 @@ public interface FurnaceInventory extends Inventory {
      *
      * @param item Item to check
      * @return True if a valid fuel source
+     * @since 1.18.1
      */
     public boolean isFuel(@Nullable ItemStack item);
 
@@ -67,6 +70,7 @@ public interface FurnaceInventory extends Inventory {
      *
      * @param item Item to check
      * @return True if can be smelt
+     * @since 1.18.1
      */
     public boolean canSmelt(@Nullable ItemStack item);
     // Paper end

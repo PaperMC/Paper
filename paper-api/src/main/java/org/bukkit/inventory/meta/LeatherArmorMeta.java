@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
  * Material#LEATHER_LEGGINGS}, {@link Material#LEATHER_CHESTPLATE}, {@link
  * Material#LEATHER_HELMET}, {@link Material#LEATHER_HORSE_ARMOR} or {@link
  * Material#WOLF_ARMOR}) that can be colored.
+ *
+ * @since 1.4.5 R1.0
  */
 public interface LeatherArmorMeta extends ItemMeta {
 
@@ -42,6 +44,7 @@ public interface LeatherArmorMeta extends ItemMeta {
      * Checks whether this leather armor is dyed.
      *
      * @return whether this leather armor is dyed
+     * @since 1.20.6
      */
     boolean isDyed();
     // Paper end - Expose #hasColor to leather armor

@@ -6,6 +6,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * A scoreboard number format that replaces the score number with a chat component.
+ *
+ * @since 1.20.4
  */
 @NullMarked
 public interface FixedFormat extends NumberFormat, ComponentLike {

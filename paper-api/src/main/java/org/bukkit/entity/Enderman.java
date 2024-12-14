@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an Enderman.
+ *
+ * @since 1.0.0 R1
  */
 public interface Enderman extends Monster {
 
@@ -16,6 +18,9 @@ public interface Enderman extends Monster {
      *
      * May conditionally fail if the random location was not valid
      * @return If the enderman teleported successfully or not
+     */
+    /**
+     * @since 1.12.2
      */
 
     public boolean teleportRandomly();
@@ -44,6 +49,7 @@ public interface Enderman extends Monster {
      * Gets the data of the block that the Enderman is carrying.
      *
      * @return BlockData containing the carried block, or null if none
+     * @since 1.13
      */
     @Nullable
     public BlockData getCarriedBlock();
@@ -52,6 +58,7 @@ public interface Enderman extends Monster {
      * Sets the data of the block that the Enderman is carrying.
      *
      * @param blockData data to set the carried block to, or null to remove
+     * @since 1.13
      */
     public void setCarriedBlock(@Nullable BlockData blockData);
 
@@ -66,6 +73,7 @@ public interface Enderman extends Monster {
      * teleport location was obstructed, or if the teleport location is in water.
      *
      * @return true if the teleport succeeded.
+     * @since 1.20.1
      */
     public boolean teleport();
 
@@ -84,6 +92,7 @@ public interface Enderman extends Monster {
      *
      * @param entity The entity to teleport towards.
      * @return true if the teleport succeeded.
+     * @since 1.20.1
      */
     public boolean teleportTowards(@NotNull Entity entity);
 
@@ -92,6 +101,7 @@ public interface Enderman extends Monster {
      * Returns whether the enderman is screaming/angry.
      *
      * @return whether the enderman is screaming
+     * @since 1.18.2
      */
     boolean isScreaming();
 
@@ -99,6 +109,7 @@ public interface Enderman extends Monster {
      * Sets whether the enderman is screaming/angry.
      *
      * @param screaming whether the enderman is screaming
+     * @since 1.18.2
      */
     void setScreaming(boolean screaming);
 
@@ -107,6 +118,7 @@ public interface Enderman extends Monster {
      * If set to true, players will hear an ambient sound.
      *
      * @return whether the enderman has been stared at
+     * @since 1.18.2
      */
     boolean hasBeenStaredAt();
 
@@ -115,6 +127,7 @@ public interface Enderman extends Monster {
      * If set to true, players will hear an ambient sound.
      *
      * @param hasBeenStaredAt whether the enderman has been stared at
+     * @since 1.18.2
      */
     void setHasBeenStaredAt(boolean hasBeenStaredAt);
     // Paper end

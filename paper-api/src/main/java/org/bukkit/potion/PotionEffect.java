@@ -20,6 +20,8 @@ import org.jetbrains.annotations.Nullable;
  * potion effect has a duration that it will last for, an amplifier that will
  * enhance its effects, and a {@link PotionEffectType}, that represents its
  * effect on an entity.
+ *
+ * @since 1.1.0 R4
  */
 @SerializableAs("PotionEffect")
 public class PotionEffect implements ConfigurationSerializable {
@@ -131,27 +133,45 @@ public class PotionEffect implements ConfigurationSerializable {
         this(getEffectType(map), getInt(map, DURATION), getInt(map, AMPLIFIER), getBool(map, AMBIENT, false), getBool(map, PARTICLES, true), getBool(map, ICON, getBool(map, PARTICLES, true)), (PotionEffect) map.get(HIDDEN_EFFECT)); // Paper
     }
 
+    /**
+     * @since 1.12.2
+     */
     // Paper start
     @NotNull
     public PotionEffect withType(@NotNull PotionEffectType type) {
         return new PotionEffect(type, duration, amplifier, ambient, particles, icon);
     }
+    /**
+     * @since 1.12.2
+     */
     @NotNull
     public PotionEffect withDuration(int duration) {
         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
     }
+    /**
+     * @since 1.12.2
+     */
     @NotNull
     public PotionEffect withAmplifier(int amplifier) {
         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
     }
+    /**
+     * @since 1.12.2
+     */
     @NotNull
     public PotionEffect withAmbient(boolean ambient) {
         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
     }
+    /**
+     * @since 1.12.2
+     */
     @NotNull
     public PotionEffect withParticles(boolean particles) {
         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
     }
+    /**
+     * @since 1.13
+     */
     @NotNull
     public PotionEffect withIcon(boolean icon) {
         return new PotionEffect(this.type, duration, amplifier, ambient, particles, icon);
@@ -164,6 +184,7 @@ public class PotionEffect implements ConfigurationSerializable {
      * Note: This value is only applicable to type applied to living entities.
      *
      * @return The hidden PotionEffect.
+     * @since 1.20.4
      */
     @Nullable
     public PotionEffect getHiddenPotionEffect() {
@@ -202,6 +223,9 @@ public class PotionEffect implements ConfigurationSerializable {
         return def;
     }
 
+    /**
+     * @since 1.4.5 R1.0
+     */
     @Override
     @NotNull
     public Map<String, Object> serialize() {
@@ -276,6 +300,7 @@ public class PotionEffect implements ConfigurationSerializable {
      * expire unless manually removed.
      *
      * @return whether this duration is infinite or not
+     * @since 1.19.4
      */
     public boolean isInfinite() {
         return duration == INFINITE_DURATION;
@@ -291,6 +316,7 @@ public class PotionEffect implements ConfigurationSerializable {
      *
      * @param other the other effect
      * @return true if this effect is shorter than the other, false if longer or equal
+     * @since 1.19.4
      */
     public boolean isShorterThan(@NotNull PotionEffect other) {
         return !isInfinite() && (duration < other.duration || other.isInfinite());
@@ -310,6 +336,7 @@ public class PotionEffect implements ConfigurationSerializable {
      * Makes potion effect produce more, translucent, particles.
      *
      * @return if this effect is ambient
+     * @since 1.4.5 R1.0
      */
     public boolean isAmbient() {
         return ambient;
@@ -317,6 +344,7 @@ public class PotionEffect implements ConfigurationSerializable {
 
     /**
      * @return whether this effect has particles or not
+     * @since 1.8
      */
     public boolean hasParticles() {
         return particles;
@@ -325,6 +353,7 @@ public class PotionEffect implements ConfigurationSerializable {
     /**
      * @return color of this potion's particles. May be null if the potion has no particles or defined color.
      * @deprecated color is not part of potion effects
+     * @since 1.9.4
      */
     @Deprecated(since = "1.13")
     @Nullable
@@ -335,6 +364,7 @@ public class PotionEffect implements ConfigurationSerializable {
 
     /**
      * @return whether this effect has an icon or not
+     * @since 1.13
      */
     public boolean hasIcon() {
         return icon;
@@ -353,6 +383,9 @@ public class PotionEffect implements ConfigurationSerializable {
         return hash;
     }
 
+    /**
+     * @since 1.4.5 R1.0
+     */
     @Override
     public String toString() {
         return "PotionEffect{" + "amplifier=" + amplifier + ", duration=" + duration + ", type=" + type + ", ambient=" + ambient + ", particles=" + particles + ", icon=" + icon + ", hiddenEffect=" + hiddenEffect + '}'; // Paper

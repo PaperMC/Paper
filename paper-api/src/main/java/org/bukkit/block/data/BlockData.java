@@ -17,6 +17,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.13
+ */
 public interface BlockData extends Cloneable {
 
     /**
@@ -62,6 +65,7 @@ public interface BlockData extends Cloneable {
      * false if they are to be shown as performed by {@link #getAsString()}.
      *
      * @return serialized data string for this block
+     * @since 1.13.2
      */
     @NotNull
     String getAsString(boolean hideUnspecified);
@@ -111,6 +115,7 @@ public interface BlockData extends Cloneable {
      * sound, hit sound, and others.
      *
      * @return the sound effect group
+     * @since 1.16.4
      */
     @NotNull
     SoundGroup getSoundGroup();
@@ -119,6 +124,7 @@ public interface BlockData extends Cloneable {
      * Get the amount of light emitted by this state when in the world.
      *
      * @return the light emission
+     * @since 1.19.3
      */
     int getLightEmission();
 
@@ -130,6 +136,7 @@ public interface BlockData extends Cloneable {
      * below it), or whether light will pass through it.
      *
      * @return true if occluding, false otherwise
+     * @since 1.19.3
      */
     boolean isOccluding();
 
@@ -140,6 +147,7 @@ public interface BlockData extends Cloneable {
      *
      * @return true if a more specific item is required for drops, false if any item
      * (or an empty hand) will drop items
+     * @since 1.19.3
      */
     boolean requiresCorrectToolForDrops();
 
@@ -151,6 +159,7 @@ public interface BlockData extends Cloneable {
      *
      * @param tool The tool or item used for breaking this block
      * @return true if the tool is preferred for breaking this block.
+     * @since 1.19.2
      */
     boolean isPreferredTool(@NotNull ItemStack tool);
 
@@ -158,6 +167,7 @@ public interface BlockData extends Cloneable {
      * Returns the reaction of the block when moved by a piston
      *
      * @return reaction
+     * @since 1.19.3
      */
     @NotNull
     PistonMoveReaction getPistonMoveReaction();
@@ -172,6 +182,7 @@ public interface BlockData extends Cloneable {
      * @param block the block position at which the state would be placed
      * @return true if the block is supported, false if this state would not survive
      * the world conditions
+     * @since 1.19
      */
     boolean isSupported(@NotNull Block block);
 
@@ -186,6 +197,7 @@ public interface BlockData extends Cloneable {
      *
      * @return true if the block is supported, false if this state would not survive
      * the world conditions
+     * @since 1.19
      */
     boolean isSupported(@NotNull Location location);
 
@@ -202,6 +214,7 @@ public interface BlockData extends Cloneable {
      * @param support the possible support level
      *
      * @return true if the face is sturdy and can support a block, false otherwise
+     * @since 1.19
      */
     boolean isFaceSturdy(@NotNull BlockFace face, @NotNull BlockSupport support);
 
@@ -214,6 +227,7 @@ public interface BlockData extends Cloneable {
      * @param location the location to calculate the collision shape at
      *
      * @return a {@link org.bukkit.util.VoxelShape} representing the collision shape of this block data.
+     * @since 1.20.2
      */
     @NotNull org.bukkit.util.VoxelShape getCollisionShape(@NotNull Location location);
     // Paper end
@@ -222,6 +236,7 @@ public interface BlockData extends Cloneable {
      * Gets the color this block should appear as when rendered on a map.
      *
      * @return the color associated with this BlockData
+     * @since 1.20.4
      */
     @NotNull
     Color getMapColor();
@@ -238,6 +253,7 @@ public interface BlockData extends Cloneable {
      * {@link Material#CARROTS} -> {@link Material#CARROT}
      * </pre>
      * @return placement material or {@link Material#AIR} if it doesn't have one
+     * @since 1.19.4
      */
     @NotNull
     Material getPlacementMaterial();
@@ -248,6 +264,7 @@ public interface BlockData extends Cloneable {
      * This has no effect on blocks that do not have any rotatable states.
      *
      * @param rotation the rotation
+     * @since 1.19.4
      */
     void rotate(@NotNull StructureRotation rotation);
 
@@ -257,6 +274,7 @@ public interface BlockData extends Cloneable {
      * This has no effect on blocks that do not have any mirrorable states.
      *
      * @param mirror the mirror
+     * @since 1.19.4
      */
     void mirror(@NotNull Mirror mirror);
 
@@ -267,6 +285,7 @@ public interface BlockData extends Cloneable {
      * Only modifies properties that both blocks share in common.
      *
      * @param other the BlockData to copy properties to
+     * @since 1.20.4
      */
     void copyTo(@NotNull BlockData other);
 
@@ -275,6 +294,7 @@ public interface BlockData extends Cloneable {
      * bound to a location.
      *
      * @return a new {@link BlockState}
+     * @since 1.20.1
      */
     @NotNull
     @ApiStatus.Experimental
@@ -290,6 +310,7 @@ public interface BlockData extends Cloneable {
      * @return the speed that this Block will be mined by the given {@link ItemStack}
      * @apiNote this method assumes default player state and hence, e.g., does not take into account changed
      * player attributes or potion effects.
+     * @since 1.20.1
      */
     default float getDestroySpeed(final @NotNull ItemStack itemStack) {
         return this.getDestroySpeed(itemStack, false);
@@ -305,6 +326,7 @@ public interface BlockData extends Cloneable {
      * @return the speed that this Block will be mined by the given {@link ItemStack}
      * @apiNote this method assumes default player state and hence, e.g., does not take into account changed
      * player attributes or potion effects.
+     * @since 1.20.1
      */
     float getDestroySpeed(@NotNull ItemStack itemStack, boolean considerEnchants);
     // Paper end - destroy speed API
@@ -315,6 +337,7 @@ public interface BlockData extends Cloneable {
      * The blocks current state may change this value.
      *
      * @return is ticked randomly
+     * @since 1.19.1
      */
     boolean isRandomlyTicked();
     // Paper end - Tick API

@@ -12,6 +12,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when a player boosts elytra flight with a firework
+ *
+ * @since 1.13
  */
 @NullMarked
 public class PlayerElytraBoostEvent extends PlayerEvent implements Cancellable {
@@ -73,6 +75,7 @@ public class PlayerElytraBoostEvent extends PlayerEvent implements Cancellable {
      * Gets the hand holding the firework used for boosting this player.
      *
      * @return interaction hand
+     * @since 1.20.4
      */
     public EquipmentSlot getHand() {
         return this.hand;

@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * If changing player state, see {@link com.destroystokyo.paper.event.player.PlayerPostRespawnEvent}
  * because the player is "reset" between this event and that event and some changes won't persist.
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerRespawnEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -85,6 +87,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
      * Gets whether the respawn location is the player's respawn anchor.
      *
      * @return true if the respawn location is the player's respawn anchor.
+     * @since 1.16.1
      */
     public boolean isAnchorSpawn() {
         return isAnchorSpawn;
@@ -94,18 +97,25 @@ public class PlayerRespawnEvent extends PlayerEvent {
      * Gets the reason this respawn event was called.
      *
      * @return the reason the event was called.
+     * @since 1.19.4
      */
     @NotNull
     public RespawnReason getRespawnReason() {
         return respawnReason;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
@@ -135,6 +145,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
      * Get the set of flags that apply to this respawn.
      *
      * @return an immutable set of the flags that apply to this respawn
+     * @since 1.16.5
      */
     @NotNull
     public java.util.Set<RespawnFlag> getRespawnFlags() {

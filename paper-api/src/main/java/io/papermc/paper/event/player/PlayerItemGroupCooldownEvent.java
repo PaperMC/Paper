@@ -13,6 +13,7 @@ import org.jspecify.annotations.NullMarked;
  * Fired when a player receives an item cooldown.
  *
  * @see PlayerItemCooldownEvent for a more specific event when applied to a specific item.
+ * @since 1.21.3
  */
 @NullMarked
 public class PlayerItemGroupCooldownEvent extends PlayerEvent implements Cancellable {

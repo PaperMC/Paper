@@ -8,6 +8,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * A component serializer for converting between {@link Message} and {@link Component}.
+ *
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @NullMarked

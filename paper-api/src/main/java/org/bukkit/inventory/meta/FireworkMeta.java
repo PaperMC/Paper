@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a {@link Material#FIREWORK_ROCKET} and its effects.
+ *
+ * @since 1.4.6 R0.3
  */
 public interface FireworkMeta extends ItemMeta {
 
@@ -79,6 +81,7 @@ public interface FireworkMeta extends ItemMeta {
      * Get whether this firework has power set by component.
      *
      * @return true if it has power set, false if there are no power set
+     * @since 1.21.1
      */
     boolean hasPower();
 

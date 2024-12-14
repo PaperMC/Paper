@@ -12,6 +12,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Thrown when a player executes a command that is not defined
+ *
+ * @since 1.12
  */
 @NullMarked
 public class UnknownCommandEvent extends Event {
@@ -76,6 +78,7 @@ public class UnknownCommandEvent extends Event {
      * Gets message that will be returned
      *
      * @return Unknown command message
+     * @since 1.16.5
      */
     @Contract(pure = true)
     public @Nullable Component message() {
@@ -88,6 +91,7 @@ public class UnknownCommandEvent extends Event {
      * Set to {@code null} to avoid any message being sent
      *
      * @param message the message to be returned, or {@code null}
+     * @since 1.16.5
      */
     public void message(@Nullable Component message) {
         this.message = message;
@@ -102,4 +106,3 @@ public class UnknownCommandEvent extends Event {
         return HANDLER_LIST;
     }
 }
-

@@ -18,6 +18,8 @@ import org.jspecify.annotations.Nullable;
  * Helps prepare a particle to be sent to players.
  * <p>
  * Usage of the builder is preferred over the super long {@link World#spawnParticle(Particle, Location, int, double, double, double, double, Object)} API
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class ParticleBuilder implements Cloneable {
@@ -402,6 +404,7 @@ public class ParticleBuilder implements Cloneable {
 
     /**
      * @return whether the particle is forcefully shown to players.
+     * @since 1.17.1
      */
     public boolean force() {
         return this.force;
@@ -441,6 +444,7 @@ public class ParticleBuilder implements Cloneable {
      * @param color the new particle color
      * @param size  the size of the particle
      * @return a reference to this object.
+     * @since 1.13.1
      */
     public ParticleBuilder color(final @Nullable Color color, final float size) {
         if (this.particle.getDataType() != Particle.DustOptions.class && color != null) {
@@ -482,6 +486,7 @@ public class ParticleBuilder implements Cloneable {
      * @param color an integer representing the color components. If the highest byte (alpha channel) is zero,
      *              the color is treated as RGB. Otherwise, it is treated as ARGB.
      * @return a reference to this object.
+     * @since 1.20.4
      */
     public ParticleBuilder color(final int color) {
         final int alpha = (color >> 24) & 0xFF;
@@ -500,6 +505,7 @@ public class ParticleBuilder implements Cloneable {
      * @param g green color component
      * @param b blue color component
      * @return a reference to this object.
+     * @since 1.21.1
      */
     public ParticleBuilder color(final int a, final int r, final int g, final int b) {
         return this.color(Color.fromARGB(a, r, g, b));
@@ -513,6 +519,7 @@ public class ParticleBuilder implements Cloneable {
      * @param toColor   the new particle to color
      * @return a reference to this object.
      * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
+     * @since 1.20.4
      */
     public ParticleBuilder colorTransition(final Color fromColor, final Color toColor) {
         return this.colorTransition(fromColor, toColor, 1);
@@ -530,6 +537,7 @@ public class ParticleBuilder implements Cloneable {
      * @param toBlue    blue color component for the to color
      * @return a reference to this object.
      * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
+     * @since 1.20.4
      */
     public ParticleBuilder colorTransition(
         final int fromRed, final int fromGreen, final int fromBlue,
@@ -546,6 +554,7 @@ public class ParticleBuilder implements Cloneable {
      * @param toRgb   an integer representing the red, green, and blue color components for the "to" color
      * @return a reference to this object.
      * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
+     * @since 1.20.4
      */
     public ParticleBuilder colorTransition(final int fromRgb, final int toRgb) {
         return this.colorTransition(Color.fromRGB(fromRgb), Color.fromRGB(toRgb));
@@ -560,6 +569,7 @@ public class ParticleBuilder implements Cloneable {
      * @param size      the size of the particle
      * @return a reference to this object.
      * @throws IllegalArgumentException if the particle builder's {@link #particle()} isn't {@link Particle#DUST_COLOR_TRANSITION}.
+     * @since 1.20.4
      */
     public ParticleBuilder colorTransition(final Color fromColor, final Color toColor, final float size) {
         Preconditions.checkArgument(fromColor != null, "Cannot define color transition with null fromColor.");
@@ -568,6 +578,9 @@ public class ParticleBuilder implements Cloneable {
         return this.data(new Particle.DustTransition(fromColor, toColor, size));
     }
 
+    /**
+     * @since 1.20.4
+     */
     @Override
     public ParticleBuilder clone() {
         try {

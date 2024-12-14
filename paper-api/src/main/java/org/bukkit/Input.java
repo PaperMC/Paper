@@ -4,6 +4,8 @@ import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Represents a movement input applied to an entity.
+ *
+ * @since 1.21.3
  */
 @ApiStatus.Experimental
 public interface Input {

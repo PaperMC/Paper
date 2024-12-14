@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * Furnace-like blocks are {@link org.bukkit.block.Furnace},
  * {@link org.bukkit.block.Smoker}, and {@link org.bukkit.block.BlastFurnace}.
+ *
+ * @since 1.17.1
  */
 public class FurnaceStartSmeltEvent extends InventoryBlockStartEvent {
     // Paper - remove HandlerList

@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player clicks a recipe in the recipe book
+ *
+ * @since 1.15.2
  */
 @NullMarked
 public class PlayerRecipeBookClickEvent extends PlayerEvent implements Cancellable {

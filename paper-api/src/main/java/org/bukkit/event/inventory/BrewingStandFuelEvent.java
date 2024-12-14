@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when an ItemStack is about to increase the fuel level of a brewing
  * stand.
+ *
+ * @since 1.11
  */
 public class BrewingStandFuelEvent extends BlockEvent implements Cancellable {
 

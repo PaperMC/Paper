@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Parrot.
+ *
+ * @since 1.12
  */
 public interface Parrot extends Tameable, Sittable {
 
@@ -26,6 +28,7 @@ public interface Parrot extends Tameable, Sittable {
      * Gets whether a parrot is dancing
      *
      * @return Whether the parrot is dancing
+     * @since 1.19
      */
     public boolean isDancing();
 

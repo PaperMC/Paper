@@ -18,6 +18,8 @@ import org.jetbrains.annotations.NotNull;
  * This event is not called for when a block is broken, to handle that, listen
  * for {@link org.bukkit.event.block.BlockBreakEvent} and
  * {@link org.bukkit.event.block.BlockDropItemEvent}.
+ *
+ * @since 1.16.1
  */
 public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable {
 
@@ -53,6 +55,7 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
      * Get the hand used to harvest the block.
      *
      * @return the hand
+     * @since 1.19.2
      */
     @NotNull
     public EquipmentSlot getHand() {

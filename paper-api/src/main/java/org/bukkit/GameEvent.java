@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a generic Mojang game event.
+ *
+ * @since 1.17
  */
 public abstract class GameEvent implements Keyed {
 
@@ -147,6 +149,7 @@ public abstract class GameEvent implements Keyed {
      * notify listeners of the event.
      *
      * @return the range
+     * @since 1.21
      */
     public abstract int getRange();
 
@@ -156,6 +159,7 @@ public abstract class GameEvent implements Keyed {
      * it won't cause any vibrations.
      *
      * @return the vibration level
+     * @since 1.21
      */
     public abstract int getVibrationLevel();
     // Paper end

@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * Some blocks may not be able to face in all directions, use
  * {@link #getVerticalDirections()} to get all possible directions for this
  * block.
+ *
+ * @since 1.17
  */
 public interface PointedDripstone extends Waterlogged {
 

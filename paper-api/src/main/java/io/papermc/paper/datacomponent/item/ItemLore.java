@@ -12,6 +12,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Additional lines to include in an item's tooltip.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#LORE
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

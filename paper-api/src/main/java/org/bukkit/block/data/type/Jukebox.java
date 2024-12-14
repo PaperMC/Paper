@@ -5,6 +5,8 @@ import org.bukkit.block.data.BlockData;
 /**
  * 'has_record' is a quick flag to check whether this jukebox has a record
  * inside it.
+ *
+ * @since 1.13
  */
 public interface Jukebox extends BlockData {
 

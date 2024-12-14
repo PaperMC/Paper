@@ -7,6 +7,9 @@ import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.12.2
+ */
 @NullMarked
 public class EndermanEscapeEvent extends EntityEvent implements Cancellable {
 

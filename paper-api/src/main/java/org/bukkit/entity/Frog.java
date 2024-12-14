@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A Frog.
+ *
+ * @since 1.19
  */
 public interface Frog extends Animals {
 

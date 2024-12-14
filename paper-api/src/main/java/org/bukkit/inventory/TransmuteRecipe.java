@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
  * item type of the result stack will be used.
  * <br>
  * Used for dyeing shulker boxes in Vanilla.
+ *
+ * @since 1.21.3
  */
 public class TransmuteRecipe extends CraftingRecipe implements ComplexRecipe {
 

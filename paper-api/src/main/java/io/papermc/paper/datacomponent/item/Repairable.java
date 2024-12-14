@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds if this item is repairable, and what item types it can be repaired with.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#REPAIRABLE
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

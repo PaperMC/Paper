@@ -3,6 +3,9 @@ package org.bukkit.inventory;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * @since 1.12
+ */
 @NullMarked
 public interface ArmoredHorseInventory extends AbstractHorseInventory {
 

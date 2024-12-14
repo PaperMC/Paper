@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Represents a color applied to a dyeable item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#DYED_COLOR
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

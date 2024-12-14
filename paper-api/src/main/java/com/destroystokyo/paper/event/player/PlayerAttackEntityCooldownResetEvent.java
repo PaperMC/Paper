@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when processing a player's attack on an entity when the player's attack strength cooldown is reset
+ *
+ * @since 1.15.2
  */
 @NullMarked
 public class PlayerAttackEntityCooldownResetEvent extends PlayerEvent implements Cancellable {

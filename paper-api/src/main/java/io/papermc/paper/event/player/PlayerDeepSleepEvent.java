@@ -13,6 +13,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Cancelling this event will prevent the player from being counted as deeply sleeping
  * unless they exit and re-enter the bed.
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class PlayerDeepSleepEvent extends PlayerEvent implements Cancellable {

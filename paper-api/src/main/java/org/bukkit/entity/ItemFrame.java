@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an Item Frame
+ *
+ * @since 1.4.5 R1.0
  */
 public interface ItemFrame extends Hanging {
 
@@ -30,6 +32,7 @@ public interface ItemFrame extends Hanging {
      *
      * @param item the new item
      * @param playSound whether or not to play the item placement sound
+     * @since 1.13.1
      */
     public void setItem(@Nullable ItemStack item, boolean playSound);
 
@@ -42,6 +45,7 @@ public interface ItemFrame extends Hanging {
      * </ul>
      *
      * @return chance of the off hand item being dropped
+     * @since 1.16.4
      */
     float getItemDropChance();
 
@@ -55,6 +59,7 @@ public interface ItemFrame extends Hanging {
      * </ul>
      *
      * @param chance the chance of off hand item being dropped
+     * @since 1.16.4
      */
     void setItemDropChance(float chance);
 
@@ -78,6 +83,7 @@ public interface ItemFrame extends Hanging {
      * Returns whether the item frame is visible or not.
      *
      * @return whether the item frame is visible or not
+     * @since 1.16.1
      */
     boolean isVisible();
 
@@ -85,6 +91,7 @@ public interface ItemFrame extends Hanging {
      * Sets whether the item frame should be visible or not.
      *
      * @param visible whether the item frame is visible or not
+     * @since 1.16.1
      */
     void setVisible(boolean visible);
 
@@ -96,6 +103,7 @@ public interface ItemFrame extends Hanging {
      * place/remove items.
      *
      * @return whether the item frame is fixed or not
+     * @since 1.16.1
      */
     boolean isFixed();
 
@@ -107,6 +115,7 @@ public interface ItemFrame extends Hanging {
      * item or place/remove items.
      *
      * @param fixed whether the item frame is fixed or not
+     * @since 1.16.1
      */
     void setFixed(boolean fixed);
 }

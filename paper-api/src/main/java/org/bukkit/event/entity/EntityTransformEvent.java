@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity is about to be replaced by another entity.
+ *
+ * @since 1.13.2
  */
 public class EntityTransformEvent extends EntityEvent implements Cancellable {
 
