@@ -1,12 +1,12 @@
 --- a/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java
 +++ b/net/minecraft/network/protocol/login/ServerboundCustomQueryAnswerPacket.java
-@@ -20,7 +20,17 @@
+@@ -20,7 +_,17 @@
      }
  
-     private static CustomQueryAnswerPayload readPayload(int queryId, FriendlyByteBuf buf) {
--        return readUnknownPayload(buf);
+     private static CustomQueryAnswerPayload readPayload(int transactionId, FriendlyByteBuf buffer) {
+-        return readUnknownPayload(buffer);
 +        // Paper start - MC Utils - default query payloads
-+        FriendlyByteBuf buffer = buf.readNullable((buf2) -> {
++        FriendlyByteBuf buf = buffer.readNullable((buf2) -> {
 +            int i = buf2.readableBytes();
 +            if (i >= 0 && i <= MAX_PAYLOAD_SIZE) {
 +                return new FriendlyByteBuf(buf2.readBytes(i));
@@ -14,19 +14,18 @@
 +                throw new IllegalArgumentException("Payload may not be larger than " + MAX_PAYLOAD_SIZE + " bytes");
 +            }
 +        });
-+        return buffer == null ? null : new net.minecraft.network.protocol.login.ServerboundCustomQueryAnswerPacket.QueryAnswerPayload(buffer);
++        return buf == null ? null : new net.minecraft.network.protocol.login.ServerboundCustomQueryAnswerPacket.QueryAnswerPayload(buf);
 +        // Paper end - MC Utils - default query payloads
      }
  
-     private static CustomQueryAnswerPayload readUnknownPayload(FriendlyByteBuf buf) {
-@@ -47,4 +57,21 @@
-     public void handle(ServerLoginPacketListener listener) {
-         listener.handleCustomQueryPacket(this);
+     private static CustomQueryAnswerPayload readUnknownPayload(FriendlyByteBuf buffer) {
+@@ -47,4 +_,19 @@
+     public void handle(ServerLoginPacketListener handler) {
+         handler.handleCustomQueryPacket(this);
      }
 +
 +    // Paper start - MC Utils - default query payloads
 +    public static final class QueryAnswerPayload implements CustomQueryAnswerPayload {
-+
 +        public final FriendlyByteBuf buffer;
 +
 +        public QueryAnswerPayload(final net.minecraft.network.FriendlyByteBuf buffer) {
@@ -39,5 +38,4 @@
 +        }
 +    }
 +    // Paper end - MC Utils - default query payloads
-+
  }
