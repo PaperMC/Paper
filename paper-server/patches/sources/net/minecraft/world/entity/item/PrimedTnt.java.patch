@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/item/PrimedTnt.java
 +++ b/net/minecraft/world/entity/item/PrimedTnt.java
-@@ -27,6 +27,12 @@
+@@ -27,6 +_,12 @@
  import net.minecraft.world.level.material.FluidState;
  import net.minecraft.world.level.portal.TeleportTransition;
  
@@ -11,26 +11,26 @@
 +// CraftBukkit end
 +
  public class PrimedTnt extends Entity implements TraceableEntity {
- 
      private static final EntityDataAccessor<Integer> DATA_FUSE_ID = SynchedEntityData.defineId(PrimedTnt.class, EntityDataSerializers.INT);
-@@ -51,6 +57,7 @@
+     private static final EntityDataAccessor<BlockState> DATA_BLOCK_STATE_ID = SynchedEntityData.defineId(PrimedTnt.class, EntityDataSerializers.BLOCK_STATE);
+@@ -50,6 +_,7 @@
      public LivingEntity owner;
      private boolean usedPortal;
-     public float explosionPower;
+     public float explosionPower = 4.0F;
 +    public boolean isIncendiary = false; // CraftBukkit - add field
  
-     public PrimedTnt(EntityType<? extends PrimedTnt> type, Level world) {
-         super(type, world);
-@@ -61,7 +68,7 @@
-     public PrimedTnt(Level world, double x, double y, double z, @Nullable LivingEntity igniter) {
-         this(EntityType.TNT, world);
+     public PrimedTnt(EntityType<? extends PrimedTnt> entityType, Level level) {
+         super(entityType, level);
+@@ -59,7 +_,7 @@
+     public PrimedTnt(Level level, double x, double y, double z, @Nullable LivingEntity owner) {
+         this(EntityType.TNT, level);
          this.setPos(x, y, z);
--        double d3 = world.random.nextDouble() * 6.2831854820251465D;
-+        double d3 = this.random.nextDouble() * 6.2831854820251465D; // Paper - Don't use level random in entity constructors
- 
-         this.setDeltaMovement(-Math.sin(d3) * 0.02D, 0.20000000298023224D, -Math.cos(d3) * 0.02D);
+-        double d = level.random.nextDouble() * (float) (Math.PI * 2);
++        double d = this.random.nextDouble() * (float) (Math.PI * 2);  // Paper - Don't use level random in entity constructors
+         this.setDeltaMovement(-Math.sin(d) * 0.02, 0.2F, -Math.cos(d) * 0.02);
          this.setFuse(80);
-@@ -94,10 +101,17 @@
+         this.xo = x;
+@@ -91,10 +_,17 @@
  
      @Override
      public void tick() {
@@ -45,16 +45,16 @@
 +            return;
 +        }
 +        // Paper end - Configurable TNT height nerf
-         this.setDeltaMovement(this.getDeltaMovement().scale(0.98D));
+         this.setDeltaMovement(this.getDeltaMovement().scale(0.98));
          if (this.onGround()) {
-             this.setDeltaMovement(this.getDeltaMovement().multiply(0.7D, -0.5D, 0.7D));
-@@ -107,10 +121,13 @@
- 
+             this.setDeltaMovement(this.getDeltaMovement().multiply(0.7, -0.5, 0.7));
+@@ -103,19 +_,49 @@
+         int i = this.getFuse() - 1;
          this.setFuse(i);
          if (i <= 0) {
 -            this.discard();
 +            // CraftBukkit start - Need to reverse the order of the explosion and the entity death so we have a location for the event
-+            // this.discard();
++            //this.discard();
              if (!this.level().isClientSide) {
                  this.explode();
              }
@@ -63,10 +63,9 @@
          } else {
              this.updateInWaterStateAndDoFluidPushing();
              if (this.level().isClientSide) {
-@@ -118,10 +135,37 @@
+                 this.level().addParticle(ParticleTypes.SMOKE, this.getX(), this.getY() + 0.5, this.getZ(), 0.0, 0.0, 0.0);
              }
          }
- 
 +        // Paper start - Option to prevent TNT from moving in water
 +        if (!this.isRemoved() && this.wasTouchingWater && this.level().paperConfig().fixes.preventTntFromMovingInWater) {
 +            /*
@@ -91,19 +90,28 @@
      }
  
      private void explode() {
--        this.level().explode(this, Explosion.getDefaultDamageSource(this.level(), this), this.usedPortal ? PrimedTnt.USED_PORTAL_DAMAGE_CALCULATOR : null, this.getX(), this.getY(0.0625D), this.getZ(), this.explosionPower, false, Level.ExplosionInteraction.TNT);
 +        // CraftBukkit start
 +        ExplosionPrimeEvent event = CraftEventFactory.callExplosionPrimeEvent((org.bukkit.entity.Explosive) this.getBukkitEntity());
 +        if (event.isCancelled()) {
 +            return;
 +        }
-+        this.level().explode(this, Explosion.getDefaultDamageSource(this.level(), this), this.usedPortal ? PrimedTnt.USED_PORTAL_DAMAGE_CALCULATOR : null, this.getX(), this.getY(0.0625D), this.getZ(), event.getRadius(), event.getFire(), Level.ExplosionInteraction.TNT);
-+        // CraftBukkit end
++        // Craftbukkit end
+         this.level()
+             .explode(
+                 this,
+@@ -124,8 +_,8 @@
+                 this.getX(),
+                 this.getY(0.0625),
+                 this.getZ(),
+-                this.explosionPower,
+-                false,
++                event.getRadius(), // CraftBukkit
++                event.getFire(), // CraftBukkit
+                 Level.ExplosionInteraction.TNT
+             );
      }
- 
-     @Override
-@@ -198,4 +242,11 @@
-     public final boolean hurtServer(ServerLevel world, DamageSource source, float amount) {
+@@ -200,4 +_,11 @@
+     public final boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
          return false;
      }
 +
