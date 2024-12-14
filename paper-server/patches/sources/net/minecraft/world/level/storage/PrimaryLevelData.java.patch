@@ -1,0 +1,132 @@
+--- a/net/minecraft/world/level/storage/PrimaryLevelData.java
++++ b/net/minecraft/world/level/storage/PrimaryLevelData.java
+@@ -15,6 +_,7 @@
+ import net.minecraft.SharedConstants;
+ import net.minecraft.Util;
+ import net.minecraft.core.BlockPos;
++import net.minecraft.core.Registry;
+ import net.minecraft.core.RegistryAccess;
+ import net.minecraft.core.UUIDUtil;
+ import net.minecraft.nbt.CompoundTag;
+@@ -23,7 +_,10 @@
+ import net.minecraft.nbt.NbtUtils;
+ import net.minecraft.nbt.StringTag;
+ import net.minecraft.nbt.Tag;
++import net.minecraft.network.protocol.game.ClientboundChangeDifficultyPacket;
+ import net.minecraft.server.MinecraftServer;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
+ import net.minecraft.world.Difficulty;
+ import net.minecraft.world.level.GameRules;
+ import net.minecraft.world.level.GameType;
+@@ -73,6 +_,20 @@
+     private boolean wasModded;
+     private final Set<String> removedFeatureFlags;
+     private final TimerQueue<MinecraftServer> scheduledEvents;
++    // CraftBukkit start - Add world and pdc
++    public Registry<net.minecraft.world.level.dimension.LevelStem> customDimensions;
++    private ServerLevel world;
++    protected net.minecraft.nbt.Tag pdc;
++
++    public void setWorld(ServerLevel world) {
++        if (this.world != null) {
++            return;
++        }
++        this.world = world;
++        world.getWorld().readBukkitValues(this.pdc);
++        this.pdc = null;
++    }
++        // CraftBukkit end
+ 
+     private PrimaryLevelData(
+         @Nullable CompoundTag loadedPlayerTag,
+@@ -281,6 +_,8 @@
+         if (this.wanderingTraderId != null) {
+             nbt.putUUID("WanderingTraderId", this.wanderingTraderId);
+         }
++        nbt.putString("Bukkit.Version", org.bukkit.Bukkit.getName() + "/" + org.bukkit.Bukkit.getVersion() + "/" + org.bukkit.Bukkit.getBukkitVersion()); // CraftBukkit
++        this.world.getWorld().storeBukkitValues(nbt); // CraftBukkit - add pdc
+     }
+ 
+     private static ListTag stringCollectionToTag(Set<String> stringCollection) {
+@@ -358,6 +_,25 @@
+ 
+     @Override
+     public void setThundering(boolean thundering) {
++        // Paper start - Add cause to Weather/ThunderChangeEvents
++        this.setThundering(thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.UNKNOWN);
++    }
++    public void setThundering(boolean thundering, org.bukkit.event.weather.ThunderChangeEvent.Cause cause) {
++        // Paper end - Add cause to Weather/ThunderChangeEvents
++        // CraftBukkit start
++        if (this.thundering == thundering) {
++            return;
++        }
++
++        org.bukkit.World world = org.bukkit.Bukkit.getWorld(this.getLevelName());
++        if (world != null) {
++            org.bukkit.event.weather.ThunderChangeEvent thunder = new org.bukkit.event.weather.ThunderChangeEvent(world, thundering, cause); // Paper - Add cause to Weather/ThunderChangeEvents
++            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(thunder);
++            if (thunder.isCancelled()) {
++                return;
++            }
++        }
++        // CraftBukkit end
+         this.thundering = thundering;
+     }
+ 
+@@ -378,6 +_,26 @@
+ 
+     @Override
+     public void setRaining(boolean isRaining) {
++        // Paper start - Add cause to Weather/ThunderChangeEvents
++        this.setRaining(isRaining, org.bukkit.event.weather.WeatherChangeEvent.Cause.UNKNOWN);
++    }
++
++    public void setRaining(boolean isRaining, org.bukkit.event.weather.WeatherChangeEvent.Cause cause) {
++        // Paper end - Add cause to Weather/ThunderChangeEvents
++        // CraftBukkit start
++        if (this.raining == isRaining) {
++            return;
++        }
++
++        org.bukkit.World world = org.bukkit.Bukkit.getWorld(this.getLevelName());
++        if (world != null) {
++            org.bukkit.event.weather.WeatherChangeEvent weather = new org.bukkit.event.weather.WeatherChangeEvent(world, isRaining, cause); // Paper - Add cause to Weather/ThunderChangeEvents
++            org.bukkit.Bukkit.getServer().getPluginManager().callEvent(weather);
++            if (weather.isCancelled()) {
++                return;
++            }
++        }
++        // CraftBukkit end
+         this.raining = isRaining;
+     }
+ 
+@@ -444,6 +_,12 @@
+     @Override
+     public void setDifficulty(Difficulty difficulty) {
+         this.settings = this.settings.withDifficulty(difficulty);
++        // CraftBukkit start
++        ClientboundChangeDifficultyPacket packet = new ClientboundChangeDifficultyPacket(this.getDifficulty(), this.isDifficultyLocked());
++        for (ServerPlayer player : this.world.players()) {
++            player.connection.send(packet);
++        }
++        // CraftBukkit end
+     }
+ 
+     @Override
+@@ -579,6 +_,14 @@
+     public LevelSettings getLevelSettings() {
+         return this.settings.copy();
+     }
++
++    // CraftBukkit start - Check if the name stored in NBT is the correct one
++    public void checkName(String name) {
++        if (!this.settings.levelName.equals(name)) {
++            this.settings.levelName = name;
++        }
++    }
++    // CraftBukkit end
+ 
+     @Deprecated
+     public static enum SpecialWorldProperty {
