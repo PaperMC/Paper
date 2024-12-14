@@ -1,0 +1,53 @@
+--- a/net/minecraft/world/level/material/LavaFluid.java
++++ b/net/minecraft/world/level/material/LavaFluid.java
+@@ -88,6 +_,13 @@
+                     BlockState blockState = level.getBlockState(blockPos);
+                     if (blockState.isAir()) {
+                         if (this.hasFlammableNeighbours(level, blockPos)) {
++                            // CraftBukkit start - Prevent lava putting something on fire
++                            if (level.getBlockState(blockPos).getBlock() != Blocks.FIRE) {
++                                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, blockPos, pos).isCancelled()) {
++                                    continue;
++                                }
++                            }
++                            // CraftBukkit end
+                             level.setBlockAndUpdate(blockPos, BaseFireBlock.getState(level, blockPos));
+                             return;
+                         }
+@@ -103,6 +_,14 @@
+                     }
+ 
+                     if (level.isEmptyBlock(blockPos1.above()) && this.isFlammable(level, blockPos1)) {
++                        // CraftBukkit start - Prevent lava putting something on fire
++                        BlockPos up = blockPos1.above();
++                        if (level.getBlockState(up).getBlock() != Blocks.FIRE) {
++                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, up, pos).isCancelled()) {
++                                continue;
++                            }
++                        }
++                        // CraftBukkit end
+                         level.setBlockAndUpdate(blockPos1.above(), BaseFireBlock.getState(level, blockPos1));
+                     }
+                 }
+@@ -195,7 +_,11 @@
+             FluidState fluidState1 = level.getFluidState(pos);
+             if (this.is(FluidTags.LAVA) && fluidState1.is(FluidTags.WATER)) {
+                 if (blockState.getBlock() instanceof LiquidBlock) {
+-                    level.setBlock(pos, Blocks.STONE.defaultBlockState(), 3);
++                    // CraftBukkit start
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(level.getMinecraftWorld(), pos, Blocks.STONE.defaultBlockState(), 3)) {
++                        return;
++                    }
++                    // CraftBukkit end
+                 }
+ 
+                 this.fizz(level, pos);
+@@ -213,7 +_,7 @@
+ 
+     @Override
+     protected float getExplosionResistance() {
+-        return 100.0F;
++        return Blocks.LAVA.getExplosionResistance(); // Paper - Get explosion resistance from actual block
+     }
+ 
+     @Override
