@@ -12,6 +12,7 @@ import org.jetbrains.annotations.ApiStatus;
  *
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#entity()
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#entities()
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

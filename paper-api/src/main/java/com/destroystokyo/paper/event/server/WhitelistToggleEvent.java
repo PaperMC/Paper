@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
  * This event is fired when whitelist is toggled
  *
  * @author Mark Vainomaa
+ * @since 1.13.2
  */
 @NullMarked
 public class WhitelistToggleEvent extends Event {

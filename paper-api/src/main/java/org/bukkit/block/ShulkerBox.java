@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a ShulkerBox.
+ *
+ * @since 1.11
  */
 public interface ShulkerBox extends Container, LootableBlockInventory, Lidded { // Paper
 

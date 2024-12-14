@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a possible recipient for a Plugin Message.
+ *
+ * @since 1.1.0 R1
  */
 public interface PluginMessageRecipient {
     /**

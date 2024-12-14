@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a renderer for a map.
+ *
+ * @since 1.0.0 R1
  */
 public abstract class MapRenderer {
 

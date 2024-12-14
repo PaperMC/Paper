@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
  * fire, you need to use {@link BlockPlaceEvent}.
  * <p>
  * If a Block Ignite event is cancelled, the block will not be ignited.
+ *
+ * @since 1.0.0 R1
  */
 public class BlockIgniteEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -75,6 +77,7 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
      * Gets the entity who ignited this block
      *
      * @return The Entity that placed/ignited the fire block, or null if not ignited by a Entity.
+     * @since 1.5.1 R0.2
      */
     @Nullable
     public Entity getIgnitingEntity() {
@@ -85,6 +88,7 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
      * Gets the block which ignited this block
      *
      * @return The Block that placed/ignited the fire block, or null if not ignited by a Block.
+     * @since 1.5.1 R0.2
      */
     @Nullable
     public Block getIgnitingBlock() {
@@ -130,12 +134,18 @@ public class BlockIgniteEvent extends BlockEvent implements Cancellable {
         ARROW,
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

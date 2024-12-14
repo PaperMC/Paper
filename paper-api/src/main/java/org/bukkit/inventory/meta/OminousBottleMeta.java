@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents an ominous bottle with an amplifier of the bad omen effect.
+ *
+ * @since 1.20.6
  */
 public interface OminousBottleMeta extends ItemMeta {
 

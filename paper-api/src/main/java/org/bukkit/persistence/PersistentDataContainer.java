@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * This interface represents a map like object, capable of storing custom tags
  * in it.
+ *
+ * @since 1.14
  */
 public interface PersistentDataContainer extends io.papermc.paper.persistence.PersistentDataContainerView { // Paper - split up view and mutable
 
@@ -55,6 +57,7 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      * @param clear if true, this {@link PersistentDataContainer} instance
      *              will be cleared before reading
      * @throws java.io.IOException if the byte array has an invalid format
+     * @since 1.19.2
      */
     void readFromBytes(byte @NotNull [] bytes, boolean clear) throws java.io.IOException;
 
@@ -66,6 +69,7 @@ public interface PersistentDataContainer extends io.papermc.paper.persistence.Pe
      *
      * @param bytes the byte array to read from
      * @throws java.io.IOException if the byte array has an invalid format
+     * @since 1.19.2
      */
     default void readFromBytes(final byte @NotNull [] bytes) throws java.io.IOException {
         this.readFromBytes(bytes, true);

@@ -15,6 +15,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * This event is called when a player clicks on a lectern to insert a book.
  * If this event is cancelled the player will keep the book and the lectern will remain empty.
+ *
+ * @since 1.21.1
  */
 @NullMarked
 public class PlayerInsertLecternBookEvent extends PlayerEvent implements Cancellable {

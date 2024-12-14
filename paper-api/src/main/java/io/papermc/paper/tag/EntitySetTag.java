@@ -10,6 +10,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * @since 1.16.4
+ */
 public class EntitySetTag extends BaseTag<EntityType, EntitySetTag> {
 
     public EntitySetTag(@NotNull NamespacedKey key, @NotNull Predicate<EntityType> filter) {

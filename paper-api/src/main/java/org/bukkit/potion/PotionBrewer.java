@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Used to manage custom {@link io.papermc.paper.potion.PotionMix}s.
+ *
+ * @since 1.1.0 R4
  */
 public interface PotionBrewer {
 
@@ -13,6 +15,7 @@ public interface PotionBrewer {
      * Adds a new potion mix recipe.
      *
      * @param potionMix the potion mix to add
+     * @since 1.18.1
      */
     void addPotionMix(@NotNull io.papermc.paper.potion.PotionMix potionMix);
 
@@ -20,11 +23,14 @@ public interface PotionBrewer {
      * Removes a potion mix recipe.
      *
      * @param key the key of the mix to remove
+     * @since 1.18.1
      */
     void removePotionMix(@NotNull org.bukkit.NamespacedKey key);
 
     /**
      * Resets potion mixes to their default, removing all custom ones.
+     *
+     * @since 1.18.1
      */
     void resetPotionMixes();
     // Paper end
@@ -72,6 +78,7 @@ public interface PotionBrewer {
      * @param extended Whether the potion is extended
      * @return The list of effects
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link PotionType#getPotionEffects()} instead
+     * @since 1.9.4
      */
     @NotNull
     @Deprecated(since = "1.20.2", forRemoval = true) // Paper

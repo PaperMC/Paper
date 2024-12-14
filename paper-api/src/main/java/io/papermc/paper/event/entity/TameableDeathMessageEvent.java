@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a {@link Tameable} dies and sends a death message.
+ *
+ * @since 1.18.2
  */
 @NullMarked
 public class TameableDeathMessageEvent extends EntityEvent implements Cancellable {

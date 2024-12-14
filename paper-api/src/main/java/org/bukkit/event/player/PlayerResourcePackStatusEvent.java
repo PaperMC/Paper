@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * Called when a player takes action on a resource pack request.
  * @see Player#setResourcePack(String, String)
  * @see Player#setResourcePack(String, String, boolean)
+ * @since 1.8.8
  */
 public class PlayerResourcePackStatusEvent extends PlayerEvent {
 
@@ -25,6 +26,7 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
     // Paper start - add hash (not used anymore)
     /**
      * @deprecated Hash does not seem to ever be set
+     * @since 1.9.4
      */
     @Deprecated(forRemoval = true)
     public String getHash() {
@@ -36,6 +38,7 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
      * Gets the unique ID of this pack.
      *
      * @return unique resource pack ID.
+     * @since 1.20.4
      */
     @NotNull
     public UUID getID() {

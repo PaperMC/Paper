@@ -5,6 +5,9 @@ import org.bukkit.Location;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.0.0 R1
+ */
 public interface CommandMap {
 
     /**
@@ -107,6 +110,7 @@ public interface CommandMap {
      * @throws CommandException Thrown when the tab-completer for the given
      *     command fails with an unhandled exception
      * @throws IllegalArgumentException if either sender or cmdLine are null
+     * @since 1.3.2 R3.0
      */
     @Nullable
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine) throws IllegalArgumentException;
@@ -125,6 +129,7 @@ public interface CommandMap {
      * @throws CommandException Thrown when the tab-completer for the given
      *     command fails with an unhandled exception
      * @throws IllegalArgumentException if either sender or cmdLine are null
+     * @since 1.10.2
      */
     @Nullable
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine, @Nullable Location location) throws IllegalArgumentException;
@@ -134,6 +139,7 @@ public interface CommandMap {
      * Return a Map of known commands
      *
      * @return known commands
+     * @since 1.11
      */
     @NotNull
     public java.util.Map<String, Command> getKnownCommands();

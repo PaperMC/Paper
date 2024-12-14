@@ -11,6 +11,8 @@ import net.kyori.adventure.text.Component;
 
 /**
  * Called when a player has completed all criteria in an advancement.
+ *
+ * @since 1.12
  */
 public class PlayerAdvancementDoneEvent extends PlayerEvent {
 
@@ -48,6 +50,7 @@ public class PlayerAdvancementDoneEvent extends PlayerEvent {
      * it is a recipe unlock or a root advancement.
      *
      * @return The announcement message, or null
+     * @since 1.16.5
      */
     @Nullable
     public Component message() {
@@ -60,6 +63,7 @@ public class PlayerAdvancementDoneEvent extends PlayerEvent {
      * If set to null the message will not be sent.
      *
      * @param message The new message
+     * @since 1.16.5
      */
     public void message(@Nullable Component message) {
         this.message = message;

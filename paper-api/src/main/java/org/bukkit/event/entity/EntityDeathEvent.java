@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Thrown whenever a LivingEntity dies
+ *
+ * @since 1.0.0 R1
  */
 public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Cancellable { // Paper - make cancellable
     private static final HandlerList handlers = new HandlerList();
@@ -37,6 +39,9 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
         this.dropExp = droppedExp;
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     @Override
     public LivingEntity getEntity() {
@@ -47,6 +52,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Gets the source of damage which caused the death.
      *
      * @return a DamageSource detailing the source of the damage for the death.
+     * @since 1.20.6
      */
     @NotNull
     public DamageSource getDamageSource() {
@@ -87,23 +93,35 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
         return drops;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }
 
+    /**
+     * @since 1.12.2
+     */
     // Paper start - make cancellable
     @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    /**
+     * @since 1.12.2
+     */
     @Override
     public void setCancelled(boolean cancel) {
         cancelled = cancel;
@@ -114,6 +132,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Set to the entity's max health by default.
      *
      * @return The amount of health
+     * @since 1.12.2
      */
     public double getReviveHealth() {
         return reviveHealth;
@@ -125,6 +144,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      *
      * @param reviveHealth The amount of health
      * @throws IllegalArgumentException Thrown if the health is {@literal <= 0 or >} max health
+     * @since 1.12.2
      */
     public void setReviveHealth(double reviveHealth) throws IllegalArgumentException {
         double maxHealth = ((LivingEntity) entity).getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH).getValue();
@@ -138,6 +158,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Whether or not the death sound should play when the entity dies. If the event is cancelled it does not play!
      *
      * @return Whether or not the death sound should play. Event is called with this set to false if the entity is silent.
+     * @since 1.12.2
      */
     public boolean shouldPlayDeathSound() {
         return shouldPlayDeathSound;
@@ -147,6 +168,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Set whether or not the death sound should play when the entity dies. If the event is cancelled it does not play!
      *
      * @param playDeathSound Enable or disable the death sound
+     * @since 1.12.2
      */
     public void setShouldPlayDeathSound(boolean playDeathSound) {
         this.shouldPlayDeathSound = playDeathSound;
@@ -156,6 +178,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Get the sound that the entity makes when dying
      *
      * @return The sound that the entity makes
+     * @since 1.12.2
      */
     @Nullable
     public org.bukkit.Sound getDeathSound() {
@@ -166,6 +189,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Set the sound that the entity makes when dying
      *
      * @param sound The sound that the entity should make when dying
+     * @since 1.12.2
      */
     public void setDeathSound(@Nullable org.bukkit.Sound sound) {
         deathSound = sound;
@@ -175,6 +199,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Get the sound category that the death sound should play in
      *
      * @return The sound category
+     * @since 1.12.2
      */
     @Nullable
     public org.bukkit.SoundCategory getDeathSoundCategory() {
@@ -185,6 +210,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Set the sound category that the death sound should play in.
      *
      * @param soundCategory The sound category
+     * @since 1.12.2
      */
     public void setDeathSoundCategory(@Nullable org.bukkit.SoundCategory soundCategory) {
         this.deathSoundCategory = soundCategory;
@@ -194,6 +220,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Get the volume that the death sound will play at.
      *
      * @return The volume the death sound will play at
+     * @since 1.12.2
      */
     public float getDeathSoundVolume() {
         return deathSoundVolume;
@@ -203,6 +230,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Set the volume the death sound should play at. If the event is cancelled this will not play the sound!
      *
      * @param volume The volume the death sound should play at
+     * @since 1.12.2
      */
     public void setDeathSoundVolume(float volume) {
         this.deathSoundVolume = volume;
@@ -212,6 +240,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Get the pitch that the death sound will play with.
      *
      * @return The pitch the death sound will play with
+     * @since 1.12.2
      */
     public float getDeathSoundPitch() {
         return deathSoundPitch;
@@ -221,6 +250,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
      * Set the pitch that the death sound should play with.
      *
      * @param pitch The pitch the death sound should play with
+     * @since 1.12.2
      */
     public void setDeathSoundPitch(float pitch) {
         this.deathSoundPitch = pitch;

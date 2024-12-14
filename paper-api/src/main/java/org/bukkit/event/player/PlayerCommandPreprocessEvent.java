@@ -44,6 +44,8 @@ import org.jetbrains.annotations.NotNull;
  * The state of whether or not there is a slash (<code>/</code>) at the
  * beginning of the message should be preserved. If a slash is added or
  * removed, unexpected behavior may result.
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -63,11 +65,17 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
         this.message = message;
     }
 
+    /**
+     * @since 1.3.1 R1.0
+     */
     @Override
     public boolean isCancelled() {
         return cancel;
     }
 
+    /**
+     * @since 1.3.1 R1.0
+     */
     @Override
     public void setCancelled(boolean cancel) {
         this.cancel = cancel;
@@ -80,6 +88,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      * consider the first character when executing the content.
      *
      * @return Message the player is attempting to send
+     * @since 1.3.1 R1.0
      */
     @NotNull
     public String getMessage() {
@@ -94,6 +103,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      *
      * @param command New message that the player will send
      * @throws IllegalArgumentException if command is null or empty
+     * @since 1.3.1 R1.0
      */
     public void setMessage(@NotNull String command) throws IllegalArgumentException {
         Preconditions.checkArgument(command != null, "Command cannot be null");
@@ -107,6 +117,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      * @param player New player which this event will execute as
      * @throws IllegalArgumentException if the player provided is null
      * @deprecated Only works for sign commands; use {@link Player#performCommand(String)}, including those cases
+     * @since 1.3.1 R1.0
      */
     @Deprecated(forRemoval = true)
     public void setPlayer(@NotNull final Player player) throws IllegalArgumentException {
@@ -126,6 +137,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      *
      * @return All Players who will see this chat message
      * @deprecated This is simply the online players. Modifications have no effect
+     * @since 1.3.1 R1.0
      */
     @NotNull
     @Deprecated(since = "1.3.1", forRemoval = true)
@@ -133,12 +145,18 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
         return recipients;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

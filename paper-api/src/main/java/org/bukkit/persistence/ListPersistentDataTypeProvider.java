@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * A provider for list persistent data types that represent the known primitive
  * types exposed by {@link PersistentDataType}.
+ *
+ * @since 1.20.4
  */
 public final class ListPersistentDataTypeProvider {
 

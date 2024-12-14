@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * If a Block Fade event is cancelled, the block will not fade, melt or
  * disappear.
+ *
+ * @since 1.0.0 R1
  */
 public class BlockFadeEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -54,12 +56,18 @@ public class BlockFadeEvent extends BlockEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

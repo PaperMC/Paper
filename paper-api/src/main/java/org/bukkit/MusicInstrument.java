@@ -6,6 +6,9 @@ import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.19.3
+ */
 public abstract class MusicInstrument implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - translation keys
 
     public static final MusicInstrument PONDER_GOAT_HORN = getInstrument("ponder_goat_horn");
@@ -59,6 +62,7 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#INSTRUMENT}. MusicInstruments can exist without a key.
+     * @since 1.21.3
      */
     @Deprecated(forRemoval = true, since = "1.20.5")
     @Override
@@ -72,6 +76,7 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     /**
      * @deprecated this method assumes that the instrument description
      * always be a translatable component which is not guaranteed.
+     * @since 1.20.1
      */
     @Override
     @Deprecated(forRemoval = true)

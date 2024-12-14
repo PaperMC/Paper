@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * While this class outlines constants for standard criteria, see {@link #statistic(Statistic)}
  * (and its overloads) to create instances for statistically-backed criteria.
+ *
+ * @since 1.19.2
  */
 public interface Criteria {
 

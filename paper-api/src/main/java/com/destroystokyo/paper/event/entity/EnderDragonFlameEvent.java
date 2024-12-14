@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when an EnderDragon spawns an AreaEffectCloud by shooting flames
+ *
+ * @since 1.13
  */
 @NullMarked
 public class EnderDragonFlameEvent extends EntityEvent implements Cancellable {

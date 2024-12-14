@@ -9,6 +9,8 @@ import org.joml.Matrix4f;
 
 /**
  * Represents a display entity which is designed to only have a visual function.
+ *
+ * @since 1.19.4
  */
 public interface Display extends Entity {
 
@@ -57,6 +59,7 @@ public interface Display extends Entity {
      * </ul>
      *
      * @return teleport duration
+     * @since 1.20.2
      */
     public int getTeleportDuration();
 
@@ -66,6 +69,7 @@ public interface Display extends Entity {
      * @param duration new duration
      * @throws IllegalArgumentException if duration is not between 0 and 59
      * @see #getTeleportDuration()
+     * @since 1.20.2
      */
     public void setTeleportDuration(int duration);
 

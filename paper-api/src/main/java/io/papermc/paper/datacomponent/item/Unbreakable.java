@@ -8,6 +8,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * If set, the item will not lose any durability when used.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#UNBREAKABLE
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

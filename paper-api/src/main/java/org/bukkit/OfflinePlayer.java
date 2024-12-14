@@ -18,6 +18,8 @@ import org.jetbrains.annotations.Nullable;
  * Represents a reference to a player identity and the data belonging to a
  * player that is stored on the disk and can, thus, be retrieved without the
  * player needing to be online.
+ *
+ * @since 1.0.0 R1
  */
 public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable, io.papermc.paper.persistence.PersistentDataViewHolder { // Paper - Add Offline PDC API
 
@@ -40,6 +42,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * has reconnected since.
      *
      * @return true if this player instance is connected
+     * @since 1.20.1
      */
     public boolean isConnected();
     // Paper end
@@ -60,6 +63,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * Returns the UUID of this player
      *
      * @return Player UUID
+     * @since 1.7.10
      */
     @Override
     @NotNull
@@ -73,6 +77,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * {@link PlayerProfile#update()} to complete the returned profile.
      *
      * @return the player's profile
+     * @since 1.18.1
      */
     @NotNull
     com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile(); // Paper
@@ -90,6 +95,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param reason Reason for Ban
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)}
+     * @since 1.12.2
      */
     @NotNull
     @Deprecated(since = "1.20.4")
@@ -103,6 +109,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param source Source of the ban, or null for default
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)}
+     * @since 1.12.2
      */
     @NotNull
     @Deprecated(since = "1.20.4")
@@ -116,6 +123,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param expires When to expire the ban
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)}
+     * @since 1.12.2
      */
     @NotNull
     @Deprecated(since = "1.20.4")
@@ -130,6 +138,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param source Source of the ban or null for default
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)}
+     * @since 1.12.2
      */
     @NotNull
     @Deprecated(since = "1.20.4")
@@ -139,6 +148,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
 
     /**
      * @deprecated use {@link #ban(String, Date, String)}
+     * @since 1.12.2
      */
     @NotNull
     @Deprecated(since = "1.20.4")
@@ -161,6 +171,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param source source of the ban, null indicates implementation default
      * @return the entry for the newly created ban, or the entry for the
      *     (updated) previous ban
+     * @since 1.20.1
      */
     @Nullable
     public <E extends BanEntry<? super com.destroystokyo.paper.profile.PlayerProfile>> E ban(@Nullable String reason, @Nullable Date expires, @Nullable String source); // Paper - fix ban list API
@@ -175,6 +186,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param source source of the ban, null indicates implementation default
      * @return the entry for the newly created ban, or the entry for the
      *     (updated) previous ban
+     * @since 1.20.1
      */
     @Nullable
     public <E extends BanEntry<? super com.destroystokyo.paper.profile.PlayerProfile>> E ban(@Nullable String reason, @Nullable Instant expires, @Nullable String source); // Paper - fix ban list API
@@ -189,6 +201,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @param source source of the ban, null indicates implementation default
      * @return the entry for the newly created ban, or the entry for the
      *     (updated) previous ban
+     * @since 1.20.1
      */
     @Nullable
     public <E extends BanEntry<? super com.destroystokyo.paper.profile.PlayerProfile>> E ban(@Nullable String reason, @Nullable Duration duration, @Nullable String source); // Paper - fix ban list API
@@ -227,6 +240,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * UTC.
      *
      * @return Date of first log-in for this player, or 0
+     * @since 1.1.0 R1
      */
     public long getFirstPlayed();
 
@@ -240,6 +254,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *
      * @return Date of last log-in for this player, or 0
      * @deprecated The API contract is ambiguous and the implementation may or may not return the correct value given this API ambiguity. It is instead recommended use {@link #getLastLogin()} or {@link #getLastSeen()} depending on your needs.
+     * @since 1.1.0 R1
      */
     @Deprecated
     public long getLastPlayed();
@@ -248,6 +263,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * Checks if this player has played on this server before.
      *
      * @return True if the player has played before, otherwise false
+     * @since 1.1.0 R1
      */
     public boolean hasPlayedBefore();
 
@@ -260,6 +276,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @see #getRespawnLocation()
      * @deprecated Misleading name. This method also returns the location of
      * respawn anchors.
+     * @since 1.1.0 R1
      */
     @Nullable
     @Deprecated(since = "1.20.4")
@@ -273,6 +290,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * UTC.
      *
      * @return last login time
+     * @since 1.13.2
      */
     public long getLastLogin();
 
@@ -285,6 +303,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * January 1, 1970 UTC.
      *
      * @return last seen time
+     * @since 1.13.2
      */
     public long getLastSeen();
     // Paper end
@@ -294,6 +313,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * don't have a valid respawn point.
      *
      * @return respawn location if exists, otherwise null.
+     * @since 1.20.4
      */
     @Nullable
     public Location getRespawnLocation();
@@ -308,6 +328,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @since 1.15.2
      */
     public void incrementStatistic(@NotNull Statistic statistic) throws IllegalArgumentException;
 
@@ -321,6 +342,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @since 1.15.2
      */
     public void decrementStatistic(@NotNull Statistic statistic) throws IllegalArgumentException;
 
@@ -333,6 +355,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @since 1.15.2
      */
     public void incrementStatistic(@NotNull Statistic statistic, int amount) throws IllegalArgumentException;
 
@@ -345,6 +368,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @since 1.15.2
      */
     public void decrementStatistic(@NotNull Statistic statistic, int amount) throws IllegalArgumentException;
 
@@ -357,6 +381,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if newValue is negative
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @since 1.15.2
      */
     public void setStatistic(@NotNull Statistic statistic, int newValue) throws IllegalArgumentException;
 
@@ -368,6 +393,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @since 1.15.2
      */
     public int getStatistic(@NotNull Statistic statistic) throws IllegalArgumentException;
 
@@ -383,6 +409,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if material is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public void incrementStatistic(@NotNull Statistic statistic, @NotNull Material material) throws IllegalArgumentException;
 
@@ -398,6 +425,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if material is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public void decrementStatistic(@NotNull Statistic statistic, @NotNull Material material) throws IllegalArgumentException;
 
@@ -411,6 +439,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if material is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public int getStatistic(@NotNull Statistic statistic, @NotNull Material material) throws IllegalArgumentException;
 
@@ -425,6 +454,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public void incrementStatistic(@NotNull Statistic statistic, @NotNull Material material, int amount) throws IllegalArgumentException;
 
@@ -439,6 +469,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public void decrementStatistic(@NotNull Statistic statistic, @NotNull Material material, int amount) throws IllegalArgumentException;
 
@@ -453,6 +484,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if newValue is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public void setStatistic(@NotNull Statistic statistic, @NotNull Material material, int newValue) throws IllegalArgumentException;
 
@@ -468,6 +500,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if entityType is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public void incrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType) throws IllegalArgumentException;
 
@@ -483,6 +516,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if entityType is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public void decrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType) throws IllegalArgumentException;
 
@@ -496,6 +530,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if entityType is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public int getStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType) throws IllegalArgumentException;
 
@@ -510,6 +545,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public void incrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType, int amount) throws IllegalArgumentException;
 
@@ -524,6 +560,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public void decrementStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType, int amount);
 
@@ -538,6 +575,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if newValue is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @since 1.15.2
      */
     public void setStatistic(@NotNull Statistic statistic, @NotNull EntityType entityType, int newValue);
 
@@ -545,6 +583,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * Gets the player's last death location.
      *
      * @return the last death location if it exists, otherwise null.
+     * @since 1.19
      */
     @Nullable
     public Location getLastDeathLocation();
@@ -554,6 +593,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *
      * @return the player's location, {@code null} if player hasn't ever played
      * before.
+     * @since 1.20.4
      */
     @Nullable
     public Location getLocation();
@@ -569,6 +609,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *
      * @return the persistent data container view
      * @see io.papermc.paper.persistence.PersistentDataViewHolder#getPersistentDataContainer()
+     * @since 1.21.1
      */
     @Override
     io.papermc.paper.persistence.@NotNull PersistentDataContainerView getPersistentDataContainer();

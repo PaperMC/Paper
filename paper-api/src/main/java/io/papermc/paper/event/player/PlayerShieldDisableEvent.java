@@ -17,6 +17,8 @@ import org.jspecify.annotations.NullMarked;
  * cooldown.
  * It follows that, if this event is cancelled, no {@link PlayerItemCooldownEvent} is called as the shield is never
  * disabled in the first place.
+ *
+ * @since 1.20.4
  */
 @NullMarked
 public class PlayerShieldDisableEvent extends PlayerEvent implements Cancellable {

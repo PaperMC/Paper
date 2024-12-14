@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * If a Block Burn event is cancelled, the block will not be destroyed as a
  * result of being burnt by fire.
+ *
+ * @since 1.0.0 R1
  */
 public class BlockBurnEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -32,6 +34,7 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
      *
      * @return The Block that ignited and burned this block, or null if no
      * source block exists
+     * @since 1.11.2
      */
     @Nullable
     public Block getIgnitingBlock() {
@@ -48,12 +51,18 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

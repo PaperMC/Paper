@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * Represents an armor trim that may be applied to an item.
  *
  * @see ArmorMeta#setTrim(ArmorTrim)
+ * @since 1.19.4
  */
 public class ArmorTrim {
 

@@ -12,6 +12,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when a DragonFireball collides with a block/entity and spawns an AreaEffectCloud
+ *
+ * @since 1.13
  */
 @NullMarked
 public class EnderDragonFireballHitEvent extends EntityEvent implements Cancellable {

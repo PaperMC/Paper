@@ -8,5 +8,7 @@ import org.bukkit.Keyed;
  *
  * Note: Since a complex recipe has dynamic outputs, {@link #getResult()} will
  * sometimes return an AIR ItemStack.
+ *
+ * @since 1.15
  */
 public interface ComplexRecipe extends Recipe, Keyed {}

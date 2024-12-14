@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This event is fired when a sign is opened by the player.
  * @deprecated use {@link io.papermc.paper.event.player.PlayerOpenSignEvent}
+ * @since 1.20.1
  */
 @Deprecated(forRemoval = true) // Paper
 @org.bukkit.Warning(false) // Paper

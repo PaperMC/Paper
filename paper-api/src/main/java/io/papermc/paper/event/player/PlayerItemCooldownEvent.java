@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
  * Fired when a player receives an item cooldown when using an item.
  *
  * @see PlayerItemGroupCooldownEvent for a more general event when applied to a group of items
+ * @since 1.16.4
  */
 @NullMarked
 public class PlayerItemCooldownEvent extends PlayerItemGroupCooldownEvent {

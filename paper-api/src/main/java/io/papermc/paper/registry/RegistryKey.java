@@ -46,6 +46,7 @@ import static io.papermc.paper.registry.RegistryKeyImpl.create;
  * reading in data from the vanilla and other datapacks.
  *
  * @param <T> the value type
+ * @since 1.20.2
  */
 @SuppressWarnings("unused")
 @NullMarked

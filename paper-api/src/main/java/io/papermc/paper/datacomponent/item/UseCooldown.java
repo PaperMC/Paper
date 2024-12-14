@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Holds the contents of cooldown information when an item is used.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#USE_COOLDOWN
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

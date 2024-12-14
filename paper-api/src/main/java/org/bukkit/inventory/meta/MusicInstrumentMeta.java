@@ -4,6 +4,9 @@ import org.bukkit.MusicInstrument;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.19.3
+ */
 public interface MusicInstrumentMeta extends ItemMeta {
 
     /**

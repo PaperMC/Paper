@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called just before a {@link PufferFish} inflates or deflates.
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class PufferFishStateChangeEvent extends EntityEvent implements Cancellable {

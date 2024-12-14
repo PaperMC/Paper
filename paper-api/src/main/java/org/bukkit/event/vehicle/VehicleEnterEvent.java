@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Raised when an entity enters a vehicle.
+ *
+ * @since 1.0.0 R1
  */
 public class VehicleEnterEvent extends VehicleEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -39,12 +41,18 @@ public class VehicleEnterEvent extends VehicleEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

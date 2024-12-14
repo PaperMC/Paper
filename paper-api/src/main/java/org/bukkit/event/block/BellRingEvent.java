@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a bell is being rung.
+ *
+ * @since 1.19.4
  */
 public class BellRingEvent extends BlockEvent implements Cancellable {
 

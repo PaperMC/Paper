@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a potion or item that can have custom effects.
+ *
+ * @since 1.4.5 R1.0
  */
 public interface PotionMeta extends ItemMeta {
 
@@ -19,6 +21,7 @@ public interface PotionMeta extends ItemMeta {
      *
      * @param data PotionData to set the base potion state to
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #setBasePotionType} instead.
+     * @since 1.9.4
      */
     @Deprecated(since = "1.20.6")
     void setBasePotionData(@Nullable PotionData data);
@@ -28,6 +31,7 @@ public interface PotionMeta extends ItemMeta {
      *
      * @return a PotionData object
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #getBasePotionType()} instead.
+     * @since 1.9.4
      */
     @Nullable
     @Deprecated(since = "1.20.6")
@@ -37,6 +41,7 @@ public interface PotionMeta extends ItemMeta {
      * Sets the underlying potion type
      *
      * @param type PotionType to set the base potion state to
+     * @since 1.20.2
      */
     void setBasePotionType(@Nullable PotionType type);
 
@@ -44,6 +49,7 @@ public interface PotionMeta extends ItemMeta {
      * Returns the potion type about the base potion
      *
      * @return a PotionType object
+     * @since 1.20.2
      */
     @Nullable
     PotionType getBasePotionType();
@@ -52,6 +58,7 @@ public interface PotionMeta extends ItemMeta {
      * Checks for the presence of a base potion type
      *
      * @return true if a base potion type is present
+     * @since 1.20.6
      */
     boolean hasBasePotionType();
 
@@ -123,6 +130,7 @@ public interface PotionMeta extends ItemMeta {
      * Checks for existence of a potion color.
      *
      * @return true if this has a custom potion color
+     * @since 1.11
      */
     boolean hasColor();
 
@@ -134,6 +142,7 @@ public interface PotionMeta extends ItemMeta {
      * calling this method.
      *
      * @return the potion color that is set
+     * @since 1.11
      */
     @Nullable
     Color getColor();
@@ -143,6 +152,7 @@ public interface PotionMeta extends ItemMeta {
      * the potion in an inventory slot.
      *
      * @param color the color to set
+     * @since 1.11
      */
     void setColor(@Nullable Color color);
 
@@ -151,6 +161,7 @@ public interface PotionMeta extends ItemMeta {
      *
      * @deprecated conflicting name, use {@link #hasCustomPotionName()}
      * @return true if this has a custom potion name
+     * @since 1.21.3
      */
     @Deprecated(forRemoval = true, since = "1.21.4")
     default boolean hasCustomName() {
@@ -165,6 +176,7 @@ public interface PotionMeta extends ItemMeta {
      *
      * @deprecated conflicting name, use {@link #getCustomPotionName()}
      * @return the potion name that is set
+     * @since 1.21.3
      */
     @Deprecated(forRemoval = true, since = "1.21.4")
     @Nullable
@@ -177,6 +189,7 @@ public interface PotionMeta extends ItemMeta {
      *
      * @deprecated conflicting name, use {@link #setCustomPotionName(String)}
      * @param name the name to set
+     * @since 1.21.3
      */
     @Deprecated(forRemoval = true, since = "1.21.4")
     default void setCustomName(@Nullable String name) {
@@ -187,6 +200,7 @@ public interface PotionMeta extends ItemMeta {
      * Checks for existence of a custom potion name translation suffix.
      *
      * @return true if this has a custom potion name
+     * @since 1.21.4
      */
     boolean hasCustomPotionName();
 
@@ -197,6 +211,7 @@ public interface PotionMeta extends ItemMeta {
      * before calling this method.
      *
      * @return the potion name that is set
+     * @since 1.21.4
      */
     @Nullable
     String getCustomPotionName();
@@ -205,6 +220,7 @@ public interface PotionMeta extends ItemMeta {
      * Sets the potion name translation suffix.
      *
      * @param name the name to set
+     * @since 1.21.4
      */
     void setCustomPotionName(@Nullable String name);
 

@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a material that may be used in an {@link ArmorTrim}.
+ *
+ * @since 1.19.4
  */
 public interface TrimMaterial extends Keyed, Translatable {
 
@@ -67,12 +69,14 @@ public interface TrimMaterial extends Keyed, Translatable {
      * Get the description of this {@link TrimMaterial}.
      *
      * @return the description
+     * @since 1.20.4
      */
     net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component description();
 
     /**
      * @deprecated this method assumes that {@link #description()} will
      * always be a translatable component which is not guaranteed.
+     * @since 1.20.4
      */
     @Override
     @Deprecated(forRemoval = true)
@@ -83,6 +87,7 @@ public interface TrimMaterial extends Keyed, Translatable {
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#TRIM_MATERIAL}. TrimMaterials can exist without a key.
+     * @since 1.20.4
      */
     @Deprecated(forRemoval = true, since = "1.20.4")
     @Override
@@ -91,6 +96,7 @@ public interface TrimMaterial extends Keyed, Translatable {
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#TRIM_MATERIAL}. TrimMaterials can exist without a key.
+     * @since 1.21.3
      */
     @Deprecated(forRemoval = true, since = "1.20.4")
     @Override

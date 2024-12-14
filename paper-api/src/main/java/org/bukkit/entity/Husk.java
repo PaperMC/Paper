@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a Husk - variant of {@link Zombie}.
+ *
+ * @since 1.11
  */
 public interface Husk extends Zombie {
 
@@ -10,6 +12,7 @@ public interface Husk extends Zombie {
      * result of being underwater.
      *
      * @return conversion status
+     * @since 1.13.2
      */
     @Override
     boolean isConverting();
@@ -22,6 +25,7 @@ public interface Husk extends Zombie {
      *
      * @return conversion time
      * @throws IllegalStateException if {@link #isConverting()} is false.
+     * @since 1.13.2
      */
     @Override
     int getConversionTime();
@@ -35,6 +39,7 @@ public interface Husk extends Zombie {
      * entity.
      *
      * @param time new conversion time
+     * @since 1.13.2
      */
     @Override
     void setConversionTime(int time);

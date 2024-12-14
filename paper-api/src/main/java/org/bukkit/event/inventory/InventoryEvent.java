@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a player related inventory event
+ *
+ * @since 1.1.0 R5
  */
 public class InventoryEvent extends Event {
     private static final HandlerList handlers = new HandlerList();

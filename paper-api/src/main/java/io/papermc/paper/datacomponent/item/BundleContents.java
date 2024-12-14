@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds all items stored inside of a Bundle.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BUNDLE_CONTENTS
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * All topics are listed in alphabetic order, but topics that start with a
  * slash come after topics that don't.
+ *
+ * @since 1.2.5 R0.1
  */
 public final class HelpTopicComparator implements Comparator<HelpTopic> {
 

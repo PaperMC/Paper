@@ -2,6 +2,8 @@ package org.bukkit.block.data;
 
 /**
  * 'hatch' is the number of entities which may hatch from these eggs.
+ *
+ * @since 1.20
  */
 public interface Hatchable extends BlockData {
 

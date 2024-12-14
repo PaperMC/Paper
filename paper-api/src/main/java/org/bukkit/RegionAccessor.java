@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A RegionAccessor gives access to getting, modifying and spawning {@link Biome}, {@link BlockState} and {@link Entity},
  * as well as generating some basic structures.
+ *
+ * @since 1.17.1
  */
 public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.FeatureFlagSetHolder { // Paper - feature flag API
 
@@ -59,6 +61,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param y Y-coordinate of the block
      * @param z Z-coordinate of the block
      * @return Biome at the given coordinates
+     * @since 1.18.2
      */
     @NotNull
     Biome getComputedBiome(int x, int y, int z);
@@ -110,6 +113,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param y The y-coordinate of the position
      * @param z The z-coordinate of the position
      * @return The {@link io.papermc.paper.block.fluid.FluidData} at the specified position
+     * @since 1.20.4
      */
     @NotNull
     io.papermc.paper.block.fluid.FluidData getFluidData(int x, int y, int z);
@@ -119,6 +123,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *
      * @param position The position of the fluid
      * @return The fluid data at the given position
+     * @since 1.20.4
      */
     @NotNull
     default io.papermc.paper.block.fluid.FluidData getFluidData(@NotNull io.papermc.paper.math.Position position) {
@@ -130,6 +135,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *
      * @param location The location of the fluid
      * @return The fluid data at the given position
+     * @since 1.20.4
      */
     @NotNull
     default io.papermc.paper.block.fluid.FluidData getFluidData(@NotNull Location location) {
@@ -260,6 +266,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param type Type of the tree to create
      * @param statePredicate The predicate which should get used to test if a block should be set or not.
      * @return true if the tree was created successfully, otherwise false
+     * @since 1.18.1
      */
     boolean generateTree(@NotNull Location location, @NotNull Random random, @NotNull TreeType type, @Nullable Predicate<? super BlockState> statePredicate);
 
@@ -352,6 +359,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @return an instance of the created {@link Entity}
      * @see #addEntity(Entity)
      * @see Entity#createSnapshot()
+     * @since 1.20.4
      */
     @NotNull
     <T extends Entity> T createEntity(@NotNull Location location, @NotNull Class<T> clazz);
@@ -456,6 +464,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param x X-coordinate of the blocks
      * @param z Z-coordinate of the blocks
      * @return Y-coordinate of the highest non-empty block
+     * @since 1.19.4
      */
     public int getHighestBlockYAt(int x, int z);
 
@@ -465,6 +474,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *
      * @param location Location of the blocks
      * @return Y-coordinate of the highest non-empty block
+     * @since 1.19.4
      */
     public int getHighestBlockYAt(@NotNull Location location);
 
@@ -479,6 +489,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *
      * @return Y-coordinate of the highest block corresponding to the
      * {@link HeightMap}
+     * @since 1.19.4
      */
     public int getHighestBlockYAt(int x, int z, @NotNull HeightMap heightMap);
 
@@ -491,6 +502,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * point
      * @return Y-coordinate of the highest block corresponding to the
      * {@link HeightMap}
+     * @since 1.19.4
      */
     public int getHighestBlockYAt(@NotNull Location location, @NotNull HeightMap heightMap);
 
@@ -508,6 +520,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
     // Paper start
     /**
      * @return the current moon phase at the current time in the world
+     * @since 1.18.2
      */
     @NotNull
     io.papermc.paper.world.MoonPhase getMoonPhase();
@@ -516,6 +529,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * Get the world's key
      *
      * @return the world's key
+     * @since 1.18.2
      */
     @NotNull
     @Override
@@ -526,6 +540,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      * @param from Location to start at
      * @param to target Location
      * @return whether a line of sight exists between {@code from} and {@code to}
+     * @since 1.18.2
      */
     public boolean lineOfSightExists(@NotNull Location from, @NotNull Location to);
 
@@ -536,6 +551,7 @@ public interface RegionAccessor extends Keyed, io.papermc.paper.world.flag.Featu
      *
      * @param boundingBox the box to check collisions in
      * @return collides or not
+     * @since 1.19.1
      */
     boolean hasCollisionsIn(@NotNull org.bukkit.util.BoundingBox boundingBox);
     // Paper end

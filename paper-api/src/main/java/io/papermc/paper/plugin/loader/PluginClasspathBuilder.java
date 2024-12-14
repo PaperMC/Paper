@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * A mutable builder that may be used to collect and register all {@link ClassPathLibrary} instances a
  * {@link PluginLoader} aims to provide to its plugin at runtime.
+ *
+ * @since 1.19.3
  */
 @ApiStatus.Experimental
 @NullMarked

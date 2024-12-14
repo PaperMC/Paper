@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * If a Block From To event is cancelled, the block will not move (the liquid
  * will not flow).
+ *
+ * @since 1.0.0 R1
  */
 public class BlockFromToEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -65,12 +67,18 @@ public class BlockFromToEvent extends BlockEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

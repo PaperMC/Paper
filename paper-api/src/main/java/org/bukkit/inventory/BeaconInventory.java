@@ -4,6 +4,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface to the inventory of a Beacon.
+ *
+ * @since 1.4.5 R1.0
  */
 public interface BeaconInventory extends Inventory {
 

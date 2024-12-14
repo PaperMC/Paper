@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * EnchantmentMeta is specific to items that can <i>store</i> enchantments, as
  * opposed to being enchanted. {@link Material#ENCHANTED_BOOK} is an example
  * of an item with enchantment storage.
+ *
+ * @since 1.4.6 R0.3
  */
 public interface EnchantmentStorageMeta extends ItemMeta {
 
@@ -73,6 +75,7 @@ public interface EnchantmentStorageMeta extends ItemMeta {
      *
      * @param ench enchantment to test
      * @return true if the enchantment conflicts, false otherwise
+     * @since 1.5.1 R0.2
      */
     boolean hasConflictingStoredEnchant(@NotNull Enchantment ench);
 

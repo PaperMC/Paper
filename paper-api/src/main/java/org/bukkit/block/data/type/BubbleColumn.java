@@ -5,6 +5,8 @@ import org.bukkit.block.data.BlockData;
 /**
  * 'drag' indicates whether a force will be applied on entities moving through
  * this block.
+ *
+ * @since 1.13
  */
 public interface BubbleColumn extends BlockData {
 

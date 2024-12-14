@@ -8,6 +8,8 @@ import org.bukkit.block.data.BlockData;
  * <br>
  * A higher moisture level leads, to faster growth of crops on this block, but
  * cannot be higher than {@link #getMaximumMoisture()}.
+ *
+ * @since 1.13
  */
 public interface Farmland extends BlockData {
 

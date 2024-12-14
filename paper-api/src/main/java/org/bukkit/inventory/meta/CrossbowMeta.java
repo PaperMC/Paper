@@ -5,6 +5,9 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.14
+ */
 public interface CrossbowMeta extends ItemMeta {
 
     /**

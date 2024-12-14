@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * This is used in conjunction with {@link Directional} to compute the
  * orientation of these blocks.
+ *
+ * @since 1.15.2
  */
 public interface FaceAttachable extends BlockData {
 

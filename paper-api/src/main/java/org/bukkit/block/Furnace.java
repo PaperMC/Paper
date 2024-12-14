@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a furnace.
+ *
+ * @since 1.0.0 R1
  */
 public interface Furnace extends Container {
 
@@ -51,6 +53,7 @@ public interface Furnace extends Container {
      * This is the amount of time the item is required to cook for.
      *
      * @return Cook time total
+     * @since 1.13.2
      */
     public int getCookTimeTotal();
 
@@ -60,6 +63,7 @@ public interface Furnace extends Container {
      * This is the amount of time the item is required to cook for.
      *
      * @param cookTimeTotal Cook time total
+     * @since 1.13.2
      */
     public void setCookTimeTotal(int cookTimeTotal);
 
@@ -70,6 +74,7 @@ public interface Furnace extends Container {
      * manually taken from the furnace.
      *
      * @return An immutable map with the recipes used and the times used
+     * @since 1.18.1
      */
     @NotNull
     public Map<CookingRecipe<?>, Integer> getRecipesUsed();
@@ -80,6 +85,7 @@ public interface Furnace extends Container {
      * compared to vanilla.
      *
      * @return the multiplier, a value between 0 and 200
+     * @since 1.13.1
      */
     public double getCookSpeedMultiplier();
 
@@ -90,6 +96,7 @@ public interface Furnace extends Container {
      * @param multiplier the multiplier to set, a value between 0 and 200
      * @throws IllegalArgumentException if value is less than 0
      * @throws IllegalArgumentException if value is more than 200
+     * @since 1.13.1
      */
     public void setCookSpeedMultiplier(double multiplier);
 
@@ -100,6 +107,7 @@ public interface Furnace extends Container {
      *
      * @param furnaceRecipe the recipe to query the count for
      * @return the count or 0 if none found
+     * @since 1.18.1
      */
     int getRecipeUsedCount(@NotNull org.bukkit.NamespacedKey furnaceRecipe);
 
@@ -108,6 +116,7 @@ public interface Furnace extends Container {
      *
      * @param furnaceRecipe the recipe to check if a count exists for
      * @return true if there is a positive count, else false
+     * @since 1.18.1
      */
     boolean hasRecipeUsedCount(@NotNull org.bukkit.NamespacedKey furnaceRecipe);
 
@@ -117,6 +126,7 @@ public interface Furnace extends Container {
      *
      * @param furnaceRecipe the recipe to set the count for
      * @param count the count, a non-positive number will remove the recipe
+     * @since 1.18.1
      */
     void setRecipeUsedCount(@NotNull org.bukkit.inventory.CookingRecipe<?> furnaceRecipe, int count);
 
@@ -124,14 +134,21 @@ public interface Furnace extends Container {
      * Sets all recipes used by this furnace.
      *
      * @param recipesUsed the recipes used
+     * @since 1.18.1
      */
     void setRecipesUsed(@NotNull Map<CookingRecipe<?>, Integer> recipesUsed);
     // Paper end
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     @Override
     public FurnaceInventory getInventory();
 
+    /**
+     * @since 1.12.1
+     */
     @NotNull
     @Override
     public FurnaceInventory getSnapshotInventory();

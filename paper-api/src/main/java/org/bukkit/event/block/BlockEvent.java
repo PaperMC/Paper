@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a block related event.
+ *
+ * @since 1.0.0 R1
  */
 public abstract class BlockEvent extends Event {
     protected Block block;

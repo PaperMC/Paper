@@ -10,6 +10,7 @@ import org.jspecify.annotations.NullMarked;
  * The default priority is 0.
  *
  * @param <O> the required owner type
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 @NullMarked

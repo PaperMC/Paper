@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * {@link org.bukkit.inventory.ItemStack#getType()}. {@code instanceof} on
  * the meta instance is not sufficient due to unusual inheritance
  * with relation to {@link BookMeta}.
+ *
+ * @since 1.20.6
  */
 public interface WritableBookMeta extends ItemMeta {
 

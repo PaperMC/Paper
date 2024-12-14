@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a component which can turn any item into a tool.
+ *
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 public interface ToolComponent extends ConfigurationSerializable {

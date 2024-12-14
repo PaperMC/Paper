@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * This is a snapshot of a datapack on the server. It
  * won't be updated as datapacks are updated.
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public interface Datapack {
@@ -26,6 +28,7 @@ public interface Datapack {
      * Gets the title component of this datapack.
      *
      * @return the title
+     * @since 1.21.1
      */
     Component getTitle();
 
@@ -33,6 +36,7 @@ public interface Datapack {
      * Gets the description component of this datapack.
      *
      * @return the description
+     * @since 1.21.1
      */
     Component getDescription();
 
@@ -40,6 +44,7 @@ public interface Datapack {
      * Gets if this datapack is required to be enabled.
      *
      * @return true if the pack is required
+     * @since 1.21.1
      */
     boolean isRequired();
 
@@ -54,6 +59,7 @@ public interface Datapack {
      * Gets the set of required features for this datapack.
      *
      * @return the set of required features
+     * @since 1.21.1
      */
     @Unmodifiable Set<FeatureFlag> getRequiredFeatures();
 
@@ -78,6 +84,7 @@ public interface Datapack {
      * Gets the source for this datapack.
      *
      * @return the pack source
+     * @since 1.21.1
      */
     DatapackSource getSource();
 
@@ -87,6 +94,7 @@ public interface Datapack {
      * {@link #getDescription()}, {@link #getName()}, and the enabled state.
      *
      * @return a new component
+     * @since 1.21.1
      */
     @Contract(pure = true, value = "-> new")
     Component computeDisplayName();

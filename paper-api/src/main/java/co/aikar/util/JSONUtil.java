@@ -15,6 +15,8 @@ import java.util.Map;
 
 /**
  * Provides Utility methods that assist with generating JSON Objects
+ *
+ * @since 1.9.4
  */
 @SuppressWarnings({"rawtypes", "SuppressionAnnotation"})
 @Deprecated(forRemoval = true)

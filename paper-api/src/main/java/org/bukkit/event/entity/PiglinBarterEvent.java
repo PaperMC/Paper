@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
  * Stores all data related to the bartering interaction with a piglin.
  *
  * Called when a piglin completes a barter.
+ *
+ * @since 1.16.5
  */
 public class PiglinBarterEvent extends EntityEvent implements Cancellable {
 

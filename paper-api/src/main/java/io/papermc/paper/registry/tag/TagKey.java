@@ -7,6 +7,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.21
+ */
 @ApiStatus.Experimental
 @NullMarked
 public sealed interface TagKey<T> extends Keyed permits TagKeyImpl {

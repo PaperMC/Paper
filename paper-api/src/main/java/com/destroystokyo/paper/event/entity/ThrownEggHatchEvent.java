@@ -12,6 +12,8 @@ import org.jspecify.annotations.NullMarked;
  * Called when a thrown egg might hatch.
  * <p>
  * This event fires for all thrown eggs that may hatch, players, dispensers, etc.
+ *
+ * @since 1.15.2
  */
 @NullMarked
 public class ThrownEggHatchEvent extends Event {

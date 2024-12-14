@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
  * in an item's tooltip.
  *
  * @param <T> the data component type
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * A list of event handlers, stored per-event. Based on lahwran's fevents.
+ *
+ * @since 1.1.0 R1
  */
 public class HandlerList {
 
@@ -86,6 +88,7 @@ public class HandlerList {
      * Unregister a specific listener from all handler lists.
      *
      * @param listener listener to unregister
+     * @since 1.1.0 R5
      */
     public static void unregisterAll(@NotNull Listener listener) {
         synchronized (allLists) {
@@ -154,6 +157,7 @@ public class HandlerList {
      * Remove a specific plugin's listeners from this handler
      *
      * @param plugin plugin to remove
+     * @since 1.1.0 R5
      */
     public synchronized void unregister(@NotNull Plugin plugin) {
         boolean changed = false;
@@ -172,6 +176,7 @@ public class HandlerList {
      * Remove a specific listener from this handler
      *
      * @param listener listener to remove
+     * @since 1.1.0 R5
      */
     public synchronized void unregister(@NotNull Listener listener) {
         boolean changed = false;

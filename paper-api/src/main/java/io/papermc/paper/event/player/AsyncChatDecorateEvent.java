@@ -17,6 +17,8 @@ import org.jspecify.annotations.Nullable;
  * original message somewhere in the final message.
  * <br>
  * See {@link AsyncChatCommandDecorateEvent} for the decoration of messages sent via commands
+ *
+ * @since 1.19.1
  */
 @ApiStatus.Experimental
 @NullMarked

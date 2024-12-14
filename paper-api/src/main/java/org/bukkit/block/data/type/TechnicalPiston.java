@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * 'type' represents the type of piston which this (technical) block corresponds
  * to.
+ *
+ * @since 1.13
  */
 public interface TechnicalPiston extends Directional {
 

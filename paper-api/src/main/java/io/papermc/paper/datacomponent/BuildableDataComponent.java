@@ -4,6 +4,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.21.3
+ */
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

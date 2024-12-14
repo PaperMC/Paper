@@ -12,12 +12,16 @@ import org.jspecify.annotations.NullMarked;
  * Holds the custom model data.
  *
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CUSTOM_MODEL_DATA
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
 public interface CustomModelData {
 
+    /**
+     * @since 1.21.4
+     */
     @Contract(value = "-> new", pure = true)
     static CustomModelData.Builder customModelData() {
         return ItemComponentTypesBridge.bridge().customModelData();
@@ -27,6 +31,7 @@ public interface CustomModelData {
      * Gets the custom model data float values.
      *
      * @return the float values
+     * @since 1.21.4
      */
     @Contract(pure = true)
     @Unmodifiable List<Float> floats();
@@ -35,6 +40,7 @@ public interface CustomModelData {
      * Gets the custom model data boolean values.
      *
      * @return the boolean values
+     * @since 1.21.4
      */
     @Contract(pure = true)
     @Unmodifiable List<Boolean> flags();
@@ -43,6 +49,7 @@ public interface CustomModelData {
      * Gets the custom model data string values.
      *
      * @return the string values
+     * @since 1.21.4
      */
     @Contract(pure = true)
     @Unmodifiable List<String> strings();
@@ -51,12 +58,15 @@ public interface CustomModelData {
      * Gets the custom model data color values.
      *
      * @return the color values
+     * @since 1.21.4
      */
     @Contract(pure = true)
     @Unmodifiable List<Color> colors();
 
     /**
      * Builder for {@link CustomModelData}.
+     *
+     * @since 1.21.4
      */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable

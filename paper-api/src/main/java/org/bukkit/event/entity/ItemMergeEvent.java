@@ -5,6 +5,9 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.8.8
+ */
 public class ItemMergeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();

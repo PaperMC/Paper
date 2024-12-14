@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player discovers a new recipe in the recipe book.
+ *
+ * @since 1.13.1
  */
 public class PlayerRecipeDiscoverEvent extends PlayerEvent implements Cancellable {
 

@@ -16,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Complex implementations can be created by overriding the behavior of all
  * the methods in this class.
+ *
+ * @since 1.1.0 R5
  */
 public abstract class HelpTopic {
     protected String name = "";
@@ -44,6 +46,7 @@ public abstract class HelpTopic {
      *
      * @param amendedPermission The permission node the server administrator
      *     wishes to apply to this topic.
+     * @since 1.2.5 R0.1
      */
     public void amendCanSee(@Nullable String amendedPermission) {
         this.amendedPermission = amendedPermission;

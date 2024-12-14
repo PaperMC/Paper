@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a bucket of axolotl.
+ *
+ * @since 1.17.1
  */
 public interface AxolotlBucketMeta extends ItemMeta {
 

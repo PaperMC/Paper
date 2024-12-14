@@ -12,6 +12,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a player sets the effect for a beacon
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class PlayerChangeBeaconEffectEvent extends PlayerEvent implements Cancellable {

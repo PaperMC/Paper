@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown when a player picks up an arrow from the ground.
+ *
+ * @since 1.9.4
  */
 public class PlayerPickupArrowEvent extends PlayerPickupItemEvent {
 

@@ -15,6 +15,8 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * The display is used in the chat, in the toast messages and the advancements
  * screen.
+ *
+ * @since 1.17.1
  */
 @NullMarked
 public interface AdvancementDisplay {
@@ -97,6 +99,7 @@ public interface AdvancementDisplay {
      *
      * @return the display name
      * @see org.bukkit.advancement.Advancement#displayName()
+     * @since 1.19.2
      */
     Component displayName();
 

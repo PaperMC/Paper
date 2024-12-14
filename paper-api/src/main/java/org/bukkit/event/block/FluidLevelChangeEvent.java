@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when the fluid level of a block changes due to changes in adjacent
  * blocks.
+ *
+ * @since 1.13.2
  */
 public class FluidLevelChangeEvent extends BlockEvent implements Cancellable {
 

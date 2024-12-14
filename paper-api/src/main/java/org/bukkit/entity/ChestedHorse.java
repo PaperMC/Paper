@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents Horse-like creatures which can carry an inventory.
+ *
+ * @since 1.11
  */
 public interface ChestedHorse extends AbstractHorse {
 

@@ -12,6 +12,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Adding or removing entities from the world at the point in time this event is called is completely
  * unsupported and should be avoided.
+ *
+ * @since 1.19.2
  */
 @NullMarked
 public class PlayerUntrackEntityEvent extends PlayerEvent {

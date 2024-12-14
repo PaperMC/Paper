@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * Purpose is to allow clean, efficient copy of a chunk data to be made, and
  * then handed off for processing in another thread (e.g. map rendering)
+ *
+ * @since 1.0.0 R1
  */
 public interface ChunkSnapshot {
 
@@ -41,6 +43,7 @@ public interface ChunkSnapshot {
      * @param y world minHeight (inclusive) - world maxHeight (exclusive)
      * @param z 0-15
      * @return block material type
+     * @since 1.12.2
      */
     @NotNull
     Material getBlockType(int x, int y, int z);
@@ -64,6 +67,7 @@ public interface ChunkSnapshot {
      * @param z 0-15
      * @return 0-15
      * @deprecated Magic value
+     * @since 1.13
      */
     @Deprecated(since = "1.6.2")
     int getData(int x, int y, int z);
@@ -117,6 +121,7 @@ public interface ChunkSnapshot {
      * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
      * @param z Z-coordinate (0-15)
      * @return Biome at given coordinate
+     * @since 1.15
      */
     @NotNull
     Biome getBiome(int x, int y, int z);
@@ -139,6 +144,7 @@ public interface ChunkSnapshot {
      * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
      * @param z Z-coordinate (0-15)
      * @return temperature at given coordinate
+     * @since 1.15
      */
     double getRawBiomeTemperature(int x, int y, int z);
 
@@ -154,6 +160,7 @@ public interface ChunkSnapshot {
      *
      * @param sy - section Y coordinate (block Y / 16, world minHeight (inclusive) - world maxHeight (exclusive))
      * @return true if empty, false if not
+     * @since 1.2.2 R0.1
      */
     boolean isSectionEmpty(int sy);
 
@@ -162,6 +169,7 @@ public interface ChunkSnapshot {
      *
      * @param block block to test
      * @return if the block is contained within
+     * @since 1.14.4
      */
     boolean contains(@NotNull BlockData block);
 
@@ -170,6 +178,7 @@ public interface ChunkSnapshot {
      *
      * @param biome biome to test
      * @return if the biome is contained within
+     * @since 1.19.3
      */
     boolean contains(@NotNull Biome biome);
 }

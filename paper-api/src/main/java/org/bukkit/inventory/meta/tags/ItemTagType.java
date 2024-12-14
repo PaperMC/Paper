@@ -45,6 +45,7 @@ import org.jetbrains.annotations.NotNull;
  * @param <Z> the retrieved object type when applying this item tag type
  *
  * @deprecated please use {@link PersistentDataType} as this part of the api is being replaced
+ * @since 1.13.2
  */
 @Deprecated(since = "1.14")
 public interface ItemTagType<T, Z> {

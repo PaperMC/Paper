@@ -22,6 +22,9 @@ import org.bukkit.util.ChatPaginator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.0.0 R1
+ */
 public class HelpCommand extends BukkitCommand {
     public HelpCommand() {
         super("help");
@@ -109,6 +112,9 @@ public class HelpCommand extends BukkitCommand {
         return true;
     }
 
+    /**
+     * @since 1.3.2 R3.0
+     */
     @NotNull
     @Override
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {

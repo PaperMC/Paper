@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a command that delegates to one or more other commands
+ *
+ * @since 1.0.0 R1
  */
 public class MultipleCommandAlias extends Command {
     private Command[] commands;
@@ -17,6 +19,7 @@ public class MultipleCommandAlias extends Command {
      * Gets the commands associated with the multi-command alias.
      *
      * @return commands associated with alias
+     * @since 1.1.0 R5
      */
     @NotNull
     public Command[] getCommands() {

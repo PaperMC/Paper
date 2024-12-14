@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface to the inventory of a Double Chest.
+ *
+ * @since 1.1.0 R5
  */
 public interface DoubleChestInventory extends Inventory {
 
@@ -25,6 +27,9 @@ public interface DoubleChestInventory extends Inventory {
     @NotNull
     Inventory getRightSide();
 
+    /**
+     * @since 1.2.5 R0.1
+     */
     @Override
     @Nullable
     DoubleChest getHolder();

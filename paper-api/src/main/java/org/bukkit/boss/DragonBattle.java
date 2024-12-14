@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a dragon battle state for a world with an end environment.
+ *
+ * @since 1.15.2
  */
 public interface DragonBattle {
 
@@ -46,6 +48,7 @@ public interface DragonBattle {
      * @param withPortals whether end portal blocks should be generated
      *
      * @return true if generated, false if already present
+     * @since 1.16.1
      */
     public boolean generateEndPortal(boolean withPortals);
 
@@ -64,6 +67,7 @@ public interface DragonBattle {
      *
      * @param previouslyKilled true if the dragon has been killed before, false
      * otherwise
+     * @since 1.20.4
      */
     public void setPreviouslyKilled(boolean previouslyKilled);
 
@@ -82,6 +86,7 @@ public interface DragonBattle {
      * world as this dragon battle will be ignored.
      *
      * @return true if the respawn was initiated, false otherwise.
+     * @since 1.20.1
      */
     public boolean initiateRespawn(@Nullable Collection<EnderCrystal> enderCrystals);
 
@@ -152,6 +157,7 @@ public interface DragonBattle {
      * kill of the {@link EnderDragon}.
      *
      * @return the number of gateways around the end island tracked by this
+     * @since 1.20.1
      */
     int getGatewayCount();
 
@@ -159,6 +165,7 @@ public interface DragonBattle {
      * Tries to spawn a new end gateway using default game mechanics.
      *
      * @return true if successful, false if there is already the maximum.
+     * @since 1.20.1
      */
     boolean spawnNewGateway();
 
@@ -167,6 +174,7 @@ public interface DragonBattle {
      * spawn regardless of the number of gateways already present.
      *
      * @param position position for the new gateway
+     * @since 1.20.1
      */
     void spawnNewGateway(@NotNull io.papermc.paper.math.Position position);
 
@@ -175,6 +183,7 @@ public interface DragonBattle {
      * is ongoing, the list will be empty.
      *
      * @return the respawn crystals
+     * @since 1.20.1
      */
     java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<org.bukkit.entity.EnderCrystal> getRespawnCrystals();
 
@@ -182,6 +191,7 @@ public interface DragonBattle {
      * Gets the {@link org.bukkit.entity.EnderCrystal}s on top of the pillars that heal the dragon.
      *
      * @return the healing crystals
+     * @since 1.20.1
      */
     java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<org.bukkit.entity.EnderCrystal> getHealingCrystals();
     // Paper end

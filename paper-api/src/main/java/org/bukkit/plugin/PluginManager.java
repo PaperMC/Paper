@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Handles all plugin management from the Server
+ *
+ * @since 1.0.0 R1
  */
 public interface PluginManager extends io.papermc.paper.plugin.PermissionManager { // Paper
 
@@ -95,6 +97,7 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
      *
      * @param files List of files containing plugins to load
      * @return A list of all plugins loaded
+     * @since 1.20.6
      */
     @NotNull
     public Plugin[] loadPlugins(@NotNull File[] files);
@@ -126,6 +129,7 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
      *
      * @param listener Listener to register
      * @param plugin Plugin to register
+     * @since 1.1.0 R1
      */
     public void registerEvents(@NotNull Listener listener, @NotNull Plugin plugin);
 
@@ -137,6 +141,7 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
      * @param priority Priority to register this event at
      * @param executor EventExecutor to register
      * @param plugin Plugin to register
+     * @since 1.1.0 R1
      */
     public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin);
 
@@ -149,6 +154,7 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
      * @param executor EventExecutor to register
      * @param plugin Plugin to register
      * @param ignoreCancelled Whether to pass cancelled events or not
+     * @since 1.1.0 R4
      */
     public void registerEvent(@NotNull Class<? extends Event> event, @NotNull Listener listener, @NotNull EventPriority priority, @NotNull EventExecutor executor, @NotNull Plugin plugin, boolean ignoreCancelled);
 
@@ -311,9 +317,13 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
      * Returns whether or not timing code should be used for event calls
      *
      * @return True if event timings are to be used
+     * @since 1.1.0 R1
      */
     public boolean useTimings();
 
+    /**
+     * @since 1.19.3
+     */
     // Paper start
     @org.jetbrains.annotations.ApiStatus.Internal
     boolean isTransitiveDependency(io.papermc.paper.plugin.configuration.PluginMeta pluginMeta, io.papermc.paper.plugin.configuration.PluginMeta dependencyConfig);
@@ -322,6 +332,7 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
      * Sets the permission manager to be used for this server.
      *
      * @param permissionManager permission manager
+     * @since 1.19.3
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     void overridePermissionManager(@NotNull Plugin plugin, @Nullable io.papermc.paper.plugin.PermissionManager permissionManager);

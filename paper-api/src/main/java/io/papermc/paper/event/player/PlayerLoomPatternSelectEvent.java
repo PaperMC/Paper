@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player selects a banner patten in a loom inventory.
+ *
+ * @since 1.16.4
  */
 @NullMarked
 public class PlayerLoomPatternSelectEvent extends PlayerEvent implements Cancellable {

@@ -12,6 +12,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Stores all explosions crafted into a Firework Rocket, as well as flight duration.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#FIREWORKS
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

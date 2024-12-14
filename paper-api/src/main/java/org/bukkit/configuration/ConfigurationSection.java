@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a section of a {@link Configuration}
+ *
+ * @since 1.0.0 R1
  */
 public interface ConfigurationSection {
     /**
@@ -80,6 +82,7 @@ public interface ConfigurationSection {
      * @return True if this section contains the requested path, or if a default
      * value exist and the boolean parameter for this method is true.
      * @throws IllegalArgumentException Thrown when path is null.
+     * @since 1.9.4
      */
     public boolean contains(@NotNull String path, boolean ignoreDefault);
 
@@ -654,6 +657,7 @@ public interface ConfigurationSection {
      * @param path the path to the object.
      * @param clazz the type of the requested object
      * @return Requested object
+     * @since 1.13.2
      */
     @Nullable
     public <T extends Object> T getObject(@NotNull String path, @NotNull Class<T> clazz);
@@ -697,6 +701,7 @@ public interface ConfigurationSection {
      * @param path the path to the object.
      * @param clazz the type of {@link ConfigurationSerializable}
      * @return Requested {@link ConfigurationSerializable} object
+     * @since 1.12.2
      */
     @Nullable
     public <T extends ConfigurationSerializable> T getSerializable(@NotNull String path, @NotNull Class<T> clazz);
@@ -859,6 +864,7 @@ public interface ConfigurationSection {
      *
      * @param path Path of the Color to get.
      * @return Requested Color.
+     * @since 1.4.5 R1.0
      */
     @Nullable
     public Color getColor(@NotNull String path);
@@ -875,6 +881,7 @@ public interface ConfigurationSection {
      * @param def The default value to return if the path is not found or is
      *     not a Color.
      * @return Requested Color.
+     * @since 1.4.5 R1.0
      */
     @Contract("_, !null -> !null")
     @Nullable
@@ -890,6 +897,7 @@ public interface ConfigurationSection {
      *
      * @param path Path of the Color to check.
      * @return Whether or not the specified path is a Color.
+     * @since 1.4.5 R1.0
      */
     public boolean isColor(@NotNull String path);
 
@@ -902,6 +910,7 @@ public interface ConfigurationSection {
      *
      * @param path Path of the Location to get.
      * @return Requested Location.
+     * @since 1.14.4
      */
     @Nullable
     public Location getLocation(@NotNull String path);
@@ -918,6 +927,7 @@ public interface ConfigurationSection {
      * @param def The default value to return if the path is not found or is not
      * a Location.
      * @return Requested Location.
+     * @since 1.14.4
      */
     @Contract("_, !null -> !null")
     @Nullable
@@ -933,6 +943,7 @@ public interface ConfigurationSection {
      *
      * @param path Path of the Location to check.
      * @return Whether or not the specified path is a Location.
+     * @since 1.14.4
      */
     public boolean isLocation(@NotNull String path);
 
@@ -1007,6 +1018,7 @@ public interface ConfigurationSection {
      * @param path Path of the comments to get.
      * @return A unmodifiable list of the requested comments, every entry
      * represents one line.
+     * @since 1.18.1
      */
     @NotNull
     public List<String> getComments(@NotNull String path);
@@ -1021,6 +1033,7 @@ public interface ConfigurationSection {
      * @param path Path of the comments to get.
      * @return A unmodifiable list of the requested comments, every entry
      * represents one line.
+     * @since 1.18.1
      */
     @NotNull
     public List<String> getInlineComments(@NotNull String path);
@@ -1039,6 +1052,7 @@ public interface ConfigurationSection {
      * @param path Path of the comments to set.
      * @param comments New comments to set at the path, every entry represents
      * one line.
+     * @since 1.18.1
      */
     public void setComments(@NotNull String path, @Nullable List<String> comments);
 
@@ -1056,6 +1070,7 @@ public interface ConfigurationSection {
      * @param path Path of the comments to set.
      * @param comments New comments to set at the path, every entry represents
      * one line.
+     * @since 1.18.1
      */
     public void setInlineComments(@NotNull String path, @Nullable List<String> comments);
 
@@ -1069,6 +1084,7 @@ public interface ConfigurationSection {
      *
      * @param path Path of the Component to get.
      * @return Requested Component.
+     * @since 1.20.4
      */
     default net.kyori.adventure.text.@Nullable Component getRichMessage(final @NotNull String path) {
         return this.getRichMessage(path, null);
@@ -1084,6 +1100,7 @@ public interface ConfigurationSection {
      * @param path Path of the Component to get.
      * @param fallback component that will be used as fallback
      * @return Requested Component.
+     * @since 1.20.4
      */
     @Contract("_, !null -> !null")
     default net.kyori.adventure.text.@Nullable Component getRichMessage(final @NotNull String path, final net.kyori.adventure.text.@Nullable Component fallback) {
@@ -1098,6 +1115,7 @@ public interface ConfigurationSection {
      *
      * @param path Path of the object to set.
      * @param value New value to set the path to.
+     * @since 1.20.4
      */
     default void setRichMessage(final @NotNull String path, final net.kyori.adventure.text.@Nullable Component value) {
         this.setComponent(path, net.kyori.adventure.text.minimessage.MiniMessage.miniMessage(), value);
@@ -1113,6 +1131,7 @@ public interface ConfigurationSection {
      * @param path Path of the Component to get.
      * @param decoder ComponentDecoder instance used for deserialization
      * @return Requested Component.
+     * @since 1.20.4
      */
     default <C extends net.kyori.adventure.text.Component> @Nullable C getComponent(final @NotNull String path, final net.kyori.adventure.text.serializer.@NotNull ComponentDecoder<? super String, C> decoder) {
         return this.getComponent(path, decoder, null);

@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * Stefan Gustavson at
  * <a href="http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf">
  * http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf</a>
+ *
+ * @since 1.0.0 R1
  */
 public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
     protected static final double SQRT_3 = Math.sqrt(3);

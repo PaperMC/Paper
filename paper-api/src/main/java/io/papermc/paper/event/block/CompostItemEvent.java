@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Called when an item is about to be composted by a hopper.
  * To prevent hoppers from moving items into composters, cancel the {@link InventoryMoveItemEvent}.
+ *
+ * @since 1.19.3
  */
 @NullMarked
 public class CompostItemEvent extends BlockEvent {

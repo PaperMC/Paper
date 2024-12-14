@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a SkeletonHorse - variant of {@link AbstractHorse}.
+ *
+ * @since 1.11
  */
 public interface SkeletonHorse extends AbstractHorse {
 
@@ -14,6 +16,7 @@ public interface SkeletonHorse extends AbstractHorse {
      * spawning three additional horsemen nearby.
      *
      * @return true if trapped
+     * @since 1.18.1
      */
     boolean isTrapped();
 
@@ -21,6 +24,7 @@ public interface SkeletonHorse extends AbstractHorse {
      * Sets if this skeleton horse is trapped.
      *
      * @param trapped new trapped state
+     * @since 1.18.1
      */
     void setTrapped(boolean trapped);
 
@@ -31,6 +35,7 @@ public interface SkeletonHorse extends AbstractHorse {
      * The horse automatically despawns when it reaches 18000 ticks.
      *
      * @return current trap time
+     * @since 1.13
      */
     int getTrapTime();
 
@@ -41,18 +46,21 @@ public interface SkeletonHorse extends AbstractHorse {
      * tick.
      *
      * @param trapTime new trap time
+     * @since 1.18.1
      */
     void setTrapTime(int trapTime);
 
     // Paper start
     /**
      * @deprecated use {@link #isTrapped()}
+     * @since 1.13
      */
     @Deprecated
     boolean isTrap();
 
     /**
      * @deprecated use {@link #setTrapped(boolean)}
+     * @since 1.13
      */
     @Deprecated
     void setTrap(boolean trap);

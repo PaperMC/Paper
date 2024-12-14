@@ -4,6 +4,8 @@ import org.bukkit.block.data.Directional;
 
 /**
  * 'extended' denotes whether the piston head is currently extended or not.
+ *
+ * @since 1.13
  */
 public interface Piston extends Directional {
 

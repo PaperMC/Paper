@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * An Axolotl.
+ *
+ * @since 1.17
  */
 public interface Axolotl extends Animals, io.papermc.paper.entity.Bucketable { // Paper - Bucketable API
 

@@ -6,6 +6,9 @@ import org.bukkit.Bukkit;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.14.1
+ */
 @NullMarked
 public interface VersionFetcher {
 

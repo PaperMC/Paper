@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
  * Called when a Creeper is struck by lightning.
  * <p>
  * If a Creeper Power event is cancelled, the Creeper will not be powered.
+ *
+ * @since 1.0.0 R1
  */
 public class CreeperPowerEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -38,6 +40,9 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
         canceled = cancel;
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     @Override
     public Creeper getEntity() {
@@ -64,12 +69,18 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
         return cause;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

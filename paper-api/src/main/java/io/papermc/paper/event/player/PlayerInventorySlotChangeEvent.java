@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a slot contents change in a player's inventory.
+ *
+ * @since 1.19.2
  */
 @NullMarked
 public class PlayerInventorySlotChangeEvent extends PlayerEvent {

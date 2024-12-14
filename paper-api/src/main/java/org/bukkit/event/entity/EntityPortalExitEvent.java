@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * Cancelling this event does not prevent the teleport, but it does prevent
  * any changes to velocity and location from taking place.
+ *
+ * @since 1.4.7 R1.1
  */
 public class EntityPortalExitEvent extends EntityTeleportEvent {
     private static final HandlerList handlers = new HandlerList();

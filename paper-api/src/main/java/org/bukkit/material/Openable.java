@@ -1,5 +1,8 @@
 package org.bukkit.material;
 
+/**
+ * @since 1.1.0 R5
+ */
 @Deprecated(forRemoval = true, since = "1.13")
 public interface Openable {
 

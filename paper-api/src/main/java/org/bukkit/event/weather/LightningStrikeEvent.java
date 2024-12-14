@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Stores data for lightning striking
+ *
+ * @since 1.0.0 R1
  */
 public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -50,18 +52,25 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
      * Gets the cause of this lightning strike.
      *
      * @return strike cause
+     * @since 1.13.1
      */
     @NotNull
     public Cause getCause() {
         return cause;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

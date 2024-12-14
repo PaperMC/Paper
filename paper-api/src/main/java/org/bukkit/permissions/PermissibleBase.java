@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Base Permissible for use in any Permissible object via proxy or extension
+ *
+ * @since 1.0.0 R1
  */
 public class PermissibleBase implements Permissible {
     private final ServerOperator opable;
@@ -179,6 +181,9 @@ public class PermissibleBase implements Permissible {
         }
     }
 
+    /**
+     * @since 1.2.5 R1.3
+     */
     public synchronized void clearPermissions() {
         Set<String> perms = permissions.keySet();
 

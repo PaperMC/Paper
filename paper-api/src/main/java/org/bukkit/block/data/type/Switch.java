@@ -5,6 +5,9 @@ import org.bukkit.block.data.FaceAttachable;
 import org.bukkit.block.data.Powerable;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.13
+ */
 public interface Switch extends Directional, FaceAttachable, Powerable {
 
     /**

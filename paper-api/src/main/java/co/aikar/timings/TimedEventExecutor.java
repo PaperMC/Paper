@@ -36,6 +36,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * @deprecated Timings will be removed in the future
+ * @since 1.9.4
  */
 @Deprecated(forRemoval = true)
 public class TimedEventExecutor implements EventExecutor {
@@ -85,6 +86,9 @@ public class TimedEventExecutor implements EventExecutor {
         }
     }
 
+    /**
+     * @since 1.19.2
+     */
     @Override
     @NotNull
     public String toString() {

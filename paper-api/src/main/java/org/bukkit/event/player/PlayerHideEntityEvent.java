@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * This event is called regardless of if the entity was within tracking range.
  *
  * @see Player#hideEntity(org.bukkit.plugin.Plugin, org.bukkit.entity.Entity)
+ * @since 1.18.1
  */
 public class PlayerHideEntityEvent extends PlayerEvent {
 

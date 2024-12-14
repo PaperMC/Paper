@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Holds information for player movement events
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -98,6 +100,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * Check if the player has changed position (even within the same block) in the event
      *
      * @return whether the player has changed position or not
+     * @since 1.16.5
      */
     public boolean hasChangedPosition() {
         return hasExplicitlyChangedPosition() || !from.getWorld().equals(to.getWorld());
@@ -107,6 +110,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * Check if the player has changed position (even within the same block) in the event, disregarding a possible world change
      *
      * @return whether the player has changed position or not
+     * @since 1.16.5
      */
     public boolean hasExplicitlyChangedPosition() {
         return from.getX() != to.getX() || from.getY() != to.getY() || from.getZ() != to.getZ();
@@ -116,6 +120,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * Check if the player has moved to a new block in the event
      *
      * @return whether the player has moved to a new block or not
+     * @since 1.16.5
      */
     public boolean hasChangedBlock() {
         return hasExplicitlyChangedBlock() || !from.getWorld().equals(to.getWorld());
@@ -125,6 +130,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * Check if the player has moved to a new block in the event, disregarding a possible world change
      *
      * @return whether the player has moved to a new block or not
+     * @since 1.16.5
      */
     public boolean hasExplicitlyChangedBlock() {
         return from.getBlockX() != to.getBlockX() || from.getBlockY() != to.getBlockY() || from.getBlockZ() != to.getBlockZ();
@@ -134,6 +140,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      * Check if the player has changed orientation in the event
      *
      * @return whether the player has changed orientation or not
+     * @since 1.16.5
      */
     public boolean hasChangedOrientation() {
         return from.getPitch() != to.getPitch() || from.getYaw() != to.getYaw();
@@ -145,12 +152,18 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
         Preconditions.checkArgument(loc.getWorld() != null, "Cannot use null location with null world!");
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

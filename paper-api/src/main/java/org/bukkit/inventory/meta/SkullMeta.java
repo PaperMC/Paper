@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a skull that can have an owner.
+ *
+ * @since 1.4.5 R1.0
  */
 public interface SkullMeta extends ItemMeta {
 
@@ -42,12 +44,14 @@ public interface SkullMeta extends ItemMeta {
     /**
      * Sets this skull to use the supplied Player Profile, which can include textures already prefilled.
      * @param profile The profile to set this Skull to use, or null to clear owner
+     * @since 1.12.2
      */
     void setPlayerProfile(@Nullable com.destroystokyo.paper.profile.PlayerProfile profile);
 
     /**
      * If the skull has an owner, per {@link #hasOwner()}, return the owners {@link com.destroystokyo.paper.profile.PlayerProfile}
      * @return The profile of the owner, if set
+     * @since 1.12.2
      */
     @Nullable com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile();
     // Paper end
@@ -56,6 +60,7 @@ public interface SkullMeta extends ItemMeta {
      * Gets the owner of the skull.
      *
      * @return the owner if the skull
+     * @since 1.12.1
      */
     @Nullable
     OfflinePlayer getOwningPlayer();
@@ -68,6 +73,7 @@ public interface SkullMeta extends ItemMeta {
      *
      * @param owner the new owner of the skull
      * @return true if the owner was successfully set
+     * @since 1.12.1
      */
     boolean setOwningPlayer(@Nullable OfflinePlayer owner);
 
@@ -76,6 +82,7 @@ public interface SkullMeta extends ItemMeta {
      * may appear as the texture depending on skull type.
      *
      * @return the profile of the owning player
+     * @since 1.18.1
      */
     @Nullable
     @Deprecated // Paper
@@ -92,6 +99,7 @@ public interface SkullMeta extends ItemMeta {
      * @param profile the profile of the owning player
      * @throws IllegalArgumentException if the profile does not contain the
      * necessary information
+     * @since 1.18.1
      */
     @Deprecated // Paper
     void setOwnerProfile(@Nullable PlayerProfile profile);
@@ -103,6 +111,7 @@ public interface SkullMeta extends ItemMeta {
      * see {@link org.bukkit.Instrument}.
      *
      * @param noteBlockSound the key of the sound to be played, or null
+     * @since 1.19.3
      */
     void setNoteBlockSound(@Nullable NamespacedKey noteBlockSound);
 
@@ -113,6 +122,7 @@ public interface SkullMeta extends ItemMeta {
      * see {@link org.bukkit.Instrument}.
      *
      * @return the key of the sound, or null
+     * @since 1.19.3
      */
     @Nullable
     NamespacedKey getNoteBlockSound();

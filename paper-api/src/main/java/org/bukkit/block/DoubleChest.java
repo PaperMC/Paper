@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a double chest.
+ *
+ * @since 1.2.5 R0.1
  */
 public class DoubleChest implements InventoryHolder {
     private DoubleChestInventory inventory;
@@ -34,12 +36,18 @@ public class DoubleChest implements InventoryHolder {
         return inventory.getRightSide().getHolder();
     }
 
+    /**
+     * @since 1.15.2
+     */
     // Paper start - getHolder without snapshot
     @Nullable
     public InventoryHolder getLeftSide(boolean useSnapshot) {
         return inventory.getLeftSide().getHolder(useSnapshot);
     }
 
+    /**
+     * @since 1.15.2
+     */
     @Nullable
     public InventoryHolder getRightSide(boolean useSnapshot) {
         return inventory.getRightSide().getHolder(useSnapshot);

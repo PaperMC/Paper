@@ -1,5 +1,8 @@
 package org.bukkit.entity;
 
+/**
+ * @since 1.8
+ */
 public interface Guardian extends Monster {
 
     /**
@@ -12,6 +15,7 @@ public interface Guardian extends Monster {
      * @return true if the laser was activated otherwise false
      * @see #getTarget()
      * @see #setTarget(LivingEntity)
+     * @since 1.17.1
      */
     boolean setLaser(boolean activated);
 
@@ -19,6 +23,7 @@ public interface Guardian extends Monster {
      * Gets whether the guardian laser is active or not.
      *
      * @return true if the laser is active otherwise false
+     * @since 1.17.1
      */
     boolean hasLaser();
 
@@ -26,6 +31,7 @@ public interface Guardian extends Monster {
      * Get the duration (in ticks) that a laser attack takes.
      *
      * @return the laser duration in ticks
+     * @since 1.19.4
      */
     public int getLaserDuration();
 
@@ -40,6 +46,7 @@ public interface Guardian extends Monster {
      * the guardian laser than the set ticks.
      *
      * @param ticks the ticks to set. Must be at least -10
+     * @since 1.19.4
      */
     public void setLaserTicks(int ticks);
 
@@ -54,6 +61,7 @@ public interface Guardian extends Monster {
      * new one.
      *
      * @return the laser ticks ranging from -10 to {@link #getLaserDuration()}
+     * @since 1.19.4
      */
     public int getLaserTicks();
 
@@ -82,6 +90,7 @@ public interface Guardian extends Monster {
      * thorns damage is guaranteed and the guardian may initiate laser attacks.
      *
      * @return true if moving, false if stationary
+     * @since 1.19.4
      */
     public boolean isMoving();
 }

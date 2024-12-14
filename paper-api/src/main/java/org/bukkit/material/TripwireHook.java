@@ -8,6 +8,7 @@ import org.bukkit.block.BlockFace;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
+ * @since 1.3.1 R1.0
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class TripwireHook extends SimpleAttachableMaterialData implements Redstone {
@@ -95,6 +96,9 @@ public class TripwireHook extends SimpleAttachableMaterialData implements Redsto
         setData((byte) dat);
     }
 
+    /**
+     * @since 1.3.2 R1.0
+     */
     @Override
     public BlockFace getAttachedFace() {
         switch (getData() & 0x3) {

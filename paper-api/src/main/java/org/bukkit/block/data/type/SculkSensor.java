@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 'sculk_sensor_phase' indicates the current operational phase of the sensor.
+ *
+ * @since 1.17
  */
 public interface SculkSensor extends AnaloguePowerable, Waterlogged {
 

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * An Allay.
+ *
+ * @since 1.19
  */
 public interface Allay extends Creature, InventoryHolder {
 
@@ -18,6 +20,7 @@ public interface Allay extends Creature, InventoryHolder {
      * {@link #getDuplicationCooldown} its lower than zero.
      *
      * @return if the allay can duplicate itself.
+     * @since 1.19.2
      */
     public boolean canDuplicate();
 
@@ -29,6 +32,7 @@ public interface Allay extends Creature, InventoryHolder {
      * {@link #setDuplicationCooldown} to allow the allay to duplicate
      *
      * @param canDuplicate if the allay can duplicate itself
+     * @since 1.19.2
      */
     public void setCanDuplicate(boolean canDuplicate);
 
@@ -36,6 +40,7 @@ public interface Allay extends Creature, InventoryHolder {
      * Gets the cooldown for duplicating the allay.
      *
      * @return the time in ticks when allay can duplicate
+     * @since 1.19.2
      */
     public long getDuplicationCooldown();
 
@@ -44,6 +49,7 @@ public interface Allay extends Creature, InventoryHolder {
      *
      * @param cooldown the cooldown, use a negative number to deny allay to
      * duplicate again.
+     * @since 1.19.2
      */
     public void setDuplicationCooldown(long cooldown);
 
@@ -52,6 +58,8 @@ public interface Allay extends Creature, InventoryHolder {
      *
      * This will set the cooldown ticks to the same value as is set after an
      * Allay has duplicated.
+     *
+     * @since 1.19.2
      */
     public void resetDuplicationCooldown();
 
@@ -59,6 +67,7 @@ public interface Allay extends Creature, InventoryHolder {
      * Gets if the allay is dancing.
      *
      * @return {@code True} if it is dancing, false otherwise.
+     * @since 1.19.2
      */
     public boolean isDancing();
 
@@ -70,6 +79,7 @@ public interface Allay extends Creature, InventoryHolder {
      *
      * @throws IllegalArgumentException if the block at the location is not a
      * jukebox
+     * @since 1.19.2
      */
     public void startDancing(@NotNull Location location);
 
@@ -78,11 +88,15 @@ public interface Allay extends Creature, InventoryHolder {
      * <br>
      * <b>Note:</b> This method forces the allay to dance, ignoring any nearby
      * jukebox being required.
+     *
+     * @since 1.19.2
      */
     public void startDancing();
 
     /**
      * Makes the allay stop dancing.
+     *
+     * @since 1.19.2
      */
     public void stopDancing();
 
@@ -92,6 +106,7 @@ public interface Allay extends Creature, InventoryHolder {
      * <b>Note:</b> this will fire a {@link CreatureSpawnEvent}
      *
      * @return the new entity {@link Allay} or null if the spawn was cancelled
+     * @since 1.19.2
      */
     @Nullable
     public Allay duplicateAllay();
@@ -100,6 +115,7 @@ public interface Allay extends Creature, InventoryHolder {
      * Gets the jukebox the allay is set to dance to.
      *
      * @return the location of the jukebox to dance if it exists
+     * @since 1.19.2
      */
     @Nullable
     public Location getJukebox();

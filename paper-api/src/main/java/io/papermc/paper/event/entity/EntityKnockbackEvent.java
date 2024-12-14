@@ -13,6 +13,7 @@ import org.jspecify.annotations.NullMarked;
  * Called when an entity receives knockback.
  * @see EntityPushedByEntityAttackEvent
  * @see com.destroystokyo.paper.event.entity.EntityKnockbackByEntityEvent
+ * @since 1.20.6
  */
 @NullMarked
 public class EntityKnockbackEvent extends EntityEvent implements Cancellable {

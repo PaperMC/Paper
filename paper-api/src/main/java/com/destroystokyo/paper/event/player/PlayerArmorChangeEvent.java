@@ -16,6 +16,8 @@ import static org.bukkit.Material.*;
  * Called when the player themselves change their armor items
  * <p>
  * Not currently called for environmental factors though it <strong>MAY BE IN THE FUTURE</strong>
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class PlayerArmorChangeEvent extends PlayerEvent {

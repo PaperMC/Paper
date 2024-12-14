@@ -13,6 +13,7 @@ import org.jspecify.annotations.NullMarked;
  * Stores a list of enchantments and their levels on an item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#ENCHANTMENTS
  * @see io.papermc.paper.datacomponent.DataComponentTypes#STORED_ENCHANTMENTS
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

@@ -8,6 +8,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a moving world border has finished its move.
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class WorldBorderBoundsChangeFinishEvent extends WorldBorderEvent {

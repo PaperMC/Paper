@@ -35,6 +35,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <K> Key Type of the Map
  * @param <V> Value Type of the Map
+ * @since 1.9.4
  */
 @Deprecated(forRemoval = true)
 public class MRUMapCache<K, V> extends AbstractMap<K, V> {

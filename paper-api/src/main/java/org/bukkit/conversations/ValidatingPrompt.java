@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
  * ValidatingPrompt is the base class for any prompt that requires validation.
  * ValidatingPrompt will keep replaying the prompt text until the user enters
  * a valid response.
+ *
+ * @since 1.1.0 R5
  */
 public abstract class ValidatingPrompt implements Prompt {
     public ValidatingPrompt() {

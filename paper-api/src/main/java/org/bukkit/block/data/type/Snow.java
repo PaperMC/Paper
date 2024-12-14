@@ -8,6 +8,8 @@ import org.bukkit.block.data.BlockData;
  * <br>
  * May not be lower than {@link #getMinimumLayers()} or higher than
  * {@link #getMaximumLayers()}.
+ *
+ * @since 1.13
  */
 public interface Snow extends BlockData {
 

@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface to the inventory of a Player, including the four armor slots and any extra slots.
+ *
+ * @since 1.0.0 R1
  */
 public interface PlayerInventory extends Inventory {
 
@@ -26,6 +28,9 @@ public interface PlayerInventory extends Inventory {
      * {@link #getArmorContents()}
      *
      * @return All additional ItemStacks. Individual items can be null.
+     */
+    /**
+     * @since 1.9.4
      */
     public @Nullable ItemStack @NotNull [] getExtraContents(); // Paper - make array elements nullable instead array
 
@@ -85,6 +90,7 @@ public interface PlayerInventory extends Inventory {
      * @see #setHelmet(ItemStack)
      * @see #setLeggings(ItemStack)
      * @see #setItemInOffHand(ItemStack)
+     * @since 1.8.8
      */
     @Override
     public void setItem(int index, @Nullable ItemStack item);
@@ -98,6 +104,7 @@ public interface PlayerInventory extends Inventory {
      * @throws IllegalArgumentException if the slot is invalid for the player
      * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
      * @see #setItem(int, ItemStack)
+     * @since 1.9.4
      */
     public void setItem(@NotNull EquipmentSlot slot, @Nullable ItemStack item);
 
@@ -109,6 +116,7 @@ public interface PlayerInventory extends Inventory {
      * @return the ItemStack in the given slot
      * @throws IllegalArgumentException if the slot is invalid for the player
      * @see org.bukkit.entity.LivingEntity#canUseEquipmentSlot(EquipmentSlot)
+     * @since 1.9.4
      */
     @NotNull // Paper
     public ItemStack getItem(@NotNull EquipmentSlot slot);
@@ -126,6 +134,7 @@ public interface PlayerInventory extends Inventory {
      * See {@link #getExtraContents()} for an explanation of extra slots.
      *
      * @param items The ItemStacks to use as extra
+     * @since 1.9.4
      */
     public void setExtraContents(@Nullable ItemStack[] items);
 
@@ -166,6 +175,7 @@ public interface PlayerInventory extends Inventory {
      * in their main hand.
      *
      * @return the currently held item
+     * @since 1.9.4
      */
     @NotNull
     ItemStack getItemInMainHand();
@@ -174,6 +184,7 @@ public interface PlayerInventory extends Inventory {
      * Sets the item the player is holding in their main hand.
      *
      * @param item The item to put into the player's hand
+     * @since 1.9.4
      */
     void setItemInMainHand(@Nullable ItemStack item);
 
@@ -182,6 +193,7 @@ public interface PlayerInventory extends Inventory {
      * in their off hand.
      *
      * @return the currently held item
+     * @since 1.9.4
      */
     @NotNull
     ItemStack getItemInOffHand();
@@ -190,6 +202,7 @@ public interface PlayerInventory extends Inventory {
      * Sets the item the player is holding in their off hand.
      *
      * @param item The item to put into the player's hand
+     * @since 1.9.4
      */
     void setItemInOffHand(@Nullable ItemStack item);
 
@@ -233,9 +246,13 @@ public interface PlayerInventory extends Inventory {
      * @param slot The new slot number
      * @throws IllegalArgumentException Thrown if slot is not between 0 and 8
      *     inclusive
+     * @since 1.5.1 R0.2
      */
     public void setHeldItemSlot(int slot);
 
+    /**
+     * @since 1.1.0 R5
+     */
     @Override
     @Nullable
     public HumanEntity getHolder();

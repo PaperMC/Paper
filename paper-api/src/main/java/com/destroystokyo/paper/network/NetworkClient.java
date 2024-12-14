@@ -6,6 +6,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a client connected to the server.
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public interface NetworkClient {

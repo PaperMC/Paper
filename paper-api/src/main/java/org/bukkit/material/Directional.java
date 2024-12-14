@@ -3,6 +3,9 @@ package org.bukkit.material;
 import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.0.0 R1
+ */
 public interface Directional {
 
     /**

@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Event that is called when an organic structure attempts to grow (Sapling {@literal ->}
  * Tree), (Mushroom {@literal ->} Huge Mushroom), naturally or using bonemeal.
+ *
+ * @since 1.1.0 R1
  */
 public class StructureGrowEvent extends WorldEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

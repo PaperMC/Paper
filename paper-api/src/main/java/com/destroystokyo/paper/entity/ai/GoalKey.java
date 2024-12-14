@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
  * Used to identify a Goal. Consists of a {@link NamespacedKey} and the type of mob the goal can be applied to
  *
  * @param <T> the type of mob the goal can be applied to
+ * @since 1.15.2
  */
 @NullMarked
 public final class GoalKey<T extends Mob> {

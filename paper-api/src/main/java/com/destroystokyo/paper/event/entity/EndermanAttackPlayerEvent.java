@@ -36,6 +36,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Starts off cancelled if the player is wearing a pumpkin head or is not looking
  * at the Enderman, according to Vanilla rules.
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class EndermanAttackPlayerEvent extends EntityEvent implements Cancellable {

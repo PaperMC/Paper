@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This class is provided as an easy way to handle scheduling tasks.
+ *
+ * @since 1.3.2 R3.0
  */
 public abstract class BukkitRunnable implements Runnable {
     private BukkitTask task;
@@ -15,6 +17,7 @@ public abstract class BukkitRunnable implements Runnable {
      *
      * @return true if the task has been cancelled
      * @throws IllegalStateException if task was not scheduled yet
+     * @since 1.12.1
      */
     public synchronized boolean isCancelled() throws IllegalStateException {
         checkScheduled();

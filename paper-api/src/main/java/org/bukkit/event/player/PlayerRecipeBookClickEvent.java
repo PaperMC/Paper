@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a player clicks a recipe in the recipe book.
  * @deprecated use {@link com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent}
+ * @since 1.20.1
  */
 @Deprecated(forRemoval = true) // Paper
 @org.bukkit.Warning(false) // Paper

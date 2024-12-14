@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents different kinds of views, also known as menus, which can be
  * created and viewed by the player.
+ *
+ * @since 1.21.1
  */
 @ApiStatus.Experimental
 public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDependant { // Paper - make FeatureDependant

@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the jukebox song for an item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#JUKEBOX_PLAYABLE
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

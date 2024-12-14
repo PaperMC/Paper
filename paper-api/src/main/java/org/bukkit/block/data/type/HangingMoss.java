@@ -5,6 +5,8 @@ import org.jetbrains.annotations.ApiStatus;
 
 /**
  * 'tip' indicates whether this block is a tip.
+ *
+ * @since 1.21.3
  */
 @ApiStatus.Experimental
 public interface HangingMoss extends BlockData {

@@ -19,6 +19,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Concrete implementation of an attribute modifier.
+ *
+ * @since 1.9.4
  */
 public class AttributeModifier implements ConfigurationSerializable, Keyed {
 
@@ -86,6 +88,9 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
         return UUID.nameUUIDFromBytes(namespacedKey.toString().getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * @since 1.21
+     */
     @NotNull
     @Override
     public NamespacedKey getKey() {
@@ -127,6 +132,7 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
      *
      * @return the slot
      * @deprecated use {@link #getSlotGroup()}
+     * @since 1.13.1
      */
     @Nullable
     @Deprecated(since = "1.20.5")
@@ -139,6 +145,7 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
      * Get the {@link EquipmentSlotGroup} this AttributeModifier is active on.
      *
      * @return the slot
+     * @since 1.20.6
      */
     @NotNull
     public EquipmentSlotGroup getSlotGroup() {
@@ -158,6 +165,9 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
         return data;
     }
 
+    /**
+     * @since 1.13.1
+     */
     @Override
     public boolean equals(Object other) {
         if (!(other instanceof AttributeModifier)) {
@@ -168,6 +178,9 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
         return this.key.equals(mod.key) && this.amount == mod.amount && this.operation == mod.operation && slots;
     }
 
+    /**
+     * @since 1.13.1
+     */
     @Override
     public int hashCode() {
         int hash = 5;
@@ -178,6 +191,9 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
         return hash;
     }
 
+    /**
+     * @since 1.13.1
+     */
     @Override
     public String toString() {
         return "AttributeModifier{"

@@ -13,6 +13,7 @@ import org.jspecify.annotations.NullMarked;
  *
  * @see PreFlattenTagRegistrar
  * @see PostFlattenTagRegistrar
+ * @since 1.21.1
  */
 @ApiStatus.Experimental
 @NullMarked

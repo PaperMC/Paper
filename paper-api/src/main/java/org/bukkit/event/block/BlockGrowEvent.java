@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
  * </ul>
  * <p>
  * If a Block Grow event is cancelled, the block will not grow.
+ *
+ * @since 1.1.0 R5
  */
 public class BlockGrowEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Holds information for player teleport events
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerTeleportEvent extends PlayerMoveEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -42,6 +44,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
      * Gets the cause of this teleportation event
      *
      * @return Cause of the event
+     * @since 1.1.0 R1
      */
     @NotNull
     public TeleportCause getCause() {
@@ -109,6 +112,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
      *
      * @return dismounted or not
      * @deprecated dismounting on tp is no longer controlled by the server
+     * @since 1.19
      */
     @Deprecated(forRemoval = true)
     public boolean willDismountPlayer() {
@@ -120,6 +124,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
      * This determines which axis the player will not lose their velocity in.
      *
      * @return an immutable set of relative teleportation flags
+     * @since 1.19
      */
     @NotNull
     public java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> getRelativeTeleportationFlags() {
@@ -127,12 +132,18 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
     }
     // Paper end
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

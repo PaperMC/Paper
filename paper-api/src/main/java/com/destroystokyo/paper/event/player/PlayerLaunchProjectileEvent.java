@@ -16,6 +16,8 @@ import org.jspecify.annotations.NullMarked;
  * Notably this event is not called for arrows as the player does not launch them, rather shoots them with the help
  * of a bow or crossbow. A plugin may listen to {@link EntityShootBowEvent}
  * for these actions instead.
+ *
+ * @since 1.13
  */
 @NullMarked
 public class PlayerLaunchProjectileEvent extends PlayerEvent implements Cancellable {

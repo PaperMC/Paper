@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * NumericPrompt is the base class for any prompt that requires a {@link
  * Number} response from the user.
+ *
+ * @since 1.1.0 R5
  */
 public abstract class NumericPrompt extends ValidatingPrompt {
     public NumericPrompt() {

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * Some types of rail may not be able to be laid out in all shapes, use
  * {@link #getShapes()} to get those applicable to this block.
+ *
+ * @since 1.13
  */
 public interface Rail extends Waterlogged {
 

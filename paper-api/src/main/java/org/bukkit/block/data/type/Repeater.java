@@ -15,6 +15,8 @@ import org.bukkit.block.data.Powerable;
  * A locked repeater will not change its output until it is unlocked. In game, a
  * locked repeater is created by having a constant current perpendicularly
  * entering the block.
+ *
+ * @since 1.13
  */
 public interface Repeater extends Directional, Powerable {
 

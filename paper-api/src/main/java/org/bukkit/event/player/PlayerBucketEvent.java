@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a player interacts with a Bucket
+ *
+ * @since 1.0.0 R1
  */
 public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellable {
     private ItemStack itemStack;
@@ -81,6 +83,7 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
      * Gets the block involved in this event.
      *
      * @return The Block which block is involved in this event
+     * @since 1.14.4
      */
     @NotNull
     public final Block getBlock() {
@@ -111,6 +114,7 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
      * Get the hand that was used in this event.
      *
      * @return the hand
+     * @since 1.13
      */
     @NotNull
     public EquipmentSlot getHand() {

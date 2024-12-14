@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a player leaves a server
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerQuitEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -39,6 +41,7 @@ public class PlayerQuitEvent extends PlayerEvent {
      * Gets the quit message to send to all online players
      *
      * @return string quit message
+     * @since 1.16.5
      */
     public net.kyori.adventure.text.@Nullable Component quitMessage() {
         return quitMessage;
@@ -48,6 +51,7 @@ public class PlayerQuitEvent extends PlayerEvent {
      * Sets the quit message to send to all online players
      *
      * @param quitMessage quit message
+     * @since 1.16.5
      */
     public void quitMessage(net.kyori.adventure.text.@Nullable Component quitMessage) {
         this.quitMessage = quitMessage;
@@ -77,17 +81,26 @@ public class PlayerQuitEvent extends PlayerEvent {
         this.quitMessage = quitMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(quitMessage) : null; // Paper
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
     }
 
+    /**
+     * @since 1.16.4
+     */
     // Paper start
     @NotNull
     public QuitReason getReason() {

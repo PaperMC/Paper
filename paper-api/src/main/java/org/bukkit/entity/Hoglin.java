@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a Hoglin.
+ *
+ * @since 1.16.1
  */
 public interface Hoglin extends Animals, Enemy {
 

@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a {@link Structure} is naturally generated in the world.
+ *
+ * @since 1.19.4
  */
 public class AsyncStructureSpawnEvent extends WorldEvent implements Cancellable {
 

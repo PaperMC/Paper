@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Is called when an {@link ElderGuardian} appears in front of a {@link Player}.
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class ElderGuardianAppearanceEvent extends EntityEvent implements Cancellable {

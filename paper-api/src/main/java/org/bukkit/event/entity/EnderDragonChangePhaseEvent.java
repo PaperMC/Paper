@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when an EnderDragon switches controller phase.
+ *
+ * @since 1.9.4
  */
 public class EnderDragonChangePhaseEvent extends EntityEvent implements Cancellable {
 

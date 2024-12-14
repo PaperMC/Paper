@@ -65,6 +65,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a server implementation.
+ *
+ * @since 1.0.0 R1
  */
 public interface Server extends PluginMessageRecipient, net.kyori.adventure.audience.ForwardingAudience { // Paper
 
@@ -76,6 +78,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * directory manually when determining the location in which to store their data and configuration files.</p>
      *
      * @return plugins directory
+     * @since 1.17.1
      */
     @NotNull
     File getPluginsFolder();
@@ -125,6 +128,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the version of game this server implements
      *
      * @return version of game
+     * @since 1.15.2
      */
     @NotNull
     String getMinecraftVersion();
@@ -171,6 +175,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Set the maximum amount of players allowed to be logged in at once.
      *
      * @param maxPlayers The maximum amount of concurrent players
+     * @since 1.16.2
      */
     void setMaxPlayers(int maxPlayers);
 
@@ -192,6 +197,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get the simulation distance from this server.
      *
      * @return the simulation distance from this server.
+     * @since 1.18
      */
     public int getSimulationDistance();
 
@@ -209,6 +215,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get world type (level-type setting) for default world.
      *
      * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
+     * @since 1.2.5 R0.1
      */
     @NotNull
     public String getWorldType();
@@ -217,6 +224,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get generate-structures setting.
      *
      * @return true if structure generation is enabled, false otherwise
+     * @since 1.2.5 R0.1
      */
     public boolean getGenerateStructures();
 
@@ -224,6 +232,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get max world size.
      *
      * @return the maximum world size as specified for the server
+     * @since 1.16.4
      */
     public int getMaxWorldSize();
 
@@ -231,6 +240,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets whether this server allows the End or not.
      *
      * @return whether this server allows the End or not
+     * @since 1.1.0 R1
      */
     public boolean getAllowEnd();
 
@@ -245,6 +255,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets whether the server is logging the IP addresses of players.
      *
      * @return whether the server is logging the IP addresses of players
+     * @since 1.20.4
      */
     public boolean isLoggingIPs();
 
@@ -252,6 +263,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets a list of packs to be enabled.
      *
      * @return a list of packs names
+     * @since 1.19.4
      */
     @NotNull
     public List<String> getInitialEnabledPacks();
@@ -260,6 +272,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets a list of packs that will not be enabled automatically.
      *
      * @return a list of packs names
+     * @since 1.19.4
      */
     @NotNull
     public List<String> getInitialDisabledPacks();
@@ -269,6 +282,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @deprecated use {@link #getDatapackManager()}
      * @return the manager
+     * @since 1.19.4
      */
     @NotNull
     @Deprecated(forRemoval = true, since = "1.20") // Paper
@@ -278,6 +292,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get the ServerTick Manager.
      *
      * @return the manager
+     * @since 1.20.4
      */
     @NotNull
     public ServerTickManager getServerTickManager();
@@ -286,6 +301,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the resource pack configured to be sent to clients by the server.
      *
      * @return the resource pack
+     * @since 1.20.4
      */
     @Nullable
     public ResourcePack getServerResourcePack();
@@ -294,6 +310,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the server resource pack uri, or empty string if not specified.
      *
      * @return the server resource pack uri, otherwise empty string
+     * @since 1.18.1
      */
     @NotNull
     public String getResourcePack();
@@ -304,6 +321,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the SHA-1 digest of the server resource pack, otherwise empty
      *     string
+     * @since 1.18.1
      */
     @NotNull
     public String getResourcePackHash();
@@ -314,6 +332,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the custom prompt message to be shown when the server resource,
      *     otherwise empty string
+     * @since 1.18.1
      */
     @NotNull
     public String getResourcePackPrompt();
@@ -322,6 +341,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets whether the server resource pack is enforced.
      *
      * @return whether the server resource pack is enforced
+     * @since 1.18.1
      */
     public boolean isResourcePackRequired();
 
@@ -346,6 +366,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * disconnected when the server whitelist is reloaded.
      *
      * @return whether the server whitelist is enforced
+     * @since 1.17
      */
     public boolean isWhitelistEnforced();
 
@@ -356,6 +377,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * disconnected when the server whitelist is reloaded.
      *
      * @param value true for enforced, false for not
+     * @since 1.17
      */
     public void setWhitelistEnforced(boolean value);
 
@@ -391,6 +413,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param component the component to send
      * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+     * @since 1.9.4
      */
     @Deprecated
     public default void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
@@ -402,6 +425,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param components the components to send
      * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
+     * @since 1.9.4
      */
     @Deprecated
     public default void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
@@ -433,6 +457,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the value of the connection throttle setting.
      *
      * @return the value of the connection throttle setting
+     * @since 1.2.5 R0.1
      */
     public long getConnectionThrottle();
 
@@ -455,6 +480,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the default ticks per animal spawns value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
+     * @since 1.1.0 R4
      */
     @Deprecated(since = "1.18.1")
     public int getTicksPerAnimalSpawns();
@@ -478,6 +504,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the default ticks per monsters spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
+     * @since 1.1.0 R4
      */
     @Deprecated(since = "1.18.1")
     public int getTicksPerMonsterSpawns();
@@ -500,6 +527,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the default ticks per water mobs spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
+     * @since 1.15.2
      */
     @Deprecated(since = "1.18.1")
     public int getTicksPerWaterSpawns();
@@ -522,6 +550,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the default ticks per water ambient mobs spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
+     * @since 1.16.1
      */
     @Deprecated(since = "1.18.1")
     public int getTicksPerWaterAmbientSpawns();
@@ -544,6 +573,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the default ticks per water underground creature spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
+     * @since 1.17.1
      */
     @Deprecated(since = "1.18.1")
     public int getTicksPerWaterUndergroundCreatureSpawns();
@@ -566,6 +596,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the default ticks per ambient mobs spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
+     * @since 1.15.2
      */
     @Deprecated(since = "1.18.1")
     public int getTicksPerAmbientSpawns();
@@ -587,6 +618,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param spawnCategory the category of spawn
      * @return the default ticks per {@link SpawnCategory} mobs spawn value
      * @throws IllegalArgumentException if the category is {@link SpawnCategory#MISC}
+     * @since 1.18.1
      */
     public int getTicksPerSpawns(@NotNull SpawnCategory spawnCategory);
 
@@ -631,6 +663,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param id UUID of the player to retrieve
      * @return a player object if one was found, null otherwise
+     * @since 1.7.10
      */
     @Nullable
     public Player getPlayer(@NotNull UUID id);
@@ -642,6 +675,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param playerName the player name to look up the unique ID for
      * @return A UUID, or null if that player name is not registered with Minecraft and the server is in online mode
+     * @since 1.12.2
      */
     @Nullable
     public UUID getPlayerUniqueId(@NotNull String playerName);
@@ -684,6 +718,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets whether the worlds are being ticked right now.
      *
      * @return true if the worlds are being ticked, false otherwise.
+     * @since 1.19.2
      */
     public boolean isTickingWorlds();
     // Paper end
@@ -755,6 +790,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param worldKey the NamespacedKey of the world to retrieve
      * @return a world with the given NamespacedKey, or null if none exists
+     * @since 1.16.5
      */
     @Nullable
     default World getWorld(@NotNull NamespacedKey worldKey) {
@@ -766,6 +802,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param worldKey the Key of the world to retrieve
      * @return a world with the given Key, or null if none exists
+     * @since 1.21.1
      */
     @Nullable
     World getWorld(@NotNull net.kyori.adventure.key.Key worldKey);
@@ -780,6 +817,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the created world border instance
      *
      * @see Player#setWorldBorder(WorldBorder)
+     * @since 1.18.2
      */
     @NotNull
     public WorldBorder createWorldBorder();
@@ -789,6 +827,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param id the id of the map to get
      * @return a map view if it exists, or null otherwise
+     */
+    /**
+     * @since 1.13.2
      */
     // @Deprecated(since = "1.6.2") // Paper - Not a magic value
     @Nullable
@@ -818,6 +859,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
      * @deprecated use {@link #createExplorerMap(World, Location, org.bukkit.generator.structure.StructureType, org.bukkit.map.MapCursor.Type)}
+     * @since 1.13.1
      */
     @Deprecated // Paper
     @NotNull
@@ -838,6 +880,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @see World#locateNearestStructure(org.bukkit.Location,
      *      org.bukkit.StructureType, int, boolean)
      * @deprecated use {@link #createExplorerMap(World, Location, org.bukkit.generator.structure.StructureType, org.bukkit.map.MapCursor.Type, int, boolean)}
+     * @since 1.13.1
      */
     @Deprecated // Paper
     @NotNull
@@ -890,6 +933,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     /**
      * Reload only the Minecraft data for the server. This includes custom
      * advancements and loot tables.
+     *
+     * @since 1.12
      */
     public void reloadData();
 
@@ -898,6 +943,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Updates all advancement, tag, and recipe data to all connected clients.
      * Useful for updating clients to new advancements/recipes/tags.
      * @see #updateRecipes()
+     * @since 1.20.1
      */
     void updateResources();
 
@@ -905,6 +951,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Updates recipe data and the recipe book to each player. Useful for
      * updating clients to new recipes.
      * @see #updateResources()
+     * @since 1.20.1
      */
     void updateRecipes();
     // Paper end - update reloadable data
@@ -973,6 +1020,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param recipe the recipe to add
      * @param resendRecipes true to update the client with the full set of recipes
      * @return true if the recipe was added, false if it wasn't for some reason
+     * @since 1.20.1
      */
     @Contract("null, _ -> false")
     boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes);
@@ -984,6 +1032,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param result the item to match against recipe results
      * @return a list of recipes with the given result
+     * @since 1.1.0 R5
      */
     @NotNull
     public List<Recipe> getRecipesFor(@NotNull ItemStack result);
@@ -993,6 +1042,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param recipeKey the key of the recipe to return
      * @return the recipe for the given key or null.
+     * @since 1.16.1
      */
     @Nullable
     public Recipe getRecipe(@NotNull NamespacedKey recipeKey);
@@ -1016,6 +1066,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *                       Must not contain more than 9 items.
      * @param world The world the crafting takes place in.
      * @return the {@link Recipe} resulting from the given crafting matrix.
+     * @since 1.17.1
      */
     @Nullable
     public Recipe getCraftingRecipe(@NotNull ItemStack[] craftingMatrix, @NotNull World world);
@@ -1044,6 +1095,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param player The player to imitate the crafting event on.
      * @return the {@link ItemStack} resulting from the given crafting matrix, if no recipe is found
      * an ItemStack of {@link Material#AIR} is returned.
+     * @since 1.17.1
      */
     @NotNull
     public ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player);
@@ -1065,6 +1117,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param world The world the crafting takes place in.
      * @return the {@link ItemStack} resulting from the given crafting matrix, if no recipe is found
      * an ItemStack of {@link Material#AIR} is returned.
+     * @since 1.20.2
      */
     @NotNull
     public ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world);
@@ -1092,6 +1145,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param world The world the crafting takes place in.
      * @param player The player to imitate the crafting event on.
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
+     * @since 1.20.2
      */
     @NotNull
     public ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player);
@@ -1112,6 +1166,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *                       Must not contain more than 9 items.
      * @param world The world the crafting takes place in.
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
+     * @since 1.20.2
      */
     @NotNull
     public ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world);
@@ -1120,17 +1175,22 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get an iterator through the list of crafting recipes.
      *
      * @return an iterator
+     * @since 1.1.0 R5
      */
     @NotNull
     public Iterator<Recipe> recipeIterator();
 
     /**
      * Clears the list of crafting recipes.
+     *
+     * @since 1.1.0 R5
      */
     public void clearRecipes();
 
     /**
      * Resets the list of crafting recipes to the default.
+     *
+     * @since 1.1.0 R5
      */
     public void resetRecipes();
 
@@ -1143,6 +1203,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param key NamespacedKey of recipe to remove.
      * @return True if recipe was removed
+     * @since 1.15.2
      */
     public boolean removeRecipe(@NotNull NamespacedKey key);
 
@@ -1158,6 +1219,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param resendRecipes true to update all clients on the new recipe list.
      *                      Will only update if a recipe was actually removed
      * @return True if recipe was removed
+     * @since 1.20.1
      */
     boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes);
     // Paper end - method to resend recipes
@@ -1190,6 +1252,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return true if the server should send a preview, false otherwise
      * @deprecated chat previews have been removed
+     * @since 1.19
      */
     @Deprecated(since = "1.19.3")
     public boolean shouldSendChatPreviews();
@@ -1199,6 +1262,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * to join
      *
      * @return true if only Mojang-signed players can join, false otherwise
+     * @since 1.19
      */
     public boolean isEnforcingSecureProfiles();
 
@@ -1207,6 +1271,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * servers.
      *
      * @return true if the server accepts transfers, false otherwise
+     * @since 1.20.6
      */
     public boolean isAcceptingTransfers();
 
@@ -1214,6 +1279,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets whether the Server hide online players in server status.
      *
      * @return true if the server hide online players, false otherwise
+     * @since 1.18
      */
     public boolean getHideOnlinePlayers();
 
@@ -1235,6 +1301,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets whether the server is in hardcore mode or not.
      *
      * @return true if the server mode is hardcore, false otherwise
+     * @since 1.4.5 R1.0
      */
     public boolean isHardcore();
 
@@ -1264,6 +1331,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param message the message
      * @return the number of players
+     * @since 1.16.5
      */
     int broadcast(net.kyori.adventure.text.@NotNull Component message);
 
@@ -1275,6 +1343,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param permission the required permission {@link Permissible
      *     permissibles} must have to receive the broadcast
      * @return number of message recipients
+     * @since 1.16.5
      */
     int broadcast(net.kyori.adventure.text.@NotNull Component message, @NotNull String permission);
     // Paper end
@@ -1311,6 +1380,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return an offline player if cached, {@code null} otherwise
      * @see #getOfflinePlayer(String)
      * @see #getOfflinePlayer(java.util.UUID)
+     * @since 1.16.3
      */
     @Nullable
     public OfflinePlayer getOfflinePlayerIfCached(@NotNull String name);
@@ -1325,6 +1395,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param id the UUID of the player to retrieve
      * @return an offline player
+     * @since 1.7.10
      */
     @NotNull
     public OfflinePlayer getOfflinePlayer(@NotNull UUID id);
@@ -1338,6 +1409,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @throws IllegalArgumentException if both the unique id is
      * <code>null</code> and the name is <code>null</code> or blank
      * @deprecated use {@link #createProfile(UUID, String)}
+     * @since 1.18.1
      */
     @NotNull
     @Deprecated(since = "1.18.1") // Paper
@@ -1350,6 +1422,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the new PlayerProfile
      * @throws IllegalArgumentException if the unique id is <code>null</code>
      * @deprecated use {@link #createProfile(UUID)}
+     * @since 1.18.1
      */
     @NotNull
     @Deprecated(since = "1.18.1") // Paper
@@ -1363,6 +1436,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @throws IllegalArgumentException if the name is <code>null</code> or
      * blank
      * @deprecated use {@link #createProfile(String)}
+     * @since 1.18.1
      */
     @NotNull
     @Deprecated(since = "1.18.1") // Paper
@@ -1400,6 +1474,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Bans the specified address from the server.
      *
      * @param address the IP address to ban
+     * @since 1.20.1
      */
     public void banIP(@NotNull InetAddress address);
 
@@ -1407,6 +1482,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Unbans the specified address from the server.
      *
      * @param address the IP address to unban
+     * @since 1.20.1
      */
     public void unbanIP(@NotNull InetAddress address);
 
@@ -1439,6 +1515,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param <B> The ban target
      *
      * @return a ban list of the specified type
+     * @since 1.20.4
      */
     @NotNull
     <B extends BanList<E>, E> B getBanList(@NotNull io.papermc.paper.ban.BanListType<B> type);
@@ -1483,6 +1560,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param feedback feedback listener
      * @return a command sender
+     * @since 1.18.1
      */
     @NotNull
     public CommandSender createCommandSender(final @NotNull java.util.function.Consumer<? super net.kyori.adventure.text.Component> feedback);
@@ -1502,6 +1580,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * <b>This method can be expensive as it loads all the player data files from the disk.</b>
      *
      * @return an array containing all previous players
+     * @since 1.1.0 R1
      */
     @NotNull
     public OfflinePlayer[] getOfflinePlayers();
@@ -1510,6 +1589,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the {@link Messenger} responsible for this server.
      *
      * @return messenger responsible for this server
+     * @since 1.1.0 R1
      */
     @NotNull
     public Messenger getMessenger();
@@ -1518,6 +1598,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the {@link HelpMap} providing help topics for this server.
      *
      * @return a help map for this server
+     * @since 1.1.0 R5
      */
     @NotNull
     public HelpMap getHelpMap();
@@ -1542,6 +1623,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * viewed.
      *
      * @see InventoryType#isCreatable()
+     * @since 1.1.0 R5
      */
     @NotNull
     Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type);
@@ -1570,6 +1652,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * viewed.
      *
      * @see InventoryType#isCreatable()
+     * @since 1.16.5
      */
     @NotNull
     Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, net.kyori.adventure.text.@NotNull Component title);
@@ -1599,6 +1682,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
      *
      * @see InventoryType#isCreatable()
+     * @since 1.7.10
      */
     @Deprecated // Paper
     @NotNull
@@ -1612,6 +1696,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param size a multiple of 9 as the size of inventory to create
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
+     * @since 1.1.0 R5
      */
     @NotNull
     Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException;
@@ -1627,6 +1712,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *     viewed
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
+     * @since 1.16.5
      */
     @NotNull
     Inventory createInventory(@Nullable InventoryHolder owner, int size, net.kyori.adventure.text.@NotNull Component title) throws IllegalArgumentException;
@@ -1643,6 +1729,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
      * @deprecated in favour of {@link #createInventory(InventoryHolder, int, net.kyori.adventure.text.Component)}
+     * @since 1.1.0 R5
      */
     @Deprecated // Paper
     @NotNull
@@ -1655,6 +1742,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param title the title of the corresponding merchant inventory, displayed
      * when the merchant inventory is viewed
      * @return a new merchant
+     * @since 1.16.5
      */
     @NotNull Merchant createMerchant(net.kyori.adventure.text.@Nullable Component title);
     // Paper start
@@ -1665,6 +1753,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * when the merchant inventory is viewed
      * @return a new merchant
      * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
+     * @since 1.11
      */
     @NotNull
     @Deprecated // Paper
@@ -1676,6 +1765,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the amount of consecutive neighbor updates, if the value is
      * negative then the limit it's not used
+     * @since 1.19
      */
     int getMaxChainedNeighborUpdates();
 
@@ -1685,6 +1775,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the monster spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.2.5 R1.3
      */
     @Deprecated(since = "1.18.1")
     int getMonsterSpawnLimit();
@@ -1695,6 +1786,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.2.5 R1.3
      */
     @Deprecated(since = "1.18.1")
     int getAnimalSpawnLimit();
@@ -1705,6 +1797,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the water animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.2.5 R1.3
      */
     @Deprecated(since = "1.18.1")
     int getWaterAnimalSpawnLimit();
@@ -1715,6 +1808,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the water ambient spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.16.1
      */
     @Deprecated(since = "1.18.1")
     int getWaterAmbientSpawnLimit();
@@ -1724,6 +1818,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * in a chunk.
      * @return the water underground creature limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.17.1
      */
     @Deprecated(since = "1.18.1")
     int getWaterUndergroundCreatureSpawnLimit();
@@ -1734,6 +1829,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the ambient spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.4.5 R1.0
      */
     @Deprecated(since = "1.18.1")
     int getAmbientSpawnLimit();
@@ -1746,6 +1842,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param spawnCategory the category spawn
      * @return the {@link SpawnCategory} spawn limit
+     * @since 1.18.1
      */
     int getSpawnLimit(@NotNull SpawnCategory spawnCategory);
 
@@ -1760,6 +1857,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return true if the current thread matches the expected primary thread,
      *     false otherwise
+     * @since 1.3.1 R1.0
      */
     boolean isPrimaryThread();
 
@@ -1768,6 +1866,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the message that is displayed on the server list.
      *
      * @return the server's MOTD
+     * @since 1.16.5
      */
     net.kyori.adventure.text.@NotNull Component motd();
 
@@ -1775,6 +1874,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Set the message that is displayed on the server list.
      *
      * @param motd The message to be displayed
+     * @since 1.20
      */
     void motd(final net.kyori.adventure.text.@NotNull Component motd);
 
@@ -1782,6 +1882,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the default message that is displayed when the server is stopped.
      *
      * @return the shutdown message
+     * @since 1.16.5
      */
     net.kyori.adventure.text.@Nullable Component shutdownMessage();
     // Paper end
@@ -1791,6 +1892,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the servers MOTD
      * @deprecated in favour of {@link #motd()}
+     * @since 1.3.1 R1.0
      */
     @NotNull
     @Deprecated // Paper
@@ -1801,6 +1903,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param motd The message to be displayed
      * @deprecated in favour of {@link #motd(net.kyori.adventure.text.Component)}
+     * @since 1.20
      */
     @Deprecated // Paper
     void setMotd(@NotNull String motd);
@@ -1809,6 +1912,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the server links which will be sent to clients
      *
      * @return the server's links
+     * @since 1.21
      */
     @NotNull
     @ApiStatus.Experimental
@@ -1819,6 +1923,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the shutdown message
      * @deprecated in favour of {@link #shutdownMessage()}
+     * @since 1.4.5 R1.0
      */
     @Nullable
     @Deprecated // Paper
@@ -1828,6 +1933,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the current warning state for the server.
      *
      * @return the configured warning state
+     * @since 1.3.1 R1.0
      */
     @NotNull
     public WarningState getWarningState();
@@ -1837,6 +1943,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the item factory
      * @see ItemFactory
+     * @since 1.4.5 R1.0
      */
     @NotNull
     ItemFactory getItemFactory();
@@ -1846,6 +1953,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the entity factory
      * @see EntityFactory
+     * @since 1.20.6
      */
     @NotNull
     EntityFactory getEntityFactory();
@@ -1856,6 +1964,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * This will only exist after the first world has loaded.
      *
      * @return the scoreboard manager or null if no worlds are loaded.
+     * @since 1.5.1 R0.2
      */
     @NotNull // Paper
     ScoreboardManager getScoreboardManager();
@@ -1866,6 +1975,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param name the criteria name
      * @return the criteria
      * @see Criteria Criteria for a list of constants
+     * @since 1.19.2
      */
     @NotNull
     Criteria getScoreboardCriteria(@NotNull String name);
@@ -1876,6 +1986,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the default server-icon; null values may be used by the
      *     implementation to indicate no defined icon, but this behavior is
      *     not guaranteed
+     * @since 1.7.2 R0.2
      */
     @Nullable
     CachedServerIcon getServerIcon();
@@ -1893,6 +2004,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @throws IllegalArgumentException if image is null
      * @throws Exception if the image does not meet current server server-icon
      *     specifications
+     * @since 1.7.2 R0.2
      */
     @NotNull
     CachedServerIcon loadServerIcon(@NotNull File file) throws IllegalArgumentException, Exception;
@@ -1909,6 +2021,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @throws IllegalArgumentException if image is null
      * @throws Exception if the image does not meet current server
      *     server-icon specifications
+     * @since 1.7.2 R0.2
      */
     @NotNull
     CachedServerIcon loadServerIcon(@NotNull BufferedImage image) throws IllegalArgumentException, Exception;
@@ -1920,6 +2033,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * A value of 0 will disable the idle kick timeout.
      *
      * @param threshold the idle timeout in minutes
+     * @since 1.7.2 R0.2
      */
     public void setIdleTimeout(int threshold);
 
@@ -1927,6 +2041,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the idle kick timeout.
      *
      * @return the idle timeout in minutes
+     * @since 1.7.2 R0.2
      */
     public int getIdleTimeout();
 
@@ -1935,6 +2050,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * pause most functions after this time if there are no players online.
      *
      * @return the pause threshold in seconds
+     * @since 1.21.3
      */
     public int getPauseWhenEmptyTime();
 
@@ -1945,6 +2061,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * A value of less than 1 will disable the setting
      *
      * @param seconds the pause threshold in seconds
+     * @since 1.21.3
      */
     public void setPauseWhenEmptyTime(int seconds);
 
@@ -1955,6 +2072,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param world the world to create the ChunkData for
      * @return a new ChunkData for the world
+     * @since 1.8.8
      *
      */
     @NotNull
@@ -2003,6 +2121,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * e.g. bossbars created using the bossbar command
      *
      * @return a bossbar iterator
+     * @since 1.13.2
      */
     @NotNull
     Iterator<KeyedBossBar> getBossBars();
@@ -2021,6 +2140,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param key unique bossbar key
      * @return bossbar or null if not exists
+     * @since 1.13.2
      */
     @Nullable
     KeyedBossBar getBossBar(@NotNull NamespacedKey key);
@@ -2039,6 +2159,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param key unique bossbar key
      * @return true if removal succeeded or false
+     * @since 1.13.2
      */
     boolean removeBossBar(@NotNull NamespacedKey key);
 
@@ -2047,6 +2168,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param uuid the UUID of the entity
      * @return the entity with the given UUID, or null if it isn't found
+     * @since 1.9.4
      */
     @Nullable
     Entity getEntity(@NotNull UUID uuid);
@@ -2056,6 +2178,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the current server TPS
      *
      * @return current server TPS (1m, 5m, 15m in Paper-Server)
+     * @since 1.9.4
      */
     @NotNull
     public double[] getTPS();
@@ -2064,6 +2187,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get a sample of the servers last tick times (in nanos)
      *
      * @return A sample of the servers last tick times (in nanos)
+     * @since 1.15.2
      */
     @NotNull
     long[] getTickTimes();
@@ -2072,6 +2196,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get the average tick time (in millis)
      *
      * @return Average tick time (in millis)
+     * @since 1.15.2
      */
     double getAverageTickTime();
     // Paper end
@@ -2081,6 +2206,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the active {@link org.bukkit.command.CommandMap}
      *
      * @return the active command map
+     * @since 1.9.4
      */
     @NotNull
     org.bukkit.command.CommandMap getCommandMap();
@@ -2090,6 +2216,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param key unique advancement key
      * @return advancement or null if not exists
+     * @since 1.12
      */
     @Nullable
     Advancement getAdvancement(@NotNull NamespacedKey key);
@@ -2099,6 +2226,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * from this iterator,
      *
      * @return an advancement iterator
+     * @since 1.12
      */
     @NotNull
     Iterator<Advancement> advancementIterator();
@@ -2109,6 +2237,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param material the material
      * @return new data instance
+     * @since 1.13
      */
     @NotNull
     BlockData createBlockData(@NotNull Material material);
@@ -2120,6 +2249,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param material the material
      * @param consumer consumer to run on new instance before returning
      * @return new data instance
+     * @since 1.13
      */
     @NotNull
     public BlockData createBlockData(@NotNull Material material, @Nullable Consumer<? super BlockData> consumer);
@@ -2131,6 +2261,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param data data string
      * @return new data instance
      * @throws IllegalArgumentException if the specified data is not valid
+     * @since 1.13
      */
     @NotNull
     BlockData createBlockData(@NotNull String data) throws IllegalArgumentException;
@@ -2147,6 +2278,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param data data string
      * @return new data instance
      * @throws IllegalArgumentException if the specified data is not valid
+     * @since 1.13
      */
     @NotNull
     @Contract("null, null -> fail")
@@ -2169,6 +2301,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param tag the name of the tag
      * @param clazz the class of the tag entries
      * @return the tag or null
+     * @since 1.13
      */
     @Nullable
     <T extends Keyed> Tag<T> getTag(@NotNull String registry, @NotNull NamespacedKey tag, @NotNull Class<T> clazz);
@@ -2185,6 +2318,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param registry the tag registry to look at
      * @param clazz the class of the tag entries
      * @return all defined tags
+     * @since 1.13.2
      */
     @NotNull
     <T extends Keyed> Iterable<Tag<T>> getTags(@NotNull String registry, @NotNull Class<T> clazz);
@@ -2194,6 +2328,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param key the name of the LootTable
      * @return the LootTable, or null if no LootTable is found with that name
+     * @since 1.13
      */
     @Nullable
     LootTable getLootTable(@NotNull NamespacedKey key);
@@ -2217,6 +2352,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * no further guarantees are made.
      * @throws IllegalArgumentException if the selector is malformed in any way
      * or a parameter is null
+     * @since 1.13.2
      */
     @NotNull
     List<Entity> selectEntities(@NotNull CommandSender sender, @NotNull String selector) throws IllegalArgumentException;
@@ -2225,6 +2361,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the structure manager for loading and saving structures.
      *
      * @return the structure manager
+     * @since 1.17.1
      */
     @NotNull
     StructureManager getStructureManager();
@@ -2242,6 +2379,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the corresponding registry or null if not present
      * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)}
      * with keys from {@link io.papermc.paper.registry.RegistryKey}
+     * @since 1.19
      */
     @Nullable
     @Deprecated(since = "1.20.6") // Paper
@@ -2250,11 +2388,15 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     /**
      * @return the unsafe values instance
      * @see UnsafeValues
+     * @since 1.7.2 R0.2
      */
     @Deprecated(since = "1.7.2")
     @NotNull
     UnsafeValues getUnsafe();
 
+    /**
+     * @since 1.7.10
+     */
     // Spigot start
     public class Spigot {
 
@@ -2263,6 +2405,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
+        /**
+         * @since 1.9.4
+         */
         // Paper start
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
@@ -2270,12 +2415,18 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
             throw new UnsupportedOperationException( "Not supported yet." );
         }
 
+        /**
+         * @since 1.9.4
+         */
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
+        /**
+         * @since 1.9.4
+         */
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
         {
@@ -2307,18 +2458,28 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
 
         /**
          * Restart the server. If the server administrator has not configured restarting, the server will stop.
+         *
+         * @since 1.8.8
          */
         public void restart() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
+    /**
+     * @since 1.7.10
+     */
     @NotNull
     Spigot spigot();
     // Spigot end
-
+    /**
+     * @since 1.9.4
+     */
     void reloadPermissions(); // Paper
 
+    /**
+     * @since 1.11
+     */
     boolean reloadCommandAliases(); // Paper
 
     // Paper start - allow preventing player name suggestions by default
@@ -2327,6 +2488,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * their tab completion result.
      *
      * @return true if player names should be suggested
+     * @since 1.12
      */
     boolean suggestPlayerNamesWhenNullTabCompletions();
 
@@ -2335,6 +2497,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the default message
      * @deprecated use {@link #permissionMessage()}
+     * @since 1.13.2
      */
     @NotNull
     @Deprecated
@@ -2344,6 +2507,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the default no permission message used on the server
      *
      * @return the default message
+     * @since 1.19
      */
     @NotNull net.kyori.adventure.text.Component permissionMessage();
 
@@ -2355,6 +2519,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param uuid UUID to create profile for
      * @return A PlayerProfile object
+     * @since 1.12.2
      */
     @NotNull
     com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull UUID uuid);
@@ -2374,6 +2539,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return A PlayerProfile object
      * @throws IllegalArgumentException if the name is longer than 16 characters
      * @throws IllegalArgumentException if the name contains invalid characters
+     * @since 1.12.2
      */
     @NotNull
     com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull String name);
@@ -2398,6 +2564,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return A PlayerProfile object
      * @throws IllegalArgumentException if the name is longer than 16 characters
      * @throws IllegalArgumentException if the name contains invalid characters
+     * @since 1.12.2
      */
     @NotNull
     com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name);
@@ -2418,6 +2585,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return A PlayerProfile object
      * @throws IllegalArgumentException if the name is longer than 16 characters
      * @throws IllegalArgumentException if the name contains invalid characters
+     * @since 1.18.2
      */
     @NotNull
     com.destroystokyo.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name);
@@ -2426,6 +2594,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get the current internal server tick
      *
      * @return Current tick
+     * @since 1.13.2
      */
     int getCurrentTick();
 
@@ -2433,6 +2602,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Checks if the server is in the process of being shutdown.
      *
      * @return true if server is in the process of being shutdown
+     * @since 1.15.2
      */
     boolean isStopping();
 
@@ -2440,12 +2610,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Returns the {@link com.destroystokyo.paper.entity.ai.MobGoals} manager
      *
      * @return the mob goals manager
+     * @since 1.15.2
      */
     @NotNull
     com.destroystokyo.paper.entity.ai.MobGoals getMobGoals();
 
     /**
      * @return the datapack manager
+     * @since 1.16.5
      */
     @NotNull
     io.papermc.paper.datapack.DatapackManager getDatapackManager();
@@ -2454,6 +2626,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the potion brewer.
      *
      * @return the potion brewer
+     * @since 1.18.1
      */
     @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer();
     // Paper end
@@ -2470,6 +2643,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * </p>
      * <p><b>If you do not need/want to make your plugin run on Folia, use {@link #getScheduler()} instead.</b></p>
      * @return the region task scheduler
+     * @since 1.20.1
      */
     @NotNull io.papermc.paper.threadedregions.scheduler.RegionScheduler getRegionScheduler();
 
@@ -2477,6 +2651,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Returns the Folia async task scheduler. The async task scheduler can be used to schedule tasks
      * that execute asynchronously from the server tick process.
      * @return the async task scheduler
+     * @since 1.20.1
      */
     @NotNull io.papermc.paper.threadedregions.scheduler.AsyncScheduler getAsyncScheduler();
 
@@ -2489,6 +2664,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * </p>
      * <p><b>If you do not need/want to make your plugin run on Folia, use {@link #getScheduler()} instead.</b></p>
      * @return the global region scheduler
+     * @since 1.20.1
      */
     @NotNull io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler getGlobalRegionScheduler();
 
@@ -2497,6 +2673,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * owns the chunk at the specified world and block position.
      * @param world Specified world.
      * @param position Specified block position.
+     * @since 1.20.1
      */
     boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull io.papermc.paper.math.Position position);
 
@@ -2509,6 +2686,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param position Specified block position.
      * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
      *                           radius, but rather a <i>Chebyshev Distance</i>.
+     * @since 1.20.1
      */
     boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull io.papermc.paper.math.Position position, int squareRadiusChunks);
 
@@ -2516,6 +2694,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Returns whether the current thread is ticking a region and that the region being ticked
      * owns the chunk at the specified world and block position as included in the specified location.
      * @param location Specified location, must have a non-null world.
+     * @since 1.20.1
      */
     boolean isOwnedByCurrentRegion(@NotNull Location location);
 
@@ -2528,6 +2707,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param location Specified location, must have a non-null world.
      * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
      *                           radius, but rather a <i>Chebyshev Distance</i>.
+     * @since 1.20.1
      */
     boolean isOwnedByCurrentRegion(@NotNull Location location, int squareRadiusChunks);
 
@@ -2535,6 +2715,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Returns whether the current thread is ticking a region and that the region being ticked
      * owns the chunk at the specified block position.
      * @param block Specified block position.
+     * @since 1.20.1
      */
     default boolean isOwnedByCurrentRegion(@NotNull org.bukkit.block.Block block) {
         return isOwnedByCurrentRegion(block.getLocation());
@@ -2546,6 +2727,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param world Specified world.
      * @param chunkX Specified x-coordinate of the chunk position.
      * @param chunkZ Specified z-coordinate of the chunk position.
+     * @since 1.20.1
      */
     boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ);
 
@@ -2560,6 +2742,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param chunkZ Specified z-coordinate of the chunk position.
      * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
      *                           radius, but rather a <i>Chebyshev Distance</i>.
+     * @since 1.20.1
      */
     boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ, int squareRadiusChunks);
 
@@ -2573,6 +2756,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param minChunkZ Specified z-coordinate of the minimum chunk position.
      * @param maxChunkX Specified x-coordinate of the maximum chunk position.
      * @param maxChunkZ Specified z-coordinate of the maximum chunk position.
+     * @since 1.21.3
      */
     boolean isOwnedByCurrentRegion(@NotNull World world, int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ);
 
@@ -2582,12 +2766,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * for ownership of an entity, as retrieving the entity's location is undefined unless the entity is owned
      * by the current region.
      * @param entity Specified entity.
+     * @since 1.20.1
      */
     boolean isOwnedByCurrentRegion(@NotNull Entity entity);
 
     /**
      * Returns whether the current thread is ticking the global region.
      * @see io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler
+     * @since 1.21.3
      */
     public boolean isGlobalTickThread();
     // Paper end - Folia region threading API
@@ -2595,6 +2781,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     // Paper start - API to check if the server is sleeping
     /**
      * Returns whether the server is sleeping/paused.
+     *
+     * @since 1.21.3
      */
     boolean isPaused();
 
@@ -2604,6 +2792,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param plugin The {@link org.bukkit.plugin.Plugin} that's allowing or disallowing pausing.
      * @param value Whether to allow sleeping of the server (defaults to true).
+     * @since 1.21.3
      */
     void allowPausing(@NotNull org.bukkit.plugin.Plugin plugin, boolean value);
     // Paper end - API to check if the server is sleeping

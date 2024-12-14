@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a Wither boss
+ *
+ * @since 1.4.5 R1.0
  */
 public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.RangedEntity { // Paper
 
@@ -15,6 +17,7 @@ public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.Ra
      * the wither.
      *
      * @see #setTarget(org.bukkit.entity.Wither.Head, org.bukkit.entity.LivingEntity)
+     * @since 1.18.2
      */
     @Override
     void setTarget(@Nullable LivingEntity target);
@@ -44,6 +47,7 @@ public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.Ra
      *
      * @return amount of invulnerability ticks
      * @deprecated Duplicate api, use {@link #getInvulnerableTicks()}
+     * @since 1.19.4
      */
     @Deprecated(forRemoval = true) // Paper
     int getInvulnerabilityTicks();
@@ -55,6 +59,7 @@ public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.Ra
      *
      * @param ticks amount of invulnerability ticks
      * @deprecated Duplicate api, use {@link #setInvulnerableTicks(int)}
+     * @since 1.19.4
      */
     @Deprecated(forRemoval = true) // Paper
     void setInvulnerabilityTicks(int ticks);
@@ -72,11 +77,13 @@ public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.Ra
     // Paper start
     /**
      * @return whether the wither is charged
+     * @since 1.16.5
      */
     boolean isCharged();
 
     /**
      * @return ticks the wither is invulnerable for
+     * @since 1.16.5
      */
     int getInvulnerableTicks();
 
@@ -84,11 +91,13 @@ public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.Ra
      * Sets for how long in the future, the wither should be invulnerable.
      *
      * @param ticks ticks the wither is invulnerable for
+     * @since 1.16.5
      */
     void setInvulnerableTicks(int ticks);
 
     /**
      * @return whether the wither can travel through portals
+     * @since 1.16.5
      */
     boolean canTravelThroughPortals();
 
@@ -96,6 +105,7 @@ public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.Ra
      * Sets whether the wither can travel through portals.
      *
      * @param value whether the wither can travel through portals
+     * @since 1.16.5
      */
     void setCanTravelThroughPortals(boolean value);
 
@@ -104,6 +114,8 @@ public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.Ra
      * sets the health to one third of the max health.
      * <br>
      * This is called in vanilla directly after spawning the wither.
+     *
+     * @since 1.19.4
      */
     void enterInvulnerabilityPhase();
     // Paper end

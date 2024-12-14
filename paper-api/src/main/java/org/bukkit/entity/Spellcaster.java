@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a spell casting "Illager".
+ *
+ * @since 1.12
  */
 public interface Spellcaster extends Illager {
 

@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface to the inventory of a Jukebox.
+ *
+ * @since 1.19.4
  */
 public interface JukeboxInventory extends Inventory {
 

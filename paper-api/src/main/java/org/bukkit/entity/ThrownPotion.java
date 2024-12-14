@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a thrown potion bottle
+ *
+ * @since 1.0.0 R1
  */
 public interface ThrownPotion extends ThrowableProjectile {
 
@@ -14,6 +16,7 @@ public interface ThrownPotion extends ThrowableProjectile {
      * Returns the effects that are applied by this potion.
      *
      * @return The potion effects
+     * @since 1.1.0 R4
      */
     @NotNull
     public Collection<PotionEffect> getEffects();
@@ -26,6 +29,7 @@ public interface ThrownPotion extends ThrowableProjectile {
      * #setItem(ItemStack) setItemStack} method.
      *
      * @return A copy of the ItemStack for this thrown potion.
+     * @since 1.5.1 R0.2
      */
     @NotNull
     public ItemStack getItem();
@@ -34,6 +38,7 @@ public interface ThrownPotion extends ThrowableProjectile {
      * Set the ItemStack for this thrown potion.
      *
      * @param item New ItemStack
+     * @since 1.5.1 R0.2
      */
     public void setItem(@NotNull ItemStack item);
 
@@ -43,6 +48,7 @@ public interface ThrownPotion extends ThrowableProjectile {
      * This includes what effects will be applied by this potion.
      *
      * @return potion meta
+     * @since 1.18.2
      */
     @NotNull
     org.bukkit.inventory.meta.PotionMeta getPotionMeta();
@@ -54,11 +60,14 @@ public interface ThrownPotion extends ThrowableProjectile {
      * Note that the type of {@link #getItem()} is irrelevant
      *
      * @param meta potion meta
+     * @since 1.18.2
      */
     void setPotionMeta(@NotNull org.bukkit.inventory.meta.PotionMeta meta);
 
     /**
      * Splashes the potion at its current location.
+     *
+     * @since 1.19.2
      */
     void splash();
     // Paper end

@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
  * services manager in order to use a service (if one is available). If
  * multiple plugins register a service, then the service with the highest
  * priority takes precedence.
+ *
+ * @since 1.0.0 R1
  */
 public interface ServicesManager {
 

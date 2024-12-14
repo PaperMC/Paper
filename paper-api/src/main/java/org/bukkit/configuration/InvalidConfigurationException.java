@@ -2,6 +2,8 @@ package org.bukkit.configuration;
 
 /**
  * Exception thrown when attempting to load an invalid {@link Configuration}
+ *
+ * @since 1.0.0 R1
  */
 @SuppressWarnings("serial")
 public class InvalidConfigurationException extends Exception {

@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Information about the current server build.
+ *
+ * @since 1.20.6
  */
 @NullMarked
 @ApiStatus.NonExtendable

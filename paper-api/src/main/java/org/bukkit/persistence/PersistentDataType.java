@@ -47,6 +47,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @param <P> the primary object type that is stored in the given tag
  * @param <C> the retrieved object type when applying this tag type
+ * @since 1.14
  */
 public interface PersistentDataType<P, C> {
 
@@ -197,6 +198,8 @@ public interface PersistentDataType<P, C> {
      * A convenience implementation to convert between Byte and Boolean as there is
      * no native implementation for booleans. <br>
      * Any byte value not equal to 0 is considered to be true.
+     *
+     * @since 1.19.4
      */
     class BooleanPersistentDataType implements PersistentDataType<Byte, Boolean> {
 

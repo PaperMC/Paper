@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
  * 'trial_spawner_state' indicates the current operational phase of the spawner.
   * <br>
  * 'ominous' indicates if the block has ominous effects.
+ *
+ * @since 1.20.4
  */
 public interface TrialSpawner extends BlockData {
 
@@ -29,6 +31,7 @@ public interface TrialSpawner extends BlockData {
      * Gets the value of the 'ominous' property.
      *
      * @return the 'ominous' value
+     * @since 1.20.6
      */
     boolean isOminous();
 
@@ -36,6 +39,7 @@ public interface TrialSpawner extends BlockData {
      * Sets the value of the 'ominous' property.
      *
      * @param ominous the new 'ominous' value
+     * @since 1.20.6
      */
     void setOminous(boolean ominous);
 

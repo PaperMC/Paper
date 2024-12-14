@@ -14,6 +14,8 @@ import org.jspecify.annotations.NullMarked;
  * Called when a player begins editing a sign's text.
  * <p>
  * Cancelling this event stops the sign editing menu from opening.
+ *
+ * @since 1.20.1
  */
 @NullMarked
 public class PlayerOpenSignEvent extends PlayerEvent implements Cancellable {

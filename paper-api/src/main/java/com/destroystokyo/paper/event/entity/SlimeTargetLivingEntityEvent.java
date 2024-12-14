@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * This event does not fire for the entity's actual movement. Only when it
  * is choosing to start moving.
+ *
+ * @since 1.13
  */
 @NullMarked
 public class SlimeTargetLivingEntityEvent extends SlimePathfindEvent {

@@ -32,6 +32,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired anytime the server is about to merge 2 experience orbs into one
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class ExperienceOrbMergeEvent extends EntityEvent implements Cancellable {

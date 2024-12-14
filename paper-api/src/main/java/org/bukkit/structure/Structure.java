@@ -28,6 +28,8 @@ import org.jetbrains.annotations.NotNull;
  * registered} with the {@link StructureManager}, or located in the primary
  * world folder, a DataPack, or the server's own default resources, so that the
  * StructureManager can find it.
+ *
+ * @since 1.17.1
  */
 public interface Structure extends PersistentDataHolder {
 
@@ -110,6 +112,7 @@ public interface Structure extends PersistentDataHolder {
      * {@link org.bukkit.loot.LootTable}s and integrity.
      * @param blockTransformers A collection of {@link BlockTransformer}s to apply to the structure.
      * @param entityTransformers A collection of {@link EntityTransformer}s to apply to the structure.
+     * @since 1.20.4
      */
     @ApiStatus.Experimental
     void place(@NotNull Location location, boolean includeEntities, @NotNull StructureRotation structureRotation, @NotNull Mirror mirror, int palette, float integrity, @NotNull Random random, @NotNull Collection<BlockTransformer> blockTransformers, @NotNull Collection<EntityTransformer> entityTransformers);
@@ -151,6 +154,7 @@ public interface Structure extends PersistentDataHolder {
      * {@link org.bukkit.loot.LootTable}s and integrity.
      * @param blockTransformers A collection of {@link BlockTransformer}s to apply to the structure.
      * @param entityTransformers A collection of {@link EntityTransformer}s to apply to the structure.
+     * @since 1.20.4
      */
     @ApiStatus.Experimental
     void place(@NotNull RegionAccessor regionAccessor, @NotNull BlockVector location, boolean includeEntities, @NotNull StructureRotation structureRotation, @NotNull Mirror mirror, int palette, float integrity, @NotNull Random random, @NotNull Collection<BlockTransformer> blockTransformers, @NotNull Collection<EntityTransformer> entityTransformers);

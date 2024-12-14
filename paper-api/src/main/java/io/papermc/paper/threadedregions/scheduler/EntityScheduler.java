@@ -23,6 +23,8 @@ import java.util.function.Consumer;
  * knows whether the given callbacks will be invoked eventually or not - which may be critical for off-thread
  * contexts.
  * </p>
+ *
+ * @since 1.20.1
  */
 public interface EntityScheduler {
 

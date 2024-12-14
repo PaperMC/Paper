@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
  * commands, or use {@link PlayerCommandSendEvent}.
  * @apiNote Only called for bukkit API commands {@link org.bukkit.command.Command} and
  * {@link org.bukkit.command.CommandExecutor} and not for brigadier commands ({@link io.papermc.paper.command.brigadier.Commands}).
+ * @since 1.9.4
  */
 public class TabCompleteEvent extends Event implements Cancellable {
 
@@ -83,6 +84,7 @@ public class TabCompleteEvent extends Event implements Cancellable {
     private final org.bukkit.Location loc;
     /**
      * @return True if it is a command being tab completed, false if it is a chat message.
+     * @since 1.12.2
      */
     public boolean isCommand() {
         return isCommand;
@@ -90,6 +92,7 @@ public class TabCompleteEvent extends Event implements Cancellable {
 
     /**
      * @return The position looked at by the sender, or null if none
+     * @since 1.12.2
      */
     @org.jetbrains.annotations.Nullable
     public org.bukkit.Location getLocation() {

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called when the list of links is sent to the player.
+ *
+ * @since 1.21
  */
 @ApiStatus.Experimental
 public class PlayerLinksSendEvent extends PlayerEvent {

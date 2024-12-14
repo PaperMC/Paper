@@ -15,6 +15,8 @@ import static io.papermc.paper.registry.event.RegistryEventProviderImpl.create;
 /**
  * Holds providers for {@link RegistryEntryAddEvent} and {@link RegistryFreezeEvent}
  * handlers for each applicable registry.
+ *
+ * @since 1.21
  */
 @ApiStatus.Experimental
 @NullMarked

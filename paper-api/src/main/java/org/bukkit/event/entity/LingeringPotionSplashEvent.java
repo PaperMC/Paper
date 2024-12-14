@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a splash potion hits an area
+ *
+ * @since 1.9.4
  */
 public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -50,6 +52,7 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
      * Sets if an Empty AreaEffectCloud may be created
      *
      * @param allowEmptyAreaEffectCreation If an Empty AreaEffectCloud may be created
+     * @since 1.20.2
      */
     public void allowsEmptyCreation(boolean allowEmptyAreaEffectCreation) {
         this.allowEmptyAreaEffectCreation = allowEmptyAreaEffectCreation;
@@ -59,6 +62,7 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
      * Gets if an empty AreaEffectCloud may be created
      *
      * @return if an empty AreaEffectCloud may be created
+     * @since 1.20.2
      */
     public boolean allowsEmptyCreation() {
         return allowEmptyAreaEffectCreation;

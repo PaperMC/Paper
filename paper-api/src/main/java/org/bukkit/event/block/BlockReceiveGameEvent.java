@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
  *
  * Will be called cancelled if the block's default behavior is to ignore the
  * event.
+ *
+ * @since 1.17
  */
 public class BlockReceiveGameEvent extends BlockEvent implements Cancellable {
 

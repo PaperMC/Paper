@@ -11,6 +11,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * @since 1.17
+ */
 @NullMarked
 @ApiStatus.Internal
 public final class JarManifests {
@@ -19,6 +22,9 @@ public final class JarManifests {
 
     private static final Map<ClassLoader, Manifest> MANIFESTS = Collections.synchronizedMap(new WeakHashMap<>());
 
+    /**
+     * @since 1.18
+     */
     public static @Nullable Manifest manifest(final Class<?> clazz) {
         return MANIFESTS.computeIfAbsent(clazz.getClassLoader(), classLoader -> {
             final String classLocation = "/" + clazz.getName().replace(".", "/") + ".class";

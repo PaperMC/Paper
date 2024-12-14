@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Raised when a vehicle collides with an entity.
+ *
+ * @since 1.0.0 R1
  */
 public class VehicleEntityCollisionEvent extends VehicleCollisionEvent implements Cancellable {
     private final Entity entity;

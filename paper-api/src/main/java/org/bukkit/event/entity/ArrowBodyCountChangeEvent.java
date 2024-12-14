@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an arrow enters or exists an entity's body.
+ *
+ * @since 1.16.2
  */
 public class ArrowBodyCountChangeEvent extends EntityEvent implements Cancellable {
 
@@ -85,6 +87,9 @@ public class ArrowBodyCountChangeEvent extends EntityEvent implements Cancellabl
         return handlers;
     }
 
+    /**
+     * @since 1.16.3
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

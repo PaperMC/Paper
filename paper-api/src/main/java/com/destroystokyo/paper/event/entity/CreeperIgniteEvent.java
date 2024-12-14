@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
  * Called when a Creeper is ignited either by a
  * flint and steel, {@link Creeper#ignite()} or
  * {@link Creeper#setIgnited(boolean)}.
+ *
+ * @since 1.13.1
  */
 @NullMarked
 public class CreeperIgniteEvent extends EntityEvent implements Cancellable {

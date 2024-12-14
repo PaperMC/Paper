@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when the recipe of an Item is completed inside a crafting matrix.
+ *
+ * @since 1.1.0 R5
  */
 public class CraftItemEvent extends InventoryClickEvent {
     private Recipe recipe;
@@ -30,6 +32,9 @@ public class CraftItemEvent extends InventoryClickEvent {
         return recipe;
     }
 
+    /**
+     * @since 1.2.5 R0.1
+     */
     @NotNull
     @Override
     public CraftingInventory getInventory() {

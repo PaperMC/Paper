@@ -4,6 +4,8 @@ import org.bukkit.block.data.Directional;
 
 /**
  * 'honey_level' represents the amount of honey stored in the hive.
+ *
+ * @since 1.15
  */
 public interface Beehive extends Directional {
 

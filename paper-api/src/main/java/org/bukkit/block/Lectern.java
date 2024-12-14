@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a lectern.
+ *
+ * @since 1.14
  */
 public interface Lectern extends io.papermc.paper.block.TileStateInventoryHolder { // Paper - TileStateInventoryHolder
 

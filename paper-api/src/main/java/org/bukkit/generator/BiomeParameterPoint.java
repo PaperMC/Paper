@@ -3,6 +3,8 @@ package org.bukkit.generator;
 /**
  * Represents the biome noise parameters which may be passed to a world
  * generator.
+ *
+ * @since 1.19.3
  */
 public interface BiomeParameterPoint {
 

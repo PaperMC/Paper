@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents an area effect cloud which will imbue a potion effect onto
  * entities which enter it.
+ *
+ * @since 1.9.4
  */
 public interface AreaEffectCloud extends Entity {
 
@@ -169,6 +171,7 @@ public interface AreaEffectCloud extends Entity {
      * Sets the underlying potion type
      *
      * @param type PotionType to set the base potion state to
+     * @since 1.20.2
      */
     void setBasePotionType(@Nullable PotionType type);
 
@@ -176,6 +179,7 @@ public interface AreaEffectCloud extends Entity {
      * Returns the potion type about the base potion
      *
      * @return a PotionType object
+     * @since 1.20.2
      */
     @Nullable
     PotionType getBasePotionType();
@@ -265,6 +269,7 @@ public interface AreaEffectCloud extends Entity {
      * Get the entity UUID for the owner of this area effect cloud.
      *
      * @return the entity owner uuid or null
+     * @since 1.20.1
      */
     @Nullable java.util.UUID getOwnerUniqueId();
 
@@ -272,6 +277,7 @@ public interface AreaEffectCloud extends Entity {
      * Sets the entity UUID for the owner of this area effect cloud.
      *
      * @param ownerUuid the entity owner uuid or null to clear
+     * @since 1.20.1
      */
     void setOwnerUniqueId(@Nullable java.util.UUID ownerUuid);
     // Paper end

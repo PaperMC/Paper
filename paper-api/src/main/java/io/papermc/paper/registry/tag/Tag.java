@@ -12,6 +12,7 @@ import org.jspecify.annotations.NullMarked;
  * @param <T>
  * @see org.bukkit.Tag
  * @see org.bukkit.Registry#getTag(TagKey)
+ * @since 1.21
  */
 @ApiStatus.Experimental
 @NullMarked

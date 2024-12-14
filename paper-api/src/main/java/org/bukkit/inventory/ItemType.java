@@ -45,6 +45,8 @@ import org.jetbrains.annotations.Nullable;
  * {@link Material} more maintenance friendly, but will in due time be the
  * official replacement for the aforementioned enum. Entirely incompatible
  * changes may occur. Do not use this API in plugins.
+ *
+ * @since 1.20.6
  */
 @ApiStatus.Experimental // Paper - already required for registry builders
 public interface ItemType extends Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - add Translatable & feature flag API
@@ -2441,6 +2443,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * Returns the item rarity for the item.
      *
      * @return the item rarity (or null if none is set)
+     * @since 1.21
      */
     @Nullable ItemRarity getItemRarity();
     // Paper end - expand ItemRarity API
@@ -2461,6 +2464,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      *
      * @param type the data component type
      * @return {@code true} if there is a default value
+     * @since 1.21.3
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     boolean hasDefaultData(io.papermc.paper.datacomponent.@NotNull DataComponentType type);
@@ -2469,6 +2473,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * Gets the default data component types for this item type.
      *
      * @return an immutable set of data component types
+     * @since 1.21.3
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     java.util.@org.jetbrains.annotations.Unmodifiable @NotNull Set<io.papermc.paper.datacomponent.DataComponentType> getDefaultDataTypes();

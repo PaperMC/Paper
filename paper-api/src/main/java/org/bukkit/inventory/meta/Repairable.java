@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents an item that can be repaired at an anvil.
+ *
+ * @since 1.4.5 R1.0
  */
 public interface Repairable extends ItemMeta {
 

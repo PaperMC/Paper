@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a minecart entity.
+ *
+ * @since 1.0.0 R1
  */
 public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { // Paper
 
@@ -17,6 +19,7 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
      * Sets a minecart's damage.
      *
      * @param damage over 40 to "kill" a minecart
+     * @since 1.6.1 R0.1
      */
     public void setDamage(double damage);
 
@@ -104,6 +107,7 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
      *
      * @param material the material to set as display block.
      * @deprecated use {@link #setDisplayBlockData(BlockData)}
+     * @since 1.8
      */
     @Deprecated(forRemoval = true, since = "1.13")
     public void setDisplayBlock(@Nullable MaterialData material);
@@ -114,6 +118,7 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
      *
      * @return the block displayed by this minecart.
      * @deprecated use {@link #getDisplayBlockData()}
+     * @since 1.8
      */
     @NotNull
     @Deprecated(forRemoval = true, since = "1.13")
@@ -124,6 +129,7 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
      * Passing a null value will set the minecart to have no display block.
      *
      * @param blockData the material to set as display block.
+     * @since 1.13
      */
     public void setDisplayBlockData(@Nullable BlockData blockData);
 
@@ -132,6 +138,7 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
      * This function will return the type AIR if none is set.
      *
      * @return the block displayed by this minecart.
+     * @since 1.13
      */
     @NotNull
     public BlockData getDisplayBlockData();
@@ -140,6 +147,7 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
      * Sets the offset of the display block.
      *
      * @param offset the block offset to set for this minecart.
+     * @since 1.8
      */
     public void setDisplayBlockOffset(int offset);
 
@@ -147,6 +155,7 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
      * Gets the offset of the display block.
      *
      * @return the current block offset for this minecart.
+     * @since 1.8
      */
     public int getDisplayBlockOffset();
 
@@ -155,6 +164,7 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
      * Gets the {@link Material} that represents this Minecart type.
      *
      * @return the minecart material.
+     * @since 1.16.4
      */
     @NotNull
     public Material getMinecartMaterial();

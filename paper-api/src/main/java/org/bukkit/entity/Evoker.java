@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an Evoker "Illager".
+ *
+ * @since 1.11
  */
 public interface Evoker extends Spellcaster {
 
@@ -68,6 +70,7 @@ public interface Evoker extends Spellcaster {
     // Paper start
     /**
      * @return the sheep being targeted by the {@link Spell#WOLOLO wololo spell}, or {@code null} if none
+     * @since 1.16.2
      */
     @Nullable
     Sheep getWololoTarget();
@@ -76,6 +79,7 @@ public interface Evoker extends Spellcaster {
      * Set the sheep to be the target of the {@link Spell#WOLOLO wololo spell}, or {@code null} to clear.
      *
      * @param sheep new wololo target
+     * @since 1.16.2
      */
     void setWololoTarget(@Nullable Sheep sheep);
     // Paper end

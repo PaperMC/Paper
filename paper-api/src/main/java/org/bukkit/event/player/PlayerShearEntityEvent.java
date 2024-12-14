@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player shears an entity
+ *
+ * @since 1.1.0 R1
  */
 public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -58,6 +60,7 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
      * Gets the item used to shear the entity.
      *
      * @return the shears
+     * @since 1.15.2
      */
     @NotNull
     public ItemStack getItem() {
@@ -68,6 +71,7 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
      * Gets the hand used to shear the entity.
      *
      * @return the hand
+     * @since 1.15.2
      */
     @NotNull
     public EquipmentSlot getHand() {
@@ -91,6 +95,7 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
      *
      * @return the shearing drops
      * @see #setDrops(java.util.List)
+     * @since 1.20.4
      */
     public java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<ItemStack> getDrops() {
         return this.drops;
@@ -100,6 +105,7 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
      * Sets the drops for the shearing.
      *
      * @param drops the shear drops
+     * @since 1.20.4
      */
     public void setDrops(final java.util.@NotNull List<org.bukkit.inventory.ItemStack> drops) {
         this.drops = java.util.List.copyOf(drops);

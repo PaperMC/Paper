@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * A representation of a fluid in a specific state of data.
  * This type is not linked to a specific location and hence mostly resembles a {@link org.bukkit.block.data.BlockData}.
+ *
+ * @since 1.20.4
  */
 @NullMarked
 public interface FluidData extends Cloneable {

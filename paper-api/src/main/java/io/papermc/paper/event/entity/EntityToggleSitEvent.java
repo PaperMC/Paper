@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Is called when an entity sits down or stands up.
+ *
+ * @since 1.19.2
  */
 @NullMarked
 public class EntityToggleSitEvent extends EntityEvent implements Cancellable {

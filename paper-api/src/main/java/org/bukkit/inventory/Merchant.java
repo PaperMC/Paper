@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a merchant. A merchant is a special type of inventory which can
  * facilitate custom trades between items.
+ *
+ * @since 1.11
  */
 public interface Merchant {
 

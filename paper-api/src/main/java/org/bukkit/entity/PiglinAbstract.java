@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Piglin / Piglin Brute.
+ *
+ * @since 1.16.2
  */
 public interface PiglinAbstract extends Monster, Ageable {
 

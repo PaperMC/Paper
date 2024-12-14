@@ -18,6 +18,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * When adding a BlockPopulator manually to a world it is recommended to do so during
  * the {@link WorldInitEvent}.
+ *
+ * @since 1.0.0 R1
  */
 public abstract class BlockPopulator {
 
@@ -65,6 +67,7 @@ public abstract class BlockPopulator {
      * @param chunkX The X-coordinate of the chunk
      * @param chunkZ The Z-coordinate of the chunk
      * @param limitedRegion The chunk region to populate
+     * @since 1.17.1
      */
     public void populate(@NotNull WorldInfo worldInfo, @NotNull Random random, int chunkX, int chunkZ, @NotNull LimitedRegion limitedRegion) {
     }

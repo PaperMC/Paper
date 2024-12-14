@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 'shape' represents the texture and bounding box shape of these stairs.
+ *
+ * @since 1.13
  */
 public interface Stairs extends Bisected, Directional, Waterlogged {
 

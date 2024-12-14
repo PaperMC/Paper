@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when an item used by the player takes durability damage as a result of
  * being used.
+ *
+ * @since 1.5.1 R0.2
  */
 public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
 
@@ -58,6 +60,7 @@ public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
      * this value will be the same as the {@link #getDamage()} value.
      *
      * @return pre-reduction damage amount
+     * @since 1.18.2
      */
     public int getOriginalDamage() {
         return originalDamage;

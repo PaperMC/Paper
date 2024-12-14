@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the layers of patterns on a banner.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BANNER_PATTERNS
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

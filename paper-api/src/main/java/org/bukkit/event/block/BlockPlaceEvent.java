@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * Called when a block is placed by a player.
  * <p>
  * If a Block Place event is cancelled, the block will not be placed.
+ *
+ * @since 1.0.0 R1
  */
 public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -106,6 +108,7 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
     /**
      * Gets the hand which placed the block
      * @return Main or off-hand, depending on which hand was used to place the block
+     * @since 1.9.4
      */
     @NotNull
     public EquipmentSlot getHand() {
@@ -135,12 +138,18 @@ public class BlockPlaceEvent extends BlockEvent implements Cancellable {
         this.canBuild = canBuild;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

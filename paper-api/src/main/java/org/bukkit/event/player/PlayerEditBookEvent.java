@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a player edits or signs a book and quill item. If the event is
  * cancelled, no changes are made to the BookMeta
+ *
+ * @since 1.6.1 R0.1
  */
 public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

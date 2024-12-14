@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an object that may be assigned permissions
+ *
+ * @since 1.0.0 R1
  */
 public interface Permissible extends ServerOperator {
 
@@ -133,6 +135,7 @@ public interface Permissible extends ServerOperator {
      *
      * @param permission the permission to check
      * @return a tri-state of if the permission is set and, if it is set, it's value
+     * @since 1.17.1
      */
     default net.kyori.adventure.util.@NotNull TriState permissionValue(final @NotNull Permission permission) {
         if (this.isPermissionSet(permission)) {
@@ -147,6 +150,7 @@ public interface Permissible extends ServerOperator {
      *
      * @param permission the permission to check
      * @return a tri-state of if the permission is set and, if it is set, it's value
+     * @since 1.17.1
      */
     default net.kyori.adventure.util.@NotNull TriState permissionValue(final @NotNull String permission) {
         if (this.isPermissionSet(permission)) {

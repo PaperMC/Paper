@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity attempts to ride another entity.
+ *
+ * @since 1.20.4
  */
 public class EntityMountEvent extends EntityEvent implements Cancellable {
 

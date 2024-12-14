@@ -7,6 +7,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Thrown when a command throws an exception
+ *
+ * @since 1.9.4
  */
 public class ServerCommandException extends ServerException {
 

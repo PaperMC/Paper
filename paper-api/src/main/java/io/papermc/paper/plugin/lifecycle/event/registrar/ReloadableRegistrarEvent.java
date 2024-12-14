@@ -10,6 +10,7 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <R> the registrar type
  * @see RegistrarEvent
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 @NullMarked

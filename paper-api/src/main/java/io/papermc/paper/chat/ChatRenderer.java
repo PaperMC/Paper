@@ -8,6 +8,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * A chat renderer is responsible for rendering chat messages sent by {@link Player}s to the server.
+ *
+ * @since 1.16.5
  */
 @NullMarked
 @FunctionalInterface
@@ -34,6 +36,9 @@ public interface ChatRenderer {
         return new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
     }
 
+    /**
+     * @since 1.19.1
+     */
     @ApiStatus.Internal
     sealed interface Default extends ChatRenderer, ViewerUnaware permits ViewerUnawareImpl.Default {
     }

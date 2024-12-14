@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Fired when an Entity is knocked back by the hit of another Entity. The acceleration
  * vector can be modified. If this event is cancelled, the entity is not knocked back.
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class EntityKnockbackByEntityEvent extends EntityPushedByEntityAttackEvent {

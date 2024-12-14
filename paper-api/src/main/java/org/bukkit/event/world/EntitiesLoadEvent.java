@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
  * Called when entities are loaded.
  *
  * The provided chunk may or may not be loaded.
+ *
+ * @since 1.17.1
  */
 public class EntitiesLoadEvent extends ChunkEvent {
 

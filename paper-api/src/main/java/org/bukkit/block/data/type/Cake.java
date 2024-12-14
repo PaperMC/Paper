@@ -8,6 +8,8 @@ import org.bukkit.block.data.BlockData;
  * <br>
  * A value of 0 indicates that the cake has not been eaten, whilst a value of
  * {@link #getMaximumBites()} indicates that it is all gone :(
+ *
+ * @since 1.13
  */
 public interface Cake extends BlockData {
 

@@ -6,6 +6,8 @@ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 
 /**
  * Thrown when the internal server throws a recoverable exception.
+ *
+ * @since 1.9.4
  */
 public class ServerInternalException extends ServerException {
 

@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Extends RegisteredListener to include timing information
+ *
+ * @since 1.1.0 R1
  */
 public class TimedRegisteredListener extends RegisteredListener {
     private int count;
@@ -83,6 +85,7 @@ public class TimedRegisteredListener extends RegisteredListener {
      * event.getClass().isAssignableFrom(clazz)</code> for all handled events.
      *
      * @return the event class handled by this RegisteredListener
+     * @since 1.6.2 R1.1
      */
     @Nullable
     public Class<? extends Event> getEventClass() {

@@ -42,6 +42,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * @deprecated Timings will be removed in the future
+ * @since 1.9.4
  */
 @Deprecated(forRemoval = true)
 @SuppressWarnings({"UnusedDeclaration", "WeakerAccess", "SameParameterValue"})
@@ -151,6 +152,9 @@ public final class Timings {
         }
     }
 
+    /**
+     * @since 1.19.4
+     */
     public static Component deprecationMessage() {
         return Component.text()
             .color(TextColor.color(0xffc93a))
@@ -286,6 +290,7 @@ public final class Timings {
      * Generates a report and sends it to the specified listener.
      * Use with {@link org.bukkit.command.BufferedCommandSender} to get full response when done!
      * @param sender The listener to send responses too.
+     * @since 1.11.2
      */
     public static void generateReport(@NotNull TimingsReportListener sender) {
         Preconditions.checkNotNull(sender);
@@ -322,4 +327,3 @@ public final class Timings {
         return TimingsManager.getHandler(groupName, name, groupHandler);
     }
 }
-

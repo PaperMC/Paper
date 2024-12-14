@@ -12,6 +12,9 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.8
+ */
 @SerializableAs("Pattern")
 public class Pattern implements ConfigurationSerializable {
 

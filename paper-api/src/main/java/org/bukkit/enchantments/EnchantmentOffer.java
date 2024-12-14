@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * A class for the available enchantment offers in the enchantment table.
+ *
+ * @since 1.11
  */
 public class EnchantmentOffer {
 

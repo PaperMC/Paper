@@ -10,6 +10,7 @@ import org.jspecify.annotations.NullMarked;
  * <b>May see breaking changes until Experimental annotation is removed.</b>
  *
  * @see BlockPosition
+ * @since 1.19.3
  */
 @ApiStatus.Experimental
 @NullMarked

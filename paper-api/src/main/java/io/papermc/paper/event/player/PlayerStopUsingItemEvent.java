@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Called when the server detects a player stopping using an item.
  * Examples of this are letting go of the interact button when holding a bow, an edible item, or a spyglass.
+ *
+ * @since 1.18.2
  */
 @NullMarked
 public class PlayerStopUsingItemEvent extends PlayerEvent {

@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Represents the tint of the decorations on the Filled Map item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#MAP_COLOR
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

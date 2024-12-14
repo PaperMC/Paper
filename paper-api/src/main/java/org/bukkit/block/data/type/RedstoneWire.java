@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * 'north', 'east', 'south', 'west' represent the types of connections this
  * redstone wire has to adjacent blocks.
+ *
+ * @since 1.13
  */
 public interface RedstoneWire extends AnaloguePowerable {
 

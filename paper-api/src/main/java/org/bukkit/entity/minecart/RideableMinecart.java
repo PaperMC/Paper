@@ -9,6 +9,8 @@ import org.bukkit.entity.Minecart;
  * the exception of {@link org.bukkit.entity.IronGolem iron golems}.
  * Non-player entities that meet normal passenger criteria automatically
  * mount these minecarts when close enough.
+ *
+ * @since 1.5.1 R0.2
  */
 public interface RideableMinecart extends Minecart {
 }

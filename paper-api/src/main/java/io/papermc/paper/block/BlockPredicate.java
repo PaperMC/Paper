@@ -7,6 +7,9 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * @since 1.21.3
+ */
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

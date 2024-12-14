@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * If present, specifies the target Lodestone that a Compass should point towards.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#LODESTONE_TRACKER
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

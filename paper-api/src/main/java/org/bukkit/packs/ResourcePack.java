@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
  * Represents a resource pack.
  *
  * @see <a href="https://minecraft.wiki/w/Resource_pack">Minecraft wiki</a>
+ * @since 1.20.4
  */
 public interface ResourcePack {
 

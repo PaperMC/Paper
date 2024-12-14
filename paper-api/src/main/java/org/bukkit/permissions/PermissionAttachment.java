@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Holds information about a permission attachment on a {@link Permissible}
  * object
+ *
+ * @since 1.0.0 R1
  */
 public class PermissionAttachment {
     private PermissionRemovedExecutor removed;

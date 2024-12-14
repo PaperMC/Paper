@@ -9,6 +9,8 @@ import org.bukkit.block.data.Waterlogged;
  * 'bottom' scaffold.
  * <br>
  * When 'distance' reaches {@link #getMaximumDistance()} the block will drop.
+ *
+ * @since 1.14
  */
 public interface Scaffolding extends Waterlogged {
 

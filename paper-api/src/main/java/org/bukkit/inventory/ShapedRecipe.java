@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a shaped (ie normal) crafting recipe.
+ *
+ * @since 1.0.0 R1
  */
 public class ShapedRecipe extends CraftingRecipe {
     private String[] rows;
@@ -172,6 +174,7 @@ public class ShapedRecipe extends CraftingRecipe {
      * @return The changed recipe, so you can chain calls.
      * @throws IllegalArgumentException if the {@code key} is a space character
      * @throws IllegalArgumentException if the {@code key} does not appear in the shape.
+     * @since 1.13.1
      */
     @NotNull
     public ShapedRecipe setIngredient(char key, @NotNull RecipeChoice ingredient) {
@@ -182,6 +185,9 @@ public class ShapedRecipe extends CraftingRecipe {
         return this;
     }
 
+    /**
+     * @since 1.13.2
+     */
     // Paper start
     @NotNull
     public ShapedRecipe setIngredient(char key, @NotNull ItemStack item) {
@@ -214,6 +220,7 @@ public class ShapedRecipe extends CraftingRecipe {
      * Get a copy of the choice map.
      *
      * @return The mapping of character to ingredients.
+     * @since 1.13.1
      */
     @NotNull
     public Map<Character, RecipeChoice> getChoiceMap() {

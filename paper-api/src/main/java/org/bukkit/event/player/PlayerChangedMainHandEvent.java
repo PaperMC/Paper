@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player changes their main hand in the client settings.
+ *
+ * @since 1.9.4
  */
 public class PlayerChangedMainHandEvent extends PlayerEvent {
 

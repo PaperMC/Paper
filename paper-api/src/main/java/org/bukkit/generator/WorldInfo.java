@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Holds various information of a World
+ *
+ * @since 1.17.1
  */
 public interface WorldInfo extends io.papermc.paper.world.flag.FeatureFlagSetHolder { // Paper - feature flag API
 
@@ -63,6 +65,7 @@ public interface WorldInfo extends io.papermc.paper.world.flag.FeatureFlagSetHol
      * Get the vanilla {@link BiomeProvider} for this world.
      *
      * @return vanilla biome provider
+     * @since 1.18.1
      */
     @NotNull BiomeProvider vanillaBiomeProvider();
     // Paper end

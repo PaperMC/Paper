@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player gets kicked from the server
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerKickEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -46,6 +48,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      * Gets the leave message send to all online players
      *
      * @return string kick reason
+     * @since 1.16.5
      */
     public net.kyori.adventure.text.@NotNull Component leaveMessage() {
         return this.leaveMessage;
@@ -55,6 +58,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      * Sets the leave message send to all online players
      *
      * @param leaveMessage leave message
+     * @since 1.16.5
      */
     public void leaveMessage(net.kyori.adventure.text.@NotNull Component leaveMessage) {
         this.leaveMessage = leaveMessage;
@@ -64,6 +68,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      * Gets the reason why the player is getting kicked
      *
      * @return string kick reason
+     * @since 1.16.5
      */
     public net.kyori.adventure.text.@NotNull Component reason() {
         return this.kickReason;
@@ -73,6 +78,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      * Sets the reason why the player is getting kicked
      *
      * @param kickReason kick reason
+     * @since 1.16.5
      */
     public void reason(net.kyori.adventure.text.@NotNull Component kickReason) {
         this.kickReason = kickReason;
@@ -135,12 +141,18 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         this.leaveMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(leaveMessage); // Paper
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
@@ -150,6 +162,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
      * Gets the cause of this kick
      *
      * @return
+     * @since 1.16.5
      */
     @NotNull
     public org.bukkit.event.player.PlayerKickEvent.Cause getCause() {

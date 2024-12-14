@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Raised when a living entity exits a vehicle.
+ *
+ * @since 1.0.0 R1
  */
 public class VehicleExitEvent extends VehicleEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -51,17 +53,26 @@ public class VehicleExitEvent extends VehicleEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    /**
+     * @since 1.13.2
+     */
     public boolean isCancellable() {
         return isCancellable;
         // Paper end
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

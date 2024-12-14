@@ -26,6 +26,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Utility class for storing and retrieving classes for {@link Configuration}.
+ *
+ * @since 1.0.0 R1
  */
 public class ConfigurationSerialization {
     public static final String SERIALIZED_TYPE_KEY = "==";

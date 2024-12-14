@@ -6,6 +6,8 @@ import org.bukkit.block.data.Waterlogged;
  * 'can_summon' indicates whether the sculk shrieker can summon the warden.
  * <p>
  * 'shrieking' indicated whether the sculk shrieker is shrieking or not.
+ *
+ * @since 1.19
  */
 public interface SculkShrieker extends Waterlogged {
 

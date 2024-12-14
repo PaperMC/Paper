@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * If a Block Dispense Armor event is cancelled, the equipment will not be
  * equipped on the target entity.
+ *
+ * @since 1.13.1
  */
 public class BlockDispenseArmorEvent extends BlockDispenseEvent {
 

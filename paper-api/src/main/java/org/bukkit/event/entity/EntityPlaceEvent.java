@@ -16,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
  * <br>
  * Note that this event is currently only fired for four specific placements:
  * armor stands, boats, minecarts, and end crystals.
+ *
+ * @since 1.13.2
  */
 public class EntityPlaceEvent extends EntityEvent implements Cancellable {
 
@@ -73,6 +75,7 @@ public class EntityPlaceEvent extends EntityEvent implements Cancellable {
      * Get the hand used to place the entity.
      *
      * @return the hand
+     * @since 1.19.2
      */
     @NotNull
     public EquipmentSlot getHand() {
