@@ -1,0 +1,46 @@
+--- a/net/minecraft/world/entity/animal/armadillo/Armadillo.java
++++ b/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+@@ -141,10 +_,12 @@
+         ArmadilloAi.updateActivity(this);
+         profilerFiller.pop();
+         if (this.isAlive() && !this.isBaby() && --this.scuteTime <= 0) {
++            this.forceDrops = true; // CraftBukkit
+             if (this.dropFromGiftLootTable(level, BuiltInLootTables.ARMADILLO_SHED, this::spawnAtLocation)) {
+                 this.playSound(SoundEvents.ARMADILLO_SCUTE_DROP, 1.0F, (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F);
+                 this.gameEvent(GameEvent.ENTITY_PLACE);
+             }
++            this.forceDrops = false; // CraftBukkit
+ 
+             this.scuteTime = this.pickNextScuteDropTime();
+         }
+@@ -283,7 +_,11 @@
+     }
+ 
+     @Override
+-    protected void actuallyHurt(ServerLevel level, DamageSource damageSource, float amount) {
++    // CraftBukkit start - void -> boolean
++    public boolean actuallyHurt(ServerLevel level, DamageSource damageSource, float amount, org.bukkit.event.entity.EntityDamageEvent event) {
++        boolean damageResult = super.actuallyHurt(level, damageSource, amount, event);
++        if (!damageResult) return false;
++        // CraftBukkit end
+         super.actuallyHurt(level, damageSource, amount);
+         if (!this.isNoAi() && !this.isDeadOrDying()) {
+             if (damageSource.getEntity() instanceof LivingEntity) {
+@@ -295,6 +_,7 @@
+                 this.rollOut();
+             }
+         }
++        return true; // CraftBukkit
+     }
+ 
+     @Override
+@@ -313,7 +_,9 @@
+             return false;
+         } else {
+             if (this.level() instanceof ServerLevel serverLevel) {
++                this.forceDrops = true; // CraftBukkit
+                 this.spawnAtLocation(serverLevel, new ItemStack(Items.ARMADILLO_SCUTE));
++                this.forceDrops = false; // CraftBukkit
+                 this.gameEvent(GameEvent.ENTITY_INTERACT);
+                 this.playSound(SoundEvents.ARMADILLO_BRUSH);
+             }
