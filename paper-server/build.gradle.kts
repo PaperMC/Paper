@@ -12,7 +12,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.4+build.5")
+    mache("io.papermc:mache:1.21.4+build.6")
     paperclip("io.papermc:paperclip:3.0.3")
     remapper("net.fabricmc:tiny-remapper:0.10.3:fat")
 }
