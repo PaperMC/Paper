@@ -1,0 +1,232 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: leguan <longboard.noah@gmail.com>
+Date: Wed, 17 Jan 2024 19:59:06 +0100
+Subject: [PATCH] Add PreTeleportEvents
+
+
+diff --git a/src/main/java/net/minecraft/server/commands/TeleportCommand.java b/src/main/java/net/minecraft/server/commands/TeleportCommand.java
+index 54851f6cc0d5fddb32a9a1e84a4f5ae41af18758..870e8d5ed8fcaa376d38037ad1ffdcd7169c57ff 100644
+--- a/src/main/java/net/minecraft/server/commands/TeleportCommand.java
++++ b/src/main/java/net/minecraft/server/commands/TeleportCommand.java
+@@ -167,6 +167,7 @@ public class TeleportCommand {
+                 result = player.teleportTo(world, x, y, z, movementFlags, f2, f3, PlayerTeleportEvent.TeleportCause.COMMAND);
+             } else {
+                 Location to = new Location(world.getWorld(), x, y, z, f2, f3);
++                (new io.papermc.paper.event.entity.EntityPreTeleportEvent(target.getBukkitEntity(), target.getBukkitEntity().getLocation(), to)).callEvent(); // Paper - Add PreTeleportEvents
+                 EntityTeleportEvent event = new EntityTeleportEvent(target.getBukkitEntity(), target.getBukkitEntity().getLocation(), to);
+                 world.getCraftServer().getPluginManager().callEvent(event);
+                 if (event.isCancelled() || event.getTo() == null) { // Paper
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 8437316888c6056060a2780652147590b6fe7443..7cc140177dd3a41bcd904f375efa0ce0ee2debe3 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1288,6 +1288,11 @@ public class ServerPlayer extends Player {
+             */
+             // CraftBukkit end
+             PortalInfo shapedetectorshape = this.findDimensionEntryPoint(worldserver);
++            // Paper start - Add PreTeleportEvents
++            Location enter = this.getBukkitEntity().getLocation();
++            Location exit = (worldserver == null) ? null : CraftLocation.toBukkit(shapedetectorshape.pos, worldserver.getWorld(), shapedetectorshape.yRot, shapedetectorshape.xRot);
++            (new io.papermc.paper.event.player.PlayerPreTeleportEvent(this.getBukkitEntity(), enter, exit, cause)).callEvent();
++            // Paper end - Add PreTeleportEvents
+ 
+             if (shapedetectorshape != null) {
+                 worldserver1.getProfiler().push("moving");
+@@ -1302,8 +1307,10 @@ public class ServerPlayer extends Player {
+             } else {
+                 return null;
+             }
+-            Location enter = this.getBukkitEntity().getLocation();
+-            Location exit = (worldserver == null) ? null : CraftLocation.toBukkit(shapedetectorshape.pos, worldserver.getWorld(), shapedetectorshape.yRot, shapedetectorshape.xRot);
++            // Paper start - Add PreTeleportEvents - moved up
++            // Location enter = this.getBukkitEntity().getLocation();
++            // Location exit = (worldserver == null) ? null : CraftLocation.toBukkit(shapedetectorshape.pos, worldserver.getWorld(), shapedetectorshape.yRot, shapedetectorshape.xRot);
++            // Paper end - Add PreTeleportEvents
+             PlayerTeleportEvent tpEvent = new PlayerTeleportEvent(this.getBukkitEntity(), enter, exit, cause);
+             Bukkit.getServer().getPluginManager().callEvent(tpEvent);
+             if (tpEvent.isCancelled() || tpEvent.getTo() == null) {
+@@ -1369,6 +1376,7 @@ public class ServerPlayer extends Player {
+     protected CraftPortalEvent callPortalEvent(Entity entity, ServerLevel exitWorldServer, Vec3 exitPosition, TeleportCause cause, int searchRadius, int creationRadius) {
+         Location enter = this.getBukkitEntity().getLocation();
+         Location exit = CraftLocation.toBukkit(exitPosition, exitWorldServer.getWorld(), this.getYRot(), this.getXRot());
++        (new io.papermc.paper.event.player.PlayerPreTeleportEvent(this.getBukkitEntity(), enter, exit, cause)).callEvent(); // Paper - Add PreTeleportEvents
+         PlayerPortalEvent event = new PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, searchRadius, true, creationRadius);
+         Bukkit.getServer().getPluginManager().callEvent(event);
+         if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null) {
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 8e67853a7a93fa736c147e8b2df537746dc8e94f..1ce9f4119d153edbfd90654c11d23eb2dfe5960c 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1696,7 +1696,12 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         for (RelativeMovement relativeArgument : set) {
+             relativeFlags.add(org.bukkit.craftbukkit.entity.CraftPlayer.toApiRelativeFlag(relativeArgument));
+         }
+-        PlayerTeleportEvent event = new PlayerTeleportEvent(player, from.clone(), to.clone(), cause, java.util.Set.copyOf(relativeFlags));
++        // Paper start - Add PreTeleportEvents
++        Location fromLocation = from.clone();
++        Location toLocation = to.clone();
++        (new io.papermc.paper.event.player.PlayerPreTeleportEvent(player, fromLocation, toLocation, cause, java.util.Set.copyOf(relativeFlags))).callEvent();
++        PlayerTeleportEvent event = new PlayerTeleportEvent(player, fromLocation, toLocation, cause, java.util.Set.copyOf(relativeFlags));
++        // Paper end - Add PreTeleportEvents
+         // Paper end - Teleport API
+         this.cserver.getPluginManager().callEvent(event);
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 2bc85351e6e52f90da5fdb29d8d042a06132d742..d3c111eb9823c726d5c9fa0d000a315c1e92bb3d 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -3872,7 +3872,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
+         Location enter = bukkitEntity.getLocation();
+         Location exit = CraftLocation.toBukkit(exitPosition, exitWorldServer.getWorld());
+-
++        (new io.papermc.paper.event.entity.EntityPreTeleportEvent(bukkitEntity, enter, exit)).callEvent(); // Paper - Add PreTeleportEvents
+         // Paper start
+         final org.bukkit.PortalType portalType = switch (cause) {
+             case END_PORTAL -> org.bukkit.PortalType.ENDER;
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 6e043457a29a890bcefd27fc5bb07c1a7e4e30f7..8b9baa215cbcc7812b79a3e16581117c9e39cc5e 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -4212,10 +4212,15 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+                 if (flag1) {
+                     if (!(this instanceof ServerPlayer)) {
+-                        EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), new Location(this.level().getWorld(), d3, d4, d5), new Location(this.level().getWorld(), d0, d6, d2));
++                        // Paper start - Add PreTeleportEvents
++                        Location from = new Location(this.level().getWorld(), d3, d4, d5);
++                        Location to = new Location(this.level().getWorld(), d0, d6, d2);
++                        (new io.papermc.paper.event.entity.EntityPreTeleportEvent(this.getBukkitLivingEntity(), from, to)).callEvent();
++                        EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), from, to);
++                        // Paper end - Add PreTeleportEvents
+                         this.level().getCraftServer().getPluginManager().callEvent(teleport);
+                         if (!teleport.isCancelled() && teleport.getTo() != null) { // Paper
+-                            Location to = teleport.getTo();
++                            to = teleport.getTo(); // Paper - Add PreTeleportEvents
+                             this.teleportTo(to.getX(), to.getY(), to.getZ());
+                         } else {
+                             return Optional.empty();
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
+index edd29c2f4d0151d512618115a8fb4b7423171491..d96c82563e20db3fde3e866819cbd72340a1a69b 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/FollowOwnerGoal.java
+@@ -128,12 +128,18 @@ public class FollowOwnerGoal extends Goal {
+         } else if (!this.canTeleportTo(new BlockPos(x, y, z))) {
+             return false;
+         } else {
++            // Paper start - Add PreTeleportEvents
++            org.bukkit.craftbukkit.entity.CraftEntity entity = this.tamable.getBukkitEntity();
++            Location to = new Location(entity.getWorld(),(double) x + 0.5D, (double) y, (double) z + 0.5D);
++            (new io.papermc.paper.event.entity.EntityPreTeleportEvent(entity, entity.getLocation(), to)).callEvent();
+             // CraftBukkit start
+-            EntityTeleportEvent event = CraftEventFactory.callEntityTeleportEvent(this.tamable, (double) x + 0.5D, (double) y, (double) z + 0.5D);
++            EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(entity, entity.getLocation(), to);
++            event.callEvent();
++            // Paper end - Add PreTeleportEvents
+             if (event.isCancelled() || event.getTo() == null) { // Paper
+                 return false;
+             }
+-            Location to = event.getTo();
++            to = event.getTo(); // Paper - Add PreTeleportEvents
+             this.tamable.moveTo(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch());
+             // CraftBukkit end
+             this.navigation.stop();
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Shulker.java b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+index 5215fa54666979ef4da074ddfdb082e7274f2957..dda81f1235862b013ef78e1454552c8242270d5b 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Shulker.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Shulker.java
+@@ -408,7 +408,13 @@ public class Shulker extends AbstractGolem implements VariantHolder<Optional<Dye
+ 
+                     if (enumdirection != null) {
+                         // CraftBukkit start
+-                        EntityTeleportEvent teleportEvent = CraftEventFactory.callEntityTeleportEvent(this, blockposition1.getX(), blockposition1.getY(), blockposition1.getZ());
++                        // Paper start - Add PreTeleportEvents
++                        org.bukkit.craftbukkit.entity.CraftEntity entity = this.getBukkitEntity();
++                        org.bukkit.Location location = new org.bukkit.Location(entity.getWorld(), blockposition1.getX(), blockposition1.getY(), blockposition1.getZ());
++                        (new io.papermc.paper.event.entity.EntityPreTeleportEvent(entity, entity.getLocation(), location)).callEvent();
++                        EntityTeleportEvent teleportEvent = new EntityTeleportEvent(entity, entity.getLocation(), location);
++                        teleportEvent.callEvent();
++                        // Paper end - Add PreTeleportEvents
+                         if (teleportEvent.isCancelled() || teleportEvent.getTo() == null) { // Paper
+                             return false;
+                         } else {
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+index 1fb1e729d6879568d8b4943071fa940325b2e5b0..da5aa59d9e9476de720117acdaf9efc7b349675d 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/ThrownEnderpearl.java
+@@ -66,7 +66,7 @@ public class ThrownEnderpearl extends ThrowableItemProjectile {
+                     org.bukkit.Location location = this.getBukkitEntity().getLocation();
+                     location.setPitch(player.getLocation().getPitch());
+                     location.setYaw(player.getLocation().getYaw());
+-
++                    (new io.papermc.paper.event.player.PlayerPreTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.ENDER_PEARL)).callEvent(); // Paper - Add PreTeleportEvents
+                     PlayerTeleportEvent teleEvent = new PlayerTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.ENDER_PEARL);
+                     Bukkit.getPluginManager().callEvent(teleEvent);
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+index 93bd70c1dc2ba8b893a6087730071c81fb1132f4..3aed8dc2597641bfff31f0edf38b94f758038a48 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+@@ -206,6 +206,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+                     location.setPitch(player.getLocation().getPitch());
+                     location.setYaw(player.getLocation().getYaw());
+ 
++                    (new io.papermc.paper.event.player.PlayerPreTeleportEvent(player, player.getLocation(), location, PlayerTeleportEvent.TeleportCause.END_GATEWAY)).callEvent(); // Paper - Add PreTeleportEvents
+                     PlayerTeleportEvent teleEvent = new com.destroystokyo.paper.event.player.PlayerTeleportEndGatewayEvent(player, player.getLocation(), location, new org.bukkit.craftbukkit.block.CraftEndGateway(worldserver.getWorld(), blockEntity)); // Paper
+                     Bukkit.getPluginManager().callEvent(teleEvent);
+                     if (teleEvent.isCancelled()) {
+@@ -225,6 +226,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+                 location.setPitch(entity1.getXRot());
+                 location.setYaw(entity1.getBukkitYaw());
+                 org.bukkit.entity.Entity bukkitEntity = entity1.getBukkitEntity();
++                (new io.papermc.paper.event.entity.EntityPreTeleportEvent(bukkitEntity, bukkitEntity.getLocation(), location)).callEvent(); // Paper - Add PreTeleportEvents
+                 org.bukkit.event.entity.EntityTeleportEvent teleEvent = new com.destroystokyo.paper.event.entity.EntityTeleportEndGatewayEvent(bukkitEntity, bukkitEntity.getLocation(), location, new org.bukkit.craftbukkit.block.CraftEndGateway(world.getWorld(), blockEntity));
+                 if (!teleEvent.callEvent() || teleEvent.getTo() == null) {
+                     // Paper end - EntityTeleportEndGatewayEvent
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index a2d336ceb52b63db5c03432ee7bc94dc6a742b82..6e78cb0068f4d03bd40150baa86d311916842353 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -241,6 +241,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         Set<io.papermc.paper.entity.TeleportFlag> flagSet = Set.of(flags);
+         boolean dismount = !flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
+         boolean ignorePassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
++        (new io.papermc.paper.event.entity.EntityPreTeleportEvent(this, this.getLocation(), location, flagSet)).callEvent(); // Paper - Add PreTeleportEvents
+         // Don't allow teleporting between worlds while keeping passengers
+         if (flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS) && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
+             return false;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index eddbbd0e9be3cb81d1030c0c9da829b9193ebc16..11abdb8d0289f90b949260a30e2f35eaf3229ee6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -1405,6 +1405,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         // Paper end - Teleport API
+         Preconditions.checkArgument(location != null, "location");
+         Preconditions.checkArgument(location.getWorld() != null, "location.world");
++        (new io.papermc.paper.event.player.PlayerPreTeleportEvent(this, this.getLocation(), location, cause, allFlags)).callEvent(); // Paper - Add PreTeleportEvents
+         // Paper start - Teleport passenger API
+         // Don't allow teleporting between worlds while keeping passengers
+         if (ignorePassengers && entity.isVehicle() && location.getWorld() != this.getWorld()) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 5a9c68b60cf3bf694fe1fcd3b095516b6481f8a2..3f2111dca111fc35908542ba4d5b3b0e885f68e7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -2044,6 +2044,8 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
++    // Paper start - Add PreTeleportEvents - no longer required
++    /*
+     public static EntityTeleportEvent callEntityTeleportEvent(Entity nmsEntity, double x, double y, double z) {
+         CraftEntity entity = nmsEntity.getBukkitEntity();
+         Location to = new Location(entity.getWorld(), x, y, z, nmsEntity.getYRot(), nmsEntity.getXRot());
+@@ -2053,7 +2055,8 @@ public class CraftEventFactory {
+ 
+         return event;
+     }
+-
++    */
++    // Paper end - Add PreTeleportEvents
+     public static boolean callEntityInteractEvent(Entity nmsEntity, Block block) {
+         EntityInteractEvent event = new EntityInteractEvent(nmsEntity.getBukkitEntity(), block);
+         Bukkit.getPluginManager().callEvent(event);
