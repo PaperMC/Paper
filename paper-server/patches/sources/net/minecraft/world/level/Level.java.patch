@@ -11,14 +11,6 @@
  import net.minecraft.sounds.SoundEvent;
  import net.minecraft.sounds.SoundEvents;
  import net.minecraft.sounds.SoundSource;
-@@ -42,6 +_,7 @@
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.boss.EnderDragonPart;
- import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-+import net.minecraft.world.entity.item.ItemEntity;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.item.alchemy.PotionBrewing;
 @@ -79,6 +_,27 @@
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.Scoreboard;
@@ -71,7 +63,7 @@
 +    public boolean isBlockPlaceCancelled = false; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
 +    public Map<BlockPos, org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates = new java.util.LinkedHashMap<>(); // Paper
 +    public Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper - Retain block place order when capturing blockstates
-+    public List<ItemEntity> captureDrops;
++    public List<net.minecraft.world.entity.item.ItemEntity> captureDrops;
 +    public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
 +    public boolean populating;
 +    public final org.spigotmc.SpigotWorldConfig spigotConfig; // Spigot
@@ -263,7 +255,7 @@
      public boolean isInWorldBounds(BlockPos pos) {
          return !this.isOutsideBuildHeight(pos) && isInWorldBoundsHorizontal(pos);
      }
-@@ -176,25 +_,88 @@
+@@ -176,21 +_,84 @@
      }
  
      private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
@@ -283,6 +275,7 @@
      @Override
 -    public LevelChunk getChunk(int chunkX, int chunkZ) {
 -        return (LevelChunk)this.getChunk(chunkX, chunkZ, ChunkStatus.FULL);
+-    }
 +    public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
 +        // Paper start - Perf: make sure loaded chunks get the inlined variant of this function
 +        net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
@@ -347,15 +340,11 @@
 +    //  reduces need to do isLoaded before getType
 +    public final @Nullable BlockState getBlockStateIfLoadedAndInBounds(BlockPos blockposition) {
 +        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
-     }
++    }
++    // Paper end
  
      @Nullable
      @Override
-     public ChunkAccess getChunk(int x, int z, ChunkStatus chunkStatus, boolean requireChunk) {
-+        // Paper end
-         ChunkAccess chunk = this.getChunkSource().getChunk(x, z, chunkStatus, requireChunk);
-         if (chunk == null && requireChunk) {
-             throw new IllegalStateException("Should always be able to create a chunk!");
 @@ -210,6 +_,22 @@
  
      @Override
