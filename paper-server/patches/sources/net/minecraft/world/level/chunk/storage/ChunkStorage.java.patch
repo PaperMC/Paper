@@ -1,29 +1,11 @@
 --- a/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-@@ -15,10 +_,16 @@
- import net.minecraft.nbt.CompoundTag;
- import net.minecraft.nbt.NbtUtils;
- import net.minecraft.resources.ResourceKey;
-+import net.minecraft.server.level.ServerChunkCache;
-+import net.minecraft.server.level.ServerLevel;
- import net.minecraft.util.datafix.DataFixTypes;
- import net.minecraft.world.level.ChunkPos;
--import net.minecraft.world.level.Level;
-+import net.minecraft.world.level.LevelAccessor;
- import net.minecraft.world.level.chunk.ChunkGenerator;
-+// CraftBukkit start
-+import java.util.concurrent.ExecutionException;
-+import net.minecraft.world.level.chunk.status.ChunkStatus;
-+import net.minecraft.world.level.dimension.LevelStem;
- import net.minecraft.world.level.levelgen.structure.LegacyStructureDataHandler;
- import net.minecraft.world.level.storage.DimensionDataStorage;
- 
 @@ -38,17 +_,63 @@
          return this.worker.isOldChunkAround(pos, radius);
      }
  
 +    // CraftBukkit start
-+    private boolean check(ServerChunkCache cps, int x, int z) {
++    private boolean check(net.minecraft.server.level.ServerChunkCache cps, int x, int z) {
 +        if (true) return true; // Paper - Perf: this isn't even needed anymore, light is purged updating to 1.14+, why are we holding up the conversion process reading chunk data off disk - return true, we need to set light populated to true so the converter recognizes the chunk as being "full"
 +        ChunkPos pos = new ChunkPos(x, z);
 +        if (cps != null) {
@@ -36,7 +18,7 @@
 +        CompoundTag nbt;
 +        try {
 +            nbt = this.read(pos).get().orElse(null);
-+        } catch (InterruptedException | ExecutionException ex) {
++        } catch (InterruptedException | java.util.concurrent.ExecutionException ex) {
 +            throw new RuntimeException(ex);
 +        }
 +        if (nbt != null) {
@@ -45,8 +27,8 @@
 +                return true;
 +            }
 +
-+            ChunkStatus status = ChunkStatus.byName(level.getString("Status"));
-+            if (status != null && status.isOrAfter(ChunkStatus.FEATURES)) {
++            net.minecraft.world.level.chunk.status.ChunkStatus status = net.minecraft.world.level.chunk.status.ChunkStatus.byName(level.getString("Status"));
++            if (status != null && status.isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.FEATURES)) {
 +                return true;
 +            }
 +        }
@@ -56,13 +38,13 @@
 +
      public CompoundTag upgradeChunkTag(
 -        ResourceKey<Level> levelKey,
-+        ResourceKey<LevelStem> levelKey,
++        ResourceKey<net.minecraft.world.level.dimension.LevelStem> levelKey,
          Supplier<DimensionDataStorage> storage,
          CompoundTag chunkData,
 -        Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> chunkGeneratorKey
 +        Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> chunkGeneratorKey,
 +        ChunkPos pos,
-+        @Nullable LevelAccessor generatoraccess
++        @Nullable net.minecraft.world.level.LevelAccessor generatoraccess
 +        // CraftBukkit end
      ) {
          int version = getVersion(chunkData);
@@ -74,7 +56,7 @@
 +                if (version < 1466) {
 +                    CompoundTag level = chunkData.getCompound("Level");
 +                    if (level.getBoolean("TerrainPopulated") && !level.getBoolean("LightPopulated")) {
-+                        ServerChunkCache cps = (generatoraccess == null) ? null : ((ServerLevel) generatoraccess).getChunkSource();
++                        net.minecraft.server.level.ServerChunkCache cps = (generatoraccess == null) ? null : ((net.minecraft.server.level.ServerLevel) generatoraccess).getChunkSource();
 +                        if (this.check(cps, pos.x - 1, pos.z) && this.check(cps, pos.x - 1, pos.z - 1) && this.check(cps, pos.x, pos.z - 1)) {
 +                            level.putBoolean("LightPopulated", true);
 +                        }
@@ -90,7 +72,7 @@
  
 +                // Spigot start - SPIGOT-6806: Quick and dirty way to prevent below zero generation in old chunks, by setting the status to heightmap instead of empty
 +                boolean stopBelowZero = false;
-+                boolean belowZeroGenerationInExistingChunks = (generatoraccess != null) ? ((ServerLevel) generatoraccess).spigotConfig.belowZeroGenerationInExistingChunks : org.spigotmc.SpigotConfig.belowZeroGenerationInExistingChunks;
++                boolean belowZeroGenerationInExistingChunks = (generatoraccess != null) ? ((net.minecraft.server.level.ServerLevel) generatoraccess).spigotConfig.belowZeroGenerationInExistingChunks : org.spigotmc.SpigotConfig.belowZeroGenerationInExistingChunks;
 +
 +                if (version <= 2730 && !belowZeroGenerationInExistingChunks) {
 +                    stopBelowZero = "full".equals(chunkData.getCompound("Level").getString("Status"));
@@ -101,7 +83,7 @@
                  chunkData = DataFixTypes.CHUNK.updateToCurrentVersion(this.fixerUpper, chunkData, Math.max(1493, version));
 +                // Spigot start
 +                if (stopBelowZero) {
-+                    chunkData.putString("Status", net.minecraft.core.registries.BuiltInRegistries.CHUNK_STATUS.getKey(ChunkStatus.SPAWN).toString());
++                    chunkData.putString("Status", net.minecraft.core.registries.BuiltInRegistries.CHUNK_STATUS.getKey(net.minecraft.world.level.chunk.status.ChunkStatus.SPAWN).toString());
 +                }
 +                // Spigot end
                  removeDatafixingContext(chunkData);
@@ -112,7 +94,7 @@
      }
  
 -    private LegacyStructureDataHandler getLegacyStructureHandler(ResourceKey<Level> level, Supplier<DimensionDataStorage> storage) {
-+    private LegacyStructureDataHandler getLegacyStructureHandler(ResourceKey<LevelStem> level, Supplier<DimensionDataStorage> storage) { // CraftBukkit
++    private LegacyStructureDataHandler getLegacyStructureHandler(ResourceKey<net.minecraft.world.level.dimension.LevelStem> level, Supplier<DimensionDataStorage> storage) { // CraftBukkit
          LegacyStructureDataHandler legacyStructureDataHandler = this.legacyStructureHandler;
          if (legacyStructureDataHandler == null) {
              synchronized (this) {
@@ -121,7 +103,7 @@
  
      public static void injectDatafixingContext(
 -        CompoundTag chunkData, ResourceKey<Level> levelKey, Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> chunkGeneratorKey
-+        CompoundTag chunkData, ResourceKey<LevelStem> levelKey, Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> chunkGeneratorKey // CraftBukkit
++        CompoundTag chunkData, ResourceKey<net.minecraft.world.level.dimension.LevelStem> levelKey, Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> chunkGeneratorKey // CraftBukkit
      ) {
          CompoundTag compoundTag = new CompoundTag();
          compoundTag.putString("dimension", levelKey.location().toString());

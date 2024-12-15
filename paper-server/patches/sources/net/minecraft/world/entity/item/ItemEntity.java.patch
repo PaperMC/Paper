@@ -1,60 +1,5 @@
 --- a/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/net/minecraft/world/entity/item/ItemEntity.java
-@@ -3,18 +_,6 @@
- import java.util.Objects;
- import java.util.UUID;
- import javax.annotation.Nullable;
--import net.minecraft.core.BlockPos;
--import net.minecraft.nbt.CompoundTag;
--import net.minecraft.network.chat.Component;
--import net.minecraft.network.syncher.EntityDataAccessor;
--import net.minecraft.network.syncher.EntityDataSerializers;
--import net.minecraft.network.syncher.SynchedEntityData;
--import net.minecraft.server.level.ServerLevel;
--import net.minecraft.sounds.SoundSource;
--import net.minecraft.stats.Stats;
--import net.minecraft.tags.FluidTags;
--import net.minecraft.tags.ItemTags;
--import net.minecraft.util.Mth;
- import net.minecraft.world.damagesource.DamageSource;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.EntityType;
-@@ -22,7 +_,6 @@
- import net.minecraft.world.entity.MoverType;
- import net.minecraft.world.entity.SlotAccess;
- import net.minecraft.world.entity.TraceableEntity;
--import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.level.Explosion;
-@@ -31,6 +_,27 @@
- import net.minecraft.world.level.gameevent.GameEvent;
- import net.minecraft.world.level.portal.TeleportTransition;
- import net.minecraft.world.phys.Vec3;
-+import net.minecraft.core.BlockPos;
-+import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.network.chat.Component;
-+import net.minecraft.network.syncher.EntityDataAccessor;
-+import net.minecraft.network.syncher.EntityDataSerializers;
-+import net.minecraft.network.syncher.SynchedEntityData;
-+// CraftBukkit start
-+import net.minecraft.server.MinecraftServer;
-+import net.minecraft.server.level.ServerLevel;
-+import net.minecraft.sounds.SoundSource;
-+import net.minecraft.stats.Stats;
-+import net.minecraft.tags.FluidTags;
-+import net.minecraft.tags.ItemTags;
-+import net.minecraft.util.Mth;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.entity.Player;
-+import org.bukkit.event.entity.EntityPickupItemEvent;
-+import org.bukkit.event.entity.EntityRemoveEvent;
-+import org.bukkit.event.player.PlayerPickupItemEvent;
-+// CraftBukkit end
-+import org.bukkit.event.player.PlayerAttemptPickupItemEvent; // Paper
- 
- public class ItemEntity extends Entity implements TraceableEntity {
-     private static final EntityDataAccessor<ItemStack> DATA_ITEM = SynchedEntityData.defineId(ItemEntity.class, EntityDataSerializers.ITEM_STACK);
 @@ -49,6 +_,9 @@
      @Nullable
      public UUID target;
@@ -84,7 +29,7 @@
      public void tick() {
          if (this.getItem().isEmpty()) {
 -            this.discard();
-+            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else {
              super.tick();
              if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
@@ -117,12 +62,12 @@
 -    }
 +            if (!this.level().isClientSide && this.age >= this.despawnRate) { // Spigot // Paper - Alternative item-despawn-rate
 +                // CraftBukkit start - fire ItemDespawnEvent
-+                if (CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callItemDespawnEvent(this).isCancelled()) {
 +                    this.age = 0;
 +                    return;
 +                }
 +                // CraftBukkit end
-+                this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 +            }
 +        }
 +    }
@@ -146,7 +91,7 @@
 +                return;
 +            }
 +            // CraftBukkit end
-+            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 +        }
 +    }
 +    // Spigot end
@@ -196,7 +141,7 @@
  
      private static void merge(ItemEntity destinationEntity, ItemStack destinationStack, ItemEntity originEntity, ItemStack originStack) {
 +        // CraftBukkit start
-+        if (!CraftEventFactory.callItemMergeEvent(originEntity, destinationEntity)) {
++        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callItemMergeEvent(originEntity, destinationEntity)) {
 +            return;
 +        }
 +        // CraftBukkit end
@@ -205,7 +150,7 @@
          destinationEntity.age = Math.min(destinationEntity.age, originEntity.age);
          if (originStack.isEmpty()) {
 -            originEntity.discard();
-+            originEntity.discard(EntityRemoveEvent.Cause.MERGE); // CraftBukkit - add Bukkit remove cause
++            originEntity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.MERGE); // CraftBukkit - add Bukkit remove cause
          }
      }
  
@@ -214,7 +159,7 @@
              return false;
          } else {
 +            // CraftBukkit start
-+            if (CraftEventFactory.handleNonLivingEntityDamageEvent(this, damageSource, amount)) {
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleNonLivingEntityDamageEvent(this, damageSource, amount)) {
 +                return false;
 +            }
 +            // CraftBukkit end
@@ -224,7 +169,7 @@
              if (this.health <= 0) {
                  this.getItem().onDestroyed(this);
 -                this.discard();
-+                this.discard(EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++                this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
              }
  
              return true;
@@ -240,7 +185,7 @@
          compound.putShort("Health", (short)this.health);
          compound.putShort("Age", (short)this.age);
          compound.putShort("PickupDelay", (short)this.pickupDelay);
-@@ -347,22 +_,95 @@
+@@ -347,9 +_,19 @@
          } else {
              this.setItem(ItemStack.EMPTY);
          }
@@ -261,10 +206,7 @@
          }
      }
  
-     @Override
--    public void playerTouch(Player entity) {
-+    public void playerTouch(net.minecraft.world.entity.player.Player entity) {
-         if (!this.level().isClientSide) {
+@@ -359,10 +_,73 @@
              ItemStack item = this.getItem();
              Item item1 = item.getItem();
              int count = item.getCount();
@@ -275,7 +217,7 @@
 +
 +            // Paper start - PlayerAttemptPickupItemEvent
 +            if (this.pickupDelay <= 0) {
-+                PlayerAttemptPickupItemEvent attemptEvent = new PlayerAttemptPickupItemEvent((org.bukkit.entity.Player) entity.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                org.bukkit.event.player.PlayerAttemptPickupItemEvent attemptEvent = new org.bukkit.event.player.PlayerAttemptPickupItemEvent((org.bukkit.entity.Player) entity.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
 +                this.level().getCraftServer().getPluginManager().callEvent(attemptEvent);
 +
 +                flyAtPlayer = attemptEvent.getFlyAtPlayer();
@@ -291,7 +233,7 @@
 +            if (this.pickupDelay <= 0 && canHold > 0) {
 +                item.setCount(canHold);
 +                // Call legacy event
-+                PlayerPickupItemEvent playerEvent = new PlayerPickupItemEvent((Player) entity.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                org.bukkit.event.player.PlayerPickupItemEvent playerEvent = new org.bukkit.event.player.PlayerPickupItemEvent((org.bukkit.entity.Player) entity.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
 +                playerEvent.setCancelled(!playerEvent.getPlayer().getCanPickupItems());
 +                this.level().getCraftServer().getPluginManager().callEvent(playerEvent);
 +                flyAtPlayer = playerEvent.getFlyAtPlayer(); // Paper
@@ -306,7 +248,7 @@
 +                }
 +
 +                // Call newer event afterwards
-+                EntityPickupItemEvent entityEvent = new EntityPickupItemEvent((Player) entity.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
++                org.bukkit.event.entity.EntityPickupItemEvent entityEvent = new org.bukkit.event.entity.EntityPickupItemEvent(entity.getBukkitEntity(), (org.bukkit.entity.Item) this.getBukkitEntity(), remaining);
 +                entityEvent.setCancelled(!entityEvent.getEntity().getCanPickupItems());
 +                this.level().getCraftServer().getPluginManager().callEvent(entityEvent);
 +                if (entityEvent.isCancelled()) {
@@ -335,7 +277,7 @@
                  entity.take(this, count);
                  if (item.isEmpty()) {
 -                    this.discard();
-+                    this.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++                    this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
                      item.setCount(count);
                  }
  
