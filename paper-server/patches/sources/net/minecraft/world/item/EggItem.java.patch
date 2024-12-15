@@ -1,0 +1,45 @@
+--- a/net/minecraft/world/item/EggItem.java
++++ b/net/minecraft/world/item/EggItem.java
+@@ -23,6 +_,28 @@
+     @Override
+     public InteractionResult use(Level level, Player player, InteractionHand hand) {
+         ItemStack itemInHand = player.getItemInHand(hand);
++        if (level instanceof ServerLevel serverLevel) {
++            // CraftBukkit start
++            // Paper start - PlayerLaunchProjectileEvent
++            final Projectile.Delayed<ThrownEgg> thrownEgg = Projectile.spawnProjectileFromRotationDelayed(ThrownEgg::new, serverLevel, itemInHand, player, 0.0F, EggItem.PROJECTILE_SHOOT_POWER, 1.0F);
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack), (org.bukkit.entity.Projectile) thrownEgg.projectile().getBukkitEntity());
++            if (event.callEvent() && thrownEgg.attemptSpawn()) {
++                if (event.shouldConsume()) {
++                    itemInHand.consume(1, player);
++                } else if (player instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity().updateInventory();
++                }
++                level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.EGG_THROW, SoundSource.PLAYERS, 0.5F, 0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F));
++                player.awardStat(Stats.ITEM_USED.get(this));
++            } else {
++                // Paper end - PlayerLaunchProjectileEvent
++                if (player instanceof net.minecraft.server.level.ServerPlayer) {
++                    ((net.minecraft.server.level.ServerPlayer) player).getBukkitEntity().updateInventory();
++                }
++                return InteractionResult.FAIL;
++            }
++            // CraftBukkit end
++        }
+         level.playSound(
+             null,
+             player.getX(),
+@@ -33,12 +_,7 @@
+             0.5F,
+             0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F)
+         );
+-        if (level instanceof ServerLevel serverLevel) {
+-            Projectile.spawnProjectileFromRotation(ThrownEgg::new, serverLevel, itemInHand, player, 0.0F, PROJECTILE_SHOOT_POWER, 1.0F);
+-        }
+-
+-        player.awardStat(Stats.ITEM_USED.get(this));
+-        itemInHand.consume(1, player);
++        // Paper - PlayerLaunchProjectileEvent - moved up
+         return InteractionResult.SUCCESS;
+     }
+ 

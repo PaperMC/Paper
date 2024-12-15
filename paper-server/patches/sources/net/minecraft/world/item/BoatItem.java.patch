@@ -1,0 +1,42 @@
+--- a/net/minecraft/world/item/BoatItem.java
++++ b/net/minecraft/world/item/BoatItem.java
+@@ -30,7 +_,7 @@
+     @Override
+     public InteractionResult use(Level level, Player player, InteractionHand hand) {
+         ItemStack itemInHand = player.getItemInHand(hand);
+-        HitResult playerPovHitResult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.ANY);
++        net.minecraft.world.phys.BlockHitResult playerPovHitResult = getPlayerPOVHitResult(level, player, ClipContext.Fluid.ANY); // Paper
+         if (playerPovHitResult.getType() == HitResult.Type.MISS) {
+             return InteractionResult.PASS;
+         } else {
+@@ -51,6 +_,13 @@
+             }
+ 
+             if (playerPovHitResult.getType() == HitResult.Type.BLOCK) {
++                // CraftBukkit start - Boat placement
++                org.bukkit.event.player.PlayerInteractEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(player, org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK, playerPovHitResult.getBlockPos(), playerPovHitResult.getDirection(), itemInHand, false, hand, playerPovHitResult.getLocation());
++
++                if (event.isCancelled()) {
++                    return InteractionResult.PASS;
++                }
++                // CraftBukkit end
+                 AbstractBoat boat = this.getBoat(level, playerPovHitResult, itemInHand, player);
+                 if (boat == null) {
+                     return InteractionResult.FAIL;
+@@ -60,7 +_,15 @@
+                         return InteractionResult.FAIL;
+                     } else {
+                         if (!level.isClientSide) {
+-                            level.addFreshEntity(boat);
++                            // CraftBukkit start
++                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(level, playerPovHitResult.getBlockPos(), player.getDirection(), player, boat, hand).isCancelled()) {
++                                return InteractionResult.FAIL;
++                            }
++
++                            if (!level.addFreshEntity(boat)) {
++                                return InteractionResult.PASS;
++                            }
++                            // CraftBukkit end
+                             level.gameEvent(player, GameEvent.ENTITY_PLACE, playerPovHitResult.getLocation());
+                             itemInHand.consume(1, player);
+                         }
