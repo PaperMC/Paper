@@ -1,0 +1,222 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 24 Nov 2024 02:38:39 -0800
+Subject: [PATCH] RegistryValue API
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/DirectRegistryValue.java b/src/main/java/io/papermc/paper/registry/DirectRegistryValue.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0ec719e90043167af5156f4c8ec2e7d823a87939
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/DirectRegistryValue.java
+@@ -0,0 +1,10 @@
++package io.papermc.paper.registry;
++
++record DirectRegistryValue<T>(T value) implements RegistryValue.Direct<T> {
++
++    DirectRegistryValue {
++        if (!RegistryUtilProvider.INSTANCE.orElseThrow().isValidForDirectHolder(value)) {
++            throw new IllegalArgumentException("Value is not valid for direct holder");
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryCreationLookup.java b/src/main/java/io/papermc/paper/registry/RegistryCreationLookup.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..332bc17c016d248f3ae3134e59a3c2b5338c6fb0
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/RegistryCreationLookup.java
+@@ -0,0 +1,38 @@
++package io.papermc.paper.registry;
++
++import io.papermc.paper.registry.tag.Tag;
++import io.papermc.paper.registry.tag.TagKey;
++import org.bukkit.Keyed;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * A lookup for {@link io.papermc.paper.registry.event.RegistryEvent}s to get
++ * or create tags and registry values.
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public interface RegistryCreationLookup {
++
++    /**
++     * Gets or creates a tag for the given tag key. This tag
++     * is then required to be filled either from the built-in or
++     * custom datapack.
++     *
++     * @param tagKey the tag key
++     * @param <V> the tag value type
++     * @return the tag
++     */
++    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
++
++    /**
++     * Gets or creates a registry value for the given typed key. If
++     * it's created, it's required to be filled during some later event.
++     *
++     * @param typedKey the typed key
++     * @param <V> the value type
++     * @return the registry value
++     */
++    <V> RegistryValue.Reference<V> getOrCreateValue(TypedKey<V> typedKey);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryUtilProvider.java b/src/main/java/io/papermc/paper/registry/RegistryUtilProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5adf17f309b4a58a9ae77284ef3f3e3e190b7dc3
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/RegistryUtilProvider.java
+@@ -0,0 +1,14 @@
++package io.papermc.paper.registry;
++
++import java.util.Optional;
++import java.util.ServiceLoader;
++import org.jetbrains.annotations.ApiStatus;
++
++@ApiStatus.Internal
++interface RegistryUtilProvider {
++
++    Optional<RegistryUtilProvider> INSTANCE = ServiceLoader.load(RegistryUtilProvider.class).findFirst();
++
++
++    <V> boolean isValidForDirectHolder(V value);
++}
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryValue.java b/src/main/java/io/papermc/paper/registry/RegistryValue.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6b7fb0a9b051589ee35859ca323faf3d765e32fb
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/registry/RegistryValue.java
+@@ -0,0 +1,49 @@
++package io.papermc.paper.registry;
++
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * A value associated with a registry. This wrapper
++ * exists to represents values that might not be inside
++ * a registry yet, but are needed to construct some other
++ * objects in other registries.
++ *
++ * @param <T> the value type
++ */
++@ApiStatus.Experimental
++@NullMarked
++@ApiStatus.NonExtendable
++public sealed interface RegistryValue<T> {
++
++    // TODO uncomment when direct holders are supported
++    // /**
++    //  * Create a direct registry value. A direct registry value
++    //  * is a value that is anonymous (not registered in a registry).
++    //  *
++    //  * @param value the value
++    //  * @param <T> the value type
++    //  * @return the direct registry value
++    //  */
++    // @Contract(value = "_ -> new", pure = true)
++    // static <T> RegistryValue.Direct<T> direct(final T value) {
++    //     return new DirectRegistryValue<>(value);
++    // }
++
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    non-sealed interface Reference<T> extends RegistryValue<T> {
++
++        @Contract(pure = true)
++        TypedKey<T> key();
++    }
++
++    @ApiStatus.Experimental
++    @ApiStatus.NonExtendable
++    sealed interface Direct<T> extends RegistryValue<T> permits DirectRegistryValue {
++
++        @Contract(pure = true)
++        T value();
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
+index 56468b311e40a6d1aa03c6d31328952b92e95027..0d18e09bd9d06dc83b53fa78e2c45710114dfdf8 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryEntryAddEvent.java
+@@ -1,10 +1,8 @@
+ package io.papermc.paper.registry.event;
+ 
+ import io.papermc.paper.registry.RegistryBuilder;
++import io.papermc.paper.registry.RegistryCreationLookup;
+ import io.papermc.paper.registry.TypedKey;
+-import io.papermc.paper.registry.tag.Tag;
+-import io.papermc.paper.registry.tag.TagKey;
+-import org.bukkit.Keyed;
+ import org.jetbrains.annotations.ApiStatus;
+ import org.jspecify.annotations.NullMarked;
+ 
+@@ -19,7 +17,7 @@ import org.jspecify.annotations.NullMarked;
+ @ApiStatus.Experimental
+ @NullMarked
+ @ApiStatus.NonExtendable
+-public interface RegistryEntryAddEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
++public interface RegistryEntryAddEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T>, RegistryCreationLookup {
+ 
+     /**
+      * Gets the builder for the entry being added to the registry.
+@@ -34,15 +32,4 @@ public interface RegistryEntryAddEvent<T, B extends RegistryBuilder<T>> extends
+      * @return the key
+      */
+     TypedKey<T> key();
+-
+-    /**
+-     * Gets or creates a tag for the given tag key. This tag
+-     * is then required to be filled either from the built-in or
+-     * custom datapack.
+-     *
+-     * @param tagKey the tag key
+-     * @return the tag
+-     * @param <V> the tag value type
+-     */
+-    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
+ }
+diff --git a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
+index 59e8ca6c5b7fa0424ad9b2c74545ec53444b5fcb..e09eb10aafc312fedf7fdec39860b31468037b00 100644
+--- a/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
++++ b/src/main/java/io/papermc/paper/registry/event/RegistryFreezeEvent.java
+@@ -1,9 +1,7 @@
+ package io.papermc.paper.registry.event;
+ 
+ import io.papermc.paper.registry.RegistryBuilder;
+-import io.papermc.paper.registry.tag.Tag;
+-import io.papermc.paper.registry.tag.TagKey;
+-import org.bukkit.Keyed;
++import io.papermc.paper.registry.RegistryCreationLookup;
+ import org.jetbrains.annotations.ApiStatus;
+ import org.jspecify.annotations.NullMarked;
+ 
+@@ -18,7 +16,7 @@ import org.jspecify.annotations.NullMarked;
+ @ApiStatus.Experimental
+ @NullMarked
+ @ApiStatus.NonExtendable
+-public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T> {
++public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends RegistryEvent<T>, RegistryCreationLookup {
+ 
+     /**
+      * Get the writable registry.
+@@ -26,15 +24,4 @@ public interface RegistryFreezeEvent<T, B extends RegistryBuilder<T>> extends Re
+      * @return a writable registry
+      */
+     WritableRegistry<T, B> registry();
+-
+-    /**
+-     * Gets or creates a tag for the given tag key. This tag
+-     * is then required to be filled either from the built-in or
+-     * custom datapack.
+-     *
+-     * @param tagKey the tag key
+-     * @return the tag
+-     * @param <V> the tag value type
+-     */
+-    <V extends Keyed> Tag<V> getOrCreateTag(TagKey<V> tagKey);
+ }
