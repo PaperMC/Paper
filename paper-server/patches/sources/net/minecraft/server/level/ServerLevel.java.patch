@@ -1,0 +1,1217 @@
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -54,7 +_,6 @@
+ import net.minecraft.network.protocol.game.ClientboundDamageEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundExplodePacket;
+-import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+ import net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket;
+@@ -120,6 +_,7 @@
+ import net.minecraft.world.level.StructureManager;
+ import net.minecraft.world.level.WorldGenLevel;
+ import net.minecraft.world.level.biome.Biome;
++import net.minecraft.world.level.biome.BiomeSource;
+ import net.minecraft.world.level.block.Block;
+ import net.minecraft.world.level.block.Blocks;
+ import net.minecraft.world.level.block.SnowLayerBlock;
+@@ -145,7 +_,9 @@
+ import net.minecraft.world.level.gameevent.DynamicGameEventListener;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.gameevent.GameEventDispatcher;
++import net.minecraft.world.level.levelgen.FlatLevelSource;
+ import net.minecraft.world.level.levelgen.Heightmap;
++import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
+ import net.minecraft.world.level.levelgen.structure.BoundingBox;
+ import net.minecraft.world.level.levelgen.structure.Structure;
+ import net.minecraft.world.level.levelgen.structure.StructureCheck;
+@@ -161,7 +_,7 @@
+ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+ import net.minecraft.world.level.storage.DimensionDataStorage;
+ import net.minecraft.world.level.storage.LevelStorageSource;
+-import net.minecraft.world.level.storage.ServerLevelData;
++import net.minecraft.world.level.storage.PrimaryLevelData;
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.phys.shapes.BooleanOp;
+@@ -182,7 +_,7 @@
+     final List<ServerPlayer> players = Lists.newArrayList();
+     public final ServerChunkCache chunkSource;
+     private final MinecraftServer server;
+-    public final ServerLevelData serverLevelData;
++    public final PrimaryLevelData serverLevelData; // CraftBukkit - type
+     private int lastSpawnChunkRadius;
+     final EntityTickList entityTickList = new EntityTickList();
+     public final PersistentEntitySectionManager<Entity> entityManager;
+@@ -209,11 +_,132 @@
+     private final boolean tickTime;
+     private final RandomSequences randomSequences;
+ 
++    // CraftBukkit start
++    public final LevelStorageSource.LevelStorageAccess levelStorageAccess;
++    public final UUID uuid;
++    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
++    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
++
++    public LevelChunk getChunkIfLoaded(int x, int z) {
++        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
++    }
++
++    @Override
++    public ResourceKey<LevelStem> getTypeKey() {
++        return this.levelStorageAccess.dimensionType;
++    }
++
++    // Paper start
++    public final boolean areChunksLoadedForMove(AABB axisalignedbb) {
++        // copied code from collision methods, so that we can guarantee that they wont load chunks (we don't override
++        // ICollisionAccess methods for VoxelShapes)
++        // be more strict too, add a block (dumb plugins in move events?)
++        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
++        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
++
++        int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
++        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
++
++        int minChunkX = minBlockX >> 4;
++        int maxChunkX = maxBlockX >> 4;
++
++        int minChunkZ = minBlockZ >> 4;
++        int maxChunkZ = maxBlockZ >> 4;
++
++        ServerChunkCache chunkProvider = this.getChunkSource();
++
++        for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
++            for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
++                if (chunkProvider.getChunkAtIfLoadedImmediately(cx, cz) == null) {
++                    return false;
++                }
++            }
++        }
++
++        return true;
++    }
++
++    public final void loadChunksForMoveAsync(AABB axisalignedbb, ca.spottedleaf.concurrentutil.util.Priority priority,
++                                             java.util.function.Consumer<List<net.minecraft.world.level.chunk.ChunkAccess>> onLoad) {
++        if (Thread.currentThread() != this.thread) {
++            this.getChunkSource().mainThreadProcessor.execute(() -> {
++                this.loadChunksForMoveAsync(axisalignedbb, priority, onLoad);
++            });
++            return;
++        }
++        int minBlockX = Mth.floor(axisalignedbb.minX - 1.0E-7D) - 3;
++        int minBlockZ = Mth.floor(axisalignedbb.minZ - 1.0E-7D) - 3;
++
++        int maxBlockX = Mth.floor(axisalignedbb.maxX + 1.0E-7D) + 3;
++        int maxBlockZ = Mth.floor(axisalignedbb.maxZ + 1.0E-7D) + 3;
++
++        int minChunkX = minBlockX >> 4;
++        int minChunkZ = minBlockZ >> 4;
++
++        int maxChunkX = maxBlockX >> 4;
++        int maxChunkZ = maxBlockZ >> 4;
++
++        this.loadChunks(minChunkX, minChunkZ, maxChunkX, maxChunkZ, priority, onLoad);
++    }
++
++    public final void loadChunks(int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ,
++                                 ca.spottedleaf.concurrentutil.util.Priority priority,
++                                 java.util.function.Consumer<List<net.minecraft.world.level.chunk.ChunkAccess>> onLoad) {
++        List<net.minecraft.world.level.chunk.ChunkAccess> ret = new java.util.ArrayList<>();
++        it.unimi.dsi.fastutil.ints.IntArrayList ticketLevels = new it.unimi.dsi.fastutil.ints.IntArrayList();
++        ServerChunkCache chunkProvider = this.getChunkSource();
++
++        int requiredChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
++        int[] loadedChunks = new int[1];
++
++        Long holderIdentifier = Long.valueOf(chunkProvider.chunkFutureAwaitCounter++);
++
++        java.util.function.Consumer<net.minecraft.world.level.chunk.ChunkAccess> consumer = (net.minecraft.world.level.chunk.ChunkAccess chunk) -> {
++            if (chunk != null) {
++                int ticketLevel = Math.max(33, chunkProvider.chunkMap.getUpdatingChunkIfPresent(chunk.getPos().toLong()).getTicketLevel());
++                ret.add(chunk);
++                ticketLevels.add(ticketLevel);
++                chunkProvider.addTicketAtLevel(TicketType.FUTURE_AWAIT, chunk.getPos(), ticketLevel, holderIdentifier);
++            }
++            if (++loadedChunks[0] == requiredChunks) {
++                try {
++                    onLoad.accept(java.util.Collections.unmodifiableList(ret));
++                } finally {
++                    for (int i = 0, len = ret.size(); i < len; ++i) {
++                        ChunkPos chunkPos = ret.get(i).getPos();
++                        int ticketLevel = ticketLevels.getInt(i);
++
++                        chunkProvider.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, ticketLevel, chunkPos);
++                        chunkProvider.removeTicketAtLevel(TicketType.FUTURE_AWAIT, chunkPos, ticketLevel, holderIdentifier);
++                    }
++                }
++            }
++        };
++
++        for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
++            for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
++                ca.spottedleaf.moonrise.common.util.ChunkSystem.scheduleChunkLoad(
++                    this, cx, cz, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, true, priority, consumer
++                );
++            }
++        }
++    }
++    // Paper end
++
++    // Paper start - optimise getPlayerByUUID
++    @Nullable
++    @Override
++    public Player getPlayerByUUID(UUID uuid) {
++        final Player player = this.getServer().getPlayerList().getPlayer(uuid);
++        return player != null && player.level() == this ? player : null;
++    }
++    // Paper end - optimise getPlayerByUUID
++
+     public ServerLevel(
+         MinecraftServer server,
+         Executor dispatcher,
+         LevelStorageSource.LevelStorageAccess levelStorageAccess,
+-        ServerLevelData serverLevelData,
++        PrimaryLevelData serverLevelData, // CraftBukkit
+         ResourceKey<Level> dimension,
+         LevelStem levelStem,
+         ChunkProgressListener progressListener,
+@@ -221,14 +_,38 @@
+         long biomeZoomSeed,
+         List<CustomSpawner> customSpawners,
+         boolean tickTime,
+-        @Nullable RandomSequences randomSequences
++        @Nullable RandomSequences randomSequences,
++        org.bukkit.World.Environment env, // CraftBukkit
++        org.bukkit.generator.ChunkGenerator gen, // CraftBukkit
++        org.bukkit.generator.BiomeProvider biomeProvider // CraftBukkit
+     ) {
+-        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates());
++        // CraftBukkit start
++        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules()))); // Paper - create paper world configs
++        this.pvpMode = server.isPvpAllowed();
++        this.levelStorageAccess = levelStorageAccess;
++        this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getUUID(levelStorageAccess.levelDirectory.path().toFile());
++        // CraftBukkit end
+         this.tickTime = tickTime;
+         this.server = server;
+         this.customSpawners = customSpawners;
+         this.serverLevelData = serverLevelData;
+         ChunkGenerator chunkGenerator = levelStem.generator();
++        // CraftBukkit start
++        this.serverLevelData.setWorld(this);
++
++        if (biomeProvider != null) {
++            BiomeSource worldChunkManager = new org.bukkit.craftbukkit.generator.CustomWorldChunkManager(this.getWorld(), biomeProvider, this.server.registryAccess().lookupOrThrow(Registries.BIOME), chunkGenerator.getBiomeSource()); // Paper - add vanillaBiomeProvider
++            if (chunkGenerator instanceof NoiseBasedChunkGenerator cga) {
++                chunkGenerator = new NoiseBasedChunkGenerator(worldChunkManager, cga.settings);
++            } else if (chunkGenerator instanceof FlatLevelSource cpf) {
++                chunkGenerator = new FlatLevelSource(cpf.settings(), worldChunkManager);
++            }
++        }
++
++        if (gen != null) {
++            chunkGenerator = new org.bukkit.craftbukkit.generator.CustomChunkGenerator(this, chunkGenerator, gen);
++        }
++        // CraftBukkit end
+         boolean flag = server.forceSynchronousWrites();
+         DataFixer fixerUpper = server.getFixerUpper();
+         EntityPersistentStorage<Entity> entityPersistentStorage = new EntityStorage(
+@@ -250,8 +_,8 @@
+             server.getStructureManager(),
+             dispatcher,
+             chunkGenerator,
+-            server.getPlayerList().getViewDistance(),
+-            server.getPlayerList().getSimulationDistance(),
++            this.spigotConfig.viewDistance, // Spigot
++            this.spigotConfig.simulationDistance, // Spigot
+             flag,
+             progressListener,
+             this.entityManager::updateChunkStatus,
+@@ -272,7 +_,7 @@
+             this.chunkSource.chunkScanner(),
+             this.registryAccess(),
+             server.getStructureManager(),
+-            dimension,
++            getTypeKey(),  // Paper - Fix missing CB diff
+             chunkGenerator,
+             this.chunkSource.randomState(),
+             this,
+@@ -281,7 +_,7 @@
+             fixerUpper
+         );
+         this.structureManager = new StructureManager(this, server.getWorldData().worldGenOptions(), this.structureCheck);
+-        if (this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END)) {
++        if (this.dimension() == Level.END && this.dimensionTypeRegistration().is(BuiltinDimensionTypes.END) || env == org.bukkit.World.Environment.THE_END) { // CraftBukkit - Allow to create EnderDragonBattle in default and custom END
+             this.dragonFight = new EndDragonFight(this, seed, server.getWorldData().endDragonFightData());
+         } else {
+             this.dragonFight = null;
+@@ -292,7 +_,15 @@
+         this.randomSequences = Objects.requireNonNullElseGet(
+             randomSequences, () -> this.getDataStorage().computeIfAbsent(RandomSequences.factory(seed), "random_sequences")
+         );
+-    }
++        this.getCraftServer().addWorld(this.getWorld()); // CraftBukkit
++    }
++
++    // Paper start
++    @Override
++    public boolean hasChunk(int chunkX, int chunkZ) {
++        return this.getChunkSource().getChunkAtIfLoadedImmediately(chunkX, chunkZ) != null;
++    }
++    // Paper end
+ 
+     @Deprecated
+     @VisibleForTesting
+@@ -304,8 +_,8 @@
+         this.serverLevelData.setClearWeatherTime(clearTime);
+         this.serverLevelData.setRainTime(weatherTime);
+         this.serverLevelData.setThunderTime(weatherTime);
+-        this.serverLevelData.setRaining(isRaining);
+-        this.serverLevelData.setThundering(isThundering);
++        this.serverLevelData.setRaining(isRaining, org.bukkit.event.weather.WeatherChangeEvent.Cause.COMMAND); // Paper - Add cause to Weather/ThunderChangeEvents
++        this.serverLevelData.setThundering(isThundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.COMMAND); // Paper - Add cause to Weather/ThunderChangeEvents
+     }
+ 
+     @Override
+@@ -332,12 +_,25 @@
+ 
+         int _int = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
+         if (this.sleepStatus.areEnoughSleeping(_int) && this.sleepStatus.areEnoughDeepSleeping(_int, this.players)) {
++            // Paper start - create time skip event - move up calculations
++            final long newDayTime = this.levelData.getDayTime() + 24000L;
++            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(
++                this.getWorld(),
++                org.bukkit.event.world.TimeSkipEvent.SkipReason.NIGHT_SKIP,
++                (newDayTime - newDayTime % 24000L) - this.getDayTime()
++            );
++            // Paper end - create time skip event - move up calculations
+             if (this.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
+-                long l = this.levelData.getDayTime() + 24000L;
+-                this.setDayTime(l - l % 24000L);
++                // Paper start - call time skip event if gamerule is enabled
++                // long l = this.levelData.getDayTime() + 24000L; // Paper - diff on change to above - newDayTime
++                // this.setDayTime(l - l % 24000L); // Paper - diff on change to above - event param
++                if (event.callEvent()) {
++                    this.setDayTime(this.getDayTime() + event.getSkipAmount());
++                }
++                // Paper end - call time skip event if gamerule is enabled
+             }
+ 
+-            this.wakeUpAllPlayers();
++            if (!event.isCancelled()) this.wakeUpAllPlayers(); // Paper - only wake up players if time skip event is not cancelled
+             if (this.getGameRules().getBoolean(GameRules.RULE_WEATHER_CYCLE) && this.isRaining()) {
+                 this.resetWeatherCycle();
+             }
+@@ -352,9 +_,9 @@
+         if (!this.isDebug() && runsNormally) {
+             long l = this.getGameTime();
+             profilerFiller.push("blockTicks");
+-            this.blockTicks.tick(l, 65536, this::tickBlock);
++            this.blockTicks.tick(l, paperConfig().environment.maxBlockTicks, this::tickBlock); // Paper - configurable max block ticks
+             profilerFiller.popPush("fluidTicks");
+-            this.fluidTicks.tick(l, 65536, this::tickFluid);
++            this.fluidTicks.tick(l, paperConfig().environment.maxFluidTicks, this::tickFluid); // Paper - configurable max fluid ticks
+             profilerFiller.pop();
+         }
+ 
+@@ -372,7 +_,7 @@
+ 
+         this.handlingTick = false;
+         profilerFiller.pop();
+-        boolean flag = !this.players.isEmpty() || !this.getForcedChunks().isEmpty();
++        boolean flag = !paperConfig().unsupportedSettings.disableWorldTickingWhenEmpty || !this.players.isEmpty() || !this.getForcedChunks().isEmpty(); // CraftBukkit - this prevents entity cleanup, other issues on servers with no players // Paper - restore this
+         if (flag) {
+             this.resetEmptyTime();
+         }
+@@ -385,6 +_,7 @@
+                 profilerFiller.pop();
+             }
+ 
++            org.spigotmc.ActivationRange.activateEntities(this); // Spigot
+             this.entityTickList
+                 .forEach(
+                     entity -> {
+@@ -461,12 +_,12 @@
+         int minBlockZ = pos.getMinBlockZ();
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("thunder");
+-        if (isRaining && this.isThundering() && this.random.nextInt(100000) == 0) {
++        if (!this.paperConfig().environment.disableThunder && isRaining && this.isThundering() && this.spigotConfig.thunderChance > 0 && this.random.nextInt(this.spigotConfig.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
+             BlockPos blockPos = this.findLightningTargetAround(this.getBlockRandomPos(minBlockX, 0, minBlockZ, 15));
+             if (this.isRainingAt(blockPos)) {
+                 DifficultyInstance currentDifficultyAt = this.getCurrentDifficultyAt(blockPos);
+                 boolean flag = this.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)
+-                    && this.random.nextDouble() < currentDifficultyAt.getEffectiveDifficulty() * 0.01
++                    && this.random.nextDouble() < currentDifficultyAt.getEffectiveDifficulty() * this.paperConfig().entities.spawning.skeletonHorseThunderSpawnChance.or(0.01D) // Paper - Configurable spawn chances for skeleton horses
+                     && !this.getBlockState(blockPos.below()).is(Blocks.LIGHTNING_ROD);
+                 if (flag) {
+                     SkeletonHorse skeletonHorse = EntityType.SKELETON_HORSE.create(this, EntitySpawnReason.EVENT);
+@@ -474,7 +_,7 @@
+                         skeletonHorse.setTrap(true);
+                         skeletonHorse.setAge(0);
+                         skeletonHorse.setPos(blockPos.getX(), blockPos.getY(), blockPos.getZ());
+-                        this.addFreshEntity(skeletonHorse);
++                        this.addFreshEntity(skeletonHorse, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // CraftBukkit
+                     }
+                 }
+ 
+@@ -482,18 +_,20 @@
+                 if (lightningBolt != null) {
+                     lightningBolt.moveTo(Vec3.atBottomCenterOf(blockPos));
+                     lightningBolt.setVisualOnly(flag);
+-                    this.addFreshEntity(lightningBolt);
++                    this.strikeLightning(lightningBolt, org.bukkit.event.weather.LightningStrikeEvent.Cause.WEATHER); // CraftBukkit
+                 }
+             }
+         }
+ 
+         profilerFiller.popPush("iceandsnow");
+ 
++        if (!this.paperConfig().environment.disableIceAndSnow) { // Paper - Option to disable ice and snow
+         for (int i = 0; i < randomTickSpeed; i++) {
+             if (this.random.nextInt(48) == 0) {
+                 this.tickPrecipitation(this.getBlockRandomPos(minBlockX, 0, minBlockZ, 15));
+             }
+         }
++        } // Paper - Option to disable ice and snow
+ 
+         profilerFiller.popPush("tickBlocks");
+         if (randomTickSpeed > 0) {
+@@ -535,7 +_,7 @@
+         BlockPos blockPos1 = heightmapPos.below();
+         Biome biome = this.getBiome(heightmapPos).value();
+         if (biome.shouldFreeze(this, blockPos1)) {
+-            this.setBlockAndUpdate(blockPos1, Blocks.ICE.defaultBlockState());
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockPos1, Blocks.ICE.defaultBlockState(), null); // CraftBukkit
+         }
+ 
+         if (this.isRaining()) {
+@@ -547,10 +_,10 @@
+                     if (layersValue < Math.min(_int, 8)) {
+                         BlockState blockState1 = blockState.setValue(SnowLayerBlock.LAYERS, Integer.valueOf(layersValue + 1));
+                         Block.pushEntitiesUp(blockState, blockState1, this, heightmapPos);
+-                        this.setBlockAndUpdate(heightmapPos, blockState1);
++                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, heightmapPos, blockState1, null); // CraftBukkit
+                     }
+                 } else {
+-                    this.setBlockAndUpdate(heightmapPos, Blocks.SNOW.defaultBlockState());
++                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, heightmapPos, Blocks.SNOW.defaultBlockState(), null); // CraftBukkit
+                 }
+             }
+ 
+@@ -575,6 +_,11 @@
+     }
+ 
+     protected BlockPos findLightningTargetAround(BlockPos pos) {
++        // Paper start - Add methods to find targets for lightning strikes
++        return this.findLightningTargetAround(pos, false);
++    }
++    public BlockPos findLightningTargetAround(BlockPos pos, boolean returnNullWhenNoTarget) {
++        // Paper end - Add methods to find targets for lightning strikes
+         BlockPos heightmapPos = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
+         Optional<BlockPos> optional = this.findLightningRod(heightmapPos);
+         if (optional.isPresent()) {
+@@ -582,11 +_,12 @@
+         } else {
+             AABB aabb = AABB.encapsulatingFullBlocks(heightmapPos, heightmapPos.atY(this.getMaxY() + 1)).inflate(3.0);
+             List<LivingEntity> entitiesOfClass = this.getEntitiesOfClass(
+-                LivingEntity.class, aabb, entity -> entity != null && entity.isAlive() && this.canSeeSky(entity.blockPosition())
++                LivingEntity.class, aabb, entity -> entity != null && entity.isAlive() && this.canSeeSky(entity.blockPosition()) && !entity.isSpectator() // Paper - Fix lightning being able to hit spectators (MC-262422)
+             );
+             if (!entitiesOfClass.isEmpty()) {
+                 return entitiesOfClass.get(this.random.nextInt(entitiesOfClass.size())).blockPosition();
+             } else {
++                if (returnNullWhenNoTarget) return null; // Paper - Add methods to find targets for lightning strikes
+                 if (heightmapPos.getY() == this.getMinY() - 1) {
+                     heightmapPos = heightmapPos.above(2);
+                 }
+@@ -673,8 +_,8 @@
+                 this.serverLevelData.setThunderTime(thunderTime);
+                 this.serverLevelData.setRainTime(rainTime);
+                 this.serverLevelData.setClearWeatherTime(clearWeatherTime);
+-                this.serverLevelData.setThundering(isThundering);
+-                this.serverLevelData.setRaining(isRaining1);
++                this.serverLevelData.setThundering(isThundering, org.bukkit.event.weather.ThunderChangeEvent.Cause.NATURAL); // Paper - Add cause to Weather/ThunderChangeEvents
++                this.serverLevelData.setRaining(isRaining1, org.bukkit.event.weather.WeatherChangeEvent.Cause.NATURAL); // Paper - Add cause to Weather/ThunderChangeEvents
+             }
+ 
+             this.oThunderLevel = this.thunderLevel;
+@@ -695,6 +_,7 @@
+             this.rainLevel = Mth.clamp(this.rainLevel, 0.0F, 1.0F);
+         }
+ 
++        /* CraftBukkit start
+         if (this.oRainLevel != this.rainLevel) {
+             this.server
+                 .getPlayerList()
+@@ -717,14 +_,47 @@
+             this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.rainLevel));
+             this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
+         }
++        */
++        for (int idx = 0; idx < this.players.size(); ++idx) {
++            if (((ServerPlayer) this.players.get(idx)).level() == this) {
++                ((ServerPlayer) this.players.get(idx)).tickWeather();
++            }
++        }
++
++        if (isRaining != this.isRaining()) {
++            // Only send weather packets to those affected
++            for (int idx = 0; idx < this.players.size(); ++idx) {
++                if (((ServerPlayer) this.players.get(idx)).level() == this) {
++                    ((ServerPlayer) this.players.get(idx)).setPlayerWeather((!isRaining ? org.bukkit.WeatherType.DOWNFALL : org.bukkit.WeatherType.CLEAR), false);
++                }
++            }
++        }
++        for (int idx = 0; idx < this.players.size(); ++idx) {
++            if (((ServerPlayer) this.players.get(idx)).level() == this) {
++                ((ServerPlayer) this.players.get(idx)).updateWeather(this.oRainLevel, this.rainLevel, this.oThunderLevel, this.thunderLevel);
++            }
++        }
++        // CraftBukkit end
+     }
+ 
+     @VisibleForTesting
+     public void resetWeatherCycle() {
+-        this.serverLevelData.setRainTime(0);
+-        this.serverLevelData.setRaining(false);
+-        this.serverLevelData.setThunderTime(0);
+-        this.serverLevelData.setThundering(false);
++        // CraftBukkit start
++        this.serverLevelData.setRaining(false, org.bukkit.event.weather.WeatherChangeEvent.Cause.SLEEP); // Paper - Add cause to Weather/ThunderChangeEvents
++        // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
++        // Not that everyone ever manages to get the whole server to sleep at the same time....
++        if (!this.serverLevelData.isRaining()) {
++            this.serverLevelData.setRainTime(0);
++        }
++        // CraftBukkit end
++        this.serverLevelData.setThundering(false, org.bukkit.event.weather.ThunderChangeEvent.Cause.SLEEP); // Paper - Add cause to Weather/ThunderChangeEvents
++        // CraftBukkit start
++        // If we stop due to everyone sleeping we should reset the weather duration to some other random value.
++        // Not that everyone ever manages to get the whole server to sleep at the same time....
++        if (!this.serverLevelData.isThundering()) {
++            this.serverLevelData.setThunderTime(0);
++        }
++        // CraftBukkit end
+     }
+ 
+     public void resetEmptyTime() {
+@@ -747,12 +_,20 @@
+     }
+ 
+     public void tickNonPassenger(Entity entity) {
++        // Spigot start
++        if (!org.spigotmc.ActivationRange.checkIfActive(entity)) {
++            entity.tickCount++;
++            entity.inactiveTick();
++            return;
++        }
++        // Spigot end
+         entity.setOldPosAndRot();
+         ProfilerFiller profilerFiller = Profiler.get();
+         entity.tickCount++;
+         profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
+         profilerFiller.incrementCounter("tickNonPassenger");
+         entity.tick();
++        entity.postTick(); // CraftBukkit
+         profilerFiller.pop();
+ 
+         for (Entity entity1 : entity.getPassengers()) {
+@@ -770,6 +_,7 @@
+             profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(passengerEntity.getType()).toString());
+             profilerFiller.incrementCounter("tickPassenger");
+             passengerEntity.rideTick();
++            passengerEntity.postTick(); // CraftBukkit
+             profilerFiller.pop();
+ 
+             for (Entity entity : passengerEntity.getPassengers()) {
+@@ -786,6 +_,7 @@
+     public void save(@Nullable ProgressListener progress, boolean flush, boolean skipSave) {
+         ServerChunkCache chunkSource = this.getChunkSource();
+         if (!skipSave) {
++            org.bukkit.Bukkit.getPluginManager().callEvent(new org.bukkit.event.world.WorldSaveEvent(this.getWorld())); // CraftBukkit
+             if (progress != null) {
+                 progress.progressStartNoAbort(Component.translatable("menu.savingLevel"));
+             }
+@@ -802,11 +_,19 @@
+                 this.entityManager.autoSave();
+             }
+         }
++
++        // CraftBukkit start - moved from MinecraftServer.saveChunks
++        ServerLevel worldserver1 = this;
++
++        this.serverLevelData.setWorldBorder(worldserver1.getWorldBorder().createSettings());
++        this.serverLevelData.setCustomBossEvents(this.server.getCustomBossEvents().save(this.registryAccess()));
++        this.levelStorageAccess.saveDataTag(this.server.registryAccess(), this.serverLevelData, this.server.getPlayerList().getSingleplayerData());
++        // CraftBukkit end
+     }
+ 
+     private void saveLevelData(boolean join) {
+         if (this.dragonFight != null) {
+-            this.server.getWorldData().setEndDragonFightData(this.dragonFight.saveData());
++            this.serverLevelData.setEndDragonFightData(this.dragonFight.saveData()); // CraftBukkit
+         }
+ 
+         DimensionDataStorage dataStorage = this.getChunkSource().getDataStorage();
+@@ -871,18 +_,40 @@
+ 
+     @Override
+     public boolean addFreshEntity(Entity entity) {
+-        return this.addEntity(entity);
++        // CraftBukkit start
++        return this.addFreshEntity(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    @Override
++    public boolean addFreshEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++        return this.addEntity(entity, reason);
++        // CraftBukkit end
+     }
+ 
+     public boolean addWithUUID(Entity entity) {
+-        return this.addEntity(entity);
++        // CraftBukkit start
++        return this.addWithUUID(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    public boolean addWithUUID(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++        return this.addEntity(entity, reason);
++        // CraftBukkit end
+     }
+ 
+     public void addDuringTeleport(Entity entity) {
++        // CraftBukkit start
++        // SPIGOT-6415: Don't call spawn event for entities which travel trough worlds,
++        // since it is only an implementation detail, that a new entity is created when
++        // they are traveling between worlds.
++        this.addDuringTeleport(entity, null);
++    }
++
++    public void addDuringTeleport(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++        // CraftBukkit end
+         if (entity instanceof ServerPlayer serverPlayer) {
+             this.addPlayer(serverPlayer);
+         } else {
+-            this.addEntity(entity);
++            this.addEntity(entity, reason); // CraftBukkit
+         }
+     }
+ 
+@@ -905,40 +_,119 @@
+         this.entityManager.addNewEntity(player);
+     }
+ 
+-    private boolean addEntity(Entity entity) {
++    // CraftBukkit start
++    private boolean addEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++        org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
++        entity.generation = false; // Paper - Don't fire sync event during generation; Reset flag if it was added during a ServerLevel generation process
++        // Paper start - extra debug info
++        if (entity.valid) {
++            MinecraftServer.LOGGER.error("Attempted Double World add on {}", entity, new Throwable());
++            return true;
++        }
++        // Paper end - extra debug info
++        if (entity.spawnReason == null) entity.spawnReason = spawnReason; // Paper - Entity#getEntitySpawnReason
+         if (entity.isRemoved()) {
+-            LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityType.getKey(entity.getType()));
++            // LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityType.getKey(entity.getType())); // CraftBukkit - remove warning
+             return false;
+         } else {
++            if (entity instanceof net.minecraft.world.entity.item.ItemEntity itemEntity && itemEntity.getItem().isEmpty()) return false; // Paper - Prevent empty items from being added
++            // Paper start - capture all item additions to the world
++            if (captureDrops != null && entity instanceof net.minecraft.world.entity.item.ItemEntity) {
++                captureDrops.add((net.minecraft.world.entity.item.ItemEntity) entity);
++                return true;
++            }
++            // Paper end - capture all item additions to the world
++            // SPIGOT-6415: Don't call spawn event when reason is null. For example when an entity teleports to a new world.
++            if (spawnReason != null && !org.bukkit.craftbukkit.event.CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
++                return false;
++            }
++            // CraftBukkit end
++
+             return this.entityManager.addNewEntity(entity);
+         }
+     }
+ 
+     public boolean tryAddFreshEntityWithPassengers(Entity entity) {
++        // CraftBukkit start
++        return this.tryAddFreshEntityWithPassengers(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
++    }
++
++    public boolean tryAddFreshEntityWithPassengers(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++        // CraftBukkit end
+         if (entity.getSelfAndPassengers().map(Entity::getUUID).anyMatch(this.entityManager::isLoaded)) {
+             return false;
+         } else {
+-            this.addFreshEntityWithPassengers(entity);
++            this.addFreshEntityWithPassengers(entity, reason); // CraftBukkit
+             return true;
+         }
+     }
+ 
+     public void unload(LevelChunk chunk) {
++        // Spigot Start
++        for (net.minecraft.world.level.block.entity.BlockEntity tileentity : chunk.getBlockEntities().values()) {
++            if (tileentity instanceof net.minecraft.world.Container) {
++                // Paper start - this area looks like it can load chunks, change the behavior
++                // chests for example can apply physics to the world
++                // so instead we just change the active container and call the event
++                for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((net.minecraft.world.Container) tileentity).getViewers())) {
++                    ((org.bukkit.craftbukkit.entity.CraftHumanEntity) h).getHandle().closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
++                }
++                // Paper end - this area looks like it can load chunks, change the behavior
++            }
++        }
++        // Spigot End
+         chunk.clearAllBlockEntities();
+         chunk.unregisterTickContainerFromLevel(this);
+     }
+ 
+     public void removePlayerImmediately(ServerPlayer player, Entity.RemovalReason reason) {
+-        player.remove(reason);
+-    }
++        player.remove(reason, null); // CraftBukkit - add Bukkit remove cause
++    }
++
++    // CraftBukkit start
++    public boolean strikeLightning(Entity entitylightning) {
++        return this.strikeLightning(entitylightning, org.bukkit.event.weather.LightningStrikeEvent.Cause.UNKNOWN);
++    }
++
++    public boolean strikeLightning(Entity entitylightning, org.bukkit.event.weather.LightningStrikeEvent.Cause cause) {
++        org.bukkit.event.weather.LightningStrikeEvent lightning = org.bukkit.craftbukkit.event.CraftEventFactory.callLightningStrikeEvent((org.bukkit.entity.LightningStrike) entitylightning.getBukkitEntity(), cause);
++
++        if (lightning.isCancelled()) {
++            return false;
++        }
++
++        return this.addFreshEntity(entitylightning);
++    }
++    // CraftBukkit end
+ 
+     @Override
+     public void destroyBlockProgress(int breakerId, BlockPos pos, int progress) {
++        // CraftBukkit start
++        Player breakerPlayer = null;
++        Entity entity = this.getEntity(breakerId);
++        if (entity instanceof Player) breakerPlayer = (Player) entity;
++        // CraftBukkit end
++
++        // Paper start - Add BlockBreakProgressUpdateEvent
++        // If a plugin is using this method to send destroy packets for a client-side only entity id, no block progress occurred on the server.
++        // Hence, do not call the event.
++        if (entity != null) {
++            float progressFloat = Mth.clamp(progress, 0, 10) / 10.0f;
++            org.bukkit.craftbukkit.block.CraftBlock bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this, pos);
++            new io.papermc.paper.event.block.BlockBreakProgressUpdateEvent(bukkitBlock, progressFloat, entity.getBukkitEntity())
++                .callEvent();
++        }
++        // Paper end - Add BlockBreakProgressUpdateEvent
+         for (ServerPlayer serverPlayer : this.server.getPlayerList().getPlayers()) {
+             if (serverPlayer != null && serverPlayer.level() == this && serverPlayer.getId() != breakerId) {
+                 double d = pos.getX() - serverPlayer.getX();
+                 double d1 = pos.getY() - serverPlayer.getY();
+                 double d2 = pos.getZ() - serverPlayer.getZ();
++                // CraftBukkit start
++                if (breakerPlayer != null && !serverPlayer.getBukkitEntity().canSee(breakerPlayer.getBukkitEntity())) {
++                    continue;
++                }
++                // CraftBukkit end
+                 if (d * d + d1 * d1 + d2 * d2 < 1024.0) {
+                     serverPlayer.connection.send(new ClientboundBlockDestructionPacket(breakerId, pos, progress));
+                 }
+@@ -1000,7 +_,7 @@
+     public void levelEvent(@Nullable Player player, int type, BlockPos pos, int data) {
+         this.server
+             .getPlayerList()
+-            .broadcast(player, pos.getX(), pos.getY(), pos.getZ(), 64.0, this.dimension(), new ClientboundLevelEventPacket(type, pos, data, false));
++            .broadcast(player, pos.getX(), pos.getY(), pos.getZ(), 64.0, this.dimension(), new ClientboundLevelEventPacket(type, pos, data, false)); // Paper - diff on change (the 64.0 distance is used as defaults for sound ranges in spigot config for ender dragon, end portal and wither)
+     }
+ 
+     public int getLogicalHeight() {
+@@ -1009,6 +_,11 @@
+ 
+     @Override
+     public void gameEvent(Holder<GameEvent> gameEvent, Vec3 pos, GameEvent.Context context) {
++        // Paper start - Prevent GameEvents being fired from unloaded chunks
++        if (this.getChunkIfLoadedImmediately((Mth.floor(pos.x) >> 4), (Mth.floor(pos.z) >> 4)) == null) {
++            return;
++        }
++        // Paper end - Prevent GameEvents being fired from unloaded chunks
+         this.gameEventDispatcher.post(gameEvent, pos, context);
+     }
+ 
+@@ -1021,17 +_,28 @@
+ 
+         this.getChunkSource().blockChanged(pos);
+         this.pathTypesByPosCache.invalidate(pos);
++        if (this.paperConfig().misc.updatePathfindingOnBlockUpdate) { // Paper - option to disable pathfinding updates
+         VoxelShape collisionShape = oldState.getCollisionShape(this, pos);
+         VoxelShape collisionShape1 = newState.getCollisionShape(this, pos);
+         if (Shapes.joinIsNotEmpty(collisionShape, collisionShape1, BooleanOp.NOT_SAME)) {
+             List<PathNavigation> list = new ObjectArrayList<>();
+ 
++            try { // Paper - catch CME see below why
+             for (Mob mob : this.navigatingMobs) {
+                 PathNavigation navigation = mob.getNavigation();
+                 if (navigation.shouldRecomputePath(pos)) {
+                     list.add(navigation);
+                 }
+             }
++            // Paper start - catch CME see below why
++            } catch (final java.util.ConcurrentModificationException concurrentModificationException) {
++                // This can happen because the pathfinder update below may trigger a chunk load, which in turn may cause more navigators to register
++                // In this case we just run the update again across all the iterators as the chunk will then be loaded
++                // As this is a relative edge case it is much faster than copying navigators (on either read or write)
++                this.sendBlockUpdated(pos, oldState, newState, flags);
++                return;
++            }
++            // Paper end - catch CME see below why
+ 
+             try {
+                 this.isUpdatingNavigations = true;
+@@ -1043,15 +_,18 @@
+                 this.isUpdatingNavigations = false;
+             }
+         }
++        } // Paper - option to disable pathfinding updates
+     }
+ 
+     @Override
+     public void updateNeighborsAt(BlockPos pos, Block block) {
++        if (captureBlockStates) { return; } // Paper - Cancel all physics during placement
+         this.updateNeighborsAt(pos, block, ExperimentalRedstoneUtils.initialOrientation(this, null, null));
+     }
+ 
+     @Override
+     public void updateNeighborsAt(BlockPos pos, Block block, @Nullable Orientation orientation) {
++        if (captureBlockStates) { return; } // Paper - Cancel all physics during placement
+         this.neighborUpdater.updateNeighborsAtExceptFromFacing(pos, block, null, orientation);
+     }
+ 
+@@ -1100,6 +_,42 @@
+         ParticleOptions largeExplosionParticles,
+         Holder<SoundEvent> explosionSound
+     ) {
++        // CraftBukkit start
++        this.explode0(source, damageSource, damageCalculator, x, y, z, radius, fire, explosionInteraction, smallExplosionParticles, largeExplosionParticles, explosionSound);
++    }
++
++    public ServerExplosion explode0(
++        @Nullable Entity source,
++        @Nullable DamageSource damageSource,
++        @Nullable ExplosionDamageCalculator damageCalculator,
++        double x,
++        double y,
++        double z,
++        float radius,
++        boolean fire,
++        Level.ExplosionInteraction explosionInteraction,
++        ParticleOptions smallExplosionParticles,
++        ParticleOptions largeExplosionParticles,
++        Holder<SoundEvent> explosionSound
++    ) {
++        return this.explode0(source, damageSource, damageCalculator, x, y, z, radius, fire, explosionInteraction, smallExplosionParticles, largeExplosionParticles, explosionSound, null);
++    }
++    public ServerExplosion explode0(
++        @Nullable Entity source,
++        @Nullable DamageSource damageSource,
++        @Nullable ExplosionDamageCalculator damageCalculator,
++        double x,
++        double y,
++        double z,
++        float radius,
++        boolean fire,
++        Level.ExplosionInteraction explosionInteraction,
++        ParticleOptions smallExplosionParticles,
++        ParticleOptions largeExplosionParticles,
++        Holder<SoundEvent> explosionSound,
++        java.util.function.Consumer<ServerExplosion> configurator
++    ) {
++        // CraftBukkit end
+         Explosion.BlockInteraction blockInteraction = switch (explosionInteraction) {
+             case NONE -> Explosion.BlockInteraction.KEEP;
+             case BLOCK -> this.getDestroyType(GameRules.RULE_BLOCK_EXPLOSION_DROP_DECAY);
+@@ -1108,10 +_,17 @@
+                 : Explosion.BlockInteraction.KEEP;
+             case TNT -> this.getDestroyType(GameRules.RULE_TNT_EXPLOSION_DROP_DECAY);
+             case TRIGGER -> Explosion.BlockInteraction.TRIGGER_BLOCK;
++            case STANDARD -> Explosion.BlockInteraction.DESTROY; // CraftBukkit - handle custom explosion type
+         };
+         Vec3 vec3 = new Vec3(x, y, z);
+         ServerExplosion serverExplosion = new ServerExplosion(this, source, damageSource, damageCalculator, vec3, radius, fire, blockInteraction);
++        if (configurator != null) configurator.accept(serverExplosion);// Paper - Allow explosions to damage source
+         serverExplosion.explode();
++        // CraftBukkit start
++        if (serverExplosion.wasCanceled) {
++            return serverExplosion;
++        }
++        // CraftBukkit end
+         ParticleOptions particleOptions = serverExplosion.isSmall() ? smallExplosionParticles : largeExplosionParticles;
+ 
+         for (ServerPlayer serverPlayer : this.players) {
+@@ -1120,6 +_,8 @@
+                 serverPlayer.connection.send(new ClientboundExplodePacket(vec3, optional, particleOptions, explosionSound));
+             }
+         }
++
++        return serverExplosion; // CraftBukkit
+     }
+ 
+     private Explosion.BlockInteraction getDestroyType(GameRules.Key<GameRules.BooleanValue> decayGameRule) {
+@@ -1190,7 +_,7 @@
+     public <T extends ParticleOptions> int sendParticles(
+         T type, double posX, double posY, double posZ, int particleCount, double xOffset, double yOffset, double zOffset, double speed
+     ) {
+-        return this.sendParticles(type, false, false, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed);
++        return this.sendParticlesSource(null, type, false, false, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed); // CraftBukkit - visibility api support
+     }
+ 
+     public <T extends ParticleOptions> int sendParticles(
+@@ -1206,13 +_,49 @@
+         double zOffset,
+         double speed
+     ) {
++    // CraftBukkit start - visibility api support
++        return this.sendParticlesSource(null, type, overrideLimiter, alwaysShow, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed);
++    }
++    public <T extends ParticleOptions> int sendParticlesSource(
++        @javax.annotation.Nullable ServerPlayer sender,
++        T type,
++        boolean overrideLimiter,
++        boolean alwaysShow,
++        double posX,
++        double posY,
++        double posZ,
++        int particleCount,
++        double xOffset,
++        double yOffset,
++        double zOffset,
++        double speed
++    ) {
++        return sendParticlesSource(this.players, sender, type, overrideLimiter, alwaysShow, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed);
++    }
++    public <T extends ParticleOptions> int sendParticlesSource(
++        List<ServerPlayer> receivers,
++        @javax.annotation.Nullable ServerPlayer sender,
++        T type,
++        boolean overrideLimiter,
++        boolean alwaysShow,
++        double posX,
++        double posY,
++        double posZ,
++        int particleCount,
++        double xOffset,
++        double yOffset,
++        double zOffset,
++        double speed
++    ) {
++    // CraftBukkit end - visibility api support
+         ClientboundLevelParticlesPacket clientboundLevelParticlesPacket = new ClientboundLevelParticlesPacket(
+             type, overrideLimiter, alwaysShow, posX, posY, posZ, (float)xOffset, (float)yOffset, (float)zOffset, (float)speed, particleCount
+         );
+         int i = 0;
+ 
+-        for (int i1 = 0; i1 < this.players.size(); i1++) {
+-            ServerPlayer serverPlayer = this.players.get(i1);
++        for (int i1 = 0; i1 < receivers.size(); i1++) { // Paper - particle API
++            ServerPlayer serverPlayer = receivers.get(i1);  // Paper - particle API
++            if (sender != null && !serverPlayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
+             if (this.sendParticles(serverPlayer, overrideLimiter, posX, posY, posZ, clientboundLevelParticlesPacket)) {
+                 i++;
+             }
+@@ -1280,7 +_,7 @@
+ 
+     @Nullable
+     public BlockPos findNearestMapStructure(TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipExistingChunks) {
+-        if (!this.server.getWorldData().worldGenOptions().generateStructures()) {
++        if (!this.serverLevelData.worldGenOptions().generateStructures()) { // CraftBukkit
+             return null;
+         } else {
+             Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
+@@ -1327,11 +_,38 @@
+     @Nullable
+     @Override
+     public MapItemSavedData getMapData(MapId mapId) {
+-        return this.getServer().overworld().getDataStorage().get(MapItemSavedData.factory(), mapId.key());
++        // Paper start - Call missing map initialize event and set id
++        final DimensionDataStorage storage = this.getServer().overworld().getDataStorage();
++
++        final Optional<net.minecraft.world.level.saveddata.SavedData> cacheEntry = storage.cache.get(mapId.key());
++        if (cacheEntry == null) { // Cache did not contain, try to load and may init
++            final MapItemSavedData worldmap = storage.get(MapItemSavedData.factory(), mapId.key()); // get populates the cache
++            if (worldmap != null) { // map was read, init it and return
++                worldmap.id = mapId;
++                new org.bukkit.event.server.MapInitializeEvent(worldmap.mapView).callEvent();
++                return worldmap;
++            }
++
++            return null; // Map does not exist, reading failed.
++        }
++
++        // Cache entry exists, update it with the id ref and return.
++        if (cacheEntry.orElse(null) instanceof final MapItemSavedData mapItemSavedData) {
++            mapItemSavedData.id = mapId;
++            return mapItemSavedData;
++        }
++
++        return null;
++        // Paper end - Call missing map initialize event and set id
+     }
+ 
+     @Override
+     public void setMapData(MapId mapId, MapItemSavedData mapData) {
++        // CraftBukkit start
++        mapData.id = mapId;
++        org.bukkit.event.server.MapInitializeEvent event = new org.bukkit.event.server.MapInitializeEvent(mapData.mapView);
++        event.callEvent();
++        // CraftBukkit end
+         this.getServer().overworld().getDataStorage().set(mapId.key(), mapData);
+     }
+ 
+@@ -1344,17 +_,27 @@
+         BlockPos spawnPos = this.levelData.getSpawnPos();
+         float spawnAngle = this.levelData.getSpawnAngle();
+         if (!spawnPos.equals(pos) || spawnAngle != angle) {
++            org.bukkit.Location prevSpawnLoc = this.getWorld().getSpawnLocation(); // Paper - Call SpawnChangeEvent
+             this.levelData.setSpawn(pos, angle);
++            new org.bukkit.event.world.SpawnChangeEvent(this.getWorld(), prevSpawnLoc).callEvent(); // Paper - Call SpawnChangeEvent
+             this.getServer().getPlayerList().broadcastAll(new ClientboundSetDefaultSpawnPositionPacket(pos, angle));
+         }
+ 
+         if (this.lastSpawnChunkRadius > 1) {
+-            this.getChunkSource().removeRegionTicket(TicketType.START, new ChunkPos(spawnPos), this.lastSpawnChunkRadius, Unit.INSTANCE);
++            // Paper start - allow disabling gamerule limits
++            for (ChunkPos chunkPos : io.papermc.paper.util.MCUtil.getSpiralOutChunks(spawnPos, this.lastSpawnChunkRadius - 2)) {
++                this.getChunkSource().removeTicketAtLevel(TicketType.START, chunkPos, net.minecraft.server.level.ChunkLevel.ENTITY_TICKING_LEVEL, Unit.INSTANCE);
++            }
++            // Paper end - allow disabling gamerule limits
+         }
+ 
+         int i = this.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS) + 1;
+         if (i > 1) {
+-            this.getChunkSource().addRegionTicket(TicketType.START, new ChunkPos(pos), i, Unit.INSTANCE);
++            // Paper start - allow disabling gamerule limits
++            for (ChunkPos chunkPos : io.papermc.paper.util.MCUtil.getSpiralOutChunks(pos, i - 2)) {
++                this.getChunkSource().addTicketAtLevel(TicketType.START, chunkPos, net.minecraft.server.level.ChunkLevel.ENTITY_TICKING_LEVEL, Unit.INSTANCE);
++            }
++            // Paper end - allow disabling gamerule limits
+         }
+ 
+         this.lastSpawnChunkRadius = i;
+@@ -1403,6 +_,11 @@
+                 DebugPackets.sendPoiRemovedPacket(this, blockPos);
+             }));
+             optional1.ifPresent(poiType -> this.getServer().execute(() -> {
++                // Paper start - Remove stale POIs
++                if (optional.isEmpty() && this.getPoiManager().exists(blockPos, ignored -> true)) {
++                    this.getPoiManager().remove(blockPos);
++                }
++                // Paper end - Remove stale POIs
+                 this.getPoiManager().add(blockPos, (Holder<PoiType>)poiType);
+                 DebugPackets.sendPoiAddedPacket(this, blockPos);
+             }));
+@@ -1543,6 +_,11 @@
+     @Override
+     public void blockUpdated(BlockPos pos, Block block) {
+         if (!this.isDebug()) {
++            // CraftBukkit start
++            if (this.populating) {
++                return;
++            }
++            // CraftBukkit end
+             this.updateNeighborsAt(pos, block);
+         }
+     }
+@@ -1562,12 +_,12 @@
+     }
+ 
+     public boolean isFlat() {
+-        return this.server.getWorldData().isFlatWorld();
++        return this.serverLevelData.isFlatWorld(); // CraftBukkit
+     }
+ 
+     @Override
+     public long getSeed() {
+-        return this.server.getWorldData().worldGenOptions().seed();
++        return this.serverLevelData.worldGenOptions().seed(); // CraftBukkit
+     }
+ 
+     @Nullable
+@@ -1618,6 +_,7 @@
+ 
+     @Override
+     public LevelEntityGetter<Entity> getEntities() {
++        org.spigotmc.AsyncCatcher.catchOp("Chunk getEntities call"); // Spigot
+         return this.entityManager.getEntityGetter();
+     }
+ 
+@@ -1699,6 +_,27 @@
+         return this.serverLevelData.getGameRules();
+     }
+ 
++    // Paper start - respect global sound events gamerule
++    public List<net.minecraft.server.level.ServerPlayer> getPlayersForGlobalSoundGamerule() {
++        return this.getGameRules().getBoolean(GameRules.RULE_GLOBAL_SOUND_EVENTS) ? ((ServerLevel) this).getServer().getPlayerList().players : ((ServerLevel) this).players();
++    }
++
++    public double getGlobalSoundRangeSquared(java.util.function.Function<org.spigotmc.SpigotWorldConfig, Integer> rangeFunction) {
++        final double range = rangeFunction.apply(this.spigotConfig);
++        return range <= 0 ? 64.0 * 64.0 : range * range; // 64 is taken from default in ServerLevel#levelEvent
++    }
++    // Paper end - respect global sound events gamerule
++    // Paper start - notify observers even if grow failed
++    public void checkCapturedTreeStateForObserverNotify(final BlockPos pos, final org.bukkit.craftbukkit.block.CraftBlockState craftBlockState) {
++        // notify observers if the block state is the same and the Y level equals the original y level (for mega trees)
++        // blocks at the same Y level with the same state can be assumed to be saplings which trigger observers regardless of if the
++        // tree grew or not
++        if (craftBlockState.getPosition().getY() == pos.getY() && this.getBlockState(craftBlockState.getPosition()) == craftBlockState.getHandle()) {
++            this.notifyAndUpdatePhysics(craftBlockState.getPosition(), null, craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getHandle(), craftBlockState.getFlag(), 512);
++        }
++    }
++    // Paper end - notify observers even if grow failed
++
+     @Override
+     public CrashReportCategory fillReportDetails(CrashReport report) {
+         CrashReportCategory crashReportCategory = super.fillReportDetails(report);
+@@ -1723,24 +_,32 @@
+ 
+         @Override
+         public void onTickingStart(Entity entity) {
++            if (entity instanceof net.minecraft.world.entity.Marker && !paperConfig().entities.markers.tick) return; // Paper - Configurable marker ticking
+             ServerLevel.this.entityTickList.add(entity);
+         }
+ 
+         @Override
+         public void onTickingEnd(Entity entity) {
+             ServerLevel.this.entityTickList.remove(entity);
++            // Paper start - Reset pearls when they stop being ticked
++            if (ServerLevel.this.paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && ServerLevel.this.paperConfig().misc.legacyEnderPearlBehavior && entity instanceof net.minecraft.world.entity.projectile.ThrownEnderpearl pearl) {
++                pearl.cachedOwner = null;
++                pearl.ownerUUID = null;
++            }
++            // Paper end - Reset pearls when they stop being ticked
+         }
+ 
+         @Override
+         public void onTrackingStart(Entity entity) {
+-            ServerLevel.this.getChunkSource().addEntity(entity);
++            org.spigotmc.AsyncCatcher.catchOp("entity register"); // Spigot
++            // ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server; moved down below valid=true
+             if (entity instanceof ServerPlayer serverPlayer) {
+                 ServerLevel.this.players.add(serverPlayer);
+                 ServerLevel.this.updateSleepingPlayerList();
+             }
+ 
+             if (entity instanceof Mob mob) {
+-                if (ServerLevel.this.isUpdatingNavigations) {
++                if (false && ServerLevel.this.isUpdatingNavigations) { // Paper - Remove unnecessary onTrackingStart during navigation warning
+                     String string = "onTrackingStart called during navigation iteration";
+                     Util.logAndPauseIfInIde(
+                         "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
+@@ -1757,10 +_,61 @@
+             }
+ 
+             entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
++            entity.inWorld = true; // CraftBukkit - Mark entity as in world
++            entity.valid = true; // CraftBukkit
++            ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server
++            // Paper start - Entity origin API
++            if (entity.getOriginVector() == null) {
++                entity.setOrigin(entity.getBukkitEntity().getLocation());
++            }
++            // Default to current world if unknown, gross assumption but entities rarely change world
++            if (entity.getOriginWorld() == null) {
++                entity.setOrigin(entity.getOriginVector().toLocation(getWorld()));
++            }
++            // Paper end - Entity origin API
++            new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid
+         }
+ 
+         @Override
+         public void onTrackingEnd(Entity entity) {
++            org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
++            // Spigot start
++            if ( entity instanceof Player )
++            {
++                com.google.common.collect.Streams.stream( ServerLevel.this.getServer().getAllLevels() ).map( ServerLevel::getDataStorage ).forEach( (worldData) ->
++                {
++                    for (Object o : worldData.cache.values() )
++                    {
++                        if ( o instanceof MapItemSavedData )
++                        {
++                            MapItemSavedData map = (MapItemSavedData) o;
++                            map.carriedByPlayers.remove( (Player) entity );
++                            for (
++                                java.util.Iterator<net.minecraft.world.level.saveddata.maps.MapItemSavedData.HoldingPlayer> iter = map.carriedBy.iterator();
++                                iter.hasNext();
++                            ) {
++                                if ( iter.next().player == entity )
++                                {
++                                    iter.remove();
++                                }
++                            }
++                        }
++                    }
++                } );
++            }
++            // Spigot end
++            // Spigot Start
++            if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder && (!(entity instanceof ServerPlayer) || entity.getRemovalReason() != Entity.RemovalReason.KILLED)) { // SPIGOT-6876: closeInventory clears death message
++                // Paper start - Fix merchant inventory not closing on entity removal
++                if (entity.getBukkitEntity() instanceof org.bukkit.inventory.Merchant merchant && merchant.getTrader() != null) {
++                    merchant.getTrader().closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED);
++                }
++                // Paper end - Fix merchant inventory not closing on entity removal
++                for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((org.bukkit.inventory.InventoryHolder) entity.getBukkitEntity()).getInventory().getViewers())) {
++                    h.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
++                }
++            }
++            // Spigot End
+             ServerLevel.this.getChunkSource().removeEntity(entity);
+             if (entity instanceof ServerPlayer serverPlayer) {
+                 ServerLevel.this.players.remove(serverPlayer);
+@@ -1768,7 +_,7 @@
+             }
+ 
+             if (entity instanceof Mob mob) {
+-                if (ServerLevel.this.isUpdatingNavigations) {
++                if (false && ServerLevel.this.isUpdatingNavigations) { // Paper - Remove unnecessary onTrackingStart during navigation warning
+                     String string = "onTrackingStart called during navigation iteration";
+                     Util.logAndPauseIfInIde(
+                         "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
+@@ -1785,6 +_,15 @@
+             }
+ 
+             entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
++            // CraftBukkit start
++            entity.valid = false;
++            if (!(entity instanceof ServerPlayer)) {
++                for (ServerPlayer player : ServerLevel.this.server.getPlayerList().players) { // Paper - call onEntityRemove for all online players
++                    player.getBukkitEntity().onEntityRemove(entity);
++                }
++            }
++            // CraftBukkit end
++            new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid
+         }
+ 
+         @Override
+@@ -1792,4 +_,12 @@
+             entity.updateDynamicGameEventListener(DynamicGameEventListener::move);
+         }
+     }
++
++    // Paper start - check global player list where appropriate
++    @Override
++    @Nullable
++    public Player getGlobalPlayerByUUID(UUID uuid) {
++        return this.server.getPlayerList().getPlayer(uuid);
++    }
++    // Paper end - check global player list where appropriate
+ }

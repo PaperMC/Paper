@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
-import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
@@ -21,7 +20,6 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -32,7 +30,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
@@ -77,7 +74,6 @@ import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Difficulty;
 import org.bukkit.Effect;
-import org.bukkit.FeatureFlag;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameRule;
 import org.bukkit.Instrument;
@@ -130,7 +126,6 @@ import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Trident;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.weather.LightningStrikeEvent;
-import org.bukkit.event.world.SpawnChangeEvent;
 import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
@@ -1631,7 +1626,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public File getWorldFolder() {
-        return this.world.convertable.getLevelPath(LevelResource.ROOT).toFile().getParentFile();
+        return this.world.levelStorageAccess.getLevelPath(LevelResource.ROOT).toFile().getParentFile();
     }
 
     @Override
