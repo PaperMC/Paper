@@ -1,0 +1,175 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 12 Nov 2023 16:56:03 -0800
+Subject: [PATCH] Bytecode Modification Framework
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 3588770a9ea6ee0a9508b218758650f43d994715..d9f18b872e906290ea9cfe7c6ef5b508561f70f7 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -56,10 +56,11 @@ dependencies {
+     implementation("net.neoforged:srgutils:1.0.9") // Paper - mappings handling
+     implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
+     // Paper start - Remap reflection
+-    val reflectionRewriterVersion = "0.0.3"
++    val reflectionRewriterVersion = "0.0.4-SNAPSHOT"
+     implementation("io.papermc:reflection-rewriter:$reflectionRewriterVersion")
+     implementation("io.papermc:reflection-rewriter-runtime:$reflectionRewriterVersion")
+     implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
++    implementation("io.papermc:asm-utils:$reflectionRewriterVersion")
+     // Paper end - Remap reflection
+     // Paper start - spark
+     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperClassloaderBytecodeModifier.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperClassloaderBytecodeModifier.java
+deleted file mode 100644
+index 0e734c07dbe82ba4c319a237f9e79b08b57b997f..0000000000000000000000000000000000000000
+--- a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/PaperClassloaderBytecodeModifier.java
++++ /dev/null
+@@ -1,12 +0,0 @@
+-package io.papermc.paper.plugin.entrypoint.classloader;
+-
+-import io.papermc.paper.plugin.configuration.PluginMeta;
+-
+-// Stub, implement in future.
+-public class PaperClassloaderBytecodeModifier implements ClassloaderBytecodeModifier {
+-
+-    @Override
+-    public byte[] modify(PluginMeta configuration, byte[] bytecode) {
+-        return io.papermc.paper.pluginremap.reflect.ReflectionRemapper.processClass(bytecode);
+-    }
+-}
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/PaperClassloaderBytecodeModifier.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/PaperClassloaderBytecodeModifier.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d7a789af72e5a1ef5e42c7e855897b65fdeda805
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/PaperClassloaderBytecodeModifier.java
+@@ -0,0 +1,60 @@
++package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
++
++import com.google.common.collect.Iterators;
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier;
++import java.util.Iterator;
++import java.util.LinkedHashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.stream.Collectors;
++import net.minecraft.Util;
++import org.bukkit.craftbukkit.util.ApiVersion;
++import org.objectweb.asm.Opcodes;
++
++public class PaperClassloaderBytecodeModifier implements ClassloaderBytecodeModifier {
++
++    private static final Map<ApiVersion, List<ModifierFactory>> MODIFIERS = Util.make(new LinkedHashMap<>(), map -> {
++    });
++
++    private final Map<ApiVersion, List<VersionedClassloaderBytecodeModifier>> constructedModifiers = MODIFIERS.entrySet().stream()
++        .collect(Collectors.toMap(Map.Entry::getKey, entry -> {
++            return entry.getValue().stream().map(factory -> factory.create(Opcodes.ASM9)).toList();
++        }));
++
++    @Override
++    public byte[] modify(final PluginMeta configuration, byte[] bytecode) {
++        int start = -1;
++        if (configuration.getAPIVersion() != null) {
++            int i = 0;
++            for (final Map.Entry<ApiVersion, List<VersionedClassloaderBytecodeModifier>> entry : this.constructedModifiers.entrySet()) {
++                final ApiVersion pluginApiVersion = ApiVersion.getOrCreateVersion(configuration.getAPIVersion());
++                final ApiVersion modifierApiVersion = entry.getKey();
++                if (pluginApiVersion.isOlderThanOrSameAs(modifierApiVersion)) {
++                    start = i;
++                    break;
++                }
++                i++;
++            }
++        } else {
++            start = 0;
++        }
++        if (start == -1) {
++            return bytecode; // no modification needed. The plugin version is newer than all versioned modifiers
++        }
++
++        final Iterator<Map.Entry<ApiVersion, List<VersionedClassloaderBytecodeModifier>>> iter = this.constructedModifiers.entrySet().iterator();
++        Iterators.advance(iter, start);
++        while (iter.hasNext()) {
++            for (final VersionedClassloaderBytecodeModifier modifier : iter.next().getValue()) {
++                bytecode = modifier.modify(configuration, bytecode);
++            }
++        }
++        return bytecode;
++    }
++
++    private interface ModifierFactory {
++
++        VersionedClassloaderBytecodeModifier create(int api);
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/VersionedClassloaderBytecodeModifier.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/VersionedClassloaderBytecodeModifier.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..acdd6e99b1257dea92ba55bc5c3686c2663bd843
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/VersionedClassloaderBytecodeModifier.java
+@@ -0,0 +1,32 @@
++package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
++
++import io.papermc.asm.AbstractRewriteRuleVisitorFactory;
++import io.papermc.asm.ClassInfoProvider;
++import io.papermc.asm.rules.builder.RuleFactoryConfiguration;
++import io.papermc.paper.plugin.configuration.PluginMeta;
++import io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier;
++import org.objectweb.asm.ClassReader;
++import org.objectweb.asm.ClassWriter;
++
++import static io.papermc.asm.util.DescriptorUtils.desc;
++
++public abstract class VersionedClassloaderBytecodeModifier extends AbstractRewriteRuleVisitorFactory implements ClassloaderBytecodeModifier, RuleFactoryConfiguration.Holder {
++
++    protected VersionedClassloaderBytecodeModifier(final int api) {
++        super(api, ClassInfoProvider.basic());
++    }
++
++    @Override
++    public final byte[] modify(final PluginMeta config, final byte[] bytecode) {
++        final ClassReader cr = new ClassReader(bytecode);
++        final ClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_FRAMES); // need to compute frames because of instruction removal in ctor rewriting
++
++        cr.accept(this.createVisitor(cw), 0);
++        return cw.toByteArray();
++    }
++
++    @Override
++    public final RuleFactoryConfiguration configuration() {
++        return RuleFactoryConfiguration.create(desc(this.getClass()));
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/package-info.java b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/package-info.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f63c305dff1e754cdaea4f0f8055ed850eab6d5a
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/plugin/entrypoint/classloader/bytecode/package-info.java
+@@ -0,0 +1,5 @@
++@DefaultQualifier(NonNull.class)
++package io.papermc.paper.plugin.entrypoint.classloader.bytecode;
++
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index 28dbe30a98a6730839949bc9a6a90b78619ff84d..3cd547a68e2baf64b926951beb66c76e66b8a89d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -397,6 +397,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         // Paper end
+         try {
+             clazz = Commodore.convert(clazz, pdf.getName(), ApiVersion.getOrCreateVersion(pdf.getAPIVersion()), ((CraftServer) Bukkit.getServer()).activeCompatibilities);
++            clazz = io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier.bytecodeModifier().modify(pdf, clazz); // Paper - run plugins through our modifications as well
+         } catch (Exception ex) {
+             Bukkit.getLogger().log(Level.SEVERE, "Fatal error trying to convert " + pdf.getFullName() + ":" + path, ex);
+         }
+diff --git a/src/main/resources/META-INF/services/io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier b/src/main/resources/META-INF/services/io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier
+index 20dbe2775951bfcdb85c5d679ac86c77a93e0847..4a554839971953e6f2b19e674d68afb727a39adf 100644
+--- a/src/main/resources/META-INF/services/io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier
++++ b/src/main/resources/META-INF/services/io.papermc.paper.plugin.entrypoint.classloader.ClassloaderBytecodeModifier
+@@ -1 +1 @@
+-io.papermc.paper.plugin.entrypoint.classloader.PaperClassloaderBytecodeModifier
++io.papermc.paper.plugin.entrypoint.classloader.bytecode.PaperClassloaderBytecodeModifier
