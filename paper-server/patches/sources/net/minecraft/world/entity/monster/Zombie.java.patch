@@ -11,7 +11,7 @@
      private static final ResourceLocation REINFORCEMENT_CALLER_CHARGE_ID = ResourceLocation.withDefaultNamespace("reinforcement_caller_charge");
      private static final AttributeModifier ZOMBIE_REINFORCEMENT_CALLEE_CHARGE = new AttributeModifier(
          ResourceLocation.withDefaultNamespace("reinforcement_callee_charge"), -0.05F, AttributeModifier.Operation.ADD_VALUE
-@@ -87,13 +_,16 @@
+@@ -87,13 +_,15 @@
      private static final EntityDimensions BABY_DIMENSIONS = EntityType.ZOMBIE.getDimensions().scale(0.5F).withEyeHeight(0.93F);
      private static final float BREAK_DOOR_CHANCE = 0.1F;
      public static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = difficulty -> difficulty == Difficulty.HARD;
@@ -20,7 +20,6 @@
      private boolean canBreakDoors;
      private int inWaterTime;
      public int conversionTime;
-+    // private int lastTick = MinecraftServer.currentTick; // CraftBukkit - add field // Paper - remove anti tick skipping measures / wall time
 +    private boolean shouldBurnInDay = true; // Paper - Add more Zombie API
  
      public Zombie(EntityType<? extends Zombie> entityType, Level level) {
@@ -77,14 +76,6 @@
              }
          }
      }
-@@ -221,6 +_,7 @@
-         }
- 
-         super.tick();
-+        // this.lastTick = MinecraftServer.currentTick; // CraftBukkit // Paper - remove anti tick skipping measures / wall time
-     }
- 
-     @Override
 @@ -251,7 +_,14 @@
          super.aiStep();
      }
@@ -111,7 +102,7 @@
 -            zombie -> zombie.handleAttributes(zombie.level().getCurrentDifficultyAt(zombie.blockPosition()).getSpecialMultiplier())
 -        );
 +            // CraftBukkit start
-+            zombie -> {zombie.handleAttributes(zombie.level().getCurrentDifficultyAt(zombie.blockPosition()).getSpecialMultiplier());},
++            zombie -> { zombie.handleAttributes(zombie.level().getCurrentDifficultyAt(zombie.blockPosition()).getSpecialMultiplier()); },
 +            org.bukkit.event.entity.EntityTransformEvent.TransformReason.DROWNED, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DROWNED);
 +        if (converted == null) {
 +            ((org.bukkit.entity.Zombie) this.getBukkitEntity()).setConversionTime(-1); // CraftBukkit - SPIGOT-5208: End conversion to stop event spam
@@ -214,7 +205,7 @@
      public boolean killedEntity(ServerLevel level, LivingEntity entity) {
          boolean flag = super.killedEntity(level, entity);
 -        if ((level.getDifficulty() == Difficulty.NORMAL || level.getDifficulty() == Difficulty.HARD) && entity instanceof Villager villager) {
-+        final double fallbackChance = level.getDifficulty() == Difficulty.HARD ? 100d : level.getDifficulty() == Difficulty.NORMAL ? 50d : 0d; // Paper - Configurable chance of villager zombie infection
++        final double fallbackChance = level.getDifficulty() == Difficulty.HARD ? 100 : level.getDifficulty() == Difficulty.NORMAL ? 50 : 0; // Paper - Configurable chance of villager zombie infection
 +        if (this.random.nextDouble() * 100 < level.paperConfig().entities.behavior.zombieVillagerInfectionChance.or(fallbackChance) && entity instanceof Villager villager) { // Paper - Configurable chance of villager zombie infection
              if (level.getDifficulty() != Difficulty.HARD && this.random.nextBoolean()) {
                  return flag;

@@ -183,7 +183,7 @@
          if (this.level() instanceof ServerLevel serverLevel) {
 -            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0 && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
 -                ExperienceOrb.award(serverLevel, this.position(), Mth.floor(i * 0.08F));
-+            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0) {  // CraftBukkit - SPIGOT-2420: Already checked for the game rule when calculating the xp
++            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0) { // CraftBukkit - SPIGOT-2420: Already checked for the game rule when calculating the xp
 +                ExperienceOrb.award(serverLevel, this.position(), Mth.floor(i * 0.08F), org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, this.lastHurtByPlayer, this); // Paper
              }
  
@@ -195,16 +195,16 @@
 +                for (net.minecraft.server.level.ServerPlayer player : serverLevel.getPlayersForGlobalSoundGamerule()) { // Paper - respect global sound events gamerule
 +                    double deltaX = this.getX() - player.getX();
 +                    double deltaZ = this.getZ() - player.getZ();
-+                    double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
++                    double distanceSquared = Mth.square(deltaX) + Mth.square(deltaZ);
 +                    final double soundRadiusSquared = serverLevel.getGlobalSoundRangeSquared(config -> config.dragonDeathSoundRadius); // Paper - respect global sound events gamerule
 +                    if (!serverLevel.getGameRules().getBoolean(GameRules.RULE_GLOBAL_SOUND_EVENTS) && distanceSquared > soundRadiusSquared) continue; // Paper - respect global sound events gamerule
-+                    if (distanceSquared > viewDistance * viewDistance) {
++                    if (distanceSquared > Mth.square(viewDistance)) {
 +                        double deltaLength = Math.sqrt(distanceSquared);
 +                        double relativeX = player.getX() + (deltaX / deltaLength) * viewDistance;
 +                        double relativeZ = player.getZ() + (deltaZ / deltaLength) * viewDistance;
-+                        player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelEventPacket(1028, new BlockPos((int) relativeX, (int) this.getY(), (int) relativeZ), 0, true));
++                        player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelEventPacket(net.minecraft.world.level.block.LevelEvent.SOUND_DRAGON_DEATH, new BlockPos((int) relativeX, (int) this.getY(), (int) relativeZ), 0, true));
 +                    } else {
-+                        player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelEventPacket(1028, new BlockPos((int) this.getX(), (int) this.getY(), (int) this.getZ()), 0, true));
++                        player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelEventPacket(net.minecraft.world.level.block.LevelEvent.SOUND_DRAGON_DEATH, new BlockPos((int) this.getX(), (int) this.getY(), (int) this.getZ()), 0, true));
 +                    }
 +                }
 +                // CraftBukkit end
@@ -260,7 +260,7 @@
              float max = Math.max((float)Math.sqrt(heightmapPos.distToCenterSqr(this.position())) / 4.0F, 1.0F);
              float f = 6.0F / max;
              float xRot = this.getXRot();
-@@ -883,4 +_,20 @@
+@@ -883,4 +_,19 @@
      protected float sanitizeScale(float scale) {
          return 1.0F;
      }
@@ -270,14 +270,13 @@
 +    public int getExpReward(ServerLevel worldserver, Entity entity) {
 +        // CraftBukkit - Moved from #tickDeath method
 +        boolean flag = worldserver.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT);
-+        short short0 = 500;
++        int i = 500;
 +
 +        if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {
-+            short0 = 12000;
++            i = 12000;
 +        }
 +
-+        return flag ? short0 : 0;
++        return flag ? i : 0;
 +    }
 +    // CraftBukkit end
-+
  }
