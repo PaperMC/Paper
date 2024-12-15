@@ -263,7 +263,7 @@ fun TaskContainer.registerRunTask(
     name: String,
     block: JavaExec.() -> Unit
 ): TaskProvider<JavaExec> = register<JavaExec>(name) {
-    group = "paper"
+    group = "runs"
     mainClass.set("org.bukkit.craftbukkit.Main")
     standardInput = System.`in`
     workingDir = rootProject.layout.projectDirectory
@@ -324,7 +324,7 @@ tasks.registerRunTask("runBundler") {
 }
 tasks.registerRunTask("runReobfBundler") {
     description = "Spin up a test server from the reobf bundler jar"
-    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createReobfBundlerJar").flatMap { it.outputZip })
+    classpath(tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createReobfBundlerJar").flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
 tasks.registerRunTask("runPaperclip") {
@@ -334,6 +334,6 @@ tasks.registerRunTask("runPaperclip") {
 }
 tasks.registerRunTask("runReobfPaperclip") {
     description = "Spin up a test server from the reobf Paperclip jar"
-    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createReobfPaperclipJar").flatMap { it.outputZip })
+    classpath(tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createReobfPaperclipJar").flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
