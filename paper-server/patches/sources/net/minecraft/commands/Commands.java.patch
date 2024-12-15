@@ -1,20 +1,5 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -139,6 +_,14 @@
- import net.minecraft.world.level.GameRules;
- import org.slf4j.Logger;
- 
-+// CraftBukkit start
-+import com.google.common.base.Joiner;
-+import java.util.Collection;
-+import java.util.LinkedHashSet;
-+import org.bukkit.event.player.PlayerCommandSendEvent;
-+import org.bukkit.event.server.ServerCommandEvent;
-+// CraftBukkit end
-+
- public class Commands {
-     private static final ThreadLocal<ExecutionContext<CommandSourceStack>> CURRENT_EXECUTION_CONTEXT = new ThreadLocal<>();
-     private static final Logger LOGGER = LogUtils.getLogger();
 @@ -251,6 +_,30 @@
              PublishCommand.register(this.dispatcher);
          }
@@ -52,12 +37,12 @@
  
 +    // CraftBukkit start
 +    public void dispatchServerCommand(CommandSourceStack sender, String command) {
-+        Joiner joiner = Joiner.on(" ");
++        com.google.common.base.Joiner joiner = com.google.common.base.Joiner.on(" ");
 +        if (command.startsWith("/")) {
 +            command = command.substring(1);
 +        }
 +
-+        ServerCommandEvent event = new ServerCommandEvent(sender.getBukkitSender(), command);
++        org.bukkit.event.server.ServerCommandEvent event = new org.bukkit.event.server.ServerCommandEvent(sender.getBukkitSender(), command);
 +        org.bukkit.Bukkit.getPluginManager().callEvent(event);
 +        if (event.isCancelled()) {
 +            return;
@@ -135,7 +120,7 @@
 +            // Paper start - Add UnknownCommandEvent
 +            final net.kyori.adventure.text.TextComponent.Builder builder = net.kyori.adventure.text.Component.text();
 +            // source.sendFailure(ComponentUtils.fromMessage(var7.getRawMessage()));
-+            builder.color(net.kyori.adventure.text.format.NamedTextColor.RED).append(io.papermc.paper.brigadier.PaperBrigadier.componentFromMessage(var7.getRawMessage()));
++            builder.color(net.kyori.adventure.text.format.NamedTextColor.RED).append(io.papermc.paper.command.brigadier.MessageComponentSerializer.message().deserialize(var7.getRawMessage()));
 +            // Paper end - Add UnknownCommandEvent
              if (var7.getInput() != null && var7.getCursor() >= 0) {
                  int min = Math.min(var7.getInput().length(), var7.getCursor());
@@ -180,7 +165,7 @@
 +        // Register Vanilla commands into builtRoot as before
 +        // Paper start - Perf: Async command map building
 +        // Copy root children to avoid concurrent modification during building
-+        final Collection<CommandNode<CommandSourceStack>> commandNodes = new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren());
++        final java.util.Collection<CommandNode<CommandSourceStack>> commandNodes = new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren());
 +        COMMAND_SENDING_POOL.execute(() -> this.sendAsync(player, commandNodes));
 +    }
 +
@@ -195,7 +180,7 @@
 +        new java.util.concurrent.ThreadPoolExecutor.DiscardPolicy()
 +    );
 +
-+    private void sendAsync(ServerPlayer player, Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
++    private void sendAsync(ServerPlayer player, java.util.Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
 +        // Paper end - Perf: Async command map building
 +        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
 +        // Paper - brigadier API removes the need to fill the map twice
@@ -204,7 +189,7 @@
 -        this.fillUsableCommands(this.dispatcher.getRoot(), rootCommandNode, player.createCommandSourceStack(), map);
 +        this.fillUsableCommands(dispatcherRootChildren, rootCommandNode, player.createCommandSourceStack(), map); // Paper - Perf: Async command map building; pass copy of children
 +
-+        Collection<String> bukkit = new LinkedHashSet<>();
++        java.util.Collection<String> bukkit = new java.util.LinkedHashSet<>();
 +        for (CommandNode node : rootCommandNode.getChildren()) {
 +            bukkit.add(node.getName());
 +        }
@@ -215,10 +200,10 @@
 +        });
 +    }
 +
-+    private void runSync(ServerPlayer player, Collection<String> bukkit, RootCommandNode<SharedSuggestionProvider> rootCommandNode) {
++    private void runSync(ServerPlayer player, java.util.Collection<String> bukkit, RootCommandNode<SharedSuggestionProvider> rootCommandNode) {
 +        // Paper end - Perf: Async command map building
 +        new com.destroystokyo.paper.event.brigadier.AsyncPlayerSendCommandsEvent<CommandSourceStack>(player.getBukkitEntity(), (RootCommandNode) rootCommandNode, true).callEvent(); // Paper - Brigadier API
-+        PlayerCommandSendEvent event = new PlayerCommandSendEvent(player.getBukkitEntity(), new LinkedHashSet<>(bukkit));
++        org.bukkit.event.player.PlayerCommandSendEvent event = new org.bukkit.event.player.PlayerCommandSendEvent(player.getBukkitEntity(), new java.util.LinkedHashSet<>(bukkit));
 +        event.getPlayer().getServer().getPluginManager().callEvent(event);
 +
 +        // Remove labels that were removed during the event
@@ -234,7 +219,7 @@
  
      private void fillUsableCommands(
 -        CommandNode<CommandSourceStack> rootCommandSource,
-+        Collection<CommandNode<CommandSourceStack>> children, // Paper - Perf: Async command map building; pass copy of children
++        java.util.Collection<CommandNode<CommandSourceStack>> children, // Paper - Perf: Async command map building; pass copy of children
          CommandNode<SharedSuggestionProvider> rootSuggestion,
          CommandSourceStack source,
          Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> commandNodeToSuggestionNode

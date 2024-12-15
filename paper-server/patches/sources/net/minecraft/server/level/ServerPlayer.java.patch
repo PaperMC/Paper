@@ -1,33 +1,5 @@
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
-@@ -135,10 +_,12 @@
- import net.minecraft.world.entity.projectile.ThrownEnderpearl;
- import net.minecraft.world.entity.vehicle.AbstractBoat;
- import net.minecraft.world.entity.vehicle.AbstractMinecart;
-+import net.minecraft.world.food.FoodData;
- import net.minecraft.world.inventory.AbstractContainerMenu;
- import net.minecraft.world.inventory.ContainerListener;
- import net.minecraft.world.inventory.ContainerSynchronizer;
- import net.minecraft.world.inventory.HorseInventoryMenu;
-+import net.minecraft.world.inventory.InventoryMenu;
- import net.minecraft.world.inventory.ResultSlot;
- import net.minecraft.world.inventory.Slot;
- import net.minecraft.world.item.Item;
-@@ -158,12 +_,14 @@
- import net.minecraft.world.level.biome.BiomeManager;
- import net.minecraft.world.level.block.BedBlock;
- import net.minecraft.world.level.block.Block;
-+import net.minecraft.world.level.block.ChestBlock;
- import net.minecraft.world.level.block.HorizontalDirectionalBlock;
- import net.minecraft.world.level.block.RespawnAnchorBlock;
- import net.minecraft.world.level.block.entity.BlockEntity;
- import net.minecraft.world.level.block.entity.CommandBlockEntity;
- import net.minecraft.world.level.block.entity.SignBlockEntity;
- import net.minecraft.world.level.block.state.BlockState;
-+import net.minecraft.world.level.dimension.LevelStem;
- import net.minecraft.world.level.gameevent.GameEvent;
- import net.minecraft.world.level.portal.TeleportTransition;
- import net.minecraft.world.level.saveddata.maps.MapId;
 @@ -223,7 +_,8 @@
      private int levitationStartTime;
      private boolean disconnected;
@@ -152,7 +124,7 @@
 +        this.containerMenu.findSlot(this.getInventory(), this.getInventory().selected).ifPresent(s -> {
 +            this.containerSynchronizer.sendSlotChange(this.containerMenu, s, this.getMainHandItem());
 +        });
-+        this.containerSynchronizer.sendSlotChange(this.inventoryMenu, InventoryMenu.SHIELD_SLOT, this.getOffhandItem());
++        this.containerSynchronizer.sendSlotChange(this.inventoryMenu, net.minecraft.world.inventory.InventoryMenu.SHIELD_SLOT, this.getOffhandItem());
 +    }
 +
 +    // Yes, this doesn't match Vanilla, but it's the best we can do for now.
@@ -699,7 +671,7 @@
              ServerLevel serverLevel = this.serverLevel();
 -            ResourceKey<Level> resourceKey = serverLevel.dimension();
 +            // CraftBukkit start
-+            ResourceKey<LevelStem> resourceKey = serverLevel.getTypeKey();
++            ResourceKey<net.minecraft.world.level.dimension.LevelStem> resourceKey = serverLevel.getTypeKey();
 +
 +            org.bukkit.Location enter = this.getBukkitEntity().getLocation();
 +            PositionMoveRotation absolutePosition = PositionMoveRotation.calculateAbsolute(PositionMoveRotation.of(this), PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());
@@ -758,7 +730,7 @@
                  ProfilerFiller profilerFiller = Profiler.get();
                  profilerFiller.push("moving");
 -                if (resourceKey == Level.OVERWORLD && level.dimension() == Level.NETHER) {
-+                if (level != null && resourceKey == LevelStem.OVERWORLD && level.getTypeKey() == LevelStem.NETHER) { // CraftBukkit - empty to fall through to null to event
++                if (level != null && resourceKey == net.minecraft.world.level.dimension.LevelStem.OVERWORLD && level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER) { // CraftBukkit - empty to fall through to null to event
                      this.enteredNetherPosition = this.position();
                  }
  
@@ -998,9 +970,9 @@
 +                    // SPIGOT-5263 - close chest if cancelled
 +                    if (menu instanceof Container) {
 +                        ((Container) menu).stopOpen(this);
-+                    } else if (menu instanceof ChestBlock.DoubleInventory) {
++                    } else if (menu instanceof net.minecraft.world.level.block.ChestBlock.DoubleInventory doubleInventory) {
 +                        // SPIGOT-5355 - double chests too :(
-+                        ((ChestBlock.DoubleInventory) menu).inventorylargechest.stopOpen(this);
++                        doubleInventory.inventorylargechest.stopOpen(this);
 +                        // Paper start - Fix InventoryOpenEvent cancellation
 +                    } else if (!this.enderChestInventory.isActiveChest(null)) {
 +                        this.enderChestInventory.stopOpen(this);
@@ -1653,7 +1625,7 @@
 +        this.setAirSupply(this.getMaxAirSupply()); // Paper - Reset players airTicks on respawn
 +        this.setRemainingFireTicks(0);
 +        this.fallDistance = 0;
-+        this.foodData = new FoodData();
++        this.foodData = new net.minecraft.world.food.FoodData();
 +        this.experienceLevel = this.newLevel;
 +        this.totalExperience = this.newTotalExp;
 +        this.experienceProgress = 0;

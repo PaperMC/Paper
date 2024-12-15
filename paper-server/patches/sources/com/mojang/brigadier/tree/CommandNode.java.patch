@@ -1,26 +1,10 @@
 --- a/com/mojang/brigadier/tree/CommandNode.java
 +++ b/com/mojang/brigadier/tree/CommandNode.java
-@@ -3,6 +_,7 @@
- 
- package com.mojang.brigadier.tree;
- 
-+// CHECKSTYLE:OFF
- import com.mojang.brigadier.AmbiguityConsumer;
- import com.mojang.brigadier.Command;
- import com.mojang.brigadier.RedirectModifier;
-@@ -22,6 +_,7 @@
- import java.util.Set;
- import java.util.concurrent.CompletableFuture;
- import java.util.function.Predicate;
-+import net.minecraft.commands.CommandSourceStack;
- 
- public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
-     private final Map<String, CommandNode<S>> children = new LinkedHashMap<>();
 @@ -32,6 +_,16 @@
      private final RedirectModifier<S> modifier;
      private final boolean forks;
      private Command<S> command;
-+    public CommandNode<CommandSourceStack> clientNode; // Paper - Brigadier API
++    public CommandNode<net.minecraft.commands.CommandSourceStack> clientNode; // Paper - Brigadier API
 +    public CommandNode<io.papermc.paper.command.brigadier.CommandSourceStack> unwrappedCached = null; // Paper - Brigadier Command API
 +    public CommandNode<io.papermc.paper.command.brigadier.CommandSourceStack> wrappedCached = null; // Paper - Brigadier Command API
 +    // CraftBukkit start
@@ -40,12 +24,12 @@
 -    public boolean canUse(final S source) {
 +    // CraftBukkit start
 +    public synchronized boolean canUse(final S source) {
-+        if (source instanceof CommandSourceStack) {
++        if (source instanceof final net.minecraft.commands.CommandSourceStack css) {
 +            try {
-+                ((CommandSourceStack) source).currentCommand.put(Thread.currentThread(), this); // Paper - Thread Safe Vanilla Command permission checking
++                css.currentCommand.put(Thread.currentThread(), this); // Paper - Thread Safe Vanilla Command permission checking
 +                return this.requirement.test(source);
 +            } finally {
-+                ((CommandSourceStack) source).currentCommand.remove(Thread.currentThread()); // Paper - Thread Safe Vanilla Command permission checking
++                css.currentCommand.remove(Thread.currentThread()); // Paper - Thread Safe Vanilla Command permission checking
 +            }
 +        }
 +        // CraftBukkit end
@@ -72,11 +56,11 @@
 -            final LiteralCommandNode<S> literal = literals.get(text);
 +            // Paper start - prioritize mc commands in function parsing
 +            LiteralCommandNode<S> literal = null;
-+            if (source instanceof CommandSourceStack css && css.source == net.minecraft.commands.CommandSource.NULL) {
++            if (source instanceof net.minecraft.commands.CommandSourceStack css && css.source == net.minecraft.commands.CommandSource.NULL) {
 +                if (!text.contains(":")) {
 +                    literal = this.literals.get("minecraft:" + text);
 +                }
-+            } else if (source instanceof CommandSourceStack css && css.source instanceof net.minecraft.world.level.BaseCommandBlock) {
++            } else if (source instanceof net.minecraft.commands.CommandSourceStack css && css.source instanceof net.minecraft.world.level.BaseCommandBlock) {
 +                if (css.getServer().server.getCommandBlockOverride(text) && !text.contains(":")) {
 +                    literal = this.literals.get("minecraft:" + text);
 +                }
