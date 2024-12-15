@@ -1,0 +1,51 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: willkroboth <46540330+willkroboth@users.noreply.github.com>
+Date: Mon, 9 Sep 2024 19:11:58 -0400
+Subject: [PATCH] Cache Bukkit Command when wrapping CommandNodes
+
+
+diff --git a/src/main/java/com/mojang/brigadier/tree/CommandNode.java b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
+index dc76fcf4c6cc6cd65ce117b1855c15ede60f30ab..5dd43e561c0dcd9346bd381ad1574535f9caef48 100644
+--- a/src/main/java/com/mojang/brigadier/tree/CommandNode.java
++++ b/src/main/java/com/mojang/brigadier/tree/CommandNode.java
+@@ -37,6 +37,7 @@ public abstract class CommandNode<S> implements Comparable<CommandNode<S>> {
+     public CommandNode<CommandSourceStack> clientNode; // Paper - Brigadier API
+     public CommandNode<io.papermc.paper.command.brigadier.CommandSourceStack> unwrappedCached = null; // Paper - Brigadier Command API
+     public CommandNode<io.papermc.paper.command.brigadier.CommandSourceStack> wrappedCached = null; // Paper - Brigadier Command API
++    public org.bukkit.command.Command wrappedBukkitCommandCached = null; // Paper - Brigadier Command API
+     // CraftBukkit start
+     public void removeCommand(String name) {
+         this.children.remove(name);
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
+index 5eef7ae5197bd395fbd6800530ffe34d147651ff..4512985b2e5e37b3fda33621fe1b2681796e1b0b 100644
+--- a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
++++ b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitBrigForwardingMap.java
+@@ -83,11 +83,13 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
+             return null;
+         }
+ 
+-        if (node instanceof BukkitCommandNode bukkitCommandNode) {
+-            return bukkitCommandNode.getBukkitCommand();
++        if (node.wrappedBukkitCommandCached != null) {
++            return node.wrappedBukkitCommandCached;
+         }
+ 
+-        return PaperBrigadier.wrapNode(node);
++        Command bukkitCommand = PaperBrigadier.wrapNode(node);
++        node.wrappedBukkitCommandCached = bukkitCommand;
++        return bukkitCommand;
+     }
+ 
+     @SuppressWarnings({"unchecked", "rawtypes"})
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
+index 0c3c82b28e581286b798ee58ca4193efc2faff4a..d60d2f311d8d1c0cb880ba6c680a794f66009ad6 100644
+--- a/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
++++ b/src/main/java/io/papermc/paper/command/brigadier/bukkit/BukkitCommandNode.java
+@@ -46,6 +46,7 @@ public class BukkitCommandNode extends LiteralCommandNode<CommandSourceStack> {
+             null, null, false
+         );
+         this.command = command;
++        this.wrappedBukkitCommandCached = command;
+     }
+ 
+     public static BukkitCommandNode of(String name, Command command) {
