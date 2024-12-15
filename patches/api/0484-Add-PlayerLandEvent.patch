@@ -1,0 +1,99 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: StillLutto <iameinsteinhe@gmail.com>
+Date: Sat, 8 Jun 2024 19:44:50 +0200
+Subject: [PATCH] Add PlayerLandEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/event/player/PlayerLandEvent.java b/src/main/java/io/papermc/paper/event/player/PlayerLandEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0a26286eb9d807ee202df60923166525a5f3af62
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/player/PlayerLandEvent.java
+@@ -0,0 +1,87 @@
++package io.papermc.paper.event.player;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.Location;
++import org.bukkit.block.Block;
++import org.bukkit.entity.Player;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.bukkit.event.player.PlayerMoveEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called when the server detects the player lands on the ground.
++ * <p>
++ * Added to avoid the overhead and special case logic that many plugins use
++ * when checking for player landing via {@link PlayerMoveEvent}, this event is fired whenever
++ * the server detects that the player lands on the ground.
++ */
++public class PlayerLandEvent extends PlayerEvent {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    @NotNull private final Location to;
++    @NotNull private Location from;
++    @NotNull private Block mainSupportingBlock;
++
++    @ApiStatus.Internal
++    public PlayerLandEvent(@NotNull final Player player, @NotNull final Location from, @NotNull final Location to, final Block mainSupportingBlock) {
++        super(player);
++        this.from = from;
++        this.to = to;
++        this.mainSupportingBlock = mainSupportingBlock;
++    }
++
++    /**
++     * Gets the location where the player lands from
++     *
++     * @return Location where the player lands from
++     */
++    @NotNull
++    public Location getFrom() {
++        return this.from;
++    }
++
++    /**
++     * Sets the location to mark as where the player lands from
++     *
++     * @param from New location to mark as the players previous location
++     */
++    public void setFrom(@NotNull Location from) {
++        Preconditions.checkArgument(from != null, "Cannot use null from location!");
++        Preconditions.checkArgument(from.getWorld() != null, "Cannot use from location with null world!");
++        this.from = from;
++    }
++
++    /**
++     * Gets the location where the player lands
++     *
++     * @return Location where the player lands
++     */
++    @NotNull
++    public Location getTo() {
++        return this.to.clone();
++    }
++
++    /**
++     * Gets the location this player jumped to
++     *
++     * @return Location the player jumped to
++     */
++    @NotNull
++    public Block getMainSupportingBlock() {
++        return this.mainSupportingBlock;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
