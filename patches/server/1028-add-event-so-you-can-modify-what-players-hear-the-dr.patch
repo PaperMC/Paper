@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lurkrul <44719592+Lurkrul@users.noreply.github.com>
+Date: Wed, 19 Jun 2024 17:59:03 +0800
+Subject: [PATCH] add event so you can modify what players hear the dragon
+ death sound
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index 4d2fbade3a01ca26ff107f1323ae23db6dad8ef8..43788f3ea1a752e74c1a0be905bc0d1df5fa14c8 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -727,7 +727,11 @@ public class EnderDragon extends Mob implements Enemy {
+                 // CraftBukkit start - Use relative location for far away sounds
+                 // this.level().globalLevelEvent(1028, this.blockPosition(), 0);
+                 int viewDistance = ((ServerLevel) this.level()).getCraftServer().getViewDistance() * 16;
++                 
++                 //paper start - adding control event to determine who hears death sounds
+-                for (net.minecraft.server.level.ServerPlayer player : this.level().getPlayersForGlobalSoundGamerule()) { // Paper - respect global sound events gamerule
++                io.papermc.paper.event.entity.DragonPrepareDeathSoundTargetsEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callDragonPrepareDeathSoundEvent((org.bukkit.entity.EnderDragon) this.getBukkitEntity(), this.level().getPlayersForGlobalSoundGamerule());
++                // change the for loop to loop through the players collected in the event. It still respects the global sound events
++                //for (net.minecraft.server.level.ServerPlayer player : this.level().getPlayersForGlobalSoundGamerule()) { // Paper - respect global sound events gamerule
++                for(org.bukkit.entity.Player bukkitPlayer: event.getPlayerList()) {
++                    net.minecraft.server.level.ServerPlayer player = ((org.bukkit.craftbukkit.entity.CraftPlayer)bukkitPlayer).getHandle();
++                     //paper end - adding control event to determine who hears death sounds
+                     double deltaX = this.getX() - player.getX();
+                     double deltaZ = this.getZ() - player.getZ();
+                     double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index bd6fee3e3ad9116802ff8bb57bfa741b881c4057..f225942db664b8ce6f97dd907f39daca5b85fc9b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -2204,4 +2200,21 @@ public class CraftEventFactory {
+         return event;
+     }
+     // Paper end - add EntityFertilizeEggEvent
++
++    // Paper start - add DragonPrepareDeathSoundTargetsEvent
++    /**
++     * Calls {@link io.papermc.paper.event.entity.DragonPrepareDeathSoundTargetsEvent}
++     * Listeners can add and remove players from the list of players that will hear the dragon death sound.
++     *
++     * @param dragon the EnderDragon that has died
++     * @param players the players that are origionally intended to hear the death sound.
++     * @return the event after it was called. This will be used to retrieve the list of players that will hear the death sound
++     */
++    public static io.papermc.paper.event.entity.DragonPrepareDeathSoundTargetsEvent callDragonPrepareDeathSoundEvent(org.bukkit.entity.EnderDragon dragon, List<net.minecraft.server.level.ServerPlayer> players) {
++        io.papermc.paper.event.entity.DragonPrepareDeathSoundTargetsEvent event = new io.papermc.paper.event.entity.DragonPrepareDeathSoundTargetsEvent(dragon, players.stream().map(element->element.getBukkitEntity().getPlayer()).collect(Collectors.toCollection(java.util.HashSet::new)));
++        event.callEvent();
++        return event;
++    }
++    // Paper end - add DragonPrepareDeathSoundTargetsEvent
+ }
