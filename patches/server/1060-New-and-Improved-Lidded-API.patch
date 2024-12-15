@@ -1,0 +1,939 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Isaac - The456 <the456@the456gamer.dev>
+Date: Mon, 9 Sep 2024 00:06:05 +0100
+Subject: [PATCH] New and Improved Lidded API
+
+Featuring
+- 5 LidModes, 3 of which were not possible before
+- The ability to get if the lid actually should be open, if a player is in the container
+- The ability to get if the is open, from api or the player itself
+
+This Implementation provides the now-deprecated bukkit api of the same name in a compatible way.
+
+the bulk of the general logic is in PaperLidded, which handles the transitions to/from LidModes, which call the implementation specific internals to start/stop open/close.
+
+diff --git a/src/main/java/io/papermc/paper/block/PaperLidded.java b/src/main/java/io/papermc/paper/block/PaperLidded.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a1ed3487a58c5cc101a0c06b7922407b59d69290
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/block/PaperLidded.java
+@@ -0,0 +1,84 @@
++package io.papermc.paper.block;
++
++public interface PaperLidded extends Lidded, org.bukkit.block.Lidded {
++
++    @Override
++    default LidMode setLidMode(final LidMode targetLidMode) {
++        final LidMode oldLidMode = getLidMode();
++        final LidMode newLidMode = getResultantLidMode(targetLidMode);
++
++        if (oldLidMode == newLidMode) {
++            // already in correct state
++            return newLidMode;
++        }
++
++        boolean wasForcedOpen =
++            oldLidMode == LidMode.FORCED_OPEN || oldLidMode == LidMode.OPEN_UNTIL_VIEWED;
++        boolean wasForcedClosed =
++            oldLidMode == LidMode.FORCED_CLOSED || oldLidMode == LidMode.CLOSED_UNTIL_NOT_VIEWED;
++        boolean isForcedOpen =
++            newLidMode == LidMode.FORCED_OPEN || newLidMode == LidMode.OPEN_UNTIL_VIEWED;
++        boolean isForcedClosed =
++            newLidMode == LidMode.FORCED_CLOSED || newLidMode == LidMode.CLOSED_UNTIL_NOT_VIEWED;
++
++        // stop any existing force open/close, if next state doesn't need it.
++        if (wasForcedOpen && !isForcedOpen) {
++            stopForceLiddedLidOpen();
++        } else if (wasForcedClosed && !isForcedClosed) {
++            stopForceLiddedLidClose();
++        }
++
++        // start new force open/close, if it wasn't previously.
++        if (isForcedOpen && !wasForcedOpen) {
++            startForceLiddedLidOpen();
++        } else if (isForcedClosed && !wasForcedClosed) {
++            startForceLiddedLidClose();
++        }
++
++        // return the new lid mode, so it can be stored by the implementation.
++        return newLidMode;
++    }
++
++    private LidMode getResultantLidMode(LidMode targetLidMode) {
++        final LidState trueLidState = getTrueLidState();
++
++        // check that target lid mode is valid for true lid state.
++        LidMode newLidMode;
++
++        if (targetLidMode == LidMode.CLOSED_UNTIL_NOT_VIEWED
++            && trueLidState == LidState.CLOSED) {
++            // insta-revert to default, as the lid is already closed.
++            newLidMode = LidMode.DEFAULT;
++        } else if (targetLidMode == LidMode.OPEN_UNTIL_VIEWED
++            && trueLidState == LidState.OPEN) {
++            // insta-revert to default, as the lid is already open.
++            newLidMode = LidMode.DEFAULT;
++        } else {
++            newLidMode = targetLidMode;
++        }
++        return newLidMode;
++    }
++
++    // these should be similar to the vanilla open/close behavior.
++    void startForceLiddedLidOpen();
++    void stopForceLiddedLidOpen();
++    void startForceLiddedLidClose();
++    void stopForceLiddedLidClose();
++
++    // bukkit lidded impl using the paper lidded api.
++
++    @Override
++    default boolean isOpen() {
++        return getLidMode() == LidMode.FORCED_OPEN || getLidMode() == LidMode.OPEN_UNTIL_VIEWED;
++    }
++
++    @Override
++    default void close() {
++        setLidMode(LidMode.DEFAULT);
++    }
++
++    @Override
++    default void open() {
++        setLidMode(LidMode.FORCED_OPEN);
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java b/src/main/java/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
+index 86dce6796f92a5b0ae2b1bd837267c4e3f6754d0..dfc184ed9f49524cf198ff672282326c16b41441 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/ContainerOpenersCounter.java
+@@ -17,7 +17,7 @@ public abstract class ContainerOpenersCounter {
+     private static final int CHECK_TICK_DELAY = 5;
+     private int openCount;
+     private double maxInteractionRange;
+-    public boolean opened; // CraftBukkit
++    //public boolean opened; // CraftBukkit // Paper - replace with new Lidded API
+ 
+     public ContainerOpenersCounter() {}
+ 
+@@ -28,25 +28,79 @@ public abstract class ContainerOpenersCounter {
+     protected abstract void openerCountChanged(Level world, BlockPos pos, BlockState state, int oldViewerCount, int newViewerCount);
+ 
+     // CraftBukkit start
+-    public void onAPIOpen(Level world, BlockPos blockposition, BlockState iblockdata) {
+-        this.onOpen(world, blockposition, iblockdata);
+-    }
+-
+-    public void onAPIClose(Level world, BlockPos blockposition, BlockState iblockdata) {
+-        this.onClose(world, blockposition, iblockdata);
+-    }
+-
+-    public void openerAPICountChanged(Level world, BlockPos blockposition, BlockState iblockdata, int i, int j) {
+-        this.openerCountChanged(world, blockposition, iblockdata, i, j);
+-    }
++    // Paper Start - Replace with new Lidded API
++    // public void onAPIOpen(Level world, BlockPos blockposition, BlockState iblockdata) {
++    //     this.onOpen(world, blockposition, iblockdata);
++    // }
++    //
++    // public void onAPIClose(Level world, BlockPos blockposition, BlockState iblockdata) {
++    //     this.onClose(world, blockposition, iblockdata);
++    // }
++    //
++    // public void openerAPICountChanged(Level world, BlockPos blockposition, BlockState iblockdata, int i, int j) {
++    //     this.openerCountChanged(world, blockposition, iblockdata, i, j);
++    // }
++    // Paper end - Replace with new Lidded API
+     // CraftBukkit end
+ 
+     protected abstract boolean isOwnContainer(Player player);
+ 
+-    public void incrementOpeners(Player player, Level world, BlockPos pos, BlockState state) {
++    // Paper start - add Improved Lidded API
++    private io.papermc.paper.block.LidMode apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++    public void startForceLiddedLidOpen(Level level, BlockPos pos, BlockState state) {
++        incrementOpeners(null, level, pos, state);
++    }
++    public void stopForceLiddedLidOpen(Level level, BlockPos pos, BlockState state) {
++        decrementOpeners(null, level, pos, state);
++        apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++    }
++    public void startForceLiddedLidClose(Level level, BlockPos pos, BlockState state) {
++        if (this.getTrueLidState() == io.papermc.paper.block.LidState.OPEN) {
++            this.onClose(level, pos, state);
++            level.gameEvent(null, GameEvent.CONTAINER_CLOSE, pos);
++        }
++        this.openerCountChanged(level, pos, state, this.openCount, 0);
++    }
++    public void stopForceLiddedLidClose(Level level, BlockPos pos, BlockState state) {
++        if (this.getTrueLidState() == io.papermc.paper.block.LidState.OPEN) {
++            this.onOpen(level, pos, state);
++            level.gameEvent(null, GameEvent.CONTAINER_OPEN, pos);
++            scheduleRecheck(level, pos, state);
++        }
++        this.openerCountChanged(level, pos, state, 0, this.openCount);
++        apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++    }
++    public io.papermc.paper.block.LidMode getLidMode() {
++        return apiLidMode;
++    }
++    public void setLidMode(final io.papermc.paper.block.LidMode targetLidMode) {
++        apiLidMode = targetLidMode;
++    }
++    public io.papermc.paper.block.LidState getEffectiveLidState() {
++        return switch (apiLidMode) {
++            case OPEN_UNTIL_VIEWED, FORCED_OPEN -> io.papermc.paper.block.LidState.OPEN;
++            case CLOSED_UNTIL_NOT_VIEWED, FORCED_CLOSED -> io.papermc.paper.block.LidState.CLOSED;
++            default -> getTrueLidState();
++        };
++    }
++    public io.papermc.paper.block.LidState getTrueLidState() {
++        boolean virtualViewerPresent = (apiLidMode == io.papermc.paper.block.LidMode.FORCED_OPEN || apiLidMode == io.papermc.paper.block.LidMode.OPEN_UNTIL_VIEWED);
++        int trueOpenCount = this.openCount - (virtualViewerPresent ? 1 : 0);
++        if (trueOpenCount < 0) {
++            throw new IllegalStateException("trueOpenCount is negative: " + trueOpenCount + " openCount: " + openCount + " virtualViewerPresent: " + virtualViewerPresent);
++        }
++        return trueOpenCount > 0 ? io.papermc.paper.block.LidState.OPEN : io.papermc.paper.block.LidState.CLOSED;
++    }
++
++    public void incrementOpeners(@javax.annotation.Nullable Player player, Level world, BlockPos pos, BlockState state) { // Paper - make player nullable for New Lidded API
++        if (this.openCount == 0 && apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) {
++            apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++            stopForceLiddedLidClose(world, pos, state);
++        }
++        // Paper end - add Improved Lidded API
+         int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
+         int i = this.openCount++;
+-
++        if (apiLidMode == io.papermc.paper.block.LidMode.FORCED_CLOSED || apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) return; // Paper - add improved Lidded API
+         // CraftBukkit start - Call redstone event
+         if (world.getBlockState(pos).is(net.minecraft.world.level.block.Blocks.TRAPPED_CHEST)) {
+             int newPower = Math.max(0, Math.min(15, this.openCount));
+@@ -64,14 +118,30 @@ public abstract class ContainerOpenersCounter {
+         }
+ 
+         this.openerCountChanged(world, pos, state, i, this.openCount);
++        if (player != null) // Paper - make player nullable for improved Lidded API
+         this.maxInteractionRange = Math.max(player.blockInteractionRange(), this.maxInteractionRange);
++        // Paper start - add Improved Lidded API
++        if (player != null && apiLidMode == io.papermc.paper.block.LidMode.OPEN_UNTIL_VIEWED) {
++            // reset to default
++            apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++            stopForceLiddedLidOpen(world, pos, state);
++        }
++        // Paper end - add Improved Lidded API
+     }
+ 
+-    public void decrementOpeners(Player player, Level world, BlockPos pos, BlockState state) {
++    public void decrementOpeners(@javax.annotation.Nullable Player player, Level world, BlockPos pos, BlockState state) { // Paper - make player nullable for New Lidded API
+         int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
+         if (this.openCount == 0) return; // Paper - Prevent ContainerOpenersCounter openCount from going negative
+         int i = this.openCount--;
+-
++        // Paper start - add Improved Lidded API
++        if (apiLidMode == io.papermc.paper.block.LidMode.FORCED_CLOSED || apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) {
++            if (this.openCount == 0 && apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) {
++                apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++                stopForceLiddedLidClose(world, pos, state);
++            }
++        return;
++        }
++        // Paper end - add Improved Lidded API
+         // CraftBukkit start - Call redstone event
+         if (world.getBlockState(pos).is(net.minecraft.world.level.block.Blocks.TRAPPED_CHEST)) {
+             int newPower = Math.max(0, Math.min(15, this.openCount));
+@@ -109,9 +179,13 @@ public abstract class ContainerOpenersCounter {
+             entityhuman = (Player) iterator.next();
+         }
+ 
+-        int i = list.size();
+-        if (this.opened) i++; // CraftBukkit - add dummy count from API
+-        int j = this.openCount;
++        // Paper Start - Replace with add Improved Lidded API
++        boolean forceClosed = apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED || apiLidMode == io.papermc.paper.block.LidMode.FORCED_CLOSED;
++        boolean forceOpened = apiLidMode == io.papermc.paper.block.LidMode.OPEN_UNTIL_VIEWED || apiLidMode == io.papermc.paper.block.LidMode.FORCED_OPEN;
++        int i = forceClosed ? 0 : list.size() + (forceOpened ? 1 : 0);
++        // if (this.opened) i++; // CraftBukkit - add dummy count from API
++        int j = forceClosed ? 0 : this.openCount;
++        // Paper End - Replace with add Improved Lidded API
+ 
+         if (j != i) {
+             boolean flag = i != 0;
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java
+index 0d68db20f5fbe5e834f12c1e8fd429099a44e4b6..53a77dddfd6ae8b0cf102acd5a8e7679df500704 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/ShulkerBoxBlockEntity.java
+@@ -59,7 +59,7 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
+     // CraftBukkit start - add fields and methods
+     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
+     private int maxStack = MAX_STACK;
+-    public boolean opened;
++    // public boolean opened; // Paper - replace with new Lidded API
+ 
+     public List<ItemStack> getContents() {
+         return this.itemStacks;
+@@ -180,7 +180,7 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
+     @Override
+     public boolean triggerEvent(int type, int data) {
+         if (type == 1) {
+-            this.openCount = data;
++            if (apiLidMode != io.papermc.paper.block.LidMode.FORCED_CLOSED && apiLidMode != io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) this.openCount = data; // Paper - Skip Mutate when forced closed by lidded api
+             if (data == 0) {
+                 this.animationStatus = ShulkerBoxBlockEntity.AnimationStatus.CLOSING;
+             }
+@@ -200,20 +200,94 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
+         world.updateNeighborsAt(pos, state.getBlock());
+     }
+ 
++    // Paper start - add Improved Lidded API
++    private io.papermc.paper.block.LidMode apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++    public void startForceLiddedLidOpen() {
++        this.openCount++;
++        this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
++        if (this.openCount == 1) {
++            this.level.gameEvent(null, GameEvent.CONTAINER_OPEN, this.worldPosition);
++            this.level.playSound(null, this.worldPosition, SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, this.level.random.nextFloat() * 0.1F + 0.9F);
++        }
++    }
++    public void stopForceLiddedLidOpen() {
++        this.openCount--;
++        this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
++        if (this.openCount <= 0) {
++            this.level.gameEvent(null, GameEvent.CONTAINER_CLOSE, this.worldPosition);
++            this.level.playSound(null, this.worldPosition, SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, this.level.random.nextFloat() * 0.1F + 0.9F);
++        }
++        apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++    }
++    public void startForceLiddedLidClose() {
++        if (this.getTrueLidState() == io.papermc.paper.block.LidState.OPEN) {
++            this.level.gameEvent(null, GameEvent.CONTAINER_CLOSE, this.worldPosition);
++            this.level.playSound(null, this.worldPosition, SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, this.level.random.nextFloat() * 0.1F + 0.9F);
++        }
++        this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, 0);
++    }
++    public void stopForceLiddedLidClose() {
++        if (this.getTrueLidState() == io.papermc.paper.block.LidState.OPEN) {
++            this.level.gameEvent(null, GameEvent.CONTAINER_OPEN, this.worldPosition);
++            this.level.playSound(null, this.worldPosition, SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, this.level.random.nextFloat() * 0.1F + 0.9F);
++        }
++        this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
++    }
++    public io.papermc.paper.block.LidMode getLidMode() {
++        return apiLidMode;
++    }
++    public void setLidMode(final io.papermc.paper.block.LidMode lidMode) {
++        this.apiLidMode = lidMode;
++    }
++    public io.papermc.paper.block.LidState getEffectiveLidState() {
++        return switch (apiLidMode) {
++            case OPEN_UNTIL_VIEWED, FORCED_OPEN -> io.papermc.paper.block.LidState.OPEN;
++            case CLOSED_UNTIL_NOT_VIEWED, FORCED_CLOSED -> io.papermc.paper.block.LidState.CLOSED;
++            default -> getTrueLidState();
++        };
++    }
++    public io.papermc.paper.block.LidState getTrueLidState() {
++        boolean virtualViewerPresent = (apiLidMode == io.papermc.paper.block.LidMode.FORCED_OPEN || apiLidMode == io.papermc.paper.block.LidMode.OPEN_UNTIL_VIEWED);
++        int trueOpenCount = this.openCount - (virtualViewerPresent ? 1 : 0);
++        // ensure trueOpenCount is never negative, throw
++        if (trueOpenCount < 0) {
++            throw new IllegalStateException("trueOpenCount is negative: " + trueOpenCount + " openCount: " + openCount + " virtualViewerPresent: " + virtualViewerPresent);
++        }
++        return trueOpenCount > 0 ? io.papermc.paper.block.LidState.OPEN : io.papermc.paper.block.LidState.CLOSED;
++    }
++    // Paper end - add Improved Lidded API
+     @Override
+     public void startOpen(Player player) {
+         if (!this.remove && !player.isSpectator()) {
+             if (this.openCount < 0) {
+                 this.openCount = 0;
+             }
++            // Paper start - add Improved Lidded API
++            if (this.openCount == 0) {
++                if (apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) {
++                    apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++                    stopForceLiddedLidClose();
++                }
++            }
++            // Paper end - add Improved Lidded API
+ 
+             ++this.openCount;
+-            if (this.opened) return; // CraftBukkit - only animate if the ShulkerBox hasn't been forced open already by an API call.
++            // Paper start - replace with Improved Lidded API
++            //if (this.opened) return; // CraftBukkit - only animate if the ShulkerBox hasn't been forced open already by an API call.
++            if (this.apiLidMode == io.papermc.paper.block.LidMode.FORCED_CLOSED || this.apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) return;
++            // Paper end - replace with Improved Lidded API
+             this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
+             if (this.openCount == 1) {
+                 this.level.gameEvent((Entity) player, (Holder) GameEvent.CONTAINER_OPEN, this.worldPosition);
+                 this.level.playSound((Player) null, this.worldPosition, SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, this.level.random.nextFloat() * 0.1F + 0.9F);
+             }
++            // Paper start -
++            if (apiLidMode == io.papermc.paper.block.LidMode.OPEN_UNTIL_VIEWED) {
++            // reset to default
++            apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++            stopForceLiddedLidOpen();
++            }
++            // Paper end - add Improved Lidded API
+         }
+ 
+     }
+@@ -222,7 +296,17 @@ public class ShulkerBoxBlockEntity extends RandomizableContainerBlockEntity impl
+     public void stopOpen(Player player) {
+         if (!this.remove && !player.isSpectator()) {
+             --this.openCount;
+-            if (this.opened) return; // CraftBukkit - only animate if the ShulkerBox hasn't been forced open already by an API call.
++            // Paper start - add Improved Lidded API
++            // if (this.opened) return; // CraftBukkit - only animate if the ShulkerBox hasn't been forced open already by an API call.
++            if (this.apiLidMode == io.papermc.paper.block.LidMode.FORCED_CLOSED || this.apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) {
++                if (this.openCount <= 0 && this.apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) {
++                    this.openCount = 0;
++                    this.apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++                    this.stopForceLiddedLidClose();
++                }
++                return;
++            }
++            // Paper end - add Improved Lidded API
+             this.level.blockEvent(this.worldPosition, this.getBlockState().getBlock(), 1, this.openCount);
+             if (this.openCount <= 0) {
+                 this.level.gameEvent((Entity) player, (Holder) GameEvent.CONTAINER_CLOSE, this.worldPosition);
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBarrel.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBarrel.java
+index 6063f0e1fdc232d063105971359ae688168a2bc4..657184a1137d35ee57d3fe2c1b106a67cc88205a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftBarrel.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBarrel.java
+@@ -10,7 +10,7 @@ import org.bukkit.block.Barrel;
+ import org.bukkit.craftbukkit.inventory.CraftInventory;
+ import org.bukkit.inventory.Inventory;
+ 
+-public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Barrel {
++public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Barrel, io.papermc.paper.block.PaperLidded { // Paper - Add Improved Lidded Api
+ 
+     public CraftBarrel(World world, BarrelBlockEntity tileEntity) {
+         super(world, tileEntity);
+@@ -34,35 +34,37 @@ public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Bar
+         return new CraftInventory(this.getTileEntity());
+     }
+ 
+-    @Override
+-    public void open() {
+-        this.requirePlaced();
+-        if (!this.getTileEntity().openersCounter.opened) {
+-            BlockState blockData = this.getTileEntity().getBlockState();
+-            boolean open = blockData.getValue(BarrelBlock.OPEN);
+-
+-            if (!open) {
+-                this.getTileEntity().updateBlockState(blockData, true);
+-                if (this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
+-                    this.getTileEntity().playSound(blockData, SoundEvents.BARREL_OPEN);
+-                }
+-            }
+-        }
+-        this.getTileEntity().openersCounter.opened = true;
+-    }
+-
+-    @Override
+-    public void close() {
+-        this.requirePlaced();
+-        if (this.getTileEntity().openersCounter.opened) {
+-            BlockState blockData = this.getTileEntity().getBlockState();
+-            this.getTileEntity().updateBlockState(blockData, false);
+-            if (this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
+-                this.getTileEntity().playSound(blockData, SoundEvents.BARREL_CLOSE);
+-            }
+-        }
+-        this.getTileEntity().openersCounter.opened = false;
+-    }
++    // Paper start - Replace with Improved Lidded API
++    // @Override
++    // public void open() {
++    //     this.requirePlaced();
++    //     if (!this.getTileEntity().openersCounter.opened) {
++    //         BlockState blockData = this.getTileEntity().getBlockState();
++    //         boolean open = blockData.getValue(BarrelBlock.OPEN);
++    //
++    //         if (!open) {
++    //             this.getTileEntity().updateBlockState(blockData, true);
++    //             if (this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
++    //                 this.getTileEntity().playSound(blockData, SoundEvents.BARREL_OPEN);
++    //             }
++    //         }
++    //     }
++    //     this.getTileEntity().openersCounter.opened = true;
++    // }
++    //
++    // @Override
++    // public void close() {
++    //     this.requirePlaced();
++    //     if (this.getTileEntity().openersCounter.opened) {
++    //         BlockState blockData = this.getTileEntity().getBlockState();
++    //         this.getTileEntity().updateBlockState(blockData, false);
++    //         if (this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
++    //             this.getTileEntity().playSound(blockData, SoundEvents.BARREL_CLOSE);
++    //         }
++    //     }
++    //     this.getTileEntity().openersCounter.opened = false;
++    // }
++    // Paper end - Replace with Improved Lidded API
+ 
+     @Override
+     public CraftBarrel copy() {
+@@ -75,9 +77,56 @@ public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Bar
+     }
+ 
+     // Paper start - More Lidded Block API
++    // Paper start - Replace with Improved Lidded API
++    // @Override
++    // public boolean isOpen() {
++    //     return getTileEntity().openersCounter.opened;
++    // }
++    // Paper end - Replace with Improved Lidded API
++    // Paper end - More Lidded Block API
++
++    // Paper start - add Improved Lidded API
+     @Override
+-    public boolean isOpen() {
+-        return getTileEntity().openersCounter.opened;
++    public void startForceLiddedLidOpen() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.startForceLiddedLidOpen(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
+     }
+-    // Paper end - More Lidded Block API
++    @Override
++    public void stopForceLiddedLidOpen() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.stopForceLiddedLidOpen(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
++    }
++    @Override
++    public void startForceLiddedLidClose() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.startForceLiddedLidClose(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
++    }
++    @Override
++    public void stopForceLiddedLidClose() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.stopForceLiddedLidClose(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
++    }
++    @Override
++    public io.papermc.paper.block.LidState getEffectiveLidState() {
++        this.requirePlaced();
++        return this.getTileEntity().openersCounter.getEffectiveLidState();
++    }
++    @Override
++    public io.papermc.paper.block.LidState getTrueLidState() {
++        this.requirePlaced();
++        return this.getTileEntity().openersCounter.getTrueLidState();
++    }
++    @Override
++    public io.papermc.paper.block.LidMode getLidMode() {
++        this.requirePlaced();
++        return this.getTileEntity().openersCounter.getLidMode();
++    }
++    @Override
++    public io.papermc.paper.block.LidMode setLidMode(final io.papermc.paper.block.LidMode targetLidMode) {
++        this.requirePlaced();
++        io.papermc.paper.block.LidMode newEffectiveMode = io.papermc.paper.block.PaperLidded.super.setLidMode(targetLidMode);
++        this.getTileEntity().openersCounter.setLidMode(newEffectiveMode);
++        return newEffectiveMode;
++    }
++    // Paper end - add Improved Lidded API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
+index cc7bf4d39b834fba472bc163226a01a0cd4b6010..63909cc516dd991c508ba5fb97a4539277aa86ad 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftChest.java
+@@ -14,7 +14,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
+ import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
+ import org.bukkit.inventory.Inventory;
+ 
+-public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest {
++public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest, io.papermc.paper.block.PaperLidded { // Paper - Add Improved Lidded Api
+ 
+     public CraftChest(World world, ChestBlockEntity tileEntity) {
+         super(world, tileEntity);
+@@ -57,31 +57,33 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
+         return inventory;
+     }
+ 
+-    @Override
+-    public void open() {
+-        this.requirePlaced();
+-        if (!this.getTileEntity().openersCounter.opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
+-            BlockState block = this.getTileEntity().getBlockState();
+-            int openCount = this.getTileEntity().openersCounter.getOpenerCount();
+-
+-            this.getTileEntity().openersCounter.onAPIOpen((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block);
+-            this.getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block, openCount, openCount + 1);
+-        }
+-        this.getTileEntity().openersCounter.opened = true;
+-    }
+-
+-    @Override
+-    public void close() {
+-        this.requirePlaced();
+-        if (this.getTileEntity().openersCounter.opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
+-            BlockState block = this.getTileEntity().getBlockState();
+-            int openCount = this.getTileEntity().openersCounter.getOpenerCount();
+-
+-            this.getTileEntity().openersCounter.onAPIClose((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block);
+-            this.getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block, openCount, 0);
+-        }
+-        this.getTileEntity().openersCounter.opened = false;
+-    }
++    // Paper start - Replace with Improved Lidded API
++    // @Override
++    // public void open() {
++    //     this.requirePlaced();
++    //     if (!this.getTileEntity().openersCounter.opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
++    //         BlockState block = this.getTileEntity().getBlockState();
++    //         int openCount = this.getTileEntity().openersCounter.getOpenerCount();
++    //
++    //         this.getTileEntity().openersCounter.onAPIOpen((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block);
++    //         this.getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block, openCount, openCount + 1);
++    //     }
++    //     this.getTileEntity().openersCounter.opened = true;
++    // }
++    //
++    // @Override
++    // public void close() {
++    //     this.requirePlaced();
++    //     if (this.getTileEntity().openersCounter.opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
++    //         BlockState block = this.getTileEntity().getBlockState();
++    //         int openCount = this.getTileEntity().openersCounter.getOpenerCount();
++    //
++    //         this.getTileEntity().openersCounter.onAPIClose((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block);
++    //         this.getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block, openCount, 0);
++    //     }
++    //     this.getTileEntity().openersCounter.opened = false;
++    // }
++    // Paper end - Replace with Improved Lidded API
+ 
+     @Override
+     public CraftChest copy() {
+@@ -94,10 +96,12 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
+     }
+ 
+     // Paper start - More Lidded Block API
+-    @Override
+-    public boolean isOpen() {
+-        return getTileEntity().openersCounter.opened;
+-    }
++    // Paper start - Replace with Improved Lidded API
++    // @Override
++    // public boolean isOpen() {
++    //     return getTileEntity().openersCounter.opened;
++    // }
++    // Paper end - Replace with Improved Lidded API
+     // Paper end - More Lidded Block API
+ 
+     // Paper start - More Chest Block API
+@@ -124,4 +128,49 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
+             && ChestBlock.isChestBlockedAt(world, neighbourBlockPos);
+     }
+     // Paper end - More Chest Block API
++
++    // Paper start - add Improved Lidded API
++    @Override
++    public void startForceLiddedLidOpen() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.startForceLiddedLidOpen(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
++    }
++    @Override
++    public void stopForceLiddedLidOpen() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.stopForceLiddedLidOpen(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
++    }
++    @Override
++    public void startForceLiddedLidClose() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.startForceLiddedLidClose(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
++    }
++    @Override
++    public void stopForceLiddedLidClose() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.stopForceLiddedLidClose(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
++    }
++    @Override
++    public io.papermc.paper.block.LidState getEffectiveLidState() {
++        this.requirePlaced();
++        return this.getTileEntity().openersCounter.getEffectiveLidState();
++    }
++    @Override
++    public io.papermc.paper.block.LidState getTrueLidState() {
++        this.requirePlaced();
++        return this.getTileEntity().openersCounter.getTrueLidState();
++    }
++    @Override
++    public io.papermc.paper.block.LidMode getLidMode() {
++        this.requirePlaced();
++        return this.getTileEntity().openersCounter.getLidMode();
++    }
++    @Override
++    public io.papermc.paper.block.LidMode setLidMode(final io.papermc.paper.block.LidMode targetLidMode) {
++        this.requirePlaced();
++        io.papermc.paper.block.LidMode newEffectiveMode = io.papermc.paper.block.PaperLidded.super.setLidMode(targetLidMode);
++        this.getTileEntity().openersCounter.setLidMode(newEffectiveMode);
++        return newEffectiveMode;
++    }
++    // Paper end - add Improved Lidded API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java b/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java
+index f45ee675a10729845bf376fa95e648b23b9aac12..40cd86856105c054f5debd0eae5e7cecc46f9cf6 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftEnderChest.java
+@@ -6,7 +6,7 @@ import org.bukkit.Location;
+ import org.bukkit.World;
+ import org.bukkit.block.EnderChest;
+ 
+-public class CraftEnderChest extends CraftBlockEntityState<EnderChestBlockEntity> implements EnderChest {
++public class CraftEnderChest extends CraftBlockEntityState<EnderChestBlockEntity> implements EnderChest, io.papermc.paper.block.PaperLidded { // Paper - Add Improved Lidded Api
+ 
+     public CraftEnderChest(World world, EnderChestBlockEntity tileEntity) {
+         super(world, tileEntity);
+@@ -16,31 +16,33 @@ public class CraftEnderChest extends CraftBlockEntityState<EnderChestBlockEntity
+         super(state, location);
+     }
+ 
+-    @Override
+-    public void open() {
+-        this.requirePlaced();
+-        if (!this.getTileEntity().openersCounter.opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
+-            BlockState block = this.getTileEntity().getBlockState();
+-            int openCount = this.getTileEntity().openersCounter.getOpenerCount();
+-
+-            this.getTileEntity().openersCounter.onAPIOpen((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block);
+-            this.getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block, openCount, openCount + 1);
+-        }
+-        this.getTileEntity().openersCounter.opened = true;
+-    }
+-
+-    @Override
+-    public void close() {
+-        this.requirePlaced();
+-        if (this.getTileEntity().openersCounter.opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
+-            BlockState block = this.getTileEntity().getBlockState();
+-            int openCount = this.getTileEntity().openersCounter.getOpenerCount();
+-
+-            this.getTileEntity().openersCounter.onAPIClose((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block);
+-            this.getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block, openCount, 0);
+-        }
+-        this.getTileEntity().openersCounter.opened = false;
+-    }
++    // Paper start - Replace with Improved Lidded API
++    // @Override
++    // public void open() {
++    //     this.requirePlaced();
++    //     if (!this.getTileEntity().openersCounter.opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
++    //         BlockState block = this.getTileEntity().getBlockState();
++    //         int openCount = this.getTileEntity().openersCounter.getOpenerCount();
++    //
++    //         this.getTileEntity().openersCounter.onAPIOpen((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block);
++    //         this.getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block, openCount, openCount + 1);
++    //     }
++    //     this.getTileEntity().openersCounter.opened = true;
++    // }
++    //
++    // @Override
++    // public void close() {
++    //     this.requirePlaced();
++    //     if (this.getTileEntity().openersCounter.opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
++    //         BlockState block = this.getTileEntity().getBlockState();
++    //         int openCount = this.getTileEntity().openersCounter.getOpenerCount();
++    //
++    //         this.getTileEntity().openersCounter.onAPIClose((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block);
++    //         this.getTileEntity().openersCounter.openerAPICountChanged((net.minecraft.world.level.Level) this.getWorldHandle(), this.getPosition(), block, openCount, 0);
++    //     }
++    //     this.getTileEntity().openersCounter.opened = false;
++    // }
++    // Paper end - Replace with Improved Lidded API
+ 
+     @Override
+     public CraftEnderChest copy() {
+@@ -53,10 +55,12 @@ public class CraftEnderChest extends CraftBlockEntityState<EnderChestBlockEntity
+     }
+ 
+     // Paper start - More Lidded Block API
+-    @Override
+-    public boolean isOpen() {
+-        return getTileEntity().openersCounter.opened;
+-    }
++    // Paper start - Replace with Improved Lidded API
++    // @Override
++    // public boolean isOpen() {
++    //     return getTileEntity().openersCounter.opened;
++    // }
++    // Paper end - Replace with Improved Lidded API
+     // Paper end - More Lidded Block API
+ 
+     // Paper start - More Chest Block API
+@@ -67,4 +71,49 @@ public class CraftEnderChest extends CraftBlockEntityState<EnderChestBlockEntity
+         return this.isPlaced() && this.getWorldHandle().getBlockState(abovePos).isRedstoneConductor(this.getWorldHandle(), abovePos);
+     }
+     // Paper end - More Chest Block API
++
++    // Paper start - add Improved Lidded API
++    @Override
++    public void startForceLiddedLidOpen() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.startForceLiddedLidOpen(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
++    }
++    @Override
++    public void stopForceLiddedLidOpen() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.stopForceLiddedLidOpen(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
++    }
++    @Override
++    public void startForceLiddedLidClose() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.startForceLiddedLidClose(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
++    }
++    @Override
++    public void stopForceLiddedLidClose() {
++        this.requirePlaced();
++        this.getTileEntity().openersCounter.stopForceLiddedLidClose(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
++    }
++    @Override
++    public io.papermc.paper.block.LidState getEffectiveLidState() {
++        this.requirePlaced();
++        return this.getTileEntity().openersCounter.getEffectiveLidState();
++    }
++    @Override
++    public io.papermc.paper.block.LidState getTrueLidState() {
++        this.requirePlaced();
++        return this.getTileEntity().openersCounter.getTrueLidState();
++    }
++    @Override
++    public io.papermc.paper.block.LidMode getLidMode() {
++        this.requirePlaced();
++        return this.getTileEntity().openersCounter.getLidMode();
++    }
++    @Override
++    public io.papermc.paper.block.LidMode setLidMode(final io.papermc.paper.block.LidMode targetLidMode) {
++        this.requirePlaced();
++        io.papermc.paper.block.LidMode newEffectiveMode = io.papermc.paper.block.PaperLidded.super.setLidMode(targetLidMode);
++        this.getTileEntity().openersCounter.setLidMode(newEffectiveMode);
++        return newEffectiveMode;
++    }
++    // Paper end - add Improved Lidded API
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java b/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java
+index f7b199fbc7a740de3ee6952ce12ef2c35f057d7a..ee3acbbf3751a21555ebbacae8e2916e7712b684 100644
+--- a/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java
++++ b/src/main/java/org/bukkit/craftbukkit/block/CraftShulkerBox.java
+@@ -11,7 +11,7 @@ import org.bukkit.block.ShulkerBox;
+ import org.bukkit.craftbukkit.inventory.CraftInventory;
+ import org.bukkit.inventory.Inventory;
+ 
+-public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implements ShulkerBox {
++public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implements ShulkerBox, io.papermc.paper.block.PaperLidded { // Paper - Add Improved Lidded Api
+ 
+     public CraftShulkerBox(World world, ShulkerBoxBlockEntity tileEntity) {
+         super(world, tileEntity);
+@@ -42,27 +42,29 @@ public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implem
+         return (color == null) ? null : DyeColor.getByWoolData((byte) color.getId());
+     }
+ 
+-    @Override
+-    public void open() {
+-        this.requirePlaced();
+-        if (!this.getTileEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
+-            net.minecraft.world.level.Level world = this.getTileEntity().getLevel();
+-            world.blockEvent(this.getPosition(), this.getTileEntity().getBlockState().getBlock(), 1, 1);
+-            world.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
+-        }
+-        this.getTileEntity().opened = true;
+-    }
+-
+-    @Override
+-    public void close() {
+-        this.requirePlaced();
+-        if (this.getTileEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
+-            net.minecraft.world.level.Level world = this.getTileEntity().getLevel();
+-            world.blockEvent(this.getPosition(), this.getTileEntity().getBlockState().getBlock(), 1, 0);
+-            world.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F); // Paper - More Lidded Block API (Wrong sound)
+-        }
+-        this.getTileEntity().opened = false;
+-    }
++    // Paper start - Replace with Improved Lidded API
++    // @Override
++    // public void open() {
++    //     this.requirePlaced();
++    //     if (!this.getTileEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
++    //         net.minecraft.world.level.Level world = this.getTileEntity().getLevel();
++    //         world.blockEvent(this.getPosition(), this.getTileEntity().getBlockState().getBlock(), 1, 1);
++    //         world.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
++    //     }
++    //     this.getTileEntity().opened = true;
++    // }
++    //
++    // @Override
++    // public void close() {
++    //     this.requirePlaced();
++    //     if (this.getTileEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
++    //         net.minecraft.world.level.Level world = this.getTileEntity().getLevel();
++    //         world.blockEvent(this.getPosition(), this.getTileEntity().getBlockState().getBlock(), 1, 0);
++    //         world.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F); // Paper - More Lidded Block API (Wrong sound)
++    //     }
++    //     this.getTileEntity().opened = false;
++    // }
++    // Paper end - Replace with Improved Lidded API
+ 
+     @Override
+     public CraftShulkerBox copy() {
+@@ -75,9 +77,56 @@ public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implem
+     }
+ 
+     // Paper start - More Lidded Block API
++    // Paper start - Replace with Improved Lidded API
++    // @Override
++    // public boolean isOpen() {
++    //     return getTileEntity().opened;
++    // }
++    // Paper end - Replace with Improved Lidded API
++    // Paper end - More Lidded Block API
++
++    // Paper start - add Improved Lidded API
+     @Override
+-    public boolean isOpen() {
+-        return getTileEntity().opened;
++    public void startForceLiddedLidOpen() {
++        this.requirePlaced();
++        this.getTileEntity().startForceLiddedLidOpen();
+     }
+-    // Paper end - More Lidded Block API
++    @Override
++    public void stopForceLiddedLidOpen() {
++        this.requirePlaced();
++        this.getTileEntity().stopForceLiddedLidOpen();
++    }
++    @Override
++    public void startForceLiddedLidClose() {
++        this.requirePlaced();
++        this.getTileEntity().startForceLiddedLidClose();
++    }
++    @Override
++    public void stopForceLiddedLidClose() {
++        this.requirePlaced();
++        this.getTileEntity().stopForceLiddedLidClose();
++    }
++    @Override
++    public io.papermc.paper.block.LidState getEffectiveLidState() {
++        this.requirePlaced();
++        return this.getTileEntity().getEffectiveLidState();
++    }
++    @Override
++    public io.papermc.paper.block.LidState getTrueLidState() {
++        this.requirePlaced();
++        return this.getTileEntity().getTrueLidState();
++    }
++    @Override
++    public io.papermc.paper.block.LidMode getLidMode() {
++        this.requirePlaced();
++        return this.getTileEntity().getLidMode();
++    }
++    @Override
++    public io.papermc.paper.block.LidMode setLidMode(final io.papermc.paper.block.LidMode targetLidMode) {
++        this.requirePlaced();
++        io.papermc.paper.block.LidMode newEffectiveMode = io.papermc.paper.block.PaperLidded.super.setLidMode(targetLidMode);
++        this.getTileEntity().setLidMode(newEffectiveMode);
++        return newEffectiveMode;
++    }
++    // Paper end - add Improved Lidded API
+ }
