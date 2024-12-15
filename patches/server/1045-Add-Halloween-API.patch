@@ -1,0 +1,109 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: SoSeDiK <mrsosedik@gmail.com>
+Date: Wed, 1 May 2024 16:26:13 +0300
+Subject: [PATCH] Add Halloween API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ambient/Bat.java b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+index dc27ddf5131e7398a5390a5187261d4c7fb6ccaa..8eef60c1a3e6376955fde95a75a888b0b2028d77 100644
+--- a/src/main/java/net/minecraft/world/entity/ambient/Bat.java
++++ b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+@@ -240,11 +240,7 @@ public class Bat extends AmbientCreature {
+     }
+ 
+     private static boolean isHalloween() {
+-        LocalDate localdate = LocalDate.now();
+-        int i = localdate.get(ChronoField.DAY_OF_MONTH);
+-        int j = localdate.get(ChronoField.MONTH_OF_YEAR);
+-
+-        return j == 10 && i >= 20 || j == 11 && i <= 3;
++        return org.bukkit.Bukkit.isHalloweenSeason(); // Paper - Add Halloween API
+     }
+ 
+     private void setupAnimationStates() {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index 0c5fe46d2da113beff3e220843593d616e37d4ca..f370aaff2e7f6cba19ede5cc624b351f6dcc338a 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -153,11 +153,7 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+         this.reassessWeaponGoal();
+         this.setCanPickUpLoot(this.level().paperConfig().entities.behavior.mobsCanAlwaysPickUpLoot.skeletons || randomsource.nextFloat() < 0.55F * difficulty.getSpecialMultiplier()); // Paper - Add world settings for mobs picking up loot
+         if (this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
+-            LocalDate localdate = LocalDate.now();
+-            int i = localdate.get(ChronoField.DAY_OF_MONTH);
+-            int j = localdate.get(ChronoField.MONTH_OF_YEAR);
+-
+-            if (j == 10 && i == 31 && randomsource.nextFloat() < 0.25F) {
++            if (org.bukkit.Bukkit.isHalloweenDay() && randomsource.nextFloat() < 0.25F) { // Paper - Add Halloween API
+                 this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(randomsource.nextFloat() < 0.1F ? Blocks.JACK_O_LANTERN : Blocks.CARVED_PUMPKIN));
+                 this.armorDropChances[EquipmentSlot.HEAD.getIndex()] = 0.0F;
+             }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index e42dfc62bb179be1ab01b0096c05c6549d38abbc..9bb42bee96cd4853a03230556b9ed35eb5eab8b4 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -541,11 +541,7 @@ public class Zombie extends Monster {
+         }
+ 
+         if (this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
+-            LocalDate localdate = LocalDate.now();
+-            int i = localdate.get(ChronoField.DAY_OF_MONTH);
+-            int j = localdate.get(ChronoField.MONTH_OF_YEAR);
+-
+-            if (j == 10 && i == 31 && randomsource.nextFloat() < 0.25F) {
++            if (org.bukkit.Bukkit.isHalloweenDay() && randomsource.nextFloat() < 0.25F) { // Paper - Add Halloween API
+                 this.setItemSlot(EquipmentSlot.HEAD, new ItemStack(randomsource.nextFloat() < 0.1F ? Blocks.JACK_O_LANTERN : Blocks.CARVED_PUMPKIN));
+                 this.armorDropChances[EquipmentSlot.HEAD.getIndex()] = 0.0F;
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 05e304f9fc8d0291fa779da589bd060ef4165b49..2c0bc756e11be0130a8a90a4b6124bcc38cf449d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -309,6 +309,8 @@ public final class CraftServer implements Server {
+     public static Exception excessiveVelEx; // Paper - Velocity warnings
+     private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
+     private final io.papermc.paper.potion.PaperPotionBrewer potionBrewer; // Paper - Custom Potion Mixes
++    private net.kyori.adventure.util.TriState halloweenSeason = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Add Halloween API
++    private net.kyori.adventure.util.TriState halloweenDay = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Add Halloween API
+ 
+     // Paper start - Folia region threading API
+     private final io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler regionizedScheduler = new io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler();
+@@ -3278,4 +3280,38 @@ public final class CraftServer implements Server {
+         return this.potionBrewer;
+     }
+     // Paper end
++
++    // Paper start - Add Halloween API
++    @Override
++    public boolean isHalloweenSeason() {
++        if (this.halloweenSeason != net.kyori.adventure.util.TriState.NOT_SET) {
++            return this.halloweenSeason.toBooleanOrElse(false);
++        }
++        java.time.LocalDate localdate = java.time.LocalDate.now();
++        int day = localdate.getDayOfMonth();
++        int month = localdate.getMonthValue();
++        return month == 10 && day >= 20 || month == 11 && day <= 3;
++    }
++
++    @Override
++    public boolean isHalloweenDay() {
++        if (this.halloweenDay != net.kyori.adventure.util.TriState.NOT_SET) {
++            return this.halloweenDay.toBooleanOrElse(false);
++        }
++        java.time.LocalDate localdate = java.time.LocalDate.now();
++        return localdate.getMonthValue() == 10 && localdate.getDayOfMonth() == 31;
++    }
++
++    @Override
++    public void setHalloweenSeason(net.kyori.adventure.util.TriState state) {
++        java.util.Objects.requireNonNull(state, "state may not be null");
++        this.halloweenSeason = state;
++    }
++
++    @Override
++    public void setHalloweenDay(net.kyori.adventure.util.TriState state) {
++        java.util.Objects.requireNonNull(state, "state may not be null");
++        this.halloweenDay = state;
++    }
++    // Paper end - Add Halloween API
+ }
