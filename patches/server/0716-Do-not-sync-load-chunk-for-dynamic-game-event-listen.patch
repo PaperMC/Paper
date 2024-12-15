@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Spottedleaf <Spottedleaf@users.noreply.github.com>
+Date: Sun, 3 Jul 2022 22:31:37 -0700
+Subject: [PATCH] Do not sync load chunk for dynamic game event listener
+ registration
+
+These can be called while an entity is being added to the world,
+and if the entity is being added from a chunk load context the
+sync load will block indefinitely (because the chunk load context
+is for completing the chunk to FULL).
+
+This does raise questions about the current system for these
+dynamic registrations, as it looks like there is _zero_ logic
+to account for the case where the chunk is _not_ currently loaded
+and then later loaded.
+
+diff --git a/src/main/java/net/minecraft/world/level/gameevent/DynamicGameEventListener.java b/src/main/java/net/minecraft/world/level/gameevent/DynamicGameEventListener.java
+index af9437bddf69546a1a78eca7e858ac8d2e68ed0a..134b4ceec0ec5a2475881e739d6579fa5984c3dd 100644
+--- a/src/main/java/net/minecraft/world/level/gameevent/DynamicGameEventListener.java
++++ b/src/main/java/net/minecraft/world/level/gameevent/DynamicGameEventListener.java
+@@ -41,7 +41,7 @@ public class DynamicGameEventListener<T extends GameEventListener> {
+ 
+     private static void ifChunkExists(LevelReader world, @Nullable SectionPos sectionPos, Consumer<GameEventListenerRegistry> dispatcherConsumer) {
+         if (sectionPos != null) {
+-            ChunkAccess chunkAccess = world.getChunk(sectionPos.x(), sectionPos.z(), ChunkStatus.FULL, false);
++            ChunkAccess chunkAccess = world.getChunkIfLoadedImmediately(sectionPos.getX(), sectionPos.getZ()); // Paper - Perf: can cause sync loads while completing a chunk, resulting in deadlock
+             if (chunkAccess != null) {
+                 dispatcherConsumer.accept(chunkAccess.getListenerRegistry(sectionPos.y()));
+             }

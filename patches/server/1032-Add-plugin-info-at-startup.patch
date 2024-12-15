@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Thu, 18 Jul 2024 18:44:28 -0700
+Subject: [PATCH] Add plugin info at startup
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
+index 49d8e207795997e5deaf830eb971067f84bfc791..70413fddd23ca1165cb5090cce4fddcb1bbca93f 100644
+--- a/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
++++ b/src/main/java/io/papermc/paper/plugin/PluginInitializerManager.java
+@@ -6,7 +6,10 @@ import io.papermc.paper.plugin.entrypoint.Entrypoint;
+ import io.papermc.paper.plugin.entrypoint.LaunchEntryPointHandler;
+ import io.papermc.paper.plugin.provider.PluginProvider;
+ import io.papermc.paper.plugin.provider.type.paper.PaperPluginParent;
++import io.papermc.paper.plugin.provider.type.spigot.SpigotPluginProvider;
+ import io.papermc.paper.pluginremap.PluginRemapper;
++import java.util.Set;
++import java.util.TreeSet;
+ import java.util.function.Function;
+ import joptsimple.OptionSet;
+ import net.minecraft.server.dedicated.DedicatedServer;
+@@ -101,6 +104,7 @@ public class PluginInitializerManager {
+     }
+ 
+     public static void load(OptionSet optionSet) throws Exception {
++        LOGGER.info("Initializing plugins...");
+         // We have to load the bukkit configuration inorder to get the update folder location.
+         io.papermc.paper.plugin.PluginInitializerManager pluginSystem = io.papermc.paper.plugin.PluginInitializerManager.init(optionSet);
+         if (pluginSystem.pluginRemapper != null) pluginSystem.pluginRemapper.loadingPlugins();
+@@ -112,6 +116,34 @@ public class PluginInitializerManager {
+         @SuppressWarnings("unchecked")
+         java.util.List<Path> files = ((java.util.List<File>) optionSet.valuesOf("add-plugin")).stream().map(File::toPath).toList();
+         io.papermc.paper.plugin.util.EntrypointUtil.registerProvidersFromSource(io.papermc.paper.plugin.provider.source.PluginFlagProviderSource.INSTANCE, files);
++
++        final Set<String> paperPluginNames = new TreeSet<>();
++        final Set<String> legacyPluginNames = new TreeSet<>();
++        LaunchEntryPointHandler.INSTANCE.getStorage().forEach((entrypoint, providerStorage) -> {
++            providerStorage.getRegisteredProviders().forEach(provider -> {
++                if (provider instanceof final SpigotPluginProvider legacy) {
++                    legacyPluginNames.add(String.format("%s (%s)", legacy.getMeta().getName(), legacy.getMeta().getVersion()));
++                } else if (provider instanceof final PaperPluginParent.PaperServerPluginProvider paper) {
++                    paperPluginNames.add(String.format("%s (%s)", provider.getMeta().getName(), provider.getMeta().getVersion()));
++                }
++            });
++        });
++        final int total = paperPluginNames.size() + legacyPluginNames.size();
++        LOGGER.info("Initialized {} plugin{}", total, total == 1 ? "" : "s");
++        if (!paperPluginNames.isEmpty()) {
++            if (LOGGER.isDebugEnabled()) {
++                LOGGER.info("Paper plugins ({}):\n - {}", paperPluginNames.size(), String.join("\n - ", paperPluginNames));
++            } else {
++                LOGGER.info("Paper plugins ({}):\n - {}", paperPluginNames.size(), String.join(", ", paperPluginNames));
++            }
++        }
++        if (!legacyPluginNames.isEmpty()) {
++            if (LOGGER.isDebugEnabled()) {
++                LOGGER.info("Bukkit plugins ({}):\n - {}", legacyPluginNames.size(), String.join("\n - ", legacyPluginNames));
++            } else {
++                LOGGER.info("Bukkit plugins ({}):\n - {}", legacyPluginNames.size(), String.join(", ", legacyPluginNames));
++            }
++        }
+     }
+ 
+     // This will be the end of me...

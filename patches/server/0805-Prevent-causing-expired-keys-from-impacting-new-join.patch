@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Mon, 3 Apr 2023 08:55:52 +0100
+Subject: [PATCH] Prevent causing expired keys from impacting new joins
+
+
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+index 68c062cbaa030d62d97c9c003651f8fc17a00a6b..6247a21c9c391abf1f6db3482c659593e4f29355 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundPlayerInfoUpdatePacket.java
+@@ -113,7 +113,15 @@ public class ClientboundPlayerInfoUpdatePacket implements Packet<ClientGamePacke
+         }),
+         INITIALIZE_CHAT(
+             (serialized, buf) -> serialized.chatSession = buf.readNullable(RemoteChatSession.Data::read),
+-            (buf, entry) -> buf.writeNullable(entry.chatSession, RemoteChatSession.Data::write)
++            // Paper start - Prevent causing expired keys from impacting new joins
++            (buf, entry) -> {
++                RemoteChatSession.Data chatSession = entry.chatSession;
++                if (chatSession != null && chatSession.profilePublicKey().hasExpired()) {
++                    chatSession = null;
++                }
++                buf.writeNullable(chatSession, RemoteChatSession.Data::write);
++            }
++            // Paper end - Prevent causing expired keys from impacting new joins
+         ),
+         UPDATE_GAME_MODE((serialized, buf) -> serialized.gameMode = GameType.byId(buf.readVarInt()), (buf, entry) -> buf.writeVarInt(entry.gameMode().getId())),
+         UPDATE_LISTED((serialized, buf) -> serialized.listed = buf.readBoolean(), (buf, entry) -> buf.writeBoolean(entry.listed())),
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 5a710de60a57c8af4eb083e17f03e801858dc2d9..db9c04d74475e00983cc9df74d615e4b68f83688 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -295,6 +295,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+     private int knownMovePacketCount;
+     @Nullable
+     private RemoteChatSession chatSession;
++    private boolean hasLoggedExpiry = false; // Paper - Prevent causing expired keys from impacting new joins
+     private SignedMessageChain.Decoder signedMessageDecoder;
+     private final LastSeenMessagesValidator lastSeenMessages = new LastSeenMessagesValidator(20);
+     private final MessageSignatureCache messageSignatureCache = MessageSignatureCache.createDefault();
+@@ -402,6 +403,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+             this.disconnect((Component) Component.translatable("multiplayer.disconnect.idling"), org.bukkit.event.player.PlayerKickEvent.Cause.IDLING); // Paper - kick event cause
+         }
+ 
++        // Paper start - Prevent causing expired keys from impacting new joins
++        if (!hasLoggedExpiry && this.chatSession != null && this.chatSession.profilePublicKey().data().hasExpired()) {
++            LOGGER.info("Player profile key for {} has expired!", this.player.getName().getString());
++            hasLoggedExpiry = true;
++        }
++        // Paper end - Prevent causing expired keys from impacting new joins
++
+     }
+ 
+     private int getMaximumFlyingTicks(Entity vehicle) {
+@@ -3434,6 +3442,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+ 
+     private void resetPlayerChatState(RemoteChatSession session) {
+         this.chatSession = session;
++        this.hasLoggedExpiry = false; // Paper - Prevent causing expired keys from impacting new joins
+         this.signedMessageDecoder = session.createMessageDecoder(this.player.getUUID());
+         this.chatMessageChain.append(() -> {
+             this.player.setChatSession(session);
