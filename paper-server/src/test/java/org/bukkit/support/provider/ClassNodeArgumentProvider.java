@@ -44,8 +44,6 @@ public class ClassNodeArgumentProvider implements ArgumentsProvider, AnnotationC
             newValues[i] = switch (this.classTypes[i]) {
                 case BUKKIT -> ClassReaderTest.ClassType.BUKKIT;
                 case CRAFT_BUKKIT -> ClassReaderTest.ClassType.CRAFT_BUKKIT;
-                case MINECRAFT_UNMODIFIED -> ClassReaderTest.ClassType.MINECRAFT_UNMODIFIED;
-                case MINECRAFT_MODIFIED -> ClassReaderTest.ClassType.MINECRAFT_MODIFIED;
             };
         }
 

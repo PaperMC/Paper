@@ -14,7 +14,7 @@ import org.junit.jupiter.params.provider.ArgumentsSource;
 @ParameterizedTest
 public @interface ClassReaderTest {
 
-    ClassType[] value() default {ClassType.BUKKIT, ClassType.CRAFT_BUKKIT, ClassType.MINECRAFT_UNMODIFIED, ClassType.MINECRAFT_MODIFIED};
+    ClassType[] value() default {ClassType.BUKKIT, ClassType.CRAFT_BUKKIT};
 
     Class<?>[] excludedClasses() default {};
 
@@ -23,7 +23,5 @@ public @interface ClassReaderTest {
     enum ClassType {
         BUKKIT,
         CRAFT_BUKKIT,
-        MINECRAFT_UNMODIFIED,
-        MINECRAFT_MODIFIED,
     }
 }

@@ -18,7 +18,7 @@ import org.objectweb.asm.tree.MethodNode;
 @Normal
 public class EntityRemoveEventTest {
 
-    @ClassNodeTest(value = {ClassNodeTest.ClassType.CRAFT_BUKKIT, ClassNodeTest.ClassType.MINECRAFT_MODIFIED, ClassNodeTest.ClassType.MINECRAFT_UNMODIFIED},
+    @ClassNodeTest(value = ClassNodeTest.ClassType.CRAFT_BUKKIT,
             excludedClasses = EntityAccess.class,
             excludedPackages = "net/minecraft/gametest/framework")
     public void testForMissing(ClassNode classNode) throws ClassNotFoundException {
