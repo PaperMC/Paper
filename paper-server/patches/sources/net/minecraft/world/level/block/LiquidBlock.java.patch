@@ -1,0 +1,67 @@
+--- a/net/minecraft/world/level/block/LiquidBlock.java
++++ b/net/minecraft/world/level/block/LiquidBlock.java
+@@ -135,9 +_,28 @@
+     @Override
+     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+         if (this.shouldSpreadLiquid(level, pos, state)) {
+-            level.scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay(level));
+-        }
+-    }
++            level.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(level, pos)); // Paper - Configurable speed for water flowing over lava
++        }
++    }
++    // Paper start - Configurable speed for water flowing over lava
++    public int getFlowSpeed(Level world, BlockPos blockposition) {
++        if (net.minecraft.core.registries.BuiltInRegistries.FLUID.wrapAsHolder(this.fluid).is(FluidTags.WATER)) {
++            if (
++                isLava(world, blockposition.north(1)) ||
++                isLava(world, blockposition.south(1)) ||
++                isLava(world, blockposition.west(1)) ||
++                isLava(world, blockposition.east(1))
++            ) {
++                return world.paperConfig().environment.waterOverLavaFlowSpeed;
++            }
++        }
++        return this.fluid.getTickDelay(world);
++    }
++    private static boolean isLava(Level world, BlockPos blockPos) {
++        final FluidState fluidState = world.getFluidIfLoaded(blockPos);
++        return fluidState != null && fluidState.is(FluidTags.LAVA);
++    }
++    // Paper end - Configurable speed for water flowing over lava
+ 
+     @Override
+     protected BlockState updateShape(
+@@ -160,7 +_,7 @@
+     @Override
+     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
+         if (this.shouldSpreadLiquid(level, pos, state)) {
+-            level.scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay(level));
++            level.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(level, pos)); // Paper - Configurable speed for water flowing over lava
+         }
+     }
+ 
+@@ -173,13 +_,21 @@
+                 if (level.getFluidState(blockPos).is(FluidTags.WATER)) {
+                     Block block = level.getFluidState(pos).isSource() ? Blocks.OBSIDIAN : Blocks.COBBLESTONE;
+                     level.setBlockAndUpdate(pos, block.defaultBlockState());
+-                    this.fizz(level, pos);
++                    // CraftBukkit start
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(level, pos, block.defaultBlockState())) {
++                        this.fizz(level, pos);
++                    }
++                    // CraftBukkit end
+                     return false;
+                 }
+ 
+                 if (isSoulSoil && level.getBlockState(blockPos).is(Blocks.BLUE_ICE)) {
+                     level.setBlockAndUpdate(pos, Blocks.BASALT.defaultBlockState());
+-                    this.fizz(level, pos);
++                    // CraftBukkit start
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(level, pos, Blocks.BASALT.defaultBlockState())) {
++                        this.fizz(level, pos);
++                    }
++                    // CraftBukkit end
+                     return false;
+                 }
+             }
