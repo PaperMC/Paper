@@ -34,7 +34,7 @@
 +    public void setPodium(@Nullable BlockPos blockPos) {
 +        this.podium = blockPos;
 +    }
-+    // Paper end
++    // Paper end - Allow changing the EnderDragon podium
 +
      @Override
      public boolean isFlapping() {
@@ -44,7 +44,7 @@
  
                      Vec3 flyTargetLocation = currentPhase.getFlyTargetLocation();
 -                    if (flyTargetLocation != null) {
-+                    if (flyTargetLocation != null && currentPhase.getPhase() != EnderDragonPhase.HOVERING) { // Paper - Don't move when hovering
++                    if (flyTargetLocation != null && currentPhase.getPhase() != EnderDragonPhase.HOVERING) { // CraftBukkit - Don't move when hovering
                          double d = flyTargetLocation.x - this.getX();
                          double d1 = flyTargetLocation.y - this.getY();
                          double d2 = flyTargetLocation.z - this.getZ();
@@ -53,14 +53,14 @@
                  this.nearestCrystal = null;
              } else if (this.tickCount % 10 == 0 && this.getHealth() < this.getMaxHealth()) {
 -                this.setHealth(this.getHealth() + 1.0F);
-+                // Paper start
++                // CraftBukkit start
 +                org.bukkit.event.entity.EntityRegainHealthEvent event = new org.bukkit.event.entity.EntityRegainHealthEvent(this.getBukkitEntity(), 1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.ENDER_CRYSTAL);
 +                this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (!event.isCancelled()) {
 +                    this.setHealth((float) (this.getHealth() + event.getAmount()));
 +                }
-+                // Paper end
++                // CraftBukkit end
              }
          }
  
@@ -86,11 +86,11 @@
                      if (!blockState.isAir() && !blockState.is(BlockTags.DRAGON_TRANSPARENT)) {
                          if (level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && !blockState.is(BlockTags.DRAGON_IMMUNE)) {
 -                            flag1 = level.removeBlock(blockPos, false) || flag1;
-+                            // Paper start - Add blocks to list rather than destroying them
++                            // CraftBukkit start - Add blocks to list rather than destroying them
 +                            //flag1 = level.removeBlock(blockPos, false) || flag1;
 +                            flag1 = true;
 +                            destroyedBlocks.add(org.bukkit.craftbukkit.block.CraftBlock.at(level, blockPos));
-+                            // Paper end
++                            // CraftBukkit end
                          } else {
                              flag = true;
                          }
@@ -98,7 +98,7 @@
              }
          }
  
-+        // Paper start - Set off an EntityExplodeEvent for the dragon exploding all these blocks
++        // CraftBukkit start - Set off an EntityExplodeEvent for the dragon exploding all these blocks
 +        // SPIGOT-4882: don't fire event if nothing hit
 +        if (!flag1) {
 +            return flag;
@@ -144,7 +144,7 @@
 +                this.level().removeBlock(blockposition, false);
 +            }
 +        }
-+        // Paper end
++        // CraftBukkit end
 +
          if (flag1) {
              BlockPos blockPos1 = new BlockPos(
@@ -161,7 +161,7 @@
 +            this.silentDeath = false; // Reset to default if event was cancelled
 +            return;
 +        }
-+        this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // Paper - add Bukkit remove cause
++        this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
 +        // Paper end - Fire entity death event
          this.gameEvent(GameEvent.ENTITY_DIE);
          if (this.dragonFight != null) {
@@ -170,7 +170,7 @@
              this.level().addParticle(ParticleTypes.EXPLOSION_EMITTER, this.getX() + f, this.getY() + 2.0 + f1, this.getZ() + f2, 0.0, 0.0, 0.0);
          }
  
-+        // Paper start - SPIGOT-2420: Moved up to #getExpReward method
++        // CraftBukkit start - SPIGOT-2420: Moved up to #getExpReward method
 +        /*
          int i = 500;
          if (this.dragonFight != null && !this.dragonFight.hasPreviouslyKilledDragon()) {
@@ -178,18 +178,18 @@
          }
 +         */
 +        int i = this.expToDrop;
-+        // Paper end
++        // CraftBukkit end
  
          if (this.level() instanceof ServerLevel serverLevel) {
 -            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0 && serverLevel.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
 -                ExperienceOrb.award(serverLevel, this.position(), Mth.floor(i * 0.08F));
-+            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0) {  // Paper - SPIGOT-2420: Already checked for the game rule when calculating the xp
++            if (this.dragonDeathTime > 150 && this.dragonDeathTime % 5 == 0) {  // CraftBukkit - SPIGOT-2420: Already checked for the game rule when calculating the xp
 +                ExperienceOrb.award(serverLevel, this.position(), Mth.floor(i * 0.08F), org.bukkit.entity.ExperienceOrb.SpawnReason.ENTITY_DEATH, this.lastHurtByPlayer, this); // Paper
              }
  
              if (this.dragonDeathTime == 1 && !this.isSilent()) {
 -                serverLevel.globalLevelEvent(1028, this.blockPosition(), 0);
-+                // Paper start - Use relative location for far away sounds
++                // CraftBukkit start - Use relative location for far away sounds
 +                // serverLevel.globalLevelEvent(1028, this.blockPosition(), 0);
 +                int viewDistance = serverLevel.getCraftServer().getViewDistance() * 16;
 +                for (net.minecraft.server.level.ServerPlayer player : serverLevel.getPlayersForGlobalSoundGamerule()) { // Paper - respect global sound events gamerule
@@ -207,7 +207,7 @@
 +                        player.connection.send(new net.minecraft.network.protocol.game.ClientboundLevelEventPacket(1028, new BlockPos((int) this.getX(), (int) this.getY(), (int) this.getZ()), 0, true));
 +                    }
 +                }
-+                // Paper end
++                // CraftBukkit end
              }
          }
  
@@ -226,7 +226,7 @@
              }
  
 -            this.remove(Entity.RemovalReason.KILLED);
-+            this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // Paper - add Bukkit remove cause
++            this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
              this.gameEvent(GameEvent.ENTITY_DIE);
          }
      }
@@ -234,7 +234,7 @@
          super.addAdditionalSaveData(compound);
          compound.putInt("DragonPhase", this.phaseManager.getCurrentPhase().getPhase().getId());
          compound.putInt("DragonDeathTime", this.dragonDeathTime);
-+        compound.putInt("Bukkit.expToDrop", this.expToDrop); // Paper - SPIGOT-2420: The ender dragon drops xp over time which can also happen between server starts
++        compound.putInt("Bukkit.expToDrop", this.expToDrop); // CraftBukkit - SPIGOT-2420: The ender dragon drops xp over time which can also happen between server starts
      }
  
      @Override
@@ -243,11 +243,11 @@
              this.dragonDeathTime = compound.getInt("DragonDeathTime");
          }
 +
-+        // Paper start - SPIGOT-2420: The ender dragon drops xp over time which can also happen between server starts
++        // CraftBukkit start - SPIGOT-2420: The ender dragon drops xp over time which can also happen between server starts
 +        if (compound.contains("Bukkit.expToDrop")) {
 +            this.expToDrop = compound.getInt("Bukkit.expToDrop");
 +        }
-+        // Paper end
++        // CraftBukkit end
      }
  
      @Override
@@ -265,7 +265,7 @@
          return 1.0F;
      }
 +
-+    // Paper start - SPIGOT-2420: Special case, the ender dragon drops 12000 xp for the first kill and 500 xp for every other kill and this over time.
++    // CraftBukkit start - SPIGOT-2420: Special case, the ender dragon drops 12000 xp for the first kill and 500 xp for every other kill and this over time.
 +    @Override
 +    public int getExpReward(ServerLevel worldserver, Entity entity) {
 +        // CraftBukkit - Moved from #tickDeath method
@@ -278,6 +278,6 @@
 +
 +        return flag ? short0 : 0;
 +    }
-+    // Paper end
++    // CraftBukkit end
 +
  }
