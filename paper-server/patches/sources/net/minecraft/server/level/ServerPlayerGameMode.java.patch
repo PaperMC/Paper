@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -41,6 +_,8 @@
+@@ -41,28 +_,49 @@
      private BlockPos delayedDestroyPos = BlockPos.ZERO;
      private int delayedTickStart;
      private int lastSentState = -1;
@@ -9,16 +9,17 @@
  
      public ServerPlayerGameMode(ServerPlayer player) {
          this.player = player;
-@@ -48,21 +_,39 @@
+         this.level = player.serverLevel();
      }
  
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
      public boolean changeGameModeForPlayer(GameType gameModeForPlayer) {
 +        // Paper start - Expand PlayerGameModeChangeEvent
 +        org.bukkit.event.player.PlayerGameModeChangeEvent event = this.changeGameModeForPlayer(gameModeForPlayer, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.UNKNOWN, null);
 +        return event != null && event.isCancelled();
 +    }
 +    @Nullable
-+    public org.bukkit.event.player.PlayerGameModeChangeEvent changeGameModeForPlayer(GameType gameMode, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause playerGameModeChangeCause, @Nullable net.kyori.adventure.text.Component cancelMessage) {
++    public org.bukkit.event.player.PlayerGameModeChangeEvent changeGameModeForPlayer(GameType gameModeForPlayer, org.bukkit.event.player.PlayerGameModeChangeEvent.Cause playerGameModeChangeCause, @Nullable net.kyori.adventure.text.Component cancelMessage) {
 +        // Paper end - Expand PlayerGameModeChangeEvent
          if (gameModeForPlayer == this.gameModeForPlayer) {
 -            return false;
@@ -28,7 +29,7 @@
 +            // CraftBukkit start
 +            org.bukkit.event.player.PlayerGameModeChangeEvent event = new org.bukkit.event.player.PlayerGameModeChangeEvent(
 +                this.player.getBukkitEntity(),
-+                org.bukkit.GameMode.getByValue(gameMode.getId()),
++                org.bukkit.GameMode.getByValue(gameModeForPlayer.getId()),
 +                playerGameModeChangeCause, // Paper
 +                cancelMessage
 +            );
@@ -36,7 +37,7 @@
 +                return event; // Paper - Expand PlayerGameModeChangeEvent
 +            }
 +            // CraftBukkit end
-+            this.setGameModeForPlayer(gameMode, this.gameModeForPlayer); // Paper - Fix MC-259571
++            this.setGameModeForPlayer(gameModeForPlayer, this.gameModeForPlayer); // Paper - Fix MC-259571
              this.player.onUpdateAbilities();
              this.player
                  .server
