@@ -1,26 +1,5 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -22,6 +_,7 @@
- import net.minecraft.ChatFormatting;
- import net.minecraft.advancements.CriteriaTriggers;
- import net.minecraft.core.BlockPos;
-+import net.minecraft.core.Direction;
- import net.minecraft.core.Holder;
- import net.minecraft.core.HolderLookup;
- import net.minecraft.core.HolderSet;
-@@ -45,10 +_,12 @@
- import net.minecraft.network.chat.MutableComponent;
- import net.minecraft.network.codec.ByteBufCodecs;
- import net.minecraft.network.codec.StreamCodec;
-+import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
- import net.minecraft.resources.RegistryOps;
- import net.minecraft.server.level.ServerLevel;
- import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.sounds.SoundEvent;
-+import net.minecraft.sounds.SoundSource;
- import net.minecraft.stats.Stats;
- import net.minecraft.tags.TagKey;
- import net.minecraft.util.ExtraCodecs;
 @@ -136,18 +_,35 @@
              } else {
                  Holder<Item> holder = ITEM_STREAM_CODEC.decode(buffer);
@@ -59,14 +38,13 @@
              }
          }
      };
-@@ -365,10 +_,180 @@
+@@ -365,10 +_,178 @@
              return InteractionResult.PASS;
          } else {
              Item item = this.getItem();
 -            InteractionResult interactionResult = item.useOn(context);
-+            // InteractionResult interactionResult = item.useOn(context);
 +            // CraftBukkit start - handle all block place event logic here
-+            DataComponentPatch oldData = this.components.asPatch();
++            DataComponentPatch previousPatch = this.components.asPatch();
 +            int oldCount = this.getCount();
 +            ServerLevel serverLevel = (ServerLevel) context.getLevel();
 +
@@ -83,11 +61,11 @@
 +            } finally {
 +                serverLevel.captureBlockStates = false;
 +            }
-+            DataComponentPatch newData = this.components.asPatch();
++            DataComponentPatch newPatch = this.components.asPatch();
 +            int newCount = this.getCount();
 +            this.setCount(oldCount);
-+            this.restorePatch(oldData);
-+            if (interactionResult.consumesAction() && serverLevel.captureTreeGeneration && serverLevel.capturedBlockStates.size() > 0) {
++            this.restorePatch(previousPatch);
++            if (interactionResult.consumesAction() && serverLevel.captureTreeGeneration && !serverLevel.capturedBlockStates.isEmpty()) {
 +                serverLevel.captureTreeGeneration = false;
 +                org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(clickedPos, serverLevel.getWorld());
 +                org.bukkit.TreeType treeType = net.minecraft.world.level.block.SaplingBlock.treeType;
@@ -107,8 +85,8 @@
 +
 +                if (!fertilizeEvent.isCancelled()) {
 +                    // Change the stack to its new contents if it hasn't been tampered with.
-+                    if (this.getCount() == oldCount && Objects.equals(this.components.asPatch(), oldData)) {
-+                        this.restorePatch(newData);
++                    if (this.getCount() == oldCount && Objects.equals(this.components.asPatch(), previousPatch)) {
++                        this.restorePatch(newPatch);
 +                        this.setCount(newCount);
 +                    }
 +                    for (org.bukkit.craftbukkit.block.CraftBlockState blockstate : blocks) {
@@ -125,15 +103,14 @@
 +            serverLevel.captureTreeGeneration = false;
              if (player != null && interactionResult instanceof InteractionResult.Success success && success.wasItemInteraction()) {
 -                player.awardStat(Stats.ITEM_USED.get(item));
-+                // player.awardStat(Stats.ITEM_USED.get(item));
-+                InteractionHand enumhand = context.getHand();
++                InteractionHand hand = context.getHand();
 +                org.bukkit.event.block.BlockPlaceEvent placeEvent = null;
 +                List<org.bukkit.block.BlockState> blocks = new java.util.ArrayList<>(serverLevel.capturedBlockStates.values());
 +                serverLevel.capturedBlockStates.clear();
 +                if (blocks.size() > 1) {
-+                    placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(serverLevel, player, enumhand, blocks, clickedPos.getX(), clickedPos.getY(), clickedPos.getZ());
++                    placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockMultiPlaceEvent(serverLevel, player, hand, blocks, clickedPos.getX(), clickedPos.getY(), clickedPos.getZ());
 +                } else if (blocks.size() == 1 && item != Items.POWDER_SNOW_BUCKET) { // Paper - Fix cancelled powdered snow bucket placement
-+                    placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(serverLevel, player, enumhand, blocks.get(0), clickedPos.getX(), clickedPos.getY(), clickedPos.getZ());
++                    placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent(serverLevel, player, hand, blocks.getFirst(), clickedPos.getX(), clickedPos.getY(), clickedPos.getZ());
 +                }
 +
 +                if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
@@ -143,11 +120,11 @@
 +                    serverLevel.capturedTileEntities.clear(); // Paper - Allow chests to be placed with NBT data; clear out block entities as chests and such will pop loot
 +                    // revert back all captured blocks
 +                    serverLevel.preventPoiUpdated = true; // CraftBukkit - SPIGOT-5710
-+                serverLevel.isBlockPlaceCancelled = true; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
++                    serverLevel.isBlockPlaceCancelled = true; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
 +                    for (org.bukkit.block.BlockState blockstate : blocks) {
 +                        blockstate.update(true, false);
 +                    }
-+                serverLevel.isBlockPlaceCancelled = false; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
++                    serverLevel.isBlockPlaceCancelled = false; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
 +                    serverLevel.preventPoiUpdated = false;
 +
 +                    // Brute force all possible updates
@@ -160,8 +137,8 @@
 +                    SignItem.openSign = null; // SPIGOT-6758 - Reset on early return
 +                } else {
 +                    // Change the stack to its new contents if it hasn't been tampered with.
-+                    if (this.getCount() == oldCount && Objects.equals(this.components.asPatch(), oldData)) {
-+                        this.restorePatch(newData);
++                    if (this.getCount() == oldCount && Objects.equals(this.components.asPatch(), previousPatch)) {
++                        this.restorePatch(newPatch);
 +                        this.setCount(newCount);
 +                    }
 +
@@ -172,14 +149,14 @@
 +                    for (org.bukkit.block.BlockState blockstate : blocks) {
 +                        int updateFlag = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getFlag();
 +                        net.minecraft.world.level.block.state.BlockState oldBlock = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getHandle();
-+                        BlockPos newblockposition = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getPosition();
-+                        net.minecraft.world.level.block.state.BlockState block = serverLevel.getBlockState(newblockposition);
++                        BlockPos newPos = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getPosition();
++                        net.minecraft.world.level.block.state.BlockState block = serverLevel.getBlockState(newPos);
 +
 +                        if (!(block.getBlock() instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // Containers get placed automatically
-+                            block.onPlace(serverLevel, newblockposition, oldBlock, true, context);
++                            block.onPlace(serverLevel, newPos, oldBlock, true, context);
 +                        }
 +
-+                        serverLevel.notifyAndUpdatePhysics(newblockposition, null, oldBlock, block, serverLevel.getBlockState(newblockposition), updateFlag, 512); // send null chunk as chunk.k() returns false by this point
++                        serverLevel.notifyAndUpdatePhysics(newPos, null, oldBlock, block, serverLevel.getBlockState(newPos), updateFlag, net.minecraft.world.level.block.Block.UPDATE_LIMIT); // send null chunk as chunk.k() returns false by this point
 +                    }
 +
 +                    if (this.item == Items.WITHER_SKELETON_SKULL) { // Special case skulls to allow wither spawns to be cancelled
@@ -225,12 +202,12 @@
 +
 +                    // SPIGOT-1288 - play sound stripped from ItemBlock
 +                    if (this.item instanceof BlockItem) {
-+                    // Paper start - Fix spigot sound playing for BlockItem ItemStacks
-+                    BlockPos position = new net.minecraft.world.item.context.BlockPlaceContext(context).getClickedPos();
-+                    net.minecraft.world.level.block.state.BlockState blockData = serverLevel.getBlockState(position);
-+                    net.minecraft.world.level.block.SoundType soundeffecttype = blockData.getSoundType();
-+                    // Paper end - Fix spigot sound playing for BlockItem ItemStacks
-+                        serverLevel.playSound(player, clickedPos, soundeffecttype.getPlaceSound(), SoundSource.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
++                        // Paper start - Fix spigot sound playing for BlockItem ItemStacks
++                        BlockPos position = new net.minecraft.world.item.context.BlockPlaceContext(context).getClickedPos();
++                        net.minecraft.world.level.block.state.BlockState blockData = serverLevel.getBlockState(position);
++                        net.minecraft.world.level.block.SoundType soundeffecttype = blockData.getSoundType();
++                        // Paper end - Fix spigot sound playing for BlockItem ItemStacks
++                        serverLevel.playSound(player, clickedPos, soundeffecttype.getPlaceSound(), net.minecraft.sounds.SoundSource.BLOCKS, (soundeffecttype.getVolume() + 1.0F) / 2.0F, soundeffecttype.getPitch() * 0.8F);
 +                    }
 +
 +                    player.awardStat(Stats.ITEM_USED.get(item));
