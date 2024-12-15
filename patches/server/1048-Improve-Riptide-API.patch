@@ -1,0 +1,149 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: PlayerSchark <simon@schark.io>
+Date: Sun, 26 May 2024 16:52:18 +0200
+Subject: [PATCH] Improve Riptide API
+
+
+diff --git a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
+index badd85a92f38caae257181f67a322fc79599d1ce..cfddeadea8b56202418f37ff5b86881da262ab54 100644
+--- a/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
++++ b/src/main/java/io/papermc/paper/adventure/PaperAdventure.java
+@@ -389,6 +389,12 @@ public final class PaperAdventure {
+         return packet;
+     }
+ 
++    public static SoundEvent asVanilla(final Sound sound) {
++        final ResourceLocation name = asVanilla(sound.name());
++        final Optional<SoundEvent> soundEvent = BuiltInRegistries.SOUND_EVENT.getOptional(name);
++        return soundEvent.map(BuiltInRegistries.SOUND_EVENT::wrapAsHolder).orElseGet(() -> Holder.direct(SoundEvent.createVariableRangeEvent(name))).value();
++    }
++
+     // NBT
+ 
+     @SuppressWarnings({"rawtypes", "unchecked"})
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index ef0f118aecf0893e45cb9423a677d7e42496324b..0be1a6c4a0a8df8e0a02cae336b19db234d7ca4d 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -3643,6 +3643,18 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         return ((Byte) this.entityData.get(LivingEntity.DATA_LIVING_ENTITY_FLAGS) & 4) != 0;
+     }
+ 
++    // Paper start - Improve Riptide API
++    public void stopAutoSpinAttack() {
++        this.autoSpinAttackTicks = 0;
++        this.setLivingEntityFlag(4, false);
++    }
++
++    public void startAutoSpinAttack(int ticks) {
++        this.autoSpinAttackTicks = ticks;
++        this.setLivingEntityFlag(4, true);
++    }
++    // Paper end - Improve Riptide API
++
+     @Override
+     public void stopRiding() {
+         // Paper start - Force entity dismount during teleportation
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 686374e89e41b0917791264f3281f7384835bca8..b171b23e6ac6ef31e46480b1ca74d0415c4b6902 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -648,6 +648,7 @@ public abstract class Player extends LivingEntity {
+         this.entityData.set(Player.DATA_SCORE_ID, j + score);
+     }
+ 
++    @Override //Paper - Improve Riptide API
+     public void startAutoSpinAttack(int riptideTicks) {
+         this.autoSpinAttackTicks = riptideTicks;
+         if (!this.level().isClientSide) {
+diff --git a/src/main/java/net/minecraft/world/item/TridentItem.java b/src/main/java/net/minecraft/world/item/TridentItem.java
+index 47de500fddb0716d142f8f5876a82a95afaa06fa..36026b6cc4ad0c650b5e34e164440458932d992d 100644
+--- a/src/main/java/net/minecraft/world/item/TridentItem.java
++++ b/src/main/java/net/minecraft/world/item/TridentItem.java
+@@ -122,15 +122,8 @@ public class TridentItem extends Item implements ProjectileItem {
+                         f2 *= f6 / f5;
+                         f3 *= f6 / f5;
+                         f4 *= f6 / f5;
+-                        org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerRiptideEvent(entityhuman, stack, f2, f3, f4); // CraftBukkit
+-                        entityhuman.push((double) f2, (double) f3, (double) f4);
+-                        entityhuman.startAutoSpinAttack(20);
+-                        if (entityhuman.onGround()) {
+-                            float f7 = 1.1999999F;
+-
+-                            entityhuman.move(MoverType.SELF, new Vec3(0.0D, 1.1999999284744263D, 0.0D));
+-                        }
+ 
++                        //Paper start - Improve Riptide API
+                         SoundEvent soundeffect;
+ 
+                         if (k >= 3) {
+@@ -141,8 +134,25 @@ public class TridentItem extends Item implements ProjectileItem {
+                             soundeffect = SoundEvents.TRIDENT_RIPTIDE_1;
+                         }
+ 
+-                        world.playSound((Player) null, (Entity) entityhuman, soundeffect, SoundSource.PLAYERS, 1.0F, 1.0F);
++                        org.bukkit.Sound minecraftSound = org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(soundeffect);
++                        net.kyori.adventure.sound.Sound adventureSound = net.kyori.adventure.sound.Sound.sound(minecraftSound, net.kyori.adventure.sound.Sound.Source.PLAYER, 1.0F, 1.0F);
++
++                        org.bukkit.event.player.PlayerRiptideEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerRiptideEvent(entityhuman, stack, f2, f3, f4, 20, adventureSound); // CraftBukkit
++                        entityhuman.push((double) f2, (double) f3, (double) f4);
++                        if (event.getAnimationTicks() > 0) {
++                            entityhuman.startAutoSpinAttack(event.getAnimationTicks());
++                        }
++
++                        if (entityhuman.onGround()) {
++                            entityhuman.move(MoverType.SELF, new Vec3(0.0D, 1.1999999284744263D, 0.0D));
++                        }
++
++                        net.kyori.adventure.sound.Sound sound = event.getSound();
++                        if (sound != null) {
++                            world.playSound((Player) null, (Entity) entityhuman, io.papermc.paper.adventure.PaperAdventure.asVanilla(sound), io.papermc.paper.adventure.PaperAdventure.asVanilla(sound.source()), sound.volume(), sound.pitch());
++                        }
+                     }
++                    //Paper end - Improve Riptide API
+ 
+                 }
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index aa351df679f300018367244c7ccb3e5a59e9276f..fb2938ae374ee2b65e210af01b14a567c09a743a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -807,6 +807,18 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         return this.getHandle().isAutoSpinAttack();
+     }
+ 
++    // Paper start - Improve Riptide API
++    @Override
++    public void setRiptiding(int ticks) {
++		this.getHandle().startAutoSpinAttack(ticks);
++    }
++
++    @Override
++    public void stopRiptiding() {
++		this.getHandle().stopAutoSpinAttack();
++    }
++    // Paper end - Improve Riptide API
++
+     @Override
+     public boolean isSleeping() {
+         return this.getHandle().isSleeping();
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 34b91eff3190848bae38b20e1d956ece497b1473..85c60a8d74c18d87b824423871fca374ac6fa519 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1661,10 +1661,13 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static void callPlayerRiptideEvent(net.minecraft.world.entity.player.Player player, ItemStack tridentItemStack, float velocityX, float velocityY, float velocityZ) {
+-        PlayerRiptideEvent event = new PlayerRiptideEvent((Player) player.getBukkitEntity(), CraftItemStack.asCraftMirror(tridentItemStack), new Vector(velocityX, velocityY, velocityZ));
++    //Paper start - Improve Riptide API
++    public static PlayerRiptideEvent callPlayerRiptideEvent(net.minecraft.world.entity.player.Player player, ItemStack tridentItemStack, float velocityX, float velocityY, float velocityZ, int animationTicks, net.kyori.adventure.sound.Sound sound) {
++        PlayerRiptideEvent event = new PlayerRiptideEvent((Player) player.getBukkitEntity(), CraftItemStack.asCraftMirror(tridentItemStack), new Vector(velocityX, velocityY, velocityZ), animationTicks, sound);
+         player.level().getCraftServer().getPluginManager().callEvent(event);
++        return event;
+     }
++    //Paper end - Improve Riptide API
+ 
+     public static BlockShearEntityEvent callBlockShearEntityEvent(Entity animal, org.bukkit.block.Block dispenser, CraftItemStack is, List<ItemStack> drops) { // Paper - custom shear drops
+         BlockShearEntityEvent bse = new BlockShearEntityEvent(dispenser, animal.getBukkitEntity(), is, Lists.transform(drops, CraftItemStack::asCraftMirror)); // Paper - custom shear drops
