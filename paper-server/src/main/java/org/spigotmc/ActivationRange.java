@@ -142,9 +142,9 @@ public class ActivationRange
     }
 
     /**
-     * Checks for the activation state of all entities in this chunk.
+     * Tries to activate an entity.
      *
-     * @param chunk
+     * @param entity
      */
     private static void activateEntity(Entity entity)
     {
@@ -172,13 +172,13 @@ public class ActivationRange
     public static boolean checkEntityImmunities(Entity entity)
     {
         // quick checks.
-        if ( entity.wasTouchingWater || entity.getRemainingFireTicks() > 0 )
+        if ( entity.isInWater() || entity.getRemainingFireTicks() > 0 )
         {
             return true;
         }
         if ( !( entity instanceof AbstractArrow ) )
         {
-            if ( !entity.onGround() || !entity.passengers.isEmpty() || entity.isPassenger() )
+            if ( !entity.onGround() || !entity.getPassengers().isEmpty() || entity.isPassenger() )
             {
                 return true;
             }
