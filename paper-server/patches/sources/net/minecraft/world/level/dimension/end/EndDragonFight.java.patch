@@ -1,63 +1,52 @@
 --- a/net/minecraft/world/level/dimension/end/EndDragonFight.java
 +++ b/net/minecraft/world/level/dimension/end/EndDragonFight.java
-@@ -74,6 +74,7 @@
+@@ -70,8 +_,9 @@
      private static final int GATEWAY_DISTANCE = 96;
      public static final int DRAGON_SPAWN_Y = 128;
      private final Predicate<Entity> validPlayer;
 +    private static final Component DEFAULT_BOSS_EVENT_NAME = Component.translatable("entity.minecraft.ender_dragon"); // Paper - ensure reset EnderDragon boss event name
-     public final ServerBossEvent dragonEvent;
-     public final ServerLevel level;
-     private final BlockPos origin;
-@@ -102,7 +103,7 @@
-     }
- 
-     public EndDragonFight(ServerLevel world, long gatewaysSeed, EndDragonFight.Data data, BlockPos origin) {
--        this.dragonEvent = (ServerBossEvent) (new ServerBossEvent(Component.translatable("entity.minecraft.ender_dragon"), BossEvent.BossBarColor.PINK, BossEvent.BossBarOverlay.PROGRESS)).setPlayBossMusic(true).setCreateWorldFog(true);
-+        this.dragonEvent = (ServerBossEvent) (new ServerBossEvent(DEFAULT_BOSS_EVENT_NAME, BossEvent.BossBarColor.PINK, BossEvent.BossBarOverlay.PROGRESS)).setPlayBossMusic(true).setCreateWorldFog(true); // Paper - ensure reset EnderDragon boss event name
-         this.gateways = new ObjectArrayList();
-         this.ticksSinceLastPlayerScan = 21;
-         this.skipArenaLoadedCheck = false;
-@@ -111,14 +112,20 @@
-         this.origin = origin;
-         this.validPlayer = EntitySelector.ENTITY_STILL_ALIVE.and(EntitySelector.withinDistance((double) origin.getX(), (double) (128 + origin.getY()), (double) origin.getZ(), 192.0D));
-         this.needsStateScanning = data.needsStateScanning;
--        this.dragonUUID = (UUID) data.dragonUUID.orElse((Object) null);
-+        this.dragonUUID = (UUID) data.dragonUUID.orElse(null); // CraftBukkit - decompile error
-         this.dragonKilled = data.dragonKilled;
-         this.previouslyKilled = data.previouslyKilled;
+     public final ServerBossEvent dragonEvent = (ServerBossEvent)new ServerBossEvent(
+-            Component.translatable("entity.minecraft.ender_dragon"), BossEvent.BossBarColor.PINK, BossEvent.BossBarOverlay.PROGRESS
++            DEFAULT_BOSS_EVENT_NAME, BossEvent.BossBarColor.PINK, BossEvent.BossBarOverlay.PROGRESS // Paper
+         )
+         .setPlayBossMusic(true)
+         .setCreateWorldFog(true);
+@@ -112,7 +_,12 @@
          if (data.isRespawning) {
              this.respawnStage = DragonRespawnAnimation.START;
          }
+-
 +        // Paper start - Add config to disable ender dragon legacy check
-+        if (data == EndDragonFight.Data.DEFAULT && !world.paperConfig().entities.spawning.scanForLegacyEnderDragon) {
++        if (data == EndDragonFight.Data.DEFAULT && !level.paperConfig().entities.spawning.scanForLegacyEnderDragon) {
 +            this.needsStateScanning = false;
 +            this.dragonKilled = true;
 +        }
 +        // Paper end - Add config to disable ender dragon legacy check
- 
--        this.portalLocation = (BlockPos) data.exitPortalLocation.orElse((Object) null);
-+        this.portalLocation = (BlockPos) data.exitPortalLocation.orElse(null); // CraftBukkit - decompile error
-         this.gateways.addAll((Collection) data.gateways.orElseGet(() -> {
-             ObjectArrayList<Integer> objectarraylist = new ObjectArrayList(ContiguousSet.create(Range.closedOpen(0, 20), DiscreteDomain.integers()));
- 
-@@ -206,9 +213,9 @@
-             this.dragonUUID = entityenderdragon.getUUID();
-             EndDragonFight.LOGGER.info("Found that there's a dragon still alive ({})", entityenderdragon);
+         this.portalLocation = data.exitPortalLocation.orElse(null);
+         this.gateways.addAll(data.gateways.orElseGet(() -> {
+             ObjectArrayList<Integer> list = new ObjectArrayList<>(ContiguousSet.create(Range.closedOpen(0, 20), DiscreteDomain.integers()));
+@@ -209,9 +_,9 @@
+             this.dragonUUID = enderDragon.getUUID();
+             LOGGER.info("Found that there's a dragon still alive ({})", enderDragon);
              this.dragonKilled = false;
--            if (!flag) {
-+            if (!flag && this.level.paperConfig().entities.behavior.shouldRemoveDragon) { // Paper - Toggle for removing existing dragon
-                 EndDragonFight.LOGGER.info("But we didn't have a portal, let's remove it.");
--                entityenderdragon.discard();
-+                entityenderdragon.discard(null); // CraftBukkit - add Bukkit remove cause
+-            if (!hasActiveExitPortal) {
++            if (!hasActiveExitPortal && this.level.paperConfig().entities.behavior.shouldRemoveDragon) { // Paper - Toggle for removing existing dragon
+                 LOGGER.info("But we didn't have a portal, let's remove it.");
+-                enderDragon.discard();
++                enderDragon.discard(null); // CraftBukkit - add Bukkit remove cause
                  this.dragonUUID = null;
              }
          }
-@@ -404,9 +411,23 @@
+@@ -366,12 +_,22 @@
              this.dragonEvent.setVisible(false);
              this.spawnExitPortal(true);
              this.spawnNewGateway();
 -            if (!this.previouslyKilled) {
--                this.level.setBlockAndUpdate(this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin)), Blocks.DRAGON_EGG.defaultBlockState());
+-                this.level
+-                    .setBlockAndUpdate(
+-                        this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin)),
+-                        Blocks.DRAGON_EGG.defaultBlockState()
+-                    );
 +            // Paper start - Add DragonEggFormEvent
 +            BlockPos eggPosition = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin));
 +            org.bukkit.craftbukkit.block.CraftBlockState eggState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(this.level, eggPosition);
@@ -70,20 +59,17 @@
 +                // this.level.setBlockAndUpdate(this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, EndPodiumFeature.getLocation(this.origin)), Blocks.DRAGON_EGG.defaultBlockState());
 +            } else {
 +                eggEvent.setCancelled(true);
-             }
++            }
 +            if (eggEvent.callEvent()) {
 +                eggEvent.getNewState().update(true);
 +                // Paper end - Add DragonEggFormEvent
-+            }
+             }
  
              this.previouslyKilled = true;
-             this.dragonKilled = true;
-@@ -419,7 +440,25 @@
-     @VisibleForTesting
-     public void removeAllGateways() {
+@@ -385,6 +_,24 @@
          this.gateways.clear();
-+    }
-+
+     }
+ 
 +    // Paper start - More DragonBattle API
 +    public boolean spawnNewGatewayIfPossible() {
 +        if (!this.gateways.isEmpty()) {
@@ -99,12 +85,13 @@
 +            endCrystals.addAll(this.level.getEntitiesOfClass(EndCrystal.class, spike.getTopBoundingBox()));
 +        }
 +        return endCrystals;
-     }
++    }
 +    // Paper end - More DragonBattle API
- 
++
      private void spawnNewGateway() {
          if (!this.gateways.isEmpty()) {
-@@ -449,6 +488,11 @@
+             int i = this.gateways.remove(this.gateways.size() - 1);
+@@ -413,6 +_,11 @@
              }
          }
  
@@ -113,18 +100,18 @@
 +            this.portalLocation = this.portalLocation.atY(this.level.getMinY() + 1);
 +        }
 +        // Paper end - Prevent "softlocked" exit portal generation
-         if (worldgenendtrophy.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation)) {
-             int i = Mth.positiveCeilDiv(4, 16);
- 
-@@ -469,6 +513,7 @@
-             entityenderdragon.moveTo((double) this.origin.getX(), (double) (128 + this.origin.getY()), (double) this.origin.getZ(), this.level.random.nextFloat() * 360.0F, 0.0F);
-             this.level.addFreshEntity(entityenderdragon);
-             this.dragonUUID = entityenderdragon.getUUID();
+         if (endPodiumFeature.place(
+             FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation
+         )) {
+@@ -432,6 +_,7 @@
+             enderDragon.moveTo(this.origin.getX(), 128 + this.origin.getY(), this.origin.getZ(), this.level.random.nextFloat() * 360.0F, 0.0F);
+             this.level.addFreshEntity(enderDragon);
+             this.dragonUUID = enderDragon.getUUID();
 +            this.resetSpikeCrystals(); // Paper - Reset ender crystals on dragon spawn
          }
  
-         return entityenderdragon;
-@@ -480,6 +525,10 @@
+         return enderDragon;
+@@ -443,6 +_,10 @@
              this.ticksSinceDragonSeen = 0;
              if (dragon.hasCustomName()) {
                  this.dragonEvent.setName(dragon.getDisplayName());
@@ -134,8 +121,8 @@
 +                // Paper end - ensure reset EnderDragon boss event name
              }
          }
- 
-@@ -513,7 +562,13 @@
+     }
+@@ -470,7 +_,13 @@
          return this.previouslyKilled;
      }
  
@@ -148,64 +135,60 @@
 +    public boolean tryRespawn(@Nullable BlockPos placedEndCrystalPos) { // placedEndCrystalPos is null if the tryRespawn() call was not caused by a placed end crystal
 +        // Paper end - Perf: Do crystal-portal proximity check before entity lookup
          if (this.dragonKilled && this.respawnStage == null) {
-             BlockPos blockposition = this.portalLocation;
+             BlockPos blockPos = this.portalLocation;
+             if (blockPos == null) {
+@@ -485,6 +_,22 @@
  
-@@ -531,6 +586,22 @@
-                 blockposition = this.portalLocation;
+                 blockPos = this.portalLocation;
              }
- 
 +            // Paper start - Perf: Do crystal-portal proximity check before entity lookup
 +            if (placedEndCrystalPos != null) {
 +                // The end crystal must be 0 or 1 higher than the portal origin
-+                int dy = placedEndCrystalPos.getY() - blockposition.getY();
++                int dy = placedEndCrystalPos.getY() - blockPos.getY();
 +                if (dy != 0 && dy != 1) {
 +                    return false;
 +                }
 +                // The end crystal must be within a distance of 1 in one planar direction, and 3 in the other
-+                int dx = placedEndCrystalPos.getX() - blockposition.getX();
-+                int dz = placedEndCrystalPos.getZ() - blockposition.getZ();
++                int dx = placedEndCrystalPos.getX() - blockPos.getX();
++                int dz = placedEndCrystalPos.getZ() - blockPos.getZ();
 +                if (!((dx >= -1 && dx <= 1 && dz >= -3 && dz <= 3) || (dx >= -3 && dx <= 3 && dz >= -1 && dz <= 1))) {
 +                    return false;
 +                }
 +            }
 +            // Paper end - Perf: Do crystal-portal proximity check before entity lookup
 +
-             List<EndCrystal> list = Lists.newArrayList();
-             BlockPos blockposition1 = blockposition.above(1);
-             Iterator iterator = Direction.Plane.HORIZONTAL.iterator();
-@@ -540,19 +611,19 @@
-                 List<EndCrystal> list1 = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(blockposition1.relative(enumdirection, 2)));
  
-                 if (list1.isEmpty()) {
+             List<EndCrystal> list = Lists.newArrayList();
+             BlockPos blockPos1 = blockPos.above(1);
+@@ -492,18 +_,19 @@
+             for (Direction direction : Direction.Plane.HORIZONTAL) {
+                 List<EndCrystal> entitiesOfClass = this.level.getEntitiesOfClass(EndCrystal.class, new AABB(blockPos1.relative(direction, 2)));
+                 if (entitiesOfClass.isEmpty()) {
 -                    return;
 +                    return false; // CraftBukkit - return value
                  }
  
-                 list.addAll(list1);
+                 list.addAll(entitiesOfClass);
              }
  
-             EndDragonFight.LOGGER.debug("Found all crystals, respawning dragon.");
+             LOGGER.debug("Found all crystals, respawning dragon.");
 -            this.respawnDragon(list);
 +            return this.respawnDragon(list); // CraftBukkit - return value
          }
--
 +        return false; // CraftBukkit - return value
      }
  
 -    public void respawnDragon(List<EndCrystal> crystals) {
-+    public boolean respawnDragon(List<EndCrystal> list) { // CraftBukkit - return boolean
++    public boolean respawnDragon(List<EndCrystal> crystals) { // CraftBukkit - return boolean
          if (this.dragonKilled && this.respawnStage == null) {
-             for (BlockPattern.BlockPatternMatch shapedetector_shapedetectorcollection = this.findExitPortal(); shapedetector_shapedetectorcollection != null; shapedetector_shapedetectorcollection = this.findExitPortal()) {
-                 for (int i = 0; i < this.exitPortalPattern.getWidth(); ++i) {
-@@ -571,9 +642,10 @@
-             this.respawnStage = DragonRespawnAnimation.START;
+             for (BlockPattern.BlockPatternMatch blockPatternMatch = this.findExitPortal(); blockPatternMatch != null; blockPatternMatch = this.findExitPortal()) {
+                 for (int i = 0; i < this.exitPortalPattern.getWidth(); i++) {
+@@ -522,7 +_,9 @@
              this.respawnTime = 0;
              this.spawnExitPortal(false);
--            this.respawnCrystals = crystals;
-+            this.respawnCrystals = list;
+             this.respawnCrystals = crystals;
 +            return true; // CraftBukkit - return value
          }
--
 +        return false; // CraftBukkit - return value
      }
  
