@@ -69,21 +69,20 @@ index e99836c4073d8b25eddd3b4c784dbdb1f0c4f2b1..a2d788a656b2a5767c8a00bbcaca16ef
  
      // Paper end - Mob Goal API
 diff --git a/net/minecraft/world/entity/ai/goal/GoalSelector.java b/net/minecraft/world/entity/ai/goal/GoalSelector.java
-index 9338e63cc28413f5559bb0122ef5e04a84bd51d1..88e7e245824b670652878e03a2142a13e97508fe 100644
+index eeba224bd575451ba6023df65ef9d9b97f7f1c71..0846ad1f26ee73d72c77b53579a00c321d696b73 100644
 --- a/net/minecraft/world/entity/ai/goal/GoalSelector.java
 +++ b/net/minecraft/world/entity/ai/goal/GoalSelector.java
-@@ -24,7 +24,9 @@ public class GoalSelector {
+@@ -24,7 +24,8 @@ public class GoalSelector {
      };
      private final Map<Goal.Flag, WrappedGoal> lockedFlags = new EnumMap<>(Goal.Flag.class);
      private final Set<WrappedGoal> availableGoals = new ObjectLinkedOpenHashSet<>();
 -    private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class);
 +    private static final Goal.Flag[] GOAL_FLAG_VALUES = Goal.Flag.values(); // Paper - remove streams from pathfindergoalselector
 +    private final ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
-+
+     private int curRate; // Paper - EAR 2
  
      public void addGoal(int priority, Goal goal) {
-         this.availableGoals.add(new WrappedGoal(priority, goal));
-@@ -45,18 +47,18 @@ public class GoalSelector {
+@@ -62,18 +63,18 @@ public class GoalSelector {
          this.availableGoals.removeIf(wrappedGoal1 -> wrappedGoal1.getGoal() == goal);
      }
  
@@ -111,7 +110,7 @@ index 9338e63cc28413f5559bb0122ef5e04a84bd51d1..88e7e245824b670652878e03a2142a13
              if (!flag.getOrDefault(flag1, NO_GOAL).canBeReplacedBy(goal)) {
                  return false;
              }
-@@ -70,7 +72,7 @@ public class GoalSelector {
+@@ -87,7 +88,7 @@ public class GoalSelector {
          profilerFiller.push("goalCleanup");
  
          for (WrappedGoal wrappedGoal : this.availableGoals) {
@@ -120,7 +119,7 @@ index 9338e63cc28413f5559bb0122ef5e04a84bd51d1..88e7e245824b670652878e03a2142a13
                  wrappedGoal.stop();
              }
          }
-@@ -80,11 +82,14 @@ public class GoalSelector {
+@@ -97,11 +98,14 @@ public class GoalSelector {
          profilerFiller.push("goalUpdate");
  
          for (WrappedGoal wrappedGoalx : this.availableGoals) {
@@ -140,7 +139,7 @@ index 9338e63cc28413f5559bb0122ef5e04a84bd51d1..88e7e245824b670652878e03a2142a13
                      WrappedGoal wrappedGoal1 = this.lockedFlags.getOrDefault(flag, NO_GOAL);
                      wrappedGoal1.stop();
                      this.lockedFlags.put(flag, wrappedGoalx);
-@@ -116,11 +121,11 @@ public class GoalSelector {
+@@ -133,11 +137,11 @@ public class GoalSelector {
      }
  
      public void disableControlFlag(Goal.Flag flag) {
