@@ -1,5 +1,3 @@
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Aikar <aikar@aikar.co>
 Date: Fri, 29 Apr 2016 20:02:00 -0400
 Subject: [PATCH] Improve Maps (in item frames) performance and bug fixes
 
@@ -12,78 +10,108 @@ custom renderers are in use, defaulting to the much simpler Vanilla system.
 
 Additionally, numerous issues to player position tracking on maps has been fixed.
 
-diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ServerLevel.java
-+++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -0,0 +0,0 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
-                             {
-                                 if ( iter.next().player == entity )
-                                 {
-+                                    map.decorations.remove(entity.getName().getString()); // Paper
-                                     iter.remove();
-                                 }
-                             }
-diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
-+++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -0,0 +0,0 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player {
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 91a1330d7308c9faadaf773d056493e1df5dcd1e..1d7e9492a474c99dff372d6b57f1f195e42d5114 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -2296,7 +2296,9 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+                         }
+ 
+                         map.carriedByPlayers.remove(player);
+-                        map.carriedBy.removeIf(holdingPlayer -> holdingPlayer.player == player);
++                        if (map.carriedBy.removeIf(holdingPlayer -> holdingPlayer.player == player)) {
++                            map.decorations.remove(player.getName().getString()); // Paper
++                        }
+                     }
+                 }
+             }
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index e3a4cf9cd03670705391f4dc68f193d7cee656e0..f9c9485a051f5fa6d508b8a194c9f17657e1a0f4 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -2654,6 +2654,14 @@ public class ServerPlayer extends Player {
                  this.awardStat(Stats.DROP);
              }
  
 +            // Paper start - remove player from map on drop
-+            if (itemstack.getItem() == net.minecraft.world.item.Items.FILLED_MAP) {
-+                net.minecraft.world.level.saveddata.maps.MapItemSavedData worldmap = net.minecraft.world.item.MapItem.getSavedData(itemstack, this.level());
-+                if (worldmap != null) {
-+                    worldmap.tickCarriedBy(this, itemstack);
-+                    }
++            if (item.getItem() == net.minecraft.world.item.Items.FILLED_MAP) {
++                final MapItemSavedData mapData = MapItem.getSavedData(item, this.level());
++                if (mapData != null) {
++                    mapData.tickCarriedBy(this, item);
 +                }
-+            // Paper end
-             return entityitem;
++            }
++            // Paper end - remove player from map on drop
+             return itemEntity;
          }
      }
-diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
-+++ b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
-@@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
+diff --git a/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+index fd50bd77e4dc7b18240afe5505c6e6f0f869c127..f60c2f3a3dfc69f50225b6ee7333ada5e9dfd090 100644
+--- a/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
++++ b/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+@@ -67,6 +67,7 @@ public class MapItemSavedData extends SavedData {
      public final Map<String, MapDecoration> decorations = Maps.newLinkedHashMap();
      private final Map<String, MapFrame> frameMarkers = Maps.newHashMap();
      private int trackedDecorationCount;
 +    private org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper
  
      // CraftBukkit start
-     public final CraftMapView mapView;
-@@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
+     public final org.bukkit.craftbukkit.map.CraftMapView mapView;
+@@ -92,6 +93,7 @@ public class MapItemSavedData extends SavedData {
          // CraftBukkit start
-         this.mapView = new CraftMapView(this);
-         this.server = (CraftServer) org.bukkit.Bukkit.getServer();
+         this.mapView = new org.bukkit.craftbukkit.map.CraftMapView(this);
+         this.server = (org.bukkit.craftbukkit.CraftServer) org.bukkit.Bukkit.getServer();
 +        this.vanillaRender.buffer = colors; // Paper
          // CraftBukkit end
      }
  
-@@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
-         if (abyte.length == 16384) {
-             worldmap.colors = abyte;
+@@ -163,6 +165,7 @@ public class MapItemSavedData extends SavedData {
+         if (byteArray.length == 16384) {
+             mapItemSavedData.colors = byteArray;
          }
-+        worldmap.vanillaRender.buffer = abyte; // Paper
++        mapItemSavedData.vanillaRender.buffer = byteArray; // Paper
  
-         RegistryOps<Tag> registryops = registries.createSerializationContext(NbtOps.INSTANCE);
-         List<MapBanner> list = (List) MapBanner.LIST_CODEC.parse(registryops, nbt.get("banners")).resultOrPartial((s) -> {
-@@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
-             --this.trackedDecorationCount;
+         RegistryOps<Tag> registryOps = levelRegistry.createSerializationContext(NbtOps.INSTANCE);
+ 
+@@ -337,7 +340,7 @@ public class MapItemSavedData extends SavedData {
+             this.trackedDecorationCount--;
          }
  
 -        this.setDecorationsDirty();
-+        if (mapicon != null) this.setDecorationsDirty(); // Paper - only mark dirty if a change occurs
++        if (mapDecoration != null) this.setDecorationsDirty(); // Paper - only mark dirty if a change occurs
      }
  
-     public static void addTargetDecoration(ItemStack stack, BlockPos pos, String id, Holder<MapDecorationType> decorationType) {
-@@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
+     public static void addTargetDecoration(ItemStack stack, BlockPos pos, String type, Holder<MapDecorationType> mapDecorationType) {
+@@ -610,7 +613,16 @@ public class MapItemSavedData extends SavedData {
+         @Nullable
+         Packet<?> nextUpdatePacket(MapId mapId) {
+             MapItemSavedData.MapPatch mapPatch;
+-            org.bukkit.craftbukkit.map.RenderData render = MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()); // CraftBukkit
++            // Paper start
++            if (!this.dirtyData && this.tick % 5 != 0) {
++                // this won't end up sending, so don't render it!
++                this.tick++;
++                return null;
++            }
++
++            final boolean vanillaMaps = this.shouldUseVanillaMap();
++            org.bukkit.craftbukkit.map.RenderData render = !vanillaMaps ? MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()) : MapItemSavedData.this.vanillaRender; // CraftBukkit // Paper
++            // Paper end
+             if (this.dirtyData) {
+                 this.dirtyData = false;
+                 mapPatch = this.createPatch(render.buffer); // CraftBukkit
+@@ -623,6 +635,7 @@ public class MapItemSavedData extends SavedData {
+                 this.dirtyDecorations = false;
+                 // CraftBukkit start
+                 java.util.Collection<MapDecoration> icons = new java.util.ArrayList<MapDecoration>();
++                if (vanillaMaps) this.addSeenPlayers(icons); // Paper
  
-     public class HoldingPlayer {
- 
+                 for (org.bukkit.map.MapCursor cursor : render.cursors) {
+                     if (cursor.isVisible()) {
+@@ -658,6 +671,23 @@ public class MapItemSavedData extends SavedData {
+         private void markDecorationsDirty() {
+             this.dirtyDecorations = true;
+         }
++
 +        // Paper start
 +        private void addSeenPlayers(java.util.Collection<MapDecoration> icons) {
 +            org.bukkit.entity.Player player = (org.bukkit.entity.Player) this.player.getBukkitEntity();
@@ -95,30 +123,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                }
 +            });
 +        }
++
 +        private boolean shouldUseVanillaMap() {
-+            return mapView.getRenderers().size() == 1 && mapView.getRenderers().get(0).getClass() == org.bukkit.craftbukkit.map.CraftMapRenderer.class;
++            return mapView.getRenderers().size() == 1 && mapView.getRenderers().getFirst().getClass() == org.bukkit.craftbukkit.map.CraftMapRenderer.class;
 +        }
 +        // Paper end
-         public final Player player;
-         private boolean dirtyData = true;
-         private int minDirtyX;
-@@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
-         @Nullable
-         Packet<?> nextUpdatePacket(MapId mapId) {
-             MapItemSavedData.MapPatch worldmap_c;
--            org.bukkit.craftbukkit.map.RenderData render = MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()); // CraftBukkit
-+            if (!this.dirtyData && this.tick % 5 != 0) { this.tick++; return null; } // Paper - this won't end up sending, so don't render it!
-+            boolean vanillaMaps = shouldUseVanillaMap(); // Paper
-+            org.bukkit.craftbukkit.map.RenderData render = !vanillaMaps ? MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()) : MapItemSavedData.this.vanillaRender; // CraftBukkit // Paper
+     }
  
-             if (this.dirtyData) {
-                 this.dirtyData = false;
-@@ -0,0 +0,0 @@ public class MapItemSavedData extends SavedData {
-                 // CraftBukkit start
-                 java.util.Collection<MapDecoration> icons = new java.util.ArrayList<MapDecoration>();
- 
-+                if (vanillaMaps) addSeenPlayers(icons); // Paper
-+
-                 for (org.bukkit.map.MapCursor cursor : render.cursors) {
-                     if (cursor.isVisible()) {
-                         icons.add(new MapDecoration(CraftMapCursor.CraftType.bukkitToMinecraftHolder(cursor.getType()), cursor.getX(), cursor.getY(), cursor.getDirection(), Optional.ofNullable(PaperAdventure.asVanilla(cursor.caption()))));
+     record MapDecorationLocation(Holder<MapDecorationType> type, byte x, byte y, byte rot) {
