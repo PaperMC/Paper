@@ -7,7 +7,7 @@ Optimise the stream.anyMatch statement to move to a bitset
 where we can replace the call with a single bitwise operation.
 
 diff --git a/net/minecraft/world/entity/ai/goal/Goal.java b/net/minecraft/world/entity/ai/goal/Goal.java
-index e99836c4073d8b25eddd3b4c784dbdb1f0c4f2b1..a2d788a656b2a5767c8a00bbcaca16efa2db8d24 100644
+index d4f8387254a65b25fc808932a069298d0f8da091..5f5bf0e710ecff09a571091e5a923332be70cb74 100644
 --- a/net/minecraft/world/entity/ai/goal/Goal.java
 +++ b/net/minecraft/world/entity/ai/goal/Goal.java
 @@ -7,7 +7,15 @@ import net.minecraft.world.entity.Entity;
@@ -15,15 +15,15 @@ index e99836c4073d8b25eddd3b4c784dbdb1f0c4f2b1..a2d788a656b2a5767c8a00bbcaca16ef
  
  public abstract class Goal {
 -    private final EnumSet<Goal.Flag> flags = EnumSet.noneOf(Goal.Flag.class);
-+    private final ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
++    private final ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from GoalSelector
 +
-+    // Paper start - remove streams from pathfindergoalselector; make sure types are not empty
++    // Paper start - remove streams from GoalSelector; make sure types are not empty
 +    protected Goal() {
 +        if (this.goalTypes.size() == 0) {
 +            this.goalTypes.addUnchecked(Flag.UNKNOWN_BEHAVIOR);
 +        }
 +    }
-+    // Paper end - remove streams from pathfindergoalselector
++    // Paper end - remove streams from GoalSelector
  
      public abstract boolean canUse();
  
@@ -33,13 +33,13 @@ index e99836c4073d8b25eddd3b4c784dbdb1f0c4f2b1..a2d788a656b2a5767c8a00bbcaca16ef
      public void setFlags(EnumSet<Goal.Flag> flagSet) {
 -        this.flags.clear();
 -        this.flags.addAll(flagSet);
-+        // Paper start - remove streams from pathfindergoalselector
++        // Paper start - remove streams from GoalSelector
 +        this.goalTypes.clear();
 +        this.goalTypes.addAllUnchecked(flagSet);
 +        if (this.goalTypes.size() == 0) {
 +            this.goalTypes.addUnchecked(Flag.UNKNOWN_BEHAVIOR);
 +        }
-+        // Paper end - remove streams from pathfindergoalselector;
++        // Paper end - remove streams from GoalSelector
      }
  
      @Override
@@ -49,10 +49,10 @@ index e99836c4073d8b25eddd3b4c784dbdb1f0c4f2b1..a2d788a656b2a5767c8a00bbcaca16ef
  
 -    public EnumSet<Goal.Flag> getFlags() {
 -        return this.flags;
-+    // Paper start - remove streams from pathfindergoalselector
++    // Paper start - remove streams from GoalSelector
 +    public ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() {
 +        return this.goalTypes;
-+        // Paper end - remove streams from pathfindergoalselector
++        // Paper end - remove streams from GoalSelector
      }
  
  
@@ -66,10 +66,10 @@ index e99836c4073d8b25eddd3b4c784dbdb1f0c4f2b1..a2d788a656b2a5767c8a00bbcaca16ef
 -        this.flags.add(flag);
 +        this.goalTypes.addUnchecked(flag);
      }
- 
      // Paper end - Mob Goal API
+ 
 diff --git a/net/minecraft/world/entity/ai/goal/GoalSelector.java b/net/minecraft/world/entity/ai/goal/GoalSelector.java
-index eeba224bd575451ba6023df65ef9d9b97f7f1c71..20f0c1a444f40b28fe4de9ebc9eb40243c1f22a0 100644
+index eeba224bd575451ba6023df65ef9d9b97f7f1c71..a927c2790c8ab9ccaa7161b970e10b0b44817dd8 100644
 --- a/net/minecraft/world/entity/ai/goal/GoalSelector.java
 +++ b/net/minecraft/world/entity/ai/goal/GoalSelector.java
 @@ -24,7 +24,8 @@ public class GoalSelector {
@@ -77,8 +77,8 @@ index eeba224bd575451ba6023df65ef9d9b97f7f1c71..20f0c1a444f40b28fe4de9ebc9eb4024
      private final Map<Goal.Flag, WrappedGoal> lockedFlags = new EnumMap<>(Goal.Flag.class);
      private final Set<WrappedGoal> availableGoals = new ObjectLinkedOpenHashSet<>();
 -    private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class);
-+    private static final Goal.Flag[] GOAL_FLAG_VALUES = Goal.Flag.values(); // Paper - remove streams from pathfindergoalselector
-+    private final ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
++    private static final Goal.Flag[] GOAL_FLAG_VALUES = Goal.Flag.values(); // Paper - remove streams from GoalSelector
++    private final ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from GoalSelector
      private int curRate; // Paper - EAR 2
  
      public void addGoal(int priority, Goal goal) {
@@ -144,17 +144,17 @@ index eeba224bd575451ba6023df65ef9d9b97f7f1c71..20f0c1a444f40b28fe4de9ebc9eb4024
  
      public void disableControlFlag(Goal.Flag flag) {
 -        this.disabledFlags.add(flag);
-+        this.goalTypes.addUnchecked(flag); // Paper - remove streams from pathfindergoalselector
++        this.goalTypes.addUnchecked(flag); // Paper - remove streams from GoalSelector
      }
  
      public void enableControlFlag(Goal.Flag flag) {
 -        this.disabledFlags.remove(flag);
-+        this.goalTypes.removeUnchecked(flag); // Paper - remove streams from pathfindergoalselector
++        this.goalTypes.removeUnchecked(flag); // Paper - remove streams from GoalSelector
      }
  
      public void setControlFlag(Goal.Flag flag, boolean enabled) {
 diff --git a/net/minecraft/world/entity/ai/goal/WrappedGoal.java b/net/minecraft/world/entity/ai/goal/WrappedGoal.java
-index 4bdbd323b642ed3422948fe24780be8b503602dc..5aaad796d2e2f7b57b1fd911a1498cdf235c36be 100644
+index 4bdbd323b642ed3422948fe24780be8b503602dc..2c2ab6a1df9d3d23773e44ce4041cc1c21b55163 100644
 --- a/net/minecraft/world/entity/ai/goal/WrappedGoal.java
 +++ b/net/minecraft/world/entity/ai/goal/WrappedGoal.java
 @@ -69,7 +69,7 @@ public class WrappedGoal extends Goal {
@@ -162,7 +162,7 @@ index 4bdbd323b642ed3422948fe24780be8b503602dc..5aaad796d2e2f7b57b1fd911a1498cdf
  
      @Override
 -    public EnumSet<Goal.Flag> getFlags() {
-+    public ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() { // Paper - remove streams from pathfindergoalselector
++    public ca.spottedleaf.moonrise.common.set.OptimizedSmallEnumSet<Goal.Flag> getFlags() { // Paper - remove streams from GoalSelector
          return this.goal.getFlags();
      }
  
