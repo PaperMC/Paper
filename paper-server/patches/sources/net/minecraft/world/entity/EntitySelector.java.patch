@@ -24,7 +24,7 @@
  
      private EntitySelector() {
      }
-@@ -26,15 +_,20 @@
+@@ -26,29 +_,34 @@
      }
  
      public static Predicate<Entity> pushableBy(Entity entity) {
@@ -38,12 +38,38 @@
          return (Predicate<Entity>)(collisionRule == Team.CollisionRule.NEVER
              ? Predicates.alwaysFalse()
              : NO_SPECTATORS.and(
-                 pushedEntity -> {
+-                pushedEntity -> {
 -                    if (!pushedEntity.isPushable()) {
-+                    if (!pushedEntity.isCollidable(ignoreClimbing) || !pushedEntity.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(pushedEntity)) { // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
++            pushedEntity -> {
++                if (!pushedEntity.isCollidable(ignoreClimbing) || !pushedEntity.canCollideWithBukkit(entity) || !entity.canCollideWithBukkit(pushedEntity)) { // CraftBukkit - collidable API // Paper - Climbing should not bypass cramming gamerule
++                    return false;
++                } else if (!entity.level().isClientSide || pushedEntity instanceof Player && ((Player)pushedEntity).isLocalPlayer()) {
++                    Team team1 = pushedEntity.getTeam();
++                    Team.CollisionRule collisionRule1 = team1 == null ? Team.CollisionRule.ALWAYS : team1.getCollisionRule();
++                    if (collisionRule1 == Team.CollisionRule.NEVER || (pushedEntity instanceof Player && !io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions)) { // Paper - Configurable player collision
                          return false;
 -                    } else if (!entity.level().isClientSide || pushedEntity instanceof Player && ((Player)pushedEntity).isLocalPlayer()) {
-+                    } else if (pushedEntity instanceof Player && entity instanceof Player && !io.papermc.paper.configuration.GlobalConfiguration.get().collisions.enablePlayerCollisions) { // Paper - Configurable player collision
-                         Team team1 = pushedEntity.getTeam();
-                         Team.CollisionRule collisionRule1 = team1 == null ? Team.CollisionRule.ALWAYS : team1.getCollisionRule();
-                         if (collisionRule1 == Team.CollisionRule.NEVER) {
+-                        Team team1 = pushedEntity.getTeam();
+-                        Team.CollisionRule collisionRule1 = team1 == null ? Team.CollisionRule.ALWAYS : team1.getCollisionRule();
+-                        if (collisionRule1 == Team.CollisionRule.NEVER) {
+-                            return false;
+-                        } else {
+-                            boolean flag = team != null && team.isAlliedTo(team1);
+-                            return (collisionRule != Team.CollisionRule.PUSH_OWN_TEAM && collisionRule1 != Team.CollisionRule.PUSH_OWN_TEAM || !flag)
+-                                && (collisionRule != Team.CollisionRule.PUSH_OTHER_TEAMS && collisionRule1 != Team.CollisionRule.PUSH_OTHER_TEAMS || flag);
+-                        }
+                     } else {
+-                        return false;
++                        boolean flag = team != null && team.isAlliedTo(team1);
++                        return (collisionRule != Team.CollisionRule.PUSH_OWN_TEAM && collisionRule1 != Team.CollisionRule.PUSH_OWN_TEAM || !flag)
++                            && (collisionRule != Team.CollisionRule.PUSH_OTHER_TEAMS && collisionRule1 != Team.CollisionRule.PUSH_OTHER_TEAMS || flag);
+                     }
++                } else {
++                    return false;
+                 }
+-            ));
++            }
++        ));
+     }
+ 
+     public static Predicate<Entity> notRiding(Entity entity) {
