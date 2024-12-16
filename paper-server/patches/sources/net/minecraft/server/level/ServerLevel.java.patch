@@ -291,14 +291,6 @@
          if (flag) {
              this.resetEmptyTime();
          }
-@@ -385,6 +_,7 @@
-                 profilerFiller.pop();
-             }
- 
-+            org.spigotmc.ActivationRange.activateEntities(this); // Spigot
-             this.entityTickList
-                 .forEach(
-                     entity -> {
 @@ -461,12 +_,12 @@
          int minBlockZ = pos.getMinBlockZ();
          ProfilerFiller profilerFiller = Profiler.get();
@@ -464,52 +456,22 @@
      }
  
      public void resetEmptyTime() {
-@@ -752,15 +_,20 @@
-         entity.tickCount++;
+@@ -753,6 +_,7 @@
          profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
          profilerFiller.incrementCounter("tickNonPassenger");
-+        // Spigot start
-+        final boolean isActive = org.spigotmc.ActivationRange.checkIfActive(entity); // Paper - EAR 2
-+        if (isActive) {
          entity.tick();
 +        entity.postTick(); // CraftBukkit
-+        } else {entity.inactiveTick();} // Spigot end
          profilerFiller.pop();
  
          for (Entity entity1 : entity.getPassengers()) {
--            this.tickPassenger(entity, entity1);
-+            this.tickPassenger(entity, entity1, isActive); // Paper - EAR 2
-         }
-     }
- 
--    private void tickPassenger(Entity ridingEntity, Entity passengerEntity) {
-+    private void tickPassenger(Entity ridingEntity, Entity passengerEntity, boolean isActive) { // Paper - EAR 2
-         if (passengerEntity.isRemoved() || passengerEntity.getVehicle() != ridingEntity) {
-             passengerEntity.stopRiding();
-         } else if (passengerEntity instanceof Player || this.entityTickList.contains(passengerEntity)) {
-@@ -769,11 +_,21 @@
-             ProfilerFiller profilerFiller = Profiler.get();
+@@ -770,6 +_,7 @@
              profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(passengerEntity.getType()).toString());
              profilerFiller.incrementCounter("tickPassenger");
-+            // Paper start - EAR 2
-+            if (isActive) {
              passengerEntity.rideTick();
 +            passengerEntity.postTick(); // CraftBukkit
-+            } else {
-+            passengerEntity.setDeltaMovement(Vec3.ZERO);
-+            passengerEntity.inactiveTick();
-+            // copied from inside of if (isPassenger()) of passengerTick, but that ifPassenger is unnecessary
-+            ridingEntity.positionRider(passengerEntity);
-+            // Paper end - EAR 2
-+            }
              profilerFiller.pop();
  
              for (Entity entity : passengerEntity.getPassengers()) {
--                this.tickPassenger(passengerEntity, entity);
-+                this.tickPassenger(passengerEntity, entity, isActive); // Paper - EAR 2
-             }
-         }
-     }
 @@ -786,6 +_,7 @@
      public void save(@Nullable ProgressListener progress, boolean flush, boolean skipSave) {
          ServerChunkCache chunkSource = this.getChunkSource();

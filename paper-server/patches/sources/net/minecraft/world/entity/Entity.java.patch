@@ -133,7 +133,7 @@
      private final double[] pistonDeltas = new double[]{0.0, 0.0, 0.0};
      private long pistonDeltasGameTime;
      private EntityDimensions dimensions;
-@@ -250,6 +_,68 @@
+@@ -250,6 +_,63 @@
      private final List<Entity.Movement> movementThisTick = new ArrayList<>();
      private final Set<BlockState> blocksInside = new ReferenceArraySet<>();
      private final LongSet visitedBlocks = new LongOpenHashSet();
@@ -153,12 +153,6 @@
 +    // Marks an entity, that it was removed by a plugin via Entity#remove
 +    // Main use case currently is for SPIGOT-7487, preventing dropping of leash when leash is removed
 +    public boolean pluginRemoved = false;
-+    // Spigot start
-+    public final org.spigotmc.ActivationRange.ActivationType activationType = org.spigotmc.ActivationRange.initializeEntityActivationType(this);
-+    public final boolean defaultActivationState;
-+    public long activatedTick = Integer.MIN_VALUE;
-+    public void inactiveTick() { }
-+    // Spigot end
 +    protected int numCollisions = 0; // Paper - Cap entity collisions
 +    public boolean fromNetherPortal; // Paper - Add option to nerf pigmen from nether portals
 +    public boolean spawnedViaMobSpawner; // Paper - Yes this name is similar to above, upstream took the better one
@@ -170,6 +164,7 @@
 +    public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
 +    public boolean fixedPose = false; // Paper - Expand Pose API
 +    private final int despawnTime; // Paper - entity despawn time limit
++    public final io.papermc.paper.entity.activation.ActivationType activationType = io.papermc.paper.entity.activation.ActivationType.activationTypeFor(this); // Paper - EAR 2/tracking ranges
 +
 +    public void setOrigin(@javax.annotation.Nonnull org.bukkit.Location location) {
 +        this.origin = location.toVector();
@@ -202,20 +197,6 @@
  
      public Entity(EntityType<?> entityType, Level level) {
          this.type = entityType;
-@@ -258,6 +_,13 @@
-         this.position = Vec3.ZERO;
-         this.blockPosition = BlockPos.ZERO;
-         this.chunkPosition = ChunkPos.ZERO;
-+        // Spigot start
-+        if (level != null) {
-+            this.defaultActivationState = org.spigotmc.ActivationRange.initializeEntityActivationState(this, level.spigotConfig);
-+        } else {
-+            this.defaultActivationState = false;
-+        }
-+        // Spigot end
-         SynchedEntityData.Builder builder = new SynchedEntityData.Builder(this);
-         builder.define(DATA_SHARED_FLAGS_ID, (byte)0);
-         builder.define(DATA_AIR_SUPPLY_ID, this.getMaxAirSupply());
 @@ -271,6 +_,7 @@
          this.entityData = builder.build();
          this.setPos(0.0, 0.0, 0.0);

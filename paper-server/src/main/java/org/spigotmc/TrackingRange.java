@@ -1,5 +1,6 @@
 package org.spigotmc;
 
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Display;
 import net.minecraft.world.entity.Entity;
@@ -25,11 +26,12 @@ public final class TrackingRange {
         if (defaultRange == 0) {
             return defaultRange;
         }
+
         final SpigotWorldConfig config = entity.level().spigotConfig;
         if (entity instanceof ServerPlayer) {
             return config.playerTrackingRange;
-            // Paper start - Simplify and set water mobs to animal tracking range
         }
+
         switch (entity.activationType) {
             case RAIDER:
             case MONSTER:
@@ -41,14 +43,15 @@ public final class TrackingRange {
                 return config.animalTrackingRange;
             case MISC:
         }
+
         if (entity instanceof ItemFrame || entity instanceof Painting || entity instanceof ItemEntity || entity instanceof ExperienceOrb) {
-        // Paper end
             return config.miscTrackingRange;
         } else if (entity instanceof Display) {
             return config.displayTrackingRange;
         } else {
             if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
-                return ((net.minecraft.server.level.ServerLevel) (entity.getCommandSenderWorld())).getChunkSource().chunkMap.serverViewDistance; // Paper - enderdragon is exempt
+                // Exempt ender dragon
+                return ((ServerLevel) entity.getCommandSenderWorld()).getChunkSource().chunkMap.serverViewDistance;
             }
             return config.otherTrackingRange;
         }
