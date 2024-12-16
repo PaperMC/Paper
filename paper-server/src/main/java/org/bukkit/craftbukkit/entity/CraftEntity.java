@@ -857,7 +857,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public void setPortalCooldown(int cooldown) {
-        this.getHandle().setPortalCooldown(cooldown);;
+        this.getHandle().setPortalCooldown(cooldown);
     }
 
     @Override

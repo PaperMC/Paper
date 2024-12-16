@@ -1097,7 +1097,7 @@
                      String string = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1757,10 +_,61 @@
+@@ -1757,10 +_,51 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1120,28 +1120,18 @@
          public void onTrackingEnd(Entity entity) {
 +            org.spigotmc.AsyncCatcher.catchOp("entity unregister"); // Spigot
 +            // Spigot start
-+            if ( entity instanceof Player )
-+            {
-+                com.google.common.collect.Streams.stream( ServerLevel.this.getServer().getAllLevels() ).map( ServerLevel::getDataStorage ).forEach( (worldData) ->
-+                {
-+                    for (Object o : worldData.cache.values() )
-+                    {
-+                        if ( o instanceof MapItemSavedData )
-+                        {
-+                            MapItemSavedData map = (MapItemSavedData) o;
-+                            map.carriedByPlayers.remove( (Player) entity );
-+                            for (
-+                                java.util.Iterator<net.minecraft.world.level.saveddata.maps.MapItemSavedData.HoldingPlayer> iter = map.carriedBy.iterator();
-+                                iter.hasNext();
-+                            ) {
-+                                if ( iter.next().player == entity )
-+                                {
-+                                    iter.remove();
-+                                }
-+                            }
++            // TODO I don't think this is needed anymore
++            if (entity instanceof Player player) {
++                for (final ServerLevel level : ServerLevel.this.getServer().getAllLevels()) {
++                    for (final Optional<net.minecraft.world.level.saveddata.SavedData> savedData : level.getDataStorage().cache.values()) {
++                        if (savedData.isEmpty() || !(savedData.get() instanceof MapItemSavedData map)) {
++                            continue;
 +                        }
++
++                        map.carriedByPlayers.remove(player);
++                        map.carriedBy.removeIf(holdingPlayer -> holdingPlayer.player == player);
 +                    }
-+                } );
++                }
 +            }
 +            // Spigot end
 +            // Spigot Start
