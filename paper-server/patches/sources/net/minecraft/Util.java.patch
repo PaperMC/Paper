@@ -37,7 +37,7 @@
      }
  
      public static long getEpochMillis() {
-@@ -146,15 +_,17 @@
+@@ -146,9 +_,10 @@
          return FILENAME_DATE_TIME_FORMATTER.format(ZonedDateTime.now());
      }
  
@@ -50,22 +50,16 @@
          if (i <= 0) {
              directExecutorService = MoreExecutors.newDirectExecutorService();
          } else {
-             AtomicInteger atomicInteger = new AtomicInteger(1);
--            directExecutorService = new ForkJoinPool(i, forkJoinPool -> {
--                final String string = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
-+            directExecutorService = Executors.newFixedThreadPool(i, target -> new io.papermc.paper.util.ServerWorkerThread(target, name, priorityModifier));
-+        }
-+        /*  final String string = "Worker-" + name + "-" + atomicInteger.getAndIncrement();
-                 ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(forkJoinPool) {
-                     @Override
-                     protected void onStart() {
-@@ -176,13 +_,27 @@
+@@ -173,16 +_,30 @@
+                         super.onTermination(throwOnTermination);
+                     }
+                 };
++                forkJoinWorkerThread.setPriority(Thread.NORM_PRIORITY + priorityModifier); // Paper - Deprioritize over main
                  forkJoinWorkerThread.setName(string);
                  return forkJoinWorkerThread;
-             }, Util::onThreadException, true);
--        }
-+        }*/
-+        // Paper end
+-            }, Util::onThreadException, true);
++            }, Util::onThreadException, true, 0, Integer.MAX_VALUE, 1, null, 365, TimeUnit.DAYS); // Paper - do not expire threads
+         }
  
          return new TracingExecutor(directExecutorService);
      }
