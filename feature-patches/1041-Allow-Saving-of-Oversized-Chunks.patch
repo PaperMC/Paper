@@ -30,36 +30,23 @@ This fix also maintains compatability if someone switches server jars to one wit
 this fix, as the data will remain in the oversized file. Once the server returns
 to a jar with this fix, the data will be restored.
 
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -0,0 +0,0 @@ import java.nio.file.LinkOption;
- import java.nio.file.Path;
- import java.nio.file.StandardCopyOption;
- import java.nio.file.StandardOpenOption;
-+import java.util.zip.InflaterInputStream; // Paper
- import javax.annotation.Nullable;
- import net.minecraft.Util;
- import net.minecraft.resources.ResourceLocation;
- import net.minecraft.util.profiling.jfr.JvmProfiler;
-+import net.minecraft.nbt.CompoundTag; // Paper
-+import net.minecraft.nbt.NbtIo; // Paper
- import net.minecraft.world.level.ChunkPos;
- import org.slf4j.Logger;
- 
-@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
-         this.usedSectors = new RegionBitmap();
-         this.info = storageKey;
+diff --git a/net/minecraft/world/level/chunk/storage/RegionFile.java b/net/minecraft/world/level/chunk/storage/RegionFile.java
+index 2b4fa89f15a42ddd627983fbd1377fb7c9864896..7491644233d52dc56d83de5ad3373f6a9a455378 100644
+--- a/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -54,6 +54,7 @@ public class RegionFile implements AutoCloseable {
+         this.info = info;
          this.path = path;
-+        initOversizedState(); // Paper
-         this.version = compressionFormat;
-         if (!Files.isDirectory(directory, new LinkOption[0])) {
-             throw new IllegalArgumentException("Expected directory, got " + String.valueOf(directory.toAbsolutePath()));
-@@ -0,0 +0,0 @@ public class RegionFile implements AutoCloseable {
- 
+         this.version = version;
++        this.initOversizedState(); // Paper
+         if (!Files.isDirectory(externalFileDir)) {
+             throw new IllegalArgumentException("Expected directory, got " + externalFileDir.toAbsolutePath());
+         } else {
+@@ -424,4 +425,75 @@ public class RegionFile implements AutoCloseable {
+     interface CommitOp {
+         void run() throws IOException;
      }
- 
++
 +    // Paper start
 +    private final byte[] oversized = new byte[1024];
 +    private int oversizedCount;
@@ -78,9 +65,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    private static int getChunkIndex(int x, int z) {
 +        return (x & 31) + (z & 31) * 32;
 +    }
++
 +    synchronized boolean isOversized(int x, int z) {
 +        return this.oversized[getChunkIndex(x, z)] == 1;
 +    }
++
 +    synchronized void setOversized(int x, int z, boolean oversized) throws IOException {
 +        final int offset = getChunkIndex(x, z);
 +        boolean previous = this.oversized[offset] == 1;
@@ -120,22 +109,20 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        return this.path.getParent().resolve(this.path.getFileName().toString().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
 +    }
 +
-+    synchronized CompoundTag getOversizedData(int x, int z) throws IOException {
++    synchronized net.minecraft.nbt.CompoundTag getOversizedData(int x, int z) throws IOException {
 +        Path file = getOversizedFile(x, z);
-+        try (DataInputStream out = new DataInputStream(new java.io.BufferedInputStream(new InflaterInputStream(Files.newInputStream(file))))) {
-+            return NbtIo.read((java.io.DataInput) out);
++        try (DataInputStream out = new DataInputStream(new java.io.BufferedInputStream(new java.util.zip.InflaterInputStream(Files.newInputStream(file))))) {
++            return net.minecraft.nbt.NbtIo.read((java.io.DataInput) out);
 +        }
 +
 +    }
 +    // Paper end
-     private class ChunkBuffer extends ByteArrayOutputStream {
- 
-         private final ChunkPos pos;
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -0,0 +0,0 @@ public final class RegionFileStorage implements AutoCloseable {
+ }
+diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+index 5ac84d6b47e7fdc16e1c09b739829de3d316bf5b..51bf310423013d0ae9d3202d66e36a053a767197 100644
+--- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
++++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+@@ -47,6 +47,43 @@ public final class RegionFileStorage implements AutoCloseable {
          }
      }
  
@@ -148,7 +135,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        synchronized (regionfile) {
 +            try (DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkCoordinate)) {
 +                CompoundTag oversizedData = regionfile.getOversizedData(chunkCoordinate.x, chunkCoordinate.z);
-+                CompoundTag chunk = NbtIo.read((DataInput) datainputstream);
++                CompoundTag chunk = NbtIo.read(datainputstream);
 +                if (oversizedData == null) {
 +                    return chunk;
 +                }
@@ -177,26 +164,26 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end
 +
      @Nullable
-     public CompoundTag read(ChunkPos pos) throws IOException {
+     public CompoundTag read(ChunkPos chunkPos) throws IOException {
          // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
-@@ -0,0 +0,0 @@ public final class RegionFileStorage implements AutoCloseable {
+@@ -55,6 +92,12 @@ public final class RegionFileStorage implements AutoCloseable {
+             return null;
+         }
          // CraftBukkit end
-         DataInputStream datainputstream = regionfile.getChunkDataInputStream(pos);
- 
 +        // Paper start
-+        if (regionfile.isOversized(pos.x, pos.z)) {
-+            printOversizedLog("Loading Oversized Chunk!", regionfile.getPath(), pos.x, pos.z);
-+            return readOversizedChunk(regionfile, pos);
++        if (regionFile.isOversized(chunkPos.x, chunkPos.z)) {
++            printOversizedLog("Loading Oversized Chunk!", regionFile.getPath(), chunkPos.x, chunkPos.z);
++            return readOversizedChunk(regionFile, chunkPos);
 +        }
 +        // Paper end
-         CompoundTag nbttagcompound;
-         label43:
-         {
-@@ -0,0 +0,0 @@ public final class RegionFileStorage implements AutoCloseable {
  
-             try {
-                 NbtIo.write(nbt, (DataOutput) dataoutputstream);
-+                regionfile.setOversized(pos.x, pos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
-             } catch (Throwable throwable) {
-                 if (dataoutputstream != null) {
-                     try {
+         CompoundTag var4;
+         try (DataInputStream chunkDataInputStream = regionFile.getChunkDataInputStream(chunkPos)) {
+@@ -90,6 +133,7 @@ public final class RegionFileStorage implements AutoCloseable {
+         } else {
+             try (DataOutputStream chunkDataOutputStream = regionFile.getChunkDataOutputStream(chunkPos)) {
+                 NbtIo.write(chunkData, chunkDataOutputStream);
++                regionFile.setOversized(chunkPos.x, chunkPos.z, false); // Paper - We don't do this anymore, mojang stores differently, but clear old meta flag if it exists to get rid of our own meta file once last oversized is gone
+             }
+         }
+     }
