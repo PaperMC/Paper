@@ -103,6 +103,9 @@ public class EntityRemoveEventTest {
         }
 
         Class<?> ownerClass = Class.forName(owner.replace('/', '.'), false, this.getClass().getClassLoader());
+        if (ownerClass == EntityAccess.class) {
+            return false;
+        }
 
         // Found missing discard, remove or setRemoved method call
         return EntityAccess.class.isAssignableFrom(ownerClass);
