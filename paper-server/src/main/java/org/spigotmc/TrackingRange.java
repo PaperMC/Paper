@@ -18,9 +18,7 @@ public final class TrackingRange {
      * Gets the range an entity should be 'tracked' by players and visible in
      * the client.
      *
-     * @param entity
      * @param defaultRange Default range defined by Mojang
-     * @return
      */
     public static int getEntityTrackingRange(final Entity entity, final int defaultRange) {
         if (defaultRange == 0) {
@@ -51,7 +49,7 @@ public final class TrackingRange {
         } else {
             if (entity instanceof net.minecraft.world.entity.boss.enderdragon.EnderDragon) {
                 // Exempt ender dragon
-                return ((ServerLevel) entity.getCommandSenderWorld()).getChunkSource().chunkMap.serverViewDistance;
+                return ((ServerLevel) entity.level()).getChunkSource().chunkMap.serverViewDistance;
             }
             return config.otherTrackingRange;
         }
