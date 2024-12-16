@@ -6,13 +6,14 @@ Subject: [PATCH] Add PaperHooks
 
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..834c5ce238c7adb0164a6282582d709348ef96cc
+index 0000000000000000000000000000000000000000..2988c418b34d6f699a9c24406cfd6949465b64f0
 --- /dev/null
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-@@ -0,0 +1,240 @@
+@@ -0,0 +1,241 @@
 +package ca.spottedleaf.moonrise.paper;
 +
 +import ca.spottedleaf.moonrise.common.PlatformHooks;
++import ca.spottedleaf.moonrise.paper.util.BaseChunkSystemHooks;
 +import com.mojang.datafixers.DSL;
 +import com.mojang.datafixers.DataFixer;
 +import com.mojang.serialization.Dynamic;
@@ -39,7 +40,7 @@ index 0000000000000000000000000000000000000000..834c5ce238c7adb0164a6282582d7093
 +import java.util.List;
 +import java.util.function.Predicate;
 +
-+public final class PaperHooks implements PlatformHooks {
++public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHooks {
 +
 +    @Override
 +    public String getBrand() {
@@ -248,5 +249,343 @@ index 0000000000000000000000000000000000000000..834c5ce238c7adb0164a6282582d7093
 +    @Override
 +    public int modifyEntityTrackingRange(final Entity entity, final int currentRange) {
 +        return org.spigotmc.TrackingRange.getEntityTrackingRange(entity, currentRange);
++    }
++}
+diff --git a/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java b/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..34b45bc11124efb22f0f3ae5b2ad8f445c719476
+--- /dev/null
++++ b/ca/spottedleaf/moonrise/paper/util/BaseChunkSystemHooks.java
+@@ -0,0 +1,332 @@
++package ca.spottedleaf.moonrise.paper.util;
++
++import ca.spottedleaf.concurrentutil.util.Priority;
++import com.mojang.logging.LogUtils;
++import net.minecraft.server.level.ChunkHolder;
++import net.minecraft.server.level.ChunkResult;
++import net.minecraft.server.level.FullChunkStatus;
++import net.minecraft.server.level.ServerLevel;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.server.level.TicketType;
++import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.chunk.ChunkAccess;
++import net.minecraft.world.level.chunk.LevelChunk;
++import net.minecraft.world.level.chunk.status.ChunkPyramid;
++import net.minecraft.world.level.chunk.status.ChunkStatus;
++import net.minecraft.world.level.chunk.status.ChunkStep;
++import org.bukkit.Bukkit;
++import org.slf4j.Logger;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.concurrent.CompletableFuture;
++import java.util.function.Consumer;
++
++public abstract class BaseChunkSystemHooks implements ca.spottedleaf.moonrise.common.util.ChunkSystemHooks {
++
++    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final ChunkStep FULL_CHUNK_STEP = ChunkPyramid.GENERATION_PYRAMID.getStepTo(ChunkStatus.FULL);
++    private static final TicketType<Long> CHUNK_LOAD = TicketType.create("chunk_load", Long::compareTo);
++
++    private long chunkLoadCounter = 0L;
++
++    private static int getDistance(final ChunkStatus status) {
++        return FULL_CHUNK_STEP.getAccumulatedRadiusOf(status);
++    }
++
++    @Override
++    public void scheduleChunkTask(final ServerLevel level, final int chunkX, final int chunkZ, final Runnable run) {
++        this.scheduleChunkTask(level, chunkX, chunkZ, run, Priority.NORMAL);
++    }
++
++    @Override
++    public void scheduleChunkTask(final ServerLevel level, final int chunkX, final int chunkZ, final Runnable run, final Priority priority) {
++        level.chunkSource.mainThreadProcessor.execute(run);
++    }
++
++    @Override
++    public void scheduleChunkLoad(final ServerLevel level, final int chunkX, final int chunkZ, final boolean gen,
++                                  final ChunkStatus toStatus, final boolean addTicket, final Priority priority,
++                                  final Consumer<ChunkAccess> onComplete) {
++        if (gen) {
++            this.scheduleChunkLoad(level, chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
++            return;
++        }
++        this.scheduleChunkLoad(level, chunkX, chunkZ, ChunkStatus.EMPTY, addTicket, priority, (final ChunkAccess chunk) -> {
++            if (chunk == null) {
++                if (onComplete != null) {
++                    onComplete.accept(null);
++                }
++            } else {
++                if (chunk.getPersistedStatus().isOrAfter(toStatus)) {
++                    BaseChunkSystemHooks.this.scheduleChunkLoad(level, chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
++                } else {
++                    if (onComplete != null) {
++                        onComplete.accept(null);
++                    }
++                }
++            }
++        });
++    }
++
++    @Override
++    public void scheduleChunkLoad(final ServerLevel level, final int chunkX, final int chunkZ, final ChunkStatus toStatus,
++                                  final boolean addTicket, final Priority priority, final Consumer<ChunkAccess> onComplete) {
++        if (!Bukkit.isOwnedByCurrentRegion(level.getWorld(), chunkX, chunkZ)) {
++            this.scheduleChunkTask(level, chunkX, chunkZ, () -> {
++                BaseChunkSystemHooks.this.scheduleChunkLoad(level, chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
++            }, priority);
++            return;
++        }
++
++        final int minLevel = 33 + getDistance(toStatus);
++        final Long chunkReference = addTicket ? Long.valueOf(++this.chunkLoadCounter) : null;
++        final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
++
++        if (addTicket) {
++            level.chunkSource.addTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel, chunkReference);
++        }
++        level.chunkSource.runDistanceManagerUpdates();
++
++        final Consumer<ChunkAccess> loadCallback = (final ChunkAccess chunk) -> {
++            try {
++                if (onComplete != null) {
++                    onComplete.accept(chunk);
++                }
++            } catch (final Throwable thr) {
++                LOGGER.error("Exception handling chunk load callback", thr);
++                com.destroystokyo.paper.util.SneakyThrow.sneaky(thr);
++            } finally {
++                if (addTicket) {
++                    level.chunkSource.addTicketAtLevel(net.minecraft.server.level.TicketType.UNKNOWN, chunkPos, minLevel, chunkPos);
++                    level.chunkSource.removeTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel, chunkReference);
++                }
++            }
++        };
++
++        final ChunkHolder holder = level.chunkSource.chunkMap.updatingChunkMap.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
++
++        if (holder == null || holder.getTicketLevel() > minLevel) {
++            loadCallback.accept(null);
++            return;
++        }
++
++        final CompletableFuture<ChunkResult<ChunkAccess>> loadFuture = holder.scheduleChunkGenerationTask(toStatus, level.chunkSource.chunkMap);
++
++        if (loadFuture.isDone()) {
++            loadCallback.accept(loadFuture.join().orElse(null));
++            return;
++        }
++
++        loadFuture.whenCompleteAsync((final ChunkResult<ChunkAccess> result, final Throwable thr) -> {
++            if (thr != null) {
++                loadCallback.accept(null);
++                return;
++            }
++            loadCallback.accept(result.orElse(null));
++        }, (final Runnable r) -> {
++            BaseChunkSystemHooks.this.scheduleChunkTask(level, chunkX, chunkZ, r, Priority.HIGHEST);
++        });
++    }
++
++    @Override
++    public void scheduleTickingState(final ServerLevel level, final int chunkX, final int chunkZ,
++                                     final FullChunkStatus toStatus, final boolean addTicket,
++                                     final Priority priority, final Consumer<LevelChunk> onComplete) {
++        // This method goes unused until the chunk system rewrite
++        if (toStatus == FullChunkStatus.INACCESSIBLE) {
++            throw new IllegalArgumentException("Cannot wait for INACCESSIBLE status");
++        }
++
++        if (!Bukkit.isOwnedByCurrentRegion(level.getWorld(), chunkX, chunkZ)) {
++            this.scheduleChunkTask(level, chunkX, chunkZ, () -> {
++                BaseChunkSystemHooks.this.scheduleTickingState(level, chunkX, chunkZ, toStatus, addTicket, priority, onComplete);
++            }, priority);
++            return;
++        }
++
++        final int minLevel = 33 - (toStatus.ordinal() - 1);
++        final int radius = toStatus.ordinal() - 1;
++        final Long chunkReference = addTicket ? Long.valueOf(++this.chunkLoadCounter) : null;
++        final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
++
++        if (addTicket) {
++            level.chunkSource.addTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel, chunkReference);
++        }
++        level.chunkSource.runDistanceManagerUpdates();
++
++        final Consumer<LevelChunk> loadCallback = (final LevelChunk chunk) -> {
++            try {
++                if (onComplete != null) {
++                    onComplete.accept(chunk);
++                }
++            } catch (final Throwable thr) {
++                LOGGER.error("Exception handling chunk load callback", thr);
++                com.destroystokyo.paper.util.SneakyThrow.sneaky(thr);
++            } finally {
++                if (addTicket) {
++                    level.chunkSource.addTicketAtLevel(TicketType.UNKNOWN, chunkPos, minLevel, chunkPos);
++                    level.chunkSource.removeTicketAtLevel(CHUNK_LOAD, chunkPos, minLevel, chunkReference);
++                }
++            }
++        };
++
++        final ChunkHolder holder = level.chunkSource.chunkMap.updatingChunkMap.get(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(chunkX, chunkZ));
++
++        if (holder == null || holder.getTicketLevel() > minLevel) {
++            loadCallback.accept(null);
++            return;
++        }
++
++        final CompletableFuture<ChunkResult<LevelChunk>> tickingState;
++        switch (toStatus) {
++            case FULL: {
++                tickingState = holder.getFullChunkFuture();
++                break;
++            }
++            case BLOCK_TICKING: {
++                tickingState = holder.getTickingChunkFuture();
++                break;
++            }
++            case ENTITY_TICKING: {
++                tickingState = holder.getEntityTickingChunkFuture();
++                break;
++            }
++            default: {
++                throw new IllegalStateException("Cannot reach here");
++            }
++        }
++
++        if (tickingState.isDone()) {
++            loadCallback.accept(tickingState.join().orElse(null));
++            return;
++        }
++
++        tickingState.whenCompleteAsync((final ChunkResult<LevelChunk> result, final Throwable thr) -> {
++            if (thr != null) {
++                loadCallback.accept(null);
++                return;
++            }
++            loadCallback.accept(result.orElse(null));
++        }, (final Runnable r) -> {
++            BaseChunkSystemHooks.this.scheduleChunkTask(level, chunkX, chunkZ, r, Priority.HIGHEST);
++        });
++    }
++
++    @Override
++    public List<ChunkHolder> getVisibleChunkHolders(final ServerLevel level) {
++        return new ArrayList<>(level.chunkSource.chunkMap.visibleChunkMap.values());
++    }
++
++    @Override
++    public List<ChunkHolder> getUpdatingChunkHolders(final ServerLevel level) {
++        return new ArrayList<>(level.chunkSource.chunkMap.updatingChunkMap.values());
++    }
++
++    @Override
++    public int getVisibleChunkHolderCount(final ServerLevel level) {
++        return level.chunkSource.chunkMap.visibleChunkMap.size();
++    }
++
++    @Override
++    public int getUpdatingChunkHolderCount(final ServerLevel level) {
++        return level.chunkSource.chunkMap.updatingChunkMap.size();
++    }
++
++    @Override
++    public boolean hasAnyChunkHolders(final ServerLevel level) {
++        return this.getUpdatingChunkHolderCount(level) != 0;
++    }
++
++    @Override
++    public void onChunkHolderCreate(final ServerLevel level, final ChunkHolder holder) {
++
++    }
++
++    @Override
++    public void onChunkHolderDelete(final ServerLevel level, final ChunkHolder holder) {
++
++    }
++
++    @Override
++    public void onChunkPreBorder(final LevelChunk chunk, final ChunkHolder holder) {
++
++    }
++
++    @Override
++    public void onChunkBorder(final LevelChunk chunk, final ChunkHolder holder) {
++
++    }
++
++    @Override
++    public void onChunkNotBorder(final LevelChunk chunk, final ChunkHolder holder) {
++
++    }
++
++    @Override
++    public void onChunkPostNotBorder(final LevelChunk chunk, final ChunkHolder holder) {
++
++    }
++
++    @Override
++    public void onChunkTicking(final LevelChunk chunk, final ChunkHolder holder) {
++
++    }
++
++    @Override
++    public void onChunkNotTicking(final LevelChunk chunk, final ChunkHolder holder) {
++
++    }
++
++    @Override
++    public void onChunkEntityTicking(final LevelChunk chunk, final ChunkHolder holder) {
++
++    }
++
++    @Override
++    public void onChunkNotEntityTicking(final LevelChunk chunk, final ChunkHolder holder) {
++
++    }
++
++    @Override
++    public ChunkHolder getUnloadingChunkHolder(final ServerLevel level, final int chunkX, final int chunkZ) {
++        return level.chunkSource.chunkMap.getUnloadingChunkHolder(chunkX, chunkZ);
++    }
++
++    @Override
++    public int getSendViewDistance(final ServerPlayer player) {
++        return this.getViewDistance(player);
++    }
++
++    @Override
++    public int getViewDistance(final ServerPlayer player) {
++        final ServerLevel level = player.serverLevel();
++        if (level == null) {
++            return Bukkit.getViewDistance();
++        }
++        return level.chunkSource.chunkMap.serverViewDistance;
++    }
++
++    @Override
++    public int getTickViewDistance(final ServerPlayer player) {
++        final ServerLevel level = player.serverLevel();
++        if (level == null) {
++            return Bukkit.getSimulationDistance();
++        }
++        return level.chunkSource.chunkMap.distanceManager.simulationDistance;
++    }
++
++    @Override
++    public void addPlayerToDistanceMaps(final ServerLevel world, final ServerPlayer player) {
++
++    }
++
++    @Override
++    public void removePlayerFromDistanceMaps(final ServerLevel world, final ServerPlayer player) {
++
++    }
++
++    @Override
++    public void updateMaps(final ServerLevel world, final ServerPlayer player) {
++
 +    }
 +}

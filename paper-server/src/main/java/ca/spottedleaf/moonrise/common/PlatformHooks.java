@@ -1,5 +1,6 @@
 package ca.spottedleaf.moonrise.common;
 
+import ca.spottedleaf.moonrise.common.util.ChunkSystemHooks;
 import com.mojang.datafixers.DSL;
 import com.mojang.datafixers.DataFixer;
 import net.minecraft.core.BlockPos;
@@ -23,7 +24,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.function.Predicate;
 
-public interface PlatformHooks {
+public interface PlatformHooks extends ChunkSystemHooks {
     public static PlatformHooks get() {
         return Holder.INSTANCE;
     }
@@ -62,8 +63,6 @@ public interface PlatformHooks {
                                                     final List<? super T> into, final int maxCount);
 
     public void entityMove(final Entity entity, final long oldSection, final long newSection);
-
-    public boolean screenEntity(final ServerLevel world, final Entity entity, final boolean fromDisk, final boolean event);
 
     public boolean configFixMC224294();
 

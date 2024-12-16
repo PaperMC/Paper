@@ -216,7 +216,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public int getTileEntityCount() {
         // We don't use the full world tile entity list, so we must iterate chunks
         int size = 0;
-        for (ChunkHolder playerchunk : ca.spottedleaf.moonrise.common.util.ChunkSystem.getVisibleChunkHolders(this.world)) {
+        for (ChunkHolder playerchunk : ca.spottedleaf.moonrise.common.PlatformHooks.get().getVisibleChunkHolders(this.world)) {
             net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
             if (chunk == null) {
                 continue;
@@ -405,7 +405,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             return chunk instanceof ImposterProtoChunk || chunk instanceof net.minecraft.world.level.chunk.LevelChunk;
         }
         final java.util.concurrent.CompletableFuture<ChunkAccess> future = new java.util.concurrent.CompletableFuture<>();
-        ca.spottedleaf.moonrise.common.util.ChunkSystem.scheduleChunkLoad(
+        ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
             this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.NORMAL, future::complete
         );
         world.getChunkSource().mainThreadProcessor.managedBlock(future::isDone);
@@ -420,7 +420,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Chunk[] getLoadedChunks() {
-        List<ChunkHolder> chunks = ca.spottedleaf.moonrise.common.util.ChunkSystem.getVisibleChunkHolders(this.world); // Paper
+        List<ChunkHolder> chunks = ca.spottedleaf.moonrise.common.PlatformHooks.get().getVisibleChunkHolders(this.world); // Paper
         return chunks.stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(CraftChunk::new).toArray(Chunk[]::new);
     }
 
@@ -2447,7 +2447,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public void getChunkAtAsync(int x, int z, boolean gen, boolean urgent, @NotNull Consumer<? super Chunk> cb) {
         warnUnsafeChunk("getting a faraway chunk async", x, z); // Paper
-        ca.spottedleaf.moonrise.common.util.ChunkSystem.scheduleChunkLoad(
+        ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
             this.getHandle(), x, z, gen, ChunkStatus.FULL, true,
             urgent ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL,
             (ChunkAccess chunk) -> {

@@ -3522,7 +3522,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public int getViewDistance() {
-        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getViewDistance(this.getHandle());
+        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getViewDistance(this.getHandle());
     }
 
     @Override
@@ -3532,7 +3532,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public int getSimulationDistance() {
-        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getTickViewDistance(this.getHandle());
+        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getTickViewDistance(this.getHandle());
     }
 
     @Override
@@ -3542,7 +3542,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public int getSendViewDistance() {
-        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getSendViewDistance(this.getHandle());
+        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getSendViewDistance(this.getHandle());
     }
 
     @Override
