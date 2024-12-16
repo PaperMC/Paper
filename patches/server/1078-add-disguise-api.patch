@@ -1,0 +1,463 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Sat, 16 Mar 2024 22:58:19 +0100
+Subject: [PATCH] add disguise api
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperSkinParts.java b/src/main/java/com/destroystokyo/paper/PaperSkinParts.java
+index b6f4400df3d8ec7e06a996de54f8cabba57885e1..41bb75ab2b38c86b9fe2233ef6fe0ecec13350fd 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperSkinParts.java
++++ b/src/main/java/com/destroystokyo/paper/PaperSkinParts.java
+@@ -3,6 +3,7 @@ package com.destroystokyo.paper;
+ import com.google.common.base.Objects;
+ 
+ import java.util.StringJoiner;
++import net.minecraft.world.entity.player.PlayerModelPart;
+ 
+ public class PaperSkinParts implements SkinParts {
+ 
+@@ -71,4 +72,81 @@ public class PaperSkinParts implements SkinParts {
+             .add("hats=" + hasHatsEnabled())
+             .toString();
+     }
++
++    public static SkinParts.Builder builder(){
++        return new Builder();
++    }
++
++    public static class Builder implements SkinParts.Builder {
++
++        private boolean cape;
++        private boolean jacket;
++        private boolean leftSleeve;
++        private boolean rightSleeve;
++        private boolean leftPants;
++        private boolean rightPants;
++        private boolean hats;
++
++        private static final int CAPE = PlayerModelPart.CAPE.getMask();
++        private static final int JACKET = PlayerModelPart.JACKET.getMask();
++        private static final int LEFT_SLEEVE = PlayerModelPart.LEFT_SLEEVE.getMask();
++        private static final int RIGHT_SLEEVE = PlayerModelPart.RIGHT_SLEEVE.getMask();
++        private static final int LEFT_PANTS = PlayerModelPart.LEFT_PANTS_LEG.getMask();
++        private static final int RIGHT_PANTS = PlayerModelPart.RIGHT_PANTS_LEG.getMask();
++        private static final int HAT = PlayerModelPart.HAT.getMask();
++
++        @Override
++        public @org.jetbrains.annotations.NotNull Builder withCape(boolean cape) {
++            this.cape = cape;
++            return this;
++        }
++
++        @Override
++        public @org.jetbrains.annotations.NotNull Builder withJacket(boolean jacket) {
++            this.jacket = jacket;
++            return this;
++        }
++
++        @Override
++        public @org.jetbrains.annotations.NotNull Builder withLeftSleeve(boolean leftSleeve) {
++            this.leftSleeve = leftSleeve;
++            return this;
++        }
++
++        @Override
++        public @org.jetbrains.annotations.NotNull Builder withRightSleeve(boolean rightSleeve) {
++            this.rightSleeve = rightSleeve;
++            return this;
++        }
++
++        @Override
++        public @org.jetbrains.annotations.NotNull Builder withLeftPants(boolean leftPants) {
++            this.leftPants = leftPants;
++            return this;
++        }
++
++        @Override
++        public @org.jetbrains.annotations.NotNull Builder withRightPants(boolean rightPants) {
++            this.rightPants = rightPants;
++            return this;
++        }
++
++        @Override
++        public @org.jetbrains.annotations.NotNull Builder withHat(boolean hat) {
++            this.hats = hat;
++            return this;
++        }
++
++        public @org.jetbrains.annotations.NotNull SkinParts build() {
++            int raw = 0;
++            if (cape) raw |= CAPE;
++            if (jacket) raw |= JACKET;
++            if (leftSleeve) raw |= LEFT_SLEEVE;
++            if (rightSleeve) raw |= RIGHT_SLEEVE;
++            if (leftPants) raw |= LEFT_PANTS;
++            if (rightPants) raw |= RIGHT_PANTS;
++            if (hats) raw |= HAT;
++            return new PaperSkinParts(raw);
++        }
++    }
+ }
+diff --git a/src/main/java/io/papermc/paper/disguise/DisguiseUtil.java b/src/main/java/io/papermc/paper/disguise/DisguiseUtil.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0a0c3b44e3d5b2a74f2d7323e86b5e977bd48111
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/disguise/DisguiseUtil.java
+@@ -0,0 +1,149 @@
++package io.papermc.paper.disguise;
++
++import com.destroystokyo.paper.profile.CraftPlayerProfile;
++import com.destroystokyo.paper.profile.PlayerProfile;
++import io.papermc.paper.entity.meta.EntityTypeToEntityClass;
++import java.util.ArrayList;
++import java.util.EnumSet;
++import java.util.List;
++import net.minecraft.network.protocol.Packet;
++import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
++import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
++import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
++import net.minecraft.network.syncher.EntityDataAccessor;
++import net.minecraft.network.syncher.EntityDataSerializer;
++import net.minecraft.network.syncher.SynchedEntityData;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.EntityType;
++import net.minecraft.world.entity.LivingEntity;
++import net.minecraft.world.entity.player.Player;
++import net.minecraft.world.phys.Vec3;
++import org.bukkit.Bukkit;
++import org.bukkit.craftbukkit.entity.CraftEntityType;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import static net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Action;
++import static net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket.Entry;
++
++public final class DisguiseUtil {
++    private static final Logger LOG = LoggerFactory.getLogger(DisguiseUtil.class);
++
++    private DisguiseUtil(){}
++
++    public static boolean tryDisguise(ServerPlayer player, Entity entity, Packet<?> packet) {
++            if(!(packet instanceof ClientboundAddEntityPacket clientboundAddEntityPacket)) {
++                return false;
++            }
++            return switch (entity.getBukkitEntity().getDisguiseData()) {
++                case DisguiseData.OriginalDisguise disguise -> false;
++                case io.papermc.paper.disguise.EntityTypeDisguise(var type) -> {
++                    player.connection.send(create(clientboundAddEntityPacket, CraftEntityType.bukkitToMinecraft(type)));
++                    yield  true;
++                }
++                case PlayerDisguise(var playerProfile, var listed, var showHead, var skinParts) -> {
++                    PlayerProfile adapted = Bukkit.createProfile(entity.getUUID(), playerProfile.getName());
++                    adapted.setProperties(playerProfile.getProperties());
++                    Entry playerUpdate = new Entry(
++                            entity.getUUID(),
++                            CraftPlayerProfile.asAuthlibCopy(adapted),
++                            listed,
++                            0,
++                            net.minecraft.world.level.GameType.DEFAULT_MODE,
++                            entity.getCustomName(),
++                            showHead,
++                            0,
++                            null
++                        );
++                    player.connection.send(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(Action.ADD_PLAYER, Action.UPDATE_LISTED), playerUpdate));
++                    player.connection.send(create(clientboundAddEntityPacket, net.minecraft.world.entity.EntityType.PLAYER));
++                    if(skinParts != null) {
++                        player.connection.send(new net.minecraft.network.protocol.game.ClientboundSetEntityDataPacket(
++                            clientboundAddEntityPacket.getId(),
++                            List.of(new SynchedEntityData.DataItem<>(Player.DATA_PLAYER_MODE_CUSTOMISATION, (byte) skinParts.getRaw()).value())
++                        ));
++                    }
++                    yield  true;
++                }
++            };
++    }
++
++    /*
++     * Only player disguise needs to be handled specially
++     * because the client doesn't forget the player profile otherwise.
++     * This would result in player being kicked cause the entities type mismatches the previously disguised one.
++     */
++    public static void tryDespawn(ServerPlayer player, Entity entity) {
++        if(entity.getBukkitEntity().getDisguiseData() instanceof PlayerDisguise) {
++            player.connection.send(new ClientboundPlayerInfoRemovePacket(List.of(entity.getUUID())));
++        }
++    }
++
++    private static ClientboundAddEntityPacket create(ClientboundAddEntityPacket packet, EntityType<?> entityType) {
++        return new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(
++            packet.getId(),
++            packet.getUUID(),
++            packet.getX(),
++            packet.getY(),
++            packet.getZ(),
++            packet.getXRot(),
++            packet.getYRot(),
++            entityType,
++            0,
++            Vec3.ZERO.add(packet.getX(), packet.getY(), packet.getZ()).scale(1/8000.0D),
++            packet.getYHeadRot()
++        );
++    }
++
++
++    /*
++     * Is used to skip entity meta that doesn't fit the disguised type.
++     * e.g. Player having a float at index 15 (additional hearts) and the server side entity is an Armorstand
++     * that has a byte at that index.
++     */
++
++    public static boolean shouldSkip(Entity entity, EntityDataAccessor<?> dataAccessor) {
++        return shouldSkip(entity, dataAccessor.serializer(), dataAccessor.id());
++    }
++
++    public static boolean shouldSkip(Entity entity, EntityDataSerializer<?> entityDataSerializer, int id) {
++        return switch (entity.getBukkitEntity().getDisguiseData()) {
++            case DisguiseData.OriginalDisguise original -> false;
++            case EntityTypeDisguise entityTypeDisguise -> !io.papermc.paper.entity.meta.EntityMetaWatcher.isValidForClass(
++                EntityTypeToEntityClass.getClassByEntityType(entityTypeDisguise.entityType()),
++                entityDataSerializer, id
++            );
++            case PlayerDisguise playerDisguise -> !io.papermc.paper.entity.meta.EntityMetaWatcher.isValidForClass(
++                ServerPlayer.class,
++                entityDataSerializer, id
++            );
++        };
++    }
++
++    public static List<SynchedEntityData.DataValue<?>> filter(Entity entity, List<SynchedEntityData.DataValue<?>> values) {
++        List<SynchedEntityData.DataValue<?>> list = new ArrayList<>();
++        for (SynchedEntityData.DataValue<?> value : values) {
++            if (!shouldSkip(entity, value.serializer(), value.id())) {
++                list.add(value);
++            }
++        }
++        return list;
++    }
++
++    public static boolean shouldSkipAttributeSending(Entity entity) {
++        return switch (entity.getBukkitEntity().getDisguiseData()) {
++            case DisguiseData.OriginalDisguise original -> false;
++            case EntityTypeDisguise entityTypeDisguise -> !entityTypeDisguise.entityType().hasDefaultAttributes();
++            case PlayerDisguise playerDisguise -> false;
++        };
++    }
++
++    public static boolean canSendAnimation(Entity entity) {
++        return switch (entity.getBukkitEntity().getDisguiseData()) {
++            case DisguiseData.OriginalDisguise original -> true;
++            case EntityTypeDisguise entityTypeDisguise -> LivingEntity.class.isAssignableFrom(EntityTypeToEntityClass.getClassByEntityType(entityTypeDisguise.entityType()));
++            case PlayerDisguise playerDisguise -> true;
++        };
++    }
++}
+diff --git a/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java b/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java
+index 0f99733660f91280e4c6262cf75b3c9cae86f65a..c49606b5f8e459a1574c3111c10f2c66c0888f87 100644
+--- a/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java
++++ b/src/main/java/net/minecraft/network/syncher/SynchedEntityData.java
+@@ -100,6 +100,7 @@ public class SynchedEntityData {
+ 
+                 if (datawatcher_item.isDirty()) {
+                     datawatcher_item.setDirty(false);
++                    if (io.papermc.paper.disguise.DisguiseUtil.shouldSkip((net.minecraft.world.entity.Entity) entity, datawatcher_item.getAccessor())) continue; // Paper - disguise api
+                     list.add(datawatcher_item.value());
+                 }
+             }
+@@ -117,6 +118,7 @@ public class SynchedEntityData {
+         for (int j = 0; j < i; ++j) {
+             SynchedEntityData.DataItem<?> datawatcher_item = adatawatcher_item[j];
+ 
++            if (io.papermc.paper.disguise.DisguiseUtil.shouldSkip((net.minecraft.world.entity.Entity) entity, datawatcher_item.getAccessor())) continue; // Paper - disguise api
+             if (!datawatcher_item.isSetToDefault()) {
+                 if (list == null) {
+                     list = new ArrayList();
+@@ -136,6 +138,7 @@ public class SynchedEntityData {
+             SynchedEntityData.DataValue<?> datawatcher_c = (SynchedEntityData.DataValue) iterator.next();
+             SynchedEntityData.DataItem<?> datawatcher_item = this.itemsById[datawatcher_c.id];
+ 
++            if (io.papermc.paper.disguise.DisguiseUtil.shouldSkip((net.minecraft.world.entity.Entity) entity, datawatcher_item.getAccessor())) continue; // Paper - disguise api
+             this.assignValue(datawatcher_item, datawatcher_c);
+             this.entity.onSyncedDataUpdated(datawatcher_item.getAccessor());
+         }
+@@ -158,6 +161,7 @@ public class SynchedEntityData {
+     public List<SynchedEntityData.DataValue<?>> packAll() {
+         final List<SynchedEntityData.DataValue<?>> list = new ArrayList<>();
+         for (final DataItem<?> dataItem : this.itemsById) {
++            if (io.papermc.paper.disguise.DisguiseUtil.shouldSkip((net.minecraft.world.entity.Entity) entity, dataItem.getAccessor())) continue; // Paper - disguise api
+             list.add(dataItem.value());
+         }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 103e2c414780be66324bcb9cd4ea539bbdfe12ad..ea7527e1e5399172ac9bed70ee51306e1c47fd33 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -334,6 +334,7 @@ public class ServerEntity {
+ 
+     public void removePairing(ServerPlayer player) {
+         this.entity.stopSeenByPlayer(player);
++        io.papermc.paper.disguise.DisguiseUtil.tryDespawn(player, this.entity); // Paper - disguise api
+         player.connection.send(new ClientboundRemoveEntitiesPacket(new int[]{this.entity.getId()}));
+     }
+ 
+@@ -355,15 +356,18 @@ public class ServerEntity {
+         }
+ 
+         Packet<ClientGamePacketListener> packet = this.entity.getAddEntityPacket(this);
+-
++        // Paper start - disguise api
++        if(!io.papermc.paper.disguise.DisguiseUtil.tryDisguise(player, entity, packet)){
+         sender.accept(packet);
++        }
++        // Paper end - disguise api
+         if (this.trackedDataValues != null) {
+-            sender.accept(new ClientboundSetEntityDataPacket(this.entity.getId(), this.trackedDataValues));
++            sender.accept(new ClientboundSetEntityDataPacket(this.entity.getId(), io.papermc.paper.disguise.DisguiseUtil.filter(this.entity, this.trackedDataValues))); // Paper - disguise api
+         }
+ 
+         boolean flag = this.trackDelta;
+ 
+-        if (this.entity instanceof LivingEntity) {
++        if (this.entity instanceof LivingEntity && !io.papermc.paper.disguise.DisguiseUtil.shouldSkipAttributeSending(this.entity)) { // Paper - disguise api
+             Collection<AttributeInstance> collection = ((LivingEntity) this.entity).getAttributes().getSyncableAttributes();
+ 
+             // CraftBukkit start - If sending own attributes send scaled health instead of current maximum health
+@@ -461,7 +465,9 @@ public class ServerEntity {
+                     ((ServerPlayer) this.entity).getBukkitEntity().injectScaledMaxHealth(set, false);
+                 }
+                 // CraftBukkit end
++                if(!io.papermc.paper.disguise.DisguiseUtil.shouldSkipAttributeSending(this.entity)) { // Paper start - disguise api
+                 this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), set));
++                } // Paper end - disguise api
+             }
+ 
+             set.clear();
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index fc7f7a34babd095a51b5321f600aef65a2a9d123..dfb41d42ff811ac743fb9e6a9ea5d774aba94f3a 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -1858,7 +1858,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+             return;
+         }
+         // CraftBukkit end
+-        if (this.isSleeping()) {
++        if (this.isSleeping() && io.papermc.paper.disguise.DisguiseUtil.canSendAnimation(this) /* Paper - disguise api */) {
+             this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(this, 2));
+         }
+ 
+@@ -2386,11 +2386,13 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+ 
+     @Override
+     public void crit(Entity target) {
++        if(!io.papermc.paper.disguise.DisguiseUtil.canSendAnimation(this)) return; // Paper - disguise api
+         this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(target, 4));
+     }
+ 
+     @Override
+     public void magicCrit(Entity target) {
++        if(!io.papermc.paper.disguise.DisguiseUtil.canSendAnimation(this)) return; // Paper - disguise api
+         this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(target, 5));
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 7ac7d0729705cb02f22277be3c467aed4f69ec0e..d628d9d8d397631c67d927ef1bfcfd6fef4f3e79 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -548,6 +548,14 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         return steps;
+     }
+     // Paper end - optimise collisions
++    // Paper start - disguise api
++    public void clearPlayers() {
++        trackedEntity.moonrise$clearPlayers();
++    }
++    public void updatePlayers() {
++        trackedEntity.updatePlayers(((ServerLevel)level).players());
++    }
++    // Paper end - disguise api
+     // Paper start - optimise entity tracker
+     private net.minecraft.server.level.ChunkMap.TrackedEntity trackedEntity;
+ 
+@@ -739,6 +747,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+         final List<SynchedEntityData.DataValue<?>> values = new java.util.ArrayList<>(keys.size());
+         for (final EntityDataAccessor<?> key : keys) {
++            if (io.papermc.paper.disguise.DisguiseUtil.shouldSkip(this, key)) continue; // Paper - disguise api
+             final SynchedEntityData.DataItem<?> synchedValue = this.entityData.getItem(key);
+             values.add(synchedValue.value());
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index 96b4fbe4a4655777ff10b32e3257e2fac2aba12a..65a5acab6f678abbc3089609783efca84fdeaef4 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1343,6 +1343,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+     private void refreshDirtyAttributes() {
+         Set<AttributeInstance> set = this.getAttributes().getAttributesToUpdate();
++        if (io.papermc.paper.disguise.DisguiseUtil.shouldSkipAttributeSending(this)) return; // Paper - disguise api
+         Iterator iterator = set.iterator();
+ 
+         while (iterator.hasNext()) {
+@@ -2611,6 +2612,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             this.swinging = true;
+             this.swingingArm = hand;
+             if (this.level() instanceof ServerLevel) {
++                if(!io.papermc.paper.disguise.DisguiseUtil.canSendAnimation(this)) return; // Paper - disguise api
+                 ClientboundAnimatePacket packetplayoutanimation = new ClientboundAnimatePacket(this, hand == InteractionHand.MAIN_HAND ? 0 : 3);
+                 ServerChunkCache chunkproviderserver = ((ServerLevel) this.level()).getChunkSource();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 97b5d6ba2b19a7c730730c74175a29157aed1840..3d356d1a019e3e8f075caac3b640f21fa92a6b02 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -395,6 +395,12 @@ public final class CraftServer implements Server {
+         return ca.spottedleaf.moonrise.common.util.TickThread.isTickThread();
+     }
+     // Paper end - Folia reagion threading API
++    // Paper start - add disguise api
++    @Override
++    public com.destroystokyo.paper.SkinParts.@org.jetbrains.annotations.NotNull Builder newSkinPartsBuilder() {
++        return com.destroystokyo.paper.PaperSkinParts.builder();
++    }
++    // Paper end - add disguise api
+ 
+     static {
+         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index b25b10c24a379097233e61bcc10add841b6a7115..949053b2421bbac6ed587779681547c8d333ed54 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -1306,4 +1306,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         }
+     }
+     // Paper end - broadcast hurt animation
++    // Paper start - disguise api
++    private io.papermc.paper.disguise.DisguiseData disguiseData = io.papermc.paper.disguise.DisguiseData.original();
++    @Override
++    public @org.jetbrains.annotations.NotNull io.papermc.paper.disguise.DisguiseData getDisguiseData() {
++        return disguiseData;
++    }
++
++    @Override
++    public void setDisguiseData(@org.jetbrains.annotations.NotNull io.papermc.paper.disguise.DisguiseData disguiseData) {
++        getHandle().clearPlayers();
++        this.disguiseData = disguiseData;
++        getHandle().updatePlayers();
++    }
++    // Paper end - disguise api
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 6a647cab8b2e476987931486e290703b8726f2c7..67a857da293f7b930a76ce428e97eb85798331e7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -2844,7 +2844,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+         // SPIGOT-3813: Attributes before health
+         if (this.getHandle().connection != null) {
++            if(!io.papermc.paper.disguise.DisguiseUtil.shouldSkipAttributeSending(this.getHandle())){ // Paper start - disguise api
+             this.getHandle().connection.send(new ClientboundUpdateAttributesPacket(this.getHandle().getId(), set));
++            } // Paper end - disguise api
+             if (sendHealth) {
+                 this.sendHealthUpdate();
+             }
