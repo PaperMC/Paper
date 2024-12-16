@@ -211,14 +211,60 @@ public class SpigotWorldConfig
     public int monsterActivationRange = 32;
     public int raiderActivationRange = 64;
     public int miscActivationRange = 16;
+    // Paper start
+    public int flyingMonsterActivationRange = 32;
+    public int waterActivationRange = 16;
+    public int villagerActivationRange = 32;
+    public int wakeUpInactiveAnimals = 4;
+    public int wakeUpInactiveAnimalsEvery = 60*20;
+    public int wakeUpInactiveAnimalsFor = 5*20;
+    public int wakeUpInactiveMonsters = 8;
+    public int wakeUpInactiveMonstersEvery = 20*20;
+    public int wakeUpInactiveMonstersFor = 5*20;
+    public int wakeUpInactiveVillagers = 4;
+    public int wakeUpInactiveVillagersEvery = 30*20;
+    public int wakeUpInactiveVillagersFor = 5*20;
+    public int wakeUpInactiveFlying = 8;
+    public int wakeUpInactiveFlyingEvery = 10*20;
+    public int wakeUpInactiveFlyingFor = 5*20;
+    public int villagersWorkImmunityAfter = 5*20;
+    public int villagersWorkImmunityFor = 20;
+    public boolean villagersActiveForPanic = true;
+    // Paper end
     public boolean tickInactiveVillagers = true;
     public boolean ignoreSpectatorActivation = false;
     private void activationRange()
     {
+        boolean hasAnimalsConfig = config.getInt("entity-activation-range.animals", this.animalActivationRange) != this.animalActivationRange; // Paper
         this.animalActivationRange = this.getInt( "entity-activation-range.animals", this.animalActivationRange );
         this.monsterActivationRange = this.getInt( "entity-activation-range.monsters", this.monsterActivationRange );
         this.raiderActivationRange = this.getInt( "entity-activation-range.raiders", this.raiderActivationRange );
         this.miscActivationRange = this.getInt( "entity-activation-range.misc", this.miscActivationRange );
+        // Paper start
+        this.waterActivationRange = this.getInt( "entity-activation-range.water", this.waterActivationRange );
+        this.villagerActivationRange = this.getInt( "entity-activation-range.villagers", hasAnimalsConfig ? this.animalActivationRange : this.villagerActivationRange );
+        this.flyingMonsterActivationRange = this.getInt( "entity-activation-range.flying-monsters", this.flyingMonsterActivationRange );
+
+        this.wakeUpInactiveAnimals = this.getInt("entity-activation-range.wake-up-inactive.animals-max-per-tick", this.wakeUpInactiveAnimals);
+        this.wakeUpInactiveAnimalsEvery = this.getInt("entity-activation-range.wake-up-inactive.animals-every", this.wakeUpInactiveAnimalsEvery);
+        this.wakeUpInactiveAnimalsFor = this.getInt("entity-activation-range.wake-up-inactive.animals-for", this.wakeUpInactiveAnimalsFor);
+
+        this.wakeUpInactiveMonsters = this.getInt("entity-activation-range.wake-up-inactive.monsters-max-per-tick", this.wakeUpInactiveMonsters);
+        this.wakeUpInactiveMonstersEvery = this.getInt("entity-activation-range.wake-up-inactive.monsters-every", this.wakeUpInactiveMonstersEvery);
+        this.wakeUpInactiveMonstersFor = this.getInt("entity-activation-range.wake-up-inactive.monsters-for", this.wakeUpInactiveMonstersFor);
+
+        this.wakeUpInactiveVillagers = this.getInt("entity-activation-range.wake-up-inactive.villagers-max-per-tick", this.wakeUpInactiveVillagers);
+        this.wakeUpInactiveVillagersEvery = this.getInt("entity-activation-range.wake-up-inactive.villagers-every", this.wakeUpInactiveVillagersEvery);
+        this.wakeUpInactiveVillagersFor = this.getInt("entity-activation-range.wake-up-inactive.villagers-for", this.wakeUpInactiveVillagersFor);
+
+        this.wakeUpInactiveFlying = this.getInt("entity-activation-range.wake-up-inactive.flying-monsters-max-per-tick", this.wakeUpInactiveFlying);
+        this.wakeUpInactiveFlyingEvery = this.getInt("entity-activation-range.wake-up-inactive.flying-monsters-every", this.wakeUpInactiveFlyingEvery);
+        this.wakeUpInactiveFlyingFor = this.getInt("entity-activation-range.wake-up-inactive.flying-monsters-for", this.wakeUpInactiveFlyingFor);
+
+        this.villagersWorkImmunityAfter = this.getInt( "entity-activation-range.villagers-work-immunity-after", this.villagersWorkImmunityAfter );
+        this.villagersWorkImmunityFor = this.getInt( "entity-activation-range.villagers-work-immunity-for", this.villagersWorkImmunityFor );
+        this.villagersActiveForPanic = this.getBoolean( "entity-activation-range.villagers-active-for-panic", this.villagersActiveForPanic );
+        // Paper end
         this.tickInactiveVillagers = this.getBoolean( "entity-activation-range.tick-inactive-villagers", this.tickInactiveVillagers );
         this.ignoreSpectatorActivation = this.getBoolean( "entity-activation-range.ignore-spectators", this.ignoreSpectatorActivation );
         this.log( "Entity Activation Range: An " + this.animalActivationRange + " / Mo " + this.monsterActivationRange + " / Ra " + this.raiderActivationRange + " / Mi " + this.miscActivationRange + " / Tiv " + this.tickInactiveVillagers + " / Isa " + this.ignoreSpectatorActivation );
