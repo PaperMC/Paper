@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/DoorBlock.java
 +++ b/net/minecraft/world/level/block/DoorBlock.java
-@@ -229,9 +_,23 @@
+@@ -229,9 +_,22 @@
  
      @Override
      protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
@@ -9,21 +9,20 @@
 -        if (!this.defaultBlockState().is(neighborBlock) && flag != state.getValue(POWERED)) {
 +        // CraftBukkit start
 +        BlockPos otherHalf = pos.relative(state.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER ? Direction.UP : Direction.DOWN);
-+        org.bukkit.World bworld = level.getWorld();
-+        org.bukkit.block.Block bukkitBlock = bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ());
-+        org.bukkit.block.Block blockTop = bworld.getBlockAt(otherHalf.getX(), otherHalf.getY(), otherHalf.getZ());
++        org.bukkit.block.Block bukkitBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
++        org.bukkit.block.Block blockTop = org.bukkit.craftbukkit.block.CraftBlock.at(level, otherHalf);
 +
 +        int power = bukkitBlock.getBlockPower();
 +        int powerTop = blockTop.getBlockPower();
 +        if (powerTop > power) power = powerTop;
-+        int oldPower = (Boolean) state.getValue(DoorBlock.POWERED) ? 15 : 0;
++        int oldPower = state.getValue(DoorBlock.POWERED) ? net.minecraft.world.level.redstone.Redstone.SIGNAL_MAX : net.minecraft.world.level.redstone.Redstone.SIGNAL_MIN;
 +
 +        if (oldPower == 0 ^ power == 0) {
-+            org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(bukkitBlock, oldPower, power);
-+            level.getCraftServer().getPluginManager().callEvent(eventRedstone);
++            org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(bukkitBlock, oldPower, power);
++            event.callEvent();
 +
-+            boolean flag = eventRedstone.getNewCurrent() > 0;
-+        // CraftBukkit end
++            boolean flag = event.getNewCurrent() > 0;
++            // CraftBukkit end
              if (flag != state.getValue(OPEN)) {
                  this.playSound(null, level, pos, flag);
                  level.gameEvent(null, flag ? GameEvent.BLOCK_OPEN : GameEvent.BLOCK_CLOSE, pos);

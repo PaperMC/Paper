@@ -194,13 +194,13 @@ public class CraftInventoryCustom extends CraftInventory {
         }
 
         @Override
-        public void onOpen(CraftHumanEntity who) {
-            this.viewers.add(who);
+        public void onOpen(CraftHumanEntity player) {
+            this.viewers.add(player);
         }
 
         @Override
-        public void onClose(CraftHumanEntity who) {
-            this.viewers.remove(who);
+        public void onClose(CraftHumanEntity player) {
+            this.viewers.remove(player);
         }
 
         @Override

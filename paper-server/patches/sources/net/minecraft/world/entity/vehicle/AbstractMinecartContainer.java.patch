@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
 +++ b/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
-@@ -21,11 +_,59 @@
+@@ -21,10 +_,11 @@
  import net.minecraft.world.phys.Vec3;
  
  public abstract class AbstractMinecartContainer extends AbstractMinecart implements ContainerEntity {
@@ -9,15 +9,42 @@
      @Nullable
      public ResourceKey<LootTable> lootTable;
      public long lootTableSeed;
++    private final com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData(); // Paper - LootTable API
  
-+    // Paper start - LootTable API
-+    final com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData();
+     protected AbstractMinecartContainer(EntityType<?> entityType, Level level) {
+         super(entityType, level);
+@@ -72,11 +_,18 @@
+ 
+     @Override
+     public void remove(Entity.RemovalReason reason) {
++        // CraftBukkit start - add Bukkit remove cause
++        this.remove(reason, null);
++    }
 +
++    @Override
++    public void remove(Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.Cause cause) {
++        // CraftBukkit end  - add Bukkit remove cause
+         if (!this.level().isClientSide && reason.shouldDestroy()) {
+             Containers.dropContents(this.level(), this, this);
+         }
+ 
+-        super.remove(reason);
++        super.remove(reason, cause); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     @Override
+@@ -164,4 +_,50 @@
+     public void clearItemStacks() {
+         this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
+     }
++
++    // Paper start - LootTable API
 +    @Override
 +    public com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData() {
 +        return this.lootableData;
 +    }
 +    // Paper end - LootTable API
++
 +    // CraftBukkit start
 +    public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
 +    private int maxStack = MAX_STACK;
@@ -26,12 +53,12 @@
 +        return this.itemStacks;
 +    }
 +
-+    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
-+        this.transaction.add(who);
++    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++        this.transaction.add(player);
 +    }
 +
-+    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity who) {
-+        this.transaction.remove(who);
++    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++        this.transaction.remove(player);
 +    }
 +
 +    public java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
@@ -56,28 +83,4 @@
 +        return this.getBukkitEntity().getLocation();
 +    }
 +    // CraftBukkit end
-+
-+
-     protected AbstractMinecartContainer(EntityType<?> entityType, Level level) {
-         super(entityType, level);
-     }
-@@ -72,11 +_,18 @@
- 
-     @Override
-     public void remove(Entity.RemovalReason reason) {
-+        // CraftBukkit start - add Bukkit remove cause
-+        this.remove(reason, null);
-+    }
-+
-+    @Override
-+    public void remove(Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.Cause cause) {
-+        // CraftBukkit end  - add Bukkit remove cause
-         if (!this.level().isClientSide && reason.shouldDestroy()) {
-             Containers.dropContents(this.level(), this, this);
-         }
- 
--        super.remove(reason);
-+        super.remove(reason, cause);  // CraftBukkit - add Bukkit remove cause
-     }
- 
-     @Override
+ }

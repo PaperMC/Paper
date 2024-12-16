@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/vehicle/AbstractBoat.java
 +++ b/net/minecraft/world/entity/vehicle/AbstractBoat.java
-@@ -83,6 +_,14 @@
+@@ -83,6 +_,15 @@
      private Leashable.LeashData leashData;
      private final Supplier<Item> dropItem;
  
@@ -10,6 +10,7 @@
 +    public double occupiedDeceleration = 0.2D;
 +    public double unoccupiedDeceleration = -1;
 +    public boolean landBoats = false;
++    private org.bukkit.Location lastLocation;
 +    // CraftBukkit end
 +
      public AbstractBoat(EntityType<? extends AbstractBoat> entityType, Level level, Supplier<Item> dropItem) {
@@ -55,30 +56,19 @@
              super.push(entity);
          }
      }
-@@ -243,6 +_,7 @@
-         return this.getDirection().getClockWise();
-     }
- 
-+    private org.bukkit.Location lastLocation; // CraftBukkit
-     @Override
-     public void tick() {
-         this.oldStatus = this.status;
-@@ -283,6 +_,21 @@
+@@ -283,6 +_,18 @@
              this.setDeltaMovement(Vec3.ZERO);
          }
  
 +        // CraftBukkit start
-+        org.bukkit.Server server = this.level().getCraftServer();
-+        org.bukkit.World bworld = this.level().getWorld();
-+
-+        org.bukkit.Location to = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(this.position(), bworld, this.getYRot(), this.getXRot());
++        org.bukkit.Location to = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(this.position(), this.level().getWorld(), this.getYRot(), this.getXRot());
 +        org.bukkit.entity.Vehicle vehicle = (org.bukkit.entity.Vehicle) this.getBukkitEntity();
 +
-+        server.getPluginManager().callEvent(new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle));
++        new org.bukkit.event.vehicle.VehicleUpdateEvent(vehicle).callEvent();
 +
 +        if (this.lastLocation != null && !this.lastLocation.equals(to)) {
 +            org.bukkit.event.vehicle.VehicleMoveEvent event = new org.bukkit.event.vehicle.VehicleMoveEvent(vehicle, this.lastLocation, to);
-+            server.getPluginManager().callEvent(event);
++            event.callEvent();
 +        }
 +        this.lastLocation = vehicle.getLocation();
 +        // CraftBukkit end
