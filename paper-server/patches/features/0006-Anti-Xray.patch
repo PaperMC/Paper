@@ -120,25 +120,28 @@ index 5d1943d37dfad0c12e77179f0866851532d983e9..3aea76690bc3e35758d3bf274777130a
      }
  
 diff --git a/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java b/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
-index aadf2dccb996e422cacf8bb510cc642e69ee4972..d2d21fe8d7275b01454e09be252d7dd7710cdc2d 100644
+index 3a384175f8e7f204234bbaf3081bdc20c47a0d4b..5699bc15eba92e22433a20cb8326b59f2ebd3036 100644
 --- a/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
 +++ b/net/minecraft/network/protocol/game/ClientboundLevelChunkWithLightPacket.java
-@@ -18,13 +18,31 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
+@@ -18,18 +18,31 @@ public class ClientboundLevelChunkWithLightPacket implements Packet<ClientGamePa
      private final int z;
      private final ClientboundLevelChunkPacketData chunkData;
      private final ClientboundLightUpdatePacketData lightData;
+-    // Paper start - Anti-Xray
 +    // Paper start - Async-Anti-Xray - Ready flag for the connection, add chunk packet info
 +    private volatile boolean ready;
- 
++
 +    @Override
 +    public boolean isReady() {
 +        return this.ready;
 +    }
 +
-+    public void setReady(boolean ready) {
+     public void setReady(final boolean ready) {
+-        // Empty hook, updated by feature patch
 +        this.ready = ready;
-+    }
-+
+     }
+-    // Paper end - Anti-Xray
+ 
 +    @Deprecated @io.papermc.paper.annotation.DoNotUse
      public ClientboundLevelChunkWithLightPacket(LevelChunk chunk, LevelLightEngine lightEngine, @Nullable BitSet skyLight, @Nullable BitSet blockLight) {
 +        this(chunk, lightEngine, skyLight, blockLight, true);
@@ -170,18 +173,9 @@ index a4b523ac1926895ccc87464892fa81753ae8f73c..ca9427a7eae9a66f4f1ccedda7b1def7
          this.levelStorageAccess = levelStorageAccess;
          this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getUUID(levelStorageAccess.levelDirectory.path().toFile());
 diff --git a/net/minecraft/server/level/ServerPlayerGameMode.java b/net/minecraft/server/level/ServerPlayerGameMode.java
-index d6a493de667bfe97b722efe40d1530bdb666bb94..bb352ad40da33a9d411836d4fab2664e226a6e38 100644
+index 732a4f20bade67c57a4f85142849752b72e349ee..6176f0738aa1a18df5d7d4d49fd6961e3f2eb736 100644
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -28,7 +28,7 @@ import org.slf4j.Logger;
- 
- public class ServerPlayerGameMode {
-     private static final Logger LOGGER = LogUtils.getLogger();
--    protected ServerLevel level;
-+    public ServerLevel level; // Paper - Anti-Xray - protected -> public
-     protected final ServerPlayer player;
-     private GameType gameModeForPlayer = GameType.DEFAULT_MODE;
-     @Nullable
 @@ -312,6 +312,7 @@ public class ServerPlayerGameMode {
                  org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDamageAbortEvent(this.player, pos, this.player.getInventory().getSelected()); // CraftBukkit
              }
