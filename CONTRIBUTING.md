@@ -169,13 +169,14 @@ move it under the line of the patch you wish to modify;
 
 1. Make your change while at HEAD;
 1. Make a fixup commit. `git commit -a --fixup <hashOfPatchToFix>`;
+   - If you want to modify a per-file patch, use `git commit -a --fixup file`
    - You can also use `--squash` instead of `--fixup` if you want the commit
    message to also be changed.
    - You can get the hash by looking at `git log` or `git blame`; your IDE can
   assist you too.
    - Alternatively, if you only know the name of the patch, you can do
   `git commit -a --fixup "Subject of Patch name"`.
-1. Rebase with autosquash: `git rebase -i --autosquash base`.
+1. Rebase with autosquash: `git rebase -i --autosquash mache/main`.
 This will automatically move your fixup commit to the right place, and you just
 need to "save" the changes.
 1. Type `./gradlew rebuildPatches` in the root directory;

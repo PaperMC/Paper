@@ -3,30 +3,12 @@ From: Andrew Steinborn <git@steinborn.me>
 Date: Mon, 26 Jul 2021 02:15:17 -0400
 Subject: [PATCH] Use Velocity compression and cipher natives
 
-== AT ==
-private-f net.minecraft.network.CompressionDecoder inflater
 
-diff --git a/build.gradle.kts b/build.gradle.kts
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/build.gradle.kts
-+++ b/build.gradle.kts
-@@ -0,0 +0,0 @@ dependencies {
-     runtimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
-     runtimeOnly("com.mysql:mysql-connector-j:9.1.0")
-     runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
-+    // Paper start - Use Velocity cipher
-+    implementation("com.velocitypowered:velocity-native:3.3.0-SNAPSHOT") {
-+        isTransitive = false
-+    }
-+    // Paper end - Use Velocity cipher
- 
-     runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
-     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
-diff --git a/src/main/java/net/minecraft/network/CipherDecoder.java b/src/main/java/net/minecraft/network/CipherDecoder.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/CipherDecoder.java
-+++ b/src/main/java/net/minecraft/network/CipherDecoder.java
-@@ -0,0 +0,0 @@ import java.util.List;
+diff --git a/net/minecraft/network/CipherDecoder.java b/net/minecraft/network/CipherDecoder.java
+index 429325ffb7db2b85ed271ddf3da64c6fdc593673..4a445cb0ab19c6eca94fdc2172e1b286d1947c63 100644
+--- a/net/minecraft/network/CipherDecoder.java
++++ b/net/minecraft/network/CipherDecoder.java
+@@ -7,14 +7,30 @@ import java.util.List;
  import javax.crypto.Cipher;
  
  public class CipherDecoder extends MessageToMessageDecoder<ByteBuf> {
@@ -39,13 +21,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.cipher = cipher;  // Paper - Use Velocity cipher
      }
  
-     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
--        list.add(this.cipher.decipher(channelHandlerContext, byteBuf));
+     @Override
+     protected void decode(ChannelHandlerContext context, ByteBuf in, List<Object> out) throws Exception {
+-        out.add(this.cipher.decipher(context, in));
 +        // Paper start - Use Velocity cipher
-+        ByteBuf compatible = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), cipher, byteBuf);
++        ByteBuf compatible = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(context.alloc(), this.cipher, in);
 +        try {
-+            cipher.process(compatible);
-+            list.add(compatible);
++            this.cipher.process(compatible);
++            out.add(compatible);
 +        } catch (Exception e) {
 +            compatible.release(); // compatible will never be used if we throw an exception
 +            throw e;
@@ -56,19 +39,17 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - Use Velocity cipher
 +    @Override
 +    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-+        cipher.close();
++        this.cipher.close();
 +    }
 +    // Paper end - Use Velocity cipher
  }
-diff --git a/src/main/java/net/minecraft/network/CipherEncoder.java b/src/main/java/net/minecraft/network/CipherEncoder.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/CipherEncoder.java
-+++ b/src/main/java/net/minecraft/network/CipherEncoder.java
-@@ -0,0 +0,0 @@ import io.netty.buffer.ByteBuf;
- import io.netty.channel.ChannelHandlerContext;
+diff --git a/net/minecraft/network/CipherEncoder.java b/net/minecraft/network/CipherEncoder.java
+index 992b9c7aed57ce29cdd2b4f66737d39db214f0cf..e087a35bcaf326c37a3e58f4d06165a61747c5a9 100644
+--- a/net/minecraft/network/CipherEncoder.java
++++ b/net/minecraft/network/CipherEncoder.java
+@@ -5,15 +5,31 @@ import io.netty.channel.ChannelHandlerContext;
  import io.netty.handler.codec.MessageToByteEncoder;
  import javax.crypto.Cipher;
-+import java.util.List;
  
 -public class CipherEncoder extends MessageToByteEncoder<ByteBuf> {
 -    private final CipherBase cipher;
@@ -81,13 +62,14 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        this.cipher = cipher;  // Paper - Use Velocity cipher
      }
  
--    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) throws Exception {
--        this.cipher.encipher(byteBuf, byteBuf2);
-+    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
-+        // Paper start - Use Velocity cipher
-+        ByteBuf compatible = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), cipher, byteBuf);
++    // Paper start - Use Velocity cipher
+     @Override
+-    protected void encode(ChannelHandlerContext context, ByteBuf message, ByteBuf out) throws Exception {
+-        this.cipher.encipher(message, out);
++    protected void encode(ChannelHandlerContext context, ByteBuf message, java.util.List<Object> list) throws Exception {
++        ByteBuf compatible = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(context.alloc(), this.cipher, message);
 +        try {
-+            cipher.process(compatible);
++            this.cipher.process(compatible);
 +            list.add(compatible);
 +        } catch (Exception e) {
 +            compatible.release(); // compatible will never be used if we throw an exception
@@ -99,57 +81,58 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper start - Use Velocity cipher
 +    @Override
 +    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-+        cipher.close();
++        this.cipher.close();
 +    }
 +    // Paper end - Use Velocity cipher
  }
-diff --git a/src/main/java/net/minecraft/network/CompressionDecoder.java b/src/main/java/net/minecraft/network/CompressionDecoder.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/CompressionDecoder.java
-+++ b/src/main/java/net/minecraft/network/CompressionDecoder.java
-@@ -0,0 +0,0 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+diff --git a/net/minecraft/network/CompressionDecoder.java b/net/minecraft/network/CompressionDecoder.java
+index fcf0e557fbcbd5f306625096d859578fe8511734..2c7f935fcecb24a4394fdde523219a5b5984a673 100644
+--- a/net/minecraft/network/CompressionDecoder.java
++++ b/net/minecraft/network/CompressionDecoder.java
+@@ -12,14 +12,22 @@ import java.util.zip.Inflater;
+ public class CompressionDecoder extends ByteToMessageDecoder {
      public static final int MAXIMUM_COMPRESSED_LENGTH = 2097152;
      public static final int MAXIMUM_UNCOMPRESSED_LENGTH = 8388608;
-     private Inflater inflater;
 +    private com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper - Use Velocity cipher
+     private Inflater inflater;
      private int threshold;
      private boolean validateDecompressed;
  
 +    // Paper start - Use Velocity cipher
 +    @io.papermc.paper.annotation.DoNotUse
-     public CompressionDecoder(int compressionThreshold, boolean rejectsBadPackets) {
-+        this(null, compressionThreshold, rejectsBadPackets);
+     public CompressionDecoder(int threshold, boolean validateDecompressed) {
++        this(null, threshold, validateDecompressed);
 +    }
-+    public CompressionDecoder(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean rejectsBadPackets) {
-         this.threshold = compressionThreshold;
-         this.validateDecompressed = rejectsBadPackets;
++    public CompressionDecoder(com.velocitypowered.natives.compression.VelocityCompressor compressor, int threshold, boolean validateDecompressed) {
+         this.threshold = threshold;
+         this.validateDecompressed = validateDecompressed;
 -        this.inflater = new Inflater();
 +        this.inflater = compressor == null ? new Inflater() : null;
 +        this.compressor = compressor;
 +        // Paper end - Use Velocity cipher
      }
  
-     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
-@@ -0,0 +0,0 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+     @Override
+@@ -39,14 +47,42 @@ public class CompressionDecoder extends ByteToMessageDecoder {
                      }
                  }
  
 +                if (inflater != null) { // Paper - Use Velocity cipher; fallback to vanilla inflater
-                 this.setupInflaterInput(byteBuf);
-                 ByteBuf byteBuf2 = this.inflate(channelHandlerContext, i);
+                 this.setupInflaterInput(in);
+                 ByteBuf byteBuf = this.inflate(context, i);
                  this.inflater.reset();
-                 list.add(byteBuf2);
+                 out.add(byteBuf);
 +                return; // Paper - Use Velocity cipher
 +                } // Paper - use velocity compression
 +
 +                // Paper start - Use Velocity cipher
 +                int claimedUncompressedSize = i; // OBFHELPER
-+                ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), this.compressor, byteBuf);
-+                ByteBuf uncompressed = com.velocitypowered.natives.util.MoreByteBufUtils.preferredBuffer(channelHandlerContext.alloc(), this.compressor, claimedUncompressedSize);
++                ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(context.alloc(), this.compressor, in);
++                ByteBuf uncompressed = com.velocitypowered.natives.util.MoreByteBufUtils.preferredBuffer(context.alloc(), this.compressor, claimedUncompressedSize);
 +                try {
 +                    this.compressor.inflate(compatibleIn, uncompressed, claimedUncompressedSize);
-+                    list.add(uncompressed);
-+                    byteBuf.clear();
++                    out.add(uncompressed);
++                    in.clear();
 +                } catch (Exception e) {
 +                    uncompressed.release();
 +                    throw e;
@@ -163,36 +146,36 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
 +    // Paper start - Use Velocity cipher
 +    @Override
-+    public void handlerRemoved0(ChannelHandlerContext ctx) throws Exception {
++    public void handlerRemoved0(ChannelHandlerContext ctx) {
 +        if (this.compressor != null) {
 +            this.compressor.close();
 +        }
 +    }
 +    // Paper end - Use Velocity cipher
 +
-     private void setupInflaterInput(ByteBuf buf) {
+     private void setupInflaterInput(ByteBuf buffer) {
          ByteBuffer byteBuffer;
-         if (buf.nioBufferCount() > 0) {
-@@ -0,0 +0,0 @@ public class CompressionDecoder extends ByteToMessageDecoder {
+         if (buffer.nioBufferCount() > 0) {
+@@ -81,7 +117,13 @@ public class CompressionDecoder extends ByteToMessageDecoder {
          }
      }
  
--    public void setThreshold(int compressionThreshold, boolean rejectsBadPackets) {
+-    public void setThreshold(int threshold, boolean validateDecompressed) {
 +    // Paper start - Use Velocity cipher
-+    public void setThreshold(com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold, boolean rejectsBadPackets) {
++    public void setThreshold(com.velocitypowered.natives.compression.VelocityCompressor compressor, int threshold, boolean validateDecompressed) {
 +        if (this.compressor == null && compressor != null) { // Only re-configure once. Re-reconfiguring would require closing the native compressor.
 +            this.compressor = compressor;
 +            this.inflater = null;
 +        }
-+    // Paper end - Use Velocity cipher
-         this.threshold = compressionThreshold;
-         this.validateDecompressed = rejectsBadPackets;
++        // Paper end - Use Velocity cipher
+         this.threshold = threshold;
+         this.validateDecompressed = validateDecompressed;
      }
-diff --git a/src/main/java/net/minecraft/network/CompressionEncoder.java b/src/main/java/net/minecraft/network/CompressionEncoder.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/CompressionEncoder.java
-+++ b/src/main/java/net/minecraft/network/CompressionEncoder.java
-@@ -0,0 +0,0 @@ import io.netty.handler.codec.MessageToByteEncoder;
+diff --git a/net/minecraft/network/CompressionEncoder.java b/net/minecraft/network/CompressionEncoder.java
+index bc674b08a41d5529fe06c6d3f077051cf4138f73..ea8a894158c44c2e7943dea43ecd8e1f0075b18f 100644
+--- a/net/minecraft/network/CompressionEncoder.java
++++ b/net/minecraft/network/CompressionEncoder.java
+@@ -6,17 +6,31 @@ import io.netty.handler.codec.MessageToByteEncoder;
  import java.util.zip.Deflater;
  
  public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
@@ -200,16 +183,15 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    @javax.annotation.Nullable private final byte[] encodeBuf; // Paper - Use Velocity cipher
 +    @javax.annotation.Nullable // Paper - Use Velocity cipher
      private final Deflater deflater;
-+    @javax.annotation.Nullable // Paper - Use Velocity cipher
-+    private final com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper - Use Velocity cipher
++    @javax.annotation.Nullable private final com.velocitypowered.natives.compression.VelocityCompressor compressor; // Paper - Use Velocity cipher
      private int threshold;
  
 +    // Paper start - Use Velocity cipher
-     public CompressionEncoder(int compressionThreshold) {
-+        this(null, compressionThreshold);
+     public CompressionEncoder(int threshold) {
++        this(null, threshold);
 +    }
-+    public CompressionEncoder(@javax.annotation.Nullable com.velocitypowered.natives.compression.VelocityCompressor compressor, int compressionThreshold) {
-         this.threshold = compressionThreshold;
++    public CompressionEncoder(@javax.annotation.Nullable com.velocitypowered.natives.compression.VelocityCompressor compressor, int threshold) {
+         this.threshold = threshold;
 -        this.deflater = new Deflater();
 +        if (compressor == null) {
 +            this.encodeBuf = new byte[8192];
@@ -222,40 +204,46 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        // Paper end - Use Velocity cipher
      }
  
--    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) {
-+    protected void encode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, ByteBuf byteBuf2) throws Exception { // Paper - Use Velocity cipher
-         int i = byteBuf.readableBytes();
+     @Override
+-    protected void encode(ChannelHandlerContext context, ByteBuf encodingByteBuf, ByteBuf byteBuf) {
++    protected void encode(ChannelHandlerContext context, ByteBuf encodingByteBuf, ByteBuf byteBuf) throws Exception { // Paper - Use Velocity cipher
+         int i = encodingByteBuf.readableBytes();
          if (i > 8388608) {
              throw new IllegalArgumentException("Packet too big (is " + i + ", should be less than 8388608)");
-@@ -0,0 +0,0 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
-                 VarInt.write(byteBuf2, 0);
-                 byteBuf2.writeBytes(byteBuf);
+@@ -25,6 +39,7 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+                 VarInt.write(byteBuf, 0);
+                 byteBuf.writeBytes(encodingByteBuf);
              } else {
 +                if (this.deflater != null) { // Paper - Use Velocity cipher
-                 byte[] bs = new byte[i];
-                 byteBuf.readBytes(bs);
-                 VarInt.write(byteBuf2, bs.length);
-@@ -0,0 +0,0 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+                 byte[] bytes = new byte[i];
+                 encodingByteBuf.readBytes(bytes);
+                 VarInt.write(byteBuf, bytes.length);
+@@ -37,6 +52,17 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
                  }
  
                  this.deflater.reset();
-+                // Paper start - Use Velocity cipher
++                    // Paper start - Use Velocity cipher
 +                    return;
 +                }
 +
-+                VarInt.write(byteBuf2, i);
-+                final ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(channelHandlerContext.alloc(), this.compressor, byteBuf);
++                VarInt.write(byteBuf, i);
++                final ByteBuf compatibleIn = com.velocitypowered.natives.util.MoreByteBufUtils.ensureCompatible(context.alloc(), this.compressor, encodingByteBuf);
 +                try {
-+                    this.compressor.deflate(compatibleIn, byteBuf2);
++                    this.compressor.deflate(compatibleIn, byteBuf);
 +                } finally {
 +                    compatibleIn.release();
 +                }
              }
          }
      }
- 
+@@ -48,4 +74,31 @@ public class CompressionEncoder extends MessageToByteEncoder<ByteBuf> {
+     public void setThreshold(int threshold) {
+         this.threshold = threshold;
+     }
++
++    // Paper start - Use Velocity cipher
 +    @Override
-+    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, ByteBuf msg, boolean preferDirect) throws Exception{
++    protected ByteBuf allocateBuffer(ChannelHandlerContext ctx, ByteBuf msg, boolean preferDirect) throws Exception {
 +        if (this.compressor != null) {
 +            // We allocate bytes to be compressed plus 1 byte. This covers two cases:
 +            //
@@ -273,44 +261,35 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +
 +    @Override
-+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
++    public void handlerRemoved(ChannelHandlerContext ctx) {
 +        if (this.compressor != null) {
 +            this.compressor.close();
-+            // Paper end - Use Velocity cipher
 +        }
 +    }
-+
-     public int getThreshold() {
-         return this.threshold;
-     }
-diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/Connection.java
-+++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
-         return networkmanager;
++    // Paper end - Use Velocity cipher
+ }
+diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
+index c4bb28857ee11dccc9924666634488044c666fd1..8fe485c5bf79804bb4d1f774f95a92b14a576e80 100644
+--- a/net/minecraft/network/Connection.java
++++ b/net/minecraft/network/Connection.java
+@@ -770,11 +770,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+         return connection;
      }
  
--    public void setEncryptionKey(Cipher decryptionCipher, Cipher encryptionCipher) {
+-    public void setEncryptionKey(Cipher decryptingCipher, Cipher encryptingCipher) {
 -        this.encrypted = true;
--        this.channel.pipeline().addBefore("splitter", "decrypt", new CipherDecoder(decryptionCipher));
--        this.channel.pipeline().addBefore("prepender", "encrypt", new CipherEncoder(encryptionCipher));
+-        this.channel.pipeline().addBefore("splitter", "decrypt", new CipherDecoder(decryptingCipher));
+-        this.channel.pipeline().addBefore("prepender", "encrypt", new CipherEncoder(encryptingCipher));
 +    // Paper start - Use Velocity cipher
-+//    public void setEncryptionKey(Cipher decryptionCipher, Cipher encryptionCipher) {
-+//        this.encrypted = true;
-+//        this.channel.pipeline().addBefore("splitter", "decrypt", new CipherDecoder(decryptionCipher));
-+//        this.channel.pipeline().addBefore("prepender", "encrypt", new CipherEncoder(encryptionCipher));
-+//    }
-+
-+    public void setupEncryption(javax.crypto.SecretKey key) throws net.minecraft.util.CryptException {
++    public void setEncryptionKey(javax.crypto.SecretKey key) throws net.minecraft.util.CryptException {
 +        if (!this.encrypted) {
 +            try {
-+                com.velocitypowered.natives.encryption.VelocityCipher decryption = com.velocitypowered.natives.util.Natives.cipher.get().forDecryption(key);
-+                com.velocitypowered.natives.encryption.VelocityCipher encryption = com.velocitypowered.natives.util.Natives.cipher.get().forEncryption(key);
++                com.velocitypowered.natives.encryption.VelocityCipher decryptionCipher = com.velocitypowered.natives.util.Natives.cipher.get().forDecryption(key);
++                com.velocitypowered.natives.encryption.VelocityCipher encryptionCipher = com.velocitypowered.natives.util.Natives.cipher.get().forEncryption(key);
 +
 +                this.encrypted = true;
-+                this.channel.pipeline().addBefore("splitter", "decrypt", new CipherDecoder(decryption));
-+                this.channel.pipeline().addBefore("prepender", "encrypt", new CipherEncoder(encryption));
++                this.channel.pipeline().addBefore("splitter", "decrypt", new CipherDecoder(decryptionCipher));
++                this.channel.pipeline().addBefore("prepender", "encrypt", new CipherEncoder(encryptionCipher));
 +            } catch (java.security.GeneralSecurityException e) {
 +                throw new net.minecraft.util.CryptException(e);
 +            }
@@ -320,68 +299,56 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
  
      public boolean isEncrypted() {
          return this.encrypted;
-@@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
- 
-     public void setupCompression(int compressionThreshold, boolean rejectsBadPackets) {
-         if (compressionThreshold >= 0) {
+@@ -813,16 +824,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     // Paper end - add proper async disconnect
+     public void setupCompression(int threshold, boolean validateDecompressed) {
+         if (threshold >= 0) {
 +            com.velocitypowered.natives.compression.VelocityCompressor compressor = com.velocitypowered.natives.util.Natives.compress.get().create(io.papermc.paper.configuration.GlobalConfiguration.get().misc.compressionLevel.or(-1)); // Paper - Use Velocity cipher
-             ChannelHandler channelhandler = this.channel.pipeline().get("decompress");
- 
-             if (channelhandler instanceof CompressionDecoder) {
-                 CompressionDecoder packetdecompressor = (CompressionDecoder) channelhandler;
- 
--                packetdecompressor.setThreshold(compressionThreshold, rejectsBadPackets);
-+                packetdecompressor.setThreshold(compressor, compressionThreshold, rejectsBadPackets); // Paper - Use Velocity cipher
+             if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder compressionDecoder) {
+-                compressionDecoder.setThreshold(threshold, validateDecompressed);
++                compressionDecoder.setThreshold(compressor, threshold, validateDecompressed); // Paper - Use Velocity cipher
              } else {
--                this.channel.pipeline().addAfter("splitter", "decompress", new CompressionDecoder(compressionThreshold, rejectsBadPackets));
-+                this.channel.pipeline().addAfter("splitter", "decompress", new CompressionDecoder(compressor, compressionThreshold, rejectsBadPackets)); // Paper - Use Velocity cipher
+-                this.channel.pipeline().addAfter("splitter", "decompress", new CompressionDecoder(threshold, validateDecompressed));
++                this.channel.pipeline().addAfter("splitter", "decompress", new CompressionDecoder(compressor, threshold, validateDecompressed)); // Paper - Use Velocity cipher
              }
  
-             channelhandler = this.channel.pipeline().get("compress");
-@@ -0,0 +0,0 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
- 
-                 packetcompressor.setThreshold(compressionThreshold);
+             if (this.channel.pipeline().get("compress") instanceof CompressionEncoder compressionEncoder) {
+                 compressionEncoder.setThreshold(threshold);
              } else {
--                this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(compressionThreshold));
-+                this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(compressor, compressionThreshold)); // Paper - Use Velocity cipher
+-                this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(threshold));
++                this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(compressor, threshold)); // Paper - Use Velocity cipher
              }
              this.channel.pipeline().fireUserEventTriggered(io.papermc.paper.network.ConnectionEvent.COMPRESSION_THRESHOLD_SET); // Paper - Add Channel initialization listeners
          } else {
-diff --git a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-+++ b/src/main/java/net/minecraft/server/network/ServerConnectionListener.java
-@@ -0,0 +0,0 @@ public class ServerConnectionListener {
+diff --git a/net/minecraft/server/network/ServerConnectionListener.java b/net/minecraft/server/network/ServerConnectionListener.java
+index b68adf37af7172671163d4a8074d2bfa97724b4b..9d9f1b93a68bbc3e201408a3669bba7f73006218 100644
+--- a/net/minecraft/server/network/ServerConnectionListener.java
++++ b/net/minecraft/server/network/ServerConnectionListener.java
+@@ -108,6 +108,10 @@ public class ServerConnectionListener {
+                 LOGGER.warn("Using HAProxy, please ensure the server port is adequately firewalled.");
              }
              // Paper end - Warn people with console access that HAProxy is in use.
- 
 +            // Paper start - Use Velocity cipher
 +            ServerConnectionListener.LOGGER.info("Paper: Using " + com.velocitypowered.natives.util.Natives.compress.getLoadedVariant() + " compression from Velocity.");
 +            ServerConnectionListener.LOGGER.info("Paper: Using " + com.velocitypowered.natives.util.Natives.cipher.getLoadedVariant() + " cipher from Velocity.");
 +            // Paper end - Use Velocity cipher
-+
-             this.channels.add(((ServerBootstrap) ((ServerBootstrap) (new ServerBootstrap()).channel(oclass)).childHandler(new ChannelInitializer<Channel>() {
-                 protected void initChannel(Channel channel) {
-                     try {
-diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -0,0 +0,0 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+ 
+             this.channels
+                 .add(
+diff --git a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index d5d1cdc0759338ce1554b19689fca90d2573189e..507c6b2628cab56e00b64fe1b21f873e717eda2d 100644
+--- a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -276,11 +276,9 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
              }
  
-             SecretKey secretkey = packet.getSecretKey(privatekey);
--            Cipher cipher = Crypt.getCipher(2, secretkey);
--            Cipher cipher1 = Crypt.getCipher(1, secretkey);
-+            // Paper start - Use Velocity cipher
-+//            Cipher cipher = Crypt.getCipher(2, secretkey);
-+//            Cipher cipher1 = Crypt.getCipher(1, secretkey);
-+            // Paper end - Use Velocity cipher
- 
-             s = (new BigInteger(Crypt.digestData("", this.server.getKeyPair().getPublic(), secretkey))).toString(16);
+             SecretKey secretKey = packet.getSecretKey(_private);
+-            Cipher cipher = Crypt.getCipher(2, secretKey);
+-            Cipher cipher1 = Crypt.getCipher(1, secretKey);
+             string = new BigInteger(Crypt.digestData("", this.server.getKeyPair().getPublic(), secretKey)).toString(16);
              this.state = ServerLoginPacketListenerImpl.State.AUTHENTICATING;
 -            this.connection.setEncryptionKey(cipher, cipher1);
-+            this.connection.setupEncryption(secretkey); // Paper - Use Velocity cipher
-         } catch (CryptException cryptographyexception) {
-             throw new IllegalStateException("Protocol error", cryptographyexception);
++            this.connection.setEncryptionKey(secretKey); // Paper - Use Velocity cipher
+         } catch (CryptException var7) {
+             throw new IllegalStateException("Protocol error", var7);
          }
