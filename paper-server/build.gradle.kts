@@ -1,5 +1,4 @@
 import io.papermc.paperweight.attribute.DevBundleOutput
-import io.papermc.paperweight.core.ext
 import io.papermc.paperweight.util.*
 import java.time.Instant
 
@@ -48,12 +47,6 @@ tasks.generateDevelopmentBundle {
         "https://repo.maven.apache.org/maven2/",
         paperMavenPublicUrl,
     )
-}
-
-// TODO remove me again, this is just to not run setupMacheSource when patches change
-tasks.setupMacheSources {
-    paperPatches.setFrom(project.ext.paper.sourcePatchDir.dir("com"), project.ext.paper.featurePatchDir)
-    // paperPatches.from(project.ext.paper.sourcePatchDir, project.ext.paper.featurePatchDir)
 }
 
 abstract class Services {
