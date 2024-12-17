@@ -1,0 +1,64 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Fritz Windisch <friwidev@gmail.com>
+Date: Thu, 15 Jun 2023 17:10:22 +0200
+Subject: [PATCH] Fix multiple spectator bugs
+
+Fixes MC-261799: Spectator mode not teleporting viewers to targets in other worlds or viewers bug around (stuck) when a target changes world
+Fixes MC-107113: Spectator mode viewers stuck when target is teleported more than viewing distance
+Fixes MC-148993: Chunks go invisible when target moves too far over time while viewing (render POI on client is not updated)
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 9209b598d7168b82574e4800056b8b9f84265dd0..2b37ccc8e2619677179b17a6c5bd758bd5f95150 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1535,6 +1535,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 double d1 = vec3d_dx * vec3d_dx + vec3d_dz * vec3d_dz; // Paper
+                 double d2 = d0 * d0;
+                 boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player);
++                flag |= player.getCamera() == this.entity; // Paper - Make entities always visible for spectators, even when teleported far away (MC-107113)
+ 
+                 // CraftBukkit start - respect vanish API
+                 if (!player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 9d46536f80b5b3e6641fd377c02166a431edfd77..9943d0291ad05572f8fb0fb15d09eac18e942973 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -11,6 +11,7 @@ import com.mojang.serialization.Dynamic;
+ import java.net.InetSocketAddress;
+ import java.net.SocketAddress;
+ import java.util.Collection;
++import java.util.Collections;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Objects;
+@@ -732,8 +733,28 @@ public class ServerPlayer extends Player {
+ 
+         if (entity != this) {
+             if (entity.isAlive()) {
+-                this.absMoveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
+-                this.serverLevel().getChunkSource().move(this);
++                // Paper start - Fix spectator on cross-world teleports (MC-261799)
++                if (entity.level() != this.level()) {
++                    // Teleport ourselves to our camera
++                    this.getBukkitEntity().teleport(entity.getBukkitEntity().getLocation(), TeleportCause.SPECTATE);
++                    // Update the tracker of the other dimension for our cross-dimension teleport
++                    ChunkMap.TrackedEntity tracker = ((ServerLevel) entity.level()).getChunkSource().chunkMap.entityMap.get(entity.getId());
++                    if (tracker != null) {
++                        tracker.updatePlayer(this);
++                    }
++                    // Advise the client to start spectating again
++                    this.connection.send(new ClientboundSetCameraPacket(entity));
++                } else {
++                    // Paper: We send the player an additional teleport packet here to indicate that the position of itself has been moved when he moved to
++                    // another chunk. Without this packet, if a player travels a too far distance, chunks will start to become invisible for our spectator.
++                    // (MC-148993)
++                    if (!entity.chunkPosition().equals(this.chunkPosition())) {
++                        this.connection.internalTeleport(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot(), Collections.emptySet());
++                    }
++                    this.absMoveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
++                    this.serverLevel().getChunkSource().move(this);
++                }
++                // Paper end
+                 if (this.wantsToStopRiding()) {
+                     this.setCamera(this);
+                 }
