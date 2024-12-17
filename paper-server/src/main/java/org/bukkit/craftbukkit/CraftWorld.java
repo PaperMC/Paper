@@ -584,10 +584,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(plugin != null, "null plugin");
         Preconditions.checkArgument(plugin.isEnabled(), "plugin is not enabled");
 
-        DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-
-        if (chunkDistanceManager.addRegionTicketAtDistance(TicketType.PLUGIN_TICKET, new ChunkPos(x, z), 2, plugin)) { // keep in-line with force loading, add at level 31
-            this.getChunkAt(x, z); // ensure loaded
+        final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.distanceManager;
+        if (distanceManager.addPluginRegionTicket(new ChunkPos(x, z), plugin)) {
+            this.getChunkAt(x, z); // ensure it's loaded
             return true;
         }
 
@@ -598,8 +597,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public boolean removePluginChunkTicket(int x, int z, Plugin plugin) {
         Preconditions.checkNotNull(plugin, "null plugin");
 
-        DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-        return chunkDistanceManager.removeRegionTicketAtDistance(TicketType.PLUGIN_TICKET, new ChunkPos(x, z), 2, plugin); // keep in-line with force loading, remove at level 31
+        final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.distanceManager;
+        return distanceManager.removePluginRegionTicket(new ChunkPos(x, z), plugin);
     }
 
     @Override

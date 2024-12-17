@@ -13,71 +13,50 @@
              for (ChunkHolder chunkHolder : this.chunksToUpdateFutures) {
                  chunkHolder.updateHighestAllowedStatus(chunkMap);
              }
-@@ -143,7 +_,7 @@
-         }
-     }
- 
--    void addTicket(long chunkPos, Ticket<?> ticket) {
-+    boolean addTicket(long chunkPos, Ticket<?> ticket) { // CraftBukkit - void -> boolean
-         SortedArraySet<Ticket<?>> tickets = this.getTickets(chunkPos);
-         int ticketLevelAt = getTicketLevelAt(tickets);
-         Ticket<?> ticket1 = tickets.addOrGet(ticket);
-@@ -151,11 +_,14 @@
-         if (ticket.getTicketLevel() < ticketLevelAt) {
-             this.ticketTracker.update(chunkPos, ticket.getTicketLevel(), true);
-         }
-+        return ticket == ticket1; // CraftBukkit
-     }
- 
--    void removeTicket(long chunkPos, Ticket<?> ticket) {
-+    boolean removeTicket(long chunkPos, Ticket<?> ticket) { // CraftBukkit - void -> boolean
-         SortedArraySet<Ticket<?>> tickets = this.getTickets(chunkPos);
-+        boolean removed = false; // CraftBukkit
-         if (tickets.remove(ticket)) {
-+            removed = true; // CraftBukkit
-         }
- 
-         if (tickets.isEmpty()) {
-@@ -163,6 +_,7 @@
-         }
- 
-         this.ticketTracker.update(chunkPos, getTicketLevelAt(tickets), false);
-+        return removed; // CraftBukkit
-     }
- 
-     public <T> void addTicket(TicketType<T> type, ChunkPos pos, int level, T value) {
-@@ -175,17 +_,29 @@
-     }
- 
+@@ -177,16 +_,42 @@
      public <T> void addRegionTicket(TicketType<T> type, ChunkPos pos, int distance, T value) {
-+        // CraftBukkit start
-+        this.addRegionTicketAtDistance(type, pos, distance, value);
-+    }
-+    public <T> boolean addRegionTicketAtDistance(TicketType<T> type, ChunkPos pos, int distance, T value) {
-+        // CraftBukkit end
          Ticket<T> ticket = new Ticket<>(type, ChunkLevel.byStatus(FullChunkStatus.FULL) - distance, value);
          long packedChunkPos = pos.toLong();
 -        this.addTicket(packedChunkPos, ticket);
-+        final boolean addded = this.addTicket(packedChunkPos, ticket); // CraftBukkit
++        this.addTicket(packedChunkPos, ticket); // Paper - diff on change above
          this.tickingTicketsTracker.addTicket(packedChunkPos, ticket);
-+        return addded; // CraftBukkit
      }
  
      public <T> void removeRegionTicket(TicketType<T> type, ChunkPos pos, int distance, T value) {
-+        // CraftBukkit start
-+        removeRegionTicketAtDistance(type, pos, distance, value);
-+    }
-+    public <T> boolean removeRegionTicketAtDistance(TicketType<T> type, ChunkPos pos, int distance, T value) {
-+        // CraftBukkit end
          Ticket<T> ticket = new Ticket<>(type, ChunkLevel.byStatus(FullChunkStatus.FULL) - distance, value);
          long packedChunkPos = pos.toLong();
--        this.removeTicket(packedChunkPos, ticket);
-+        final boolean removed = this.removeTicket(packedChunkPos, ticket); // CraftBukkit
++        this.removeTicket(packedChunkPos, ticket); // Paper - diff on change above
++        this.tickingTicketsTracker.removeTicket(packedChunkPos, ticket);
++    }
++
++    // Paper start
++    public boolean addPluginRegionTicket(final ChunkPos pos, final org.bukkit.plugin.Plugin value) {
++        Ticket<org.bukkit.plugin.Plugin> ticket = new Ticket<>(TicketType.PLUGIN_TICKET, ChunkLevel.byStatus(FullChunkStatus.FULL) - 2, value); // Copied from below and keep in-line with force loading, add at level 31
++        final long packedChunkPos = pos.toLong();
++        final Set<Ticket<?>> tickets = this.getTickets(packedChunkPos);
++        if (tickets.contains(ticket)) {
++            return false;
++        }
++        this.addTicket(packedChunkPos, ticket);
++        this.tickingTicketsTracker.addTicket(packedChunkPos, ticket);
++        return true;
++    }
++
++    public boolean removePluginRegionTicket(final ChunkPos pos, final org.bukkit.plugin.Plugin value) {
++        Ticket<org.bukkit.plugin.Plugin> ticket = new Ticket<>(TicketType.PLUGIN_TICKET, ChunkLevel.byStatus(FullChunkStatus.FULL) - 2, value); // Copied from below and keep in-line with force loading, add at level 31
++        final long packedChunkPos = pos.toLong();
++        final Set<Ticket<?>> tickets = this.tickets.get(packedChunkPos); // Don't use getTickets, we don't want to create a new set
++        if (tickets == null || !tickets.contains(ticket)) {
++            return false;
++        }
+         this.removeTicket(packedChunkPos, ticket);
          this.tickingTicketsTracker.removeTicket(packedChunkPos, ticket);
-+        return removed; // CraftBukkit
++        return true;
      }
++    // Paper end
  
      private SortedArraySet<Ticket<?>> getTickets(long chunkPos) {
+         return this.tickets.computeIfAbsent(chunkPos, l -> SortedArraySet.create(4));
 @@ -217,8 +_,12 @@
          ChunkPos chunkPos = sectionPos.chunk();
          long packedChunkPos = chunkPos.toLong();
