@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 19 Nov 2022 12:38:15 -0800
+Subject: [PATCH] Expand Instrument API
+
+
+diff --git a/src/main/java/org/bukkit/Instrument.java b/src/main/java/org/bukkit/Instrument.java
+index 92194803bcdfbcfdb99567835906ce9219eabd04..6fbdc2a177e7361e2e3e55d47714deec5944f907 100644
+--- a/src/main/java/org/bukkit/Instrument.java
++++ b/src/main/java/org/bukkit/Instrument.java
+@@ -78,6 +78,7 @@ public enum Instrument {
+ 
+     private final byte type;
+     private static final Map<Byte, Instrument> BY_DATA = Maps.newHashMap();
++    private static final java.util.Optional<org.bukkit.Instrument.InstrumentUtil> UTIL = net.kyori.adventure.util.Services.service(InstrumentUtil.class); // Paper
+ 
+     private Instrument(final int type) {
+         this.type = (byte) type;
+@@ -110,4 +111,43 @@ public enum Instrument {
+             BY_DATA.put(instrument.getType(), instrument);
+         }
+     }
++
++    // Paper start
++    /**
++     * Gets the sound for this instrument.
++     *
++     * @return the sound
++     */
++    public @org.jetbrains.annotations.NotNull Sound getSound() {
++        return UTIL.orElseThrow().getSound(this);
++    }
++
++    /**
++     * Gets the instrument for the default block data of the provided material.
++     *
++     * @param material the material
++     * @return the instrument
++     */
++    public static @org.jetbrains.annotations.NotNull Instrument getInstrumentFor(@org.jetbrains.annotations.NotNull Material material) {
++        return getInstrumentFor(material.createBlockData());
++    }
++
++    /**
++     * Gets the instrument that plays for this block data
++     *
++     * @param blockData the block data
++     * @return the instrument
++     */
++    public static @org.jetbrains.annotations.NotNull Instrument getInstrumentFor(org.bukkit.block.data.@org.jetbrains.annotations.NotNull BlockData blockData) {
++        return UTIL.orElseThrow().getSoundFor(blockData);
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public interface InstrumentUtil {
++
++        @org.jetbrains.annotations.NotNull Sound getSound(@org.jetbrains.annotations.NotNull Instrument instrument);
++
++        @org.jetbrains.annotations.NotNull Instrument getSoundFor(org.bukkit.block.data.@org.jetbrains.annotations.NotNull BlockData blockData);
++    }
++    // Paper end
+ }
