@@ -24,14 +24,15 @@
          @Override
          public void sendSlotChange(AbstractContainerMenu container, int slot, ItemStack itemStack) {
              ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(container.containerId, container.incrementStateId(), slot, itemStack));
-@@ -288,6 +_,31 @@
+@@ -288,6 +_,32 @@
              }
          }
  
 +        // Paper start - Add PlayerInventorySlotChangeEvent
 +        @Override
-+        public void slotChanged(AbstractContainerMenu handler, int slotId, ItemStack oldStack, ItemStack stack) {
-+            Slot slot = handler.getSlot(slotId);
++        public void slotChanged(AbstractContainerMenu containerToSend, int dataSlotIndex, ItemStack oldStack, ItemStack stack) {
++            // See slotChanged above
++            Slot slot = containerToSend.getSlot(dataSlotIndex);
 +            if (!(slot instanceof ResultSlot)) {
 +                if (slot.container == ServerPlayer.this.getInventory()) {
 +                    if (io.papermc.paper.event.player.PlayerInventorySlotChangeEvent.getHandlerList().getRegisteredListeners().length == 0) {
@@ -40,7 +41,7 @@
 +                    }
 +                    io.papermc.paper.event.player.PlayerInventorySlotChangeEvent event = new io.papermc.paper.event.player.PlayerInventorySlotChangeEvent(
 +                        ServerPlayer.this.getBukkitEntity(),
-+                        slotId,
++                        dataSlotIndex,
 +                        org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(oldStack),
 +                        org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(stack)
 +                    );
@@ -100,7 +101,7 @@
  
      public ServerPlayer(MinecraftServer server, ServerLevel level, GameProfile gameProfile, ClientInformation clientInformation) {
          super(level, level.getSharedSpawnPos(), level.getSharedSpawnAngle(), gameProfile);
-@@ -328,16 +_,71 @@
+@@ -328,16 +_,22 @@
          this.server = server;
          this.stats = server.getPlayerList().getPlayerStats(this);
          this.advancements = server.getPlayerList().getPlayerAdvancements(this);
@@ -115,55 +116,6 @@
 +        this.adventure$displayName = net.kyori.adventure.text.Component.text(this.getScoreboardName()); // Paper
 +        this.bukkitPickUpLoot = true;
 +        this.maxHealthCache = this.getMaxHealth();
-+    }
-+
-+    // Use method to resend items in hands in case of client desync, because the item use got cancelled.
-+    // For example, when cancelling the leash event
-+    @Deprecated // Paper - this shouldn't be used, use the regular sendAllDataToRemote call to resync all
-+    public void resendItemInHands() {
-+        this.containerMenu.findSlot(this.getInventory(), this.getInventory().selected).ifPresent(s -> {
-+            this.containerSynchronizer.sendSlotChange(this.containerMenu, s, this.getMainHandItem());
-+        });
-+        this.containerSynchronizer.sendSlotChange(this.inventoryMenu, net.minecraft.world.inventory.InventoryMenu.SHIELD_SLOT, this.getOffhandItem());
-+    }
-+
-+    // Yes, this doesn't match Vanilla, but it's the best we can do for now.
-+    // If this is an issue, PRs are welcome
-+    public final BlockPos getSpawnPoint(ServerLevel worldserver) {
-+        BlockPos blockposition = worldserver.getSharedSpawnPos();
-+
-+        if (worldserver.dimensionType().hasSkyLight() && worldserver.serverLevelData.getGameType() != GameType.ADVENTURE) {
-+            int i = Math.max(0, this.server.getSpawnRadius(worldserver));
-+            int j = Mth.floor(worldserver.getWorldBorder().getDistanceToBorder((double) blockposition.getX(), (double) blockposition.getZ()));
-+
-+            if (j < i) {
-+                i = j;
-+            }
-+
-+            if (j <= 1) {
-+                i = 1;
-+            }
-+
-+            long k = (long) (i * 2 + 1);
-+            long l = k * k;
-+            int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
-+            int j1 = this.getCoprime(i1);
-+            int k1 = RandomSource.create().nextInt(i1);
-+
-+            for (int l1 = 0; l1 < i1; ++l1) {
-+                int i2 = (k1 + j1 * l1) % i1;
-+                int j2 = i2 % (i * 2 + 1);
-+                int k2 = i2 / (i * 2 + 1);
-+                BlockPos blockposition1 = PlayerRespawnLogic.getOverworldRespawnPos(worldserver, blockposition.getX() + j2 - i, blockposition.getZ() + k2 - i);
-+
-+                if (blockposition1 != null) {
-+                    return blockposition1;
-+                }
-+            }
-+        }
-+
-+        return blockposition;
-+    // CraftBukkit end
      }
  
      @Override
