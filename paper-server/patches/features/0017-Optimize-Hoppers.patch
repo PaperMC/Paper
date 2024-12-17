@@ -12,7 +12,6 @@ Subject: [PATCH] Optimize Hoppers
 * Don't check for Entities with Inventories if the block above us is also occluding (not just Inventoried)
 * Remove Streams from Item Suck In and restore restore 1.12 AABB checks which is simpler and no voxel allocations (was doing TWO Item Suck ins)
 
-
 diff --git a/io/papermc/paper/event/inventory/PaperInventoryMoveItemEvent.java b/io/papermc/paper/event/inventory/PaperInventoryMoveItemEvent.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..24a2090e068ad3c0d08705050944abdfe19136a2
@@ -49,10 +48,10 @@ index 0000000000000000000000000000000000000000..24a2090e068ad3c0d08705050944abdf
 +    }
 +}
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 646c2f2b617ed706021c83c9fc4492860dfdd4e9..415ab7faf371507e278d0da5bf0ffa9972585876 100644
+index d450d4af96716caff4b29a84d1d83ec4010854f0..8657e4fd7c5e0e23b69d9a982408a7d038f0a787 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -1564,6 +1564,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1563,6 +1563,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          for (ServerLevel serverLevel : this.getAllLevels()) {
              serverLevel.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
              serverLevel.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
@@ -104,7 +103,7 @@ index 2ebdf1ad323bb53dfe9eed319e25856b35a1443c..77618757c0e678532dbab814aceed83f
          }
      }
 diff --git a/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 60e1e44f328e66d52ebf08476b533fef83bc5eba..8139868201c2eaca29588b840a2bd85778f1b3d5 100644
+index 60e1e44f328e66d52ebf08476b533fef83bc5eba..eb02249b518c2d262315c4cd5965bec5d81166a1 100644
 --- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -139,18 +139,56 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
@@ -116,10 +115,10 @@ index 60e1e44f328e66d52ebf08476b533fef83bc5eba..8139868201c2eaca29588b840a2bd857
 +    private static final int HOPPER_HAS_ITEMS = 1;
 +    private static final int HOPPER_IS_FULL = 2;
 +
-+    private static int getFullState(final HopperBlockEntity hoper) {
-+        hoper.unpackLootTable(null);
++    private static int getFullState(final HopperBlockEntity hopper) {
++        hopper.unpackLootTable(null);
 +
-+        final List<ItemStack> hopperItems = hoper.items;
++        final List<ItemStack> hopperItems = hopper.items;
 +
 +        boolean empty = true;
 +        boolean full = true;
