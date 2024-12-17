@@ -6,6 +6,85 @@ Subject: [PATCH] Detail more information in watchdog dumps
 - Dump position, world, velocity, and uuid for currently ticking entities
 - Dump player name, player uuid, position, and world for packet handling
 
+diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
+index d3aebc7f833764351c8e5fe1fad1aa2f8718ca37..5a561c8f48f4b5f7a3077c21f5ddd19cbcaa6aac 100644
+--- a/io/papermc/paper/FeatureHooks.java
++++ b/io/papermc/paper/FeatureHooks.java
+@@ -83,8 +83,72 @@ public final class FeatureHooks {
+     }
+ 
+     public static void dumpTickingInfo() {
++        java.util.logging.Logger log = org.bukkit.Bukkit.getServer().getLogger();
++
++        // ticking entities
++        for (net.minecraft.world.entity.Entity entity : net.minecraft.server.level.ServerLevel.getCurrentlyTickingEntities()) {
++            dumpEntity(entity);
++            net.minecraft.world.entity.Entity vehicle = entity.getVehicle();
++            if (vehicle != null) {
++                log.log(java.util.logging.Level.SEVERE, "Detailing vehicle for above entity:");
++                dumpEntity(vehicle);
++            }
++        }
++
++        // packet processors
++        for (net.minecraft.network.PacketListener packetListener : net.minecraft.network.protocol.PacketUtils.getCurrentPacketProcessors()) {
++            if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl) {
++                net.minecraft.server.level.ServerPlayer player = ((net.minecraft.server.network.ServerGamePacketListenerImpl)packetListener).player;
++                long totalPackets = net.minecraft.network.protocol.PacketUtils.getTotalProcessedPackets();
++                if (player == null) {
++                    log.log(java.util.logging.Level.SEVERE, "Handling packet for player connection or ticking player connection (null player): " + packetListener);
++                    log.log(java.util.logging.Level.SEVERE, "Total packets processed on the main thread for all players: " + totalPackets);
++                } else {
++                    dumpEntity(player);
++                    net.minecraft.world.entity.Entity vehicle = player.getVehicle();
++                    if (vehicle != null) {
++                        log.log(java.util.logging.Level.SEVERE, "Detailing vehicle for above entity:");
++                        dumpEntity(vehicle);
++                    }
++                    log.log(java.util.logging.Level.SEVERE, "Total packets processed on the main thread for all players: " + totalPackets);
++                }
++            } else {
++                log.log(java.util.logging.Level.SEVERE, "Handling packet for connection: " + packetListener);
++            }
++        }
+     }
+ 
+     private static void dumpEntity(final Entity entity) {
++        java.util.logging.Logger log = org.bukkit.Bukkit.getServer().getLogger();
++        double posX, posY, posZ;
++        net.minecraft.world.phys.Vec3 mot;
++        double moveStartX, moveStartY, moveStartZ;
++        net.minecraft.world.phys.Vec3 moveVec;
++        synchronized (entity.posLock) {
++            posX = entity.getX();
++            posY = entity.getY();
++            posZ = entity.getZ();
++            mot = entity.getDeltaMovement();
++            moveStartX = entity.getMoveStartX();
++            moveStartY = entity.getMoveStartY();
++            moveStartZ = entity.getMoveStartZ();
++            moveVec = entity.getMoveVector();
++        }
++
++        String entityType = net.minecraft.world.entity.EntityType.getKey(entity.getType()).toString();
++        java.util.UUID entityUUID = entity.getUUID();
++        net.minecraft.world.level.Level world = entity.level();
++
++        log.log(java.util.logging.Level.SEVERE, "Ticking entity: " + entityType + ", entity class: " + entity.getClass().getName());
++        log.log(java.util.logging.Level.SEVERE, "Entity status: removed: " + entity.isRemoved() + ", valid: " + entity.valid + ", alive: " + entity.isAlive() + ", is passenger: " + entity.isPassenger());
++        log.log(java.util.logging.Level.SEVERE, "Entity UUID: " + entityUUID);
++        log.log(java.util.logging.Level.SEVERE, "Position: world: '" + (world == null ? "unknown world?" : world.getWorld().getName()) + "' at location (" + posX + ", " + posY + ", " + posZ + ")");
++        log.log(java.util.logging.Level.SEVERE, "Velocity: " + (mot == null ? "unknown velocity" : mot.toString()) + " (in blocks per tick)");
++        log.log(java.util.logging.Level.SEVERE, "Entity AABB: " + entity.getBoundingBox());
++        if (moveVec != null) {
++            log.log(java.util.logging.Level.SEVERE, "Move call information: ");
++            log.log(java.util.logging.Level.SEVERE, "Start position: (" + moveStartX + ", " + moveStartY + ", " + moveStartZ + ")");
++            log.log(java.util.logging.Level.SEVERE, "Move vector: " + moveVec.toString());
++        }
+     }
+-}
+\ No newline at end of file
++}
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
 index 8fe485c5bf79804bb4d1f774f95a92b14a576e80..0bcae6256d3b3fb6b2e0c2f23907d4659b236ef3 100644
 --- a/net/minecraft/network/Connection.java
