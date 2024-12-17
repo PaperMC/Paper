@@ -3,8 +3,6 @@ From: theosib <millerti@172.16.221.1>
 Date: Thu, 27 Sep 2018 01:43:35 -0600
 Subject: [PATCH] Eigencraft redstone implementation
 
-Author: theosib <millerti@172.16.221.1>
-
 Original license: MIT
 
 This patch implements theosib's redstone algorithms to completely overhaul the way redstone works.
@@ -17,19 +15,15 @@ A lot of this code is self-contained in a helper class.
 Aside from making the obvious class/function renames and obfhelpers I didn't need to modify much.
 Just added Bukkit's event system and took a few liberties with dead code and comment misspellings.
 
-== AT ==
-public net.minecraft.world.level.block.RedStoneWireBlock shouldSignal
-public net.minecraft.world.level.block.RedStoneWireBlock canSurvive(Lnet/minecraft/world/level/block/state/BlockState;Lnet/minecraft/world/level/LevelReader;Lnet/minecraft/core/BlockPos;)Z
-
 Co-authored-by: egg82 <eggys82@gmail.com>
 
-diff --git a/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
+diff --git a/io/papermc/paper/redstone/RedstoneWireTurbo.java b/io/papermc/paper/redstone/RedstoneWireTurbo.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+index 0000000000000000000000000000000000000000..ff747a1ecdf3c888bca0d69de4f85dcd810b6139
 --- /dev/null
-+++ b/src/main/java/com/destroystokyo/paper/util/RedstoneWireTurbo.java
-@@ -0,0 +0,0 @@
-+package com.destroystokyo.paper.util;
++++ b/io/papermc/paper/redstone/RedstoneWireTurbo.java
+@@ -0,0 +1,954 @@
++package io.papermc.paper.redstone;
 +
 +import java.util.List;
 +import java.util.Map;
@@ -48,14 +42,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +import com.google.common.collect.Lists;
 +import com.google.common.collect.Maps;
 +
-+/**
-+ * Used for the faster redstone algorithm.
-+ * Original author: theosib
-+ * Original license: MIT
-+ *
-+ * Ported to Paper and updated to 1.13 by egg82
-+ */
-+public class RedstoneWireTurbo {
++public final class RedstoneWireTurbo {
 +    /*
 +     * This is Helper class for BlockRedstoneWire.  It implements a minimally-invasive
 +     * bolt-on accelerator that performs a breadth-first search through redstone wire blocks
@@ -862,7 +849,7 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    private BlockState calculateCurrentChanges(final Level worldIn, final UpdateNode upd) {
 +        BlockState state = upd.currentState;
-+        final int i = state.getValue(RedStoneWireBlock.POWER).intValue();
++        final int i = state.getValue(RedStoneWireBlock.POWER);
 +        int j = 0;
 +        j = getMaxCurrentStrength(upd, j);
 +        int l = 0;
@@ -986,21 +973,21 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +     */
 +    private static int getMaxCurrentStrength(final UpdateNode upd, final int strength) {
 +        if (upd.type != UpdateNode.Type.REDSTONE) return strength;
-+        final int i = upd.currentState.getValue(RedStoneWireBlock.POWER).intValue();
++        final int i = upd.currentState.getValue(RedStoneWireBlock.POWER);
 +        return i > strength ? i : strength;
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-+++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -0,0 +0,0 @@ public class RedStoneWireBlock extends Block {
-         return floor.isFaceSturdy(world, pos, Direction.UP) || floor.is(Blocks.HOPPER);
+diff --git a/net/minecraft/world/level/block/RedStoneWireBlock.java b/net/minecraft/world/level/block/RedStoneWireBlock.java
+index 84e6c986917128d4488afa23d29c689cadb4f55d..f02232ce97779db0d12a5d5da1d767326d78ea4c 100644
+--- a/net/minecraft/world/level/block/RedStoneWireBlock.java
++++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
+@@ -290,6 +290,60 @@ public class RedStoneWireBlock extends Block {
+         return state.isFaceSturdy(level, pos, Direction.UP) || state.is(Blocks.HOPPER);
      }
  
 +    // Paper start - Optimize redstone
 +    // The bulk of the new functionality is found in RedstoneWireTurbo.java
-+    com.destroystokyo.paper.util.RedstoneWireTurbo turbo = new com.destroystokyo.paper.util.RedstoneWireTurbo(this);
++    io.papermc.paper.redstone.RedstoneWireTurbo turbo = new io.papermc.paper.redstone.RedstoneWireTurbo(this);
 +
 +    /*
 +     * Modified version of pre-existing updateSurroundingRedstone, which is called from
@@ -1052,46 +1039,46 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    }
 +    // Paper end
 +
-     private void updatePowerStrength(Level world, BlockPos pos, BlockState state, @Nullable Orientation orientation, boolean blockAdded) {
-         if (useExperimentalEvaluator(world)) {
-             new ExperimentalRedstoneWireEvaluator(this).updatePowerStrength(world, pos, state, orientation, blockAdded);
-@@ -0,0 +0,0 @@ public class RedStoneWireBlock extends Block {
+     private void updatePowerStrength(Level level, BlockPos pos, BlockState state, @Nullable Orientation orientation, boolean updateShape) {
+         if (useExperimentalEvaluator(level)) {
+             new ExperimentalRedstoneWireEvaluator(this).updatePowerStrength(level, pos, state, orientation, updateShape);
+@@ -318,7 +372,7 @@ public class RedStoneWireBlock extends Block {
      @Override
-     protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
-         if (!oldState.is(state.getBlock()) && !world.isClientSide) {
--            this.updatePowerStrength(world, pos, state, null, true);
-+            this.updateSurroundingRedstone(world, pos, state, null, true); // Paper - Optimize redstone
+     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+         if (!oldState.is(state.getBlock()) && !level.isClientSide) {
+-            this.updatePowerStrength(level, pos, state, null, true);
++            this.updateSurroundingRedstone(level, pos, state, null, true); // Paper - Optimize redstone
  
              for (Direction direction : Direction.Plane.VERTICAL) {
-                 world.updateNeighborsAt(pos.relative(direction), this);
-@@ -0,0 +0,0 @@ public class RedStoneWireBlock extends Block {
-                     world.updateNeighborsAt(pos.relative(direction), this);
+                 level.updateNeighborsAt(pos.relative(direction), this);
+@@ -337,7 +391,7 @@ public class RedStoneWireBlock extends Block {
+                     level.updateNeighborsAt(pos.relative(direction), this);
                  }
  
--                this.updatePowerStrength(world, pos, state, null, false);
-+                this.updateSurroundingRedstone(world, pos, state, null, false); // Paper - Optimize redstone
-                 this.updateNeighborsOfNeighboringWires(world, pos);
+-                this.updatePowerStrength(level, pos, state, null, false);
++                this.updateSurroundingRedstone(level, pos, state, null, false); // Paper - Optimize redstone
+                 this.updateNeighborsOfNeighboringWires(level, pos);
              }
          }
-@@ -0,0 +0,0 @@ public class RedStoneWireBlock extends Block {
-         if (!world.isClientSide) {
-             if (sourceBlock != this || !useExperimentalEvaluator(world)) {
-                 if (state.canSurvive(world, pos)) {
--                    this.updatePowerStrength(world, pos, state, wireOrientation, false);
-+                    this.updateSurroundingRedstone(world, pos, state, wireOrientation, false); // Paper - Optimize redstone
+@@ -363,7 +417,7 @@ public class RedStoneWireBlock extends Block {
+         if (!level.isClientSide) {
+             if (neighborBlock != this || !useExperimentalEvaluator(level)) {
+                 if (state.canSurvive(level, pos)) {
+-                    this.updatePowerStrength(level, pos, state, orientation, false);
++                    this.updateSurroundingRedstone(level, pos, state, orientation, false); // Paper - Optimize redstone
                  } else {
-                     dropResources(state, world, pos);
-                     world.removeBlock(pos, false);
-diff --git a/src/main/java/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java b/src/main/java/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
-+++ b/src/main/java/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
-@@ -0,0 +0,0 @@ public class DefaultRedstoneWireEvaluator extends RedstoneWireEvaluator {
- 
+                     dropResources(state, level, pos);
+                     level.removeBlock(pos, false);
+diff --git a/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java b/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
+index 380fc51a252022195e178daccd8aa53dd1d71a2e..2d77780b6727f82ffc3cb216ca5f2d6483496cfd 100644
+--- a/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
++++ b/net/minecraft/world/level/redstone/DefaultRedstoneWireEvaluator.java
+@@ -44,7 +44,7 @@ public class DefaultRedstoneWireEvaluator extends RedstoneWireEvaluator {
+         }
      }
  
--    private int calculateTargetStrength(Level world, BlockPos pos) {
-+    public int calculateTargetStrength(Level world, BlockPos pos) { // Paper - Optimize redstone
-         int i = this.getBlockSignal(world, pos);
- 
-         return i == 15 ? i : Math.max(i, this.getIncomingWireSignal(world, pos));
+-    private int calculateTargetStrength(Level level, BlockPos pos) {
++    public int calculateTargetStrength(Level level, BlockPos pos) { // Paper - Optimize redstone
+         int blockSignal = this.getBlockSignal(level, pos);
+         return blockSignal == 15 ? blockSignal : Math.max(blockSignal, this.getIncomingWireSignal(level, pos));
+     }

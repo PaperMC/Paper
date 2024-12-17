@@ -28,30 +28,30 @@ which is most likely in an unloaded chunk - which means that the
 client will not tick the entity and thus not lerp the entity
 from its old position to its new position.
 
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
-@@ -0,0 +0,0 @@ public class ClientboundAddEntityPacket implements Packet<ClientGamePacketListen
+diff --git a/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java b/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
+index db31989ebe3d7021cfd2311439e9a00f819b0841..1373977b339405ef59bb3ea03d195285c96dd3fe 100644
+--- a/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundAddEntityPacket.java
+@@ -42,9 +42,11 @@ public class ClientboundAddEntityPacket implements Packet<ClientGamePacketListen
          this(
              entity.getId(),
              entity.getUUID(),
--            entityTrackerEntry.getPositionBase().x(),
--            entityTrackerEntry.getPositionBase().y(),
--            entityTrackerEntry.getPositionBase().z(),
+-            serverEntity.getPositionBase().x(),
+-            serverEntity.getPositionBase().y(),
+-            serverEntity.getPositionBase().z(),
 +            // Paper start - fix entity tracker desync
 +            entity.trackingPosition().x(),
 +            entity.trackingPosition().y(),
 +            entity.trackingPosition().z(),
 +            // Paper end - fix entity tracker desync
-             entityTrackerEntry.getLastSentXRot(),
-             entityTrackerEntry.getLastSentYRot(),
+             serverEntity.getLastSentXRot(),
+             serverEntity.getLastSentYRot(),
              entity.getType(),
-diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ChunkMap.java
-+++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -0,0 +0,0 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
+index f8f145cd9614f7e38d6aa72501fe31837340a8bb..fa48e63fea42f387dcd154c08af54cfb0d3b08af 100644
+--- a/net/minecraft/server/level/ChunkMap.java
++++ b/net/minecraft/server/level/ChunkMap.java
+@@ -1419,6 +1419,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                          this.serverEntity.addPairing(player);
                          }
                          // Paper end - entity tracking events
@@ -59,11 +59,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
                      }
                  } else if (this.seenBy.remove(player.connection)) {
                      this.serverEntity.removePairing(player);
-diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/server/level/ServerEntity.java
-+++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -0,0 +0,0 @@ public class ServerEntity {
+diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
+index 4c891706c2a3efc8e8c44fc1c031e8a1d21efb60..66f7926a2639ade41cb89419e38e12053314c982 100644
+--- a/net/minecraft/server/level/ServerEntity.java
++++ b/net/minecraft/server/level/ServerEntity.java
+@@ -90,6 +90,13 @@ public class ServerEntity {
          this.trackedDataValues = entity.getEntityData().getNonDefaultValues();
      }
  
@@ -75,31 +75,31 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +    // Paper end - fix desync when a player is added to the tracker
 +
      public void sendChanges() {
-         // Paper start - optimise collisions
-         if (((ca.spottedleaf.moonrise.patches.chunk_system.entity.ChunkSystemEntity)this.entity).moonrise$isHardColliding()) {
-@@ -0,0 +0,0 @@ public class ServerEntity {
-             }
+         List<Entity> passengers = this.entity.getPassengers();
+         if (!passengers.equals(this.lastPassengers)) {
+@@ -125,7 +132,7 @@ public class ServerEntity {
+             this.sendDirtyEntityData();
          }
  
 -        if (this.tickCount % this.updateInterval == 0 || this.entity.hasImpulse || this.entity.getEntityData().isDirty()) {
 +        if (this.forceStateResync || this.tickCount % this.updateInterval == 0 || this.entity.hasImpulse || this.entity.getEntityData().isDirty()) { // Paper - fix desync when a player is added to the tracker
-             byte b0 = Mth.packDegrees(this.entity.getYRot());
+             byte b = Mth.packDegrees(this.entity.getYRot());
              byte b1 = Mth.packDegrees(this.entity.getXRot());
-             boolean flag = Math.abs(b0 - this.lastSentYRot) >= 1 || Math.abs(b1 - this.lastSentXRot) >= 1;
-@@ -0,0 +0,0 @@ public class ServerEntity {
-                     long k = this.positionCodec.encodeZ(vec3d);
-                     boolean flag5 = i < -32768L || i > 32767L || j < -32768L || j > 32767L || k < -32768L || k > 32767L;
- 
--                    if (!flag5 && this.teleportDelay <= 400 && !this.wasRiding && this.wasOnGround == this.entity.onGround()) {
-+                    if (!this.forceStateResync && !flag5 && this.teleportDelay <= 400 && !this.wasRiding && this.wasOnGround == this.entity.onGround()) { // Paper - fix desync when a player is added to the tracker
-                         if ((!flag2 || !flag) && !(this.entity instanceof AbstractArrow)) {
-                             if (flag2) {
-                                 packet1 = new ClientboundMoveEntityPacket.Pos(this.entity.getId(), (short) ((int) i), (short) ((int) j), (short) ((int) k), this.entity.onGround());
-@@ -0,0 +0,0 @@ public class ServerEntity {
+             boolean flag = Math.abs(b - this.lastSentYRot) >= 1 || Math.abs(b1 - this.lastSentXRot) >= 1;
+@@ -160,7 +167,7 @@ public class ServerEntity {
+                 long l1 = this.positionCodec.encodeY(vec3);
+                 long l2 = this.positionCodec.encodeZ(vec3);
+                 boolean flag5 = l < -32768L || l > 32767L || l1 < -32768L || l1 > 32767L || l2 < -32768L || l2 > 32767L;
+-                if (flag5 || this.teleportDelay > 400 || this.wasRiding || this.wasOnGround != this.entity.onGround()) {
++                if (this.forceStateResync || flag5 || this.teleportDelay > 400 || this.wasRiding || this.wasOnGround != this.entity.onGround()) { // Paper - fix desync when a player is added to the tracker
+                     this.wasOnGround = this.entity.onGround();
+                     this.teleportDelay = 0;
+                     packet = ClientboundEntityPositionSyncPacket.of(this.entity);
+@@ -225,6 +232,7 @@ public class ServerEntity {
              }
  
              this.entity.hasImpulse = false;
 +            this.forceStateResync = false; // Paper - fix desync when a player is added to the tracker
          }
  
-         ++this.tickCount;
+         this.tickCount++;
