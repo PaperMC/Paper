@@ -1252,12 +1252,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     // Paper start - missing entity api
     @Override
-    public boolean isInvisible() {  // Paper - moved up from LivingEntity
+    public boolean isInvisible() { // Paper - moved up from LivingEntity
         return this.getHandle().isInvisible();
     }
 
     @Override
-    public void setInvisible(boolean invisible) {  // Paper - moved up from LivingEntity
+    public void setInvisible(boolean invisible) { // Paper - moved up from LivingEntity
         this.getHandle().persistentInvisibility = invisible;
         this.getHandle().setSharedFlag(Entity.FLAG_INVISIBLE, invisible);
     }

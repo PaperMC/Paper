@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Thrown whenever a LivingEntity dies
  */
-public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Cancellable {  // Paper - make cancellable
+public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Cancellable { // Paper - make cancellable
     private static final HandlerList handlers = new HandlerList();
     private final DamageSource damageSource;
     private final List<ItemStack> drops;
