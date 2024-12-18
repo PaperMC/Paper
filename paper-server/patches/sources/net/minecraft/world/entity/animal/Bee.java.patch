@@ -1,6 +1,10 @@
 --- a/net/minecraft/world/entity/animal/Bee.java
 +++ b/net/minecraft/world/entity/animal/Bee.java
-@@ -144,7 +_,22 @@
+@@ -141,10 +_,26 @@
+     Bee.BeeGoToHiveGoal goToHiveGoal;
+     private Bee.BeeGoToKnownFlowerGoal goToKnownFlowerGoal;
+     private int underWaterTicks;
++    public net.kyori.adventure.util.TriState rollingOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Rolling override
  
      public Bee(EntityType<? extends Bee> entityType, Level level) {
          super(entityType, level);
@@ -65,24 +69,18 @@
 -            return this.isTooFarAway(this.hivePos) ? null : this.level().getBlockEntity(this.hivePos, BlockEntityType.BEEHIVE).orElse(null);
 +        // Paper start - move over logic to accommodate isTooFarAway with chunk load check
 +        if (this.hivePos != null && !this.isTooFarAway(this.hivePos) && this.level().getChunkIfLoadedImmediately(this.hivePos.getX() >> 4, this.hivePos.getZ() >> 4) != null) {
-+            return (BeehiveBlockEntity) this.level().getBlockEntity(this.hivePos, BlockEntityType.BEEHIVE).orElse(null);
++            return this.level().getBlockEntity(this.hivePos, BlockEntityType.BEEHIVE).orElse(null);
          }
 +        return null;
 +        // Paper end
      }
  
      boolean isHiveValid() {
-@@ -520,11 +_,13 @@
-         this.setFlag(4, hasStung);
-     }
- 
-+    public net.kyori.adventure.util.TriState rollingOverride = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Rolling override
-     public boolean isRolling() {
-         return this.getFlag(2);
+@@ -525,6 +_,7 @@
      }
  
      public void setRolling(boolean isRolling) {
-+        isRolling = rollingOverride.toBooleanOrElse(isRolling); // Paper - Rolling override
++        isRolling = this.rollingOverride.toBooleanOrElse(isRolling); // Paper - Rolling override
          this.setFlag(2, isRolling);
      }
  

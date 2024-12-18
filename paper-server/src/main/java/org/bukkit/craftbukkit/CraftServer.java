@@ -904,13 +904,13 @@ public final class CraftServer implements Server {
 
     @Override
     public long getConnectionThrottle() {
-        // Spigot Start - Automatically set connection throttle for bungee configurations
+        // Spigot start - Automatically set connection throttle for bungee configurations
         if (org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) { // Paper - Add Velocity IP Forwarding Support
             return -1;
         } else {
             return this.configuration.getInt("settings.connection-throttle");
         }
-        // Spigot End
+        // Spigot end
     }
 
     @Override
@@ -2131,7 +2131,7 @@ public final class CraftServer implements Server {
         if (result == null) {
             GameProfile profile = null;
             // Only fetch an online UUID in online mode
-            if (this.getOnlineMode() || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) { // Paper - Add setting for proxy online mode status
+            if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) { // Paper - Add setting for proxy online mode status
                 // This is potentially blocking :(
                 profile = this.console.getProfileCache().get(name).orElse(null);
             }
@@ -2585,12 +2585,11 @@ public final class CraftServer implements Server {
     }
 
     public List<String> tabCompleteCommand(Player player, String message, ServerLevel world, Vec3 pos) {
-        // Spigot Start
-        if ( (org.spigotmc.SpigotConfig.tabComplete < 0 || message.length() <= org.spigotmc.SpigotConfig.tabComplete) && !message.contains( " " ) )
-        {
+        // Spigot start
+        if ((org.spigotmc.SpigotConfig.tabComplete < 0 || message.length() <= org.spigotmc.SpigotConfig.tabComplete) && !message.contains(" ")) {
             return ImmutableList.of();
         }
-        // Spigot End
+        // Spigot end
 
         List<String> completions = null;
         try {

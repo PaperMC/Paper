@@ -200,7 +200,7 @@
              this.registryAccess(),
              server.getStructureManager(),
 -            dimension,
-+            getTypeKey(),  // Paper - Fix missing CB diff
++            getTypeKey(), // Paper - Fix missing CB diff
              chunkGenerator,
              this.chunkSource.randomState(),
              this,
@@ -302,7 +302,7 @@
                  DifficultyInstance currentDifficultyAt = this.getCurrentDifficultyAt(blockPos);
                  boolean flag = this.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING)
 -                    && this.random.nextDouble() < currentDifficultyAt.getEffectiveDifficulty() * 0.01
-+                    && this.random.nextDouble() < currentDifficultyAt.getEffectiveDifficulty() * this.paperConfig().entities.spawning.skeletonHorseThunderSpawnChance.or(0.01D) // Paper - Configurable spawn chances for skeleton horses
++                    && this.random.nextDouble() < currentDifficultyAt.getEffectiveDifficulty() * this.paperConfig().entities.spawning.skeletonHorseThunderSpawnChance.or(0.01) // Paper - Configurable spawn chances for skeleton horses
                      && !this.getBlockState(blockPos.below()).is(Blocks.LIGHTNING_ROD);
                  if (flag) {
                      SkeletonHorse skeletonHorse = EntityType.SKELETON_HORSE.create(this, EntitySpawnReason.EVENT);
@@ -409,23 +409,23 @@
              this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
          }
 +        */
-+        for (int idx = 0; idx < this.players.size(); ++idx) {
-+            if (((ServerPlayer) this.players.get(idx)).level() == this) {
-+                ((ServerPlayer) this.players.get(idx)).tickWeather();
++        for (ServerPlayer player : this.players) {
++            if (player.level() == this) {
++                player.tickWeather();
 +            }
 +        }
 +
 +        if (isRaining != this.isRaining()) {
 +            // Only send weather packets to those affected
-+            for (int idx = 0; idx < this.players.size(); ++idx) {
-+                if (((ServerPlayer) this.players.get(idx)).level() == this) {
-+                    ((ServerPlayer) this.players.get(idx)).setPlayerWeather((!isRaining ? org.bukkit.WeatherType.DOWNFALL : org.bukkit.WeatherType.CLEAR), false);
++            for (ServerPlayer player : this.players) {
++                if (player.level() == this) {
++                    player.setPlayerWeather((!isRaining ? org.bukkit.WeatherType.DOWNFALL : org.bukkit.WeatherType.CLEAR), false);
 +                }
 +            }
 +        }
-+        for (int idx = 0; idx < this.players.size(); ++idx) {
-+            if (((ServerPlayer) this.players.get(idx)).level() == this) {
-+                ((ServerPlayer) this.players.get(idx)).updateWeather(this.oRainLevel, this.rainLevel, this.oThunderLevel, this.thunderLevel);
++        for (ServerPlayer player : this.players) {
++            if (player.level() == this) {
++                player.updateWeather(this.oRainLevel, this.rainLevel, this.oThunderLevel, this.thunderLevel);
 +            }
 +        }
 +        // CraftBukkit end
@@ -600,19 +600,19 @@
      }
  
      public void unload(LevelChunk chunk) {
-+        // Spigot Start
-+        for (net.minecraft.world.level.block.entity.BlockEntity tileentity : chunk.getBlockEntities().values()) {
-+            if (tileentity instanceof net.minecraft.world.Container) {
++        // Spigot start
++        for (net.minecraft.world.level.block.entity.BlockEntity blockEntity : chunk.getBlockEntities().values()) {
++            if (blockEntity instanceof net.minecraft.world.Container) {
 +                // Paper start - this area looks like it can load chunks, change the behavior
 +                // chests for example can apply physics to the world
 +                // so instead we just change the active container and call the event
-+                for (org.bukkit.entity.HumanEntity h : Lists.newArrayList(((net.minecraft.world.Container) tileentity).getViewers())) {
-+                    ((org.bukkit.craftbukkit.entity.CraftHumanEntity) h).getHandle().closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
++                for (org.bukkit.entity.HumanEntity human : Lists.newArrayList(((net.minecraft.world.Container) blockEntity).getViewers())) {
++                    ((org.bukkit.craftbukkit.entity.CraftHumanEntity) human).getHandle().closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
 +                }
 +                // Paper end - this area looks like it can load chunks, change the behavior
 +            }
 +        }
-+        // Spigot End
++        // Spigot end
          chunk.clearAllBlockEntities();
          chunk.unregisterTickContainerFromLevel(this);
      }
@@ -776,7 +776,7 @@
 +        ParticleOptions smallExplosionParticles,
 +        ParticleOptions largeExplosionParticles,
 +        Holder<SoundEvent> explosionSound,
-+        java.util.function.Consumer<ServerExplosion> configurator
++        @Nullable java.util.function.Consumer<ServerExplosion> configurator
 +    ) {
 +        // CraftBukkit end
          Explosion.BlockInteraction blockInteraction = switch (explosionInteraction) {
@@ -865,7 +865,7 @@
 -        for (int i1 = 0; i1 < this.players.size(); i1++) {
 -            ServerPlayer serverPlayer = this.players.get(i1);
 +        for (int i1 = 0; i1 < receivers.size(); i1++) { // Paper - particle API
-+            ServerPlayer serverPlayer = receivers.get(i1);  // Paper - particle API
++            ServerPlayer serverPlayer = receivers.get(i1); // Paper - particle API
 +            if (sender != null && !serverPlayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
              if (this.sendParticles(serverPlayer, overrideLimiter, posX, posY, posZ, clientboundLevelParticlesPacket)) {
                  i++;
@@ -889,11 +889,11 @@
 +
 +        final Optional<net.minecraft.world.level.saveddata.SavedData> cacheEntry = storage.cache.get(mapId.key());
 +        if (cacheEntry == null) { // Cache did not contain, try to load and may init
-+            final MapItemSavedData worldmap = storage.get(MapItemSavedData.factory(), mapId.key()); // get populates the cache
-+            if (worldmap != null) { // map was read, init it and return
-+                worldmap.id = mapId;
-+                new org.bukkit.event.server.MapInitializeEvent(worldmap.mapView).callEvent();
-+                return worldmap;
++            final MapItemSavedData mapData = storage.get(MapItemSavedData.factory(), mapId.key()); // get populates the cache
++            if (mapData != null) { // map was read, init it and return
++                mapData.id = mapId;
++                new org.bukkit.event.server.MapInitializeEvent(mapData.mapView).callEvent();
++                return mapData;
 +            }
 +
 +            return null; // Map does not exist, reading failed.
@@ -1096,7 +1096,7 @@
 +                }
 +            }
 +            // Spigot end
-+            // Spigot Start
++            // Spigot start
 +            if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder && (!(entity instanceof ServerPlayer) || entity.getRemovalReason() != Entity.RemovalReason.KILLED)) { // SPIGOT-6876: closeInventory clears death message
 +                // Paper start - Fix merchant inventory not closing on entity removal
 +                if (entity.getBukkitEntity() instanceof org.bukkit.inventory.Merchant merchant && merchant.getTrader() != null) {
@@ -1107,7 +1107,7 @@
 +                    h.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
 +                }
 +            }
-+            // Spigot End
++            // Spigot end
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer serverPlayer) {
                  ServerLevel.this.players.remove(serverPlayer);

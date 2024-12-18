@@ -59,7 +59,7 @@
  
      public void tick() {
 -        this.gameTicks++;
-+        this.gameTicks = net.minecraft.server.MinecraftServer.currentTick; // CraftBukkit;
++        this.gameTicks = net.minecraft.server.MinecraftServer.currentTick; // CraftBukkit
          if (this.hasDelayedDestroy) {
 -            BlockState blockState = this.level.getBlockState(this.delayedDestroyPos);
 -            if (blockState.isAir()) {
@@ -102,7 +102,7 @@
 -                    return;
 -                }
 +                    // Update any tile entity data for this block
-+                    capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
++                    this.capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
 +                    // CraftBukkit end
 +                    return;
 +                }
@@ -113,7 +113,7 @@
 +                    // Let the client know the block still exists
 +                    // this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos)); // Paper - Don't resync blocks
 +                    // Update any tile entity data for this block
-+                    capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
++                    this.capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
 +                    return;
 +                }
 +                // CraftBukkit end
@@ -207,7 +207,7 @@
              }
          }
      }
-@@ -235,36 +_,125 @@
+@@ -235,36 +_,127 @@
  
      public boolean destroyBlock(BlockPos pos) {
          BlockState blockState = this.level.getBlockState(pos);
@@ -258,12 +258,14 @@
 +                // Paper end - Don't resync blocks
 +
 +                // Update any tile entity data for this block
-+                if (!captureSentBlockEntities) { // Paper - Send block entities after destroy prediction
-+                    BlockEntity tileentity = this.level.getBlockEntity(pos);
-+                    if (tileentity != null) {
-+                        this.player.connection.send(tileentity.getUpdatePacket());
++                if (!this.captureSentBlockEntities) { // Paper - Send block entities after destroy prediction
++                    BlockEntity blockEntity = this.level.getBlockEntity(pos);
++                    if (blockEntity != null) {
++                        this.player.connection.send(blockEntity.getUpdatePacket());
 +                    }
-+                } else {capturedBlockEntity = true;} // Paper - Send block entities after destroy prediction
++                } else {
++                    this.capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
++                }
 +                return false;
 +            }
 +        }

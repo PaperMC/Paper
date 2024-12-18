@@ -5,7 +5,7 @@ Subject: [PATCH] Use Velocity compression and cipher natives
 
 
 diff --git a/net/minecraft/network/CipherDecoder.java b/net/minecraft/network/CipherDecoder.java
-index 429325ffb7db2b85ed271ddf3da64c6fdc593673..4a445cb0ab19c6eca94fdc2172e1b286d1947c63 100644
+index 429325ffb7db2b85ed271ddf3da64c6fdc593673..d764552aea825af7bbf0f47c9d88af527d9dbe62 100644
 --- a/net/minecraft/network/CipherDecoder.java
 +++ b/net/minecraft/network/CipherDecoder.java
 @@ -7,14 +7,30 @@ import java.util.List;
@@ -17,8 +17,8 @@ index 429325ffb7db2b85ed271ddf3da64c6fdc593673..4a445cb0ab19c6eca94fdc2172e1b286
  
 -    public CipherDecoder(Cipher cipher) {
 -        this.cipher = new CipherBase(cipher);
-+    public CipherDecoder(com.velocitypowered.natives.encryption.VelocityCipher cipher) {  // Paper - Use Velocity cipher
-+        this.cipher = cipher;  // Paper - Use Velocity cipher
++    public CipherDecoder(com.velocitypowered.natives.encryption.VelocityCipher cipher) { // Paper - Use Velocity cipher
++        this.cipher = cipher; // Paper - Use Velocity cipher
      }
  
      @Override
@@ -38,13 +38,13 @@ index 429325ffb7db2b85ed271ddf3da64c6fdc593673..4a445cb0ab19c6eca94fdc2172e1b286
 +
 +    // Paper start - Use Velocity cipher
 +    @Override
-+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
++    public void handlerRemoved(ChannelHandlerContext ctx) {
 +        this.cipher.close();
 +    }
 +    // Paper end - Use Velocity cipher
  }
 diff --git a/net/minecraft/network/CipherEncoder.java b/net/minecraft/network/CipherEncoder.java
-index 992b9c7aed57ce29cdd2b4f66737d39db214f0cf..e087a35bcaf326c37a3e58f4d06165a61747c5a9 100644
+index 992b9c7aed57ce29cdd2b4f66737d39db214f0cf..b927c85923147d2b346e892a3e4deee48b3d073e 100644
 --- a/net/minecraft/network/CipherEncoder.java
 +++ b/net/minecraft/network/CipherEncoder.java
 @@ -5,15 +5,31 @@ import io.netty.channel.ChannelHandlerContext;
@@ -58,8 +58,8 @@ index 992b9c7aed57ce29cdd2b4f66737d39db214f0cf..e087a35bcaf326c37a3e58f4d06165a6
  
 -    public CipherEncoder(Cipher cipher) {
 -        this.cipher = new CipherBase(cipher);
-+    public CipherEncoder(com.velocitypowered.natives.encryption.VelocityCipher cipher) {  // Paper - Use Velocity cipher
-+        this.cipher = cipher;  // Paper - Use Velocity cipher
++    public CipherEncoder(com.velocitypowered.natives.encryption.VelocityCipher cipher) { // Paper - Use Velocity cipher
++        this.cipher = cipher; // Paper - Use Velocity cipher
      }
  
 +    // Paper start - Use Velocity cipher
@@ -80,7 +80,7 @@ index 992b9c7aed57ce29cdd2b4f66737d39db214f0cf..e087a35bcaf326c37a3e58f4d06165a6
 +
 +    // Paper start - Use Velocity cipher
 +    @Override
-+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
++    public void handlerRemoved(ChannelHandlerContext ctx) {
 +        this.cipher.close();
 +    }
 +    // Paper end - Use Velocity cipher
@@ -269,10 +269,10 @@ index bc674b08a41d5529fe06c6d3f077051cf4138f73..ea8a894158c44c2e7943dea43ecd8e1f
 +    // Paper end - Use Velocity cipher
  }
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index c4bb28857ee11dccc9924666634488044c666fd1..8fe485c5bf79804bb4d1f774f95a92b14a576e80 100644
+index 1672bd0eeea8db44016bbbccf9a332c7f45fdb54..bfdc637a750602c00919422ca0e3943ba34db832 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -770,11 +770,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -766,11 +766,22 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          return connection;
      }
  
@@ -299,7 +299,7 @@ index c4bb28857ee11dccc9924666634488044c666fd1..8fe485c5bf79804bb4d1f774f95a92b1
  
      public boolean isEncrypted() {
          return this.encrypted;
-@@ -813,16 +824,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -809,16 +820,17 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      // Paper end - add proper async disconnect
      public void setupCompression(int threshold, boolean validateDecompressed) {
          if (threshold >= 0) {

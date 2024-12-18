@@ -149,13 +149,13 @@ public class Main {
 
                 this.acceptsAll(Main.asList("initSettings"), "Only create configuration files and then exit"); // SPIGOT-5761: Add initSettings option
 
-                // Spigot Start
+                // Spigot start
                 this.acceptsAll(Main.asList("S", "spigot-settings"), "File for spigot settings")
                         .withRequiredArg()
                         .ofType(File.class)
                         .defaultsTo(new File("spigot.yml"))
                         .describedAs("Yml file");
-                // Spigot End
+                // Spigot end
 
                 // Paper start
                 acceptsAll(asList("paper-dir", "paper-settings-directory"), "Directory for Paper settings")

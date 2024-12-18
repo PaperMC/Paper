@@ -155,7 +155,7 @@
 +            // CraftBukkit end
 +            // Paper start - avoid duplicate event call
 +            org.bukkit.event.entity.EntityDeathEvent event = this.brokenByAnything(level, damageSource);
-+            if (!event.isCancelled()) this.kill(damageSource, false); // CraftBukkit
++            if (!event.isCancelled()) this.kill(level, damageSource, false); // CraftBukkit
 +            // Paper end
              return false;
          } else if (damageSource.is(DamageTypeTags.IGNITES_ARMOR_STANDS)) {
@@ -204,7 +204,7 @@
 +                    org.bukkit.event.entity.EntityDeathEvent event = this.brokenByPlayer(level, damageSource); // Paper
                      this.showBreakingParticles();
 -                    this.kill(level);
-+                    if (!event.isCancelled()) this.kill(damageSource, false); // Paper - we still need to kill to follow vanilla logic (emit the game event etc...)
++                    if (!event.isCancelled()) this.kill(level, damageSource, false); // Paper - we still need to kill to follow vanilla logic (emit the game event etc...)
                  }
  
                  return true;
@@ -215,7 +215,7 @@
 -            this.kill(level);
 +            // Paper start - avoid duplicate event call
 +            org.bukkit.event.entity.EntityDeathEvent event = this.brokenByAnything(level, damageSource);
-+            if (!event.isCancelled()) this.kill(damageSource, false); // CraftBukkit
++            if (!event.isCancelled()) this.kill(level, damageSource, false); // CraftBukkit
 +            // Paper end
          } else {
              this.setHealth(health);
@@ -289,7 +289,7 @@
          Rotations rotations = this.entityData.get(DATA_HEAD_POSE);
          if (!this.headPose.equals(rotations)) {
              this.setHeadPose(rotations);
-@@ -587,9 +_,31 @@
+@@ -587,9 +_,32 @@
          return this.isSmall();
      }
  
@@ -309,9 +309,10 @@
 +
 +    public void kill(ServerLevel level, @Nullable DamageSource damageSource) {
 +        // Paper start - make cancellable
-+        this.kill(damageSource, true);
++        this.kill(level, damageSource, true);
 +    }
-+    public void kill(@Nullable DamageSource damageSource, boolean callEvent) {
++
++    public void kill(ServerLevel level, @Nullable DamageSource damageSource, boolean callEvent) {
 +        if (callEvent) {
 +            org.bukkit.event.entity.EntityDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, (damageSource == null ? this.damageSources().genericKill() : damageSource), this.drops); // CraftBukkit - call event
 +            if (event.isCancelled()) return;

@@ -61,7 +61,7 @@
 +    public static final int TICK_TIME = 1000000000 / MinecraftServer.TPS;
 +    private static final int SAMPLE_INTERVAL = 20; // Paper - improve server tick loop
 +    @Deprecated(forRemoval = true) // Paper
-+    public final double[] recentTps = new double[ 3 ];
++    public final double[] recentTps = new double[3];
 +    // Spigot end
 +    public volatile boolean hasFullyShutdown; // Paper - Improved watchdog support
 +    public volatile boolean abnormalExit; // Paper - Improved watchdog support
@@ -623,16 +623,17 @@
          }
  
          LOGGER.info("Saving worlds");
-@@ -646,6 +_,15 @@
+@@ -646,6 +_,16 @@
          } catch (IOException var4) {
              LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), var4);
          }
 +        // Spigot start
 +        io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR.shutdown(); // Paper
-+        try { io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // Paper
++        try {
++            io.papermc.paper.util.MCUtil.ASYNC_EXECUTOR.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS); // Paper
 +        } catch (java.lang.InterruptedException ignored) {} // Paper
 +        if (org.spigotmc.SpigotConfig.saveUserCacheOnStopOnly) {
-+            MinecraftServer.LOGGER.info("Saving usercache.json");
++            LOGGER.info("Saving usercache.json");
 +            this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
 +        }
 +        // Spigot end
@@ -654,15 +655,10 @@
          this.running = false;
          if (waitForServer) {
              try {
-@@ -671,6 +_,63 @@
+@@ -671,6 +_,57 @@
          }
      }
  
-+    // Spigot Start
-+    private static double calcTps(double avg, double exp, double tps) {
-+        return (avg * exp) + (tps * (1 - exp));
-+    }
-+
 +    // Paper start - Further improve server tick loop
 +    private static final long SEC_IN_NANO = 1000000000;
 +    private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
@@ -713,7 +709,6 @@
 +    }
 +    private static final java.math.BigDecimal TPS_BASE = new java.math.BigDecimal(1E9).multiply(new java.math.BigDecimal(SAMPLE_INTERVAL));
 +    // Paper end
-+    // Spigot End
 +
      protected void runServer() {
          try {
@@ -725,7 +720,7 @@
 +            this.server.spark.enableBeforePlugins(); // Paper - spark
 +            // Spigot start
 +            org.spigotmc.WatchdogThread.hasStarted = true; // Paper
-+            Arrays.fill( this.recentTps, 20 );
++            Arrays.fill(this.recentTps, 20);
 +            // Paper start - further improve server tick loop
 +            long tickSection = Util.getNanos();
 +            long currentTime;
@@ -1181,7 +1176,7 @@
          if (this.isEnforceWhitelist()) {
              PlayerList playerList = commandSource.getServer().getPlayerList();
              UserWhiteList whiteList = playerList.getWhiteList();
-+            if (!((net.minecraft.server.dedicated.DedicatedServer) getServer()).getProperties().whiteList.get()) return; // Paper - whitelist not enabled
++            if (!((net.minecraft.server.dedicated.DedicatedServer) this).getProperties().whiteList.get()) return; // Paper - whitelist not enabled
  
              for (ServerPlayer serverPlayer : Lists.newArrayList(playerList.getPlayers())) {
 -                if (!whiteList.isWhiteListed(serverPlayer.getGameProfile())) {

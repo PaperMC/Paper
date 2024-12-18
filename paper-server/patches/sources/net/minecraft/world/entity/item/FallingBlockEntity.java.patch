@@ -4,7 +4,7 @@
  import net.minecraft.world.phys.Vec3;
  import org.slf4j.Logger;
  
-+// CraftBukkit start;
++// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.event.entity.EntityRemoveEvent;
 +// CraftBukkit end
@@ -20,28 +20,14 @@
  
      public FallingBlockEntity(EntityType<? extends FallingBlockEntity> entityType, Level level) {
          super(entityType, level);
-@@ -80,6 +_,10 @@
-     }
- 
-     public static FallingBlockEntity fall(Level level, BlockPos pos, BlockState blockState) {
-+        // CraftBukkit start
-+        return FallingBlockEntity.fall(level, pos, blockState, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
-+    }
-+    public static FallingBlockEntity fall(Level level, BlockPos pos, BlockState blockState, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
-         FallingBlockEntity fallingBlockEntity = new FallingBlockEntity(
-             level,
-             pos.getX() + 0.5,
-@@ -89,8 +_,9 @@
+@@ -89,6 +_,7 @@
                  ? blockState.setValue(BlockStateProperties.WATERLOGGED, Boolean.valueOf(false))
                  : blockState
          );
 +        if (!CraftEventFactory.callEntityChangeBlockEvent(fallingBlockEntity, pos, blockState.getFluidState().createLegacyBlock())) return fallingBlockEntity; // CraftBukkit
          level.setBlock(pos, blockState.getFluidState().createLegacyBlock(), 3);
--        level.addFreshEntity(fallingBlockEntity);
-+        level.addFreshEntity(fallingBlockEntity, creatureSpawnReason); // CraftBukkit
+         level.addFreshEntity(fallingBlockEntity);
          return fallingBlockEntity;
-     }
- 
 @@ -139,13 +_,22 @@
      @Override
      public void tick() {
@@ -147,9 +133,9 @@
          }
 +
 +        // Paper start - Expand FallingBlock API
-+         if (compound.contains("Paper.AutoExpire")) {
++        if (compound.contains("Paper.AutoExpire")) {
 +            this.autoExpire = compound.getBoolean("Paper.AutoExpire");
-+         }
++        }
 +        // Paper end - Expand FallingBlock API
      }
  

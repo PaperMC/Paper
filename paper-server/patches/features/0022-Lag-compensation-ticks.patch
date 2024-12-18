@@ -8,7 +8,7 @@ Areas affected by lag comepnsation:
  - Eating food items
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index fd6fdb6d7e15633bd01d4f930ee3b15c0dd2ca06..22dc6bec58702762e4a31415f9aed2df2b3ad0d6 100644
+index 5649482a8b85056bc009b868e19ca11f21d59fbf..f4fba4e2d12c7ab4b4eb9858cd738a9678a2d203 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -301,6 +301,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -19,7 +19,7 @@ index fd6fdb6d7e15633bd01d4f930ee3b15c0dd2ca06..22dc6bec58702762e4a31415f9aed2df
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> threadFunction) {
          ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.init(); // Paper - rewrite data converter system
-@@ -1566,6 +1567,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1561,6 +1562,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          for (ServerLevel serverLevel : this.getAllLevels()) {
              serverLevel.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
              serverLevel.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
@@ -28,7 +28,7 @@ index fd6fdb6d7e15633bd01d4f930ee3b15c0dd2ca06..22dc6bec58702762e4a31415f9aed2df
              /* Drop global time updates
              if (this.tickCount % 20 == 0) {
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index ca9427a7eae9a66f4f1ccedda7b1def7ac2a88da..efc18884358907661d1226409f11d19a394073b3 100644
+index 4d20bda4cba578c47216d450c99389b744a59008..47b7d487467225505e3f20cea92e114331d660fd 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -2362,4 +2362,16 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -49,20 +49,20 @@ index ca9427a7eae9a66f4f1ccedda7b1def7ac2a88da..efc18884358907661d1226409f11d19a
 +    // Paper end - lag compensation
  }
 diff --git a/net/minecraft/server/level/ServerPlayerGameMode.java b/net/minecraft/server/level/ServerPlayerGameMode.java
-index 6176f0738aa1a18df5d7d4d49fd6961e3f2eb736..d6da40d7188a55a9b2eeedb540c8e275359342e4 100644
+index 9fdb825be2b04a5806bbb3d39948bad0863e7ae5..261445152f741b68f91cd8fc1eac17275ee52427 100644
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
 @@ -111,7 +111,7 @@ public class ServerPlayerGameMode {
      }
  
      public void tick() {
--        this.gameTicks = net.minecraft.server.MinecraftServer.currentTick; // CraftBukkit;
+-        this.gameTicks = net.minecraft.server.MinecraftServer.currentTick; // CraftBukkit
 +        this.gameTicks = (int) this.level.getLagCompensationTick(); // Paper - lag compensation
          if (this.hasDelayedDestroy) {
              BlockState blockState = this.level.getBlockStateIfLoaded(this.delayedDestroyPos); // Paper - Don't allow digging into unloaded chunks
              if (blockState == null || blockState.isAir()) { // Paper - Don't allow digging into unloaded chunks
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index c83aeaf4e50dd7290c608dfe260a3bd2404b6004..8439e1593c9973243383dc7091c587f7e72eb9e0 100644
+index 228ceecd5ab9040dcc6710d1cdd0feda2f901016..884e1f8f72cc31520ba0c54af17be3879918a5d3 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -3831,6 +3831,10 @@ public abstract class LivingEntity extends Entity implements Attackable {

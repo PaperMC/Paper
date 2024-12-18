@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/monster/Bogged.java
 +++ b/net/minecraft/world/entity/monster/Bogged.java
-@@ -72,7 +_,20 @@
+@@ -72,7 +_,19 @@
          ItemStack itemInHand = player.getItemInHand(hand);
          if (itemInHand.is(Items.SHEARS) && this.readyForShearing()) {
              if (this.level() instanceof ServerLevel serverLevel) {
@@ -11,18 +11,17 @@
 +                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemInHand, hand, drops);
 +                if (event != null) {
 +                    if (event.isCancelled()) {
-+                        // this.getEntityData().markDirty(Bogged.DATA_SHEARED); // CraftBukkit - mark dirty to restore sheared state to clients // Paper - no longer needed
 +                        return InteractionResult.PASS;
 +                    }
 +                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
-+                // Paper end - custom shear drops
++                    // Paper end - custom shear drops
 +                }
 +                // CraftBukkit end
 +                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand, drops); // Paper - custom shear drops
                  this.gameEvent(GameEvent.SHEAR, player);
                  itemInHand.hurtAndBreak(1, player, getSlotForHand(hand));
              }
-@@ -125,15 +_,34 @@
+@@ -125,15 +_,33 @@
  
      @Override
      public void shear(ServerLevel level, SoundSource soundSource, ItemStack shears) {
@@ -53,10 +52,9 @@
 -            level, BuiltInLootTables.BOGGED_SHEAR, stack, (serverLevel, itemStack) -> this.spawnAtLocation(serverLevel, itemStack, this.getBbHeight())
 -        );
 +    // Paper start - custom shear drops
-+    private void spawnShearedMushrooms(ServerLevel world, ItemStack shears, java.util.List<ItemStack> drops) {
-+        final ServerLevel worldserver1 = world; // Named for lambda consumption
++    private void spawnShearedMushrooms(ServerLevel level, ItemStack stack, java.util.List<ItemStack> drops) {
 +        this.forceDrops = true; // Paper - Add missing forceDrop toggles
-+        drops.forEach(itemstack1 -> this.spawnAtLocation(world, shears, this.getBbHeight()));
++        drops.forEach(itemstack1 -> this.spawnAtLocation(level, stack, this.getBbHeight()));
 +        this.forceDrops = false; // Paper - Add missing forceDrop toggles
 +        // Paper end - custom shear drops
      }

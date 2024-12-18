@@ -48,16 +48,14 @@
                          double d = flyTargetLocation.x - this.getX();
                          double d1 = flyTargetLocation.y - this.getY();
                          double d2 = flyTargetLocation.z - this.getZ();
-@@ -369,7 +_,14 @@
+@@ -369,7 +_,12 @@
              if (this.nearestCrystal.isRemoved()) {
                  this.nearestCrystal = null;
              } else if (this.tickCount % 10 == 0 && this.getHealth() < this.getMaxHealth()) {
 -                this.setHealth(this.getHealth() + 1.0F);
 +                // CraftBukkit start
 +                org.bukkit.event.entity.EntityRegainHealthEvent event = new org.bukkit.event.entity.EntityRegainHealthEvent(this.getBukkitEntity(), 1.0F, org.bukkit.event.entity.EntityRegainHealthEvent.RegainReason.ENDER_CRYSTAL);
-+                this.level().getCraftServer().getPluginManager().callEvent(event);
-+
-+                if (!event.isCancelled()) {
++                if (event.callEvent()) {
 +                    this.setHealth((float) (this.getHealth() + event.getAmount()));
 +                }
 +                // CraftBukkit end
@@ -94,7 +92,7 @@
                          } else {
                              flag = true;
                          }
-@@ -450,6 +_,54 @@
+@@ -450,6 +_,58 @@
              }
          }
  
@@ -116,32 +114,36 @@
 +            }
 +        } else {
 +            for (org.bukkit.block.Block block : event.blockList()) {
-+                org.bukkit.Material blockId = block.getType();
-+                if (blockId.isAir()) {
++                org.bukkit.Material blockType = block.getType();
++                if (blockType.isAir()) {
 +                    continue;
 +                }
 +
 +                org.bukkit.craftbukkit.block.CraftBlock craftBlock = ((org.bukkit.craftbukkit.block.CraftBlock) block);
-+                BlockPos blockposition = craftBlock.getPosition();
++                BlockPos pos = craftBlock.getPosition();
 +
 +                net.minecraft.world.level.block.Block nmsBlock = craftBlock.getNMS().getBlock();
 +                if (nmsBlock.dropFromExplosion(this.explosionSource)) {
-+                    net.minecraft.world.level.block.entity.BlockEntity tileentity = craftBlock.getNMS().hasBlockEntity() ? this.level().getBlockEntity(blockposition) : null;
-+                    net.minecraft.world.level.storage.loot.LootParams.Builder loottableinfo_builder = (new net.minecraft.world.level.storage.loot.LootParams.Builder((ServerLevel) this.level())).withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, Vec3.atCenterOf(blockposition)).withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.TOOL, net.minecraft.world.item.ItemStack.EMPTY).withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS, 1.0F / event.getYield()).withOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY, tileentity);
++                    net.minecraft.world.level.block.entity.BlockEntity blockEntity = craftBlock.getNMS().hasBlockEntity() ? this.level().getBlockEntity(pos) : null;
++                    net.minecraft.world.level.storage.loot.LootParams.Builder builder = new net.minecraft.world.level.storage.loot.LootParams.Builder((ServerLevel) this.level())
++                        .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
++                        .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.TOOL, net.minecraft.world.item.ItemStack.EMPTY)
++                        .withParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.EXPLOSION_RADIUS, 1.0F / event.getYield())
++                        .withOptionalParameter(net.minecraft.world.level.storage.loot.parameters.LootContextParams.BLOCK_ENTITY, blockEntity);
 +
-+                    craftBlock.getNMS().getDrops(loottableinfo_builder).forEach((itemstack) -> {
-+                        net.minecraft.world.level.block.Block.popResource(this.level(), blockposition, itemstack);
++                    craftBlock.getNMS().getDrops(builder).forEach((stack) -> {
++                        net.minecraft.world.level.block.Block.popResource(this.level(), pos, stack);
 +                    });
-+                    craftBlock.getNMS().spawnAfterBreak((ServerLevel) this.level(), blockposition, net.minecraft.world.item.ItemStack.EMPTY, false);
++                    craftBlock.getNMS().spawnAfterBreak((ServerLevel) this.level(), pos, net.minecraft.world.item.ItemStack.EMPTY, false);
 +                }
 +                // Paper start - TNTPrimeEvent
-+                org.bukkit.block.Block tntBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level(), blockposition);
++                org.bukkit.block.Block tntBlock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level(), pos);
 +                if (!new com.destroystokyo.paper.event.block.TNTPrimeEvent(tntBlock, com.destroystokyo.paper.event.block.TNTPrimeEvent.PrimeReason.EXPLOSION, explosionSource.getIndirectSourceEntity().getBukkitEntity()).callEvent())
 +                    continue;
 +                // Paper end - TNTPrimeEvent
-+                nmsBlock.wasExploded((ServerLevel) this.level(), blockposition, this.explosionSource);
++                nmsBlock.wasExploded((ServerLevel) this.level(), pos, this.explosionSource);
 +
-+                this.level().removeBlock(blockposition, false);
++                this.level().removeBlock(pos, false);
 +            }
 +        }
 +        // CraftBukkit end
