@@ -1,10 +1,7 @@
 --- a/net/minecraft/world/entity/item/FallingBlockEntity.java
 +++ b/net/minecraft/world/entity/item/FallingBlockEntity.java
-@@ -47,8 +_,14 @@
- import net.minecraft.world.phys.BlockHitResult;
- import net.minecraft.world.phys.HitResult;
+@@ -49,6 +_,11 @@
  import net.minecraft.world.phys.Vec3;
-+import org.bukkit.event.entity.CreatureSpawnEvent;
  import org.slf4j.Logger;
  
 +// CraftBukkit start;
@@ -28,20 +25,23 @@
  
      public static FallingBlockEntity fall(Level level, BlockPos pos, BlockState blockState) {
 +        // CraftBukkit start
-+        return FallingBlockEntity.fall(level, pos, blockState, CreatureSpawnEvent.SpawnReason.DEFAULT);
++        return FallingBlockEntity.fall(level, pos, blockState, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
-+    public static FallingBlockEntity fall(Level level, BlockPos pos, BlockState blockState, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++    public static FallingBlockEntity fall(Level level, BlockPos pos, BlockState blockState, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
          FallingBlockEntity fallingBlockEntity = new FallingBlockEntity(
              level,
              pos.getX() + 0.5,
-@@ -89,6 +_,7 @@
+@@ -89,8 +_,9 @@
                  ? blockState.setValue(BlockStateProperties.WATERLOGGED, Boolean.valueOf(false))
                  : blockState
          );
 +        if (!CraftEventFactory.callEntityChangeBlockEvent(fallingBlockEntity, pos, blockState.getFluidState().createLegacyBlock())) return fallingBlockEntity; // CraftBukkit
          level.setBlock(pos, blockState.getFluidState().createLegacyBlock(), 3);
-         level.addFreshEntity(fallingBlockEntity);
+-        level.addFreshEntity(fallingBlockEntity);
++        level.addFreshEntity(fallingBlockEntity, creatureSpawnReason); // CraftBukkit
          return fallingBlockEntity;
+     }
+ 
 @@ -139,13 +_,22 @@
      @Override
      public void tick() {
