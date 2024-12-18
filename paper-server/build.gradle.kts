@@ -181,12 +181,12 @@ dependencies {
     // Paper end - spark
 }
 
-
 tasks.jar {
     manifest {
         val git = Git(rootProject.layout.projectDirectory.path)
         val mcVersion = rootProject.providers.gradleProperty("mcVersion").get()
         val build = System.getenv("BUILD_NUMBER") ?: null
+        val buildTime = if (build != null) Instant.now() else Instant.EPOCH
         val gitHash = git.exec(providers, "rev-parse", "--short=7", "HEAD").get().trim()
         val implementationVersion = "$mcVersion-${build ?: "DEV"}-$gitHash"
         val date = git.exec(providers, "show", "-s", "--format=%ci", gitHash).get().trim() // Paper
@@ -202,7 +202,7 @@ tasks.jar {
             "Brand-Id" to "papermc:paper",
             "Brand-Name" to "Paper",
             "Build-Number" to (build ?: ""),
-            "Build-Time" to Instant.now().toString(),
+            "Build-Time" to buildTime.toString(),
             "Git-Branch" to gitBranch, // Paper
             "Git-Commit" to gitHash, // Paper
         )
