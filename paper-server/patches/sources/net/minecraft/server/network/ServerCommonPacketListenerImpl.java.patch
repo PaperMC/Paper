@@ -95,7 +95,7 @@
          }
      }
  
-@@ -88,37 +_,124 @@
+@@ -88,30 +_,117 @@
      public void handlePong(ServerboundPongPacket packet) {
      }
  
@@ -206,31 +206,20 @@
  
      protected void keepConnectionAlive() {
          Profiler.get().push("keepAlive");
--        long millis = Util.getMillis();
+         long millis = Util.getMillis();
 -        if (!this.isSingleplayerOwner() && millis - this.keepAliveTime >= 15000L) {
 -            if (this.keepAlivePending) {
 -                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE);
--            } else if (this.checkIfClosed(millis)) {
 +        // Paper start - give clients a longer time to respond to pings as per pre 1.12.2 timings
 +        // This should effectively place the keepalive handling back to "as it was" before 1.12.2
-+        long currentTime = Util.getMillis();
-+        long elapsedTime = currentTime - this.keepAliveTime;
-+        if (!this.isSingleplayerOwner() && elapsedTime >= 15000L) { // Paper - use vanilla's 15000L between keep alive packets
-+            if (this.keepAlivePending && !this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // Paper - check keepalive limit, don't fire if already disconnected
++        final long elapsedTime = millis - this.keepAliveTime;
++        if (!this.isSingleplayerOwner() && elapsedTime >= 15000L) { // use vanilla's 15000L between keep alive packets
++            if (this.keepAlivePending && !this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
++                // Paper end - give clients a longer time to respond to pings as per pre 1.12.2 timings
 +                this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
-+            } else if (this.checkIfClosed(currentTime)) { // Paper
+             } else if (this.checkIfClosed(millis)) {
                  this.keepAlivePending = true;
--                this.keepAliveTime = millis;
--                this.keepAliveChallenge = millis;
-+                this.keepAliveTime = currentTime;
-+                this.keepAliveChallenge = currentTime;
-                 this.send(new ClientboundKeepAlivePacket(this.keepAliveChallenge));
-             }
-         }
-+        // Paper end - give clients a longer time to respond to pings as per pre 1.12.2 timings
- 
-         Profiler.get().pop();
-     }
+                 this.keepAliveTime = millis;
 @@ -126,7 +_,7 @@
      private boolean checkIfClosed(long time) {
          if (this.closed) {

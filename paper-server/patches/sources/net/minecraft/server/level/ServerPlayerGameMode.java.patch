@@ -91,7 +91,7 @@
              this.debugLogging(pos, false, sequence, "too far");
          } else if (pos.getY() > maxBuildHeight) {
              this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
-@@ -138,16 +_,40 @@
+@@ -138,16 +_,39 @@
          } else {
              if (action == ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK) {
                  if (!this.level.mayInteract(this.player, pos)) {
@@ -126,7 +126,6 @@
 +                // Spigot start - handle debug stick left click for non-creative
 +                if (this.player.getMainHandItem().is(net.minecraft.world.item.Items.DEBUG_STICK)
 +                    && ((net.minecraft.world.item.DebugStickItem) net.minecraft.world.item.Items.DEBUG_STICK).handleInteraction(this.player, this.level.getBlockState(pos), this.level, pos, false, this.player.getMainHandItem())) {
-+                    // this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos)); // Paper - Don't resync block
 +                    return;
 +                }
 +                // Spigot end
@@ -134,45 +133,28 @@
                  if (this.player.blockActionRestricted(this.level, pos, this.gameModeForPlayer)) {
                      this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
                      this.debugLogging(pos, false, sequence, "block action restricted");
-@@ -157,7 +_,21 @@
+@@ -157,7 +_,7 @@
                  this.destroyProgressStart = this.gameTicks;
                  float f = 1.0F;
                  BlockState blockState = this.level.getBlockState(pos);
 -                if (!blockState.isAir()) {
-+                // CraftBukkit start - Swings at air do *NOT* exist.
-+                if (event.useInteractedBlock() == org.bukkit.event.Event.Result.DENY) {
-+                    // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
-+                    // Paper start - Don't resync blocks
-+                    //BlockState data = this.level.getBlockState(pos);
-+                    //if (data.getBlock() instanceof DoorBlock) {
-+                    //    // For some reason *BOTH* the bottom/top part have to be marked updated.
-+                    //    boolean bottom = data.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER;
-+                    //    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
-+                    //    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, bottom ? pos.above() : pos.below()));
-+                    //} else if (data.getBlock() instanceof TrapDoorBlock) {
-+                    //    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
-+                    //}
-+                    // Paper end - Don't resync blocks
-+                } else if (!blockState.isAir()) {
++                if (event.useInteractedBlock() != org.bukkit.event.Event.Result.DENY && !blockState.isAir()) { // Paper
                      EnchantmentHelper.onHitBlock(
                          this.level,
                          this.player.getMainHandItem(),
-@@ -172,6 +_,26 @@
+@@ -172,6 +_,23 @@
                      f = blockState.getDestroyProgress(this.player, this.player.level(), pos);
                  }
  
++                // CraftBukkit start
++                // Note that we don't need to resync blocks, block acks will handle it properly for everything but block entities already
 +                if (event.useItemInHand() == org.bukkit.event.Event.Result.DENY) {
-+                    // If we 'insta destroyed' then the client needs to be informed.
-+                    if (f > 1.0f) {
-+                        // this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos)); // Paper - Don't resync blocks
-+                    }
 +                    return;
 +                }
++
 +                org.bukkit.event.block.BlockDamageEvent blockEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDamageEvent(this.player, pos, face, this.player.getInventory().getSelected(), f >= 1.0f); // Paper - Add BlockFace to BlockDamageEvent
 +
 +                if (blockEvent.isCancelled()) {
-+                    // Let the client know the block still exists
-+                    // this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos)); // Paper - Don't resync block
 +                    return;
 +                }
 +
@@ -184,20 +166,22 @@
                  if (!blockState.isAir() && f >= 1.0F) {
                      this.destroyAndAck(pos, sequence, "insta mine");
                  } else {
-@@ -212,14 +_,18 @@
+@@ -212,14 +_,22 @@
                  this.debugLogging(pos, true, sequence, "stopped destroying");
              } else if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
                  this.isDestroyingBlock = false;
 -                if (!Objects.equals(this.destroyPos, pos)) {
 -                    LOGGER.warn("Mismatch in destroy block pos: {} {}", this.destroyPos, pos);
--                    this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
--                    this.debugLogging(pos, true, sequence, "aborted mismatched destroying");
++                // Paper start - Don't allow digging into unloaded chunks
 +                if (!Objects.equals(this.destroyPos, pos) && !BlockPos.ZERO.equals(this.destroyPos)) { // Paper
 +                    ServerPlayerGameMode.LOGGER.debug("Mismatch in destroy block pos: {} {}", this.destroyPos, pos); // CraftBukkit - SPIGOT-5457 sent by client when interact event cancelled
-+                    BlockState type = this.level.getBlockStateIfLoaded(this.destroyPos); // Paper - don't load unloaded chunks for stale records here
-+                    if (type != null) this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
-+                    if (type != null) this.debugLogging(pos, true, sequence, "aborted mismatched destroying");
-+                    this.destroyPos = BlockPos.ZERO; // Paper
++                    BlockState type = this.level.getBlockStateIfLoaded(this.destroyPos); // Don't load unloaded chunks for stale records here
++                    if (type != null) {
+                     this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
+                     this.debugLogging(pos, true, sequence, "aborted mismatched destroying");
++                    }
++                    this.destroyPos = BlockPos.ZERO;
++                    // Paper end - Don't allow digging into unloaded chunks
                  }
  
                  this.level.destroyBlockProgress(this.player.getId(), pos, -1);
@@ -207,7 +191,7 @@
              }
          }
      }
-@@ -235,36 +_,127 @@
+@@ -235,36 +_,108 @@
  
      public boolean destroyBlock(BlockPos pos) {
          BlockState blockState = this.level.getBlockState(pos);
@@ -217,54 +201,36 @@
 +        org.bukkit.event.block.BlockBreakEvent event = null;
 +        if (this.player instanceof ServerPlayer) {
 +            // Sword + Creative mode pre-cancel
-+            boolean isSwordNoBreak = !this.player.getMainHandItem().getItem().canAttackBlock(blockState, this.level, pos, this.player);
-+
-+            // Tell client the block is gone immediately then process events
-+            // Don't tell the client if its a creative sword break because its not broken!
-+            if (false && this.level.getBlockEntity(pos) == null && !isSwordNoBreak) { // Paper - Don't resync block
-+                ClientboundBlockUpdatePacket packet = new ClientboundBlockUpdatePacket(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
-+                this.player.connection.send(packet);
-+            }
-+
++            boolean canAttackBlock = !this.player.getMainHandItem().getItem().canAttackBlock(blockState, this.level, pos, this.player);
 +            event = new org.bukkit.event.block.BlockBreakEvent(bblock, this.player.getBukkitEntity());
 +
 +            // Sword + Creative mode pre-cancel
-+            event.setCancelled(isSwordNoBreak);
++            event.setCancelled(canAttackBlock);
 +
 +            // Calculate default block experience
-+            BlockState nmsData = this.level.getBlockState(pos);
-+            Block nmsBlock = nmsData.getBlock();
++            BlockState updatedBlockState = this.level.getBlockState(pos);
++            Block block = updatedBlockState.getBlock();
 +
-+            ItemStack itemstack = this.player.getItemBySlot(EquipmentSlot.MAINHAND);
-+
-+            if (nmsBlock != null && !event.isCancelled() && !this.isCreative() && this.player.hasCorrectToolForDrops(nmsBlock.defaultBlockState())) {
-+                event.setExpToDrop(nmsBlock.getExpDrop(nmsData, this.level, pos, itemstack, true));
++            if (!event.isCancelled() && !this.isCreative() && this.player.hasCorrectToolForDrops(block.defaultBlockState())) {
++                ItemStack itemInHand = this.player.getItemBySlot(EquipmentSlot.MAINHAND);
++                event.setExpToDrop(block.getExpDrop(updatedBlockState, this.level, pos, itemInHand, true));
 +            }
 +
 +            this.level.getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (event.isCancelled()) {
-+                if (isSwordNoBreak) {
++                if (canAttackBlock) {
 +                    return false;
 +                }
-+                // Paper start - Don't resync blocks
-+                // Let the client know the block still exists
-+                //this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos));
 +
-+                // Brute force all possible updates
-+                //for (Direction dir : Direction.values()) {
-+                //    this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos.relative(dir)));
-+                //}
-+                // Paper end - Don't resync blocks
-+
-+                // Update any tile entity data for this block
-+                if (!this.captureSentBlockEntities) { // Paper - Send block entities after destroy prediction
++                // Block entity data is not reset by the block acks, send after destroy prediction
++                if (!this.captureSentBlockEntities) {
 +                    BlockEntity blockEntity = this.level.getBlockEntity(pos);
 +                    if (blockEntity != null) {
 +                        this.player.connection.send(blockEntity.getUpdatePacket());
 +                    }
 +                } else {
-+                    this.capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
++                    this.capturedBlockEntity = true;
 +                }
 +                return false;
 +            }
@@ -325,10 +291,9 @@
 +                if (event.isDropItems()) {
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockDropItemEvent(bblock, state, this.player, itemsToDrop); // Paper - capture all item additions to the world
 +                }
-+                //this.level.captureDrops = null; // Paper - capture all item additions to the world; move up
 +
 +                // Drop event experience
-+                if (flag && event != null) {
++                if (flag) {
 +                    blockState.getBlock().popExperience(this.level, pos, event.getExpToDrop(), this.player); // Paper
 +                }
 +                // Paper start - Trigger bee_nest_destroyed trigger in the correct place (check impls of block#playerDestroy)
@@ -344,7 +309,7 @@
              }
          }
      }
-@@ -307,15 +_,61 @@
+@@ -307,15 +_,47 @@
          }
      }
  
@@ -379,32 +344,18 @@
 +        this.interactItemStack = stack.copy();
 +
 +        if (event.useInteractedBlock() == org.bukkit.event.Event.Result.DENY) {
-+            // If we denied a door from opening, we need to send a correcting update to the client, as it already opened the door.
-+            if (blockState.getBlock() instanceof net.minecraft.world.level.block.DoorBlock) {
-+                // Paper start - Don't resync blocks
-+                // boolean bottom = iblockdata.getValue(DoorBlock.HALF) == DoubleBlockHalf.LOWER;
-+                // player.connection.send(new ClientboundBlockUpdatePacket(world, bottom ? blockposition.above() : blockposition.below()));
-+                // Paper end - Don't resync blocks
-+            } else if (blockState.getBlock() instanceof net.minecraft.world.level.block.CakeBlock) {
++            // Block acks will take care of most of it, just handle some special cases here
++            if (blockState.getBlock() instanceof net.minecraft.world.level.block.CakeBlock) {
 +                player.getBukkitEntity().sendHealthUpdate(); // SPIGOT-1341 - reset health for cake
-+            } else if (this.interactItemStack.getItem() instanceof net.minecraft.world.item.DoubleHighBlockItem) {
-+                // send a correcting update to the client, as it already placed the upper half of the bisected item
-+                //player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.relative(hitResult.getDirection()).above())); // Paper - Don't resync blocks
-+
-+                // send a correcting update to the client for the block above as well, this because of replaceable blocks (such as grass, sea grass etc)
-+                //player.connection.send(new ClientboundBlockUpdatePacket(world, blockposition.above())); // Paper - Don't resync blocks
-+                // Paper start - extend Player Interact cancellation // TODO: consider merging this into the extracted method
 +            } else if (blockState.is(net.minecraft.world.level.block.Blocks.JIGSAW) || blockState.is(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK) || blockState.getBlock() instanceof net.minecraft.world.level.block.CommandBlock) {
 +                player.connection.send(new net.minecraft.network.protocol.game.ClientboundContainerClosePacket(this.player.containerMenu.containerId));
 +            }
-+            // Paper end - extend Player Interact cancellation
 +            player.getBukkitEntity().updateInventory(); // SPIGOT-2867
 +            this.player.resyncUsingItem(this.player); // Paper - Properly cancel usable items
 +            return (event.useItemInHand() != org.bukkit.event.Event.Result.ALLOW) ? InteractionResult.SUCCESS : InteractionResult.PASS;
 +        } else if (this.gameModeForPlayer == GameType.SPECTATOR) {
-+            MenuProvider itileinventory = blockState.getMenuProvider(level, blockPos);
-+
-+            if (itileinventory != null && player.openMenu(itileinventory).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
++            MenuProvider menuProvider = blockState.getMenuProvider(level, blockPos);
++            if (menuProvider != null && player.openMenu(menuProvider).isPresent()) { // Paper - Fix InventoryOpenEvent cancellation
                  return InteractionResult.CONSUME;
              } else {
                  return InteractionResult.PASS;
