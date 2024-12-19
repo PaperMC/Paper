@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called prior to an entity being unleashed due to a player's action.
+ *
+ * @since 1.6.2 R1.1
  */
 public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Cancellable {
 
@@ -49,6 +51,7 @@ public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Canc
      * Get the hand used by the player to unleash the entity.
      *
      * @return the hand
+     * @since 1.19.2
      */
     @NotNull
     public EquipmentSlot getHand() {

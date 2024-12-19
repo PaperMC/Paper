@@ -6,6 +6,7 @@ package org.bukkit.util;
  *
  * @param <T> the type of the input to the operation
  * @deprecated Use {@link java.util.function.Consumer} instead
+ * @since 1.11
  */
 // Bukkit developer note (NOT plugin developers):
 // NEVER use this consumer in the API.

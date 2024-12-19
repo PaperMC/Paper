@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a complex living entity - one that is made up of various smaller
  * parts
+ *
+ * @since 1.0.0 R1
  */
 public interface ComplexLivingEntity extends LivingEntity {
     /**

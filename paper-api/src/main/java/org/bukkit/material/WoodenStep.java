@@ -10,6 +10,7 @@ import org.bukkit.TreeSpecies;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
+ * @since 1.3.1 R1.0
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class WoodenStep extends Wood {

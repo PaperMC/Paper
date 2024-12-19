@@ -3,6 +3,8 @@ package org.bukkit.plugin;
 /**
  * Thrown when a plugin attempts to interact with the server when it is not
  * enabled
+ *
+ * @since 1.0.0 R1
  */
 @SuppressWarnings("serial")
 public class IllegalPluginAccessException extends RuntimeException {

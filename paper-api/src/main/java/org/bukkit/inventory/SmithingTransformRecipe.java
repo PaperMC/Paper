@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a smithing transform recipe.
+ *
+ * @since 1.19.4
  */
 public class SmithingTransformRecipe extends SmithingRecipe {
 

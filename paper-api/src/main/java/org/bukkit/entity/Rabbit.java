@@ -2,6 +2,9 @@ package org.bukkit.entity;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.8
+ */
 public interface Rabbit extends Animals {
 
     /**
@@ -20,6 +23,7 @@ public interface Rabbit extends Animals {
      * until trying to find more carrots.
      *
      * @param ticks ticks
+     * @since 1.19.3
      */
     void setMoreCarrotTicks(int ticks);
 
@@ -28,6 +32,7 @@ public interface Rabbit extends Animals {
      * will wait until trying to find more carrots.
      *
      * @return ticks
+     * @since 1.19.3
      */
     int getMoreCarrotTicks();
     // Paper end

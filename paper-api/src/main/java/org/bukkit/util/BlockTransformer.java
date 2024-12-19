@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * A BlockTransformer is used to modify blocks that are placed by structure.
+ *
+ * @since 1.20.2
  */
 @FunctionalInterface
 @ApiStatus.Experimental

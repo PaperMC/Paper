@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
  * Called when a potion effect is modified on an entity.
  * <p>
  * If the event is cancelled, no change will be made on the entity.
+ *
+ * @since 1.13
  */
 public class EntityPotionEffectEvent extends EntityEvent implements Cancellable {
 

@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a potion mix made in a Brewing Stand.
+ *
+ * @since 1.18.1
  */
 @NullMarked
 public final class PotionMix implements Keyed {
@@ -41,6 +43,7 @@ public final class PotionMix implements Keyed {
      *
      * @param stackPredicate a predicate for an itemstack.
      * @return a new RecipeChoice
+     * @since 1.20.2
      */
     @Contract(value = "_ -> new", pure = true)
     public static RecipeChoice createPredicateChoice(final Predicate<? super ItemStack> stackPredicate) {

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * The individual status of an advancement for a player. This class is not
  * reference safe as the underlying advancement may be reloaded.
+ *
+ * @since 1.12
  */
 public interface AdvancementProgress {
 

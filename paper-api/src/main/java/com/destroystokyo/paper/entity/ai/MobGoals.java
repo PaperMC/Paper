@@ -8,6 +8,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a part of the "brain" of a mob. It tracks all tasks (running or not), allows adding and removing goals
+ *
+ * @since 1.15.2
  */
 @NullMarked
 public interface MobGoals {

@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * An event that's called when a block yields experience.
+ *
+ * @since 1.4.5 R1.0
  */
 public class BlockExpEvent extends BlockEvent {
     private static final HandlerList handlers = new HandlerList();

@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a valid source of a projectile.
+ *
+ * @since 1.7.10
  */
 public interface ProjectileSource {
 
@@ -58,6 +60,7 @@ public interface ProjectileSource {
      * @param velocity the velocity with which to launch
      * @param function the function to be run before the entity is spawned
      * @return the launched projectile
+     * @since 1.19.2
      */
     <T extends Projectile> @NotNull T launchProjectile(@NotNull Class<? extends T> projectile, @Nullable Vector velocity, java.util.function.@Nullable Consumer<? super T> function);
     // Paper end - add consumer to launchProjectile

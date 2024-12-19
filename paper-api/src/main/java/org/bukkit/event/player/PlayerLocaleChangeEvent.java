@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player changes their locale in the client settings.
+ *
+ * @since 1.12
  */
 public class PlayerLocaleChangeEvent extends PlayerEvent {
 
@@ -18,6 +20,7 @@ public class PlayerLocaleChangeEvent extends PlayerEvent {
      * @see Player#locale()
      *
      * @return the player's new locale
+     * @since 1.16.5
      */
     public @NotNull java.util.Locale locale() {
         return this.adventure$locale;

@@ -14,6 +14,8 @@ import org.jspecify.annotations.Nullable;
  * Called when a player's spawn is set, either by themselves or otherwise.
  * <br>
  * Cancelling this event will prevent the spawn from being set.
+ *
+ * @since 1.17.1
  */
 @NullMarked
 public class PlayerSetSpawnEvent extends PlayerEvent implements Cancellable {

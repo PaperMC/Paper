@@ -3,6 +3,9 @@ package org.bukkit.entity;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.20.6
+ */
 @ApiStatus.Experimental
 public interface EntityFactory {
 

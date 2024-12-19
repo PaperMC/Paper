@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
  * Called with the block changes resulting from a player fertilizing a given
  * block with bonemeal. Will be called after the applicable
  * {@link StructureGrowEvent}.
+ *
+ * @since 1.13
  */
 public class BlockFertilizeEvent extends BlockEvent implements Cancellable {
 

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @author Mark Vainomaa
  * @deprecated use {@link org.bukkit.event.block.TNTPrimeEvent}
+ * @since 1.13
  */
 @Deprecated(forRemoval = true, since = "1.19.4")
 public class TNTPrimeEvent extends BlockEvent implements Cancellable {

@@ -14,6 +14,8 @@ import org.jspecify.annotations.NullMarked;
  * Called when a Warden's anger level has changed due to another entity.
  * <p>
  * If the event is cancelled, the warden's anger level will not change.
+ *
+ * @since 1.19
  */
 @NullMarked
 public class WardenAngerChangeEvent extends EntityEvent implements Cancellable {

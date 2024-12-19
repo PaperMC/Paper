@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a view linking two inventories and a single player (whose
  * inventory may or may not be one of the two).
+ *
+ * @since 1.1.0 R5
  */
 public interface InventoryView {
     public static final int OUTSIDE = -999;
@@ -212,6 +214,7 @@ public interface InventoryView {
      *
      * @param rawSlot The raw slot ID.
      * @return corresponding inventory, or null
+     * @since 1.13.2
      */
     @Nullable
     public Inventory getInventory(int rawSlot);
@@ -238,6 +241,7 @@ public interface InventoryView {
      *
      * @param slot The raw slot ID
      * @return the slot type
+     * @since 1.13.2
      */
     @NotNull
     public InventoryType.SlotType getSlotType(int slot);
@@ -274,6 +278,7 @@ public interface InventoryView {
      * Get the title of this inventory window.
      *
      * @return The title.
+     * @since 1.16.5
      */
     @NotNull
     default net.kyori.adventure.text.Component title() {
@@ -297,6 +302,7 @@ public interface InventoryView {
      *
      * @return the original title
      * @deprecated changing the title is not supported
+     * @since 1.19.4
      */
     @NotNull
     @Deprecated(since = "1.21.1") // Paper
@@ -313,6 +319,7 @@ public interface InventoryView {
      * @param title The new title.
      * @deprecated changing the title is not supported. This method has
      * poorly defined and broken behaviors. It should not be used.
+     * @since 1.19.4
      */
     @Deprecated(since = "1.21.1") // Paper
     public void setTitle(@NotNull String title);

@@ -12,6 +12,7 @@ import org.bukkit.block.BlockFace;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
+ * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Tree extends Wood {
@@ -97,6 +98,7 @@ public class Tree extends Wood {
      * <li>BlockFace.WEST (north-south)
      * <li>BlockFace.SELF (directionless)
      * </ul>
+     * @since 1.3.1 R1.0
      */
     @SuppressWarnings("deprecation")
     public BlockFace getDirection() {
@@ -117,6 +119,7 @@ public class Tree extends Wood {
      * Set direction of the log
      *
      * @param dir - direction of end of log (BlockFace.SELF for no direction)
+     * @since 1.3.1 R1.0
      */
     @SuppressWarnings("deprecation")
     public void setDirection(BlockFace dir) {
@@ -147,6 +150,9 @@ public class Tree extends Wood {
         return getSpecies() + " " + getDirection() + " " + super.toString();
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @Override
     public Tree clone() {
         return (Tree) super.clone();

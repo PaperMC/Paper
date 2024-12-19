@@ -10,6 +10,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the food properties of an item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#FOOD
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

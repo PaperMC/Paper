@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Various settings for controlling the input and output of a {@link
  * FileConfiguration}
+ *
+ * @since 1.0.0 R1
  */
 public class FileConfigurationOptions extends MemoryConfigurationOptions {
     private List<String> header = Collections.emptyList();
@@ -58,6 +60,7 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * line.
      *
      * @return Unmodifiable header, every entry represents one line.
+     * @since 1.18.1
      */
     @NotNull
     public List<String> getHeader() {
@@ -94,6 +97,7 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      *
      * @param value New header, every entry represents one line.
      * @return This object, for chaining
+     * @since 1.18.1
      */
     @NotNull
     public FileConfigurationOptions setHeader(@Nullable List<String> value) {
@@ -128,6 +132,7 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * line.
      *
      * @return Unmodifiable footer, every entry represents one line.
+     * @since 1.18.1
      */
     @NotNull
     public List<String> getFooter() {
@@ -149,6 +154,7 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      *
      * @param value New footer, every entry represents one line.
      * @return This object, for chaining
+     * @since 1.18.1
      */
     @NotNull
     public FileConfigurationOptions setFooter(@Nullable List<String> value) {
@@ -162,6 +168,7 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      * Defaults to true.
      *
      * @return Whether or not comments are parsed.
+     * @since 1.18.1
      */
     public boolean parseComments() {
         return parseComments;
@@ -174,6 +181,7 @@ public class FileConfigurationOptions extends MemoryConfigurationOptions {
      *
      * @param value Whether or not comments are parsed.
      * @return This object, for chaining
+     * @since 1.18.1
      */
     @NotNull
     public MemoryConfigurationOptions parseComments(boolean value) {

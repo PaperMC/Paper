@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
  * A ban list, containing bans of some {@link Type}.
  *
  * @param <T> The ban target
+ * @since 1.7.10
  */
 public interface BanList<T> {
 
@@ -140,6 +141,7 @@ public interface BanList<T> {
      * Gets a set containing every {@link BanEntry} in this list.
      *
      * @return an immutable set containing every entry tracked by this list
+     * @since 1.20.1
      */
     @NotNull
     public <E extends BanEntry<? super T>> Set<E> getEntries(); // Paper

@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * A ConversationCanceller is a class that cancels an active {@link
  * Conversation}. A Conversation can have more than one ConversationCanceller.
+ *
+ * @since 1.1.0 R5
  */
 public interface ConversationCanceller extends Cloneable {
 

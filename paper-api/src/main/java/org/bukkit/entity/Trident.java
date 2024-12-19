@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a thrown trident.
+ *
+ * @since 1.13
  */
 // Paper start
 public interface Trident extends AbstractArrow, ThrowableProjectile {
@@ -11,6 +13,7 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
      * This can be separate from the underlying item having any enchantments.
      *
      * @return whether the trident has an enchanted glow
+     * @since 1.18.2
      */
     boolean hasGlint();
 
@@ -19,6 +22,7 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
      * This is separate from the underlying item having any enchantments.
      *
      * @param glint whether the trident should have an enchanted glow
+     * @since 1.18.2
      */
     void setGlint(boolean glint);
 
@@ -27,6 +31,7 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
      * This can be separate from the underlying item's enchantments.
      *
      * @return loyalty level of the trident
+     * @since 1.18.2
      */
     int getLoyaltyLevel();
 
@@ -36,6 +41,7 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
      *
      * @param loyaltyLevel loyalty level
      * @throws IllegalArgumentException if the loyalty level is lower than 0 or greater than 127
+     * @since 1.18.2
      */
     void setLoyaltyLevel(int loyaltyLevel);
 
@@ -47,6 +53,7 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
      * return false.
      *
      * @return has dealt damage
+     * @since 1.19.2
      */
     boolean hasDealtDamage();
 
@@ -55,6 +62,7 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
      * yet or has hit the floor.
      *
      * @param hasDealtDamage has dealt damage or hit the floor
+     * @since 1.19.2
      */
     void setHasDealtDamage(boolean hasDealtDamage);
 
@@ -62,6 +70,7 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
      * Sets the base amount of damage this trident will do.
      *
      * @param damage new damage amount
+     * @since 1.20.1
      */
     void setDamage(double damage);
 
@@ -73,6 +82,7 @@ public interface Trident extends AbstractArrow, ThrowableProjectile {
      * damage enchanted bows.
      *
      * @return base damage amount
+     * @since 1.20.1
      */
     double getDamage();
 }

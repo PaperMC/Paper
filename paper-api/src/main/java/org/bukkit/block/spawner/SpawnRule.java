@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a spawn rule that controls what conditions an entity from a
  * monster spawner can spawn.
+ *
+ * @since 1.20.4
  */
 @SerializableAs("SpawnRule")
 public class SpawnRule implements Cloneable, ConfigurationSerializable {

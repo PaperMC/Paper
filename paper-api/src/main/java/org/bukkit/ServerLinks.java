@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a collections of links which may be sent to a client.
+ *
+ * @since 1.21
  */
 @ApiStatus.Experimental
 public interface ServerLinks {

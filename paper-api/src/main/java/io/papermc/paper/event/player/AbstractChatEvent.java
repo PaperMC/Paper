@@ -15,6 +15,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * An abstract implementation of a chat event, handling shared logic.
+ *
+ * @since 1.16.5
  */
 @ApiStatus.NonExtendable
 @NullMarked
@@ -105,6 +107,7 @@ public abstract class AbstractChatEvent extends PlayerEvent implements Cancellab
      * the signed message.
      *
      * @return the signed message
+     * @since 1.19.3
      */
     public final SignedMessage signedMessage() {
         return this.signedMessage;

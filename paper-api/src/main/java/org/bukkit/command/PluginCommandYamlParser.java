@@ -8,6 +8,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.0.0 R1
+ */
 public class PluginCommandYamlParser {
 
     @NotNull

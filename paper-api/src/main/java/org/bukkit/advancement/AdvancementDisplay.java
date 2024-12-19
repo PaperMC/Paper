@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * Holds information about how the advancement is displayed by the game.
  *
  * @deprecated use {@link io.papermc.paper.advancement.AdvancementDisplay}
+ * @since 1.18.2
  */
 @Deprecated(forRemoval = true) // Paper
 public interface AdvancementDisplay {

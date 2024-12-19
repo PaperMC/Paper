@@ -12,6 +12,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Called when the player is attempting to rename a mob
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class PlayerNameEntityEvent extends PlayerEvent implements Cancellable {

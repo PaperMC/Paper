@@ -13,6 +13,9 @@ import org.bukkit.plugin.EventExecutor;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.9.4
+ */
 @ApiStatus.Internal
 @NullMarked
 public class StaticMethodHandleEventExecutor implements EventExecutor {
@@ -44,6 +47,9 @@ public class StaticMethodHandleEventExecutor implements EventExecutor {
         }
     }
 
+    /**
+     * @since 1.19.2
+     */
     @Override
     public String toString() {
         return "StaticMethodHandleEventExecutor['" + this.method + "']";

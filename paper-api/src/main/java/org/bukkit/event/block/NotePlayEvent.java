@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a note block is being played through player interaction or a
  * redstone current.
+ *
+ * @since 1.3.1 R1.0
  */
 public class NotePlayEvent extends BlockEvent implements Cancellable {
 

@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Tropical fish.
+ *
+ * @since 1.13
  */
 public interface TropicalFish extends io.papermc.paper.entity.SchoolableFish { // Paper - Schooling Fish API
 

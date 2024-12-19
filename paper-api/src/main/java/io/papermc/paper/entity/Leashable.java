@@ -6,6 +6,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Represents an entity that can be leashed.
+ *
+ * @since 1.21.1
  */
 @NullMarked
 public interface Leashable extends Entity {

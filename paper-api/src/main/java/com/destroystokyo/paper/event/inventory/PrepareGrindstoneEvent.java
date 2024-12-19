@@ -12,6 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * Called when an item is put in a slot for grinding in a Grindstone
  *
  * @deprecated use {@link org.bukkit.event.inventory.PrepareGrindstoneEvent}
+ * @since 1.15.2
  */
 @Deprecated(since = "1.16.1")
 @Warning

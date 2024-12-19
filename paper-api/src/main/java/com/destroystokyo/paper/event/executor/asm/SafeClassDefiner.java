@@ -6,6 +6,9 @@ import java.util.concurrent.ConcurrentMap;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.9.4
+ */
 @ApiStatus.Internal
 @NullMarked
 public class SafeClassDefiner implements ClassDefiner {

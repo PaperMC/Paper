@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a block inventory holder - either a BlockState, or a regular
  * Block.
+ *
+ * @since 1.14
  */
 public interface BlockInventoryHolder extends InventoryHolder {
 

@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when an item is put in a slot for repair by an anvil.
+ *
+ * @since 1.9.4
  */
 public class PrepareAnvilEvent extends com.destroystokyo.paper.event.inventory.PrepareResultEvent {
 
@@ -38,6 +40,9 @@ public class PrepareAnvilEvent extends com.destroystokyo.paper.event.inventory.P
         super.setResult(result);
     }
 
+    /**
+     * @since 1.21
+     */
     @NotNull
     @Override
     public AnvilView getView() {

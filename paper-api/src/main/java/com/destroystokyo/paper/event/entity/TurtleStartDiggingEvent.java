@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when a Turtle starts digging to lay eggs
+ *
+ * @since 1.13.1
  */
 @NullMarked
 public class TurtleStartDiggingEvent extends EntityEvent implements Cancellable {

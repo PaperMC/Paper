@@ -37,6 +37,8 @@ import org.yaml.snakeyaml.reader.UnicodeReader;
 /**
  * An implementation of {@link Configuration} which saves all files in Yaml.
  * Note that this implementation is not synchronized.
+ *
+ * @since 1.0.0 R1
  */
 public class YamlConfiguration extends FileConfiguration {
     /**
@@ -328,6 +330,7 @@ public class YamlConfiguration extends FileConfiguration {
      * @param reader input
      * @return resulting configuration
      * @throws IllegalArgumentException Thrown if stream is null
+     * @since 1.7.10
      */
     @NotNull
     public static YamlConfiguration loadConfiguration(@NotNull Reader reader) {

@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * A EntityTransformer is used to modify entities that are spawned by structure.
+ *
+ * @since 1.20.2
  */
 @FunctionalInterface
 @ApiStatus.Experimental

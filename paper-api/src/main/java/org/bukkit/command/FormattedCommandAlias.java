@@ -7,6 +7,9 @@ import java.util.regex.Pattern; // Paper
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.7.10
+ */
 public class FormattedCommandAlias extends Command {
     private final String[] formatStrings;
 
@@ -120,6 +123,9 @@ public class FormattedCommandAlias extends Command {
         return formatString.trim(); // Paper - Causes an extra space at the end, breaks with brig commands
     }
 
+    /**
+     * @since 1.9.4
+     */
     @NotNull
     @Override // Paper
     public String getTimingName() {return "Command Forwarder - " + super.getTimingName();} // Paper

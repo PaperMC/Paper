@@ -58,6 +58,8 @@ import static java.util.Objects.requireNonNull;
 /**
  * All the different types of data that {@link org.bukkit.inventory.ItemStack ItemStacks}
  * and {@link org.bukkit.inventory.ItemType ItemTypes} can have.
+ *
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

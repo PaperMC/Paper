@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Hanging entity
+ *
+ * @since 1.4.5 R1.0
  */
 public interface Hanging extends Entity, Attachable {
 

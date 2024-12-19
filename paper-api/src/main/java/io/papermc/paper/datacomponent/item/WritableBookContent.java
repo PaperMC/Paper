@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the pages for a writable book.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#WRITABLE_BOOK_CONTENT
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

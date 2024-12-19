@@ -5,6 +5,8 @@ import org.bukkit.entity.Minecart;
 
 /**
  * Represents a Minecart with TNT inside it that can explode when triggered.
+ *
+ * @since 1.5.1 R0.2
  */
 public interface ExplosiveMinecart extends Minecart, Explosive {
 
@@ -15,6 +17,7 @@ public interface ExplosiveMinecart extends Minecart, Explosive {
      * explosive.
      *
      * @param ticks the ticks
+     * @since 1.19.2
      */
     public void setFuseTicks(int ticks);
 
@@ -25,6 +28,7 @@ public interface ExplosiveMinecart extends Minecart, Explosive {
      *
      * @return the fuse ticks, or -1 if this minecart's fuse has not yet been
      * ignited
+     * @since 1.19.2
      */
     public int getFuseTicks();
 
@@ -33,6 +37,7 @@ public interface ExplosiveMinecart extends Minecart, Explosive {
      * speed.
      *
      * @return increase factor
+     * @since 1.21.4
      */
     public float getExplosionSpeedFactor();
 
@@ -41,11 +46,14 @@ public interface ExplosiveMinecart extends Minecart, Explosive {
      * speed.
      *
      * @param factor new factor
+     * @since 1.21.4
      */
     public void setExplosionSpeedFactor(float factor);
 
     /**
      * Ignite this minecart's fuse naturally.
+     *
+     * @since 1.19.3
      */
     public void ignite();
 
@@ -53,12 +61,15 @@ public interface ExplosiveMinecart extends Minecart, Explosive {
      * Check whether or not this minecart's fuse has been ignited.
      *
      * @return true if ignited, false otherwise
+     * @since 1.19.3
      */
     public boolean isIgnited();
 
     /**
      * Immediately explode this minecart with the power assumed by its current
      * movement.
+     *
+     * @since 1.19.3
      */
     public void explode();
 
@@ -66,6 +77,7 @@ public interface ExplosiveMinecart extends Minecart, Explosive {
      * Immediately explode this minecart with the given power.
      *
      * @param power the power to use. Must be positive and cannot exceed 5.0
+     * @since 1.19.3
      */
     public void explode(double power);
 }

@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * <strong>Note: Armor trims are part of an experimental feature of Minecraft
  * and hence subject to change.</strong>
+ *
+ * @since 1.19.4
  */
 public interface ArmorMeta extends ItemMeta {
 

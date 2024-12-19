@@ -4,6 +4,9 @@ import java.util.List;
 import org.bukkit.block.banner.Pattern;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.8
+ */
 public interface BannerMeta extends ItemMeta {
 
     /**

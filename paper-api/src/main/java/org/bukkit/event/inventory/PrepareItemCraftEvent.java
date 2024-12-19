@@ -7,6 +7,9 @@ import org.bukkit.inventory.Recipe;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.1.0 R5
+ */
 public class PrepareItemCraftEvent extends InventoryEvent {
     private static final HandlerList handlers = new HandlerList();
     private boolean repair;

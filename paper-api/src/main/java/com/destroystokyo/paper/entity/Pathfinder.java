@@ -9,6 +9,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Handles pathfinding operations for an Entity
+ *
+ * @since 1.13.1
  */
 @NullMarked
 public interface Pathfinder {
@@ -142,6 +144,7 @@ public interface Pathfinder {
      * Checks if this pathfinder allows passing through closed doors.
      *
      * @return if this pathfinder allows passing through closed doors
+     * @since 1.15.2
      */
     boolean canOpenDoors();
 
@@ -149,6 +152,7 @@ public interface Pathfinder {
      * Allows this pathfinder to pass through closed doors, or not
      *
      * @param canOpenDoors if the mob can pass through closed doors, or not
+     * @since 1.15.2
      */
     void setCanOpenDoors(boolean canOpenDoors);
 
@@ -156,6 +160,7 @@ public interface Pathfinder {
      * Checks if this pathfinder allows passing through open doors.
      *
      * @return if this pathfinder allows passing through open doors
+     * @since 1.15.2
      */
     boolean canPassDoors();
 
@@ -163,6 +168,7 @@ public interface Pathfinder {
      * Allows this pathfinder to pass through open doors, or not
      *
      * @param canPassDoors if the mob can pass through open doors, or not
+     * @since 1.15.2
      */
     void setCanPassDoors(boolean canPassDoors);
 
@@ -170,6 +176,7 @@ public interface Pathfinder {
      * Checks if this pathfinder assumes that the mob can float
      *
      * @return if this pathfinder assumes that the mob can float
+     * @since 1.15.2
      */
     boolean canFloat();
 
@@ -177,11 +184,14 @@ public interface Pathfinder {
      * Makes this pathfinder assume that the mob can float, or not
      *
      * @param canFloat if the mob can float, or not
+     * @since 1.15.2
      */
     void setCanFloat(boolean canFloat);
 
     /**
      * Represents the result of a pathfinding calculation
+     *
+     * @since 1.13.1
      */
     interface PathResult {
 
@@ -215,6 +225,7 @@ public interface Pathfinder {
          *
          * @return whether the final point can be reached
          * @see #getFinalPoint()
+         * @since 1.20.6
          */
         boolean canReachFinalPoint();
     }

@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Sets whether this item should protect the entity upon death, and what effects should be played.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#DEATH_PROTECTION
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

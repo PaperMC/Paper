@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * This event is called when a player clicks the button to take a book of a
  * Lectern. If this event is cancelled the book remains on the lectern.
+ *
+ * @since 1.14.1
  */
 public class PlayerTakeLecternBookEvent extends PlayerEvent implements Cancellable {
 

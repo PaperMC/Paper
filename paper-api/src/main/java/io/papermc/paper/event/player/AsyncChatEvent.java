@@ -22,6 +22,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Care should be taken to check {@link #isAsynchronous()} and treat the event
  * appropriately.
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public final class AsyncChatEvent extends AbstractChatEvent {

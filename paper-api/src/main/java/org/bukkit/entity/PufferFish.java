@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a puffer fish.
+ *
+ * @since 1.13
  */
 public interface PufferFish extends Fish {
 

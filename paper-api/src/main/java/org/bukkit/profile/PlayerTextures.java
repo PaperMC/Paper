@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
  * Modifying the textures immediately invalidates and clears any previously
  * present attributes that are specific to official player profiles, such as the
  * {@link #getTimestamp() timestamp} and {@link #isSigned() signature}.
+ *
+ * @since 1.18.1
  */
 public interface PlayerTextures {
 

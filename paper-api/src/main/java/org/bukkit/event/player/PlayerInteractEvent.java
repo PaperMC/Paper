@@ -26,6 +26,8 @@ import org.jetbrains.annotations.Nullable;
  * of some prediction made by the server where no subsequent code will run,
  * rather than when the subsequent interaction activity (e.g. placing a block in
  * an illegal position ({@link BlockCanBuildEvent}) will fail.
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -223,6 +225,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      * {@link Action#PHYSICAL}.
      *
      * @return the hand used to interact. May be null.
+     * @since 1.9.4
      */
     @Nullable
     public EquipmentSlot getHand() {
@@ -237,6 +240,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      *
      * @deprecated misleading, use {@link #getInteractionPoint()}
      * @return the clicked position. May be null.
+     * @since 1.20.1
      */
     @Nullable
     @Deprecated // Paper
@@ -249,6 +253,7 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
      * The exact point at which the interaction occurred. May be null.
      *
      * @return the exact interaction point. May be null.
+     * @since 1.16.4
      */
     @Nullable
     public Location getInteractionPoint() {
@@ -259,12 +264,18 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     }
     // Paper end
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

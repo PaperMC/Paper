@@ -9,6 +9,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
  *
  * @see EntityState
  * @see Relative
+ * @since 1.19.3
  */
 public sealed interface TeleportFlag permits TeleportFlag.EntityState, TeleportFlag.Relative {
 

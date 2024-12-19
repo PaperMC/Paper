@@ -12,6 +12,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Holds a list of markers to be placed on a Filled Map (used for Explorer Maps).
  * @see io.papermc.paper.datacomponent.DataComponentTypes#MAP_DECORATIONS
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

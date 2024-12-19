@@ -16,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a unique permission that may be attached to a {@link
  * Permissible}
+ *
+ * @since 1.0.0 R1
  */
 public class Permission {
     public static final PermissionDefault DEFAULT_PERMISSION = PermissionDefault.OP;

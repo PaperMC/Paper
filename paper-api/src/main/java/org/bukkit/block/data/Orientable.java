@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
  * Some blocks such as the portal block may not be able to be placed in all
  * orientations, use {@link #getAxes()} to retrieve all possible such
  * orientations.
+ *
+ * @since 1.13
  */
 public interface Orientable extends BlockData {
 

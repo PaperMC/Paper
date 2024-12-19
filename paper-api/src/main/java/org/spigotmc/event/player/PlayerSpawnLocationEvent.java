@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when player is about to spawn in a world after joining the server.
+ *
+ * @since 1.7.10
  */
 public class PlayerSpawnLocationEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();

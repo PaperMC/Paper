@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a player trades with a standalone merchant GUI.
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class PlayerPurchaseEvent extends PlayerEvent implements Cancellable {

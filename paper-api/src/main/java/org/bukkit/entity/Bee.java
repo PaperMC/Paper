@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a Bee.
+ *
+ * @since 1.15
  */
 public interface Bee extends Animals {
 
@@ -84,6 +86,7 @@ public interface Bee extends Animals {
      * Get the amount of ticks the bee cannot enter the hive for.
      *
      * @return Ticks the bee cannot enter a hive for
+     * @since 1.15.2
      */
     int getCannotEnterHiveTicks();
 
@@ -91,6 +94,7 @@ public interface Bee extends Animals {
      * Set the amount of ticks the bee cannot enter a hive for.
      *
      * @param ticks Ticks the bee cannot enter a hive for
+     * @since 1.15.2
      */
     void setCannotEnterHiveTicks(int ticks);
 
@@ -99,6 +103,7 @@ public interface Bee extends Animals {
      * Sets the override for if the bee is currently rolling.
      *
      * @param rolling is rolling, or unset for vanilla behavior
+     * @since 1.18.2
      */
     void setRollingOverride(@org.jetbrains.annotations.NotNull net.kyori.adventure.util.TriState rolling);
 
@@ -106,6 +111,7 @@ public interface Bee extends Animals {
      * Gets the plugin set override for if the bee is currently rolling.
      *
      * @return plugin set rolling override
+     * @since 1.18.2
      */
     @org.jetbrains.annotations.NotNull
     net.kyori.adventure.util.TriState getRollingOverride();
@@ -114,6 +120,7 @@ public interface Bee extends Animals {
      * Gets if the bee is currently rolling.
      *
      * @return is rolling
+     * @since 1.18.2
      */
     boolean isRolling();
 
@@ -121,6 +128,7 @@ public interface Bee extends Animals {
      * Sets how many crops this bee has grown since it last
      * pollinated.
      * @param crops number of crops
+     * @since 1.19.2
      */
     void setCropsGrownSincePollination(int crops);
 
@@ -128,6 +136,7 @@ public interface Bee extends Animals {
      * Gets how many crops this bee has grown since it last
      * pollinated.
      * @return number of crops
+     * @since 1.19.2
      */
     int getCropsGrownSincePollination();
 
@@ -135,6 +144,7 @@ public interface Bee extends Animals {
      * Sets how many ticks this bee has gone without pollinating.
      *
      * @param ticks number of ticks
+     * @since 1.19.2
      */
     void setTicksSincePollination(int ticks);
 
@@ -142,6 +152,7 @@ public interface Bee extends Animals {
      * Gets how many ticks this bee has gone without pollinating
      *
      * @return number of ticks
+     * @since 1.19.2
      */
     int getTicksSincePollination();
     // Paper end

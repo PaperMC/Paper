@@ -6,6 +6,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents an {@link Entity} that can experience friction with the air and ground.
+ *
+ * @since 1.19.2
  */
 @NullMarked
 public interface Frictional {

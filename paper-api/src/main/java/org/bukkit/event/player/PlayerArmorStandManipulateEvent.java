@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a player interacts with an armor stand and will either swap, retrieve or
  * place an item.
+ *
+ * @since 1.8
  */
 public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
 
@@ -80,6 +82,8 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
      * <p>
      * Note that this is not the hand of the armor stand that was changed, but rather
      * the hand used by the player to swap items with the armor stand.
+     *
+     * @since 1.19.2
      */
     @NotNull
     @Override

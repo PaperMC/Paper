@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a smithing recipe.
+ *
+ * @since 1.16.1
  */
 public class SmithingRecipe implements Recipe, Keyed {
 
@@ -92,6 +94,7 @@ public class SmithingRecipe implements Recipe, Keyed {
      *
      * @return true to copy the NBT (default for vanilla smithing recipes)
      * @apiNote use {@link #willCopyDataComponents()}
+     * @since 1.17.1
      */
     @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.5")
     public boolean willCopyNbt() {
@@ -102,6 +105,7 @@ public class SmithingRecipe implements Recipe, Keyed {
      * Whether to copy the data components of the input base item to the output.
      *
      * @return true to copy the data components (default for vanilla smithing recipes)
+     * @since 1.20.6
      */
     public boolean willCopyDataComponents() {
         return this.copyDataComponents;

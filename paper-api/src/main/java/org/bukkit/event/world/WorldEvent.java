@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents events within a world
+ *
+ * @since 1.0.0 R1
  */
 public abstract class WorldEvent extends Event {
     private final World world;

@@ -6,6 +6,9 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.14.1
+ */
 public class VillagerCareerChangeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();

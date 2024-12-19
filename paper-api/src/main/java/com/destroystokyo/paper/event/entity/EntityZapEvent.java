@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when lightning strikes an entity
+ *
+ * @since 1.10.2
  */
 @NullMarked
 public class EntityZapEvent extends EntityTransformEvent implements Cancellable {

@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @see World#locateNearestStructure(Location, Structure, int, boolean)
  * @see World#locateNearestStructure(Location, StructureType, int, boolean)
+ * @since 1.19
  */
 public interface StructureSearchResult {
 

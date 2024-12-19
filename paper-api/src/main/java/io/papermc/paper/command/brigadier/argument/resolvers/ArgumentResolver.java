@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <T> resolved type
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @NullMarked

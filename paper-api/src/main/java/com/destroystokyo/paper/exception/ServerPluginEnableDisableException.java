@@ -4,6 +4,8 @@ import org.bukkit.plugin.Plugin;
 
 /**
  * Thrown whenever there is an exception with any enabling or disabling of plugins.
+ *
+ * @since 1.9.4
  */
 public class ServerPluginEnableDisableException extends ServerPluginException {
     public ServerPluginEnableDisableException(String message, Throwable cause, Plugin responsiblePlugin) {

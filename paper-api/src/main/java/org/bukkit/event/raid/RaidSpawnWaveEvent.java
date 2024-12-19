@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a raid wave spawns.
+ *
+ * @since 1.14.4
  */
 public class RaidSpawnWaveEvent extends RaidEvent {
 

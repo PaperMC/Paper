@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a shapeless recipe, where the arrangement of the ingredients on
  * the crafting grid does not matter.
+ *
+ * @since 1.0.0 R1
  */
 public class ShapelessRecipe extends CraftingRecipe {
     private final List<RecipeChoice> ingredients = new ArrayList<>();
@@ -128,6 +130,9 @@ public class ShapelessRecipe extends CraftingRecipe {
         return this;
     }
 
+    /**
+     * @since 1.13.1
+     */
     @NotNull
     public ShapelessRecipe addIngredient(@NotNull RecipeChoice ingredient) {
         Preconditions.checkArgument(ingredients.size() + 1 <= 9, "Shapeless recipes cannot have more than 9 ingredients");
@@ -136,12 +141,18 @@ public class ShapelessRecipe extends CraftingRecipe {
         return this;
     }
 
+    /**
+     * @since 1.13.2
+     */
     // Paper start
     @NotNull
     public ShapelessRecipe addIngredient(@NotNull ItemStack item) {
         return addIngredient(item.getAmount(), item);
     }
 
+    /**
+     * @since 1.13.2
+     */
     @NotNull
     public ShapelessRecipe addIngredient(int count, @NotNull ItemStack item) {
         Preconditions.checkArgument(ingredients.size() + count <= 9, "Shapeless recipes cannot have more than 9 ingredients");
@@ -153,11 +164,17 @@ public class ShapelessRecipe extends CraftingRecipe {
         return this;
     }
 
+    /**
+     * @since 1.13.2
+     */
     @NotNull
     public ShapelessRecipe removeIngredient(@NotNull ItemStack item) {
         return removeIngredient(1, item);
     }
 
+    /**
+     * @since 1.13.2
+     */
     @NotNull
     public ShapelessRecipe removeIngredient(int count, @NotNull ItemStack item) {
         Iterator<RecipeChoice> iterator = ingredients.iterator();
@@ -177,6 +194,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      *
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
+     * @since 1.13.1
      */
     @NotNull
     public ShapelessRecipe removeIngredient(@NotNull RecipeChoice ingredient) {
@@ -192,6 +210,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      *
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
+     * @since 1.1.0 R5
      */
     @NotNull
     public ShapelessRecipe removeIngredient(@NotNull Material ingredient) {
@@ -221,6 +240,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      * @param count The number of copies to remove.
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
+     * @since 1.1.0 R5
      */
     @NotNull
     public ShapelessRecipe removeIngredient(int count, @NotNull Material ingredient) {
@@ -236,6 +256,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      * @param ingredient The ingredient to remove.
      * @return The changed recipe.
      * @deprecated use {@link #removeIngredient(int, Material)}
+     * @since 1.1.0 R5
      */
     @NotNull
     @Deprecated // Paper
@@ -252,6 +273,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      * @param rawdata The data value;
      * @return The changed recipe.
      * @deprecated Magic value
+     * @since 1.1.0 R5
      */
     @Deprecated(since = "1.6.2")
     @NotNull
@@ -269,6 +291,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      * @param rawdata The data value.
      * @return The changed recipe.
      * @deprecated Magic value
+     * @since 1.1.0 R5
      */
     @Deprecated(since = "1.6.2")
     @NotNull
@@ -300,6 +323,9 @@ public class ShapelessRecipe extends CraftingRecipe {
         return result;
     }
 
+    /**
+     * @since 1.13.1
+     */
     @NotNull
     public List<RecipeChoice> getChoiceList() {
         List<RecipeChoice> result = new ArrayList<>(ingredients.size());

@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * GenericCommandHelpTopic for each command in the server's CommandMap. You
  * can use this class as a base class for custom help topics, or as an example
  * for how to write your own.
+ *
+ * @since 1.2.5 R0.1
  */
 public class GenericCommandHelpTopic extends HelpTopic {
 

@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
  * Called when a Pig Zombie is angered by another entity.
  * <p>
  * If the event is cancelled, the pig zombie will not be angered.
+ *
+ * @since 1.13
  */
 public class PigZombieAngerEvent extends EntityEvent implements Cancellable {
 

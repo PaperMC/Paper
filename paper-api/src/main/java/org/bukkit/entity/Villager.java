@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a villager NPC
+ *
+ * @since 1.0.0 R1
  */
 public interface Villager extends AbstractVillager {
 
@@ -22,6 +24,7 @@ public interface Villager extends AbstractVillager {
      * Gets the current profession of this villager.
      *
      * @return Current profession.
+     * @since 1.2.5 R0.1
      */
     @NotNull
     public Profession getProfession();
@@ -37,6 +40,7 @@ public interface Villager extends AbstractVillager {
      * Gets the current type of this villager.
      *
      * @return Current type.
+     * @since 1.14
      */
     @NotNull
     public Type getVillagerType();
@@ -55,6 +59,7 @@ public interface Villager extends AbstractVillager {
      * profession.
      *
      * @return this villager's level
+     * @since 1.14
      */
     public int getVillagerLevel();
 
@@ -69,6 +74,7 @@ public interface Villager extends AbstractVillager {
      * @param level the new level
      * @throws IllegalArgumentException if level not between [1, 5]
      * @see #increaseLevel(int)
+     * @since 1.14
      */
     public void setVillagerLevel(int level);
 
@@ -76,6 +82,7 @@ public interface Villager extends AbstractVillager {
      * Gets the trading experience of this villager.
      *
      * @return trading experience
+     * @since 1.14
      */
     public int getVillagerExperience();
 
@@ -84,6 +91,7 @@ public interface Villager extends AbstractVillager {
      *
      * @param experience new experience
      * @throws IllegalArgumentException if experience &lt; 0
+     * @since 1.14
      */
     public void setVillagerExperience(int experience);
 
@@ -104,6 +112,7 @@ public interface Villager extends AbstractVillager {
      * @throws IllegalArgumentException if current level plus the amount
      * isn't between [1, 5] or the amount isn't positive
      * @see #setVillagerLevel(int)
+     * @since 1.19.2
      */
     boolean increaseLevel(int amount);
 
@@ -113,18 +122,21 @@ public interface Villager extends AbstractVillager {
      * @param amount The amount of trades to give
      * @return Whether trades are added
      * @throws IllegalArgumentException if the amount isn't positive
+     * @since 1.19.2
      */
     boolean addTrades(int amount);
 
     /**
      * Gets the amount of times a villager has restocked their trades today
      * @return The amount of trade restocks.
+     * @since 1.15.2
      */
     public int getRestocksToday();
 
     /**
      * Sets the amount of times a villager has restocked their trades today
      * @param restocksToday new restock count
+     * @since 1.15.2
      */
     public void setRestocksToday(int restocksToday);
     // Paper end
@@ -138,6 +150,7 @@ public interface Villager extends AbstractVillager {
      *
      * @param location the location of the bed
      * @return whether the sleep was successful
+     * @since 1.14.4
      */
     public boolean sleep(@NotNull Location location);
 
@@ -145,11 +158,14 @@ public interface Villager extends AbstractVillager {
      * Causes this villager to wake up if he's currently sleeping.
      *
      * @throws IllegalStateException if not sleeping
+     * @since 1.14.4
      */
     public void wakeup();
 
     /**
      * Causes this villager to shake his head.
+     *
+     * @since 1.17
      */
     public void shakeHead();
 
@@ -161,6 +177,7 @@ public interface Villager extends AbstractVillager {
      *
      * @return the converted entity {@link ZombieVillager} or null if the
      * conversion its cancelled
+     * @since 1.18.2
      */
     @Nullable
     public ZombieVillager zombify();
@@ -168,6 +185,8 @@ public interface Villager extends AbstractVillager {
     /**
      * Represents Villager type, usually corresponding to what biome they spawn
      * in.
+     *
+     * @since 1.14
      */
     interface Type extends OldEnum<Type>, Keyed {
 
@@ -211,6 +230,8 @@ public interface Villager extends AbstractVillager {
     /**
      * Represents the various different Villager professions there may be.
      * Villagers have different trading options depending on their profession,
+     *
+     * @since 1.2.5 R0.1
      */
     interface Profession extends OldEnum<Profession>, Keyed, net.kyori.adventure.translation.Translatable {
 
@@ -314,6 +335,9 @@ public interface Villager extends AbstractVillager {
             return Lists.newArrayList(Registry.VILLAGER_PROFESSION).toArray(new Profession[0]);
         }
 
+        /**
+         * @since 1.17.1
+         */
         // Paper start
         @Override
         default @NotNull String translationKey() {
@@ -329,6 +353,7 @@ public interface Villager extends AbstractVillager {
      *
      * @param uniqueId The {@link UUID} of the player to get the reputation of.
      * @return The player's copied reputation with this villager.
+     * @since 1.15.2
      */
     @NotNull
     public com.destroystokyo.paper.entity.villager.Reputation getReputation(@NotNull UUID uniqueId);
@@ -339,6 +364,7 @@ public interface Villager extends AbstractVillager {
      *
      * @return All {@link com.destroystokyo.paper.entity.villager.Reputation reputations} for all players
      * in a copied map.
+     * @since 1.15.2
      */
     @NotNull
     public Map<UUID, com.destroystokyo.paper.entity.villager.Reputation> getReputations();
@@ -349,6 +375,7 @@ public interface Villager extends AbstractVillager {
      *
      * @param uniqueId The {@link UUID} of the player to set the reputation of.
      * @param reputation The {@link com.destroystokyo.paper.entity.villager.Reputation reputation} to set.
+     * @since 1.15.2
      */
     public void setReputation(@NotNull UUID uniqueId, @NotNull com.destroystokyo.paper.entity.villager.Reputation reputation);
 
@@ -358,12 +385,15 @@ public interface Villager extends AbstractVillager {
      *
      * @param reputations All {@link com.destroystokyo.paper.entity.villager.Reputation reputations}
      * for all players mapped by their {@link UUID unique IDs}.
+     * @since 1.15.2
      */
     public void setReputations(@NotNull Map<UUID, com.destroystokyo.paper.entity.villager.Reputation> reputations);
 
     /**
      * Clear all reputations from this villager. This removes every single
      * reputation regardless of its impact and the player associated.
+     *
+     * @since 1.15.2
      */
     public void clearReputations();
     // Paper end

@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * 'occupied' property is a quick flag to check if a player is currently
  * sleeping in this bed block.
+ *
+ * @since 1.13
  */
 public interface Bed extends Directional {
 
@@ -40,6 +42,7 @@ public interface Bed extends Directional {
      * Sets the value of the 'occupied' property.
      *
      * @param occupied the new 'occupied' value
+     * @since 1.19.2
      */
     void setOccupied(boolean occupied);
     // Paper end

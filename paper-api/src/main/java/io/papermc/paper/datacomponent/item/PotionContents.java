@@ -14,6 +14,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Holds the contents of a potion (Potion, Splash Potion, Lingering Potion), or potion applied to a Tipped Arrow.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#POTION_CONTENTS
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

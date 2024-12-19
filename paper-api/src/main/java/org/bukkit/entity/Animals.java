@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an Animal.
+ *
+ * @since 1.0.0 R1
  */
 public interface Animals extends Breedable {
 
@@ -16,6 +18,7 @@ public interface Animals extends Breedable {
      * {@link #canBreed()} state.
      *
      * @return uuid if set, or null
+     * @since 1.13.1
      */
     @Nullable
     UUID getBreedCause();
@@ -25,6 +28,7 @@ public interface Animals extends Breedable {
      * {@link #canBreed()} state.
      *
      * @param uuid new uuid, or null
+     * @since 1.13.1
      */
     void setBreedCause(@Nullable UUID uuid);
 
@@ -34,6 +38,7 @@ public interface Animals extends Breedable {
      * and only if {@link #getLoveModeTicks()} is greater than 0.
      *
      * @return true if in love mode, false otherwise
+     * @since 1.13.2
      */
     boolean isLoveMode();
 
@@ -42,6 +47,7 @@ public interface Animals extends Breedable {
      * If the entity is not in love mode, 0 will be returned.
      *
      * @return the remaining love mode ticks
+     * @since 1.13.2
      */
     int getLoveModeTicks();
 
@@ -51,6 +57,7 @@ public interface Animals extends Breedable {
      * feeding the entity their breeding item of choice.
      *
      * @param ticks the love mode ticks. Must be positive
+     * @since 1.13.2
      */
     void setLoveModeTicks(int ticks);
 
@@ -61,6 +68,7 @@ public interface Animals extends Breedable {
      * @param stack ItemStack to check.
      * @return if the provided ItemStack is the correct food item for this
      * entity.
+     * @since 1.17
      */
     boolean isBreedItem(@NotNull ItemStack stack);
 
@@ -71,6 +79,7 @@ public interface Animals extends Breedable {
      * @param material Material to check.
      * @return if the provided ItemStack is the correct food item for this
      * entity.
+     * @since 1.17
      */
     boolean isBreedItem(@NotNull Material material);
 }

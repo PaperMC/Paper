@@ -2,6 +2,8 @@ package org.bukkit.block.data;
 
 /**
  * 'open' denotes whether this block is currently opened.
+ *
+ * @since 1.13
  */
 public interface Openable extends BlockData {
 

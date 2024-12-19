@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a human entity's food level changes
+ *
+ * @since 1.0.0 R1
  */
 public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -26,6 +28,9 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
         this.item = item;
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     @Override
     public HumanEntity getEntity() {
@@ -36,6 +41,7 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
      * Gets the item that triggered this event, if any.
      *
      * @return an ItemStack for the item being consumed
+     * @since 1.14.2
      */
     @Nullable
     public ItemStack getItem() {
@@ -77,12 +83,18 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

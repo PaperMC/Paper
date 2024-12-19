@@ -7,6 +7,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Describes a scoreboard number format that applies custom formatting to scoreboard scores.
+ *
+ * @since 1.20.4
  */
 @NullMarked
 public interface NumberFormat {

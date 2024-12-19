@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
  * A shape made out of voxels.
  *
  * For example, used to represent the detailed collision shape of blocks.
+ *
+ * @since 1.17
  */
 public interface VoxelShape {
 

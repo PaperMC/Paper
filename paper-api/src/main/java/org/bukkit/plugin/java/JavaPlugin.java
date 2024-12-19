@@ -34,6 +34,8 @@ import org.jetbrains.annotations.Nullable;
  * Represents a Java plugin and its main class. It contains fundamental methods
  * and fields for a plugin to be loaded and work properly. This is an indirect
  * implementation of {@link org.bukkit.plugin.Plugin}.
+ *
+ * @since 1.0.0 R1
  */
 public abstract class JavaPlugin extends PluginBase {
     private boolean isEnabled = false;
@@ -144,6 +146,9 @@ public abstract class JavaPlugin extends PluginBase {
         return description;
     }
 
+    /**
+     * @since 1.19.3
+     */
     @NotNull
     public final io.papermc.paper.plugin.configuration.PluginMeta getPluginMeta() {
         return this.pluginMeta;
@@ -196,6 +201,9 @@ public abstract class JavaPlugin extends PluginBase {
         }
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @Override
     public void saveDefaultConfig() {
         if (!configFile.exists()) {
@@ -203,6 +211,9 @@ public abstract class JavaPlugin extends PluginBase {
         }
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @Override
     public void saveResource(@NotNull String resourcePath, boolean replace) {
         if (resourcePath == null || resourcePath.equals("")) {
@@ -277,6 +288,7 @@ public abstract class JavaPlugin extends PluginBase {
      * Sets the enabled state of this plugin
      *
      * @param enabled true if enabled, otherwise false
+     * @since 1.19.3
      */
     @org.jetbrains.annotations.ApiStatus.Internal // Paper
     public final void setEnabled(final boolean enabled) { // Paper
@@ -298,10 +310,16 @@ public abstract class JavaPlugin extends PluginBase {
         private static final PluginLoader INSTANCE =  net.kyori.adventure.util.Services.service(PluginLoader.class)
             .orElseThrow();
     }
+    /**
+     * @since 1.19.3
+     */
     public final void init(@NotNull PluginLoader loader, @NotNull Server server, @NotNull PluginDescriptionFile description, @NotNull File dataFolder, @NotNull File file, @NotNull ClassLoader classLoader) {
         init(server, description, dataFolder, file, classLoader, description, com.destroystokyo.paper.utils.PaperPluginLogger.getLogger(description));
         this.pluginMeta = description;
     }
+    /**
+     * @since 1.19.4
+     */
     public final void init(@NotNull Server server, @NotNull PluginDescriptionFile description, @NotNull File dataFolder, @NotNull File file, @NotNull ClassLoader classLoader, @Nullable io.papermc.paper.plugin.configuration.PluginMeta configuration, @NotNull Logger logger) {
     // Paper end
         this.loader = DummyPluginLoaderImplHolder.INSTANCE; // Paper
@@ -325,6 +343,8 @@ public abstract class JavaPlugin extends PluginBase {
 
     /**
      * {@inheritDoc}
+     *
+     * @since 1.3.2 R3.0
      */
     @Override
     @Nullable
@@ -359,9 +379,15 @@ public abstract class JavaPlugin extends PluginBase {
     @Override
     public void onLoad() {}
 
+    /**
+     * @since 1.1.0 R4
+     */
     @Override
     public void onDisable() {}
 
+    /**
+     * @since 1.1.0 R4
+     */
     @Override
     public void onEnable() {}
 
@@ -371,6 +397,9 @@ public abstract class JavaPlugin extends PluginBase {
         return null;
     }
 
+    /**
+     * @since 1.17.1
+     */
     @Nullable
     @Override
     public BiomeProvider getDefaultBiomeProvider(@NotNull String worldName, @Nullable String id) {
@@ -387,6 +416,9 @@ public abstract class JavaPlugin extends PluginBase {
         this.naggable = canNag;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public Logger getLogger() {
@@ -421,6 +453,7 @@ public abstract class JavaPlugin extends PluginBase {
      *     given JavaPlugin
      * @throws ClassCastException if plugin that provided the class does not
      *     extend the class
+     * @since 1.7.2 R0.2
      */
     @NotNull
     public static <T extends JavaPlugin> T getPlugin(@NotNull Class<T> clazz) {
@@ -450,6 +483,7 @@ public abstract class JavaPlugin extends PluginBase {
      * @throws IllegalArgumentException if class is null
      * @throws IllegalStateException if called from the static initializer for
      *     given JavaPlugin
+     * @since 1.7.2 R0.2
      */
     @NotNull
     public static JavaPlugin getProvidingPlugin(@NotNull Class<?> clazz) {
@@ -465,6 +499,9 @@ public abstract class JavaPlugin extends PluginBase {
         return plugin;
     }
 
+    /**
+     * @since 1.20.4
+     */
     // Paper start - lifecycle events
     @Override
     public final io.papermc.paper.plugin.lifecycle.event.@NotNull LifecycleEventManager<org.bukkit.plugin.Plugin> getLifecycleManager() {

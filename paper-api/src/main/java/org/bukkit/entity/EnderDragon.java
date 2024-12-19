@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an Ender Dragon
+ *
+ * @since 1.0.0 R1
  */
 public interface EnderDragon extends ComplexLivingEntity, Boss, Mob, Enemy {
 
@@ -71,6 +73,7 @@ public interface EnderDragon extends ComplexLivingEntity, Boss, Mob, Enemy {
      * Gets the current phase that the dragon is performing.
      *
      * @return the current phase
+     * @since 1.9.4
      */
     @NotNull
     Phase getPhase();
@@ -94,6 +97,7 @@ public interface EnderDragon extends ComplexLivingEntity, Boss, Mob, Enemy {
      * @return the dragon battle
      *
      * @see World#getEnderDragonBattle()
+     * @since 1.15.2
      */
     @Nullable
     DragonBattle getDragonBattle();
@@ -106,6 +110,7 @@ public interface EnderDragon extends ComplexLivingEntity, Boss, Mob, Enemy {
      * 200 (the length of the animation).
      *
      * @return this dragon's death animation ticks
+     * @since 1.15.2
      */
     int getDeathAnimationTicks();
 
@@ -115,6 +120,7 @@ public interface EnderDragon extends ComplexLivingEntity, Boss, Mob, Enemy {
      * Get the podium location used by the ender dragon.
      *
      * @return the podium location of the dragon
+     * @since 1.18.2
      */
     @NotNull
     org.bukkit.Location getPodium();
@@ -123,6 +129,7 @@ public interface EnderDragon extends ComplexLivingEntity, Boss, Mob, Enemy {
      * Sets the location of the podium for the ender dragon.
      *
      * @param location the location of the podium or null to use the default podium location (exit portal of the end)
+     * @since 1.18.2
      */
     void setPodium(@Nullable org.bukkit.Location location);
     // Paper end

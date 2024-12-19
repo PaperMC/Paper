@@ -14,6 +14,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when the player changes their client settings
+ *
+ * @since 1.15.2
  */
 @NullMarked
 public class PlayerClientOptionsChangeEvent extends PlayerEvent {
@@ -107,26 +109,44 @@ public class PlayerClientOptionsChangeEvent extends PlayerEvent {
         return this.mainHand != this.player.getClientOption(ClientOption.MAIN_HAND);
     }
 
+    /**
+     * @since 1.19.2
+     */
     public boolean hasTextFilteringEnabled() {
         return this.textFilteringEnabled;
     }
 
+    /**
+     * @since 1.19.2
+     */
     public boolean hasTextFilteringChanged() {
         return this.textFilteringEnabled != this.player.getClientOption(ClientOption.TEXT_FILTERING_ENABLED);
     }
 
+    /**
+     * @since 1.19.2
+     */
     public boolean allowsServerListings() {
         return this.allowsServerListings;
     }
 
+    /**
+     * @since 1.19.2
+     */
     public boolean hasAllowServerListingsChanged() {
         return this.allowsServerListings != this.player.getClientOption(ClientOption.ALLOW_SERVER_LISTINGS);
     }
 
+    /**
+     * @since 1.21.3
+     */
     public ParticleVisibility getParticleVisibility() {
         return this.particleVisibility;
     }
 
+    /**
+     * @since 1.21.3
+     */
     public boolean hasParticleVisibilityChanged() {
         return this.particleVisibility != this.player.getClientOption(ClientOption.PARTICLE_VISIBILITY);
     }

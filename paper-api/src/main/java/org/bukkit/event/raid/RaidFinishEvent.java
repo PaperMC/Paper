@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called when a {@link Raid} was complete with a clear result.
+ *
+ * @since 1.14.4
  */
 public class RaidFinishEvent extends RaidEvent {
 

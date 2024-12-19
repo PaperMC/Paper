@@ -7,6 +7,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when the server has finished ticking the main loop
+ *
+ * @since 1.13.2
  */
 @NullMarked
 public class ServerTickEndEvent extends Event {

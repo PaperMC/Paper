@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * This event gets called when the whitelist status of a player is changed
+ *
+ * @since 1.20.1
  */
 @NullMarked
 public class WhitelistStateUpdateEvent extends Event implements Cancellable {

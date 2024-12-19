@@ -12,6 +12,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Should only be used for packet/clientside related stuff.
  * Not intended for modifying server side.
+ *
+ * @since 1.16.4
  */
 @NullMarked
 public class PlayerChunkUnloadEvent extends ChunkEvent {

@@ -38,6 +38,7 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <T> the type of value in the tag
  * @see PostFlattenTagRegistrar
+ * @since 1.21.1
  */
 @ApiStatus.Experimental
 @NullMarked

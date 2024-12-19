@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
  * outside.
  * <br>
  * Block may have 0, 1... {@link #getMaximumOccupiedSlots()}-1 occupied slots.
+ *
+ * @since 1.19.3
  */
 public interface ChiseledBookshelf extends Directional {
 

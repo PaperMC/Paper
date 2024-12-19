@@ -7,6 +7,8 @@ import java.util.Set;
  * <p>
  * The internal representation may be singleton, or be a parameterized
  * instance, but must be immutable.
+ *
+ * @since 1.7.10
  */
 public interface PluginAwareness {
     /**

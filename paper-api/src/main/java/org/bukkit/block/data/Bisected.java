@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
  * 'half' denotes which half of a two block tall material this block is.
  * <br>
  * In game it may be referred to as either (top, bottom) or (upper, lower).
+ *
+ * @since 1.13
  */
 public interface Bisected extends BlockData {
 

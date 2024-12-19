@@ -9,6 +9,8 @@ import org.joml.Vector3f;
 
 /**
  * Represents an arbitrary affine transformation.
+ *
+ * @since 1.19.4
  */
 public class Transformation {
 

@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  *     <li>Player lands on ground while they are gliding (with an Elytra)</li>
  * </ul>
  * This can be visually estimated by the animation in which a player turns horizontal.
+ *
+ * @since 1.9.4
  */
 public class EntityToggleGlideEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

@@ -8,6 +8,9 @@ import org.bukkit.inventory.StonecutterInventory;
 import org.bukkit.inventory.StonecuttingRecipe;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.16.5
+ */
 @NullMarked
 public class PlayerStonecutterRecipeSelectEvent extends PlayerEvent implements Cancellable {
 

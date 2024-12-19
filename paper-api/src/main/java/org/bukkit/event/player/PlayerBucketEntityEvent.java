@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called whenever a player captures an entity in a bucket.
+ *
+ * @since 1.16.5
  */
 public class PlayerBucketEntityEvent extends PlayerEvent implements Cancellable {
 
@@ -68,6 +70,7 @@ public class PlayerBucketEntityEvent extends PlayerEvent implements Cancellable 
      * Get the hand that was used to bucket the entity.
      *
      * @return the hand
+     * @since 1.19.2
      */
     @NotNull
     public EquipmentSlot getHand() {

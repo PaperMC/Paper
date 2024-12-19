@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a chunk is unloaded
+ *
+ * @since 1.0.0 R1
  */
 public class ChunkUnloadEvent extends ChunkEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -24,6 +26,7 @@ public class ChunkUnloadEvent extends ChunkEvent {
      * Return whether this chunk will be saved to disk.
      *
      * @return chunk save status
+     * @since 1.10.2
      */
     public boolean isSaveChunk() {
         return saveChunk;
@@ -33,17 +36,24 @@ public class ChunkUnloadEvent extends ChunkEvent {
      * Set whether this chunk will be saved to disk.
      *
      * @param saveChunk chunk save status
+     * @since 1.10.2
      */
     public void setSaveChunk(boolean saveChunk) {
         this.saveChunk = saveChunk;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

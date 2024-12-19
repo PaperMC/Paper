@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a basic entity spawner. <br>
  * May be a {@link SpawnerMinecart}, {@link CreatureSpawner} or {@link TrialSpawnerConfiguration}.
+ *
+ * @since 1.21
  */
 public interface BaseSpawner {
 

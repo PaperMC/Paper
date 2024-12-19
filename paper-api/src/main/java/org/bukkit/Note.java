@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A note class to store a specific note.
+ *
+ * @since 1.0.0 R1
  */
 public class Note {
 
@@ -202,6 +204,7 @@ public class Note {
 
     /**
      * @return The note a semitone above this one.
+     * @since 1.1.0 R5
      */
     @NotNull
     public Note sharped() {
@@ -211,6 +214,7 @@ public class Note {
 
     /**
      * @return The note a semitone below this one.
+     * @since 1.1.0 R5
      */
     @NotNull
     public Note flattened() {
@@ -267,11 +271,15 @@ public class Note {
      * {@link World#playSound} or the /playsound command.
      *
      * @return the pitch
+     * @since 1.20.2
      */
     public float getPitch() {
         return pitchArray[this.note];
     }
 
+    /**
+     * @since 1.1.0 R2
+     */
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -280,6 +288,9 @@ public class Note {
         return result;
     }
 
+    /**
+     * @since 1.1.0 R2
+     */
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -294,6 +305,9 @@ public class Note {
         return true;
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @Override
     public String toString() {
         return "Note{" + getTone().toString() + (isSharped() ? "#" : "") + "}";

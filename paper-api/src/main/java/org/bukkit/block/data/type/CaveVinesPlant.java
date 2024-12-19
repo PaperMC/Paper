@@ -4,6 +4,8 @@ import org.bukkit.block.data.BlockData;
 
 /**
  * 'berries' indicates whether the block has berries.
+ *
+ * @since 1.17
  */
 public interface CaveVinesPlant extends BlockData {
 

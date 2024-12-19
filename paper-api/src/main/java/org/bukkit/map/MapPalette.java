@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * These fields are hee base color ranges. Each entry corresponds to four
  * colors of varying shades with values entry to entry + 3.
+ *
+ * @since 1.0.0 R1
  */
 public final class MapPalette {
     // Internal mechanisms
@@ -297,6 +299,8 @@ public final class MapPalette {
 
     /**
      * Holds cached information for matching map colors of a given RBG color.
+     *
+     * @since 1.19
      */
     public interface MapColorCache {
 

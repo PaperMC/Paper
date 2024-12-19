@@ -8,6 +8,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a block tries to dispense an item, but its inventory is empty.
+ *
+ * @since 1.16.4
  */
 @NullMarked
 public class BlockFailedDispenseEvent extends BlockEvent {

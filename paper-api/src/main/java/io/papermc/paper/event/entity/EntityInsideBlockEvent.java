@@ -41,6 +41,8 @@ import org.jspecify.annotations.NullMarked;
  *     <li>Web</li>
  *     <li>Wither rose</li>
  * </ul>
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class EntityInsideBlockEvent extends EntityEvent implements Cancellable {

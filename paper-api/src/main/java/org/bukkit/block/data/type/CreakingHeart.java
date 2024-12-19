@@ -7,6 +7,8 @@ import org.jetbrains.annotations.ApiStatus;
  * 'active' is whether the block is active.
  * <br>
  * 'natural' is whether this is a naturally generated block.
+ *
+ * @since 1.21.3
  */
 @ApiStatus.Experimental
 public interface CreakingHeart extends Orientable {
@@ -15,6 +17,7 @@ public interface CreakingHeart extends Orientable {
      * Gets the value of the 'active' property.
      *
      * @return the 'active' value
+     * @since 1.21.4
      */
     boolean isActive();
 
@@ -22,6 +25,7 @@ public interface CreakingHeart extends Orientable {
      * Sets the value of the 'active' property.
      *
      * @param active the new 'active' value
+     * @since 1.21.4
      */
     void setActive(boolean active);
 
@@ -29,6 +33,7 @@ public interface CreakingHeart extends Orientable {
      * Gets the value of the 'natural' property.
      *
      * @return the 'natural' value
+     * @since 1.21.4
      */
     boolean isNatural();
 
@@ -36,6 +41,7 @@ public interface CreakingHeart extends Orientable {
      * Sets the value of the 'natural' property.
      *
      * @param natural the new 'natural' value
+     * @since 1.21.4
      */
     void setNatural(boolean natural);
 }

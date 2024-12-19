@@ -27,11 +27,16 @@ import org.jetbrains.annotations.NotNull;
  * {@link org.bukkit.scheduler.BukkitScheduler#runTask(org.bukkit.plugin.Plugin, Runnable)}, which will run the task
  * on the next tick. Also be aware that this is not an exhaustive list, and
  * other methods could potentially create issues as well.
+ *
+ * @since 1.1.0 R5
  */
 public class InventoryCloseEvent extends InventoryEvent {
     private static final HandlerList handlers = new HandlerList();
     // Paper start
     private final Reason reason;
+    /**
+     * @since 1.12.2
+     */
     @NotNull
     public Reason getReason() {
         return reason;

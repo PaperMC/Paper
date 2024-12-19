@@ -21,6 +21,7 @@ import org.jspecify.annotations.NullMarked;
  * @param <O> the required owner type
  * @param <E> the event object type
  * @param <C> the configuration type
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 @NullMarked

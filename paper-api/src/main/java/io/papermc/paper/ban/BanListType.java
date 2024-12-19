@@ -8,6 +8,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Represents a ban-type that a {@link BanList} may track.
  * It enforces the correct return value at compile time.
+ *
+ * @since 1.20.4
  */
 @NullMarked
 public interface BanListType<T> {

@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a firework explodes.
+ *
+ * @since 1.8.8
  */
 public class FireworkExplodeEvent extends EntityEvent implements Cancellable {
 

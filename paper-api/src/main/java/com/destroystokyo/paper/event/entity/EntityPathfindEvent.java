@@ -14,6 +14,8 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * This event does not fire for the entities actual movement. Only when it
  * is choosing to start moving to a location.
+ *
+ * @since 1.9.4
  */
 @NullMarked
 public class EntityPathfindEvent extends EntityEvent implements Cancellable {

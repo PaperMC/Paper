@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Standard implementation to {@link Messenger}
+ *
+ * @since 1.1.0 R1
  */
 public class StandardMessenger implements Messenger {
     private final Map<String, Set<PluginMessageListenerRegistration>> incomingByChannel = new HashMap<String, Set<PluginMessageListenerRegistration>>();
@@ -479,6 +481,7 @@ public class StandardMessenger implements Messenger {
      * @param channel Channel name to validate.
      * @return corrected channel name
      * @deprecated not an API method
+     * @since 1.13
      */
     @Deprecated(since = "1.13")
     @NotNull

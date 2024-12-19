@@ -12,6 +12,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Note: Some entities might trigger this multiple times on the same entity
  * as multiple acceleration calculations are done.
+ *
+ * @since 1.19.3
  */
 @NullMarked
 public class EntityPushedByEntityAttackEvent extends EntityKnockbackEvent implements Cancellable {
@@ -49,6 +51,7 @@ public class EntityPushedByEntityAttackEvent extends EntityKnockbackEvent implem
      *
      * @param acceleration the new acceleration vector
      * @deprecated use {@link #setKnockback(Vector)}
+     * @since 1.20.4
      */
     @Deprecated(since = "1.20.6", forRemoval = true)
     public void setAcceleration(final Vector acceleration) {

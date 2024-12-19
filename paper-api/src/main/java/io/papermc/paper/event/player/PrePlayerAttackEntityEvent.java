@@ -18,6 +18,8 @@ import org.jspecify.annotations.NullMarked;
  * to indicate that this entity will not actually be attacked.
  * <p>
  * Note: there may be other factors (invulnerability, etc.) that will prevent this entity from being attacked that this event will not cover
+ *
+ * @since 1.19.2
  */
 @NullMarked
 public class PrePlayerAttackEntityEvent extends PlayerEvent implements Cancellable {

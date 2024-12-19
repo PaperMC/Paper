@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
  * This class extends LazyMetadataValue for historical reasons, even though it
  * overrides all the implementation methods. it is possible that in the future
  * that the inheritance hierarchy may change.
+ *
+ * @since 1.1.0 R5
  */
 public class FixedMetadataValue extends LazyMetadataValue {
 
@@ -31,11 +33,17 @@ public class FixedMetadataValue extends LazyMetadataValue {
         this.internalValue = value;
     }
 
+    /**
+     * @since 1.5.1 R0.2
+     */
     @Override
     public void invalidate() {
 
     }
 
+    /**
+     * @since 1.5.1 R0.2
+     */
     @Nullable
     @Override
     public Object value() {

@@ -7,6 +7,7 @@ import org.bukkit.Material;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
+ * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class PressurePlate extends MaterialData implements PressureSensor {
@@ -38,6 +39,9 @@ public class PressurePlate extends MaterialData implements PressureSensor {
         return super.toString() + (isPressed() ? " PRESSED" : "");
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @Override
     public PressurePlate clone() {
         return (PressurePlate) super.clone();

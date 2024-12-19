@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link org.bukkit.entity.LivingEntity}.
  *
  * @param <T> the class type of the memory value
+ * @since 1.14.1
  */
 public final class MemoryKey<T> implements Keyed {
 

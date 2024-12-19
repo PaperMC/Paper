@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a LivingEntity shoots a bow firing an arrow
+ *
+ * @since 1.1.0 R1
  */
 public class EntityShootBowEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -22,17 +24,26 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
     private final float force;
     private boolean consumeItem;
     private boolean cancelled;
+    /**
+     * @since 1.12.2
+     */
     // Paper start
     @Deprecated
     public void setConsumeArrow(boolean consumeArrow) {
         this.setConsumeItem(consumeArrow);
     }
 
+    /**
+     * @since 1.12.2
+     */
     @Deprecated
     public boolean getConsumeArrow() {
         return this.shouldConsumeItem();
     }
 
+    /**
+     * @since 1.12.2
+     */
     @Nullable @Deprecated
     public ItemStack getArrowItem() {
         return this.getConsumable();
@@ -58,6 +69,9 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
         this.consumeItem = consumeItem;
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     @Override
     public LivingEntity getEntity() {
@@ -81,6 +95,7 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
      * inventory.
      *
      * @return the consumable item
+     * @since 1.16.2
      */
     @Nullable
     public ItemStack getConsumable() {
@@ -110,6 +125,7 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
      * Get the hand from which the bow was shot.
      *
      * @return the hand
+     * @since 1.16.2
      */
     @NotNull
     public EquipmentSlot getHand() {
@@ -138,6 +154,7 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
      *
      * @param consumeItem whether or not to consume the item
      * @deprecated not currently functional
+     * @since 1.16.2
      */
     @Deprecated(since = "1.20.5")
     public void setConsumeItem(boolean consumeItem) {
@@ -148,6 +165,7 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
      * Get whether or not the consumable item should be consumed in this event.
      *
      * @return true if consumed, false otherwise
+     * @since 1.16.2
      */
     public boolean shouldConsumeItem() {
         return consumeItem;

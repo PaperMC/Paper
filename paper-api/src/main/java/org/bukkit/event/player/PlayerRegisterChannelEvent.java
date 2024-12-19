@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This is called immediately after a player registers for a plugin channel.
+ *
+ * @since 1.3.1 R1.0
  */
 public class PlayerRegisterChannelEvent extends PlayerChannelEvent {
 

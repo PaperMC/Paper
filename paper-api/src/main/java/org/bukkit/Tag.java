@@ -16,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
  * and {@link io.papermc.paper.tag.EntityTags}.</p>
  *
  * @param <T> the type of things grouped by this tag
+ * @since 1.13
  */
 public interface Tag<T extends Keyed> extends Keyed {
 

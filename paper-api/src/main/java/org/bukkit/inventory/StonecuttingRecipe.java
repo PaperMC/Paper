@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Stonecutting recipe.
+ *
+ * @since 1.14
  */
 public class StonecuttingRecipe implements Recipe, Keyed {
     private final NamespacedKey key;

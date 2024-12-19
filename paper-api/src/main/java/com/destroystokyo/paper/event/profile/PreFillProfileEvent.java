@@ -35,6 +35,8 @@ import org.jspecify.annotations.NullMarked;
  * Fired when the server is requesting to fill in properties of an incomplete profile, such as textures.
  * <p>
  * Allows plugins to pre-populate cached properties and avoid a call to the Mojang API
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class PreFillProfileEvent extends Event {

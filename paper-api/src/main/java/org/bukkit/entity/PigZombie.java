@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a Pig Zombie.
+ *
+ * @since 1.0.0 R1
  */
 public interface PigZombie extends Zombie {
 
@@ -38,12 +40,15 @@ public interface PigZombie extends Zombie {
      * <b>Not applicable to this entity</b>
      *
      * @return false
+     * @since 1.13.2
      */
     @Override
     public boolean isConverting();
 
     /**
      * <b>Not applicable to this entity</b>
+     *
+     * @since 1.13.2
      */
     @Override
     public int getConversionTime();
@@ -52,6 +57,7 @@ public interface PigZombie extends Zombie {
      * <b>Not applicable to this entity</b>
      *
      * @param time unused
+     * @since 1.13.2
      */
     @Override
     public void setConversionTime(int time);

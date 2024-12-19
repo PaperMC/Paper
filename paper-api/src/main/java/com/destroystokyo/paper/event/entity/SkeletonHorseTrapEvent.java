@@ -12,6 +12,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Event called when a player gets close to a skeleton horse and triggers the lightning trap
+ *
+ * @since 1.13
  */
 @NullMarked
 public class SkeletonHorseTrapEvent extends EntityEvent implements Cancellable {
@@ -38,6 +40,9 @@ public class SkeletonHorseTrapEvent extends EntityEvent implements Cancellable {
         return (SkeletonHorse) super.getEntity();
     }
 
+    /**
+     * @since 1.16.4
+     */
     public List<HumanEntity> getEligibleHumans() {
         return this.eligibleHumans;
     }
@@ -61,4 +66,3 @@ public class SkeletonHorseTrapEvent extends EntityEvent implements Cancellable {
         return HANDLER_LIST;
     }
 }
-

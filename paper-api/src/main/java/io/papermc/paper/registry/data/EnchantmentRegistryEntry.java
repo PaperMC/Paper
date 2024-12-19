@@ -19,6 +19,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * A data-centric version-specific registry entry for the {@link Enchantment} type.
+ *
+ * @since 1.21
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Runs when a player attempts to move, but is prevented from doing so by the server
+ *
+ * @since 1.20.1
  */
 @NullMarked
 public class PlayerFailMoveEvent extends PlayerEvent {

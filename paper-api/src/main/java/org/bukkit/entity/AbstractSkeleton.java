@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * To compute what specific type of skeleton is present in a variable/field
  * of this type, instanceOf checks against the specific subtypes listed prior
  * are recommended.
+ *
+ * @since 1.17
  */
 public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entity.RangedEntity { // Paper
 
@@ -40,6 +42,7 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
      * immunity.
      *
      * @return True if skeleton will burn in sunlight
+     * @since 1.18.1
      */
     boolean shouldBurnInDay();
 
@@ -49,6 +52,7 @@ public interface AbstractSkeleton extends Monster, com.destroystokyo.paper.entit
      * immunity.
      *
      * @param shouldBurnInDay True to burn in sunlight
+     * @since 1.18.1
      */
     void setShouldBurnInDay(boolean shouldBurnInDay);
     // Paper end

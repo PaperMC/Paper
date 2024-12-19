@@ -7,6 +7,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a {@link TileState} block that has an inventory.
+ *
+ * @since 1.21.1
  */
 @NullMarked
 public interface TileStateInventoryHolder extends TileState, BlockInventoryHolder {

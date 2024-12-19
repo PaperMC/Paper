@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * Some blocks may not be able to face in all directions, use
  * {@link #getFaces()} to get all possible directions for this block.
+ *
+ * @since 1.13
  */
 public interface Directional extends BlockData {
 

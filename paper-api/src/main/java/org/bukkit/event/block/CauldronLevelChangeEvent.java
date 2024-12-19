@@ -12,6 +12,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.9.4
+ */
 public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
@@ -47,6 +50,7 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
      * Gets the new state of the cauldron.
      *
      * @return The block state of the block that will be changed
+     * @since 1.17
      */
     @NotNull
     public BlockState getNewState() {

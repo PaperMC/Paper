@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a command block.
+ *
+ * @since 1.5.1 R0.2
  */
 public interface CommandBlock extends TileState, io.papermc.paper.command.CommandBlockHolder { // Paper
 
@@ -57,6 +59,7 @@ public interface CommandBlock extends TileState, io.papermc.paper.command.Comman
      * by default is a {@link net.kyori.adventure.text.TextComponent} containing {@code @}.
      *
      * @return Name of this CommandBlock.
+     * @since 1.17.1
      */
     public net.kyori.adventure.text.@NotNull Component name();
 
@@ -66,6 +69,7 @@ public interface CommandBlock extends TileState, io.papermc.paper.command.Comman
      * same as setting it to a {@link net.kyori.adventure.text.TextComponent} containing {@code @}.
      *
      * @param name New name for this CommandBlock.
+     * @since 1.17.1
      */
     public void name(net.kyori.adventure.text.@Nullable Component name);
     // Paper end

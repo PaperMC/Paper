@@ -2,6 +2,8 @@ package org.bukkit.util.noise;
 
 /**
  * Base class for all noise generators
+ *
+ * @since 1.0.0 R1
  */
 public abstract class NoiseGenerator {
     protected final int[] perm = new int[512];

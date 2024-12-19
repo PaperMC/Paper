@@ -4,6 +4,8 @@ import org.bukkit.block.data.BlockData;
 
 /**
  * 'unstable' indicates whether this TNT will explode on punching.
+ *
+ * @since 1.13.1
  */
 public interface TNT extends BlockData {
 

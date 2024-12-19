@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when the moisture level of a soil block changes.
+ *
+ * @since 1.13.1
  */
 public class MoistureChangeEvent extends BlockEvent implements Cancellable {
 

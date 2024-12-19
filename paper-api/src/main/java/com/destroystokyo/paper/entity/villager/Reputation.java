@@ -7,6 +7,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * A reputation score for a player on a villager.
+ *
+ * @since 1.15.2
  */
 @NullMarked
 public final class Reputation {
@@ -49,6 +51,7 @@ public final class Reputation {
      *
      * @param type The {@link ReputationType type} to check
      * @return If there is a value for this {@link ReputationType type} set.
+     * @since 1.19.2
      */
     public boolean hasReputationSet(final ReputationType type) {
         return this.reputation.containsKey(type);

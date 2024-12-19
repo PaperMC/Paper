@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * A Goat.
+ *
+ * @since 1.17
  */
 public interface Goat extends Animals {
 
@@ -9,6 +11,7 @@ public interface Goat extends Animals {
      * Gets if this goat has its left horn.
      *
      * @return left horn status
+     * @since 1.19
      */
     boolean hasLeftHorn();
 
@@ -16,6 +19,7 @@ public interface Goat extends Animals {
      * Sets if this goat has its left horn.
      *
      * @param hasHorn left horn status
+     * @since 1.19
      */
     void setLeftHorn(boolean hasHorn);
 
@@ -23,6 +27,7 @@ public interface Goat extends Animals {
      * Gets if this goat has its right horn.
      *
      * @return right horn status
+     * @since 1.19
      */
     boolean hasRightHorn();
 
@@ -30,6 +35,7 @@ public interface Goat extends Animals {
      * Sets if this goat has its right horn.
      *
      * @param hasHorn right horn status
+     * @since 1.19
      */
     void setRightHorn(boolean hasHorn);
 
@@ -57,6 +63,7 @@ public interface Goat extends Animals {
     /**
      * Makes the goat ram at the specified entity
      * @param entity the entity to ram at
+     * @since 1.17.1
      */
     void ram(@org.jetbrains.annotations.NotNull LivingEntity entity);
     // Paper end

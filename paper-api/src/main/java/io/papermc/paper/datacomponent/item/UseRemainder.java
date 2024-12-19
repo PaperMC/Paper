@@ -8,6 +8,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the contents of item transformation information when an item is used.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#USE_REMAINDER
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

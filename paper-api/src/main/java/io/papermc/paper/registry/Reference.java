@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
  * change.
  *
  * @param <T> type of the value
+ * @since 1.18.2
  */
 @Deprecated(forRemoval = true, since = "1.20.6")
 public interface Reference<T extends Keyed> extends Keyed {

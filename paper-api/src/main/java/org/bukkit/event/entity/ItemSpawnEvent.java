@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an item is spawned into a world
+ *
+ * @since 1.0.0 R1
  */
 public class ItemSpawnEvent extends EntitySpawnEvent {
 
@@ -18,6 +20,9 @@ public class ItemSpawnEvent extends EntitySpawnEvent {
         super(spawnee);
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     @Override
     public Item getEntity() {

@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a bucket of tropical fish.
+ *
+ * @since 1.13
  */
 public interface TropicalFishBucketMeta extends ItemMeta {
 

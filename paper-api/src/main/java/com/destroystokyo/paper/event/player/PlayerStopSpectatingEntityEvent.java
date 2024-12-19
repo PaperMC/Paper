@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Triggered when a player stops spectating an entity in spectator mode.
+ *
+ * @since 1.13.1
  */
 @NullMarked
 public class PlayerStopSpectatingEntityEvent extends PlayerEvent implements Cancellable {

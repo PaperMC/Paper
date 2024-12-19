@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a brewing stand.
+ *
+ * @since 1.1.0 R1
  */
 public interface BrewingStand extends Container {
 
@@ -30,6 +32,7 @@ public interface BrewingStand extends Container {
      *
      * @param recipeBrewTime recipe brew time (in ticks)
      * @throws IllegalArgumentException if the recipe brew time is non-positive
+     * @since 1.21.1
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     void setRecipeBrewTime(@org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int recipeBrewTime);
@@ -40,6 +43,7 @@ public interface BrewingStand extends Container {
      * {@link #getBrewingTime()}.
      *
      * @return recipe brew time (in ticks)
+     * @since 1.21.1
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     @org.jetbrains.annotations.Range(from = 1, to = Integer.MAX_VALUE) int getRecipeBrewTime();
@@ -49,6 +53,7 @@ public interface BrewingStand extends Container {
      * Get the level of current fuel for brewing.
      *
      * @return The fuel level
+     * @since 1.9.4
      */
     int getFuelLevel();
 
@@ -56,13 +61,20 @@ public interface BrewingStand extends Container {
      * Set the level of current fuel for brewing.
      *
      * @param level fuel level
+     * @since 1.9.4
      */
     void setFuelLevel(int level);
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     @Override
     BrewerInventory getInventory();
 
+    /**
+     * @since 1.12.1
+     */
     @NotNull
     @Override
     BrewerInventory getSnapshotInventory();

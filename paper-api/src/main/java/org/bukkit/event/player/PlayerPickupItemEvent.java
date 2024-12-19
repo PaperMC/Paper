@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Thrown when a player picks an item up from the ground
  * @deprecated {@link EntityPickupItemEvent}
+ * @since 1.0.0 R1
  */
 @Deprecated(since = "1.12")
 @Warning(false)
@@ -53,6 +54,7 @@ public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
      * Cancelling the event will set this value to false.
      *
      * @param flyAtPlayer true for item to fly at player
+     * @since 1.12
      */
     public void setFlyAtPlayer(boolean flyAtPlayer) {
         this.flyAtPlayer = flyAtPlayer;
@@ -62,6 +64,7 @@ public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
      * Gets if the item will fly at the player
      *
      * @return true if the item will fly at the player
+     * @since 1.12
      */
     public boolean getFlyAtPlayer() {
         return flyAtPlayer;
@@ -79,12 +82,18 @@ public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
         this.flyAtPlayer = !cancel; // Paper
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

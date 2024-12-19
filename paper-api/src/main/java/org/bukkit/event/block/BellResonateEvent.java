@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a bell resonated after being rung and highlights nearby raiders.
  * A bell will only resonate if raiders are in the vicinity of the bell.
+ *
+ * @since 1.19.4
  */
 public class BellResonateEvent extends BlockEvent {
 

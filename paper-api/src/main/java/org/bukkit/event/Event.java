@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @see PluginManager#callEvent(Event)
  * @see PluginManager#registerEvents(Listener,Plugin)
+ * @since 1.0.0 R1
  */
 public abstract class Event {
     private String name;
@@ -40,6 +41,7 @@ public abstract class Event {
      * Calls the event and tests if cancelled.
      *
      * @return false if event was cancelled, if cancellable. otherwise true.
+     * @since 1.9.4
      */
     public boolean callEvent() {
         org.bukkit.Bukkit.getPluginManager().callEvent(this);
@@ -66,6 +68,9 @@ public abstract class Event {
         return name;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public abstract HandlerList getHandlers();
 
@@ -90,6 +95,7 @@ public abstract class Event {
      * </ul>
      *
      * @return false by default, true if the event fires asynchronously
+     * @since 1.3.1 R1.0
      */
     public final boolean isAsynchronous() {
         return async;

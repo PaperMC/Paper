@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 'rotation' represents the current rotation of this block.
+ *
+ * @since 1.13
  */
 public interface Rotatable extends BlockData {
 

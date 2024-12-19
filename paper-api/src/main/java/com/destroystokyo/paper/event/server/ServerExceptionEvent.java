@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called whenever an exception is thrown in a recoverable section of the server.
+ *
+ * @since 1.9.4
  */
 @NullMarked
 public class ServerExceptionEvent extends Event {

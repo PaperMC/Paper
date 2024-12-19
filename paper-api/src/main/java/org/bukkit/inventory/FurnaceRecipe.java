@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a furnace recipe.
+ *
+ * @since 1.0.0 R1
  */
 public class FurnaceRecipe extends CookingRecipe<FurnaceRecipe> {
 
@@ -89,12 +91,16 @@ public class FurnaceRecipe extends CookingRecipe<FurnaceRecipe> {
      *     CraftBukkit server.)
      * @return The changed recipe, so you can chain calls.
      * @deprecated Magic value
+     * @since 1.1.0 R5
      */
     @Deprecated(since = "1.6.2")
     public FurnaceRecipe setInput(@NotNull Material input, int data) {
         return setInputChoice(new RecipeChoice.MaterialChoice(Collections.singletonList(input)));
     }
 
+    /**
+     * @since 1.13.2
+     */
     @NotNull
     @Override
     public FurnaceRecipe setInputChoice(@NotNull RecipeChoice input) {

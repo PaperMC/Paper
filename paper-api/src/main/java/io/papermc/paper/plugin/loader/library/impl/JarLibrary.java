@@ -19,6 +19,8 @@ import org.jspecify.annotations.NullMarked;
  * at runtime.
  * <p>
  * The jar library implementation will error if the file does not exist at the specified path.
+ *
+ * @since 1.19.3
  */
 @NullMarked
 public class JarLibrary implements ClassPathLibrary {

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a {@link Strider}'s temperature has changed as a result of
  * entering or exiting blocks it considers warm.
+ *
+ * @since 1.16.1
  */
 public class StriderTemperatureChangeEvent extends EntityEvent implements Cancellable {
 
@@ -35,11 +37,17 @@ public class StriderTemperatureChangeEvent extends EntityEvent implements Cancel
         return shivering;
     }
 
+    /**
+     * @since 1.17.1
+     */
     @Override
     public boolean isCancelled() {
         return cancelled;
     }
 
+    /**
+     * @since 1.17.1
+     */
     @Override
     public void setCancelled(boolean cancelled) {
         this.cancelled = cancelled;

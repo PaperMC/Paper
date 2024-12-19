@@ -12,6 +12,7 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <R> registrar type
  * @see ReloadableRegistrarEvent
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 @NullMarked

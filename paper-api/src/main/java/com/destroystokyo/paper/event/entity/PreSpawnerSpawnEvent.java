@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * This only includes the spawner's location and not the full BlockState snapshot for performance reasons.
  * If you really need it you have to get the spawner yourself.
+ *
+ * @since 1.13.1
  */
 @NullMarked
 public class PreSpawnerSpawnEvent extends PreCreatureSpawnEvent {

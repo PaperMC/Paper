@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable; // Paper
 
 /**
  * Called when a players experience changes naturally
+ *
+ * @since 1.1.0 R1
  */
 public class PlayerExpChangeEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -31,6 +33,7 @@ public class PlayerExpChangeEvent extends PlayerEvent {
      * Get the source that provided the experience.
      *
      * @return The source of the experience
+     * @since 1.11
      */
     @Nullable
     public Entity getSource() {

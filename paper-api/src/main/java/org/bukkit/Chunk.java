@@ -19,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
  * If the chunk is not yet fully generated and data is requested from the chunk,
  * then the chunk will only be generated as far as it needs to provide the
  * requested data.
+ *
+ * @since 1.0.0 R1
  */
 public interface Chunk extends PersistentDataHolder {
 
@@ -39,6 +41,7 @@ public interface Chunk extends PersistentDataHolder {
     // Paper start
     /**
      * @return The Chunks X and Z coordinates packed into a long
+     * @since 1.12.2
      */
     default long getChunkKey() {
         return getChunkKey(getX(), getZ());
@@ -47,6 +50,7 @@ public interface Chunk extends PersistentDataHolder {
     /**
      * @param loc Location to get chunk key
      * @return Location's chunk coordinates packed into a long
+     * @since 1.13.1
      */
     static long getChunkKey(@NotNull Location loc) {
         return getChunkKey((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4);
@@ -56,6 +60,7 @@ public interface Chunk extends PersistentDataHolder {
      * @param x X Coordinate
      * @param z Z Coordinate
      * @return Chunk coordinates packed into a long
+     * @since 1.13.1
      */
     static long getChunkKey(int x, int z) {
         return (long) x & 0xffffffffL | ((long) z & 0xffffffffL) << 32;
@@ -115,6 +120,7 @@ public interface Chunk extends PersistentDataHolder {
      *     raw biome temperature and rainfall
      * @param includeLightData Whether to include per-coordinate light emitted by blocks and sky light data
      * @return ChunkSnapshot
+     * @since 1.20.4
      */
     @NotNull
     ChunkSnapshot getChunkSnapshot(boolean includeMaxblocky, boolean includeBiome, boolean includeBiomeTempRain, boolean includeLightData);
@@ -124,6 +130,7 @@ public interface Chunk extends PersistentDataHolder {
      * Checks if entities in this chunk are loaded.
      *
      * @return True if entities are loaded.
+     * @since 1.17.1
      */
     boolean isEntitiesLoaded();
 
@@ -152,6 +159,7 @@ public interface Chunk extends PersistentDataHolder {
      *
      * @param useSnapshot Take snapshots or direct references
      * @return The tile entities.
+     * @since 1.13
      */
     @NotNull
     BlockState[] getTileEntities(boolean useSnapshot);
@@ -162,6 +170,7 @@ public interface Chunk extends PersistentDataHolder {
      * @param blockPredicate The predicate of blocks to return tile entities for
      * @param useSnapshot Take snapshots or direct references
      * @return The tile entities.
+     * @since 1.16.4
      */
     @NotNull
     Collection<BlockState> getTileEntities(java.util.function.@NotNull Predicate<? super Block> blockPredicate, boolean useSnapshot);
@@ -171,6 +180,7 @@ public interface Chunk extends PersistentDataHolder {
      * Checks if the chunk is fully generated.
      *
      * @return True if it is fully generated.
+     * @since 1.19.4
      */
     boolean isGenerated();
 
@@ -216,6 +226,7 @@ public interface Chunk extends PersistentDataHolder {
      * Checks if this chunk can spawn slimes without being a swamp biome.
      *
      * @return true if slimes are able to spawn in this chunk
+     * @since 1.11.2
      */
     boolean isSlimeChunk();
 
@@ -227,6 +238,7 @@ public interface Chunk extends PersistentDataHolder {
      *
      * @return force load status
      * @see World#isChunkForceLoaded(int, int)
+     * @since 1.13.1
      */
     boolean isForceLoaded();
 
@@ -238,6 +250,7 @@ public interface Chunk extends PersistentDataHolder {
      *
      * @param forced force load status
      * @see World#setChunkForceLoaded(int, int, boolean)
+     * @since 1.13.1
      */
     void setForceLoaded(boolean forced);
 
@@ -255,6 +268,7 @@ public interface Chunk extends PersistentDataHolder {
      * ticket already exists for the plugin
      * @throws IllegalStateException If the specified plugin is not enabled
      * @see World#addPluginChunkTicket(int, int, Plugin)
+     * @since 1.14.3
      */
     boolean addPluginChunkTicket(@NotNull Plugin plugin);
 
@@ -270,6 +284,7 @@ public interface Chunk extends PersistentDataHolder {
      * @return {@code true} if the plugin ticket was removed, {@code false} if
      * there is no plugin ticket for the chunk
      * @see World#removePluginChunkTicket(int, int, Plugin)
+     * @since 1.14.3
      */
     boolean removePluginChunkTicket(@NotNull Plugin plugin);
 
@@ -286,6 +301,7 @@ public interface Chunk extends PersistentDataHolder {
      * @return unmodifiable collection containing which plugins have tickets for
      * this chunk
      * @see World#getPluginChunkTickets(int, int)
+     * @since 1.14.3
      */
     @NotNull
     Collection<Plugin> getPluginChunkTickets();
@@ -297,6 +313,7 @@ public interface Chunk extends PersistentDataHolder {
      * spawning distance of this chunk.
      *
      * @return inhabited time
+     * @since 1.14.4
      */
     long getInhabitedTime();
 
@@ -304,6 +321,7 @@ public interface Chunk extends PersistentDataHolder {
      * Sets the amount of time in ticks that this chunk has been inhabited.
      *
      * @param ticks new inhabited time
+     * @since 1.14.4
      */
     void setInhabitedTime(long ticks);
 
@@ -312,6 +330,7 @@ public interface Chunk extends PersistentDataHolder {
      *
      * @param block block to test
      * @return if the block is contained within
+     * @since 1.14.4
      */
     boolean contains(@NotNull BlockData block);
 
@@ -320,6 +339,7 @@ public interface Chunk extends PersistentDataHolder {
      *
      * @param biome biome to test
      * @return if the biome is contained within
+     * @since 1.19.3
      */
     boolean contains(@NotNull Biome biome);
 
@@ -328,6 +348,7 @@ public interface Chunk extends PersistentDataHolder {
      * processed.
      *
      * @return the load level
+     * @since 1.19.4
      */
     @NotNull
     LoadLevel getLoadLevel();
@@ -337,6 +358,7 @@ public interface Chunk extends PersistentDataHolder {
      * If no structures are present an empty collection will be returned.
      *
      * @return a collection of placed structures in this chunk
+     * @since 1.20.4
      */
     @NotNull
     Collection<GeneratedStructure> getStructures();
@@ -348,6 +370,7 @@ public interface Chunk extends PersistentDataHolder {
      *
      * @param structure the structure to find
      * @return a collection of placed structures in this chunk
+     * @since 1.20.4
      */
     @NotNull
     Collection<GeneratedStructure> getStructures(@NotNull Structure structure);
@@ -359,6 +382,7 @@ public interface Chunk extends PersistentDataHolder {
      * is unloaded.
      *
      * @return collection of players who can see the chunk
+     * @since 1.20.6
      */
     @NotNull
     public Collection<Player> getPlayersSeeingChunk();

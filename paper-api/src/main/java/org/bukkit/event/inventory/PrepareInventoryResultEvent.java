@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when an item is put in a slot and the result is calculated.
  * @deprecated use {@link com.destroystokyo.paper.event.inventory.PrepareResultEvent}
+ * @since 1.19.3
  */
 @Deprecated @org.bukkit.Warning(false) // Paper
 public class PrepareInventoryResultEvent extends InventoryEvent {

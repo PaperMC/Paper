@@ -20,6 +20,8 @@ import org.jetbrains.annotations.NotNull;
  * chunk. The buffer zone may or may not be already populated.
  *
  * The coordinates are <b>absolute</b> from the world origin.
+ *
+ * @since 1.17.1
  */
 public interface LimitedRegion extends RegionAccessor {
 

@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents one of the configurations of a trial spawner.
+ *
+ * @since 1.21
  */
 @ApiStatus.Experimental
 public interface TrialSpawnerConfiguration extends BaseSpawner {

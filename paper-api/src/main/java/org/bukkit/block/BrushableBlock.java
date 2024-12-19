@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of suspicious sand or gravel.
+ *
+ * @since 1.20
  */
 public interface BrushableBlock extends Lootable, TileState {
 

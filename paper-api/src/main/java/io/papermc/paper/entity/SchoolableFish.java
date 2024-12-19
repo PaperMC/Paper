@@ -6,6 +6,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a fish that can school with other fish.
+ *
+ * @since 1.19.2
  */
 @NullMarked
 public interface SchoolableFish extends Fish {

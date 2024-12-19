@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a skull block.
+ *
+ * @since 1.4.6 R0.3
  */
 public interface Skull extends TileState {
 
@@ -51,6 +53,7 @@ public interface Skull extends TileState {
      * texture depending on skull type.
      *
      * @return owning player
+     * @since 1.9.4
      */
     @Nullable
     public OfflinePlayer getOwningPlayer();
@@ -60,6 +63,7 @@ public interface Skull extends TileState {
      * texture depending on skull type.
      *
      * @param player the owning player
+     * @since 1.9.4
      */
     public void setOwningPlayer(@NotNull OfflinePlayer player);
 
@@ -67,12 +71,14 @@ public interface Skull extends TileState {
     /**
      * Sets this skull to use the supplied Player Profile, which can include textures already prefilled.
      * @param profile The profile to set this Skull to use, may not be null
+     * @since 1.13
      */
     void setPlayerProfile(@NotNull com.destroystokyo.paper.profile.PlayerProfile profile);
 
     /**
      * If the skull has an owner, per {@link #hasOwner()}, return the owners {@link com.destroystokyo.paper.profile.PlayerProfile}
      * @return The profile of the owner, if set
+     * @since 1.13
      */
     @Nullable com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile();
     // Paper end
@@ -82,6 +88,7 @@ public interface Skull extends TileState {
      * may appear as the texture depending on skull type.
      *
      * @return the profile of the owning player
+     * @since 1.18.1
      */
     @Nullable
     @Deprecated // Paper
@@ -98,6 +105,7 @@ public interface Skull extends TileState {
      * @param profile the profile of the owning player
      * @throws IllegalArgumentException if the profile does not contain the
      * necessary information
+     * @since 1.18.1
      */
     @Deprecated // Paper
     void setOwnerProfile(@Nullable PlayerProfile profile);
@@ -109,6 +117,7 @@ public interface Skull extends TileState {
      * see {@link org.bukkit.Instrument}.
      *
      * @return the key of the sound, or null
+     * @since 1.19.3
      */
     @Nullable
     public NamespacedKey getNoteBlockSound();
@@ -120,6 +129,7 @@ public interface Skull extends TileState {
      * see {@link org.bukkit.Instrument}.
      *
      * @param noteBlockSound the key of the sound to be played, or null
+     * @since 1.19.3
      *
      */
     public void setNoteBlockSound(@Nullable NamespacedKey noteBlockSound);

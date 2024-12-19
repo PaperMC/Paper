@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
  * instantiation logic.
  * A bootstrap context may be used to access data or logic usually provided to {@link org.bukkit.plugin.Plugin} instances
  * like the plugin's configuration or logger during the plugins bootstrap.
+ *
+ * @since 1.19.4
  */
 @ApiStatus.Experimental
 @NullMarked
@@ -21,6 +23,7 @@ public interface BootstrapContext extends PluginProviderContext, LifecycleEventO
      * for lifecycle events allowed on the {@link BootstrapContext}.
      *
      * @return the lifecycle event manager
+     * @since 1.20.4
      */
     LifecycleEventManager<BootstrapContext> getLifecycleManager();
 }

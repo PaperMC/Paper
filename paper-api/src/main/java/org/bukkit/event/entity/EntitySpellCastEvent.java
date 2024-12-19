@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a {@link Spellcaster} casts a spell.
+ *
+ * @since 1.16.2
  */
 public class EntitySpellCastEvent extends EntityEvent implements Cancellable {
 

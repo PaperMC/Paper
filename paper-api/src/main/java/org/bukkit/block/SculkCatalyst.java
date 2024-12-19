@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a sculk catalyst.
+ *
+ * @since 1.19
  */
 public interface SculkCatalyst extends TileState {
 
@@ -22,6 +24,7 @@ public interface SculkCatalyst extends TileState {
      *
      * @param block which block to spawn the cursor in
      * @param charges how much charge to spawn.
+     * @since 1.20.1
      */
     void bloom(@NotNull Block block, int charges);
 
@@ -31,6 +34,7 @@ public interface SculkCatalyst extends TileState {
      *
      * @param position position to bloom at
      * @param charge charge to bloom with, normally the amount of experience dropped from the dead entity
+     * @since 1.20.1
      */
     void bloom(@org.jetbrains.annotations.NotNull io.papermc.paper.math.Position position, int charge);
     // Paper end - SculkCatalyst bloom API

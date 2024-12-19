@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player's experience cooldown changes.
+ *
+ * @since 1.19.4
  */
 public class PlayerExpCooldownChangeEvent extends PlayerEvent {
 

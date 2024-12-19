@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a suspicious stew that can have custom effects.
+ *
+ * @since 1.14.4
  */
 public interface SuspiciousStewMeta extends ItemMeta {
 
@@ -50,6 +52,7 @@ public interface SuspiciousStewMeta extends ItemMeta {
      * overwritten
      * @return true if the suspicious stew meta changed as a result of this call
      * as a result of this call
+     * @since 1.20.4
      */
     boolean addCustomEffect(@NotNull io.papermc.paper.potion.SuspiciousEffectEntry suspiciousEffectEntry, boolean overwrite);
     // Paper end - add overloads to use suspicious effect entry to mushroom cow and suspicious stew meta

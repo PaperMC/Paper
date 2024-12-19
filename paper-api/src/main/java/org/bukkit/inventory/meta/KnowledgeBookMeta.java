@@ -4,6 +4,9 @@ import java.util.List;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.12
+ */
 public interface KnowledgeBookMeta extends ItemMeta {
 
     /**

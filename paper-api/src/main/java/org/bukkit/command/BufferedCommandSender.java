@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * @deprecated Timings will be removed in the future
+ * @since 1.11.2
  */
 @Deprecated(forRemoval = true)
 public class BufferedCommandSender implements MessageCommandSender {

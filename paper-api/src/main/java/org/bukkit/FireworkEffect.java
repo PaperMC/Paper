@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a single firework effect.
+ *
+ * @since 1.4.6 R0.3
  */
 @SerializableAs("Firework")
 public final class FireworkEffect implements ConfigurationSerializable {

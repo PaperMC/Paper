@@ -8,6 +8,7 @@ import org.jspecify.annotations.NullMarked;
  * Base builder type for all component builders.
  *
  * @param <C> built component type
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

@@ -12,6 +12,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a world's gamerule is changed, either by command or by api.
+ *
+ * @since 1.16.4
  */
 @NullMarked
 public class WorldGameRuleChangeEvent extends WorldEvent implements Cancellable {

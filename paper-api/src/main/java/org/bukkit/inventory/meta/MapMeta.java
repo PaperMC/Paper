@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a map that can be scalable.
+ *
+ * @since 1.4.5 R1.0
  */
 public interface MapMeta extends ItemMeta {
 
@@ -16,6 +18,9 @@ public interface MapMeta extends ItemMeta {
      *
      * @return true if this has a map ID number.
      * @see #hasMapView()
+     */
+    /**
+     * @since 1.13
      */
     //@Deprecated(since = "1.13.2") // Paper
     boolean hasMapId();
@@ -30,6 +35,9 @@ public interface MapMeta extends ItemMeta {
      * @return the map ID that is set
      * @see #getMapView()
      */
+    /**
+     * @since 1.13
+     */
     // @Deprecated(since = "1.13.2") // Paper
     int getMapId();
 
@@ -43,6 +51,7 @@ public interface MapMeta extends ItemMeta {
      * behavior if that integer is not a valid map (the current implementation
      * for example will generate a new map with a different ID). The xxxMapView
      * family of methods should be used instead.
+     * @since 1.13
      */
     @Deprecated(since = "1.13.2")
     void setMapId(int id);
@@ -51,6 +60,7 @@ public interface MapMeta extends ItemMeta {
      * Checks for existence of an associated map.
      *
      * @return true if this item has an associated map
+     * @since 1.13.2
      */
     boolean hasMapView();
 
@@ -63,6 +73,7 @@ public interface MapMeta extends ItemMeta {
      *
      * @return the map view, or null if the item hasMapView(), but this map does
      * not exist on the server
+     * @since 1.13.2
      */
     @Nullable
     MapView getMapView();
@@ -76,6 +87,7 @@ public interface MapMeta extends ItemMeta {
      * the item is first used.
      *
      * @param map the map to set
+     * @since 1.13.2
      */
     void setMapView(@UndefinedNullability("implementation defined") MapView map);
 
@@ -99,6 +111,7 @@ public interface MapMeta extends ItemMeta {
      * @return true if this has a location name
      * @deprecated This method does not have the expected effect and is
      * actually an alias for {@link ItemMeta#hasLocalizedName()}.
+     * @since 1.11
      */
     @Deprecated(since = "1.19.4")
     boolean hasLocationName();
@@ -112,6 +125,7 @@ public interface MapMeta extends ItemMeta {
      * @return the location name that is set
      * @deprecated This method does not have the expected effect and is
      * actually an alias for {@link ItemMeta#getLocalizedName()}.
+     * @since 1.11
      */
     @Deprecated(since = "1.19.4")
     @Nullable
@@ -123,6 +137,7 @@ public interface MapMeta extends ItemMeta {
      * @param name the name to set
      * @deprecated This method does not have the expected effect and is
      * actually an alias for {@link ItemMeta#setLocalizedName(String)}.
+     * @since 1.11
      */
     @Deprecated(since = "1.19.4")
     void setLocationName(@Nullable String name);
@@ -131,6 +146,7 @@ public interface MapMeta extends ItemMeta {
      * Checks for existence of a map color.
      *
      * @return true if this has a custom map color
+     * @since 1.11
      */
     boolean hasColor();
 
@@ -142,6 +158,7 @@ public interface MapMeta extends ItemMeta {
      * calling this method.
      *
      * @return the map color that is set
+     * @since 1.11
      */
     @Nullable
     Color getColor();
@@ -151,6 +168,7 @@ public interface MapMeta extends ItemMeta {
      * in an inventory slot.
      *
      * @param color the color to set
+     * @since 1.11
      */
     void setColor(@Nullable Color color);
 

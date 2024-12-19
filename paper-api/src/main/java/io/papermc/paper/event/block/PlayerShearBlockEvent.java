@@ -18,6 +18,8 @@ import org.jspecify.annotations.NullMarked;
  * player uses the sheer item on a block to garner drops from said block and/or change its state.
  * <p>
  * Examples include shearing a pumpkin to turn it into a carved pumpkin or shearing a beehive to get honeycomb.
+ *
+ * @since 1.16.4
  */
 @NullMarked
 public class PlayerShearBlockEvent extends PlayerEvent implements Cancellable {

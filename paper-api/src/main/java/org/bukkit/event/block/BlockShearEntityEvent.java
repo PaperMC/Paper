@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Event fired when a dispenser shears a nearby sheep.
+ *
+ * @since 1.14
  */
 public class BlockShearEntityEvent extends BlockEvent implements Cancellable {
 
@@ -73,6 +75,7 @@ public class BlockShearEntityEvent extends BlockEvent implements Cancellable {
      *
      * @return the shearing drops
      * @see #setDrops(java.util.List)
+     * @since 1.20.4
      */
     public java.util.@NotNull @org.jetbrains.annotations.Unmodifiable List<ItemStack> getDrops() {
         return java.util.Collections.unmodifiableList(this.drops);
@@ -82,6 +85,7 @@ public class BlockShearEntityEvent extends BlockEvent implements Cancellable {
      * Sets the drops for the shearing.
      *
      * @param drops the shear drops
+     * @since 1.20.4
      */
     public void setDrops(final java.util.@NotNull List<org.bukkit.inventory.ItemStack> drops) {
         this.drops = java.util.List.copyOf(drops);

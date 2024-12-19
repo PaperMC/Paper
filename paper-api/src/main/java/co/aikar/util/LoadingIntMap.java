@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
  * Do not wrap the backing map with Collections.synchronizedMap.
  *
  * @param <V> Value
+ * @since 1.9.4
  */
 @Deprecated(forRemoval = true)
 public class LoadingIntMap<V> extends Int2ObjectOpenHashMap<V> {

@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
  * Prompts are chained together into a directed graph that represents the
  * conversation flow. To halt a conversation, END_OF_CONVERSATION is returned
  * in liu of another Prompt object.
+ *
+ * @since 1.1.0 R5
  */
 public interface Prompt extends Cloneable {
 

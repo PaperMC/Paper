@@ -8,6 +8,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds if an item is enchantable, allowing for enchantments of the type to be seen in an enchanting table.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#ENCHANTABLE
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

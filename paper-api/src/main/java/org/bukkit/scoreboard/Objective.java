@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
  * An objective on a scoreboard that can show scores specific to entries. This
  * objective is only relevant to the display of the associated {@link
  * #getScoreboard() scoreboard}.
+ *
+ * @since 1.5.1 R0.2
  */
 public interface Objective {
 
@@ -26,6 +28,7 @@ public interface Objective {
      *
      * @return this objective's display name
      * @throws IllegalStateException if this objective has been unregistered
+     * @since 1.16.5
      */
     net.kyori.adventure.text.@NotNull Component displayName();
     /**
@@ -36,6 +39,7 @@ public interface Objective {
      * @throws IllegalArgumentException if displayName is null
      * @throws IllegalArgumentException if displayName is longer than 128
      *     characters.
+     * @since 1.16.5
      */
     void displayName(net.kyori.adventure.text.@Nullable Component displayName);
     // Paper end - Adventure
@@ -77,6 +81,7 @@ public interface Objective {
      *
      * @return this objective's criteria
      * @throws IllegalStateException if this objective has been unregistered
+     * @since 1.19.2
      */
     @NotNull
     Criteria getTrackedCriteria();
@@ -129,6 +134,7 @@ public interface Objective {
      *
      * @param renderType new render type
      * @throws IllegalStateException if this objective has been unregistered
+     * @since 1.13.2
      */
     void setRenderType(@NotNull RenderType renderType);
 
@@ -137,6 +143,7 @@ public interface Objective {
      *
      * @return the render type
      * @throws IllegalStateException if this objective has been unregistered
+     * @since 1.13.2
      */
     @NotNull
     RenderType getRenderType();
@@ -160,6 +167,7 @@ public interface Objective {
      * @return Score tracking the Objective and entry specified
      * @throws IllegalStateException if this objective has been unregistered
      * @throws IllegalArgumentException if entry is longer than 32767 characters.
+     * @since 1.7.10
      */
     @NotNull
     Score getScore(@NotNull String entry);
@@ -172,6 +180,7 @@ public interface Objective {
      * @return Score tracking the Objective and entity specified
      * @throws IllegalArgumentException if entity is null
      * @throws IllegalStateException if this objective has been unregistered
+     * @since 1.18.1
      */
     @NotNull Score getScoreFor(@NotNull org.bukkit.entity.Entity entity) throws IllegalArgumentException, IllegalStateException;
     // Paper end - improve scoreboard entries
@@ -183,6 +192,7 @@ public interface Objective {
      *
      * @return true if auto updating
      * @throws IllegalStateException if this objective has been unregistered
+     * @since 1.20.4
      */
     boolean willAutoUpdateDisplay();
 
@@ -192,6 +202,7 @@ public interface Objective {
      *
      * @param autoUpdateDisplay true to auto update
      * @throws IllegalStateException if this objective has been unregistered
+     * @since 1.20.4
      */
     void setAutoUpdateDisplay(boolean autoUpdateDisplay);
     // Paper end - add more score API
@@ -202,6 +213,7 @@ public interface Objective {
      *
      * @return this objective's number format, or null if the client default is used
      * @throws IllegalStateException if this objective has been unregistered
+     * @since 1.20.4
      */
     @Nullable io.papermc.paper.scoreboard.numbers.NumberFormat numberFormat();
 
@@ -210,6 +222,7 @@ public interface Objective {
      *
      * @param format the number format to set, pass null to reset format to default
      * @throws IllegalStateException if this objective has been unregistered
+     * @since 1.20.4
      */
     void numberFormat(@Nullable io.papermc.paper.scoreboard.numbers.NumberFormat format);
     // Paper end - number format api

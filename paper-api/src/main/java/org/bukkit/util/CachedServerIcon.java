@@ -12,12 +12,19 @@ import org.jetbrains.annotations.Nullable;
  * @see Server#loadServerIcon(java.awt.image.BufferedImage)
  * @see Server#loadServerIcon(java.io.File)
  * @see ServerListPingEvent#setServerIcon(CachedServerIcon)
+ * @since 1.7.2 R0.2
  */
 public interface CachedServerIcon {
 
+    /**
+     * @since 1.9.4
+     */
     @Nullable
     public String getData(); // Paper
 
+    /**
+     * @since 1.12.2
+     */
     // Paper start
     default boolean isEmpty() {
         return getData() == null;

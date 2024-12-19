@@ -7,6 +7,9 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.9.4
+ */
 @NullMarked
 public class LootableInventoryReplenishEvent extends PlayerEvent implements Cancellable {
 

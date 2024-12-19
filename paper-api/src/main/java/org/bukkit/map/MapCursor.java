@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a cursor on a map.
+ *
+ * @since 1.0.0 R1
  */
 public final class MapCursor {
     private byte x, y;
@@ -243,6 +245,7 @@ public final class MapCursor {
      * Gets the caption on this cursor.
      *
      * @return caption
+     * @since 1.16.5
      */
     public net.kyori.adventure.text.@Nullable Component caption() {
         return this.caption;
@@ -251,6 +254,7 @@ public final class MapCursor {
      * Sets the caption on this cursor.
      *
      * @param caption new caption
+     * @since 1.16.5
      */
     public void caption(net.kyori.adventure.text.@Nullable Component caption) {
         this.caption = caption;
@@ -261,6 +265,7 @@ public final class MapCursor {
      *
      * @return caption
      * @deprecated in favour of {@link #caption()}
+     * @since 1.13
      */
     @Nullable
     @Deprecated // Paper
@@ -273,6 +278,7 @@ public final class MapCursor {
      *
      * @param caption new caption
      * @deprecated in favour of {@link #caption(net.kyori.adventure.text.Component)}
+     * @since 1.13
      */
     @Deprecated // Paper
     public void setCaption(@Nullable String caption) {
@@ -284,6 +290,8 @@ public final class MapCursor {
      * available by resource packs - the value is used by the client as an
      * index in the file './assets/minecraft/textures/map/map_icons.png' from minecraft.jar or from a
      * resource pack.
+     *
+     * @since 1.0.0 R1
      */
     public interface Type extends OldEnum<Type>, Keyed {
 

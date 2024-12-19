@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a cooking recipe.
  * @param <T> type of recipe
+ * @since 1.14
  */
 public abstract class CookingRecipe<T extends CookingRecipe> implements Recipe, Keyed {
     private final NamespacedKey key;
@@ -181,6 +182,7 @@ public abstract class CookingRecipe<T extends CookingRecipe> implements Recipe, 
      * Defaults to {@link CookingBookCategory#MISC} if not set.
      *
      * @return recipe book category
+     * @since 1.19.3
      */
     @NotNull
     public CookingBookCategory getCategory() {
@@ -193,6 +195,7 @@ public abstract class CookingRecipe<T extends CookingRecipe> implements Recipe, 
      * Defaults to {@link CookingBookCategory#MISC} if not set.
      *
      * @param category recipe book category
+     * @since 1.19.3
      */
     public void setCategory(@NotNull CookingBookCategory category) {
         Preconditions.checkArgument(category != null, "category cannot be null");

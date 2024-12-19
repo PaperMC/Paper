@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Used for plugin enable and disable events
+ *
+ * @since 1.0.0 R1
  */
 public abstract class PluginEvent extends ServerEvent {
     private final Plugin plugin;

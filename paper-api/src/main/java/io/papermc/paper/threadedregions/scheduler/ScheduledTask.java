@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a task scheduled to a scheduler.
+ *
+ * @since 1.20.1
  */
 public interface ScheduledTask {
 

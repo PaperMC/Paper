@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
  * This provides all the conversion functions for MetadataValue so that
  * writing an implementation of MetadataValue is as simple as implementing
  * value() and invalidate().
+ *
+ * @since 1.5.1 R0.2
  */
 public abstract class MetadataValueAdapter implements MetadataValue {
     protected final WeakReference<Plugin> owningPlugin;

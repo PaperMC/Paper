@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when the brewing of the contents inside the Brewing Stand is
  * complete.
+ *
+ * @since 1.1.0 R5
  */
 public class BrewEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -44,6 +46,7 @@ public class BrewEvent extends BlockEvent implements Cancellable {
      * Gets the remaining fuel level.
      *
      * @return the remaining fuel
+     * @since 1.11
      */
     public int getFuelLevel() {
         return fuelLevel;
@@ -58,6 +61,7 @@ public class BrewEvent extends BlockEvent implements Cancellable {
      * remaining items will be set to air.
      *
      * @return List of {@link ItemStack} resulting for this operation
+     * @since 1.17.1
      */
     @NotNull
     public List<ItemStack> getResults() {

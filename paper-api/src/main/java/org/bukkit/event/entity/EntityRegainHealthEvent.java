@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Stores data for health-regain events
+ *
+ * @since 1.0.0 R1
  */
 public class EntityRegainHealthEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -33,6 +35,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      * Is this event a result of the fast regeneration mechanic
      *
      * @return Whether the event is the result of a fast regeneration mechanic
+     * @since 1.9.4
      */
     public boolean isFastRegen() {
         return isFastRegen;
@@ -52,6 +55,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      * Sets the amount of regained health
      *
      * @param amount the amount of health the entity will regain
+     * @since 1.6.1 R0.1
      */
     public void setAmount(double amount) {
         this.amount = amount;
@@ -78,12 +82,18 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
         return regainReason;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

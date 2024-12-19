@@ -6,12 +6,16 @@ import org.bukkit.block.Block;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.14
+ */
 public interface Raider extends Monster {
 
     /**
      * Set the {@link Raid} that this raider is participating in.
      *
      * @param raid the raid to set
+     * @since 1.20.1
      */
     void setRaid(@Nullable Raid raid);
 
@@ -19,6 +23,7 @@ public interface Raider extends Monster {
      * Get the {@link Raid} that this raider is participating in, if any.
      *
      * @return the raid, or null if not participating in a raid
+     * @since 1.20.1
      */
     @Nullable
     Raid getRaid();
@@ -27,6 +32,7 @@ public interface Raider extends Monster {
      * Get the raid wave that this raider spawned as part of.
      *
      * @return the raid wave, or 0 if not participating in a raid
+     * @since 1.20.1
      */
     int getWave();
 
@@ -34,6 +40,7 @@ public interface Raider extends Monster {
      * Set the raid wave that this raider was spawned as part of.
      *
      * @param wave the raid wave to set. Must be >= 0
+     * @since 1.20.1
      */
     void setWave(int wave);
 
@@ -70,6 +77,7 @@ public interface Raider extends Monster {
      * Gets whether this mob can join an active raid.
      *
      * @return CanJoinRaid status
+     * @since 1.15.1
      */
     boolean isCanJoinRaid();
 
@@ -77,6 +85,7 @@ public interface Raider extends Monster {
      * Sets whether this mob can join an active raid.
      *
      * @param join CanJoinRaid status
+     * @since 1.15.1
      */
     void setCanJoinRaid(boolean join);
 
@@ -90,6 +99,7 @@ public interface Raider extends Monster {
      * expelled from the raid.
      *
      * @return the ticks outside of a raid
+     * @since 1.20.1
      */
     int getTicksOutsideRaid();
 
@@ -103,6 +113,7 @@ public interface Raider extends Monster {
      * expelled from the raid.
      *
      * @param ticks the ticks outside of a raid
+     * @since 1.20.1
      */
     void setTicksOutsideRaid(int ticks);
 
@@ -110,6 +121,7 @@ public interface Raider extends Monster {
      * Check whether or not this raider is celebrating a raid victory.
      *
      * @return true if celebrating, false otherwise
+     * @since 1.18.2
      */
     boolean isCelebrating();
 
@@ -117,6 +129,7 @@ public interface Raider extends Monster {
      * Set whether or not this mob is celebrating a raid victory.
      *
      * @param celebrating whether or not to celebrate
+     * @since 1.18.2
      */
     void setCelebrating(boolean celebrating);
 
@@ -124,6 +137,7 @@ public interface Raider extends Monster {
      * Get the {@link Sound} this entity will play when celebrating.
      *
      * @return the celebration sound
+     * @since 1.19.2
      */
     @NotNull
     Sound getCelebrationSound();

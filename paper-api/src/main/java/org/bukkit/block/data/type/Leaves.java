@@ -9,6 +9,8 @@ import org.bukkit.block.data.Waterlogged;
  * 'distance' denotes how far the block is from a tree and is used in
  * conjunction with 'persistent' flag to determine if the leaves will decay or
  * not.
+ *
+ * @since 1.13
  */
 public interface Leaves extends Waterlogged {
 
@@ -45,6 +47,7 @@ public interface Leaves extends Waterlogged {
      * Gets the maximum allowed value of the 'distance' property.
      *
      * @return the maximum 'distance' value
+     * @since 1.18.1
      */
     int getMaximumDistance();
 
@@ -52,6 +55,7 @@ public interface Leaves extends Waterlogged {
      * Gets the minimum allowed value of the 'distance' property.
      *
      * @return the minimum 'distance' value
+     * @since 1.18.1
      */
     int getMinimumDistance();
     // Paper end

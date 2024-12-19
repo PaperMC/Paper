@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a chiseled bookshelf.
+ *
+ * @since 1.19.3
  */
 public interface ChiseledBookshelf extends io.papermc.paper.block.TileStateInventoryHolder { // Paper - TileStateInventoryHolder
 
@@ -42,6 +44,7 @@ public interface ChiseledBookshelf extends io.papermc.paper.block.TileStateInven
      *
      * @param position a vector relative to this block
      * @return the slot under the given vector or -1
+     * @since 1.20.1
      */
     int getSlot(@NotNull Vector position);
 }

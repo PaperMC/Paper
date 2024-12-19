@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is fired when the player is almost about to enter the bed.
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
 
@@ -78,6 +80,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      * This describes the default outcome of this event.
      *
      * @return the bed enter result representing the default outcome of this event
+     * @since 1.13.2
      */
     @NotNull
     public BedEnterResult getBedEnterResult() {
@@ -92,6 +95,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
      *
      * @return the action to take with the interacted bed
      * @see #setUseBed(org.bukkit.event.Event.Result)
+     * @since 1.13.2
      */
     @NotNull
     public Result useBed() {
@@ -158,12 +162,18 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
         return bed;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

@@ -20,6 +20,7 @@ import org.jspecify.annotations.NullMarked;
  * Adapted from Velocity's ProxyQueryEvent
  *
  * @author Mark Vainomaa
+ * @since 1.13.2
  */
 @NullMarked
 public final class GS4QueryEvent extends Event {

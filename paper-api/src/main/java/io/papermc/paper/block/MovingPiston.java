@@ -5,6 +5,9 @@ import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.19.2
+ */
 @NullMarked
 public interface MovingPiston extends TileState {
 

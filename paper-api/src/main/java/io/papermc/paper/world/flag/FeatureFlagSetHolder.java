@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Implemented by types that hold {@link FeatureFlag FeatureFlags} like
  * {@link org.bukkit.generator.WorldInfo} and {@link org.bukkit.RegionAccessor}.
+ *
+ * @since 1.21.1
  */
 @NullMarked
 @ApiStatus.NonExtendable

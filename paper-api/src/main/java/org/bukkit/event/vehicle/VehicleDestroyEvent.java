@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
  * Raised when a vehicle is destroyed, which could be caused by either a
  * player or the environment. This is not raised if the boat is simply
  * 'removed' due to other means.
+ *
+ * @since 1.0.0 R1
  */
 public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -42,12 +44,18 @@ public class VehicleDestroyEvent extends VehicleEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

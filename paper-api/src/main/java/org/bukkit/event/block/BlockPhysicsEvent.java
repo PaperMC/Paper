@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
  * updates that cause other blocks to change their state may not result in an
  * event for each of those blocks (usually adjacent). If you are concerned about
  * monitoring these changes then you should check adjacent blocks yourself.
+ *
+ * @since 1.0.0 R1
  */
 public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -55,6 +57,7 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
      * Note: This will default to block if not set.
      *
      * @return The source block
+     * @since 1.12.2
      */
     @NotNull
     public Block getSourceBlock() {
@@ -78,6 +81,7 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
      * This is the BlockData of {@link #getBlock()} at the time of the event.
      *
      * @return Changed block's BlockData
+     * @since 1.17.1
      */
     @NotNull
     public BlockData getChangedBlockData() {
@@ -95,12 +99,18 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

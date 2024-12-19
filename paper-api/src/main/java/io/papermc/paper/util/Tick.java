@@ -14,6 +14,7 @@ import org.jspecify.annotations.NullMarked;
  * took, rather it is used for simple conversion between times and ticks.
  *
  * @see #tick()
+ * @since 1.19.2
  */
 @NullMarked
 public final class Tick implements TemporalUnit {

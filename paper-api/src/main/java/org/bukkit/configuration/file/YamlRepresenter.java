@@ -10,6 +10,9 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.representer.Representer;
 
+/**
+ * @since 1.1.0 R1
+ */
 public class YamlRepresenter extends Representer {
 
     /**

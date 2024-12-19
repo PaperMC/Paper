@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a smithing trim recipe.
+ *
+ * @since 1.19.4
  */
 public class SmithingTrimRecipe extends SmithingRecipe implements ComplexRecipe {
 

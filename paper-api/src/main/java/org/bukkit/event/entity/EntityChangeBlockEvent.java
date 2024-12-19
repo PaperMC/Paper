@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when any Entity changes a block and a more specific event is not available.
+ *
+ * @since 1.1.0 R1
  */
 public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -58,6 +60,7 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
      * Gets the data for the block that would be changed into
      *
      * @return the data for the block that would be changed into
+     * @since 1.13
      */
     @NotNull
     public BlockData getBlockData() {

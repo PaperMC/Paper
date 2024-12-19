@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @see SimplexNoiseGenerator "Improved" and faster version with slightly
  *     different results
+ * @since 1.0.0 R1
  */
 public class PerlinNoiseGenerator extends NoiseGenerator {
     protected static final int[][] grad3 = {{1, 1, 0}, {-1, 1, 0}, {1, -1, 0}, {-1, -1, 0},

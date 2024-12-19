@@ -25,6 +25,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * If a Block Break event is cancelled, the block will not break and
  * experience will not drop.
+ *
+ * @since 1.0.0 R1
  */
 public class BlockBreakEvent extends BlockExpEvent implements Cancellable {
     private final Player player;
@@ -56,6 +58,7 @@ public class BlockBreakEvent extends BlockExpEvent implements Cancellable {
      * called after this event.
      *
      * @param dropItems Whether or not the block will attempt to drop items
+     * @since 1.12
      */
     public void setDropItems(boolean dropItems) {
         this.dropItems = dropItems;
@@ -68,6 +71,7 @@ public class BlockBreakEvent extends BlockExpEvent implements Cancellable {
      * called after this event.
      *
      * @return Whether or not the block will attempt to drop items
+     * @since 1.12
      */
     public boolean isDropItems() {
         return this.dropItems;

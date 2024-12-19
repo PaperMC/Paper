@@ -5,6 +5,8 @@ import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Represents a captured state of a crafter.
+ *
+ * @since 1.20.4
  */
 public interface Crafter extends Container, com.destroystokyo.paper.loottable.LootableBlockInventory { // Paper - LootTable API
 

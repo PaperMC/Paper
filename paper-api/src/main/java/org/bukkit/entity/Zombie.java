@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a Zombie.
+ *
+ * @since 1.0.0 R1
  */
 public interface Zombie extends Monster, Ageable {
 
@@ -13,6 +15,7 @@ public interface Zombie extends Monster, Ageable {
      *
      * @return Whether the zombie is a baby
      * @deprecated see {@link Ageable#isAdult()}
+     * @since 1.4.5 R1.0
      */
     @Deprecated(since = "1.16.2")
     public boolean isBaby();
@@ -22,6 +25,7 @@ public interface Zombie extends Monster, Ageable {
      *
      * @param flag Whether the zombie is a baby
      * @deprecated see {@link Ageable#setBaby()} and {@link Ageable#setAdult()}
+     * @since 1.4.5 R1.0
      */
     @Deprecated(since = "1.16.2")
     public void setBaby(boolean flag);
@@ -31,6 +35,7 @@ public interface Zombie extends Monster, Ageable {
      *
      * @return Whether the zombie is a villager
      * @deprecated check if instanceof {@link ZombieVillager}.
+     * @since 1.4.5 R1.0
      */
     @Deprecated(since = "1.10.2")
     public boolean isVillager();
@@ -38,6 +43,7 @@ public interface Zombie extends Monster, Ageable {
     /**
      * @param flag flag
      * @deprecated must spawn {@link ZombieVillager}.
+     * @since 1.4.5 R1.0
      */
     @Deprecated(since = "1.9")
     @Contract("_ -> fail")
@@ -54,6 +60,7 @@ public interface Zombie extends Monster, Ageable {
     /**
      * @return profession
      * @see ZombieVillager#getVillagerProfession()
+     * @since 1.9.4
      */
     @Deprecated(since = "1.10.2")
     @Nullable
@@ -65,6 +72,7 @@ public interface Zombie extends Monster, Ageable {
      * result of being underwater.
      *
      * @return conversion status
+     * @since 1.13.2
      */
     boolean isConverting();
 
@@ -76,6 +84,7 @@ public interface Zombie extends Monster, Ageable {
      *
      * @return conversion time
      * @throws IllegalStateException if {@link #isConverting()} is false.
+     * @since 1.13.2
      */
     int getConversionTime();
 
@@ -88,6 +97,7 @@ public interface Zombie extends Monster, Ageable {
      * entity.
      *
      * @param time new conversion time
+     * @since 1.13.2
      */
     void setConversionTime(int time);
 
@@ -95,6 +105,7 @@ public interface Zombie extends Monster, Ageable {
      * Gets whether this zombie can break doors
      *
      * @return Whether this zombie can break doors
+     * @since 1.16.4
      */
     boolean canBreakDoors();
 
@@ -107,6 +118,7 @@ public interface Zombie extends Monster, Ageable {
      * the entity is currently breaking a door.
      *
      * @param flag Whether this zombie can break doors
+     * @since 1.16.4
      */
     void setCanBreakDoors(boolean flag);
 
@@ -115,6 +127,7 @@ public interface Zombie extends Monster, Ageable {
      * Check if zombie is drowning
      *
      * @return True if zombie conversion process has begun
+     * @since 1.13.2
      */
     boolean isDrowning();
 
@@ -124,12 +137,15 @@ public interface Zombie extends Monster, Ageable {
      * @param drownedConversionTime Amount of time until zombie converts from drowning
      *
      * @deprecated See {@link #setConversionTime(int)}
+     * @since 1.13.2
      */
     @Deprecated
     void startDrowning(int drownedConversionTime);
 
     /**
      * Stop a zombie from starting the drowning conversion process
+     *
+     * @since 1.13.2
      */
     void stopDrowning();
 
@@ -138,6 +154,7 @@ public interface Zombie extends Monster, Ageable {
      *
      * @param raised True to raise arms
      * @deprecated use {{@link #setAggressive(boolean)}}
+     * @since 1.13.2
      */
     @Deprecated
     void setArmsRaised(boolean raised);
@@ -147,6 +164,7 @@ public interface Zombie extends Monster, Ageable {
      *
      * @return True if arms are raised
      * @deprecated use {@link #isAggressive()}
+     * @since 1.13.2
      */
     @Deprecated
     boolean isArmsRaised();
@@ -155,6 +173,7 @@ public interface Zombie extends Monster, Ageable {
      * Check if this zombie will burn in the sunlight
      *
      * @return True if zombie will burn in sunlight
+     * @since 1.13.2
      */
     boolean shouldBurnInDay();
 
@@ -162,6 +181,7 @@ public interface Zombie extends Monster, Ageable {
      * Set if this zombie should burn in the sunlight
      *
      * @param shouldBurnInDay True to burn in sunlight
+     * @since 1.13.2
      */
     void setShouldBurnInDay(boolean shouldBurnInDay);
 
@@ -173,6 +193,7 @@ public interface Zombie extends Monster, Ageable {
      *
      * @return true if entity supports breaking doors
      * @deprecated Since 1.21.2 all zombie types can break doors if instructed as MC-137053 was fixed.
+     * @since 1.17.1
      */
     @Deprecated(since = "1.21.2", forRemoval = true)
     boolean supportsBreakingDoors();

@@ -10,6 +10,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * @since 1.16.5
+ */
 @NullMarked
 public class PlayerBedFailEnterEvent extends PlayerEvent implements Cancellable {
 

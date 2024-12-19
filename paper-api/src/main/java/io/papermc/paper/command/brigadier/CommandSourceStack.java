@@ -18,6 +18,8 @@ import org.jspecify.annotations.Nullable;
  * instance of {@link CommandSender} in cases where the server either doesn't
  * exist yet, or no specific sender is available. Methods on such a {@link CommandSender}
  * will either have no effect or throw an {@link UnsupportedOperationException}.</p>
+ *
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @NullMarked

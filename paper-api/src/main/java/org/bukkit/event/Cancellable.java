@@ -2,6 +2,8 @@ package org.bukkit.event;
 
 /**
  * A type characterizing events that may be cancelled by a plugin or the server.
+ *
+ * @since 1.0.0 R1
  */
 public interface Cancellable {
 

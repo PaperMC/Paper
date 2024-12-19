@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * 'instrument' is the type of sound made when this note block is activated.
  * <br>
  * 'note' is the specified tuned pitch that the instrument will be played in.
+ *
+ * @since 1.13
  */
 public interface NoteBlock extends Powerable {
 

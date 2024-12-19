@@ -36,6 +36,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * An implementation will handle the creation and application for ItemMeta.
  * This class should not be implemented by a plugin in a live environment.
+ *
+ * @since 1.4.5 R1.0
  */
 public interface ItemMeta extends Cloneable, ConfigurationSerializable, PersistentDataHolder {
 
@@ -44,6 +46,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Checks for existence of a custom name.
      *
      * @return true if this has a custom name
+     * @since 1.21.4
      */
     boolean hasCustomName();
 
@@ -53,6 +56,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * <p>Plugins should check that {@link #hasCustomName()} returns {@code true} before calling this method.</p>
      *
      * @return the custom name
+     * @since 1.21.4
      */
     net.kyori.adventure.text.@Nullable Component customName();
 
@@ -60,6 +64,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the custom name.
      *
      * @param customName the custom name to set
+     * @since 1.21.4
      */
     void customName(final net.kyori.adventure.text.@Nullable Component customName);
 
@@ -81,6 +86,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @apiNote This method is obsolete, use {@link #customName()} instead.
      * @return the display name
+     * @since 1.16.5
      */
     @ApiStatus.Obsolete(since = "1.21.4")
     default net.kyori.adventure.text.@Nullable Component displayName() {
@@ -92,6 +98,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param displayName the display name to set
      * @apiNote This method is obsolete, use {@link #customName(Component)} instead.
+     * @since 1.16.5
      */
     @ApiStatus.Obsolete(since = "1.21.4")
     default void displayName(final net.kyori.adventure.text.@Nullable Component displayName) {
@@ -121,6 +128,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return the display name that is set
      * @deprecated use {@link #displayName()}
+     * @since 1.16.1
      */
     @NotNull
     @Deprecated
@@ -152,6 +160,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * anvil, is not styled with italics, and does not show labels.
      *
      * @return true if this has an item name
+     * @since 1.20.6
      */
     boolean hasItemName();
 
@@ -167,6 +176,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return the item name that is set
      * @see #hasItemName()
+     * @since 1.20.6
      */
     @org.jetbrains.annotations.NotNull
     Component itemName();
@@ -178,6 +188,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * anvil, is not styled with italics, and does not show labels.
      *
      * @param name the name to set, null to remove it
+     * @since 1.20.6
      */
     void itemName(@Nullable final Component name);
     // Paper end
@@ -192,6 +203,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return the item name that is set
      * @deprecated in favour of {@link #itemName()}
+     * @since 1.20.6
      */
     @Deprecated // Paper
     @NotNull
@@ -205,6 +217,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param name the name to set
      * @deprecated in favour of {@link #itemName(Component)}
+     * @since 1.20.6
      */
     @Deprecated // Paper
     void setItemName(@Nullable String name);
@@ -215,6 +228,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @deprecated Use {@link ItemMeta#displayName()} and check if it is instanceof a {@link net.kyori.adventure.text.TranslatableComponent}.
      * @return true if this has a localized name
      * @deprecated meta no longer exists
+     * @since 1.11.2
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     boolean hasLocalizedName();
@@ -228,6 +242,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @deprecated Use {@link ItemMeta#displayName()} and cast it to a {@link net.kyori.adventure.text.TranslatableComponent}. No longer used by the client.
      * @return the localized name that is set
      * @deprecated meta no longer exists
+     * @since 1.11.2
      */
     @NotNull
     @Deprecated(since = "1.20.5", forRemoval = true)
@@ -239,6 +254,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @deprecated Use {@link ItemMeta#displayName(Component)} with a {@link net.kyori.adventure.text.TranslatableComponent}. No longer used by the client.
      * @param name the name to set
      * @deprecated meta no longer exists
+     * @since 1.11.2
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     void setLocalizedName(@Nullable String name);
@@ -257,6 +273,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * <p>Plugins should check that {@link #hasLore()} returns <code>true</code> before calling this method.</p>
      *
      * @return the lore
+     * @since 1.16.5
      */
     @Nullable List<net.kyori.adventure.text.Component> lore();
 
@@ -264,6 +281,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the lore.
      *
      * @param lore the lore to set
+     * @since 1.16.5
      */
     void lore(final @Nullable List<? extends net.kyori.adventure.text.Component> lore);
     // Paper end
@@ -289,6 +307,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return a list of lore that is set
      * @deprecated use {@link #lore()}
+     * @since 1.16.1
      */
     @Nullable
     @Deprecated
@@ -310,6 +329,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param lore the lore that will be set
      * @deprecated use {@link #lore(List)}
+     * @since 1.16.1
      */
     @Deprecated
     void setLoreComponents(@Nullable List<net.md_5.bungee.api.chat.BaseComponent[]> lore);
@@ -321,6 +341,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * custom item model.
      *
      * @return true if this has custom model data
+     * @since 1.14
      */
     boolean hasCustomModelData();
 
@@ -334,6 +355,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * before calling this method.
      *
      * @return the custom model data that is set
+     * @since 1.14
      */
     int getCustomModelData();
 
@@ -348,6 +370,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * the changes.
      *
      * @return component
+     * @since 1.21.4
      */
     @NotNull
     CustomModelDataComponent getCustomModelDataComponent();
@@ -359,6 +382,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * custom item model.
      *
      * @param data the data to set, or null to clear
+     * @since 1.14
      */
     void setCustomModelData(@Nullable Integer data);
 
@@ -366,6 +390,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the custom model data component.
      *
      * @param customModelData new component
+     * @since 1.21.4
      */
     void setCustomModelDataComponent(@Nullable CustomModelDataComponent customModelData);
 
@@ -373,6 +398,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets if the enchantable component is set.
      *
      * @return if an enchantable is set.
+     * @since 1.21.3
      */
     boolean hasEnchantable();
 
@@ -380,6 +406,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets the enchantable component. Higher values allow higher enchantments.
      *
      * @return the enchantable value
+     * @since 1.21.3
      */
     int getEnchantable();
 
@@ -387,6 +414,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the enchantable. Higher values allow higher enchantments.
      *
      * @param enchantable enchantable value, must be positive
+     * @since 1.21.3
      */
     void setEnchantable(@Nullable Integer enchantable);
 
@@ -445,6 +473,8 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
 
     /**
      * Removes all enchantments from this item meta.
+     *
+     * @since 1.20.4
      */
     void removeEnchantments();
 
@@ -454,6 +484,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param ench enchantment to test
      * @return true if the enchantment conflicts, false otherwise
+     * @since 1.5.1 R0.2
      */
     boolean hasConflictingEnchant(@NotNull Enchantment ench);
 
@@ -475,6 +506,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Get current set itemFlags. The collection returned is unmodifiable.
      *
      * @return A set of all itemFlags set
+     * @since 1.8
      */
     @NotNull
     Set<ItemFlag> getItemFlags();
@@ -484,6 +516,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param flag the flag to check
      * @return if it is present
+     * @since 1.8
      */
     boolean hasItemFlag(@NotNull ItemFlag flag);
 
@@ -492,6 +525,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * show any tooltip whatsoever.
      *
      * @return hide_tooltip
+     * @since 1.20.6
      */
     boolean isHideTooltip();
 
@@ -500,6 +534,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * show any tooltip whatsoever.
      *
      * @param hideTooltip new hide_tooltip
+     * @since 1.20.6
      */
     void setHideTooltip(boolean hideTooltip);
 
@@ -507,6 +542,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets if this item has a custom tooltip style.
      *
      * @return if a tooltip_style is set
+     * @since 1.21.3
      */
     boolean hasTooltipStyle();
 
@@ -514,6 +550,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets the custom tooltip style.
      *
      * @return the tooltip style
+     * @since 1.21.3
      */
     @Nullable
     NamespacedKey getTooltipStyle();
@@ -522,6 +559,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the custom tooltip style.
      *
      * @param tooltipStyle the new style
+     * @since 1.21.3
      */
     void setTooltipStyle(@Nullable NamespacedKey tooltipStyle);
 
@@ -529,6 +567,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets if this item has a custom item model.
      *
      * @return if a item_model is set
+     * @since 1.21.3
      */
     boolean hasItemModel();
 
@@ -536,6 +575,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets the custom item model.
      *
      * @return the item model
+     * @since 1.21.3
      */
     @Nullable
     NamespacedKey getItemModel();
@@ -544,6 +584,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the custom item model.
      *
      * @param itemModel the new model
+     * @since 1.21.3
      */
     void setItemModel(@Nullable NamespacedKey itemModel);
 
@@ -552,6 +593,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * durability.
      *
      * @return true if the unbreakable tag is true
+     * @since 1.11
      */
     boolean isUnbreakable();
 
@@ -559,6 +601,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the unbreakable tag. An unbreakable item will not lose durability.
      *
      * @param unbreakable true if set unbreakable
+     * @since 1.11
      */
     void setUnbreakable(boolean unbreakable);
 
@@ -566,6 +609,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets if an enchantment_glint_override is set.
      *
      * @return if an enchantment_glint_override is set
+     * @since 1.20.6
      */
     boolean hasEnchantmentGlintOverride();
 
@@ -578,6 +622,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * calling this method.
      *
      * @return enchantment_glint_override
+     * @since 1.20.6
      */
     @NotNull
     Boolean getEnchantmentGlintOverride();
@@ -588,6 +633,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * enchantments. If null, the override will be cleared.
      *
      * @param override new enchantment_glint_override
+     * @since 1.20.6
      */
     void setEnchantmentGlintOverride(@Nullable Boolean override);
 
@@ -596,6 +642,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * glide when it is equipped.
      *
      * @return glider
+     * @since 1.21.3
      */
     boolean isGlider();
 
@@ -604,6 +651,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * glide when it is equipped.
      *
      * @param glider glider
+     * @since 1.21.3
      */
     void setGlider(boolean glider);
 
@@ -614,6 +662,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @return fire_resistant
      * @deprecated use {@link #getDamageResistant()} and
      * {@link DamageTypeTags#IS_FIRE}
+     * @since 1.20.6
      */
     @Deprecated(since = "1.21.2")
     boolean isFireResistant();
@@ -625,6 +674,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @param fireResistant fire_resistant
      * @deprecated use {@link #setDamageResistant(org.bukkit.Tag)} and
      * {@link DamageTypeTags#IS_FIRE}
+     * @since 1.20.6
      */
     @Deprecated(since = "1.21.2")
     void setFireResistant(boolean fireResistant);
@@ -633,6 +683,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets if this item is resistant to certain types of damage.
      *
      * @return true if a resistance is set
+     * @since 1.21.3
      */
     boolean hasDamageResistant();
 
@@ -644,6 +695,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * method.
      *
      * @return damage type
+     * @since 1.21.3
      */
     @Nullable
     Tag<DamageType> getDamageResistant();
@@ -653,6 +705,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * form.
      *
      * @param tag the tag, or null to clear
+     * @since 1.21.3
      */
     void setDamageResistant(@Nullable Tag<DamageType> tag);
 
@@ -660,6 +713,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets if the max_stack_size is set.
      *
      * @return if a max_stack_size is set.
+     * @since 1.20.6
      */
     boolean hasMaxStackSize();
 
@@ -668,6 +722,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * stack.
      *
      * @return max_stack_size
+     * @since 1.20.6
      */
     int getMaxStackSize();
 
@@ -676,6 +731,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * stack.
      *
      * @param max max_stack_size, between 1 and 99 (inclusive)
+     * @since 1.20.6
      */
     void setMaxStackSize(@Nullable Integer max);
 
@@ -683,6 +739,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets if the rarity is set.
      *
      * @return rarity
+     * @since 1.20.6
      */
     boolean hasRarity();
 
@@ -692,6 +749,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Plugins should check {@link #hasRarity()} before calling this method.
      *
      * @return rarity
+     * @since 1.20.6
      */
     @NotNull
     ItemRarity getRarity();
@@ -700,6 +758,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the item rarity.
      *
      * @param rarity new rarity
+     * @since 1.20.6
      */
     void setRarity(@Nullable ItemRarity rarity);
 
@@ -707,6 +766,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Checks if the use remainder is set.
      *
      * @return if a use remainder item is set
+     * @since 1.21.3
      */
     boolean hasUseRemainder();
 
@@ -714,6 +774,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Gets the item which this item will convert to when used.
      *
      * @return remainder
+     * @since 1.21.3
      */
     @Nullable
     ItemStack getUseRemainder();
@@ -722,6 +783,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the item which this item will convert to when used.
      *
      * @param remainder new item
+     * @since 1.21.3
      */
     void setUseRemainder(@Nullable ItemStack remainder);
 
@@ -729,6 +791,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Checks if the use cooldown is set.
      *
      * @return if a use cooldown is set
+     * @since 1.21.3
      */
     boolean hasUseCooldown();
 
@@ -742,6 +805,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * {@link #setUseCooldown(UseCooldownComponent)} to apply the changes.
      *
      * @return cooldown
+     * @since 1.21.3
      */
     @NotNull
     UseCooldownComponent getUseCooldown();
@@ -750,6 +814,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the item use cooldown.
      *
      * @param cooldown new cooldown
+     * @since 1.21.3
      */
     void setUseCooldown(@Nullable UseCooldownComponent cooldown);
 
@@ -757,6 +822,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Checks if the food is set.
      *
      * @return if a food is set
+     * @since 1.20.6
      */
     boolean hasFood();
 
@@ -769,6 +835,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * apply the changes.
      *
      * @return food
+     * @since 1.20.6
      */
     @NotNull
     FoodComponent getFood();
@@ -777,6 +844,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the item food.
      *
      * @param food new food
+     * @since 1.20.6
      */
     void setFood(@Nullable FoodComponent food);
 
@@ -784,6 +852,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Checks if the tool is set.
      *
      * @return if a tool is set
+     * @since 1.20.6
      */
     boolean hasTool();
 
@@ -796,6 +865,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * apply the changes.
      *
      * @return tool
+     * @since 1.20.6
      */
     @NotNull
     ToolComponent getTool();
@@ -804,6 +874,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the item tool.
      *
      * @param tool new tool
+     * @since 1.20.6
      */
     void setTool(@Nullable ToolComponent tool);
 
@@ -811,6 +882,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Checks if the equippable is set.
      *
      * @return if a equippable is set
+     * @since 1.21.3
      */
     boolean hasEquippable();
 
@@ -824,6 +896,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * {@link #setEquippable(EquippableComponent)} to apply the changes.
      *
      * @return equippable
+     * @since 1.21.3
      */
     @NotNull
     EquippableComponent getEquippable();
@@ -832,6 +905,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the equippable tool.
      *
      * @param equippable new equippable
+     * @since 1.21.3
      */
     void setEquippable(@Nullable EquippableComponent equippable);
 
@@ -839,6 +913,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Checks if the jukebox playable is set.
      *
      * @return if a jukebox playable is set
+     * @since 1.21
      */
     boolean hasJukeboxPlayable();
 
@@ -852,6 +927,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * to apply the changes.
      *
      * @return component
+     * @since 1.21
      */
     @NotNull // Paper
     JukeboxPlayableComponent getJukeboxPlayable();
@@ -860,6 +936,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Sets the jukebox playable component.
      *
      * @param jukeboxPlayable new component
+     * @since 1.21
      */
     void setJukeboxPlayable(@Nullable JukeboxPlayableComponent jukeboxPlayable);
 
@@ -867,6 +944,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Checks for the existence of any AttributeModifiers.
      *
      * @return true if any AttributeModifiers exist
+     * @since 1.13.1
      */
     boolean hasAttributeModifiers();
 
@@ -877,6 +955,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return an immutable {@link Multimap} of Attributes
      *         and their AttributeModifiers, or null if none exist
+     * @since 1.13.1
      */
     @Nullable
     Multimap<Attribute, AttributeModifier> getAttributeModifiers();
@@ -894,6 +973,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @return the immutable {@link Multimap} with the
      *         respective Attributes and modifiers, or an empty map
      *         if no attributes are set.
+     * @since 1.13.1
      */
     @NotNull
     Multimap<Attribute, AttributeModifier> getAttributeModifiers(@NotNull EquipmentSlot slot);
@@ -906,6 +986,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @return an immutable collection of {@link AttributeModifier}s
      *          or null if no AttributeModifiers exist for the Attribute.
      * @throws NullPointerException if Attribute is null
+     * @since 1.13.1
      */
     @Nullable
     Collection<AttributeModifier> getAttributeModifiers(@NotNull Attribute attribute);
@@ -925,6 +1006,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @throws NullPointerException if Attribute is null
      * @throws NullPointerException if AttributeModifier is null
      * @throws IllegalArgumentException if AttributeModifier already exists
+     * @since 1.13.1
      */
     boolean addAttributeModifier(@NotNull Attribute attribute, @NotNull AttributeModifier modifier);
 
@@ -938,6 +1020,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param attributeModifiers the new Multimap containing the Attributes
      *                           and their AttributeModifiers
+     * @since 1.13.1
      */
     void setAttributeModifiers(@Nullable Multimap<Attribute, AttributeModifier> attributeModifiers);
 
@@ -951,6 +1034,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *                  Attribute. Returns false if no attributes were
      *                  removed.
      * @throws NullPointerException if Attribute is null
+     * @since 1.13.1
      */
     boolean removeAttributeModifier(@NotNull Attribute attribute);
 
@@ -964,6 +1048,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *             their modifiers for
      * @return true if all modifiers were removed that match the given
      *         EquipmentSlot.
+     * @since 1.13.1
      */
     boolean removeAttributeModifier(@NotNull EquipmentSlot slot);
 
@@ -979,6 +1064,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @throws NullPointerException if the AttributeModifier is null
      *
      * @see AttributeModifier#getKey()
+     * @since 1.13.1
      */
     boolean removeAttributeModifier(@NotNull Attribute attribute, @NotNull AttributeModifier modifier);
 
@@ -991,6 +1077,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * instead.
      *
      * @return the NBT string
+     * @since 1.18.2
      */
     @NotNull
     String getAsString();
@@ -1029,6 +1116,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * instead.
      *
      * @return the component-compliant string
+     * @since 1.20.6
      */
     @NotNull
     String getAsComponentString();
@@ -1046,6 +1134,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @return the custom tag container
      * @deprecated this API part has been replaced by the {@link PersistentDataHolder} API.
      * Please use {@link PersistentDataHolder#getPersistentDataContainer()} instead of this.
+     * @since 1.13.2
      */
     @NotNull
     @Deprecated(since = "1.14")
@@ -1056,6 +1145,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param version version
      * @apiNote  internal use only
+     * @since 1.14
      */
     @ApiStatus.Internal
     void setVersion(int version);
@@ -1070,6 +1160,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return Set of materials
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.14")
     Set<org.bukkit.Material> getCanDestroy();
@@ -1079,6 +1170,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param canDestroy Set of materials
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.14")
     void setCanDestroy(Set<org.bukkit.Material> canDestroy);
@@ -1088,6 +1180,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return Set of materials
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.14")
     Set<org.bukkit.Material> getCanPlaceOn();
@@ -1097,6 +1190,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param canPlaceOn Set of materials
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.14")
     void setCanPlaceOn(Set<org.bukkit.Material> canPlaceOn);
@@ -1106,6 +1200,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return Set of {@link com.destroystokyo.paper.Namespaced}
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @since 1.13.2
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     @NotNull
@@ -1116,6 +1211,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param canDestroy Collection of {@link com.destroystokyo.paper.Namespaced}
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @since 1.13.2
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     void setDestroyableKeys(@NotNull Collection<com.destroystokyo.paper.Namespaced> canDestroy);
@@ -1125,6 +1221,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return Set of {@link com.destroystokyo.paper.Namespaced}
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @since 1.13.2
      */
     @NotNull
     @Deprecated(forRemoval = true, since = "1.20.6")
@@ -1135,6 +1232,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param canPlaceOn Collection of {@link com.destroystokyo.paper.Namespaced}
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
+     * @since 1.13.2
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     void setPlaceableKeys(@NotNull Collection<com.destroystokyo.paper.Namespaced> canPlaceOn);
@@ -1144,6 +1242,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return true if this item has placeable keys
      * @deprecated this API is unsupported and will be replaced
+     * @since 1.13.2
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     boolean hasPlaceableKeys();
@@ -1153,6 +1252,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return true if this item has destroyable keys
      * @deprecated this API is unsupported and will be replaced
+     * @since 1.13.2
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     boolean hasDestroyableKeys();

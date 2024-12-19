@@ -46,6 +46,8 @@ import org.slf4j.LoggerFactory;
  * }</pre>
  * <p>
  * Plugins may create and register a {@link MavenLibraryResolver} after configuring it.
+ *
+ * @since 1.19.3
  */
 @NullMarked
 public class MavenLibraryResolver implements ClassPathLibrary {

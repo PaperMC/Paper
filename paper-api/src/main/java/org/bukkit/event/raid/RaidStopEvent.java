@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a {@link Raid} is stopped.
+ *
+ * @since 1.14.4
  */
 public class RaidStopEvent extends RaidEvent {
 

@@ -18,6 +18,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when a splash water potion "splashes" and affects
  * different entities in different ways.
+ *
+ * @since 1.19.3
  */
 @NullMarked
 public class WaterBottleSplashEvent extends PotionSplashEvent {

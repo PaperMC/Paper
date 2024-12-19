@@ -13,6 +13,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Called when an anvil is damaged from being used
+ *
+ * @since 1.13
  */
 @NullMarked
 public class AnvilDamagedEvent extends InventoryEvent implements Cancellable {

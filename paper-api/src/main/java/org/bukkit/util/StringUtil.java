@@ -4,6 +4,9 @@ import com.google.common.base.Preconditions;
 import java.util.Collection;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.3.2 R3.0
+ */
 public class StringUtil {
 
     /**

@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
  * <br>
  * This may be as a result of natural causes (Enderman, Shulker), pathfinding
  * (Wolf), or commands (/teleport).
+ *
+ * @since 1.1.0 R4
  */
 public class EntityTeleportEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

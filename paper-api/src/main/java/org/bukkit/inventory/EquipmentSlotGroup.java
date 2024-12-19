@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a group of {@link EquipmentSlot}.
+ *
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 public final class EquipmentSlotGroup implements Predicate<EquipmentSlot> {

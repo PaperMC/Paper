@@ -2,6 +2,8 @@ package org.bukkit.block.data;
 
 /**
  * 'dusted' represents how far uncovered by brush the block is.
+ *
+ * @since 1.20
  */
 public interface Brushable extends BlockData {
 

@@ -17,6 +17,8 @@ import org.jetbrains.annotations.Nullable;
  * by a {@link CacheStrategy} or invalidated at the individual or plugin
  * level. Once invalidated, the LazyMetadataValue will recompute its value
  * when asked.
+ *
+ * @since 1.1.0 R5
  */
 public class LazyMetadataValue extends MetadataValueAdapter {
     private Callable<Object> lazyValue;

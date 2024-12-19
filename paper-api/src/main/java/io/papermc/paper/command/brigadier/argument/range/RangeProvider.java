@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
  *
  * @param <T>
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @NullMarked

@@ -5,6 +5,8 @@ import org.bukkit.loot.Lootable;
 
 /**
  * Represents a captured state of a dropper.
+ *
+ * @since 1.5.1 R0.2
  */
 public interface Dropper extends Container, LootableBlockInventory { // Paper
 

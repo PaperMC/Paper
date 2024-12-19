@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents an entity which may be saddled, ridden and steered using an item.
+ *
+ * @since 1.16.1
  */
 public interface Steerable extends Animals {
 

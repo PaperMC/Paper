@@ -7,6 +7,8 @@ import org.bukkit.block.data.BlockData;
  * <br>
  * When the sapling reaches {@link #getMaximumStage()} it will attempt to grow
  * into a tree as the next stage.
+ *
+ * @since 1.13
  */
 public interface Sapling extends BlockData {
 

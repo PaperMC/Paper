@@ -7,6 +7,7 @@ import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
  * the server list).
  *
  * @see PaperServerListPingEvent
+ * @since 1.12.2
  */
 public interface StatusClient extends NetworkClient {
 

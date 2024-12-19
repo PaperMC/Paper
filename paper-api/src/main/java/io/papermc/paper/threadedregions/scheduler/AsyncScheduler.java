@@ -8,6 +8,8 @@ import java.util.function.Consumer;
 
 /**
  * Scheduler that may be used by plugins to schedule tasks to execute asynchronously from the server tick process.
+ *
+ * @since 1.20.1
  */
 public interface AsyncScheduler {
 

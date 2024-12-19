@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * the same way.
  *
  * @deprecated chat previews have been removed
+ * @since 1.19.1
  */
 @Deprecated(since = "1.19.1")
 @Warning(false)

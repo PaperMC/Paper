@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Event that gets called each time a Hopper attempts to find its
  * source/attached containers.
+ *
+ * @since 1.19.4
  */
 public class HopperInventorySearchEvent extends BlockEvent {
 

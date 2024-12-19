@@ -9,6 +9,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * @since 1.12.2
+ */
 @NullMarked
 public class WitchReadyPotionEvent extends EntityEvent implements Cancellable {
 

@@ -33,6 +33,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when a player is attempting to pick up an experience orb
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class PlayerPickupExperienceEvent extends PlayerEvent implements Cancellable {

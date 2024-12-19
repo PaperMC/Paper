@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * Channel names must contain a colon separator and consist of only [a-z0-9/._-]
  * - i.e. they MUST be valid {@link NamespacedKey}. The "BungeeCord" channel is
  * an exception and may only take this form.
+ *
+ * @since 1.1.0 R1
  */
 public interface Messenger {
 

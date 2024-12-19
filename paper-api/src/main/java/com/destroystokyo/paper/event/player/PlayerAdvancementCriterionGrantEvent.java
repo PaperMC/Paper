@@ -12,6 +12,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Called after a player is granted a criteria in an advancement.
  * If cancelled the criteria will be revoked.
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class PlayerAdvancementCriterionGrantEvent extends PlayerEvent implements Cancellable {
@@ -54,6 +56,7 @@ public class PlayerAdvancementCriterionGrantEvent extends PlayerEvent implements
      * Gets the current AdvancementProgress.
      *
      * @return advancement progress
+     * @since 1.20.2
      */
     public AdvancementProgress getAdvancementProgress() {
         return this.advancementProgress;

@@ -13,6 +13,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * NOTE: default vanilla behaviour dictates that armor/tools picked up by
  * mobs do not take damage (except via Thorns).
+ *
+ * @since 1.17.1
  */
 @NullMarked
 public class EntityDamageItemEvent extends EntityEvent implements Cancellable {

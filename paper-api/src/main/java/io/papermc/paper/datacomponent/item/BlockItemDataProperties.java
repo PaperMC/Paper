@@ -10,6 +10,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the {@link BlockData} properties of a block item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#BLOCK_DATA
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

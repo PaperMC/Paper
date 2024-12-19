@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a source of configurable options and settings
+ *
+ * @since 1.0.0 R1
  */
 public interface Configuration extends ConfigurationSection {
     /**

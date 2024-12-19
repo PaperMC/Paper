@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when the amount of air an entity has remaining changes.
+ *
+ * @since 1.10.2
  */
 public class EntityAirChangeEvent extends EntityEvent implements Cancellable {
 

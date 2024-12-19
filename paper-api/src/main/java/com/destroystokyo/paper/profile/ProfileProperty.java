@@ -7,6 +7,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a property on a {@link PlayerProfile}
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public final class ProfileProperty {

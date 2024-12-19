@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * This event is called whenever a player attempts to put a fish in a bucket.
  *
  * @deprecated Use the more generic {@link PlayerBucketEntityEvent}
+ * @since 1.16.5
  */
 @Deprecated(since = "1.16.5")
 @Warning(false)

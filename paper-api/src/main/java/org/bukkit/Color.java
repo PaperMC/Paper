@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
  * A container for a color palette. This class is immutable; the set methods
  * return a new color. The color names listed as fields are HTML4 standards,
  * but subject to change.
+ *
+ * @since 1.4.5 R1.0
  */
 @SerializableAs("Color")
 public final class Color implements ConfigurationSerializable {
@@ -120,6 +122,7 @@ public final class Color implements ConfigurationSerializable {
      * @param blue integer from 0-255
      * @return a new Color object for the alpha, red, green, blue
      * @throws IllegalArgumentException if any value is strictly {@literal >255 or <0}
+     * @since 1.19.4
      */
     @NotNull
     public static Color fromARGB(int alpha, int red, int green, int blue) throws IllegalArgumentException {
@@ -175,6 +178,7 @@ public final class Color implements ConfigurationSerializable {
      *
      * @param argb the integer storing the alpha, red, green, and blue values
      * @return a new color object for specified values
+     * @since 1.19.4
      */
     @NotNull
     public static Color fromARGB(int argb) {
@@ -216,6 +220,7 @@ public final class Color implements ConfigurationSerializable {
      * Gets the alpha component
      *
      * @return alpha component, from 0 to 255
+     * @since 1.19.4
      */
     public int getAlpha() {
         return BIT_MASK & alpha;
@@ -226,6 +231,7 @@ public final class Color implements ConfigurationSerializable {
      *
      * @param alpha the alpha component, from 0 to 255
      * @return a new color object with the red component
+     * @since 1.19.4
      */
     @NotNull
     public Color setAlpha(int alpha) {
@@ -305,6 +311,7 @@ public final class Color implements ConfigurationSerializable {
      * Gets the color as an ARGB integer.
      *
      * @return An integer representation of this color, as 0xAARRGGBB
+     * @since 1.19.4
      */
     public int asARGB() {
         return getAlpha() << 24 | getRed() << 16 | getGreen() << 8 | getBlue();

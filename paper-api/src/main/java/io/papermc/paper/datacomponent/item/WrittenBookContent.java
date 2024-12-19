@@ -14,6 +14,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the contents and metadata of a Written Book.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#WRITTEN_BOOK_CONTENT
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

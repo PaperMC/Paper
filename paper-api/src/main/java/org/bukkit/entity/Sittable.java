@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * An animal that can sit still.
+ *
+ * @since 1.12
  */
 public interface Sittable {
 

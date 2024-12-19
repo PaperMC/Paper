@@ -15,6 +15,8 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * The behavior of how the Inventory is filled based on the loot table may vary based
  * on Minecraft versions and the Loot Table feature.
+ *
+ * @since 1.9.4
  */
 @NullMarked
 public interface LootableInventory extends Lootable {
@@ -48,6 +50,7 @@ public interface LootableInventory extends Lootable {
      *
      * @param player the player to check
      * @return Whether this player can loot this block
+     * @since 1.20.1
      */
     boolean canPlayerLoot(UUID player);
 

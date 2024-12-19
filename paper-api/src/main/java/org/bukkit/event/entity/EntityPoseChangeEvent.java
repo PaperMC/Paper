@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * Called when an entity changes its pose.
  *
  * @see Entity#getPose()
+ * @since 1.14
  */
 public class EntityPoseChangeEvent extends EntityEvent {
 

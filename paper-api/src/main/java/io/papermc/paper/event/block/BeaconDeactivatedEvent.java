@@ -11,6 +11,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a beacon is deactivated, either because its base block(s) or itself were destroyed.
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class BeaconDeactivatedEvent extends BlockEvent {

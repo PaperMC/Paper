@@ -36,6 +36,9 @@ import org.eclipse.aether.transport.http.HttpTransporterFactory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.19.3
+ */
 // Paper start
 @org.jetbrains.annotations.ApiStatus.Internal
 public class LibraryLoader
@@ -87,6 +90,9 @@ public class LibraryLoader
         // Paper start - plugin loader api
         return this.createLoader(desc, null);
     }
+    /**
+     * @since 1.20.6
+     */
     @Nullable
     public ClassLoader createLoader(@NotNull PluginDescriptionFile desc, java.util.@Nullable List<java.nio.file.Path> paperLibraryPaths) {
         if ( desc.getLibraries().isEmpty() && paperLibraryPaths == null )

@@ -34,6 +34,9 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 // Paper end - version command 2.0
 
+/**
+ * @since 1.0.0 R1
+ */
 public class VersionCommand extends BukkitCommand {
     private VersionFetcher versionFetcher; // Paper - version command 2.0
     private VersionFetcher getVersionFetcher() { // lazy load because unsafe isn't available at command registration
@@ -151,6 +154,9 @@ public class VersionCommand extends BukkitCommand {
         return result.toString();
     }
 
+    /**
+     * @since 1.3.2 R3.0
+     */
     @NotNull
     @Override
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) {

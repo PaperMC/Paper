@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * brewing stand which indicate which bottles are rendered on the outside.
  * <br>
  * Stand may have 0, 1... {@link #getMaximumBottles()}-1 bottles.
+ *
+ * @since 1.13
  */
 public interface BrewingStand extends BlockData {
 

@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
  * generated (use {@link EntityDeathEvent#getDrops()}, but WILL be called by
  * plugins invoking
  * {@link LootTable#fillInventory(org.bukkit.inventory.Inventory, java.util.Random, LootContext)}.
+ *
+ * @since 1.15.2
  */
 public class LootGenerateEvent extends WorldEvent implements Cancellable {
 

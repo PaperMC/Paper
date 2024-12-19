@@ -13,6 +13,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds attribute modifiers applied to any item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#ATTRIBUTE_MODIFIERS
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

@@ -18,6 +18,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * Currently: NATURAL and SPAWNER based reasons. <!-- Please submit a Pull Request for future additions. -->
  * Also, Plugins that replace Entity Registrations with their own custom entities might not fire this event.
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class PreCreatureSpawnEvent extends Event implements Cancellable {

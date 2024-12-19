@@ -10,6 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
  *  argument value using a {@link CommandSourceStack}.
  *
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#playerProfiles()
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

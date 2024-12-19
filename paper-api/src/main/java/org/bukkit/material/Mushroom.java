@@ -16,6 +16,7 @@ import org.bukkit.material.types.MushroomBlockTexture;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
+ * @since 1.1.0 R5
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Mushroom extends MaterialData {
@@ -112,6 +113,7 @@ public class Mushroom extends MaterialData {
      * Gets the mushroom texture of this block.
      *
      * @return The mushroom texture of this block
+     * @since 1.9.4
      */
     public MushroomBlockTexture getBlockTexture() {
         return MushroomBlockTexture.getByData(getData());
@@ -121,6 +123,7 @@ public class Mushroom extends MaterialData {
      * Sets the mushroom texture of this block.
      *
      * @param texture The mushroom texture to set
+     * @since 1.9.4
      */
     public void setBlockTexture(MushroomBlockTexture texture) {
         setData(texture.getData());

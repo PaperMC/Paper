@@ -3,6 +3,9 @@ package org.bukkit.inventory.meta;
 import org.bukkit.DyeColor;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.21
+ */
 public interface ShieldMeta extends BannerMeta {
 
     /**

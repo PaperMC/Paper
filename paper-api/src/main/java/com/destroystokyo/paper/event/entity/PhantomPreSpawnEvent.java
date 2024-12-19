@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a phantom is spawned for an exhausted player
+ *
+ * @since 1.13.1
  */
 @NullMarked
 public class PhantomPreSpawnEvent extends PreCreatureSpawnEvent {

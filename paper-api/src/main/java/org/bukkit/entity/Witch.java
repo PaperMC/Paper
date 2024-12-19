@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a Witch
+ *
+ * @since 1.4.5 R1.0
  */
 public interface Witch extends Raider, RangedEntity { // Paper
 
@@ -16,6 +18,7 @@ public interface Witch extends Raider, RangedEntity { // Paper
      * Gets whether the witch is drinking a potion
      *
      * @return whether the witch is drinking a potion
+     * @since 1.13.1
      */
     boolean isDrinkingPotion();
 
@@ -24,6 +27,7 @@ public interface Witch extends Raider, RangedEntity { // Paper
      * Get time remaining (in ticks) the Witch is drinking a potion
      *
      * @return Time remaining (in ticks)
+     * @since 1.13.1
      */
     int getPotionUseTimeLeft();
 
@@ -34,6 +38,7 @@ public interface Witch extends Raider, RangedEntity { // Paper
      *
      * @param ticks Time in ticks remaining
      * @see #isDrinkingPotion
+     * @since 1.16.5
      */
     void setPotionUseTimeLeft(int ticks);
 
@@ -41,6 +46,7 @@ public interface Witch extends Raider, RangedEntity { // Paper
      * Get the potion the Witch is drinking
      *
      * @return The potion the witch is drinking
+     * @since 1.13.1
      */
     @org.jetbrains.annotations.NotNull
     ItemStack getDrinkingPotion();
@@ -49,6 +55,7 @@ public interface Witch extends Raider, RangedEntity { // Paper
      * Set the potion the Witch should drink
      *
      * @param potion Potion to drink
+     * @since 1.13.1
      */
     void setDrinkingPotion(@Nullable ItemStack potion);
     // Paper end

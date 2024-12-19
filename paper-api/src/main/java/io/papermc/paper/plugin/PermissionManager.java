@@ -11,6 +11,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * A permission manager implementation to keep backwards compatibility partially alive with existing plugins that used
  * the bukkit one before.
+ *
+ * @since 1.19.3
  */
 @ApiStatus.Experimental
 @NullMarked

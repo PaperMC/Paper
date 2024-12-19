@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the trims applied to an item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#TRIM
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

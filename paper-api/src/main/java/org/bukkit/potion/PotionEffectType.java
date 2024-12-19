@@ -16,6 +16,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a type of potion and its effect on an entity.
+ *
+ * @since 1.1.0 R4
  */
 public abstract class PotionEffectType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - implement Translatable & feature flag API
     private static final BiMap<Integer, PotionEffectType> ID_MAP = HashBiMap.create();
@@ -253,6 +255,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * Returns the {@link PotionEffectTypeCategory category} of this effect type.
      *
      * @return the category
+     * @since 1.20.6
      */
     @NotNull
     public abstract PotionEffectTypeCategory getCategory();
@@ -261,6 +264,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * Returns the color of this effect type.
      *
      * @return the color
+     * @since 1.11
      */
     @NotNull
     public abstract Color getColor();
@@ -299,6 +303,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * @param key key to fetch
      * @return Resulting PotionEffectType, or null if not found
      * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
+     * @since 1.18
      */
     @Contract("null -> null")
     @Nullable
@@ -366,6 +371,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * Gets the effect attributes in an immutable map.
      *
      * @return the attribute map
+     * @since 1.18.1
      */
     public abstract @NotNull java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes();
 
@@ -376,6 +382,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * @param effectAmplifier the effect amplifier (0 indexed)
      * @return the modifier amount
      * @throws IllegalArgumentException if the supplied attribute is not present in the map from {@link #getEffectAttributes()}
+     * @since 1.18.1
      */
     public abstract double getAttributeModifierAmount(@NotNull org.bukkit.attribute.Attribute attribute, int effectAmplifier);
 
@@ -383,6 +390,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * Gets the category of this effect
      *
      * @return the category
+     * @since 1.18.1
      */
     public abstract @NotNull PotionEffectType.Category getEffectCategory();
 

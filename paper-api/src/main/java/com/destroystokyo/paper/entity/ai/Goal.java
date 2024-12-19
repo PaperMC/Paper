@@ -6,6 +6,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents an AI goal of an entity
+ *
+ * @since 1.15.2
  */
 @NullMarked
 public interface Goal<T extends Mob> {

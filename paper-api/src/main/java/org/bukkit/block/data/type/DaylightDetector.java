@@ -5,6 +5,8 @@ import org.bukkit.block.data.AnaloguePowerable;
 /**
  * 'inverted' denotes whether this daylight detector is in the inverted mode,
  * i.e. activates in the absence of light rather than presence."
+ *
+ * @since 1.13
  */
 public interface DaylightDetector extends AnaloguePowerable {
 

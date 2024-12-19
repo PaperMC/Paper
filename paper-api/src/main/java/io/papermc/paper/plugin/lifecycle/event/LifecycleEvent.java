@@ -10,6 +10,7 @@ import org.jetbrains.annotations.ApiStatus;
  * event system is not available, like during early
  * server initialization.
  * @see LifecycleEvents
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

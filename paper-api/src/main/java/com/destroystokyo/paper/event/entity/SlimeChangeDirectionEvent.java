@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * This event does not fire for the entity's actual movement. Only when it
  * is choosing to change direction.
+ *
+ * @since 1.13
  */
 @NullMarked
 public class SlimeChangeDirectionEvent extends SlimePathfindEvent {

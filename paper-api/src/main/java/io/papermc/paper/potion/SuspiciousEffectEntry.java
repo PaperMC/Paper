@@ -7,6 +7,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a {@link PotionEffectType} paired with a duration.
+ *
+ * @since 1.20.2
  */
 @NullMarked
 public sealed interface SuspiciousEffectEntry permits SuspiciousEffectEntryImpl {

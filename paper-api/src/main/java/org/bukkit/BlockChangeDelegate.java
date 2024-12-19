@@ -7,6 +7,8 @@ import org.jetbrains.annotations.NotNull;
  * A delegate for handling block changes. This serves as a direct interface
  * between generation algorithms in the server implementation and utilizing
  * code.
+ *
+ * @since 1.0.0 R1
  */
 public interface BlockChangeDelegate {
 
@@ -18,6 +20,7 @@ public interface BlockChangeDelegate {
      * @param z Z coordinate
      * @param blockData Block data
      * @return true if the block was set successfully
+     * @since 1.13
      */
     public boolean setBlockData(int x, int y, int z, @NotNull BlockData blockData);
 
@@ -28,6 +31,7 @@ public interface BlockChangeDelegate {
      * @param y Y coordinate
      * @param z Z coordinate
      * @return The block data
+     * @since 1.13
      */
     @NotNull
     public BlockData getBlockData(int x, int y, int z);
@@ -46,6 +50,7 @@ public interface BlockChangeDelegate {
      * @param y Y coordinate
      * @param z Z coordinate
      * @return True if the block is considered empty.
+     * @since 1.2.2 R0.1
      */
     public boolean isEmpty(int x, int y, int z);
 }

@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a component which determines the cooldown applied when using this item before it is available for use again.
+ *
+ * @since 1.21.3
  */
 @ApiStatus.Experimental
 public interface UseCooldownComponent extends ConfigurationSerializable {

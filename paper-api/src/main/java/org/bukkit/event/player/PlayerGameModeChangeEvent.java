@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * the Player from {@link #getPlayer()} might not be fully online at
  * the time this event is fired. Plugins should use {@link Player#isOnline()}
  * to check before changing player state.
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -56,12 +58,18 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
         return newGameMode;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;
@@ -71,6 +79,7 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
      * Gets the cause of this gamemode change.
      *
      * @return the cause
+     * @since 1.16.5
      */
     @NotNull
     public Cause getCause() {
@@ -87,6 +96,7 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
      * and {@code force-gamemode} is set to true.
      *
      * @return the error message shown to the command user, null if not directly caused by a command
+     * @since 1.16.5
      */
     @org.jetbrains.annotations.Nullable
     public net.kyori.adventure.text.Component cancelMessage() {
@@ -99,6 +109,7 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
      * not by a plugin or a player joining with the wrong gamemode.</b>
      *
      * @param message the error message shown to the command user, null to show no message.
+     * @since 1.16.5
      */
     public void cancelMessage(@org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component message) {
         this.cancelMessage = message;

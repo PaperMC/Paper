@@ -4,6 +4,9 @@ import net.kyori.adventure.text.Component;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * @since 1.17.1
+ */
 @NullMarked
 public interface CommandBlockHolder {
 

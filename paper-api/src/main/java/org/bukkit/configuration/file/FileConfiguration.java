@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * This is a base class for all File based implementations of {@link
  * Configuration}
+ *
+ * @since 1.0.0 R1
  */
 public abstract class FileConfiguration extends MemoryConfiguration {
 
@@ -140,6 +142,7 @@ public abstract class FileConfiguration extends MemoryConfiguration {
      * @throws InvalidConfigurationException thrown when the reader does not
      *      represent a valid Configuration
      * @throws IllegalArgumentException thrown when reader is null
+     * @since 1.7.10
      */
     public void load(@NotNull Reader reader) throws IOException, InvalidConfigurationException {
         BufferedReader input = reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);

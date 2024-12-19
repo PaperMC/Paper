@@ -18,6 +18,8 @@ import org.jetbrains.annotations.ApiStatus;
  * <li>The plugin groups only contains the classloaders that each plugin has access to and hence serves to properly
  * separates unrelated classloaders.</li>
  * </ul>
+ *
+ * @since 1.19.3
  */
 @ApiStatus.Internal
 public interface PaperClassLoaderStorage {

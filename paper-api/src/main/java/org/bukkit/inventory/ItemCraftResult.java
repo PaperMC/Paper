@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * This class makes no guarantees about the nature or mutability of the returned
  * values.
+ *
+ * @since 1.20.2
  */
 public interface ItemCraftResult {
 

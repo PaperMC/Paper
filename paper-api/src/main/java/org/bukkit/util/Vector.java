@@ -23,6 +23,8 @@ import org.joml.Vector3ic;
  * storing Vectors long term may be dangerous if passing code modifies the
  * Vector later. If you want to keep around a Vector, it may be wise to call
  * <code>clone()</code> in order to get a copy.
+ *
+ * @since 1.0.0 R1
  */
 @SerializableAs("Vector")
 public class Vector implements Cloneable, ConfigurationSerializable {
@@ -334,6 +336,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      *
      * @param o The other vector
      * @return a new vector
+     * @since 1.8.8
      */
     @NotNull
     public Vector getCrossProduct(@NotNull Vector o) {
@@ -376,6 +379,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * Check whether or not each component of this vector is equal to 0.
      *
      * @return true if equal to zero, false if at least one component is non-zero
+     * @since 1.19.3
      */
     public boolean isZero() {
         return x == 0 && y == 0 && z == 0;
@@ -423,6 +427,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * Returns if a vector is normalized
      *
      * @return whether the vector is normalised
+     * @since 1.13.2
      */
     public boolean isNormalized() {
         return Math.abs(this.lengthSquared() - 1) < getEpsilon();
@@ -439,6 +444,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @param angle the angle to rotate the vector about. This angle is passed
      * in radians
      * @return the same vector
+     * @since 1.13.2
      */
     @NotNull
     public Vector rotateAroundX(double angle) {
@@ -461,6 +467,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @param angle the angle to rotate the vector about. This angle is passed
      * in radians
      * @return the same vector
+     * @since 1.13.2
      */
     @NotNull
     public Vector rotateAroundY(double angle) {
@@ -483,6 +490,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @param angle the angle to rotate the vector about. This angle is passed
      * in radians
      * @return the same vector
+     * @since 1.13.2
      */
     @NotNull
     public Vector rotateAroundZ(double angle) {
@@ -514,6 +522,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      * @throws IllegalArgumentException if the provided axis vector instance is
      * null
+     * @since 1.13.2
      */
     @NotNull
     public Vector rotateAroundAxis(@NotNull Vector axis, double angle) throws IllegalArgumentException {
@@ -541,6 +550,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * @return the same vector
      * @throws IllegalArgumentException if the provided axis vector instance is
      * null
+     * @since 1.13.2
      */
     @NotNull
     public Vector rotateAroundNonUnitAxis(@NotNull Vector axis, double angle) throws IllegalArgumentException {
@@ -825,6 +835,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * Get this vector as a JOML {@link Vector3f}.
      *
      * @return the JOML vector
+     * @since 1.19.4
      */
     @NotNull
     public Vector3f toVector3f() {
@@ -835,6 +846,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * Get this vector as a JOML {@link Vector3d}.
      *
      * @return the JOML vector
+     * @since 1.19.4
      */
     @NotNull
     public Vector3d toVector3d() {
@@ -846,6 +858,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      *
      * @param roundingMode the {@link RoundingMode} to use for this vector's components
      * @return the JOML vector
+     * @since 1.19.4
      */
     @NotNull
     public Vector3i toVector3i(int roundingMode) {
@@ -857,6 +870,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      *
      * @return the JOML vector
      * @see #toVector3i(int)
+     * @since 1.19.4
      */
     @NotNull
     public Vector3i toVector3i() {
@@ -867,6 +881,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      * Check if each component of this Vector is finite.
      *
      * @throws IllegalArgumentException if any component is not finite
+     * @since 1.12
      */
     public void checkFinite() throws IllegalArgumentException {
         NumberConversions.checkFinite(x, "x not finite");
@@ -923,6 +938,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      *
      * @param vector the vector to match
      * @return the new vector
+     * @since 1.19.4
      */
     @NotNull
     public static Vector fromJOML(@NotNull Vector3f vector) {
@@ -934,6 +950,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      *
      * @param vector the vector to match
      * @return the new vector
+     * @since 1.19.4
      */
     @NotNull
     public static Vector fromJOML(@NotNull Vector3d vector) {
@@ -945,6 +962,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      *
      * @param vector the vector to match
      * @return the new vector
+     * @since 1.19.4
      */
     @NotNull
     public static Vector fromJOML(@NotNull Vector3i vector) {
@@ -956,6 +974,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      *
      * @param vector the vector to match
      * @return the new vector
+     * @since 1.20.4
      */
     @NotNull
     public static Vector fromJOML(@NotNull Vector3fc vector) {
@@ -967,6 +986,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      *
      * @param vector the vector to match
      * @return the new vector
+     * @since 1.20.4
      */
     @NotNull
     public static Vector fromJOML(@NotNull Vector3dc vector) {
@@ -978,6 +998,7 @@ public class Vector implements Cloneable, ConfigurationSerializable {
      *
      * @param vector the vector to match
      * @return the new vector
+     * @since 1.20.4
      */
     @NotNull
     public static Vector fromJOML(@NotNull Vector3ic vector) {

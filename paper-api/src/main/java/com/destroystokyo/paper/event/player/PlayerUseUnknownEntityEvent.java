@@ -16,6 +16,8 @@ import org.jspecify.annotations.Nullable;
  * <br>
  * This event may be called multiple times per interaction with different interaction hands
  * and with or without the clicked position.
+ *
+ * @since 1.9.4
  */
 @NullMarked
 public class PlayerUseUnknownEntityEvent extends PlayerEvent {
@@ -69,6 +71,7 @@ public class PlayerUseUnknownEntityEvent extends PlayerEvent {
      *
      * @return the position relative to the entity that was clicked, or {@code null} if not available
      * @see PlayerInteractAtEntityEvent
+     * @since 1.20.1
      */
     public @Nullable Vector getClickedRelativePosition() {
         return this.clickedPosition != null ? this.clickedPosition.clone() : null;

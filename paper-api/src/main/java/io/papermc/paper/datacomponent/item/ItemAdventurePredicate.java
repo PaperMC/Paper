@@ -12,6 +12,7 @@ import org.jspecify.annotations.NullMarked;
  * Controls which blocks a player in Adventure mode can do a certain action with this item.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CAN_BREAK
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CAN_PLACE_ON
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

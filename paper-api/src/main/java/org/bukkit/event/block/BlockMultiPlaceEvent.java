@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
  * by {@link #getBlockPlaced()} and its related methods is the block where
  * the placed block would exist if the placement only affected a single
  * block.
+ *
+ * @since 1.7.10
  */
 public class BlockMultiPlaceEvent extends BlockPlaceEvent {
     private final List<BlockState> states;

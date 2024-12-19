@@ -57,6 +57,7 @@ import org.jspecify.annotations.Nullable;
  * was registered with.</p>
  *
  * @see io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents#COMMANDS
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @NullMarked

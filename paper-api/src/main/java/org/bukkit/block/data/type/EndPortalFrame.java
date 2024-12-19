@@ -5,6 +5,8 @@ import org.bukkit.block.data.Directional;
 /**
  * 'eye' denotes whether this end portal frame has been activated by having an
  * eye of ender placed in it.
+ *
+ * @since 1.13
  */
 public interface EndPortalFrame extends Directional {
 

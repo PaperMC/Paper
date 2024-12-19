@@ -4,6 +4,8 @@ import org.bukkit.material.Colorable;
 
 /**
  * Represents a Sheep.
+ *
+ * @since 1.0.0 R1
  */
 public interface Sheep extends Animals, Colorable, Shearable, io.papermc.paper.entity.Shearable { // Paper - Shear API
 

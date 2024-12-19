@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Triggered when a hanging entity is created in the world
+ *
+ * @since 1.4.5 R1.0
  */
 public class HangingPlaceEvent extends HangingEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -72,6 +74,7 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
      * if a player did not place the hanging entity.
      *
      * @return the hand
+     * @since 1.19.2
      */
     @Nullable
     public EquipmentSlot getHand() {
@@ -82,6 +85,7 @@ public class HangingPlaceEvent extends HangingEvent implements Cancellable {
      * Gets the item from which the hanging entity originated
      *
      * @return the item from which the hanging entity originated
+     * @since 1.17.1
      */
     @Nullable
     public ItemStack getItemStack() {

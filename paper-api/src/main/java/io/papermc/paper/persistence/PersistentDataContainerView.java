@@ -15,6 +15,7 @@ import org.jspecify.annotations.Nullable;
  * methods on this interface mutate the container.
  *
  * @see PersistentDataContainer
+ * @since 1.21
  */
 @NullMarked
 @ApiStatus.NonExtendable

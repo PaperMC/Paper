@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
  * <br>
  * See the <a href="https://minecraft.wiki/w/Loot_table">
  * Minecraft Wiki</a> for more information.
+ *
+ * @since 1.13
  */
 public interface LootTable extends Keyed {
 

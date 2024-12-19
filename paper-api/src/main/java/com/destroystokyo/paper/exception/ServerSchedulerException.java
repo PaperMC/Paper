@@ -6,6 +6,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Thrown when a plugin's scheduler fails with an exception
+ *
+ * @since 1.9.4
  */
 public class ServerSchedulerException extends ServerPluginException {
 

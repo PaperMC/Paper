@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the contents of an item container.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CONTAINER
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

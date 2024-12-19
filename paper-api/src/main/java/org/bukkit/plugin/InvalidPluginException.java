@@ -2,6 +2,8 @@ package org.bukkit.plugin;
 
 /**
  * Thrown when attempting to load an invalid Plugin file
+ *
+ * @since 1.0.0 R1
  */
 public class InvalidPluginException extends Exception {
     private static final long serialVersionUID = -8242141640709409544L;

@@ -4,6 +4,9 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.12.2
+ */
 @NullMarked
 public interface RangedEntity extends Mob {
     /**

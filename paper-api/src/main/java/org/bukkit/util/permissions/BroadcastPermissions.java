@@ -4,6 +4,9 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.0.0 R1
+ */
 public final class BroadcastPermissions {
     private static final String ROOT = "bukkit.broadcast";
     private static final String PREFIX = ROOT + ".";

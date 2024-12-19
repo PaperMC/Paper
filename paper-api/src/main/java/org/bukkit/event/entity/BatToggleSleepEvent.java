@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * If a Bat Toggle Sleep event is cancelled, the Bat will not toggle its sleep
  * state.
+ *
+ * @since 1.13.1
  */
 public class BatToggleSleepEvent extends EntityEvent implements Cancellable {
 

@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * 'hinge' indicates which hinge this door is attached to and will rotate around
  * when opened.
+ *
+ * @since 1.13
  */
 public interface Door extends Bisected, Directional, Openable, Powerable {
 

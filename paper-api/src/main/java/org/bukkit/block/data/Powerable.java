@@ -3,6 +3,8 @@ package org.bukkit.block.data;
 /**
  * 'powered' indicates whether this block is in the powered state or not, i.e.
  * receiving a redstone current of power &gt; 0.
+ *
+ * @since 1.13
  */
 public interface Powerable extends BlockData {
 

@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the contents of damage types that the item entity containing this item is invincible to.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#DAMAGE_RESISTANT
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

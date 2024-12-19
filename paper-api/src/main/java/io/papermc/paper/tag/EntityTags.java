@@ -7,6 +7,8 @@ import static org.bukkit.entity.EntityType.*;
 /**
  * All tags in this class are unmodifiable, attempting to modify them will throw an
  * {@link UnsupportedOperationException}.
+ *
+ * @since 1.16.4
  */
 public class EntityTags {
 

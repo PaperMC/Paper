@@ -21,6 +21,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a Command, which executes various tasks upon user input
+ *
+ * @since 1.0.0 R1
  */
 public abstract class Command {
     private String name;
@@ -40,6 +42,7 @@ public abstract class Command {
     public co.aikar.timings.Timing timings; // Paper
     /**
      * @deprecated Timings will be removed in the future
+     * @since 1.9.4
      */
     @Deprecated(forRemoval = true)
     @NotNull public String getTimingName() {return getName();} // Paper
@@ -78,6 +81,7 @@ public abstract class Command {
      * @return a list of tab-completions for the specified arguments. This
      *     will never be null. List may be immutable.
      * @throws IllegalArgumentException if sender, alias, or args is null
+     * @since 1.3.2 R3.0
      */
     @NotNull
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
@@ -95,6 +99,7 @@ public abstract class Command {
      * @return a list of tab-completions for the specified arguments. This
      *     will never be null. List may be immutable.
      * @throws IllegalArgumentException if sender, alias, or args is null
+     * @since 1.9.4
      */
     @NotNull
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args, @Nullable Location location) throws IllegalArgumentException {
@@ -147,6 +152,7 @@ public abstract class Command {
      * @param name New command name
      * @return returns true if the name change happened instantly or false if
      *     the command was already registered
+     * @since 1.8.8
      */
     public boolean setName(@NotNull String name) {
         if (!isRegistered()) {
@@ -210,6 +216,7 @@ public abstract class Command {
      *
      * @param target User to test
      * @return true if they can use it, otherwise false
+     * @since 1.1.0 R5
      */
     public boolean testPermissionSilent(@NotNull CommandSender target) {
         if ((permission == null) || (permission.length() == 0)) {
@@ -329,6 +336,7 @@ public abstract class Command {
      * command execution to the server. This message will only ever be shown to
      * consoles or when this command is executed with
      * {@link Bukkit#dispatchCommand(CommandSender, String)}.
+     * @since 1.1.0 R4
      */
     @Deprecated(since = "1.20.4")
     @Nullable
@@ -400,6 +408,7 @@ public abstract class Command {
      * command execution to the server. This message will only ever be shown to
      * consoles or when this command is executed with
      * {@link Bukkit#dispatchCommand(CommandSender, String)}.
+     * @since 1.1.0 R4
      */
     @Deprecated(since = "1.20.4")
     @NotNull
@@ -430,6 +439,7 @@ public abstract class Command {
      * command execution to the server. This message will only ever be shown to
      * consoles or when this command is executed with
      * {@link Bukkit#dispatchCommand(CommandSender, String)}.
+     * @since 1.17.1
      */
     @Deprecated
     public net.kyori.adventure.text.@Nullable Component permissionMessage() {
@@ -446,6 +456,7 @@ public abstract class Command {
      * command execution to the server. This message will only ever be shown to
      * consoles or when this command is executed with
      * {@link Bukkit#dispatchCommand(CommandSender, String)}.
+     * @since 1.17.1
      */
     @Deprecated
     public void permissionMessage(net.kyori.adventure.text.@Nullable Component permissionMessage) {
@@ -457,15 +468,24 @@ public abstract class Command {
         broadcastCommandMessage(source, message, true);
     }
 
+    /**
+     * @since 1.3.1 R1.0
+     */
     public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull String message, boolean sendToSource) {
         // Paper start
         broadcastCommandMessage(source, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message), sendToSource);
     }
 
+    /**
+     * @since 1.18.2
+     */
     public static void broadcastCommandMessage(@NotNull CommandSender source, net.kyori.adventure.text.@NotNull Component message) {
         broadcastCommandMessage(source, message, true);
     }
 
+    /**
+     * @since 1.18.2
+     */
     public static void broadcastCommandMessage(@NotNull CommandSender source, net.kyori.adventure.text.@NotNull Component message, boolean sendToSource) {
         net.kyori.adventure.text.TextComponent.Builder result = net.kyori.adventure.text.Component.text()
             .color(net.kyori.adventure.text.format.NamedTextColor.WHITE)
@@ -516,11 +536,17 @@ public abstract class Command {
         }
     }
 
+    /**
+     * @since 1.3.2 R3.0
+     */
     @Override
     public String toString() {
         return getClass().getName() + '(' + name + ')';
     }
 
+    /**
+     * @since 1.20.6
+     */
     // Paper start
     @org.jetbrains.annotations.ApiStatus.Internal
     public boolean canBeOverriden() { return false; }

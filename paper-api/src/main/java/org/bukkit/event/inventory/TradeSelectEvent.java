@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * This event allows the user to get the index of the trade, letting them get
  * the MerchantRecipe via the Merchant.
+ *
+ * @since 1.14
  */
 public class TradeSelectEvent extends InventoryInteractEvent {
 
@@ -49,6 +51,9 @@ public class TradeSelectEvent extends InventoryInteractEvent {
         return getInventory().getMerchant();
     }
 
+    /**
+     * @since 1.21
+     */
     @NotNull
     @Override
     public MerchantView getView() {

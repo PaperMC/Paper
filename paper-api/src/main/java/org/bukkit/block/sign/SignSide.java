@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a side of a sign.
+ *
+ * @since 1.19.4
  */
 public interface SignSide extends Colorable {
     // Paper start

@@ -30,6 +30,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * Not all methods are guaranteed to work/may have side effects when
  * {@link #isInWorld()} is false.
+ *
+ * @since 1.0.0 R1
  */
 public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter { // Paper
 
@@ -49,6 +51,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param loc the location to copy into
      * @return The Location object provided or null
+     * @since 1.4.5 R1.0
      */
     @Contract("null -> null; !null -> !null")
     @Nullable
@@ -73,6 +76,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets the entity's height
      *
      * @return height of entity
+     * @since 1.11.2
      */
     public double getHeight();
 
@@ -80,6 +84,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets the entity's width
      *
      * @return width of entity
+     * @since 1.11.2
      */
     public double getWidth();
 
@@ -90,6 +95,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * size.
      *
      * @return the entity's current bounding box
+     * @since 1.13.2
      */
     @NotNull
     public BoundingBox getBoundingBox();
@@ -101,6 +107,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @return True if entity is on ground.
      * @see Player#isOnGround()
+     * @since 1.5.1 R0.2
      */
     public boolean isOnGround();
 
@@ -108,6 +115,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Returns true if the entity is in water.
      *
      * @return <code>true</code> if the entity is in water.
+     * @since 1.16.1
      */
     public boolean isInWater();
 
@@ -126,6 +134,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param yaw the yaw
      * @param pitch the pitch
+     * @since 1.13.2
      */
     public void setRotation(float yaw, float pitch);
 
@@ -195,6 +204,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
      * @param loc Location to teleport to
      * @return A future that will be completed with the result of the teleport
+     * @since 1.13.1
      */
     default java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(final @NotNull Location loc) {
         return this.teleportAsync(loc, TeleportCause.PLUGIN);
@@ -273,6 +283,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Sets if the entity has visual fire (it will always appear to be on fire).
      *
      * @param fire whether visual fire is enabled
+     * @since 1.17
      */
     void setVisualFire(boolean fire);
 
@@ -280,6 +291,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets if the entity has visual fire (it will always appear to be on fire).
      *
      * @return whether visual fire is enabled
+     * @since 1.17
      */
     boolean isVisualFire();
 
@@ -288,6 +300,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * been in powdered snow).
      *
      * @return int freeze ticks
+     * @since 1.17
      */
     int getFreezeTicks();
 
@@ -296,6 +309,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * be fully frozen)
      *
      * @return int max freeze ticks
+     * @since 1.17
      */
     int getMaxFreezeTicks();
 
@@ -304,6 +318,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * been in powdered snow).
      *
      * @param ticks Current ticks
+     * @since 1.17
      */
     void setFreezeTicks(int ticks);
 
@@ -312,6 +327,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * freeze ticks).
      *
      * @return freeze status
+     * @since 1.17
      */
     boolean isFrozen();
 
@@ -325,6 +341,9 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param invisible If the entity is invisible
      */
+    /**
+     * @since 1.20.4
+     */
     void setInvisible(boolean invisible); // Paper - moved up from LivingEntity
 
     /**
@@ -332,12 +351,16 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @return Whether the entity is invisible
      */
+    /**
+     * @since 1.20.4
+     */
     boolean isInvisible(); // Paper - moved up from LivingEntity
 
     /**
      * Sets this entities no physics status.
      *
      * @param noPhysics boolean indicating if the entity should not have physics.
+     * @since 1.20.4
      */
     void setNoPhysics(boolean noPhysics);
 
@@ -345,6 +368,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets if this entity has no physics.
      *
      * @return true if the entity does not have physics.
+     * @since 1.20.4
      */
     boolean hasNoPhysics();
     // Paper end - missing entity api
@@ -357,6 +381,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * This is only set by plugins
      *
      * @return locked or not
+     * @since 1.18.1
      */
     boolean isFreezeTickingLocked();
 
@@ -365,6 +390,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * preventing default vanilla freeze tick modification.
      *
      * @param locked prevent vanilla modification or not
+     * @since 1.18.1
      */
     void lockFreezeTicks(boolean locked);
     // Paper end - Freeze Tick Lock API
@@ -388,6 +414,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * reason, or has not been added to the world.
      *
      * @return True if valid.
+     * @since 1.3.1 R1.0
      */
     public boolean isValid();
 
@@ -416,6 +443,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * despawning of living entities. </b>
      *
      * @return true if this entity is persistent
+     * @since 1.13
      */
     public boolean isPersistent();
 
@@ -424,6 +452,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param persistent the persistence status
      * @see #isPersistent()
+     * @since 1.13
      */
     public void setPersistent(boolean persistent);
 
@@ -457,6 +486,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * passengers, and no guarantees are made as to its mutability.
      *
      * @return list of entities corresponding to current passengers.
+     * @since 1.11.2
      */
     @NotNull
     public List<Entity> getPassengers();
@@ -466,6 +496,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param passenger The passenger to add
      * @return false if it could not be done for whatever reason
+     * @since 1.11.2
      */
     public boolean addPassenger(@NotNull Entity passenger);
 
@@ -474,6 +505,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param passenger The passenger to remove
      * @return false if it could not be done for whatever reason
+     * @since 1.11.2
      */
     public boolean removePassenger(@NotNull Entity passenger);
 
@@ -559,6 +591,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * If the effect is not applicable to this class of entity, it will not play.
      *
      * @param type Effect to play.
+     * @since 1.1.0 R1
      */
     public void playEffect(@NotNull EntityEffect type);
 
@@ -566,6 +599,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Get the type of the entity.
      *
      * @return The entity type.
+     * @since 1.1.0 R5
      */
     @NotNull
     public EntityType getType();
@@ -574,6 +608,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Get the {@link Sound} this entity makes while swimming.
      *
      * @return the swimming sound
+     * @since 1.19.2
      */
     @NotNull
     public Sound getSwimSound();
@@ -583,6 +618,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * entities, this is just {@link Sound#ENTITY_GENERIC_SPLASH}.
      *
      * @return the splash sound
+     * @since 1.19.2
      */
     @NotNull
     public Sound getSwimSplashSound();
@@ -592,6 +628,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * speeds. For most entities, this is just {@link Sound#ENTITY_GENERIC_SPLASH}.
      *
      * @return the splash sound
+     * @since 1.19.2
      */
     @NotNull
     public Sound getSwimHighSpeedSplashSound();
@@ -600,6 +637,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Returns whether this entity is inside a vehicle.
      *
      * @return True if the entity is in a vehicle.
+     * @since 1.1.0 R5
      */
     public boolean isInsideVehicle();
 
@@ -609,6 +647,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * returned.
      *
      * @return True if the entity was in a vehicle.
+     * @since 1.1.0 R5
      */
     public boolean leaveVehicle();
 
@@ -617,6 +656,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * null will be returned.
      *
      * @return The current vehicle.
+     * @since 1.1.0 R5
      */
     @Nullable
     public Entity getVehicle();
@@ -629,6 +669,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * name.
      *
      * @param flag custom name or not
+     * @since 1.8
      */
     public void setCustomNameVisible(boolean flag);
 
@@ -639,6 +680,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * name.
      *
      * @return if the custom name is displayed
+     * @since 1.8
      */
     public boolean isCustomNameVisible();
 
@@ -650,6 +692,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * will need to be called before the entity is visible to a given player.
      *
      * @param visible default visibility status
+     * @since 1.19.4
      */
     public void setVisibleByDefault(boolean visible);
 
@@ -661,6 +704,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * will need to be called before the entity is visible to a given player.
      *
      * @return default visibility status
+     * @since 1.19.4
      */
     public boolean isVisibleByDefault();
 
@@ -673,6 +717,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * are tracked.
      *
      * @return the players tracking this entity, or an empty set if none
+     * @since 1.20.2
      */
     @NotNull
     Set<Player> getTrackedBy();
@@ -684,6 +729,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * glowing potion effect is applied</b>
      *
      * @param flag if the entity is glowing
+     * @since 1.9.4
      */
     void setGlowing(boolean flag);
 
@@ -694,6 +740,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * glowing potion effect is applied</b>
      *
      * @return whether the entity is glowing
+     * @since 1.9.4
      */
     boolean isGlowing();
 
@@ -704,6 +751,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * creative mode.
      *
      * @param flag if the entity is invulnerable
+     * @since 1.9.4
      */
     public void setInvulnerable(boolean flag);
 
@@ -711,6 +759,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets whether the entity is invulnerable or not.
      *
      * @return whether the entity is
+     * @since 1.9.4
      */
     public boolean isInvulnerable();
 
@@ -718,6 +767,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets whether the entity is silent or not.
      *
      * @return whether the entity is silent.
+     * @since 1.9.4
      */
     public boolean isSilent();
 
@@ -727,6 +777,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * When an entity is silent it will not produce any sound.
      *
      * @param flag if the entity is silent
+     * @since 1.9.4
      */
     public void setSilent(boolean flag);
 
@@ -734,6 +785,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Returns whether gravity applies to this entity.
      *
      * @return whether gravity applies
+     * @since 1.10.2
      */
     boolean hasGravity();
 
@@ -741,6 +793,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Sets whether gravity applies to this entity.
      *
      * @param gravity whether gravity should apply
+     * @since 1.10.2
      */
     void setGravity(boolean gravity);
 
@@ -748,6 +801,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets the period of time (in ticks) before this entity can use a portal.
      *
      * @return portal cooldown ticks
+     * @since 1.10.2
      */
     int getPortalCooldown();
 
@@ -755,6 +809,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Sets the period of time (in ticks) before this entity can use a portal.
      *
      * @param cooldown portal cooldown ticks
+     * @since 1.10.2
      */
     void setPortalCooldown(int cooldown);
 
@@ -764,6 +819,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Entities can have no more than 1024 tags.
      *
      * @return a set of tags for this entity
+     * @since 1.10.2
      */
     @NotNull
     Set<String> getScoreboardTags();
@@ -775,6 +831,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param tag the tag to add
      * @return true if the tag was successfully added
+     * @since 1.10.2
      */
     boolean addScoreboardTag(@NotNull String tag);
 
@@ -783,6 +840,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param tag the tag to remove
      * @return true if the tag was successfully removed
+     * @since 1.10.2
      */
     boolean removeScoreboardTag(@NotNull String tag);
 
@@ -790,6 +848,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Returns the reaction of the entity when moved by a piston.
      *
      * @return reaction
+     * @since 1.12
      */
     @NotNull
     PistonMoveReaction getPistonMoveReaction();
@@ -807,6 +866,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return the entity's current cardinal facing.
      * @see Hanging
      * @see Directional#getFacing()
+     * @since 1.13.1
      */
     @NotNull
     BlockFace getFacing();
@@ -819,6 +879,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * true does not imply the current pose will be {@link Pose#SNEAKING}</b>
      *
      * @return current pose
+     * @since 1.14
      */
     @NotNull
     Pose getPose();
@@ -828,6 +889,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Returns if the entity is in sneak mode
      *
      * @return true if the entity is in sneak mode
+     * @since 1.19.3
      */
     boolean isSneaking();
 
@@ -838,6 +900,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * and just makes its name tag less visible.
      *
      * @param sneak true if the entity should be sneaking
+     * @since 1.19.3
      */
     void setSneaking(boolean sneak);
 
@@ -851,6 +914,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param pose a new {@link Pose}
      * @see #setPose(Pose, boolean)
+     * @since 1.20.1
      */
     default void setPose(@NotNull Pose pose) {
         setPose(pose, false);
@@ -866,6 +930,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param pose a new {@link Pose}
      * @param fixed whether the new {@link Pose} should stay until manually changed
+     * @since 1.20.1
      */
     void setPose(@NotNull Pose pose, boolean fixed);
 
@@ -874,6 +939,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @see #setPose(Pose, boolean)
      * @return whether the entity has a fixed {@link Pose}
+     * @since 1.20.1
      */
     boolean hasFixedPose();
     // Paper end
@@ -882,6 +948,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Get the category of spawn to which this entity belongs.
      *
      * @return the entity´s category spawn
+     * @since 1.18.1
      */
     @NotNull
     SpawnCategory getSpawnCategory();
@@ -892,6 +959,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * saved to the server files.
      *
      * @return whether the entity has been spawned in a world
+     * @since 1.20.4
      */
     boolean isInWorld();
 
@@ -901,6 +969,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * This string should not be relied upon as a serializable value.
      *
      * @return the NBT string or null if one cannot be made
+     * @since 1.20.6
      */
     @Nullable
     @ApiStatus.Experimental
@@ -910,6 +979,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Crates an {@link EntitySnapshot} representing the current state of this entity.
      *
      * @return a snapshot representing this entity or null if one cannot be made
+     * @since 1.20.4
      */
     @Nullable
     @ApiStatus.Experimental
@@ -921,6 +991,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <b>Note:</b> Players cannot be copied.
      *
      * @return a copy of this entity.
+     * @since 1.20.4
      */
     @NotNull
     @ApiStatus.Experimental
@@ -931,16 +1002,23 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <b>Note:</b> Players cannot be copied.
      * @param to the location to copy to
      * @return a copy of this entity.
+     * @since 1.20.4
      */
     @NotNull
     @ApiStatus.Experimental
     Entity copy(@NotNull Location to);
 
+    /**
+     * @since 1.6.2 R1.1
+     */
     // Spigot start
     public class Spigot extends CommandSender.Spigot {
 
     }
 
+    /**
+     * @since 1.6.2 R1.1
+     */
     @NotNull
     @Override
     Spigot spigot();
@@ -952,9 +1030,13 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * the entity's default hover/click events.
      *
      * @return the team display name
+     * @since 1.17.1
      */
     net.kyori.adventure.text.@NotNull Component teamDisplayName();
 
+    /**
+     * @since 1.16.5
+     */
     @NotNull
     @Override
     default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
@@ -967,6 +1049,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * This value can be null if the entity hasn't yet been added to the world.
      *
      * @return Location where entity originates or null if not yet added
+     * @since 1.9.4
      */
     @Nullable
     Location getOrigin();
@@ -975,6 +1058,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Returns whether this entity was spawned from a mob spawner.
      *
      * @return True if entity spawned from a mob spawner
+     * @since 1.12
      */
     boolean fromMobSpawner();
 
@@ -982,6 +1066,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets the latest chunk an entity is currently or was in.
      *
      * @return The current, or most recent chunk if the entity is invalid (which may load the chunk)
+     * @since 1.12.2
      */
     @NotNull
     default Chunk getChunk() {
@@ -991,47 +1076,64 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
 
     /**
      * @return The {@link org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason} that initially spawned this entity. <!-- Paper - added "initially" to clarify that the SpawnReason doesn't change after the Entity was initially spawned" -->
+     * @since 1.13.2
      */
     @NotNull
     org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason getEntitySpawnReason();
 
     /**
      * Check if entity is underwater
+     *
+     * @since 1.19.2
      */
     boolean isUnderWater();
 
     /**
      * Check if entity is in rain
+     *
+     * @since 1.16.1
      */
     boolean isInRain();
 
     /**
      * Check if entity is in bubble column
+     *
+     * @since 1.16.1
      */
     boolean isInBubbleColumn();
 
     /**
      * Check if entity is in water or rain
+     *
+     * @since 1.16.1
      */
     boolean isInWaterOrRain();
 
     /**
      * Check if entity is in water or bubble column
+     *
+     * @since 1.16.1
      */
     boolean isInWaterOrBubbleColumn();
 
     /**
      * Check if entity is in water or rain or bubble column
+     *
+     * @since 1.16.1
      */
     boolean isInWaterOrRainOrBubbleColumn();
 
     /**
      * Check if entity is in lava
+     *
+     * @since 1.16.1
      */
     boolean isInLava();
 
     /**
      * Check if entity is inside a ticking chunk
+     *
+     * @since 1.16.3
      */
     boolean isTicking();
 
@@ -1040,6 +1142,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @return players in tracking range
      * @deprecated slightly misleading name, use {@link #getTrackedBy()}
+     * @since 1.17.1
      */
     @Deprecated
     @NotNull Set<Player> getTrackedPlayers();
@@ -1053,6 +1156,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param location The location to spawn the entity at.
      * @return Whether the entity was successfully spawned.
+     * @since 1.17.1
      */
     public default boolean spawnAt(@NotNull Location location) {
         return spawnAt(location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
@@ -1075,6 +1179,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Check if entity is inside powdered snow.
      *
      * @return true if in powdered snow.
+     * @since 1.18.1
      */
     boolean isInPowderedSnow();
 
@@ -1082,6 +1187,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets the x-coordinate of this entity
      *
      * @return x-coordinate
+     * @since 1.20.1
      */
     double getX();
 
@@ -1089,6 +1195,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets the y-coordinate of this entity
      *
      * @return y-coordinate
+     * @since 1.20.1
      */
     double getY();
 
@@ -1096,6 +1203,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Gets the z-coordinate of this entity
      *
      * @return z-coordinate
+     * @since 1.20.1
      */
     double getZ();
 
@@ -1104,6 +1212,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @see Location#getPitch()
      * @return the entity's pitch
+     * @since 1.20.1
      */
     float getPitch();
 
@@ -1112,6 +1221,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @see Location#getYaw()
      * @return the entity's yaw
+     * @since 1.20.1
      */
     float getYaw();
     // Paper end
@@ -1124,6 +1234,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param location the location to check collisions in
      * @return collides or not
+     * @since 1.19.1
      */
     boolean collidesAt(@NotNull Location location);
 
@@ -1134,6 +1245,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param boundingBox the box to check collisions in
      * @return collides or not
+     * @since 1.19.1
      */
     boolean wouldCollideUsing(@NotNull BoundingBox boundingBox);
     // Paper end - Collision API
@@ -1145,6 +1257,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <p><b>If you do not need/want to make your plugin run on Folia, use {@link org.bukkit.Server#getScheduler()} instead.</b></p>
      * @return the task scheduler for this entity.
      * @see io.papermc.paper.threadedregions.scheduler.EntityScheduler
+     * @since 1.20.1
      */
     @NotNull io.papermc.paper.threadedregions.scheduler.EntityScheduler getScheduler();
     // Paper end - Folia schedulers
@@ -1156,6 +1269,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return the scoreboard entry name
      * @see org.bukkit.scoreboard.Scoreboard#getScores(String)
      * @see org.bukkit.scoreboard.Scoreboard#getEntries()
+     * @since 1.20.1
      */
     @NotNull String getScoreboardEntryName();
     // Paper end - entity scoreboard name
@@ -1169,6 +1283,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param players the players to broadcast to (cannot include {@code this}
      * @throws IllegalArgumentException if {@code this} is contained in {@code players}
+     * @since 1.21.1
      */
     void broadcastHurtAnimation(@NotNull java.util.Collection<Player> players);
     // Paper end - broadcast hurt animation

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a map item.
+ *
+ * @since 1.0.0 R1
  */
 public interface MapView {
 
@@ -163,6 +165,7 @@ public interface MapView {
      * center.
      *
      * @return tracking status
+     * @since 1.14.1
      */
     boolean isTrackingPosition();
 
@@ -171,6 +174,7 @@ public interface MapView {
      * center.
      *
      * @param trackingPosition tracking status
+     * @since 1.14.1
      */
     void setTrackingPosition(boolean trackingPosition);
 
@@ -179,6 +183,7 @@ public interface MapView {
      * position cursor (false) when cursor is outside of map's range.
      *
      * @return unlimited tracking state
+     * @since 1.11
      */
     boolean isUnlimitedTracking();
 
@@ -187,6 +192,7 @@ public interface MapView {
      * position cursor (false) when cursor is outside of map's range.
      *
      * @param unlimited tracking state
+     * @since 1.11
      */
     void setUnlimitedTracking(boolean unlimited);
 
@@ -196,6 +202,7 @@ public interface MapView {
      * A locked map may not be explored further.
      *
      * @return lock status
+     * @since 1.14
      */
     boolean isLocked();
 
@@ -205,6 +212,7 @@ public interface MapView {
      * A locked map may not be explored further.
      *
      * @param locked status
+     * @since 1.14
      */
     void setLocked(boolean locked);
 }

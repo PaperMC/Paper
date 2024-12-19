@@ -13,6 +13,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * No guarantees are made about thread execution context for this event. If you need to know, check
  * {@link Event#isAsynchronous()}
+ *
+ * @since 1.12
  */
 @NullMarked
 public class LookupProfileEvent extends Event {
@@ -29,6 +31,7 @@ public class LookupProfileEvent extends Event {
 
     /**
      * @return The profile that was recently looked up. This profile can be mutated
+     * @since 1.12.2
      */
     public PlayerProfile getPlayerProfile() {
         return this.profile;

@@ -8,6 +8,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the ominous bottle amplifier.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#OMINOUS_BOTTLE_AMPLIFIER
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

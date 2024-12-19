@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
  * in a concrete class or as a lambda.
  *
  * @param <E> the event
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 @NullMarked

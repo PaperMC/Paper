@@ -6,6 +6,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Entities that can have their collars colored.
+ *
+ * @since 1.18.2
  */
 @NullMarked
 public interface CollarColorable extends LivingEntity {

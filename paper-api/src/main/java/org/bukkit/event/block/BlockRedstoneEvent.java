@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a redstone current changes
+ *
+ * @since 1.0.0 R1
  */
 public class BlockRedstoneEvent extends BlockEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -45,12 +47,18 @@ public class BlockRedstoneEvent extends BlockEvent {
         this.newCurrent = newCurrent;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

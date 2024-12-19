@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
  * Called when an ItemStack is successfully burned as fuel in a furnace-like block such as a
  * {@link org.bukkit.block.Furnace}, {@link org.bukkit.block.Smoker}, or
  * {@link org.bukkit.block.BlastFurnace}.
+ *
+ * @since 1.0.0 R1
  */
 public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -78,6 +80,7 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
      * Gets whether the furnace's fuel will be consumed or not.
      *
      * @return whether the furnace's fuel will be consumed
+     * @since 1.16.5
      */
     public boolean willConsumeFuel() {
         return consumeFuel;
@@ -87,6 +90,7 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
      * Sets whether the furnace's fuel will be consumed or not.
      *
      * @param consumeFuel true to consume the fuel
+     * @since 1.16.5
      */
     public void setConsumeFuel(boolean consumeFuel) {
         this.consumeFuel = consumeFuel;
@@ -103,12 +107,18 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

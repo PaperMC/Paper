@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a world border changes its bounds, either over time, or instantly.
+ *
+ * @since 1.16.5
  */
 @NullMarked
 public class WorldBorderBoundsChangeEvent extends WorldBorderEvent implements Cancellable {

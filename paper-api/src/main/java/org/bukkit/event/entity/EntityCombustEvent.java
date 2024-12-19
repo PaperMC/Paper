@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * Called when an entity combusts.
  * <p>
  * If an Entity Combust event is cancelled, the entity will not combust.
+ *
+ * @since 1.0.0 R1
  */
 public class EntityCombustEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -39,6 +41,7 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
     /**
      * @return the amount of time (in seconds) the combustee should be alight
      *     for
+     * @since 1.1.0 R1
      */
     public float getDuration() {
         return duration;
@@ -51,6 +54,7 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
      * existing combustion times.
      *
      * @param duration the time in seconds to be alight for.
+     * @since 1.21
      */
     public void setDuration(float duration) {
         this.duration = duration;
@@ -65,18 +69,25 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
      * @param duration the time in seconds to be alight for.
      * @see #setDuration(float)
      * @deprecated duration is now a float
+     * @since 1.1.0 R1
      */
     @Deprecated(since = "1.21", forRemoval = true)
     public void setDuration(int duration) {
         this.duration = duration;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

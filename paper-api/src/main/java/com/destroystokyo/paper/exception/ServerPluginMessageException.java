@@ -7,6 +7,8 @@ import static com.google.common.base.Preconditions.*;
 
 /**
  * Thrown when an incoming plugin message channel throws an exception
+ *
+ * @since 1.9.4
  */
 public class ServerPluginMessageException extends ServerPluginException {
 

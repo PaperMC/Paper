@@ -38,6 +38,8 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * Plugins may override/control the servers whitelist with this event,
  * and dynamically change the kick message.
+ *
+ * @since 1.12
  */
 @NullMarked
 public class ProfileWhitelistVerifyEvent extends Event {
@@ -85,6 +87,7 @@ public class ProfileWhitelistVerifyEvent extends Event {
 
     /**
      * @return the currently planned message to send to the user if they are not whitelisted
+     * @since 1.16.5
      */
     @Contract(pure = true)
     public @Nullable Component kickMessage() {
@@ -93,6 +96,7 @@ public class ProfileWhitelistVerifyEvent extends Event {
 
     /**
      * @param kickMessage The message to send to the player on kick if not whitelisted. May set to {@code null} to use the server configured default
+     * @since 1.16.5
      */
     public void kickMessage(final @Nullable Component kickMessage) {
         this.kickMessage = kickMessage;
@@ -100,6 +104,7 @@ public class ProfileWhitelistVerifyEvent extends Event {
 
     /**
      * @return The profile of the player trying to connect
+     * @since 1.12.2
      */
     public PlayerProfile getPlayerProfile() {
         return this.profile;

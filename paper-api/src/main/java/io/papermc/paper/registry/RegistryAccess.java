@@ -10,6 +10,8 @@ import org.jspecify.annotations.Nullable;
  * Used for accessing different {@link Registry} instances
  * by a {@link RegistryKey}. Get the main instance of {@link RegistryAccess}
  * with {@link RegistryAccess#registryAccess()}.
+ *
+ * @since 1.20.6
  */
 @NullMarked
 @ApiStatus.NonExtendable

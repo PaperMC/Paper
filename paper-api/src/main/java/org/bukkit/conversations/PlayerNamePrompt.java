@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * PlayerNamePrompt is the base class for any prompt that requires the player
  * to enter another player's name.
+ *
+ * @since 1.1.0 R5
  */
 public abstract class PlayerNamePrompt extends ValidatingPrompt {
     private Plugin plugin;

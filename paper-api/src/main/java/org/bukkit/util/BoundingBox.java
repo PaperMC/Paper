@@ -25,6 +25,8 @@ import org.jetbrains.annotations.Nullable;
  * Because bounding boxes are mutable, storing them long term may be dangerous
  * if they get modified later. If you want to keep around a bounding box, it may
  * be wise to call {@link #clone()} in order to get a copy.
+ *
+ * @since 1.13.2
  */
 @SerializableAs("BoundingBox")
 public class BoundingBox implements Cloneable, ConfigurationSerializable {

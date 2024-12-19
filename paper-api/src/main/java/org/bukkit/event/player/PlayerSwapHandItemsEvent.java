@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a player swap items between main hand and off hand using the
  * hotkey.
+ *
+ * @since 1.9.4
  */
 public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable {
 

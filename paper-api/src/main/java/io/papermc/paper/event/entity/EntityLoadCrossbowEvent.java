@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when a LivingEntity loads a crossbow with a projectile.
+ *
+ * @since 1.16.4
  */
 @NullMarked
 public class EntityLoadCrossbowEvent extends EntityEvent implements Cancellable {

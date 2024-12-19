@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A {@link BanList} targeting player profile bans.
+ *
+ * @since 1.20.1
  */
 public interface ProfileBanList extends BanList<com.destroystokyo.paper.profile.PlayerProfile> { // Paper
 

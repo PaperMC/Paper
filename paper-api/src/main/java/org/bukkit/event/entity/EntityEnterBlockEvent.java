@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * It is not called when a silverfish "enters" a stone block. For that listen to
  * the {@link EntityChangeBlockEvent}.
+ *
+ * @since 1.15.2
  */
 public class EntityEnterBlockEvent extends EntityEvent implements Cancellable {
 

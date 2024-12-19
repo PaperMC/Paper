@@ -8,9 +8,14 @@ import org.jetbrains.annotations.Nullable;
 /**
  * An instance of {@link InventoryView} which provides extra methods related to
  * anvil view data.
+ *
+ * @since 1.21
  */
 public interface AnvilView extends InventoryView {
 
+    /**
+     * @since 1.21.1
+     */
     @NotNull
     @Override
     AnvilInventory getTopInventory();
@@ -78,6 +83,7 @@ public interface AnvilView extends InventoryView {
      * books to be applied fully, even if their enchantments are beyond the limit.
      *
      * @return {@code true} if this view bypasses the vanilla restrictions.
+     * @since 1.21.1
      */
     boolean bypassesEnchantmentLevelRestriction();
 
@@ -86,6 +92,7 @@ public interface AnvilView extends InventoryView {
      *
      * @param bypassEnchantmentLevelRestriction if this view bypasses the vanilla level restrictions.
      * @see AnvilView#bypassesEnchantmentLevelRestriction()
+     * @since 1.21.1
      */
     void bypassEnchantmentLevelRestriction(boolean bypassEnchantmentLevelRestriction);
     // Paper end - bypass anvil level restrictions

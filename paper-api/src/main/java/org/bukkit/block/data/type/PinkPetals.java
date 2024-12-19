@@ -4,6 +4,8 @@ import org.bukkit.block.data.Directional;
 
 /**
  * 'flower_amount' represents the number of petals.
+ *
+ * @since 1.19.4
  */
 public interface PinkPetals extends Directional {
 
@@ -26,6 +28,7 @@ public interface PinkPetals extends Directional {
      * Gets the minimum allowed value of the 'flower_amount' property.
      *
      * @return the minimum 'flower_amount' value
+     * @since 1.20.4
      */
     int getMinimumFlowerAmount();
     // Paper end

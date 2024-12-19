@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a Weather-related event
+ *
+ * @since 1.0.0 R1
  */
 public abstract class WeatherEvent extends Event {
     protected World world;

@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
  * dispenser is currently activated.
  * <br>
  * 'crafting' is whether crafter's mouth is open and top is glowing.
+ *
+ * @since 1.20.4
  */
 public interface Crafter extends BlockData {
 

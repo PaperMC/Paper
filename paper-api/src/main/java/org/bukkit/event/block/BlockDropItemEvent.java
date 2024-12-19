@@ -27,6 +27,8 @@ import org.jetbrains.annotations.NotNull;
  * The Block is already broken as this event is called, so #getBlock() will be
  * AIR in most cases. Use #getBlockState() for more Information about the broken
  * block.
+ *
+ * @since 1.13.2
  */
 public class BlockDropItemEvent extends BlockEvent implements Cancellable {
 

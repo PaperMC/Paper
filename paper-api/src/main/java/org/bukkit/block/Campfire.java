@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a campfire.
+ *
+ * @since 1.14
  */
 public interface Campfire extends TileState {
 
@@ -73,11 +75,15 @@ public interface Campfire extends TileState {
     // Paper start
     /**
      * Disable cooking in all slots.
+     *
+     * @since 1.18.1
      */
     void stopCooking();
 
     /**
      * Re-enable cooking in all slots.
+     *
+     * @since 1.18.1
      */
     void startCooking();
 
@@ -86,6 +92,7 @@ public interface Campfire extends TileState {
      *
      * @param index item slot index
      * @return whether the slot had cooking enabled before this call
+     * @since 1.18.1
      */
     boolean stopCooking(int index);
 
@@ -94,6 +101,7 @@ public interface Campfire extends TileState {
      *
      * @param index item slot index
      * @return whether the slot couldn't cook before this call
+     * @since 1.18.1
      */
     boolean startCooking(int index);
 
@@ -102,6 +110,7 @@ public interface Campfire extends TileState {
      *
      * @param index item slot index
      * @return {@code true} if the specified slot index cannot cook
+     * @since 1.18.1
      */
     boolean isCookingDisabled(int index);
     // Paper end

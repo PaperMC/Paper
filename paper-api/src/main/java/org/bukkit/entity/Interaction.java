@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an entity designed to only record interactions.
+ *
+ * @since 1.19.4
  */
 public interface Interaction extends Entity {
 

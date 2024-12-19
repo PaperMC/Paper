@@ -23,6 +23,7 @@ import org.jspecify.annotations.NullMarked;
  * </ul>
  *
  * @param <T> registry value type
+ * @since 1.21
  */
 @ApiStatus.Experimental
 @NullMarked

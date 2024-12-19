@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * New profiles can be created via
  * {@link Server#createPlayerProfile(UUID, String)}.
  * @deprecated see {@link com.destroystokyo.paper.profile.PlayerProfile}
+ * @since 1.18.1
  */
 @Deprecated(since = "1.18.1") // Paper
 public interface PlayerProfile extends Cloneable, ConfigurationSerializable {

@@ -18,6 +18,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A simple services manager.
+ *
+ * @since 1.0.0 R1
  */
 public class SimpleServicesManager implements ServicesManager {
 

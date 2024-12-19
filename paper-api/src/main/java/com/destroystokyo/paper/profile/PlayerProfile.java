@@ -10,6 +10,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a players profile for the game, such as UUID, Name, and textures.
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public interface PlayerProfile extends org.bukkit.profile.PlayerProfile {
@@ -52,6 +54,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile {
      * requested inside PlayerTextures.
      *
      * @return the textures, not <code>null</code>
+     * @since 1.18.1
      */
     @Override
     PlayerTextures getTextures();
@@ -61,6 +64,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile {
      *
      * @param textures the textures to copy, or <code>null</code> to clear the
      * textures
+     * @since 1.18.1
      */
     @Override
     void setTextures(@Nullable PlayerTextures textures);
@@ -154,6 +158,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile {
      *
      * @param onlineMode Treat this as online mode or not
      * @return If the profile is now complete (has UUID and Name)
+     * @since 1.15.2
      */
     boolean completeFromCache(boolean onlineMode);
 
@@ -164,6 +169,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile {
      * @param lookupUUID If only name is supplied, should we do a UUID lookup
      * @param onlineMode Treat this as online mode or not
      * @return If the profile is now complete (has UUID and Name)
+     * @since 1.15.2
      */
     boolean completeFromCache(boolean lookupUUID, boolean onlineMode);
 
@@ -201,6 +207,7 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile {
      * @param textures controls if we should fill the profile with texture properties
      * @param onlineMode Treat this server as online mode or not
      * @return If the profile is now complete (has UUID and Name) (if you get rate limited, this operation may fail)
+     * @since 1.15.2
      */
     boolean complete(boolean textures, boolean onlineMode);
 
@@ -231,6 +238,8 @@ public interface PlayerProfile extends org.bukkit.profile.PlayerProfile {
      *     // ...
      * }, runnable -> Bukkit.getScheduler().runTask(plugin, runnable));
      * </pre>
+     *
+     * @since 1.19
      */
     @Override
     CompletableFuture<PlayerProfile> update();

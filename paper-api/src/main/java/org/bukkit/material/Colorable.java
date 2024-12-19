@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * An object that can be colored.
+ *
+ * @since 1.0.0 R1
  */
 public interface Colorable {
 

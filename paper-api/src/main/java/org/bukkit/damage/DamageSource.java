@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a source of damage.
+ *
+ * @since 1.20.4
  */
 @ApiStatus.Experimental
 public interface DamageSource {

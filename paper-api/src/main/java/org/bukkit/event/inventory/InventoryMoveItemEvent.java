@@ -23,6 +23,8 @@ import org.jetbrains.annotations.NotNull;
  * into the destination inventory. If this is not possible and the ItemStack
  * has not been modified, the source inventory slot will be restored to its
  * former state. Otherwise any additional items will be discarded.
+ *
+ * @since 1.5.1 R0.2
  */
 public class InventoryMoveItemEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

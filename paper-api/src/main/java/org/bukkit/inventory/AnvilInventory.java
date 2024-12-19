@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Interface to the inventory of an Anvil.
+ *
+ * @since 1.4.5 R1.0
  */
 public interface AnvilInventory extends Inventory {
 
@@ -14,6 +16,7 @@ public interface AnvilInventory extends Inventory {
      *
      * @return the rename text
      * @deprecated use {@link AnvilView#getRenameText()}.
+     * @since 1.11
      */
     @Deprecated(forRemoval = true, since = "1.21")
     @Nullable
@@ -24,6 +27,7 @@ public interface AnvilInventory extends Inventory {
      *
      * @return the amount
      * @deprecated use {@link AnvilView#getRepairItemCountCost()}.
+     * @since 1.18.1
      */
     @Deprecated(forRemoval = true, since = "1.21")
     int getRepairCostAmount();
@@ -33,6 +37,7 @@ public interface AnvilInventory extends Inventory {
      *
      * @param amount the amount
      * @deprecated use {@link AnvilView#setRepairItemCountCost(int)}.
+     * @since 1.18.1
      */
     @Deprecated(forRemoval = true, since = "1.21")
     void setRepairCostAmount(int amount);
@@ -42,6 +47,7 @@ public interface AnvilInventory extends Inventory {
      *
      * @return the experience cost
      * @deprecated use {@link AnvilView#getRepairCost()}.
+     * @since 1.11
      */
     @Deprecated(forRemoval = true, since = "1.21")
     int getRepairCost();
@@ -51,6 +57,7 @@ public interface AnvilInventory extends Inventory {
      *
      * @param levels the experience cost
      * @deprecated use {@link AnvilView#setRepairCost(int)}.
+     * @since 1.11
      */
     @Deprecated(forRemoval = true, since = "1.21")
     void setRepairCost(int levels);
@@ -65,6 +72,7 @@ public interface AnvilInventory extends Inventory {
      *
      * @return the maximum experience cost
      * @deprecated use {@link AnvilView#getMaximumRepairCost()}.
+     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.21")
     int getMaximumRepairCost();
@@ -75,6 +83,7 @@ public interface AnvilInventory extends Inventory {
      *
      * @param levels the maximum experience cost
      * @deprecated use {@link AnvilView#setMaximumRepairCost(int)}.
+     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.21")
     void setMaximumRepairCost(int levels);
@@ -84,6 +93,7 @@ public interface AnvilInventory extends Inventory {
      * Gets the item in the left input slot.
      *
      * @return item in the first slot
+     * @since 1.15.2
      */
     @Nullable
     default ItemStack getFirstItem() {
@@ -94,6 +104,7 @@ public interface AnvilInventory extends Inventory {
      * Sets the item in the left input slot.
      *
      * @param firstItem item to set
+     * @since 1.15.2
      */
     default void setFirstItem(@Nullable ItemStack firstItem) {
         setItem(0, firstItem);
@@ -103,6 +114,7 @@ public interface AnvilInventory extends Inventory {
      * Gets the item in the right input slot.
      *
      * @return item in the second slot
+     * @since 1.15.2
      */
     @Nullable
     default ItemStack getSecondItem() {
@@ -113,6 +125,7 @@ public interface AnvilInventory extends Inventory {
      * Sets the item in the right input slot.
      *
      * @param secondItem item to set
+     * @since 1.15.2
      */
     default void setSecondItem(@Nullable ItemStack secondItem) {
         setItem(1, secondItem);
@@ -122,6 +135,7 @@ public interface AnvilInventory extends Inventory {
      * Gets the item in the result slot.
      *
      * @return item in the result slot
+     * @since 1.15.2
      */
     @Nullable
     default ItemStack getResult() {
@@ -133,6 +147,7 @@ public interface AnvilInventory extends Inventory {
      * Note that the client might not be able to take out the item if it does not match the input items.
      *
      * @param result item to set
+     * @since 1.15.2
      */
     default void setResult(@Nullable ItemStack result) {
         setItem(2, result);

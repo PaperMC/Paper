@@ -16,6 +16,8 @@ import java.util.function.Consumer;
  * as the entity scheduler will "follow" an entity if it is teleported, whereas the region task scheduler
  * will not.
  * </p>
+ *
+ * @since 1.20.1
  */
 public interface RegionScheduler {
 

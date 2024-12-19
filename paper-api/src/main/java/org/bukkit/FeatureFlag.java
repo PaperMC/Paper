@@ -11,6 +11,8 @@ import org.jetbrains.annotations.ApiStatus;
 
 /**
  * This represents a Feature Flag for a {@link io.papermc.paper.world.flag.FeatureFlagSetHolder}.
+ *
+ * @since 1.19.4
  */
 public interface FeatureFlag extends Keyed {
 

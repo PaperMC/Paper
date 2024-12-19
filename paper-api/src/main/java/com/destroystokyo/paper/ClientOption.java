@@ -5,6 +5,9 @@ import net.kyori.adventure.util.Index;
 import org.bukkit.inventory.MainHand;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.15.2
+ */
 @NullMarked
 public final class ClientOption<T> {
 

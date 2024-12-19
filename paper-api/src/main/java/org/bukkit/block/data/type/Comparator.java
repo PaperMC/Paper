@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 'mode' indicates what mode this comparator will operate in.
+ *
+ * @since 1.13
  */
 public interface Comparator extends Directional, Powerable {
 

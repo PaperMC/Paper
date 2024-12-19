@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a vibration from a Skulk sensor.
+ *
+ * @since 1.17
  */
 public class Vibration {
 

@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
  * A ConversationPrefix implementation prepends all output from the
  * conversation to the player. The ConversationPrefix can be used to display
  * the plugin name or conversation status as the conversation evolves.
+ *
+ * @since 1.1.0 R5
  */
 public interface ConversationPrefix {
 

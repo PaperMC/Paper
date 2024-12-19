@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
  * Called when a bell is rung.
  *
  * @deprecated use {@link org.bukkit.event.block.BellRingEvent}
+ * @since 1.16.2
  */
 @Deprecated(since = "1.19.4")
 public class BellRingEvent extends org.bukkit.event.block.BellRingEvent {

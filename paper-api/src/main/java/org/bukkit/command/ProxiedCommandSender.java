@@ -3,6 +3,9 @@ package org.bukkit.command;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.8
+ */
 public interface ProxiedCommandSender extends CommandSender, net.kyori.adventure.audience.ForwardingAudience.Single { // Paper
 
     /**
@@ -21,12 +24,18 @@ public interface ProxiedCommandSender extends CommandSender, net.kyori.adventure
     @NotNull
     CommandSender getCallee();
 
+    /**
+     * @since 1.16.5
+     */
     // Paper start
     @Override
     default void sendMessage(final net.kyori.adventure.identity.@NotNull Identity source, final net.kyori.adventure.text.@NotNull Component message, final net.kyori.adventure.audience.@NotNull MessageType type) {
         net.kyori.adventure.audience.ForwardingAudience.Single.super.sendMessage(source, message, type);
     }
 
+    /**
+     * @since 1.16.5
+     */
     @NotNull
     @Override
     default net.kyori.adventure.audience.Audience audience() {

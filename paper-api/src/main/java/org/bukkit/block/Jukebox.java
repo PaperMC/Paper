@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a jukebox.
+ *
+ * @since 1.0.0 R1
  */
 public interface Jukebox extends io.papermc.paper.block.TileStateInventoryHolder { // Paper - TileStateInventoryHolder
 
@@ -36,6 +38,7 @@ public interface Jukebox extends io.papermc.paper.block.TileStateInventoryHolder
      *
      * @return true if this jukebox has a record, false if it the jukebox
      * is empty
+     * @since 1.19.4
      */
     public boolean hasRecord();
 
@@ -43,6 +46,7 @@ public interface Jukebox extends io.papermc.paper.block.TileStateInventoryHolder
      * Gets the record item inserted into the jukebox.
      *
      * @return a copy of the inserted record, or an air stack if none
+     * @since 1.13.2
      */
     @NotNull
     public ItemStack getRecord();
@@ -51,6 +55,7 @@ public interface Jukebox extends io.papermc.paper.block.TileStateInventoryHolder
      * Sets the record being played. The jukebox will start playing automatically.
      *
      * @param record the record to insert or null/AIR to empty
+     * @since 1.13.2
      */
     public void setRecord(@Nullable ItemStack record);
 
@@ -66,11 +71,14 @@ public interface Jukebox extends io.papermc.paper.block.TileStateInventoryHolder
      *
      * @return true if the jukebox had a record and was able to start playing, false
      * if the jukebox was already playing or did not have a record
+     * @since 1.19.4
      */
     public boolean startPlaying();
 
     /**
      * Stops the jukebox playing without ejecting the record.
+     *
+     * @since 1.16.1
      */
     public void stopPlaying();
 
@@ -85,11 +93,17 @@ public interface Jukebox extends io.papermc.paper.block.TileStateInventoryHolder
      */
     public boolean eject();
 
+    /**
+     * @since 1.19.4
+     */
     // Paper - move docs to TileStateInventoryHolder
     @NotNull
     @Override
     JukeboxInventory getInventory();
 
+    /**
+     * @since 1.19.4
+     */
     @Override // Paper - move docs to TileStateInventoryHolder
     @NotNull
     JukeboxInventory getSnapshotInventory();

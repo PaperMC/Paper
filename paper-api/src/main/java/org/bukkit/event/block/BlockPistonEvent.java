@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a piston block is triggered
+ *
+ * @since 1.0.0 R1
  */
 public abstract class BlockPistonEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;

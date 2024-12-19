@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
  * Keys may only contain lowercase alphanumeric characters, periods,
  * underscores, hyphens, and forward slashes.
  *
+ * @since 1.12
  */
 public final class NamespacedKey implements net.kyori.adventure.key.Key, com.destroystokyo.paper.Namespaced { // Paper - implement Key and Namespaced
 
@@ -204,6 +205,7 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
      * ({@link #minecraft(String)}) will be used
      * @return the created NamespacedKey. null if invalid key
      * @see #fromString(String)
+     * @since 1.16.5
      */
     @Nullable
     public static NamespacedKey fromString(@NotNull String string, @Nullable Plugin defaultNamespace) {
@@ -250,12 +252,16 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
      * @param key the key to convert to a NamespacedKey
      * @return the created NamespacedKey. null if invalid
      * @see #fromString(String, Plugin)
+     * @since 1.16.5
      */
     @Nullable
     public static NamespacedKey fromString(@NotNull String key) {
         return fromString(key, null);
     }
 
+    /**
+     * @since 1.16.5
+     */
     // Paper start
     @NotNull
     @Override
@@ -263,12 +269,18 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
         return this.getNamespace();
     }
 
+    /**
+     * @since 1.16.5
+     */
     @NotNull
     @Override
     public String value() {
         return this.getKey();
     }
 
+    /**
+     * @since 1.16.5
+     */
     @NotNull
     @Override
     public String asString() {

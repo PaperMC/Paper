@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
  * Called when an entity jumps
  * <p>
  * Cancelling the event will stop the entity from jumping
+ *
+ * @since 1.15.2
  */
 @NullMarked
 public class EntityJumpEvent extends EntityEvent implements Cancellable {

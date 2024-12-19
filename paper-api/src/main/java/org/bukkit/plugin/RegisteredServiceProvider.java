@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
  * A registered service provider.
  *
  * @param <T> Service
+ * @since 1.0.0 R1
  */
 public class RegisteredServiceProvider<T> implements Comparable<RegisteredServiceProvider<?>> {
 

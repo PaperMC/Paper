@@ -6,6 +6,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * The {@link PersistentDataViewHolder} interface defines an object that can view
  * custom persistent data on it.
+ *
+ * @since 1.21
  */
 @NullMarked
 @ApiStatus.NonExtendable

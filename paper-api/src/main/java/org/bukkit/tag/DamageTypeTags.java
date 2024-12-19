@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Vanilla {@link DamageType} {@link Tag tags}.
+ *
+ * @since 1.21.3
  */
 @ApiStatus.Experimental
 public final class DamageTypeTags {

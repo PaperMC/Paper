@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a block display entity.
+ *
+ * @since 1.19.4
  */
 public interface BlockDisplay extends Display {
 

@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
  * Represents a key for a value in a specific registry.
  *
  * @param <T> the value type for the registry
+ * @since 1.20.2
  */
 @ApiStatus.Experimental
 @NullMarked

@@ -8,6 +8,9 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.16.5
+ */
 @NullMarked
 public class BlockPreDispenseEvent extends BlockEvent implements Cancellable {
 

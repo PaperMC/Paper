@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Creates perlin noise through unbiased octaves
+ *
+ * @since 1.0.0 R1
  */
 public class PerlinOctaveGenerator extends OctaveGenerator {
 

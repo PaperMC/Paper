@@ -22,6 +22,9 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.13.1
+ */
 public class MaterialSetTag extends BaseTag<Material, MaterialSetTag> {
 
     /**

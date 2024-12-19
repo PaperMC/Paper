@@ -15,6 +15,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the properties for this item for when it is consumed.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CONSUMABLE
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

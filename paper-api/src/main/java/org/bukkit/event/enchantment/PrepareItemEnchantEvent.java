@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when an ItemStack is inserted in an enchantment table - can be
  * called multiple times
+ *
+ * @since 1.1.0 R1
  */
 public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -85,6 +87,7 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
      * are 3 slots in the enchantment table available to modify.
      *
      * @return list of available enchantment offers
+     * @since 1.11
      */
     public @org.jetbrains.annotations.Nullable EnchantmentOffer @NotNull [] getOffers() { // Paper offers can contain null values
         return offers;
@@ -99,6 +102,9 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
         return bonus;
     }
 
+    /**
+     * @since 1.21
+     */
     @NotNull
     @Override
     public EnchantmentView getView() {

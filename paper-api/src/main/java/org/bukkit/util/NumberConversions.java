@@ -5,24 +5,38 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Utils for casting number types to other number types
+ *
+ * @since 1.1.0 R1
  */
 public final class NumberConversions {
     private NumberConversions() {}
 
+    /**
+     * @since 1.1.0 R5
+     */
     public static int floor(double num) {
         final int floor = (int) num;
         return floor == num ? floor : floor - (int) (Double.doubleToRawLongBits(num) >>> 63);
     }
 
+    /**
+     * @since 1.2.5 R1.3
+     */
     public static int ceil(final double num) {
         final int floor = (int) num;
         return floor == num ? floor : floor + (int) (~Double.doubleToRawLongBits(num) >>> 63);
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     public static int round(double num) {
         return floor(num + 0.5d);
     }
 
+    /**
+     * @since 1.6.4 R2.1
+     */
     public static double square(double num) {
         return num * num;
     }
@@ -105,20 +119,32 @@ public final class NumberConversions {
         return 0;
     }
 
+    /**
+     * @since 1.8
+     */
     public static boolean isFinite(double d) {
         return Math.abs(d) <= Double.MAX_VALUE;
     }
 
+    /**
+     * @since 1.8
+     */
     public static boolean isFinite(float f) {
         return Math.abs(f) <= Float.MAX_VALUE;
     }
 
+    /**
+     * @since 1.8
+     */
     public static void checkFinite(double d, @NotNull String message) {
         if (!isFinite(d)) {
             throw new IllegalArgumentException(message);
         }
     }
 
+    /**
+     * @since 1.8
+     */
     public static void checkFinite(float d, @NotNull String message) {
         if (!isFinite(d)) {
             throw new IllegalArgumentException(message);

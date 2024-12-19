@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a shaped or shapeless crafting recipe.
+ *
+ * @since 1.20.1
  */
 public abstract class CraftingRecipe implements Recipe, Keyed {
     private final NamespacedKey key;

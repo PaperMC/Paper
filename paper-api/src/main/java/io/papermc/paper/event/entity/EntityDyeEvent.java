@@ -16,6 +16,8 @@ import org.jspecify.annotations.Nullable;
 /**
  * Called when an entity is dyed. Currently, this is called for {@link Sheep}
  * being dyed, and {@link Wolf}/{@link Cat} collars being dyed.
+ *
+ * @since 1.18.2
  */
 @NullMarked
 public class EntityDyeEvent extends EntityEvent implements Cancellable {

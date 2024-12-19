@@ -23,6 +23,7 @@ import static com.google.common.base.Preconditions.checkState;
  * <p>A title can be sent without subtitle text.</p>
  *
  * @deprecated use {@link net.kyori.adventure.title.Title}
+ * @since 1.9.4
  */
 @Deprecated(since = "1.16.5")
 public final class Title {
@@ -237,6 +238,7 @@ public final class Title {
      * Sends the title directly to an player
      *
      * @param player the receiver of the title
+     * @since 1.16.4
      */
     public void send(@NotNull Player player) {
         player.sendTitle(this);
@@ -246,6 +248,7 @@ public final class Title {
      * Sends the title directly to the defined players
      *
      * @param players the receivers of the title
+     * @since 1.16.4
      */
     public void send(@NotNull Collection<? extends Player> players) {
         for (Player player : players) {
@@ -257,6 +260,7 @@ public final class Title {
      * Sends the title directly to the defined players
      *
      * @param players the receivers of the title
+     * @since 1.16.4
      */
     public void send(@NotNull Player[] players) {
         for (Player player : players) {
@@ -266,6 +270,8 @@ public final class Title {
 
     /**
      * Sends the title directly to all online players
+     *
+     * @since 1.16.4
      */
     public void broadcast() {
         send(Bukkit.getOnlinePlayers());

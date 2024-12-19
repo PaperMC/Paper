@@ -16,6 +16,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * Holds player profile data that can be resolved to a {@link PlayerProfile}.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#PROFILE
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

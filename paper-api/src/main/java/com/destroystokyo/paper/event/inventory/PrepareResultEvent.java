@@ -9,6 +9,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Called when an item is put in an inventory containing a result slot
+ *
+ * @since 1.16.1
  */
 @NullMarked
 public class PrepareResultEvent extends PrepareInventoryResultEvent {

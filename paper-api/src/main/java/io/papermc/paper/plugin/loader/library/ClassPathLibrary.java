@@ -5,6 +5,8 @@ import org.jspecify.annotations.NullMarked;
 /**
  * The classpath library interface represents libraries that are capable of registering themselves via
  * {@link #register(LibraryStore)} on any given {@link LibraryStore}.
+ *
+ * @since 1.19.3
  */
 @NullMarked
 public interface ClassPathLibrary {

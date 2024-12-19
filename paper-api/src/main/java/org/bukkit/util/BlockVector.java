@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * BlockVector in WorldEdit. BlockVectors can be used in hash sets and
  * hash maps. Be aware that BlockVectors are mutable, but it is important
  * that BlockVectors are never changed once put into a hash set or hash map.
+ *
+ * @since 1.0.0 R1
  */
 @SerializableAs("BlockVector")
 public class BlockVector extends Vector {

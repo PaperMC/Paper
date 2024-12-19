@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown when a LivingEntity is tamed
+ *
+ * @since 1.0.0 R1
  */
 public class EntityTameEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -19,6 +21,9 @@ public class EntityTameEvent extends EntityEvent implements Cancellable {
         this.owner = owner;
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     @Override
     public LivingEntity getEntity() {
@@ -45,12 +50,18 @@ public class EntityTameEvent extends EntityEvent implements Cancellable {
         return owner;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

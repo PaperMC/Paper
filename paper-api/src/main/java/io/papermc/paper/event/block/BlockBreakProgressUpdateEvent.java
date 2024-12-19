@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when the progress of a block break is updated.
+ *
+ * @since 1.20.4
  */
 @NullMarked
 public class BlockBreakProgressUpdateEvent extends BlockEvent {

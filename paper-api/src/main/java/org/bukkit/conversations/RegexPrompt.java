@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * RegexPrompt is the base class for any prompt that requires an input
  * validated by a regular expression.
+ *
+ * @since 1.1.0 R5
  */
 public abstract class RegexPrompt extends ValidatingPrompt {
 

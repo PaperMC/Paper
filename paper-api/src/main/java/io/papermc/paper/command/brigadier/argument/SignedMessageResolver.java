@@ -12,6 +12,7 @@ import org.jspecify.annotations.NullMarked;
  * A resolver for a {@link SignedMessage}
  *
  * @see ArgumentTypes#signedMessage()
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @NullMarked

@@ -10,6 +10,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a weighted spawn potential that can be added to a monster spawner.
+ *
+ * @since 1.20.4
  */
 public class SpawnerEntry {
 
@@ -96,6 +98,7 @@ public class SpawnerEntry {
      * Gets the equipment which will be applied to the spawned entity.
      *
      * @return the equipment, or null
+     * @since 1.20.6
      */
     @Nullable
     public Equipment getEquipment() {
@@ -113,6 +116,8 @@ public class SpawnerEntry {
 
     /**
      * Represents the equipment loot table applied to a spawned entity.
+     *
+     * @since 1.20.6
      */
     public static class Equipment {
 

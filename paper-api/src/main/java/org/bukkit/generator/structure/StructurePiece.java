@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * Represents an individual part of a {@link GeneratedStructure}.
  *
  * @see GeneratedStructure
+ * @since 1.20.4
  */
 public interface StructurePiece {
 

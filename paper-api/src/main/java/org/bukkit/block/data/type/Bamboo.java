@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * 'leaves' represents the size of the leaves on this bamboo block.
+ *
+ * @since 1.14
  */
 public interface Bamboo extends Ageable, Sapling {
 

@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a captured state of a dispenser.
+ *
+ * @since 1.0.0 R1
  */
 public interface Dispenser extends Container, Nameable, LootableBlockInventory { // Paper
 
@@ -19,6 +21,7 @@ public interface Dispenser extends Container, Nameable, LootableBlockInventory {
      *
      * @return a BlockProjectileSource if valid, otherwise null
      * @throws IllegalStateException if this block state is not placed
+     * @since 1.7.10
      */
     @Nullable
     public BlockProjectileSource getBlockProjectileSource();

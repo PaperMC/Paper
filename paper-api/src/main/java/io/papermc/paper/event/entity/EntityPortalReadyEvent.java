@@ -19,6 +19,8 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * Cancelling this event resets the entity's readiness
  * regarding the current portal.
+ *
+ * @since 1.19
  */
 @NullMarked
 public class EntityPortalReadyEvent extends EntityEvent implements Cancellable {

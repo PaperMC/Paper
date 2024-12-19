@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called whenever a villager acquires a new trade.
+ *
+ * @since 1.9.4
  */
 public class VillagerAcquireTradeEvent extends EntityEvent implements Cancellable {
 

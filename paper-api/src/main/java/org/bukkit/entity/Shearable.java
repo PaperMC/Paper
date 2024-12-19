@@ -6,6 +6,7 @@ package org.bukkit.entity;
  * mushroom cows which, once sheared, convert into normal cows. For such entities, methods like
  * {@link #setSheared(boolean)} or {@link #isSheared()} make no sense, making this API and interface dead API from
  * the get-go.
+ * @since 1.21
  */
 @Deprecated(forRemoval = true, since = "1.21")
 public interface Shearable {

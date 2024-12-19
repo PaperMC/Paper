@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
  * The ManuallyAbandonedConversationCanceller is only used as part of a {@link
  * ConversationAbandonedEvent} to indicate that the conversation was manually
  * abandoned by programmatically calling the abandon() method on it.
+ *
+ * @since 1.2.5 R0.1
  */
 public class ManuallyAbandonedConversationCanceller implements ConversationCanceller {
     @Override

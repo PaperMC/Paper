@@ -33,6 +33,8 @@ import org.bukkit.Tag;
  * <p>
  * All tags in this class are unmodifiable, attempting to modify them will throw an
  * {@link UnsupportedOperationException}.
+ *
+ * @since 1.13.1
  */
 @SuppressWarnings({"NonFinalUtilityClass", "unused", "WeakerAccess"})
 public class MaterialTags {

@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * An event relating to a registered service. This is called in a {@link
  * org.bukkit.plugin.ServicesManager}
+ *
+ * @since 1.1.0 R5
  */
 public abstract class ServiceEvent extends ServerEvent {
     private final RegisteredServiceProvider<?> provider;

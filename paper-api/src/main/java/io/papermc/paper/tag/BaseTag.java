@@ -16,6 +16,9 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+/**
+ * @since 1.16.4
+ */
 public abstract class BaseTag<T extends Keyed, C extends BaseTag<T, C>> implements Tag<T> {
 
     protected final NamespacedKey key;
@@ -48,11 +51,17 @@ public abstract class BaseTag<T extends Keyed, C extends BaseTag<T, C>> implemen
         return (Set<E>) EnumSet.noneOf((Class<Enum>) enumClass);
     }
 
+    /**
+     * @since 1.18.1
+     */
     public @NotNull C lock() {
         this.locked = true;
         return (C) this;
     }
 
+    /**
+     * @since 1.18.1
+     */
     public boolean isLocked() {
         return this.locked;
     }

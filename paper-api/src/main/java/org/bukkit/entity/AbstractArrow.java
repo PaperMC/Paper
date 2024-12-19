@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an arrow.
+ *
+ * @since 1.14
  */
 public interface AbstractArrow extends Projectile {
 
@@ -55,6 +57,7 @@ public interface AbstractArrow extends Projectile {
      * Gets the number of times this arrow can pierce through an entity.
      *
      * @return pierce level
+     * @since 1.14.3
      */
     public int getPierceLevel();
 
@@ -64,6 +67,7 @@ public interface AbstractArrow extends Projectile {
      * Must be between 0 and 127 times.
      *
      * @param pierceLevel new pierce level
+     * @since 1.14.3
      */
     public void setPierceLevel(int pierceLevel);
 
@@ -122,6 +126,7 @@ public interface AbstractArrow extends Projectile {
      * Gets if this arrow was shot from a crossbow.
      *
      * @return if shot from a crossbow
+     * @since 1.15.2
      */
     public boolean isShotFromCrossbow();
 
@@ -131,6 +136,7 @@ public interface AbstractArrow extends Projectile {
      * @param shotFromCrossbow if shot from a crossbow
      * @see #setWeapon(org.bukkit.inventory.ItemStack)
      * @deprecated a function of the firing weapon instead
+     * @since 1.15.2
      */
     @Deprecated(since = "1.21")
     public void setShotFromCrossbow(boolean shotFromCrossbow);
@@ -140,6 +146,7 @@ public interface AbstractArrow extends Projectile {
      *
      * @return The picked up ItemStack
      * @deprecated use {@link #getItemStack()}
+     * @since 1.20.4
      */
     @NotNull
     @ApiStatus.Experimental
@@ -151,6 +158,7 @@ public interface AbstractArrow extends Projectile {
      *
      * @param item ItemStack set to be picked up
      * @deprecated use {@link #getItemStack()}
+     * @since 1.20.4
      */
     @ApiStatus.Experimental
     @Deprecated(forRemoval = true, since = "1.20.4") // Paper
@@ -160,6 +168,7 @@ public interface AbstractArrow extends Projectile {
      * Gets the ItemStack which fired this arrow.
      *
      * @return The firing ItemStack
+     * @since 1.21
      */
     @Nullable // Paper
     @ApiStatus.Experimental
@@ -169,6 +178,7 @@ public interface AbstractArrow extends Projectile {
      * Sets the ItemStack which fired this arrow.
      *
      * @param item The firing ItemStack
+     * @since 1.21
      */
     @ApiStatus.Experimental
     public void setWeapon(@NotNull ItemStack item);
@@ -231,6 +241,7 @@ public interface AbstractArrow extends Projectile {
      * for both visuals on the arrow and the stack that could be picked up.
      *
      * @return The ItemStack, as if a player picked up the arrow
+     * @since 1.15.2
      */
     @NotNull ItemStack getItemStack();
 
@@ -239,6 +250,7 @@ public interface AbstractArrow extends Projectile {
      * visuals on the arrow and the stack that could be picked up.
      *
      * @param stack the arrow stack
+     * @since 1.20.6
      */
     void setItemStack(@NotNull ItemStack stack);
 
@@ -247,6 +259,7 @@ public interface AbstractArrow extends Projectile {
      * This is used to determine when the arrow should be automatically despawned.
      *
      * @param ticks lifetime ticks
+     * @since 1.19.2
      */
     void setLifetimeTicks(int ticks);
 
@@ -254,6 +267,7 @@ public interface AbstractArrow extends Projectile {
      * Gets how many ticks this arrow has been in the world for.
      *
      * @return ticks this arrow has been in the world
+     * @since 1.19.2
      */
     int getLifetimeTicks();
 
@@ -261,6 +275,7 @@ public interface AbstractArrow extends Projectile {
      * Gets the sound that is played when this arrow hits an entity.
      *
      * @return sound that plays
+     * @since 1.19.2
      */
     @NotNull
     org.bukkit.Sound getHitSound();
@@ -269,6 +284,7 @@ public interface AbstractArrow extends Projectile {
      * Sets the sound that is played when this arrow hits an entity.
      *
      * @param sound sound that is played
+     * @since 1.19.2
      */
     void setHitSound(@NotNull org.bukkit.Sound sound);
     // Paper end - more projectile API
@@ -279,6 +295,7 @@ public interface AbstractArrow extends Projectile {
      *
      * @param source the {@link org.bukkit.projectiles.ProjectileSource} that shot this projectile
      * @param resetPickupStatus whether the {@link org.bukkit.entity.AbstractArrow.PickupStatus} should be reset
+     * @since 1.21
      */
     void setShooter(@Nullable org.bukkit.projectiles.ProjectileSource source, boolean resetPickupStatus);
     // Paper end - Fix PickupStatus getting reset

@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a campfire recipe.
+ *
+ * @since 1.14
  */
 public class CampfireRecipe extends CookingRecipe<CampfireRecipe> {
 

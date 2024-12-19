@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an item display entity.
+ *
+ * @since 1.19.4
  */
 public interface ItemDisplay extends Display {
 

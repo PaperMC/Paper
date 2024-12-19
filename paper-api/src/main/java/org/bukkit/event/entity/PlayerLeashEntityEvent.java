@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called immediately prior to a creature being leashed by a player.
+ *
+ * @since 1.6.2 R1.1
  */
 public class PlayerLeashEntityEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -65,6 +67,7 @@ public class PlayerLeashEntityEvent extends Event implements Cancellable {
      * Returns the hand used by the player to leash the entity.
      *
      * @return the hand
+     * @since 1.19.2
      */
     @NotNull
     public EquipmentSlot getHand() {

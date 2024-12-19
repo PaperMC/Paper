@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
  * Listed structures are present in the default server. Depending on the server
  * there might be additional structures present (for example structures added by
  * data packs), which can be received via {@link Registry#STRUCTURE}.
+ *
+ * @since 1.19
  */
 public abstract class Structure implements Keyed {
 
@@ -65,6 +67,7 @@ public abstract class Structure implements Keyed {
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#STRUCTURE}. Structures can exist without a key.
+     * @since 1.20.4
      */
     @Override
     @Deprecated(since = "1.20.4", forRemoval = true)
@@ -73,6 +76,7 @@ public abstract class Structure implements Keyed {
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#STRUCTURE}. Structures can exist without a key.
+     * @since 1.21.3
      */
     @Override
     @Deprecated(since = "1.20.4", forRemoval = true)

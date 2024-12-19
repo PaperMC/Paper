@@ -19,6 +19,8 @@ import org.jspecify.annotations.Nullable;
  * to your server platform will be run.
  *
  * <p>WARNING: TAMPERING WITH THIS EVENT CAN BE DANGEROUS</p>
+ *
+ * @since 1.9.4
  */
 @NullMarked
 public class PlayerHandshakeEvent extends Event implements Cancellable {
@@ -92,6 +94,7 @@ public class PlayerHandshakeEvent extends Event implements Cancellable {
      * <p>In cases where this event is manually fired and the plugin wasn't updated yet, the default is {@code "127.0.0.1"}.</p>
      *
      * @return the original socket address hostname
+     * @since 1.16.5
      */
     public String getOriginalSocketAddressHostname() {
         return this.originalSocketAddressHostname;
@@ -209,6 +212,7 @@ public class PlayerHandshakeEvent extends Event implements Cancellable {
      * Gets the message to display to the client when authentication fails.
      *
      * @return the message to display to the client
+     * @since 1.16.5
      */
     public Component failMessage() {
         return this.failMessage;
@@ -218,6 +222,7 @@ public class PlayerHandshakeEvent extends Event implements Cancellable {
      * Sets the message to display to the client when authentication fails.
      *
      * @param failMessage the message to display to the client
+     * @since 1.16.5
      */
     public void failMessage(final Component failMessage) {
         this.failMessage = failMessage;

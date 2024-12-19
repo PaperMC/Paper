@@ -4,6 +4,9 @@ import org.bukkit.entity.Minecart;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.7.2 R0.2
+ */
 public interface CommandMinecart extends Minecart, io.papermc.paper.command.CommandBlockHolder { // Paper
 
     /**

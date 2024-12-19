@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a {@link Raid} is triggered (e.g: a player with Bad Omen effect
  * enters a village).
+ *
+ * @since 1.14.4
  */
 public class RaidTriggerEvent extends RaidEvent implements Cancellable {
 

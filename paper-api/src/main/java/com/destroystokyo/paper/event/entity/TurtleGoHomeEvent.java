@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when a Turtle decides to go home
+ *
+ * @since 1.13.1
  */
 @NullMarked
 public class TurtleGoHomeEvent extends EntityEvent implements Cancellable {

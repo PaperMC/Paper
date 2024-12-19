@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
  * only return {@code true} on calls for {@link #canAccess(ConfiguredPluginClassLoader)} if the passed class loader
  * is owned by a direct or transitive dependency of the plugin, preventing the plugin for accidentally discovering and
  * using class types that are supplied by plugins/libraries the plugin did not actively define as a dependency.
+ *
+ * @since 1.19.3
  */
 @NullMarked
 @ApiStatus.Internal

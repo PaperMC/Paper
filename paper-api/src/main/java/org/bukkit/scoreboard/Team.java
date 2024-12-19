@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
  * A team on a scoreboard that has a common display theme and other
  * properties. This team is only relevant to the display of the associated
  * {@link #getScoreboard() scoreboard}.
+ *
+ * @since 1.5.1 R0.2
  */
 public interface Team extends net.kyori.adventure.audience.ForwardingAudience { // Paper - Make Team extend ForwardingAudience
 
@@ -29,6 +31,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @return Team display name
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.16.5
      */
     net.kyori.adventure.text.@NotNull Component displayName();
 
@@ -37,6 +40,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @param displayName New display name
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.16.5
      */
     void displayName(net.kyori.adventure.text.@Nullable Component displayName);
 
@@ -45,6 +49,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @return Team prefix
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.16.5
      */
     net.kyori.adventure.text.@NotNull Component prefix();
 
@@ -53,6 +58,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @param prefix New prefix
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.16.5
      */
     void prefix(net.kyori.adventure.text.@Nullable Component prefix);
 
@@ -61,6 +67,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @return the team's current suffix
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.16.5
      */
     net.kyori.adventure.text.@NotNull Component suffix();
 
@@ -69,6 +76,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @param suffix the new suffix for this team.
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.16.5
      */
     void suffix(net.kyori.adventure.text.@Nullable Component suffix);
 
@@ -77,6 +85,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @return true if it has a <b>color</b>
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.18.2
      */
     boolean hasColor();
 
@@ -90,6 +99,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalStateException if this team has been unregistered
      * @throws IllegalStateException if the team doesn't have a color
      * @see #hasColor()
+     * @since 1.16.5
      */
     net.kyori.adventure.text.format.@NotNull TextColor color();
 
@@ -100,6 +110,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * names are handled by prefixes / suffixes.
      *
      * @param color new color, null for no color
+     * @since 1.16.5
      */
     void color(net.kyori.adventure.text.format.@Nullable NamedTextColor color);
     // Paper end - Adventure
@@ -176,6 +187,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return team color, defaults to {@link ChatColor#RESET}
      * @throws IllegalStateException if this team has been unregistered
      * @deprecated in favour of {@link #color()}
+     * @since 1.12
      */
     @NotNull
     @Deprecated // Paper
@@ -190,6 +202,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param color new color, must be non-null. Use {@link ChatColor#RESET} for
      * no color
      * @deprecated in favour of {@link #color(net.kyori.adventure.text.format.NamedTextColor)}
+     * @since 1.12
      */
     @Deprecated // Paper
     void setColor(@NotNull ChatColor color);
@@ -234,6 +247,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return the current name tag visibility for the team
      * @throws IllegalArgumentException if this team has been unregistered
      * @deprecated see {@link #getOption(Team.Option)}
+     * @since 1.8
      */
     @Deprecated(since = "1.9")
     @NotNull
@@ -245,6 +259,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param visibility The nameTagVisibility to set
      * @throws IllegalArgumentException if this team has been unregistered
      * @deprecated see {@link #setOption(Team.Option, Team.OptionStatus)}
+     * @since 1.8
      */
     @Deprecated(since = "1.9")
     void setNameTagVisibility(@NotNull NameTagVisibility visibility);
@@ -266,6 +281,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @return entries on the team
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.7.10
      */
     @NotNull
     Set<String> getEntries();
@@ -306,6 +322,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      *
      * @param entry the entry to add
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.7.10
      */
     void addEntry(@NotNull String entry);
 
@@ -333,6 +350,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param entities the entities to add
      * @throws IllegalArgumentException if entities are null
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.18.1
      */
     void addEntities(@NotNull java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException;
 
@@ -359,6 +377,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param entries the entries to add
      * @throws IllegalArgumentException if entries are null
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.18.1
      */
     void addEntries(@NotNull java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException;
     // Paper end
@@ -380,6 +399,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param entry the entry to remove
      * @return if the entry was a part of this team
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.7.10
      */
     boolean removeEntry(@NotNull String entry);
 
@@ -405,6 +425,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if any of the entities were a part of this team
      * @throws IllegalArgumentException if entities is null
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.18.1
      */
     boolean removeEntities(@NotNull java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException;
 
@@ -429,6 +450,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @return if any of the entries were a part of this team
      * @throws IllegalArgumentException if entries is null
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.18.1
      */
     boolean removeEntries(@NotNull java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException;
     // Paper end
@@ -456,6 +478,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @param entry the entry to search for
      * @return true if the entry is a member of this team
      * @throws IllegalStateException if this team has been unregistered
+     * @since 1.7.10
      */
     boolean hasEntry(@NotNull String entry);
 
@@ -488,6 +511,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalArgumentException if entity is null
      * @throws IllegalStateException if this team has been unregistered
      * @see #addEntry(String)
+     * @since 1.18.1
      */
     void addEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
 
@@ -499,6 +523,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalArgumentException if entity is null
      * @throws IllegalStateException if this team has been unregistered
      * @see #removeEntry(String)
+     * @since 1.18.1
      */
     boolean removeEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
 
@@ -510,6 +535,7 @@ public interface Team extends net.kyori.adventure.audience.ForwardingAudience { 
      * @throws IllegalArgumentException if entity is null
      * @throws IllegalStateException if this team has been unregistered
      * @see #hasEntry(String)
+     * @since 1.18.1
      */
     boolean hasEntity(@NotNull org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException;
     // Paper end - improve scoreboard entries

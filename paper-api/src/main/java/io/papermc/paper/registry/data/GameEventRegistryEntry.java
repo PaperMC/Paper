@@ -8,6 +8,8 @@ import org.jetbrains.annotations.Range;
 
 /**
  * A data-centric version-specific registry entry for the {@link GameEvent} type.
+ *
+ * @since 1.21
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

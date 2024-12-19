@@ -18,6 +18,8 @@ import org.jetbrains.annotations.Nullable;
  * <li>If you want to figure out what is being placed, use {@link
  *     #getMaterial()} instead.
  * </ul>
+ *
+ * @since 1.0.0 R1
  */
 public class BlockCanBuildEvent extends BlockEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -56,6 +58,7 @@ public class BlockCanBuildEvent extends BlockEvent {
      * Gets the hand the player will use to place the block
      *
      * @return the EquipmentSlot representing the players hand.
+     * @since 1.20.1
      */
     @NotNull
     public org.bukkit.inventory.EquipmentSlot getHand() {
@@ -99,6 +102,7 @@ public class BlockCanBuildEvent extends BlockEvent {
      * Gets the BlockData that we are trying to place.
      *
      * @return The BlockData that we are trying to place
+     * @since 1.13
      */
     @NotNull
     public BlockData getBlockData() {
@@ -111,18 +115,25 @@ public class BlockCanBuildEvent extends BlockEvent {
      * May be null for legacy calls of the event.
      *
      * @return The Player who placed the block involved in this event
+     * @since 1.13.2
      */
     @Nullable
     public Player getPlayer() {
         return player;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

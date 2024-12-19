@@ -4,6 +4,8 @@ import com.destroystokyo.paper.entity.RangedEntity;
 
 /**
  * Represents a snowman entity
+ *
+ * @since 1.0.0 R1
  */
 public interface Snowman extends Golem, RangedEntity, io.papermc.paper.entity.Shearable { // Paper
 
@@ -12,6 +14,7 @@ public interface Snowman extends Golem, RangedEntity, io.papermc.paper.entity.Sh
      * pumpkin.
      *
      * @return True if the snowman is bald, false if it is wearing a pumpkin
+     * @since 1.9.4
      */
     boolean isDerp();
 
@@ -21,6 +24,7 @@ public interface Snowman extends Golem, RangedEntity, io.papermc.paper.entity.Sh
      * reset when the chunk is reloaded.
      *
      * @param derpMode True to remove the pumpkin, false to add a pumpkin
+     * @since 1.9.4
      */
     void setDerp(boolean derpMode);
 }

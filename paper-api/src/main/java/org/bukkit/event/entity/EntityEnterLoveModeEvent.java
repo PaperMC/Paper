@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
  * <br>
  * This can be cancelled but the item will still be consumed that was used to
  * make the entity enter into love mode.
+ *
+ * @since 1.16.1
  */
 public class EntityEnterLoveModeEvent extends EntityEvent implements Cancellable {
 

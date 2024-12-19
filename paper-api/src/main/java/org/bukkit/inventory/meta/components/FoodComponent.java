@@ -5,6 +5,8 @@ import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Represents a component which can turn any item into food.
+ *
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 public interface FoodComponent extends ConfigurationSerializable {

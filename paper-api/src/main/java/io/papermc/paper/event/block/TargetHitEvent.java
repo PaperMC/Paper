@@ -16,6 +16,8 @@ import org.jspecify.annotations.NullMarked;
  * Cancelling this event will stop the Target from emitting a redstone signal,
  * and in the case that the shooter is a player, will stop them from receiving
  * advancement criteria.
+ *
+ * @since 1.16.4
  */
 @NullMarked
 public class TargetHitEvent extends ProjectileHitEvent {

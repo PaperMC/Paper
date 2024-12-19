@@ -19,6 +19,8 @@ import org.jetbrains.annotations.NotNull;
  * or can be enabled via a {@link FeatureFlag}.
  * There may be additional biomes present in the server, for example from a {@link DataPack}
  * which can be accessed via {@link Registry#BIOME}.
+ *
+ * @since 1.0.0 R1
  */
 public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
@@ -128,6 +130,9 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
         return Lists.newArrayList(Registry.BIOME).toArray(new Biome[0]);
     }
 
+    /**
+     * @since 1.19
+     */
     // Paper start
     @Override
     default @NotNull String translationKey() {

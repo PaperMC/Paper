@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * <b>Note:</b> Do not use this to generated blocks in a newly generated chunk.
  * Use a {@link BlockPopulator} instead.
+ *
+ * @since 1.0.0 R1
  */
 public class ChunkPopulateEvent extends ChunkEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -18,12 +20,18 @@ public class ChunkPopulateEvent extends ChunkEvent {
         super(chunk);
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

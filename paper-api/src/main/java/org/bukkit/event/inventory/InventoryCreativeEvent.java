@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * This event is called when a player in creative mode puts down or picks up
  * an item in their inventory / hotbar and when they drop items from their
  * Inventory while in creative mode.
+ *
+ * @since 1.6.1 R0.1
  */
 public class InventoryCreativeEvent extends InventoryClickEvent {
     private ItemStack item;

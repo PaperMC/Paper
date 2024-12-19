@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a mutable instance of an attribute and its associated modifiers
  * and values.
+ *
+ * @since 1.9.4
  */
 public interface AttributeInstance {
 
@@ -45,6 +47,7 @@ public interface AttributeInstance {
      *
      * @param key the jey of the modifier
      * @return the modifier, if it exists
+     * @since 1.21
      */
     @org.jetbrains.annotations.Nullable AttributeModifier getModifier(@NotNull net.kyori.adventure.key.Key key);
 
@@ -52,6 +55,7 @@ public interface AttributeInstance {
      * Remove a modifier with the corresponding key from this instance.
      *
      * @param key the key of the modifier
+     * @since 1.21
      */
     void removeModifier(@NotNull net.kyori.adventure.key.Key key);
 
@@ -61,6 +65,7 @@ public interface AttributeInstance {
      * @param uuid the UUID of the modifier
      * @return the modifier, if it exists
      * @deprecated use {@link #getModifier(net.kyori.adventure.key.Key)}, modifiers are no longer stored by UUID
+     * @since 1.20.2
      */
     @Deprecated(forRemoval = true, since = "1.21")
     @org.jetbrains.annotations.Nullable AttributeModifier getModifier(@NotNull java.util.UUID uuid);
@@ -70,6 +75,7 @@ public interface AttributeInstance {
      *
      * @param uuid the UUID of the modifier
      * @deprecated use {@link #removeModifier(net.kyori.adventure.key.Key)}, modifiers are no longer stored by UUID
+     * @since 1.20.2
      */
     @Deprecated(forRemoval = true, since = "1.21")
     void removeModifier(@NotNull java.util.UUID uuid);
@@ -88,6 +94,7 @@ public interface AttributeInstance {
      * Transient modifiers are not persisted (saved with the NBT data)
      *
      * @param modifier to add
+     * @since 1.19.4
      */
     void addTransientModifier(@NotNull AttributeModifier modifier);
     // Paper end
@@ -111,6 +118,7 @@ public interface AttributeInstance {
      * Gets the default value of the Attribute attached to this instance.
      *
      * @return server default value
+     * @since 1.11
      */
     double getDefaultValue();
 }

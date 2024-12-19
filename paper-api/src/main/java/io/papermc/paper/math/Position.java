@@ -11,6 +11,8 @@ import org.jspecify.annotations.NullMarked;
  * Common interface for {@link FinePosition} and {@link BlockPosition}.
  * <p>
  * <b>May see breaking changes until Experimental annotation is removed.</b>
+ *
+ * @since 1.19.3
  */
 @ApiStatus.Experimental
 @NullMarked
@@ -77,6 +79,8 @@ public interface Position {
 
     /**
      * Checks if each component of this position is finite.
+     *
+     * @since 1.20.2
      */
     default boolean isFinite() {
         return Double.isFinite(this.x()) && Double.isFinite(this.y()) && Double.isFinite(this.z());

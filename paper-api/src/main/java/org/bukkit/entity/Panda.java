@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Panda entity.
+ *
+ * @since 1.14
  */
 public interface Panda extends Animals, Sittable {
 
@@ -41,6 +43,7 @@ public interface Panda extends Animals, Sittable {
      * Gets whether the Panda is rolling
      *
      * @return Whether the Panda is rolling
+     * @since 1.18.1
      */
     boolean isRolling();
 
@@ -48,6 +51,7 @@ public interface Panda extends Animals, Sittable {
      * Sets whether the Panda is rolling
      *
      * @param flag Whether the Panda is rolling
+     * @since 1.18.1
      */
     void setRolling(boolean flag);
 
@@ -55,6 +59,7 @@ public interface Panda extends Animals, Sittable {
      * Gets whether the Panda is sneezing
      *
      * @return Whether the Panda is sneezing
+     * @since 1.18.1
      */
     boolean isSneezing();
 
@@ -62,6 +67,7 @@ public interface Panda extends Animals, Sittable {
      * Sets whether the Panda is sneezing
      *
      * @param flag Whether the Panda is sneezing
+     * @since 1.18.1
      */
     void setSneezing(boolean flag);
 
@@ -69,6 +75,7 @@ public interface Panda extends Animals, Sittable {
      * Gets whether the Panda is on its back
      *
      * @return Whether the Panda is on its back
+     * @since 1.18.1
      */
     boolean isOnBack();
 
@@ -76,6 +83,7 @@ public interface Panda extends Animals, Sittable {
      * Sets whether the Panda is on its back
      *
      * @param flag Whether the Panda is on its back
+     * @since 1.19
      */
     void setOnBack(boolean flag);
 
@@ -83,6 +91,7 @@ public interface Panda extends Animals, Sittable {
      * Gets whether the Panda is eating
      *
      * @return Whether the Panda is eating
+     * @since 1.19
      */
     boolean isEating();
 
@@ -90,6 +99,7 @@ public interface Panda extends Animals, Sittable {
      * Sets the Panda's eating status. The panda must be holding food for this to work
      *
      * @param flag Whether the Panda is eating
+     * @since 1.19
      */
     void setEating(boolean flag);
 
@@ -97,6 +107,7 @@ public interface Panda extends Animals, Sittable {
      * Gets whether the Panda is scared
      *
      * @return Whether the Panda is scared
+     * @since 1.19
      */
     boolean isScared();
 
@@ -104,6 +115,7 @@ public interface Panda extends Animals, Sittable {
      * Gets how many ticks the panda will be unhappy for
      *
      * @return The number of ticks the panda will be unhappy for
+     * @since 1.18.1
      */
     int getUnhappyTicks();
 
@@ -113,6 +125,7 @@ public interface Panda extends Animals, Sittable {
      * This value counts up only if {@link Panda#isSneezing()} is true
      *
      * @param ticks sneeze progress
+     * @since 1.18.1
      */
     void setSneezeTicks(int ticks);
 
@@ -120,6 +133,7 @@ public interface Panda extends Animals, Sittable {
      * Gets the current sneeze progress, or how many ticks this panda will sneeze for.
      *
      * @return sneeze progress
+     * @since 1.18.1
      */
     int getSneezeTicks();
 
@@ -130,6 +144,7 @@ public interface Panda extends Animals, Sittable {
      * This starts counting up as long as it is greater than 0.
      *
      * @param ticks eating ticks
+     * @since 1.18.1
      */
     void setEatingTicks(int ticks);
 
@@ -137,6 +152,7 @@ public interface Panda extends Animals, Sittable {
      * Gets the current eating progress, or how many ticks this panda has been eating for.
      *
      * @return eating progress
+     * @since 1.18.1
      */
     int getEatingTicks();
 
@@ -146,6 +162,7 @@ public interface Panda extends Animals, Sittable {
      * This value counts down.
      *
      * @param ticks unhappy ticks
+     * @since 1.18.1
      */
     void setUnhappyTicks(int ticks);
 
@@ -154,6 +171,7 @@ public interface Panda extends Animals, Sittable {
      *
      * @param onBack is on its back
      * @deprecated use {@link #setOnBack(boolean)}
+     * @since 1.18.1
      */
     @Deprecated(forRemoval = true, since = "1.19")
     default void setIsOnBack(boolean onBack) {
@@ -165,6 +183,7 @@ public interface Panda extends Animals, Sittable {
      *
      * @param sitting is currently sitting
      * @deprecated use {@link #setSitting(boolean)}
+     * @since 1.18.1
      */
     @Deprecated(forRemoval = true, since = "1.19")
     default void setIsSitting(boolean sitting) {
@@ -175,6 +194,7 @@ public interface Panda extends Animals, Sittable {
      * Sets if this panda is currently sitting.
      *
      * @param sitting is currently sitting
+     * @since 1.18.1
      */
     @Override
     void setSitting(boolean sitting);
@@ -183,6 +203,7 @@ public interface Panda extends Animals, Sittable {
      * Gets if this panda is sitting.
      *
      * @return is sitting
+     * @since 1.18.1
      */
     @Override
     boolean isSitting();
@@ -194,6 +215,7 @@ public interface Panda extends Animals, Sittable {
      * {@link #setMainGene(Gene)} or {@link #setHiddenGene(Gene)}.
      *
      * @return combined gene
+     * @since 1.20.2
      */
     @NotNull
     Gene getCombinedGene();

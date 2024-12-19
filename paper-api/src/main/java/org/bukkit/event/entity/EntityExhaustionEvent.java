@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * Called when a human entity experiences exhaustion.
  *
  * An exhaustion level greater than 4.0 causes a decrease in saturation by 1.
+ *
+ * @since 1.16.5
  */
 public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
 

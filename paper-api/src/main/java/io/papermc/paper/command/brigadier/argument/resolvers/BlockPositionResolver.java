@@ -9,6 +9,7 @@ import org.jetbrains.annotations.ApiStatus;
  * a block position argument value using a {@link CommandSourceStack}.
  *
  * @see io.papermc.paper.command.brigadier.argument.ArgumentTypes#blockPosition()
+ * @since 1.20.6
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable

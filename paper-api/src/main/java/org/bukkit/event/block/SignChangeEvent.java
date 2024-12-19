@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
  * Called when a sign is changed by a player.
  * <p>
  * If a Sign Change event is cancelled, the sign will not be changed.
+ *
+ * @since 1.0.0 R1
  */
 public class SignChangeEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -67,6 +69,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
      * Gets all of the lines of text from the sign involved in this event.
      *
      * @return the String array for the sign's lines new text
+     * @since 1.16.5
      */
     public @NotNull java.util.List<net.kyori.adventure.text.Component> lines() {
         return this.adventure$lines;
@@ -80,6 +83,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
      *     provided index
      * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
      *     or < 0}
+     * @since 1.16.5
      */
     public net.kyori.adventure.text.@Nullable Component line(int index) throws IndexOutOfBoundsException {
         return this.adventure$lines.get(index);
@@ -92,6 +96,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
      * @param line text to set
      * @throws IndexOutOfBoundsException thrown when the provided index is {@literal > 3
      *     or < 0}
+     * @since 1.16.5
      */
     public void line(int index, net.kyori.adventure.text.@Nullable Component line) throws IndexOutOfBoundsException {
         this.adventure$lines.set(index, line);
@@ -144,6 +149,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
      * Returns which side is changed.
      *
      * @return the affected side of the sign
+     * @since 1.19.4
      */
     @NotNull
     public Side getSide() {
@@ -160,12 +166,18 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
         this.cancel = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

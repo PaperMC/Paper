@@ -9,6 +9,9 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.0.0 R1
+ */
 public class ReloadCommand extends BukkitCommand {
     public ReloadCommand(@NotNull String name) {
         super(name);
@@ -69,6 +72,9 @@ public class ReloadCommand extends BukkitCommand {
         return true;
     }
 
+    /**
+     * @since 1.7.2 R0.2
+     */
     @NotNull
     @Override
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {

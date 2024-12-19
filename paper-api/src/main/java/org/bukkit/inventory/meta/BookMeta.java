@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
  * {@link org.bukkit.inventory.ItemStack#getType()}. {@code instanceof} on
  * the meta instance is not sufficient due to unusual inheritance
  * with relation to {@link WritableBookMeta}.
+ *
+ * @since 1.4.5 R1.0
  */
 public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventory.Book { // Paper - adventure
 
@@ -96,6 +98,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * Checks for the existence of generation level in the book.
      *
      * @return true if the book has a generation level
+     * @since 1.10.2
      */
     boolean hasGeneration();
 
@@ -106,6 +109,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * this method.
      *
      * @return the generation of the book
+     * @since 1.9.4
      */
     @Nullable
     Generation getGeneration();
@@ -173,6 +177,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * method.
      *
      * @return the title of the book
+     * @since 1.16.5
      */
     @Override
     net.kyori.adventure.text.@Nullable Component title();
@@ -184,6 +189,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      *
      * @param title the title to set
      * @return the same {@link BookMeta} instance
+     * @since 1.16.5
      */
     @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
     @Override
@@ -196,6 +202,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      * method.
      *
      * @return the author of the book
+     * @since 1.16.5
      */
     @Override
     net.kyori.adventure.text.@Nullable Component author();
@@ -205,6 +212,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      *
      * @param author the author to set
      * @return the same {@link BookMeta} instance
+     * @since 1.16.5
      */
     @org.jetbrains.annotations.Contract(value = "_ -> this", pure = false)
     @Override
@@ -218,6 +226,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      *
      * @param page the page number to get, in range [1, getPageCount()]
      * @return the page from the book
+     * @since 1.16.5
      */
     net.kyori.adventure.text.@NotNull Component page(int page);
 
@@ -232,6 +241,7 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      *
      * @param page the page number to set, in range [1, getPageCount()]
      * @param data the data to set for that page
+     * @since 1.16.5
      */
     void page(int page, net.kyori.adventure.text.@NotNull Component data);
 
@@ -243,6 +253,9 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
      */
     void addPages(net.kyori.adventure.text.@NotNull Component @NotNull ... pages);
 
+    /**
+     * @since 1.16.5
+     */
     interface BookMetaBuilder extends net.kyori.adventure.inventory.Book.Builder {
 
         @Override
@@ -264,10 +277,16 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
         @NotNull BookMeta build();
     }
 
+    /**
+     * @since 1.16.5
+     */
     @Override
     @NotNull BookMetaBuilder toBuilder();
     // Paper end
 
+    /**
+     * @since 1.12.2
+     */
     // Spigot start
     public class Spigot {
 
@@ -349,6 +368,9 @@ public interface BookMeta extends WritableBookMeta, net.kyori.adventure.inventor
         }
     }
 
+    /**
+     * @since 1.12.2
+     */
     @NotNull
     Spigot spigot();
     // Spigot end

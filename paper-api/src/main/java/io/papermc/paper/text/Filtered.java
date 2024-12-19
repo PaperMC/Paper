@@ -10,6 +10,7 @@ import org.jspecify.annotations.Nullable;
  * depending on the player's set configuration.
  *
  * @param <T> type of value
+ * @since 1.21.3
  */
 @ApiStatus.Experimental
 @NullMarked

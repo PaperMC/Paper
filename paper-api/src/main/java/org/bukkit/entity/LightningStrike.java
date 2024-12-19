@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an instance of a lightning strike. May or may not do damage.
+ *
+ * @since 1.0.0 R1
  */
 public interface LightningStrike extends Entity {
 
@@ -23,6 +25,7 @@ public interface LightningStrike extends Entity {
      *
      * @return the flashes
      * @deprecated use {@link #getFlashCount()}
+     * @since 1.20.2
      */
     @Deprecated // Paper
     public int getFlashes();
@@ -34,6 +37,7 @@ public interface LightningStrike extends Entity {
      *
      * @param flashes the flashes
      * @deprecated use {@link #setFlashCount(int)}
+     * @since 1.20.2
      */
     @Deprecated // Paper
     public void setFlashes(int flashes);
@@ -46,6 +50,7 @@ public interface LightningStrike extends Entity {
      * flash will be initiated and life ticks reset to 1.
      *
      * @return the life ticks
+     * @since 1.16.4
      */
     public int getLifeTicks();
 
@@ -66,6 +71,7 @@ public interface LightningStrike extends Entity {
      * </ul>
      *
      * @param ticks the life ticks
+     * @since 1.16.4
      */
     public void setLifeTicks(int ticks);
 
@@ -76,6 +82,7 @@ public interface LightningStrike extends Entity {
      * during a storm.
      *
      * @return the player
+     * @since 1.20.2
      */
     @Nullable
     public Player getCausingPlayer();
@@ -84,12 +91,14 @@ public interface LightningStrike extends Entity {
      * Set the {@link Player} that caused this lightning to strike.
      *
      * @param player the player
+     * @since 1.17.1
      */
     public void setCausingPlayer(@Nullable Player player);
 
     // Spigot start
     /**
      * @deprecated Unsupported api
+     * @since 1.7.10
      */
     @Deprecated // Paper
     public class Spigot extends Entity.Spigot {
@@ -108,6 +117,7 @@ public interface LightningStrike extends Entity {
 
     /**
      * @deprecated Unsupported api
+     * @since 1.7.10
      */
     @NotNull
     @Override
@@ -121,6 +131,7 @@ public interface LightningStrike extends Entity {
      *
      * @see #getLifeTicks() for how long the current flash will last
      * @return amount of flashes that will be shown before the lightning dies
+     * @since 1.16.4
      */
     int getFlashCount();
 
@@ -129,6 +140,7 @@ public interface LightningStrike extends Entity {
      * Default number of flashes on creation is between 1-3.
      *
      * @param flashes amount of iterations that will be done before the lightning dies, must to be a positive number
+     * @since 1.16.4
      */
     void setFlashCount(int flashes);
 
@@ -148,6 +160,7 @@ public interface LightningStrike extends Entity {
      *
      * @return the entity that caused this lightning or null if the lightning was not caused by a entity (e.g. normal
      * weather)
+     * @since 1.17.1
      */
     @org.jetbrains.annotations.Nullable
     Entity getCausingEntity();

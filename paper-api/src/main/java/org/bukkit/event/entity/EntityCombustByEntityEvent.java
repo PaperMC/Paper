@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity causes another entity to combust.
+ *
+ * @since 1.1.0 R1
  */
 public class EntityCombustByEntityEvent extends EntityCombustEvent {
     private final Entity combuster;

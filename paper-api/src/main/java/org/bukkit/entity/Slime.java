@@ -2,6 +2,8 @@ package org.bukkit.entity;
 
 /**
  * Represents a Slime.
+ *
+ * @since 1.0.0 R1
  */
 public interface Slime extends Mob, Enemy {
 
@@ -30,6 +32,7 @@ public interface Slime extends Mob, Enemy {
      * Get whether this slime can randomly wander/jump around on its own
      *
      * @return true if can wander
+     * @since 1.13
      */
     public boolean canWander();
 
@@ -37,6 +40,7 @@ public interface Slime extends Mob, Enemy {
      * Set whether this slime can randomly wander/jump around on its own
      *
      * @param canWander true if can wander
+     * @since 1.13
      */
     public void setWander(boolean canWander);
     // Paper end

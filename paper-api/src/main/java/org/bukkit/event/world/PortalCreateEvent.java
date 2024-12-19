@@ -11,6 +11,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a portal is created
+ *
+ * @since 1.0.0 R1
  */
 public class PortalCreateEvent extends WorldEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -46,6 +48,7 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
      * Returns the Entity that triggered this portal creation (if available)
      *
      * @return Entity involved in this event
+     * @since 1.14.1
      */
     @Nullable
     public Entity getEntity() {
@@ -66,18 +69,25 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
      * Gets the reason for the portal's creation
      *
      * @return CreateReason for the portal's creation
+     * @since 1.1.0 R5
      */
     @NotNull
     public CreateReason getReason() {
         return reason;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

@@ -16,6 +16,8 @@ import org.jspecify.annotations.NullMarked;
  * Added to avoid the overhead and special case logic that many plugins use
  * when checking for jumps via {@link PlayerMoveEvent}, this event is fired whenever
  * the server detects that the player is jumping.
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class PlayerJumpEvent extends PlayerEvent implements Cancellable {

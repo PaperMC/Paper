@@ -4,6 +4,8 @@ import org.bukkit.block.data.Waterlogged;
 
 /**
  * 'pickles' indicates the number of pickles in this block.
+ *
+ * @since 1.13
  */
 public interface SeaPickle extends Waterlogged {
 

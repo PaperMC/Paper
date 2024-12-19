@@ -6,6 +6,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents an ominous item spawner.
+ *
+ * @since 1.20.6
  */
 public interface OminousItemSpawner extends Entity {
 

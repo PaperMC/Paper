@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
  * <li>Snow formed by a {@link org.bukkit.entity.Snowman}.
  * <li>Frosted Ice formed by the Frost Walker enchantment.
  * </ul>
+ *
+ * @since 1.1.0 R1
  */
 public class EntityBlockFormEvent extends BlockFormEvent {
     private final Entity entity;

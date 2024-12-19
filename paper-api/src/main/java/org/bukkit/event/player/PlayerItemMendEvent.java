@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
  * <br>
  * This event is fired directly before the {@link PlayerExpChangeEvent}, and the
  * results of this event directly affect the {@link PlayerExpChangeEvent}.
+ *
+ * @since 1.12.2
  */
 public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
 
@@ -52,6 +54,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      * @return the durability-to-xp operation
      * @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
      * The enchantment effects operation are too complex to reliably offer the inverse function.
+     * @since 1.19.4
      */
     @Contract("-> fail")
     @Deprecated(forRemoval = true, since = "1.21")
@@ -67,6 +70,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      * @param durabilityToXpOp the durability-to-xp operation
      * @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
      * The enchantment effects operation are too complex to reliably offer the inverse function.
+     * @since 1.19.4
      */
     @Contract("_ -> fail")
     @Deprecated(forRemoval = true, since = "1.21")
@@ -80,6 +84,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      * into the function {@link #getDurabilityToXpOperation()}.
      *
      * @return the amount of xp that will be consumed
+     * @since 1.19.4
      */
     public int getConsumedExperience() {
          return this.consumedExperience;
@@ -108,6 +113,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      * may be found.
      *
      * @return the repaired slot
+     * @since 1.19.2
      */
     @NotNull
     public EquipmentSlot getSlot() {

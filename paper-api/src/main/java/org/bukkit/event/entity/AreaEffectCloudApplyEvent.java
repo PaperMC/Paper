@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a lingering potion applies its effects. Happens
  * once every 5 ticks
+ *
+ * @since 1.9.4
  */
 public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -21,11 +23,17 @@ public class AreaEffectCloudApplyEvent extends EntityEvent implements Cancellabl
         this.affectedEntities = affectedEntities;
     }
 
+    /**
+     * @since 1.13.2
+     */
     @Override
     public boolean isCancelled() {
         return this.cancelled;
     }
 
+    /**
+     * @since 1.13.2
+     */
     @Override
     public void setCancelled(boolean cancel) {
         this.cancelled = cancel;

@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a class which contains a single method for executing commands
+ *
+ * @since 1.0.0 R1
  */
 public interface CommandExecutor {
 

@@ -25,6 +25,8 @@ import org.jspecify.annotations.Nullable;
  * </ul>
  * <p>
  * The event hence only exposes the two parent entities in the fertilization process and cannot provide the child entity, as it will only exist at a later point in time.
+ *
+ * @since 1.19.3
  */
 @NullMarked
 public class EntityFertilizeEggEvent extends EntityEvent implements Cancellable {

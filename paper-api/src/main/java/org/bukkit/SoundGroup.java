@@ -5,6 +5,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a group of sounds for blocks that are played when various actions
  * happen (ie stepping, breaking, hitting, etc).
+ *
+ * @since 1.16.4
  */
 public interface SoundGroup {
 

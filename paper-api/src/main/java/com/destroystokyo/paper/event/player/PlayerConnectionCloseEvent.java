@@ -33,6 +33,8 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * The event may be invoked asynchronously or synchronously. Plugins should check
  * {@link Event#isAsynchronous()} and handle accordingly.
+ *
+ * @since 1.13.2
  */
 @NullMarked
 public class PlayerConnectionCloseEvent extends Event {

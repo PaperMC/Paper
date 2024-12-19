@@ -8,9 +8,14 @@ import org.jetbrains.annotations.NotNull;
 /**
  * An instance of {@link InventoryView} which provides extra methods related to
  * merchant view data.
+ *
+ * @since 1.21
  */
 public interface MerchantView extends InventoryView {
 
+    /**
+     * @since 1.21.1
+     */
     @NotNull
     @Override
     MerchantInventory getTopInventory();

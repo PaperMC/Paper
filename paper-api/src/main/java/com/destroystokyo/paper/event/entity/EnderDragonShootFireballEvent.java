@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired when an EnderDragon shoots a fireball
+ *
+ * @since 1.13
  */
 @NullMarked
 public class EnderDragonShootFireballEvent extends EntityEvent implements Cancellable {

@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
  * which are used to set the height of a face.
  *
  * 'bottom' denotes whether this is a bottom block.
+ *
+ * @since 1.21.3
  */
 @ApiStatus.Experimental
 public interface MossyCarpet extends BlockData {

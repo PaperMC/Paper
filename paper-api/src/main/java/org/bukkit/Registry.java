@@ -43,6 +43,7 @@ import org.jetbrains.annotations.Nullable;
  * {@link NamespacedKey}.
  *
  * @param <T> type of item in the registry
+ * @since 1.14
  */
 public interface Registry<T extends Keyed> extends Iterable<T> {
 
@@ -391,6 +392,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @param key non-null key
      * @return item or null if it does not exist
+     * @since 1.21
      */
     default @Nullable T get(final net.kyori.adventure.key.@NotNull Key key) {
         return key instanceof final NamespacedKey nsKey ? this.get(nsKey) : this.get(new NamespacedKey(key.namespace(), key.value()));
@@ -401,6 +403,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @param typedKey non-null typed key
      * @return item or null if it does not exist
+     * @since 1.21
      */
     default @Nullable T get(final io.papermc.paper.registry.@NotNull TypedKey<T> typedKey) {
         return this.get(typedKey.key());
@@ -414,6 +417,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @param key the key to get the object of in this registry
      * @return the object for the key
      * @throws java.util.NoSuchElementException if the key doesn't point to an object in the registry
+     * @since 1.21
      */
     default @NotNull T getOrThrow(final net.kyori.adventure.key.@NotNull Key key) {
         final T value = this.get(key);
@@ -429,6 +433,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @param key the key to get the object of in this registry
      * @return the object for the key
      * @throws java.util.NoSuchElementException if the key doesn't point to an object in the registry
+     * @since 1.21
      */
     default @NotNull T getOrThrow(final io.papermc.paper.registry.@NotNull TypedKey<T> key) {
         final T value = this.get(key);
@@ -487,6 +492,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @param key the key to check for
      * @return true if this registry has a tag with the given key, false otherwise
      * @see #getTag(io.papermc.paper.registry.tag.TagKey)
+     * @since 1.21
      */
     @ApiStatus.Experimental
     default boolean hasTag(final io.papermc.paper.registry.tag.@NotNull TagKey<T> key) {
@@ -501,6 +507,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws java.util.NoSuchElementException if no tag with the given key is found
      * @throws UnsupportedOperationException if this registry doesn't have or support tags
      * @see #hasTag(io.papermc.paper.registry.tag.TagKey)
+     * @since 1.21
      */
     @ApiStatus.Experimental
     default @NotNull io.papermc.paper.registry.tag.Tag<T> getTag(final io.papermc.paper.registry.tag.@NotNull TagKey<T> key) {
@@ -516,6 +523,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @param key to get the object from
      * @return object with the given key
      * @throws IllegalArgumentException if there is no object with the given key
+     * @since 1.21.1
      */
     @NotNull
     T getOrThrow(@NotNull NamespacedKey key);
@@ -524,6 +532,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Returns a new stream, which contains all registry items, which are registered to the registry.
      *
      * @return a stream of all registry items
+     * @since 1.20.1
      */
     @NotNull
     Stream<T> stream();
@@ -538,6 +547,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @return registered object or null if does not exist
      * @deprecated this method's behavior is broken and not useful. If you want to get an object
      * based on its vanilla name, or a key, wrap it in a {@link NamespacedKey} object and use {@link #get(NamespacedKey)}
+     * @since 1.19.3
      */
     @Nullable
     @Deprecated(forRemoval = true) // Paper
@@ -549,6 +559,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         return (namespacedKey != null) ? get(namespacedKey) : null;
     }
 
+    /**
+     * @since 1.14
+     */
     class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> { // Paper - remove final
 
         private final Class<T> type;
@@ -577,6 +590,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             return map.get(key);
         }
 
+        /**
+         * @since 1.21.1
+         */
         @NotNull
         @Override
         public T getOrThrow(@NotNull NamespacedKey key) {
@@ -587,6 +603,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             return object;
         }
 
+        /**
+         * @since 1.20.1
+         */
         @NotNull
         @Override
         public Stream<T> stream() {
@@ -599,6 +618,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
             return map.values().iterator();
         }
 
+        /**
+         * @since 1.20.6
+         */
         @ApiStatus.Internal
         @Deprecated(since = "1.20.6", forRemoval = true)
         public Class<T> getType() {

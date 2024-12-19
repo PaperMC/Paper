@@ -22,6 +22,9 @@ import org.bukkit.util.StringUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * @since 1.0.0 R1
+ */
 public class SimpleCommandMap implements CommandMap {
     protected final Map<String, Command> knownCommands; // Paper
     private final Server server;
@@ -42,6 +45,9 @@ public class SimpleCommandMap implements CommandMap {
         register("bukkit", new co.aikar.timings.TimingsCommand("timings")); // Paper
     }
 
+    /**
+     * @since 1.7.10
+     */
     public void setFallbackCommands() {
         register("bukkit", new HelpCommand());
     }
@@ -195,12 +201,18 @@ public class SimpleCommandMap implements CommandMap {
         return target;
     }
 
+    /**
+     * @since 1.3.2 R3.0
+     */
     @Override
     @Nullable
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine) {
         return tabComplete(sender, cmdLine, null);
     }
 
+    /**
+     * @since 1.9.4
+     */
     @Override
     @Nullable
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine, @Nullable Location location) {
@@ -257,6 +269,9 @@ public class SimpleCommandMap implements CommandMap {
         }
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     public Collection<Command> getCommands() {
         return Collections.unmodifiableCollection(knownCommands.values());
@@ -304,6 +319,9 @@ public class SimpleCommandMap implements CommandMap {
         }
     }
 
+    /**
+     * @since 1.11
+     */
     // Paper start - Expose Known Commands
     @NotNull
     public Map<String, Command> getKnownCommands() {

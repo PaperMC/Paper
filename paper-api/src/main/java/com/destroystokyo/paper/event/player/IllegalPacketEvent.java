@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * @deprecated Not used
+ * @since 1.11.2
  */
 @Deprecated(since = "1.16.4")
 public class IllegalPacketEvent extends PlayerEvent {

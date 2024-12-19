@@ -14,6 +14,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * You should not be implementing this interface yourself, use {@link org.bukkit.NamespacedKey}
  * or {@link com.destroystokyo.paper.NamespacedTag} as needed instead.
+ *
+ * @since 1.13.2
  */
 @Deprecated(forRemoval = true, since = "1.20.6")
 public interface Namespaced {

@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * Some blocks may not be able to have faces on all directions, use
  * {@link #getAllowedFaces()} to get all possible faces for this block. It is
  * not valid to call any methods on non-allowed faces.
+ *
+ * @since 1.13
  */
 public interface MultipleFacing extends BlockData {
 

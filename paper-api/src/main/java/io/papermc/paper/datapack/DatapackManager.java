@@ -5,6 +5,9 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+/**
+ * @since 1.16.5
+ */
 @NullMarked
 public interface DatapackManager {
 
@@ -13,6 +16,8 @@ public interface DatapackManager {
      * can find new datapacks, remove old ones, and update the metadata for
      * existing datapacks. Some of these changes will only take effect
      * after the next {@link org.bukkit.Server#reloadData()} or {@code /minecraft:reload}.
+     *
+     * @since 1.21.1
      */
     void refreshPacks();
 
@@ -22,6 +27,7 @@ public interface DatapackManager {
      *
      * @param name the name/id of the datapack
      * @return the datapack, or null if not found
+     * @since 1.21.1
      */
     @Nullable Datapack getPack(String name);
 

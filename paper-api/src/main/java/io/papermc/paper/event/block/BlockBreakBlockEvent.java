@@ -12,6 +12,8 @@ import org.jspecify.annotations.NullMarked;
  * Called when a block forces another block to break and drop items.
  * <p>
  * Currently called for piston's and liquid flows.
+ *
+ * @since 1.17.1
  */
 @NullMarked
 public class BlockBreakBlockEvent extends BlockExpEvent {

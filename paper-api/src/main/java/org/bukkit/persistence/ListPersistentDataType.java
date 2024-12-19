@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @param <P> the primitive type of the list element.
  * @param <C> the complex type of the list elements.
+ * @since 1.20.4
  */
 public interface ListPersistentDataType<P, C> extends PersistentDataType<List<P>, List<C>> {
 

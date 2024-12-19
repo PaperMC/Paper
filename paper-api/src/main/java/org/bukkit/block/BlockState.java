@@ -20,6 +20,8 @@ import org.jetbrains.annotations.Nullable;
  * can exist multiple times for any given Block. Note that another plugin may
  * change the state of the block and you will not know, or they may change the
  * block to another type entirely, causing your BlockState to become invalid.
+ *
+ * @since 1.0.0 R1
  */
 public interface BlockState extends Metadatable {
 
@@ -46,6 +48,7 @@ public interface BlockState extends Metadatable {
      * Gets the data for this block state.
      *
      * @return block specific data
+     * @since 1.13
      */
     @NotNull
     BlockData getBlockData();
@@ -54,6 +57,7 @@ public interface BlockState extends Metadatable {
      * Returns a copy of this BlockState as an unplaced BlockState.
      *
      * @return a copy of the block state
+     * @since 1.20.2
      */
     @NotNull
     @ApiStatus.Experimental
@@ -64,6 +68,7 @@ public interface BlockState extends Metadatable {
      *
      * @param location the location to copy the block state to
      * @return the new block state
+     * @since 1.20.6
      */
     @NotNull
     @ApiStatus.Experimental
@@ -121,6 +126,7 @@ public interface BlockState extends Metadatable {
      * If this block state is not placed the location's world will be null!
      *
      * @return the location
+     * @since 1.1.0 R5
      */
     @NotNull
     Location getLocation();
@@ -135,6 +141,7 @@ public interface BlockState extends Metadatable {
      *
      * @param loc the location to copy into
      * @return The Location object provided or null
+     * @since 1.4.5 R1.0
      */
     @Contract("null -> null; !null -> !null")
     @Nullable
@@ -162,6 +169,7 @@ public interface BlockState extends Metadatable {
      * Sets the data for this block state.
      *
      * @param data New block specific data
+     * @since 1.13
      */
     void setBlockData(@NotNull BlockData data);
 
@@ -218,6 +226,7 @@ public interface BlockState extends Metadatable {
      * @param applyPhysics false to cancel updating physics on surrounding
      *     blocks
      * @return true if the update was successful, otherwise false
+     * @since 1.5.1 R0.2
      */
     boolean update(boolean force, boolean applyPhysics);
 
@@ -231,6 +240,7 @@ public interface BlockState extends Metadatable {
     /**
      * @param data The new data value for the block.
      * @deprecated Magic value
+     * @since 1.1.0 R5
      */
     @Deprecated(since = "1.6.2")
     public void setRawData(byte data);
@@ -243,6 +253,7 @@ public interface BlockState extends Metadatable {
      *
      * @return whether the state is placed in the world
      *         or 'virtual' (e.g. on an itemstack)
+     * @since 1.8.8
      */
     boolean isPlaced();
 
@@ -251,6 +262,7 @@ public interface BlockState extends Metadatable {
      * Checks if this block state is collidable.
      *
      * @return true if collidable
+     * @since 1.17.1
      */
     boolean isCollidable();
 
@@ -259,6 +271,7 @@ public interface BlockState extends Metadatable {
      *
      * @return an immutable list of dropped items for the block state
      * @throws IllegalStateException if this block state is not placed
+     * @since 1.19.2
      */
     @NotNull
     default java.util.@org.jetbrains.annotations.Unmodifiable Collection<org.bukkit.inventory.ItemStack> getDrops() {
@@ -272,6 +285,7 @@ public interface BlockState extends Metadatable {
      * @param tool The tool or item in hand used for digging
      * @return an immutable list of dropped items for the block state
      * @throws IllegalStateException if this block state is not placed
+     * @since 1.19.2
      */
     @NotNull
     default java.util.@org.jetbrains.annotations.Unmodifiable Collection<org.bukkit.inventory.ItemStack> getDrops(@Nullable org.bukkit.inventory.ItemStack tool) {
@@ -286,6 +300,7 @@ public interface BlockState extends Metadatable {
      * @param entity the entity destroying the block
      * @return an immutable list of dropped items for the block state
      * @throws IllegalStateException if this block state is not placed
+     * @since 1.19.2
      */
     @NotNull
     java.util.@org.jetbrains.annotations.Unmodifiable Collection<org.bukkit.inventory.ItemStack> getDrops(@Nullable org.bukkit.inventory.ItemStack tool, @Nullable org.bukkit.entity.Entity entity);

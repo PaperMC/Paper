@@ -3,6 +3,9 @@ package org.bukkit.advancement;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.21.3
+ */
 public interface AdvancementRequirement {
 
     /**

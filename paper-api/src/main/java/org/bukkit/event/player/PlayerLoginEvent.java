@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
  * Note that this event is called <i>early</i> in the player initialization
  * process. It is recommended that most options involving the Player
  * <i>entity</i> be postponed to the {@link PlayerJoinEvent} instead.
+ *
+ * @since 1.0.0 R1
  */
 public class PlayerLoginEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -92,6 +94,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      * Result.ALLOWED
      *
      * @return Current kick message
+     * @since 1.16.5
      */
     public net.kyori.adventure.text.@NotNull Component kickMessage() {
         return this.message;
@@ -101,6 +104,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      * Sets the kick message to display if getResult() != Result.ALLOWED
      *
      * @param message New kick message
+     * @since 1.16.5
      */
     public void kickMessage(net.kyori.adventure.text.@NotNull Component message) {
         this.message = message;
@@ -155,6 +159,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      * blank if unknown
      *
      * @return The hostname
+     * @since 1.2.5 R0.1
      */
     @NotNull
     public String getHostname() {
@@ -200,6 +205,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      *
      * @return The address for this player. For legacy compatibility, this may
      *     be null.
+     * @since 1.2.5 R1.0
      */
     @NotNull
     public InetAddress getAddress() {
@@ -212,18 +218,25 @@ public class PlayerLoginEvent extends PlayerEvent {
      *
      * @return the player's connection address
      * @see #getAddress()
+     * @since 1.6.1 R0.1
      */
     @NotNull
     public InetAddress getRealAddress() {
         return realAddress;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

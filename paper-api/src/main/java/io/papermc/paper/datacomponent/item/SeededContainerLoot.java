@@ -9,6 +9,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the loot table and seed for a container.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#CONTAINER_LOOT
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

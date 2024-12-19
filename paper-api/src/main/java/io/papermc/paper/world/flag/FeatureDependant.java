@@ -11,6 +11,7 @@ import org.jspecify.annotations.NullMarked;
  * Types in data-driven registries that are controlled by feature flags just will not exist in that registry.
  * @apiNote When a type that currently implements this interface transitions to being data-drive, this
  * interface will be removed from that type in the following major version.
+ * @since 1.21.1
  */
 @NullMarked
 @ApiStatus.NonExtendable

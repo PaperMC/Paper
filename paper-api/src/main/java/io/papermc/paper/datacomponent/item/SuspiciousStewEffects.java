@@ -12,6 +12,7 @@ import org.jspecify.annotations.NullMarked;
 /**
  * Holds the effects that will be applied when consuming Suspicious Stew.
  * @see io.papermc.paper.datacomponent.DataComponentTypes#SUSPICIOUS_STEW_EFFECTS
+ * @since 1.21.3
  */
 @NullMarked
 @ApiStatus.Experimental

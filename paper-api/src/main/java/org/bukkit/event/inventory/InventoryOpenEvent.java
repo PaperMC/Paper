@@ -8,6 +8,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player opens an inventory
+ *
+ * @since 1.1.0 R5
  */
 public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -63,6 +65,7 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
      * if not set.
      *
      * @return the title override or null
+     * @since 1.20.1
      */
     public net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component titleOverride() {
         return this.titleOverride;
@@ -78,6 +81,7 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
      * have no effect. Horse inventory titles are set by the horse display name.
      *
      * @param titleOverride the title override or null
+     * @since 1.20.1
      */
     public void titleOverride(net.kyori.adventure.text.@org.jetbrains.annotations.Nullable Component titleOverride) {
         this.titleOverride = titleOverride;

@@ -13,6 +13,8 @@ import org.jspecify.annotations.NullMarked;
  * Called when sending {@link Suggestions} to the client. Will be called asynchronously if a plugin
  * marks the {@link com.destroystokyo.paper.event.server.AsyncTabCompleteEvent} event handled asynchronously,
  * otherwise called synchronously.
+ *
+ * @since 1.20.6
  */
 @NullMarked
 public class AsyncPlayerSendSuggestionsEvent extends PlayerEvent implements Cancellable {

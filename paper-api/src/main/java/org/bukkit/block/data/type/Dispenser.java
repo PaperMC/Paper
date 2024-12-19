@@ -6,6 +6,8 @@ import org.bukkit.block.data.Powerable;
 /**
  * Similar to {@link Powerable}, 'triggered' indicates whether or not the
  * dispenser is currently activated.
+ *
+ * @since 1.13
  */
 public interface Dispenser extends Directional {
 

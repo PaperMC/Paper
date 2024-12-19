@@ -5,6 +5,9 @@ import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
+/**
+ * @since 1.13.2
+ */
 @NullMarked
 public class ServerTickStartEvent extends Event {
 

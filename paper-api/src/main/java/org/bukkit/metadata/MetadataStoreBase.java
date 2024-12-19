@@ -12,6 +12,9 @@ import java.util.WeakHashMap;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.1.0 R5
+ */
 public abstract class MetadataStoreBase<T> {
     private Map<String, Map<Plugin, MetadataValue>> metadataMap = new java.util.concurrent.ConcurrentHashMap<String, Map<Plugin, MetadataValue>>(); // Paper
 
@@ -137,6 +140,7 @@ public abstract class MetadataStoreBase<T> {
      *
      * @param owningPlugin the plugin requesting the invalidation.
      * @throws IllegalArgumentException If plugin is null
+     * @since 1.9.4
      */
     public void removeAll(@NotNull Plugin owningPlugin) {
         Preconditions.checkNotNull(owningPlugin, "Plugin cannot be null");

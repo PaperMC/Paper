@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Event called when a Crafter is about to craft an item.
+ *
+ * @since 1.21
  */
 public class CrafterCraftEvent extends BlockEvent implements Cancellable {
 

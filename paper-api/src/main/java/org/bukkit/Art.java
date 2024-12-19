@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
  * or can be enabled via a {@link FeatureFlag}.
  * There may be additional arts present in the server, for example from a {@link DataPack}
  * which can be accessed via {@link Registry#ART}.
+ *
+ * @since 1.0.0 R1
  */
 public interface Art extends OldEnum<Art>, Keyed {
 
@@ -101,6 +103,7 @@ public interface Art extends OldEnum<Art>, Keyed {
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#PAINTING_VARIANT}. Painting variants can exist without a key.
+     * @since 1.14
      */
     @Deprecated(since = "1.21", forRemoval = true)
     @Override
@@ -109,6 +112,7 @@ public interface Art extends OldEnum<Art>, Keyed {
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#PAINTING_VARIANT}. Painting variants can exist without a key.
+     * @since 1.21.3
      */
     @Deprecated(since = "1.21", forRemoval = true)
     @Override
@@ -122,6 +126,7 @@ public interface Art extends OldEnum<Art>, Keyed {
      * Get the painting's title.
      *
      * @return the title
+     * @since 1.21.3
      */
     net.kyori.adventure.text.@Nullable Component title();
 
@@ -129,6 +134,7 @@ public interface Art extends OldEnum<Art>, Keyed {
      * Get the painting's author.
      *
      * @return the author
+     * @since 1.21.3
      */
     net.kyori.adventure.text.@Nullable Component author();
 
@@ -136,6 +142,7 @@ public interface Art extends OldEnum<Art>, Keyed {
      * Get the painting's asset id
      *
      * @return the asset id
+     * @since 1.21.3
      */
     net.kyori.adventure.key.@NotNull Key assetId();
     // Paper end - name and author components, assetId key

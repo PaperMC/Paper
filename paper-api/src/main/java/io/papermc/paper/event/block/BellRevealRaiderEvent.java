@@ -12,6 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * Called when a {@link Raider} is revealed by a bell.
  *
  * @deprecated use {@link org.bukkit.event.block.BellResonateEvent}
+ * @since 1.16.5
  */
 @Deprecated(since = "1.19.4")
 public class BellRevealRaiderEvent extends BlockEvent implements Cancellable {

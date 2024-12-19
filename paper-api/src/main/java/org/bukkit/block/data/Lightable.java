@@ -3,6 +3,8 @@ package org.bukkit.block.data;
 /**
  * 'lit' denotes whether this block (either a redstone torch or furnace) is
  * currently lit - that is not burned out.
+ *
+ * @since 1.13
  */
 public interface Lightable extends BlockData {
 

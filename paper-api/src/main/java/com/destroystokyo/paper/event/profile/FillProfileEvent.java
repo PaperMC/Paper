@@ -33,6 +33,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Fired once a profiles additional properties (such as textures) has been filled
+ *
+ * @since 1.12.2
  */
 @NullMarked
 public class FillProfileEvent extends Event {

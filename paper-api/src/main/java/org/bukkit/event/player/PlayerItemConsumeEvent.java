@@ -18,6 +18,8 @@ import org.jetbrains.annotations.Nullable;
  * <br>
  * If the event is cancelled the effect will not be applied and the item will
  * not be removed from the player's inventory.
+ *
+ * @since 1.5.1 R0.2
  */
 public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -77,6 +79,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      * Get the hand used to consume the item.
      *
      * @return the hand
+     * @since 1.19.2
      */
     @NotNull
     public EquipmentSlot getHand() {
@@ -89,6 +92,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      * custom replacement has been set (which means the default replacement will be used).
      *
      * @return The custom item stack that will replace the consumed item or null
+     * @since 1.9.4
      */
     @Nullable
     public ItemStack getReplacement() {
@@ -100,6 +104,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      * stack that has been set and use the default replacement.
      *
      * @param replacement Replacement item to set, null to clear any custom stack and use default
+     * @since 1.9.4
      */
     public void setReplacement(@Nullable ItemStack replacement) {
         this.replacement = replacement;

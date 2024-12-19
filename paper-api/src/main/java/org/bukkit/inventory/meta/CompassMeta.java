@@ -5,6 +5,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a compass that can track a specific location.
+ *
+ * @since 1.16.1
  */
 public interface CompassMeta extends ItemMeta {
 
@@ -59,12 +61,15 @@ public interface CompassMeta extends ItemMeta {
      * Checks if this compass is considered a lodestone compass.
      * @see #hasLodestone() to check if a position is being tracked
      * @see #isLodestoneTracked() to check if it verifies the position is a lodestone
+     * @since 1.21.1
      */
     boolean isLodestoneCompass();
 
     /**
      * Reset this compass to a normal compass, removing any tracked
      * location.
+     *
+     * @since 1.21.1
      */
     void clearLodestone();
     // Paper end - Add more lodestone compass methods

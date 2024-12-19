@@ -4,6 +4,9 @@ package org.bukkit.inventory.meta;
 import org.bukkit.block.BlockState;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * @since 1.8.8
+ */
 public interface BlockStateMeta extends ItemMeta {
 
     /**
@@ -17,6 +20,8 @@ public interface BlockStateMeta extends ItemMeta {
     // Paper start - add method to clear block state
     /**
      * Clears the block state currently attached to this item.
+     *
+     * @since 1.20.4
      */
     void clearBlockState();
     // Paper end - add method to clear block state

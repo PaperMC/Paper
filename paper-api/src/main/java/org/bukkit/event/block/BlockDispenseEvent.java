@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * If a Block Dispense event is cancelled, the block will not dispense the
  * item.
+ *
+ * @since 1.0.0 R1
  */
 public class BlockDispenseEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -78,12 +80,18 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
         cancelled = cancel;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     @Override
     public HandlerList getHandlers() {
         return handlers;
     }
 
+    /**
+     * @since 1.1.0 R1
+     */
     @NotNull
     public static HandlerList getHandlerList() {
         return handlers;

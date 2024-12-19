@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * Called when a creature is spawned into a world.
  * <p>
  * If a Creature Spawn event is cancelled, the creature will not spawn.
+ *
+ * @since 1.0.0 R1
  */
 public class CreatureSpawnEvent extends EntitySpawnEvent {
     private final SpawnReason spawnReason;
@@ -18,6 +20,9 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
         this.spawnReason = spawnReason;
     }
 
+    /**
+     * @since 1.1.0 R5
+     */
     @NotNull
     @Override
     public LivingEntity getEntity() {

@@ -24,6 +24,8 @@ import org.jetbrains.annotations.NotNull;
  * </ul>
  *
  * The result of {@link #getBlock()} is the location that the cursor is spawning at.
+ *
+ * @since 1.20.1
  */
 public class SculkBloomEvent extends BlockEvent implements Cancellable {
 
