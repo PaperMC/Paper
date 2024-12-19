@@ -37,9 +37,30 @@ public interface CustomArgumentType<T, N> extends ArgumentType<T> {
      * @param reader string reader input
      * @return parsed value
      * @throws CommandSyntaxException if an error occurs while parsing
+     * @see #parse(StringReader, Object)
      */
     @Override
     T parse(final StringReader reader) throws CommandSyntaxException;
+
+    /**
+     * Parses the argument into the custom type ({@code T}). Keep in mind
+     * that this parsing will be done on the server. This means that if
+     * you throw a {@link CommandSyntaxException} during parsing, this
+     * will only show up to the user after the user has executed the command
+     * not while they are still entering it.
+     * <p>
+     * This method provides the command source for additional context when parsing. You
+     * may have to do your own {@code instanceof} checks for {@link io.papermc.paper.command.brigadier.CommandSourceStack}.
+     *
+     * @param reader string reader input
+     * @param source source of the command
+     * @return parsed value
+     * @throws CommandSyntaxException if an error occurs while parsing
+     */
+    @Override
+    default <S> T parse(final StringReader reader, final S source) throws CommandSyntaxException {
+        return ArgumentType.super.parse(reader, source);
+    }
 
     /**
      * Gets the native type that this argument uses,
@@ -95,13 +116,35 @@ public interface CustomArgumentType<T, N> extends ArgumentType<T> {
             return this.convert(this.getNativeType().parse(reader));
         }
 
+        @ApiStatus.NonExtendable
+        @Override
+        default <S> T parse(final StringReader reader, final S source) throws CommandSyntaxException {
+            return this.convert(this.getNativeType().parse(reader, source), source);
+        }
+
         /**
          * Converts the value from the native type to the custom argument type.
          *
          * @param nativeType native argument provided value
          * @return converted value
          * @throws CommandSyntaxException if an exception occurs while parsing
+         * @see #convert(Object, Object)
          */
         T convert(N nativeType) throws CommandSyntaxException;
+
+        /**
+         * Converts the value from the native type to the custom argument type.
+         * <p>
+         * This method provides the command source for additional context when converting. You
+         * may have to do your own {@code instanceof} checks for {@link io.papermc.paper.command.brigadier.CommandSourceStack}.
+         *
+         * @param nativeType native argument provided value
+         * @param source     source of the command
+         * @return converted value
+         * @throws CommandSyntaxException if an exception occurs while parsing
+         */
+        default <S> T convert(final N nativeType, final S source) throws CommandSyntaxException {
+            return this.convert(nativeType);
+        }
     }
 }

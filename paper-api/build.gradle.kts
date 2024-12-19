@@ -39,7 +39,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 // Paper end - configure mockito agent that is needed in newer java versions
 
 dependencies {
-    api("com.mojang:brigadier:1.2.9") // Paper - Brigadier command api
+    api("com.mojang:brigadier:1.3.10") // Paper - Brigadier command api
     // api dependencies are listed transitively to API consumers
     api("com.google.guava:guava:33.3.1-jre")
     api("com.google.code.gson:gson:2.11.0")
