@@ -543,7 +543,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public String getDisplayName() {
-        if(true) return io.papermc.paper.adventure.DisplayNames.getLegacy(this); // Paper
+        if (true) return io.papermc.paper.adventure.DisplayNames.getLegacy(this); // Paper
         return this.getHandle().displayName;
     }
 

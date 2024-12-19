@@ -1,50 +1,39 @@
 --- a/net/minecraft/world/level/block/WitherSkullBlock.java
 +++ b/net/minecraft/world/level/block/WitherSkullBlock.java
-@@ -26,6 +26,10 @@
- import net.minecraft.world.level.block.state.pattern.BlockPatternBuilder;
- import net.minecraft.world.level.block.state.predicate.BlockStatePredicate;
- 
-+// CraftBukkit start
-+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
-+// CraftBukkit end
-+
- public class WitherSkullBlock extends SkullBlock {
- 
-     public static final MapCodec<WitherSkullBlock> CODEC = simpleCodec(WitherSkullBlock::new);
-@@ -58,6 +62,7 @@
+@@ -51,6 +_,7 @@
      }
  
-     public static void checkSpawn(Level world, BlockPos pos, SkullBlockEntity blockEntity) {
-+        if (world.captureBlockStates) return; // CraftBukkit
-         if (!world.isClientSide) {
-             BlockState iblockdata = blockEntity.getBlockState();
-             boolean flag = iblockdata.is(Blocks.WITHER_SKELETON_SKULL) || iblockdata.is(Blocks.WITHER_SKELETON_WALL_SKULL);
-@@ -69,12 +74,18 @@
-                     WitherBoss entitywither = (WitherBoss) EntityType.WITHER.create(world, EntitySpawnReason.TRIGGERED);
- 
-                     if (entitywither != null) {
--                        CarvedPumpkinBlock.clearPatternBlocks(world, shapedetector_shapedetectorcollection);
-+                        // BlockPumpkinCarved.clearPatternBlocks(world, shapedetector_shapedetectorcollection); // CraftBukkit - move down
-                         BlockPos blockposition1 = shapedetector_shapedetectorcollection.getBlock(1, 2, 0).getPos();
- 
-                         entitywither.moveTo((double) blockposition1.getX() + 0.5D, (double) blockposition1.getY() + 0.55D, (double) blockposition1.getZ() + 0.5D, shapedetector_shapedetectorcollection.getForwards().getAxis() == Direction.Axis.X ? 0.0F : 90.0F, 0.0F);
-                         entitywither.yBodyRot = shapedetector_shapedetectorcollection.getForwards().getAxis() == Direction.Axis.X ? 0.0F : 90.0F;
-                         entitywither.makeInvulnerable();
+     public static void checkSpawn(Level level, BlockPos pos, SkullBlockEntity blockEntity) {
++        if (level.captureBlockStates) return; // CraftBukkit
+         if (!level.isClientSide) {
+             BlockState blockState = blockEntity.getBlockState();
+             boolean flag = blockState.is(Blocks.WITHER_SKELETON_SKULL) || blockState.is(Blocks.WITHER_SKELETON_WALL_SKULL);
+@@ -59,7 +_,7 @@
+                 if (blockPatternMatch != null) {
+                     WitherBoss witherBoss = EntityType.WITHER.create(level, EntitySpawnReason.TRIGGERED);
+                     if (witherBoss != null) {
+-                        CarvedPumpkinBlock.clearPatternBlocks(level, blockPatternMatch);
++                        // CarvedPumpkinBlock.clearPatternBlocks(level, blockPatternMatch); // CraftBukkit - move down
+                         BlockPos pos1 = blockPatternMatch.getBlock(1, 2, 0).getPos();
+                         witherBoss.moveTo(
+                             pos1.getX() + 0.5,
+@@ -70,12 +_,18 @@
+                         );
+                         witherBoss.yBodyRot = blockPatternMatch.getForwards().getAxis() == Direction.Axis.X ? 0.0F : 90.0F;
+                         witherBoss.makeInvulnerable();
 +                        // CraftBukkit start
-+                        if (!world.addFreshEntity(entitywither, SpawnReason.BUILD_WITHER)) {
++                        if (!level.addFreshEntity(witherBoss, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BUILD_WITHER)) {
 +                            return;
 +                        }
-+                        CarvedPumpkinBlock.clearPatternBlocks(world, shapedetector_shapedetectorcollection); // CraftBukkit - from above
++                        CarvedPumpkinBlock.clearPatternBlocks(level, blockPatternMatch); // CraftBukkit - from above
 +                        // CraftBukkit end
-                         Iterator iterator = world.getEntitiesOfClass(ServerPlayer.class, entitywither.getBoundingBox().inflate(50.0D)).iterator();
  
-                         while (iterator.hasNext()) {
-@@ -83,7 +94,7 @@
-                             CriteriaTriggers.SUMMONED_ENTITY.trigger(entityplayer, (Entity) entitywither);
+                         for (ServerPlayer serverPlayer : level.getEntitiesOfClass(ServerPlayer.class, witherBoss.getBoundingBox().inflate(50.0))) {
+                             CriteriaTriggers.SUMMONED_ENTITY.trigger(serverPlayer, witherBoss);
                          }
  
--                        world.addFreshEntity(entitywither);
-+                        // world.addFreshEntity(entitywither); // CraftBukkit - moved up
-                         CarvedPumpkinBlock.updatePatternBlocks(world, shapedetector_shapedetectorcollection);
+-                        level.addFreshEntity(witherBoss);
++                        // level.addFreshEntity(witherBoss); // CraftBukkit - moved up
+                         CarvedPumpkinBlock.updatePatternBlocks(level, blockPatternMatch);
                      }
- 
+                 }

@@ -1,73 +1,54 @@
 --- a/net/minecraft/world/level/block/ChorusFlowerBlock.java
 +++ b/net/minecraft/world/level/block/ChorusFlowerBlock.java
-@@ -23,6 +23,8 @@
- import net.minecraft.world.phys.BlockHitResult;
- import net.minecraft.world.phys.shapes.VoxelShape;
- 
-+import org.bukkit.craftbukkit.event.CraftEventFactory; // CraftBukkit
-+
- public class ChorusFlowerBlock extends Block {
- 
-     public static final MapCodec<ChorusFlowerBlock> CODEC = RecordCodecBuilder.mapCodec((instance) -> {
-@@ -103,8 +105,12 @@
+@@ -96,8 +_,10 @@
                  }
  
-                 if (flag && ChorusFlowerBlock.allNeighborsEmpty(world, blockposition1, (Direction) null) && world.isEmptyBlock(pos.above(2))) {
--                    world.setBlock(pos, ChorusPlantBlock.getStateWithConnections(world, pos, this.plant.defaultBlockState()), 2);
--                    this.placeGrownFlower(world, blockposition1, i);
-+                    // CraftBukkit start - add event
-+                    if (CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, this.defaultBlockState().setValue(ChorusFlowerBlock.AGE, Integer.valueOf(i)), 2)) {
-+                        world.setBlock(pos, ChorusPlantBlock.getStateWithConnections(world, pos, this.plant.defaultBlockState()), 2);
-+                        this.placeGrownFlower(world, blockposition1, i);
-+                    }
-+                    // CraftBukkit end
-                 } else if (i < 4) {
-                     j = random.nextInt(4);
+                 if (flag && allNeighborsEmpty(level, blockPos, null) && level.isEmptyBlock(pos.above(2))) {
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, blockPos, this.defaultBlockState().setValue(ChorusFlowerBlock.AGE, ageValue), 2)) { // CraftBukkit - add event
+                     level.setBlock(pos, ChorusPlantBlock.getStateWithConnections(level, pos, this.plant.defaultBlockState()), 2);
+                     this.placeGrownFlower(level, blockPos, ageValue);
++                    } // CraftBukkit
+                 } else if (ageValue < 4) {
+                     int i = random.nextInt(4);
                      if (flag1) {
-@@ -118,18 +124,30 @@
-                         BlockPos blockposition2 = pos.relative(enumdirection);
- 
-                         if (world.isEmptyBlock(blockposition2) && world.isEmptyBlock(blockposition2.below()) && ChorusFlowerBlock.allNeighborsEmpty(world, blockposition2, enumdirection.getOpposite())) {
--                            this.placeGrownFlower(world, blockposition2, i + 1);
--                            flag2 = true;
-+                            // CraftBukkit start - add event
-+                            if (CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition2, this.defaultBlockState().setValue(ChorusFlowerBlock.AGE, Integer.valueOf(i + 1)), 2)) {
-+                                this.placeGrownFlower(world, blockposition2, i + 1);
-+                                flag2 = true;
-+                            }
-+                            // CraftBukkit end
+@@ -112,18 +_,28 @@
+                         if (level.isEmptyBlock(blockPos1)
+                             && level.isEmptyBlock(blockPos1.below())
+                             && allNeighborsEmpty(level, blockPos1, randomDirection.getOpposite())) {
++                            if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, blockPos1, this.defaultBlockState().setValue(ChorusFlowerBlock.AGE, ageValue + 1), 2)) { // CraftBukkit - add event
+                             this.placeGrownFlower(level, blockPos1, ageValue + 1);
+                             flag2 = true;
++                            } // CraftBukkit
                          }
                      }
  
                      if (flag2) {
-                         world.setBlock(pos, ChorusPlantBlock.getStateWithConnections(world, pos, this.plant.defaultBlockState()), 2);
+                         level.setBlock(pos, ChorusPlantBlock.getStateWithConnections(level, pos, this.plant.defaultBlockState()), 2);
                      } else {
--                        this.placeDeadFlower(world, pos);
 +                        // CraftBukkit start - add event
-+                        if (CraftEventFactory.handleBlockGrowEvent(world, pos, this.defaultBlockState().setValue(ChorusFlowerBlock.AGE, Integer.valueOf(5)), 2)) {
-+                            this.placeDeadFlower(world, pos);
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, this.defaultBlockState().setValue(ChorusFlowerBlock.AGE, Integer.valueOf(5)), 2)) {
+                         this.placeDeadFlower(level, pos);
 +                        }
 +                        // CraftBukkit end
                      }
                  } else {
--                    this.placeDeadFlower(world, pos);
 +                    // CraftBukkit start - add event
-+                    if (CraftEventFactory.handleBlockGrowEvent(world, pos, this.defaultBlockState().setValue(ChorusFlowerBlock.AGE, Integer.valueOf(5)), 2)) {
-+                        this.placeDeadFlower(world, pos);
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, this.defaultBlockState().setValue(ChorusFlowerBlock.AGE, Integer.valueOf(5)), 2)) {
+                     this.placeDeadFlower(level, pos);
 +                    }
 +                    // CraftBukkit end
                  }
- 
-             }
-@@ -267,6 +285,11 @@
- 
-         if (world instanceof ServerLevel worldserver) {
-             if (projectile.mayInteract(worldserver, blockposition) && projectile.mayBreak(worldserver)) {
-+                // CraftBukkit
-+                if (!CraftEventFactory.callEntityChangeBlockEvent(projectile, blockposition, state.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
-+                    return;
-+                }
-+                // CraftBukkit end
-                 world.destroyBlock(blockposition, true, projectile);
              }
          }
+@@ -261,6 +_,11 @@
+     protected void onProjectileHit(Level level, BlockState state, BlockHitResult hit, Projectile projectile) {
+         BlockPos blockPos = hit.getBlockPos();
+         if (level instanceof ServerLevel serverLevel && projectile.mayInteract(serverLevel, blockPos) && projectile.mayBreak(serverLevel)) {
++            // CraftBukkit start
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockPos, state.getFluidState().createLegacyBlock())) { // Paper - fix wrong block state
++                return;
++            }
++            // CraftBukkit end
+             level.destroyBlock(blockPos, true, projectile);
+         }
+     }

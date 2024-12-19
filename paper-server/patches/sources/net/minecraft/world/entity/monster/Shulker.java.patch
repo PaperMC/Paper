@@ -1,19 +1,6 @@
 --- a/net/minecraft/world/entity/monster/Shulker.java
 +++ b/net/minecraft/world/entity/monster/Shulker.java
-@@ -59,6 +59,12 @@
- import net.minecraft.world.phys.Vec3;
- import org.joml.Vector3f;
- 
-+// CraftBukkit start
-+import org.bukkit.craftbukkit.util.CraftLocation;
-+import org.bukkit.event.entity.EntityTeleportEvent;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+// CraftBukkit end
-+
- public class Shulker extends AbstractGolem implements VariantHolder<Optional<DyeColor>>, Enemy {
- 
-     private static final ResourceLocation COVERED_ARMOR_MODIFIER_ID = ResourceLocation.withDefaultNamespace("covered");
-@@ -283,7 +289,13 @@
+@@ -274,7 +_,13 @@
  
      @Override
      public void stopRiding() {
@@ -28,32 +15,32 @@
          if (this.level().isClientSide) {
              this.clientOldAttachPosition = this.blockPosition();
          }
-@@ -402,6 +414,14 @@
-                     Direction enumdirection = this.findAttachableSurface(blockposition1);
- 
-                     if (enumdirection != null) {
-+                        // CraftBukkit start
-+                        EntityTeleportEvent teleportEvent = CraftEventFactory.callEntityTeleportEvent(this, blockposition1.getX(), blockposition1.getY(), blockposition1.getZ());
-+                        if (teleportEvent.isCancelled() || teleportEvent.getTo() == null) { // Paper
-+                            return false;
-+                        } else {
-+                            blockposition1 = CraftLocation.toBlockPosition(teleportEvent.getTo());
-+                        }
-+                        // CraftBukkit end
+@@ -387,6 +_,14 @@
+                     && this.level().getWorldBorder().isWithinBounds(blockPos1)
+                     && this.level().noCollision(this, new AABB(blockPos1).deflate(1.0E-6))) {
+                     Direction direction = this.findAttachableSurface(blockPos1);
++                    // CraftBukkit start
++                    org.bukkit.event.entity.EntityTeleportEvent teleportEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(this, blockPos1.getX(), blockPos1.getY(), blockPos1.getZ());
++                    if (teleportEvent.isCancelled() || teleportEvent.getTo() == null) { // Paper
++                        return false;
++                    } else {
++                        blockPos1 = org.bukkit.craftbukkit.util.CraftLocation.toBlockPosition(teleportEvent.getTo());
++                    }
++                    // CraftBukkit end
+                     if (direction != null) {
                          this.unRide();
-                         this.setAttachFace(enumdirection);
-                         this.playSound(SoundEvents.SHULKER_TELEPORT, 1.0F, 1.0F);
-@@ -472,7 +492,12 @@
-                 if (entityshulker != null) {
-                     entityshulker.setVariant(this.getVariant());
-                     entityshulker.moveTo(vec3d);
--                    this.level().addFreshEntity(entityshulker);
+                         this.setAttachFace(direction);
+@@ -453,7 +_,12 @@
+                 if (shulker != null) {
+                     shulker.setVariant(this.getVariant());
+                     shulker.moveTo(vec3);
+-                    this.level().addFreshEntity(shulker);
 +                    // Paper start - Shulker duplicate event
-+                    if (!new io.papermc.paper.event.entity.ShulkerDuplicateEvent((org.bukkit.entity.Shulker) entityshulker.getBukkitEntity(), (org.bukkit.entity.Shulker) this.getBukkitEntity()).callEvent()) {
++                    if (!new io.papermc.paper.event.entity.ShulkerDuplicateEvent((org.bukkit.entity.Shulker) shulker.getBukkitEntity(), (org.bukkit.entity.Shulker) this.getBukkitEntity()).callEvent()) {
 +                        return;
 +                    }
 +                    // Paper end - Shulker duplicate event
-+                    this.level().addFreshEntity(entityshulker, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - the mysteries of life
++                    this.level().addFreshEntity(shulker, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - the mysteries of life
                  }
- 
              }
+         }

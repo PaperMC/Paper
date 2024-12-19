@@ -1,64 +1,50 @@
 --- a/net/minecraft/world/entity/animal/SnowGolem.java
 +++ b/net/minecraft/world/entity/animal/SnowGolem.java
-@@ -42,6 +42,9 @@
- import net.minecraft.world.level.gameevent.GameEvent;
- import net.minecraft.world.level.storage.loot.BuiltInLootTables;
- import net.minecraft.world.phys.Vec3;
-+// CraftBukkit start
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+// CraftBukkit end
- 
- public class SnowGolem extends AbstractGolem implements Shearable, RangedAttackMob {
- 
-@@ -100,7 +103,7 @@
- 
-         if (world instanceof ServerLevel worldserver) {
+@@ -92,7 +_,7 @@
+         super.aiStep();
+         if (this.level() instanceof ServerLevel serverLevel) {
              if (this.level().getBiome(this.blockPosition()).is(BiomeTags.SNOW_GOLEM_MELTS)) {
--                this.hurtServer(worldserver, this.damageSources().onFire(), 1.0F);
-+                this.hurtServer(worldserver, this.damageSources().melting(), 1.0F); // CraftBukkit - DamageSources.ON_FIRE -> CraftEventFactory.MELTING
+-                this.hurtServer(serverLevel, this.damageSources().onFire(), 1.0F);
++                this.hurtServer(serverLevel, this.damageSources().melting(), 1.0F); // CraftBukkit - DamageSources.ON_FIRE -> CraftEventFactory.MELTING
              }
  
-             if (!worldserver.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
-@@ -116,7 +119,11 @@
-                 BlockPos blockposition = new BlockPos(j, k, l);
- 
-                 if (this.level().getBlockState(blockposition).isAir() && iblockdata.canSurvive(this.level(), blockposition)) {
--                    this.level().setBlockAndUpdate(blockposition, iblockdata);
-+                    // CraftBukkit start
-+                    if (!CraftEventFactory.handleBlockFormEvent(this.level(), blockposition, iblockdata, this)) {
-+                        continue;
-+                    }
-+                    // CraftBukkit end
-                     this.level().gameEvent((Holder) GameEvent.BLOCK_PLACE, blockposition, GameEvent.Context.of(this, iblockdata));
+             if (!serverLevel.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+@@ -107,7 +_,7 @@
+                 int floor2 = Mth.floor(this.getZ() + (i / 2 % 2 * 2 - 1) * 0.25F);
+                 BlockPos blockPos = new BlockPos(floor, floor1, floor2);
+                 if (this.level().getBlockState(blockPos).isAir() && blockState.canSurvive(this.level(), blockPos)) {
+-                    this.level().setBlockAndUpdate(blockPos, blockState);
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level(), blockPos, blockState, this)) continue; // CraftBukkit
+                     this.level().gameEvent(GameEvent.BLOCK_PLACE, blockPos, GameEvent.Context.of(this, blockState));
                  }
              }
-@@ -153,7 +160,19 @@
-             if (world instanceof ServerLevel) {
-                 ServerLevel worldserver = (ServerLevel) world;
- 
--                this.shear(worldserver, SoundSource.PLAYERS, itemstack);
+@@ -135,7 +_,19 @@
+         ItemStack itemInHand = player.getItemInHand(hand);
+         if (itemInHand.is(Items.SHEARS) && this.readyForShearing()) {
+             if (this.level() instanceof ServerLevel serverLevel) {
+-                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand);
 +                // CraftBukkit start
 +                // Paper start - custom shear drops
-+                java.util.List<ItemStack> drops = this.generateDefaultDrops(worldserver, itemstack);
-+                org.bukkit.event.player.PlayerShearEntityEvent event = CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemstack, hand, drops);
++                java.util.List<ItemStack> drops = this.generateDefaultDrops(serverLevel, itemInHand);
++                org.bukkit.event.player.PlayerShearEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.handlePlayerShearEntityEvent(player, this, itemInHand, hand, drops);
 +                if (event != null) {
 +                    if (event.isCancelled()) {
 +                        return InteractionResult.PASS;
 +                    }
 +                    drops = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDrops());
-+                // Paper end - custom shear drops
++                    // Paper end - custom shear drops
 +                }
 +                // CraftBukkit end
-+                this.shear(worldserver, SoundSource.PLAYERS, itemstack, drops); // Paper - custom shear drops
++                this.shear(serverLevel, SoundSource.PLAYERS, itemInHand, drops); // Paper - custom shear drops
                  this.gameEvent(GameEvent.SHEAR, player);
-                 itemstack.hurtAndBreak(1, player, getSlotForHand(hand));
+                 itemInHand.hurtAndBreak(1, player, getSlotForHand(hand));
              }
-@@ -166,10 +185,29 @@
+@@ -148,11 +_,29 @@
  
      @Override
-     public void shear(ServerLevel world, SoundSource shearedSoundCategory, ItemStack shears) {
-+    // Paper start - custom shear drops
-+        this.shear(world, shearedSoundCategory, shears, this.generateDefaultDrops(world, shears));
+     public void shear(ServerLevel level, SoundSource soundSource, ItemStack shears) {
++        // Paper start - custom shear drops
++        this.shear(level, soundSource, shears, this.generateDefaultDrops(level, shears));
 +    }
 +
 +    @Override
@@ -71,16 +57,18 @@
 +    }
 +
 +    @Override
-+    public void shear(ServerLevel world, SoundSource shearedSoundCategory, ItemStack shears, java.util.List<ItemStack> drops) {
-+        final ServerLevel worldserver1 = world; // Named for lambda consumption
-+    // Paper end - custom shear drops
-         world.playSound((Player) null, (Entity) this, SoundEvents.SNOW_GOLEM_SHEAR, shearedSoundCategory, 1.0F, 1.0F);
++    public void shear(ServerLevel level, SoundSource soundSource, ItemStack shears, java.util.List<ItemStack> drops) {
++        // Paper end - custom shear drops
+         level.playSound(null, this, SoundEvents.SNOW_GOLEM_SHEAR, soundSource, 1.0F, 1.0F);
          this.setPumpkin(false);
--        this.dropFromShearingLootTable(world, BuiltInLootTables.SHEAR_SNOW_GOLEM, shears, (worldserver1, itemstack1) -> {
+-        this.dropFromShearingLootTable(
+-            level, BuiltInLootTables.SHEAR_SNOW_GOLEM, shears, (serverLevel, itemStack) -> this.spawnAtLocation(serverLevel, itemStack, this.getEyeHeight())
+-        );
 +        drops.forEach(itemstack1 -> { // Paper - custom shear drops
 +            this.forceDrops = true; // CraftBukkit
-             this.spawnAtLocation(worldserver1, itemstack1, this.getEyeHeight());
++            this.spawnAtLocation(level, itemstack1, this.getEyeHeight());
 +            this.forceDrops = false; // CraftBukkit
-         });
++        });
      }
  
+     @Override

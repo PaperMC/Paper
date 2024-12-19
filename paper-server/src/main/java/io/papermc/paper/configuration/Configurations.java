@@ -275,7 +275,7 @@ public abstract class Configurations<G, W> {
     }
 
     public Path getWorldConfigFile(ServerLevel level) {
-        return level.convertable.levelDirectory.path().resolve(this.worldConfigFileName);
+        return level.levelStorageAccess.levelDirectory.path().resolve(this.worldConfigFileName);
     }
 
     public static class ContextMap {

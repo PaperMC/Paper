@@ -1,31 +1,18 @@
 --- a/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/net/minecraft/world/entity/projectile/Projectile.java
-@@ -35,6 +35,9 @@
- import net.minecraft.world.phys.EntityHitResult;
- import net.minecraft.world.phys.HitResult;
- import net.minecraft.world.phys.Vec3;
-+// CraftBukkit start
-+import org.bukkit.projectiles.ProjectileSource;
-+// CraftBukkit end
- 
- public abstract class Projectile extends Entity implements TraceableEntity {
- 
-@@ -47,6 +50,10 @@
+@@ -43,6 +_,7 @@
+     public boolean hasBeenShot;
      @Nullable
      private Entity lastDeflectedBy;
++    protected boolean hitCancelled = false; // CraftBukkit
  
-+    // CraftBukkit start
-+    protected boolean hitCancelled = false;
-+    // CraftBukkit end
-+
-     Projectile(EntityType<? extends Projectile> type, Level world) {
-         super(type, world);
-     }
-@@ -56,16 +63,35 @@
-             this.ownerUUID = entity.getUUID();
-             this.cachedOwner = entity;
+     Projectile(EntityType<? extends Projectile> entityType, Level level) {
+         super(entityType, level);
+@@ -53,15 +_,36 @@
+             this.ownerUUID = owner.getUUID();
+             this.cachedOwner = owner;
          }
--
+-    }
 +        // Paper start - Refresh ProjectileSource for projectiles
 +        else {
 +            this.ownerUUID = null;
@@ -34,13 +21,14 @@
 +        }
 +        // Paper end - Refresh ProjectileSource for projectiles
 +        this.refreshProjectileSource(false); // Paper
-     }
++    }
++
 +    // Paper start - Refresh ProjectileSource for projectiles
 +    public void refreshProjectileSource(boolean fillCache) {
 +        if (fillCache) {
 +            this.getOwner();
 +        }
-+        if (this.cachedOwner != null && !this.cachedOwner.isRemoved() && this.projectileSource == null && this.cachedOwner.getBukkitEntity() instanceof ProjectileSource projSource) {
++        if (this.cachedOwner != null && !this.cachedOwner.isRemoved() && this.projectileSource == null && this.cachedOwner.getBukkitEntity() instanceof org.bukkit.projectiles.ProjectileSource projSource) {
 +            this.projectileSource = projSource;
 +        }
 +    }
@@ -58,55 +46,69 @@
              return this.cachedOwner;
          } else {
              return null;
-@@ -108,6 +134,7 @@
-     protected void readAdditionalSaveData(CompoundTag nbt) {
-         if (nbt.hasUUID("Owner")) {
-             this.setOwnerThroughUUID(nbt.getUUID("Owner"));
-+            if (this instanceof ThrownEnderpearl && this.level() != null && this.level().paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && this.level().paperConfig().misc.legacyEnderPearlBehavior) { this.ownerUUID = null; } // Paper - Reset pearls when they stop being ticked; Don't store shooter name for pearls to block enderpearl travel exploit
+@@ -98,6 +_,7 @@
+     protected void readAdditionalSaveData(CompoundTag compound) {
+         if (compound.hasUUID("Owner")) {
+             this.setOwnerThroughUUID(compound.getUUID("Owner"));
++            if (this instanceof ThrownEnderpearl && this.level().paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && this.level().paperConfig().misc.legacyEnderPearlBehavior) { this.ownerUUID = null; } // Paper - Reset pearls when they stop being ticked; Don't store shooter name for pearls to block enderpearl travel exploit
          }
  
-         this.leftOwner = nbt.getBoolean("LeftOwner");
-@@ -184,12 +211,20 @@
- 
-         this.shoot((double) f5, (double) f6, (double) f7, speed, divergence);
-         Vec3 vec3d = shooter.getKnownMovement();
--
+         this.leftOwner = compound.getBoolean("LeftOwner");
+@@ -175,13 +_,22 @@
+         float f2 = Mth.cos(y * (float) (Math.PI / 180.0)) * Mth.cos(x * (float) (Math.PI / 180.0));
+         this.shoot(f, f1, f2, velocity, inaccuracy);
+         Vec3 knownMovement = shooter.getKnownMovement();
 +        // Paper start - allow disabling relative velocity
 +        if (!shooter.level().paperConfig().misc.disableRelativeProjectileVelocity) {
-         this.setDeltaMovement(this.getDeltaMovement().add(vec3d.x, shooter.onGround() ? 0.0D : vec3d.y, vec3d.z));
+         this.setDeltaMovement(this.getDeltaMovement().add(knownMovement.x, shooter.onGround() ? 0.0 : knownMovement.y, knownMovement.z));
 +        }
 +        // Paper end - allow disabling relative velocity
      }
  
-     public static <T extends Projectile> T spawnProjectileFromRotation(Projectile.ProjectileFactory<T> creator, ServerLevel world, ItemStack projectileStack, LivingEntity shooter, float roll, float power, float divergence) {
--        return Projectile.spawnProjectile(creator.create(world, shooter, projectileStack), world, projectileStack, (iprojectile) -> {
-+    // Paper start - PlayerLaunchProjectileEvent
-+        return spawnProjectileFromRotationDelayed(creator, world, projectileStack, shooter, roll, power, divergence).spawn();
+     public static <T extends Projectile> T spawnProjectileFromRotation(
+         Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float innaccuracy
+     ) {
+-        return spawnProjectile(
++        // Paper start - PlayerLaunchProjectileEvent
++        return spawnProjectileFromRotationDelayed(factory, level, spawnedFrom, owner, z, velocity, innaccuracy).spawn();
 +    }
-+    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(Projectile.ProjectileFactory<T> creator, ServerLevel world, ItemStack projectileStack, LivingEntity shooter, float roll, float power, float divergence) {
-+        return Projectile.spawnProjectileDelayed(creator.create(world, shooter, projectileStack), world, projectileStack, (iprojectile) -> {
-+    // Paper end - PlayerLaunchProjectileEvent
-             iprojectile.shootFromRotation(shooter, shooter.getXRot(), shooter.getYRot(), roll, power, divergence);
-         });
-     }
-@@ -201,7 +236,12 @@
-     }
- 
-     public static <T extends Projectile> T spawnProjectileUsingShoot(T projectile, ServerLevel world, ItemStack projectileStack, double velocityX, double velocityY, double velocityZ, float power, float divergence) {
--        return Projectile.spawnProjectile(projectile, world, projectileStack, (iprojectile) -> {
++    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float innaccuracy) {
++        return spawnProjectileDelayed(
++        // Paper end - PlayerLaunchProjectileEvent
+             factory.create(level, owner, spawnedFrom),
+             level,
+             spawnedFrom,
+@@ -206,7 +_,12 @@
+     public static <T extends Projectile> T spawnProjectileUsingShoot(
+         T projectile, ServerLevel level, ItemStack spawnedFrom, double x, double y, double z, float velocity, float inaccuracy
+     ) {
+-        return spawnProjectile(projectile, level, spawnedFrom, projectile1 -> projectile.shoot(x, y, z, velocity, inaccuracy));
 +    // Paper start - fixes and addition to spawn reason API
-+        return spawnProjectileUsingShootDelayed(projectile, world, projectileStack, velocityX, velocityY, velocityZ, power, divergence).spawn();
++        return spawnProjectileUsingShootDelayed(projectile, level, spawnedFrom, x, y, z, velocity, inaccuracy).spawn();
 +    }
-+    public static <T extends Projectile> Delayed<T> spawnProjectileUsingShootDelayed(T projectile, ServerLevel world, ItemStack projectileStack, double velocityX, double velocityY, double velocityZ, float power, float divergence) {
-+        return Projectile.spawnProjectileDelayed(projectile, world, projectileStack, (iprojectile) -> {
++    public static <T extends Projectile> Delayed<T> spawnProjectileUsingShootDelayed(T projectile, ServerLevel level, ItemStack spawnedFrom, double x, double y, double z, float velocity, float inaccuracy) {
++        return spawnProjectileDelayed(projectile, level, spawnedFrom, projectile1 -> projectile.shoot(x, y, z, velocity, inaccuracy));
 +    // Paper end - fixes and addition to spawn reason API
-             projectile.shoot(velocityX, velocityY, velocityZ, power, divergence);
-         });
-     }
-@@ -211,11 +251,45 @@
-         });
      }
  
+     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel level, ItemStack spawnedFrom) {
+@@ -214,11 +_,45 @@
+     }
+ 
+     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel level, ItemStack stack, Consumer<T> adapter) {
++        // Paper start - delayed projectile spawning
++        return spawnProjectileDelayed(projectile, level, stack, adapter).spawn();
++    }
++    public static <T extends Projectile> Delayed<T> spawnProjectileDelayed(T projectile, ServerLevel level, ItemStack stack, Consumer<T> adapter) {
++        // Paper end - delayed projectile spawning
+         adapter.accept(projectile);
+-        level.addFreshEntity(projectile);
+-        projectile.applyOnProjectileSpawned(level, stack);
+-        return projectile;
+-    }
++        return new Delayed<>(projectile, level, stack); // Paper - delayed projectile spawning
++    }
++
 +    // Paper start - delayed projectile spawning
 +    public record Delayed<T extends Projectile>(
 +        T projectile,
@@ -115,53 +117,41 @@
 +    ) {
 +        // Taken from net.minecraft.world.entity.projectile.Projectile.spawnProjectile(T, net.minecraft.server.level.ServerLevel, net.minecraft.world.item.ItemStack, java.util.function.Consumer<T>)
 +        public boolean attemptSpawn() {
-+            if (!world.addFreshEntity(projectile)) return false;
-+            projectile.applyOnProjectileSpawned(this.world, this.projectileStack);
++            if (!this.world.addFreshEntity(this.projectile)) return false;
++            this.projectile.applyOnProjectileSpawned(this.world, this.projectileStack);
 +            return true;
 +        }
 +
 +        public T spawn() {
 +            this.attemptSpawn();
-+            return projectile();
++            return this.projectile();
 +        }
 +
 +        public boolean attemptSpawn(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
-+            if (!world.addFreshEntity(projectile, reason)) return false;
-+            projectile.applyOnProjectileSpawned(this.world, this.projectileStack);
++            if (!this.world.addFreshEntity(this.projectile, reason)) return false;
++            this.projectile.applyOnProjectileSpawned(this.world, this.projectileStack);
 +            return true;
 +        }
 +
 +        public T spawn(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +            this.attemptSpawn(reason);
-+            return projectile();
++            return this.projectile();
 +        }
 +    }
 +    // Paper end - delayed projectile spawning
-+
-     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel world, ItemStack projectileStack, Consumer<T> beforeSpawn) {
-+    // Paper start - delayed projectile spawning
-+        return spawnProjectileDelayed(projectile, world, projectileStack, beforeSpawn).spawn();
-+    }
-+    public static <T extends Projectile> Delayed<T> spawnProjectileDelayed(T projectile, ServerLevel world, ItemStack projectileStack, Consumer<T> beforeSpawn) {
-+    // Paper end - delayed projectile spawning
-         beforeSpawn.accept(projectile);
--        world.addFreshEntity(projectile);
--        projectile.applyOnProjectileSpawned(world, projectileStack);
--        return projectile;
-+        return new Delayed<>(projectile, world, projectileStack); // Paper - delayed projectile spawning
-     }
  
-     public void applyOnProjectileSpawned(ServerLevel world, ItemStack projectileStack) {
-@@ -232,6 +306,17 @@
- 
+     public void applyOnProjectileSpawned(ServerLevel level, ItemStack spawnedFrom) {
+         EnchantmentHelper.onProjectileSpawned(level, spawnedFrom, this, item -> {});
+@@ -230,6 +_,17 @@
+         }
      }
  
 +    // CraftBukkit start - call projectile hit event
-+    public ProjectileDeflection preHitTargetOrDeflectSelf(HitResult movingobjectposition) { // Paper - protected -> public
-+        org.bukkit.event.entity.ProjectileHitEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, movingobjectposition);
++    public ProjectileDeflection preHitTargetOrDeflectSelf(HitResult hitResult) { // Paper - protected -> public
++        org.bukkit.event.entity.ProjectileHitEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, hitResult);
 +        this.hitCancelled = event != null && event.isCancelled();
-+        if (movingobjectposition.getType() == HitResult.Type.BLOCK || !this.hitCancelled) {
-+            return this.hitTargetOrDeflectSelf(movingobjectposition);
++        if (hitResult.getType() == HitResult.Type.BLOCK || !this.hitCancelled) {
++            return this.hitTargetOrDeflectSelf(hitResult);
 +        }
 +        return ProjectileDeflection.NONE;
 +    }
@@ -169,10 +159,10 @@
 +
      protected ProjectileDeflection hitTargetOrDeflectSelf(HitResult hitResult) {
          if (hitResult.getType() == HitResult.Type.ENTITY) {
-             EntityHitResult movingobjectpositionentity = (EntityHitResult) hitResult;
-@@ -269,7 +354,13 @@
-     public boolean deflect(ProjectileDeflection deflection, @Nullable Entity deflector, @Nullable Entity owner, boolean fromAttack) {
-         deflection.deflect(this, deflector, this.random);
+             EntityHitResult entityHitResult = (EntityHitResult)hitResult;
+@@ -261,7 +_,13 @@
+     public boolean deflect(ProjectileDeflection deflection, @Nullable Entity entity, @Nullable Entity owner, boolean deflectedByPlayer) {
+         deflection.deflect(this, entity, this.random);
          if (!this.level().isClientSide) {
 -            this.setOwner(owner);
 +            // Paper start - Fix PickupStatus getting reset
@@ -182,50 +172,57 @@
 +                this.setOwner(owner);
 +            }
 +            // Paper end - Fix PickupStatus getting reset
-             this.onDeflection(deflector, fromAttack);
+             this.onDeflection(entity, deflectedByPlayer);
          }
  
-@@ -309,6 +400,11 @@
-     protected void onHitEntity(EntityHitResult entityHitResult) {}
+@@ -297,15 +_,35 @@
+     }
  
-     protected void onHitBlock(BlockHitResult blockHitResult) {
+     protected void onHitBlock(BlockHitResult result) {
 +        // CraftBukkit start - cancellable hit event
 +        if (this.hitCancelled) {
 +            return;
 +        }
 +        // CraftBukkit end
-         BlockState iblockdata = this.level().getBlockState(blockHitResult.getBlockPos());
+         BlockState blockState = this.level().getBlockState(result.getBlockPos());
+         blockState.onProjectileHit(this.level(), blockState, result, this);
+     }
  
-         iblockdata.onProjectileHit(this.level(), iblockdata, blockHitResult, this);
-@@ -320,6 +416,15 @@
++    // Paper start
++    public boolean canHitEntityPublic(final Entity target) {
++        return this.canHitEntity(target);
++    }
++    // Paper end
++
+     protected boolean canHitEntity(Entity target) {
+         if (!target.canBeHitByProjectile()) {
+             return false;
          } else {
-             Entity entity1 = this.getOwner();
- 
+             Entity owner = this.getOwner();
 +            // Paper start - Cancel hit for vanished players
-+            if (entity1 instanceof net.minecraft.server.level.ServerPlayer && entity instanceof net.minecraft.server.level.ServerPlayer) {
-+                org.bukkit.entity.Player collided = (org.bukkit.entity.Player) entity.getBukkitEntity();
-+                org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) entity1.getBukkitEntity();
++            if (owner instanceof net.minecraft.server.level.ServerPlayer && target instanceof net.minecraft.server.level.ServerPlayer) {
++                org.bukkit.entity.Player collided = (org.bukkit.entity.Player) target.getBukkitEntity();
++                org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) owner.getBukkitEntity();
 +                if (!shooter.canSee(collided)) {
 +                    return false;
 +                }
 +            }
 +            // Paper end - Cancel hit for vanished players
-             return entity1 == null || this.leftOwner || !entity1.isPassengerOfSameVehicle(entity);
+             return owner == null || this.leftOwner || !owner.isPassengerOfSameVehicle(target);
          }
      }
-@@ -333,14 +438,8 @@
+@@ -318,13 +_,7 @@
      }
  
-     protected static float lerpRotation(float prevRot, float newRot) {
--        while (newRot - prevRot < -180.0F) {
--            prevRot -= 360.0F;
--        }
-+        prevRot += Math.round((newRot - prevRot) / 360.0F) * 360.0F; // Paper - stop large look changes from crashing the server
- 
--        while (newRot - prevRot >= 180.0F) {
--            prevRot += 360.0F;
+     protected static float lerpRotation(float currentRotation, float targetRotation) {
+-        while (targetRotation - currentRotation < -180.0F) {
+-            currentRotation -= 360.0F;
 -        }
 -
-         return Mth.lerp(0.2F, prevRot, newRot);
-     }
+-        while (targetRotation - currentRotation >= 180.0F) {
+-            currentRotation += 360.0F;
+-        }
++        currentRotation += Math.round((targetRotation - currentRotation) / 360.0F) * 360.0F; // Paper - stop large look changes from crashing the server
  
+         return Mth.lerp(0.2F, currentRotation, targetRotation);
+     }

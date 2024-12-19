@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/RailState.java
 +++ b/net/minecraft/world/level/block/RailState.java
-@@ -17,6 +17,12 @@
+@@ -17,6 +_,12 @@
      private final boolean isStraight;
      private final List<BlockPos> connections = Lists.newArrayList();
  
@@ -10,24 +10,24 @@
 +    }
 +    // Paper end - Fix some rails connecting improperly
 +
-     public RailState(Level world, BlockPos pos, BlockState state) {
-         this.level = world;
+     public RailState(Level level, BlockPos pos, BlockState state) {
+         this.level = level;
          this.pos = pos;
-@@ -141,6 +147,11 @@
+@@ -141,6 +_,11 @@
      }
  
-     private void connectTo(RailState placementHelper) {
+     private void connectTo(RailState state) {
 +        // Paper start - Fix some rails connecting improperly
-+        if (!this.isValid() || !placementHelper.isValid()) {
++        if (!this.isValid() || !state.isValid()) {
 +            return;
 +        }
 +        // Paper end - Fix some rails connecting improperly
-         this.connections.add(placementHelper.pos);
+         this.connections.add(state.pos);
          BlockPos blockPos = this.pos.north();
-         BlockPos blockPos2 = this.pos.south();
-@@ -331,10 +342,15 @@
-         this.state = this.state.setValue(this.block.getShapeProperty(), railShape2);
-         if (forceUpdate || this.level.getBlockState(this.pos) != this.state) {
+         BlockPos blockPos1 = this.pos.south();
+@@ -331,10 +_,15 @@
+         this.state = this.state.setValue(this.block.getShapeProperty(), railShape);
+         if (alwaysPlace || this.level.getBlockState(this.pos) != this.state) {
              this.level.setBlock(this.pos, this.state, 3);
 +            // Paper start - Fix some rails connecting improperly
 +            if (!this.isValid()) {
@@ -36,13 +36,13 @@
 +            // Paper end - Fix some rails connecting improperly
  
              for (int i = 0; i < this.connections.size(); i++) {
-                 RailState railState = this.getRail(this.connections.get(i));
--                if (railState != null) {
-+                if (railState != null && railState.isValid()) { // Paper - Fix some rails connecting improperly
-                     railState.removeSoftConnections();
-                     if (railState.canConnectTo(this)) {
-                         railState.connectTo(this);
-@@ -347,6 +363,6 @@
+                 RailState rail = this.getRail(this.connections.get(i));
+-                if (rail != null) {
++                if (rail != null && rail.isValid()) { // Paper - Fix some rails connecting improperly
+                     rail.removeSoftConnections();
+                     if (rail.canConnectTo(this)) {
+                         rail.connectTo(this);
+@@ -347,6 +_,6 @@
      }
  
      public BlockState getState() {

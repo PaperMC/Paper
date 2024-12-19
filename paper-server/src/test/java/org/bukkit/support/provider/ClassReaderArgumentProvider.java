@@ -1,6 +1,5 @@
 package org.bukkit.support.provider;
 
-import static org.junit.jupiter.api.Assertions.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -13,8 +12,6 @@ import java.nio.file.Path;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Stream;
-import net.minecraft.WorldVersion;
-import net.minecraft.server.Main;
 import org.bukkit.Bukkit;
 import org.bukkit.support.test.ClassReaderTest;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -27,15 +24,12 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
 
     // Needs to be a class, which is present in the source, and not a test class
     private static final URI CRAFT_BUKKIT_CLASSES;
-    // Needs to be a class, which is from the minecraft package and not patch by CraftBukkit
-    private static final URI MINECRAFT_CLASSES;
     // Needs to be a class, which is from the bukkit package and not a CraftBukkit class
     private static final URI BUKKIT_CLASSES;
 
     static {
         try {
-            CRAFT_BUKKIT_CLASSES = Main.class.getProtectionDomain().getCodeSource().getLocation().toURI();
-            MINECRAFT_CLASSES = WorldVersion.class.getProtectionDomain().getCodeSource().getLocation().toURI();
+            CRAFT_BUKKIT_CLASSES = org.bukkit.craftbukkit.Main.class.getProtectionDomain().getCodeSource().getLocation().toURI();
             BUKKIT_CLASSES = Bukkit.class.getProtectionDomain().getCodeSource().getLocation().toURI();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
@@ -63,19 +57,11 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
     }
 
     public Stream<ClassReader> getClassReaders() {
-        assertNotEquals(ClassReaderArgumentProvider.CRAFT_BUKKIT_CLASSES, ClassReaderArgumentProvider.MINECRAFT_CLASSES, """
-                The Minecraft and CraftBukkit uri point to the same directory / file.
-                Please make sure the CRAFT_BUKKIT_CLASSES points to the test class directory and MINECRAFT_CLASSES to the minecraft server jar.
-                """);
 
         Stream<InputStream> result = Stream.empty();
 
-        if (this.contains(ClassReaderTest.ClassType.MINECRAFT_UNMODIFIED)) {
-            result = Stream.concat(result, this.readMinecraftClasses());
-        }
-
-        if (this.contains(ClassReaderTest.ClassType.CRAFT_BUKKIT) || this.contains(ClassReaderTest.ClassType.MINECRAFT_MODIFIED)) {
-            result = Stream.concat(result, this.readCraftBukkitAndOrMinecraftModifiedClasses(this.contains(ClassReaderTest.ClassType.CRAFT_BUKKIT), this.contains(ClassReaderTest.ClassType.MINECRAFT_MODIFIED)));
+        if (this.contains(ClassReaderTest.ClassType.CRAFT_BUKKIT)) {
+            result = Stream.concat(result, this.createCraftBukkitClasses());
         }
 
         if (this.contains(ClassReaderTest.ClassType.BUKKIT)) {
@@ -101,10 +87,6 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
         }
 
         return false;
-    }
-
-    private Stream<InputStream> readMinecraftClasses() {
-        return this.readJarFile(ClassReaderArgumentProvider.MINECRAFT_CLASSES, true);
     }
 
     private Stream<InputStream> readBukkitClasses() {
@@ -159,13 +141,12 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
         return true;
     }
 
-    private Stream<InputStream> readCraftBukkitAndOrMinecraftModifiedClasses(boolean craftBukkit, boolean minecraftModified) {
+    private Stream<InputStream> createCraftBukkitClasses() {
         try {
             return Files.walk(Path.of(ClassReaderArgumentProvider.CRAFT_BUKKIT_CLASSES))
                     .map(Path::toFile)
                     .filter(File::isFile)
                     .filter(file -> file.getName().endsWith(".class"))
-                    .filter(file -> this.shouldInclude(this.removeHomeDirectory(file), craftBukkit, minecraftModified))
                     .filter(file -> this.filterPackageNames(this.removeHomeDirectory(file)))
                     .filter(file -> this.filterClass(this.removeHomeDirectory(file)))
                     .map(file -> {
@@ -182,22 +163,6 @@ public class ClassReaderArgumentProvider implements ArgumentsProvider, Annotatio
 
     private String removeHomeDirectory(File file) {
         return file.getAbsolutePath().substring(ClassReaderArgumentProvider.CRAFT_BUKKIT_CLASSES.getPath().length());
-    }
-
-    private boolean shouldInclude(String name, boolean craftBukkit, boolean minecraftModified) {
-        if (craftBukkit && minecraftModified) {
-            return true;
-        }
-
-        if (craftBukkit) {
-            return name.startsWith("org/bukkit/craftbukkit/");
-        }
-
-        if (minecraftModified) {
-            return name.startsWith("net/minecraft/");
-        }
-
-        return false;
     }
 
     private void closeJarFile(JarFile jarFile) {

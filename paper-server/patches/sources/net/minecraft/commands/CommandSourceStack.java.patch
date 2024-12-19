@@ -1,33 +1,30 @@
 --- a/net/minecraft/commands/CommandSourceStack.java
 +++ b/net/minecraft/commands/CommandSourceStack.java
-@@ -45,9 +45,9 @@
- import net.minecraft.world.level.dimension.DimensionType;
+@@ -45,7 +_,7 @@
  import net.minecraft.world.phys.Vec2;
  import net.minecraft.world.phys.Vec3;
-+import com.mojang.brigadier.tree.CommandNode; // CraftBukkit
  
 -public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider {
--
 +public class CommandSourceStack implements ExecutionCommandSource<CommandSourceStack>, SharedSuggestionProvider, io.papermc.paper.command.brigadier.PaperCommandSourceStack { // Paper - Brigadier API
      public static final SimpleCommandExceptionType ERROR_NOT_PLAYER = new SimpleCommandExceptionType(Component.translatable("permissions.requires.player"));
      public static final SimpleCommandExceptionType ERROR_NOT_ENTITY = new SimpleCommandExceptionType(Component.translatable("permissions.requires.entity"));
      public final CommandSource source;
-@@ -65,6 +65,8 @@
+@@ -63,6 +_,8 @@
      private final Vec2 rotation;
      private final CommandSigningContext signingContext;
      private final TaskChainer chatMessageChainer;
-+    public java.util.Map<Thread, CommandNode> currentCommand = new java.util.concurrent.ConcurrentHashMap<>(); // CraftBukkit // Paper - Thread Safe Vanilla Command permission checking
++    public java.util.Map<Thread, com.mojang.brigadier.tree.CommandNode> currentCommand = new java.util.concurrent.ConcurrentHashMap<>(); // CraftBukkit // Paper - Thread Safe Vanilla Command permission checking
 +    public boolean bypassSelectorPermissions = false; // Paper - add bypass for selector permissions
  
-     public CommandSourceStack(CommandSource output, Vec3 pos, Vec2 rot, ServerLevel world, int level, String name, Component displayName, MinecraftServer server, @Nullable Entity entity) {
-         this(output, pos, rot, world, level, name, displayName, server, entity, false, CommandResultCallback.EMPTY, EntityAnchorArgument.Anchor.FEET, CommandSigningContext.ANONYMOUS, TaskChainer.immediate(server));
-@@ -171,8 +173,43 @@
+     public CommandSourceStack(
+         CommandSource source,
+@@ -391,9 +_,44 @@
  
      @Override
      public boolean hasPermission(int level) {
 +        // CraftBukkit start
 +        // Paper start - Thread Safe Vanilla Command permission checking
-+        CommandNode currentCommand = this.currentCommand.get(Thread.currentThread());
++        com.mojang.brigadier.tree.CommandNode currentCommand = this.currentCommand.get(Thread.currentThread());
 +        if (currentCommand != null) {
 +            return this.hasPermission(level, org.bukkit.craftbukkit.command.VanillaCommandWrapper.getPermission(currentCommand));
 +            // Paper end - Thread Safe Vanilla Command permission checking
@@ -35,8 +32,8 @@
 +        // CraftBukkit end
 +
          return this.permissionLevel >= level;
-+    }
-+
+     }
+ 
 +    // Paper start - Fix permission levels for command blocks
 +    private boolean forceRespectPermissionLevel() {
 +        return this.source == CommandSource.NULL || (this.source instanceof final net.minecraft.world.level.BaseCommandBlock commandBlock && commandBlock.getLevel().paperConfig().commandBlocks.forceFollowPermLevel);
@@ -60,27 +57,27 @@
 +        }
 +        return hasBukkitPerm.getAsBoolean();
 +        // Paper end - Fix permission levels for command blocks
-     }
++    }
 +    // CraftBukkit end
- 
++
      public Vec3 getPosition() {
          return this.worldPosition;
-@@ -302,21 +339,26 @@
-             while (iterator.hasNext()) {
-                 ServerPlayer entityplayer = (ServerPlayer) iterator.next();
- 
--                if (entityplayer.commandSource() != this.source && this.server.getPlayerList().isOp(entityplayer.getGameProfile())) {
-+                if (entityplayer.commandSource() != this.source && entityplayer.getBukkitEntity().hasPermission("minecraft.admin.command_feedback")) { // CraftBukkit
-                     entityplayer.sendSystemMessage(ichatmutablecomponent);
+     }
+@@ -499,20 +_,25 @@
+         Component component = Component.translatable("chat.type.admin", this.getDisplayName(), message).withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC);
+         if (this.server.getGameRules().getBoolean(GameRules.RULE_SENDCOMMANDFEEDBACK)) {
+             for (ServerPlayer serverPlayer : this.server.getPlayerList().getPlayers()) {
+-                if (serverPlayer.commandSource() != this.source && this.server.getPlayerList().isOp(serverPlayer.getGameProfile())) {
++                if (serverPlayer.commandSource() != this.source && serverPlayer.getBukkitEntity().hasPermission("minecraft.admin.command_feedback")) { // CraftBukkit
+                     serverPlayer.sendSystemMessage(component);
                  }
              }
          }
  
 -        if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS)) {
 +        if (this.source != this.server && this.server.getGameRules().getBoolean(GameRules.RULE_LOGADMINCOMMANDS) && !org.spigotmc.SpigotConfig.silentCommandBlocks) { // Spigot
-             this.server.sendSystemMessage(ichatmutablecomponent);
+             this.server.sendSystemMessage(component);
          }
- 
      }
  
      public void sendFailure(Component message) {
@@ -93,9 +90,9 @@
 -            this.source.sendSystemMessage(Component.empty().append(message).withStyle(ChatFormatting.RED));
 +            this.source.sendSystemMessage(withStyle ? Component.empty().append(message).withStyle(ChatFormatting.RED) : message); // Paper - Add UnknownCommandEvent
          }
- 
      }
-@@ -400,4 +442,16 @@
+ 
+@@ -598,4 +_,16 @@
      public boolean isSilent() {
          return this.silent;
      }

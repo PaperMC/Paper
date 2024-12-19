@@ -1,62 +1,46 @@
 --- a/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
 +++ b/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
-@@ -47,6 +47,17 @@
- import net.minecraft.world.level.saveddata.SavedData;
- import org.slf4j.Logger;
- 
-+// CraftBukkit start
-+import io.papermc.paper.adventure.PaperAdventure; // Paper
-+import java.util.UUID;
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.CraftServer;
-+import org.bukkit.craftbukkit.CraftWorld;
-+import org.bukkit.craftbukkit.map.CraftMapCursor;
-+import org.bukkit.craftbukkit.map.CraftMapView;
-+import org.bukkit.craftbukkit.util.CraftChatMessage;
-+// CraftBukkit end
-+
- public class MapItemSavedData extends SavedData {
- 
-     private static final Logger LOGGER = LogUtils.getLogger();
-@@ -70,6 +81,13 @@
+@@ -68,6 +_,13 @@
      private final Map<String, MapFrame> frameMarkers = Maps.newHashMap();
      private int trackedDecorationCount;
  
 +    // CraftBukkit start
-+    public final CraftMapView mapView;
-+    private CraftServer server;
-+    public UUID uniqueId = null;
++    public final org.bukkit.craftbukkit.map.CraftMapView mapView;
++    private org.bukkit.craftbukkit.CraftServer server;
++    public java.util.UUID uniqueId = null;
 +    public MapId id;
 +    // CraftBukkit end
 +
      public static SavedData.Factory<MapItemSavedData> factory() {
          return new SavedData.Factory<>(() -> {
              throw new IllegalStateException("Should never create an empty map saved data");
-@@ -84,6 +102,10 @@
-         this.trackingPosition = showDecorations;
+@@ -82,6 +_,10 @@
+         this.trackingPosition = trackingPosition;
          this.unlimitedTracking = unlimitedTracking;
          this.locked = locked;
 +        // CraftBukkit start
-+        this.mapView = new CraftMapView(this);
-+        this.server = (CraftServer) org.bukkit.Bukkit.getServer();
++        this.mapView = new org.bukkit.craftbukkit.map.CraftMapView(this);
++        this.server = (org.bukkit.craftbukkit.CraftServer) org.bukkit.Bukkit.getServer();
 +        // CraftBukkit end
      }
  
-     public static MapItemSavedData createFresh(double centerX, double centerZ, byte scale, boolean showDecorations, boolean unlimitedTracking, ResourceKey<Level> dimension) {
-@@ -101,12 +123,49 @@
+     public static MapItemSavedData createFresh(
+@@ -100,9 +_,47 @@
      }
  
-     public static MapItemSavedData load(CompoundTag nbt, HolderLookup.Provider registries) {
--        DataResult dataresult = DimensionType.parseLegacy(new Dynamic(NbtOps.INSTANCE, nbt.get("dimension")));
+     public static MapItemSavedData load(CompoundTag tag, HolderLookup.Provider levelRegistry) {
+-        ResourceKey<Level> resourceKey = DimensionType.parseLegacy(new Dynamic<>(NbtOps.INSTANCE, tag.get("dimension")))
+-            .resultOrPartial(LOGGER::error)
+-            .orElseThrow(() -> new IllegalArgumentException("Invalid map dimension: " + tag.get("dimension")));
 +        // Paper start - fix "Not a string" spam
-+        Tag dimension = nbt.get("dimension");
-+        if (dimension instanceof final net.minecraft.nbt.NumericTag numericTag && numericTag.getAsInt() >= CraftWorld.CUSTOM_DIMENSION_OFFSET) {
-+            long least = nbt.getLong("UUIDLeast");
-+            long most = nbt.getLong("UUIDMost");
++        Tag dimension = tag.get("dimension");
++        if (dimension instanceof final net.minecraft.nbt.NumericTag numericTag && numericTag.getAsInt() >= org.bukkit.craftbukkit.CraftWorld.CUSTOM_DIMENSION_OFFSET) {
++            long least = tag.getLong("UUIDLeast");
++            long most = tag.getLong("UUIDMost");
 +
 +            if (least != 0L && most != 0L) {
-+                UUID uuid = new UUID(most, least);
-+                CraftWorld world = (CraftWorld) Bukkit.getWorld(uuid);
++                java.util.UUID uuid = new java.util.UUID(most, least);
++                org.bukkit.craftbukkit.CraftWorld world = (org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(uuid);
 +                if (world != null) {
 +                    dimension = net.minecraft.nbt.StringTag.valueOf("minecraft:" + world.getName().toLowerCase(java.util.Locale.ENGLISH));
 +                } else {
@@ -66,22 +50,17 @@
 +                dimension = net.minecraft.nbt.StringTag.valueOf("bukkit:_invalidworld_");
 +            }
 +        }
-+        DataResult<ResourceKey<Level>> dataresult = DimensionType.parseLegacy(new Dynamic(NbtOps.INSTANCE, dimension)); // CraftBukkit - decompile error
++        com.mojang.serialization.DataResult<ResourceKey<Level>> dataresult = DimensionType.parseLegacy(new Dynamic(NbtOps.INSTANCE, dimension)); // CraftBukkit - decompile error
 +        // Paper end - fix "Not a string" spam
-         Logger logger = MapItemSavedData.LOGGER;
- 
-         Objects.requireNonNull(logger);
--        ResourceKey<Level> resourcekey = (ResourceKey) dataresult.resultOrPartial(logger::error).orElseThrow(() -> {
--            return new IllegalArgumentException("Invalid map dimension: " + String.valueOf(nbt.get("dimension")));
 +        // CraftBukkit start
-+        ResourceKey<Level> resourcekey = (ResourceKey) dataresult.resultOrPartial(logger::error).orElseGet(() -> {
-+            long least = nbt.getLong("UUIDLeast");
-+            long most = nbt.getLong("UUIDMost");
++        ResourceKey<Level> resourceKey = dataresult.resultOrPartial(LOGGER::error).orElseGet(() -> {
++            long least = tag.getLong("UUIDLeast");
++            long most = tag.getLong("UUIDMost");
 +
 +            if (least != 0L && most != 0L) {
-+                UUID uniqueId = new UUID(most, least);
++                java.util.UUID uniqueId = new java.util.UUID(most, least);
 +
-+                CraftWorld world = (CraftWorld) Bukkit.getWorld(uniqueId);
++                org.bukkit.craftbukkit.CraftWorld world = (org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(uniqueId);
 +                // Check if the stored world details are correct.
 +                if (world == null) {
 +                    /* All Maps which do not have their valid world loaded are set to a dimension which hopefully won't be reached.
@@ -91,38 +70,21 @@
 +                    return world.getHandle().dimension();
 +                }
 +            }
-+            throw new IllegalArgumentException("Invalid map dimension: " + String.valueOf(nbt.get("dimension")));
++            throw new IllegalArgumentException("Invalid map dimension: " + String.valueOf(tag.get("dimension")));
 +            // CraftBukkit end
-         });
-         int i = nbt.getInt("xCenter");
-         int j = nbt.getInt("zCenter");
-@@ -131,7 +190,8 @@
-             MapBanner mapiconbanner = (MapBanner) iterator.next();
- 
-             worldmap.bannerMarkers.put(mapiconbanner.getId(), mapiconbanner);
--            worldmap.addDecoration(mapiconbanner.getDecoration(), (LevelAccessor) null, mapiconbanner.getId(), (double) mapiconbanner.pos().getX(), (double) mapiconbanner.pos().getZ(), 180.0D, (Component) mapiconbanner.name().orElse((Object) null));
-+            // CraftBukkit - decompile error
-+            worldmap.addDecoration(mapiconbanner.getDecoration(), (LevelAccessor) null, mapiconbanner.getId(), (double) mapiconbanner.pos().getX(), (double) mapiconbanner.pos().getZ(), 180.0D, (Component) mapiconbanner.name().orElse(null));
-         }
- 
-         ListTag nbttaglist = nbt.getList("frames", 10);
-@@ -150,13 +210,32 @@
- 
-     @Override
-     public CompoundTag save(CompoundTag nbt, HolderLookup.Provider registries) {
--        DataResult dataresult = ResourceLocation.CODEC.encodeStart(NbtOps.INSTANCE, this.dimension.location());
-+        DataResult<Tag> dataresult = ResourceLocation.CODEC.encodeStart(NbtOps.INSTANCE, this.dimension.location()); // CraftBukkit - decompile error
-         Logger logger = MapItemSavedData.LOGGER;
- 
-         Objects.requireNonNull(logger);
-         dataresult.resultOrPartial(logger::error).ifPresent((nbtbase) -> {
-             nbt.put("dimension", nbtbase);
-         });
++        });
+         int _int = tag.getInt("xCenter");
+         int _int1 = tag.getInt("zCenter");
+         byte b = (byte)Mth.clamp(tag.getByte("scale"), 0, 4);
+@@ -154,6 +_,25 @@
+             .encodeStart(NbtOps.INSTANCE, this.dimension.location())
+             .resultOrPartial(LOGGER::error)
+             .ifPresent(dimension -> tag.put("dimension", dimension));
 +        // CraftBukkit start
 +        if (true) {
 +            if (this.uniqueId == null) {
 +                for (org.bukkit.World world : this.server.getWorlds()) {
-+                    CraftWorld cWorld = (CraftWorld) world;
++                    org.bukkit.craftbukkit.CraftWorld cWorld = (org.bukkit.craftbukkit.CraftWorld) world;
 +                    if (cWorld.getHandle().dimension() == this.dimension) {
 +                        this.uniqueId = cWorld.getUID();
 +                        break;
@@ -132,71 +94,68 @@
 +            /* Perform a second check to see if a matching world was found, this is a necessary
 +               change incase Maps are forcefully unlinked from a World and lack a UID.*/
 +            if (this.uniqueId != null) {
-+                nbt.putLong("UUIDLeast", this.uniqueId.getLeastSignificantBits());
-+                nbt.putLong("UUIDMost", this.uniqueId.getMostSignificantBits());
++                tag.putLong("UUIDLeast", this.uniqueId.getLeastSignificantBits());
++                tag.putLong("UUIDMost", this.uniqueId.getMostSignificantBits());
 +            }
 +        }
 +        // CraftBukkit end
-         nbt.putInt("xCenter", this.centerX);
-         nbt.putInt("zCenter", this.centerZ);
-         nbt.putByte("scale", this.scale);
-@@ -247,8 +326,10 @@
+         tag.putInt("xCenter", this.centerX);
+         tag.putInt("zCenter", this.centerZ);
+         tag.putByte("scale", this.scale);
+@@ -233,10 +_,12 @@
+             }
  
-             MapFrame worldmapframe1 = new MapFrame(blockposition, entityitemframe.getDirection().get2DDataValue() * 90, entityitemframe.getId());
- 
+             MapFrame mapFrame1 = new MapFrame(pos, frame.getDirection().get2DDataValue() * 90, frame.getId());
 +            if (this.decorations.size() < player.level().paperConfig().maps.itemFrameCursorLimit) { // Paper - Limit item frame cursors on maps
-             this.addDecoration(MapDecorationTypes.FRAME, player.level(), MapItemSavedData.getFrameKey(entityitemframe.getId()), (double) blockposition.getX(), (double) blockposition.getZ(), (double) (entityitemframe.getDirection().get2DDataValue() * 90), (Component) null);
-             this.frameMarkers.put(worldmapframe1.getId(), worldmapframe1);
+             this.addDecoration(
+                 MapDecorationTypes.FRAME, player.level(), getFrameKey(frame.getId()), pos.getX(), pos.getZ(), frame.getDirection().get2DDataValue() * 90, null
+             );
+             this.frameMarkers.put(mapFrame1.getId(), mapFrame1);
 +            } // Paper - Limit item frame cursors on maps
          }
  
-         MapDecorations mapdecorations = (MapDecorations) stack.getOrDefault(DataComponents.MAP_DECORATIONS, MapDecorations.EMPTY);
-@@ -441,9 +522,9 @@
+         MapDecorations mapDecorations = mapStack.getOrDefault(DataComponents.MAP_DECORATIONS, MapDecorations.EMPTY);
+@@ -421,7 +_,7 @@
                  return true;
              }
  
 -            if (!this.isTrackedCountOverLimit(256)) {
-+            if (!this.isTrackedCountOverLimit(((Level) world).paperConfig().maps.itemFrameCursorLimit)) { // Paper - Limit item frame cursors on maps
-                 this.bannerMarkers.put(mapiconbanner.getId(), mapiconbanner);
--                this.addDecoration(mapiconbanner.getDecoration(), world, mapiconbanner.getId(), d0, d1, 180.0D, (Component) mapiconbanner.name().orElse((Object) null));
-+                this.addDecoration(mapiconbanner.getDecoration(), world, mapiconbanner.getId(), d0, d1, 180.0D, (Component) mapiconbanner.name().orElse(null)); // CraftBukkit - decompile error
++            if (!this.isTrackedCountOverLimit(((Level) accessor).paperConfig().maps.itemFrameCursorLimit)) { // Paper - Limit item frame cursors on maps
+                 this.bannerMarkers.put(mapBanner.getId(), mapBanner);
+                 this.addDecoration(mapBanner.getDecoration(), accessor, mapBanner.getId(), d, d1, 180.0, mapBanner.name().orElse(null));
                  return true;
-             }
-         }
-@@ -554,7 +635,7 @@
-             this.player = entityhuman;
+@@ -521,7 +_,7 @@
+             this.player = player;
          }
  
 -        private MapItemSavedData.MapPatch createPatch() {
 +        private MapItemSavedData.MapPatch createPatch(byte[] buffer) { // CraftBukkit
              int i = this.minDirtyX;
-             int j = this.minDirtyY;
-             int k = this.maxDirtyX + 1 - this.minDirtyX;
-@@ -563,7 +644,7 @@
+             int i1 = this.minDirtyY;
+             int i2 = this.maxDirtyX + 1 - this.minDirtyX;
+@@ -530,7 +_,7 @@
  
-             for (int i1 = 0; i1 < k; ++i1) {
-                 for (int j1 = 0; j1 < l; ++j1) {
--                    abyte[i1 + j1 * k] = MapItemSavedData.this.colors[i + i1 + (j + j1) * 128];
-+                    abyte[i1 + j1 * k] = buffer[i + i1 + (j + j1) * 128]; // CraftBukkit
+             for (int i4 = 0; i4 < i2; i4++) {
+                 for (int i5 = 0; i5 < i3; i5++) {
+-                    bytes[i4 + i5 * i2] = MapItemSavedData.this.colors[i + i4 + (i1 + i5) * 128];
++                    bytes[i4 + i5 * i2] = buffer[i + i4 + (i1 + i5) * 128]; // CraftBukkit
                  }
              }
  
-@@ -573,19 +654,29 @@
+@@ -540,17 +_,27 @@
          @Nullable
          Packet<?> nextUpdatePacket(MapId mapId) {
-             MapItemSavedData.MapPatch worldmap_c;
+             MapItemSavedData.MapPatch mapPatch;
 +            org.bukkit.craftbukkit.map.RenderData render = MapItemSavedData.this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) this.player.getBukkitEntity()); // CraftBukkit
- 
              if (this.dirtyData) {
                  this.dirtyData = false;
--                worldmap_c = this.createPatch();
-+                worldmap_c = this.createPatch(render.buffer); // CraftBukkit
+-                mapPatch = this.createPatch();
++                mapPatch = this.createPatch(render.buffer); // CraftBukkit
              } else {
-                 worldmap_c = null;
+                 mapPatch = null;
              }
  
-             Collection collection;
- 
+             Collection<MapDecoration> collection;
 -            if (this.dirtyDecorations && this.tick++ % 5 == 0) {
 +            if ((true || this.dirtyDecorations) && this.tick++ % 5 == 0) { // CraftBukkit - custom maps don't update this yet
                  this.dirtyDecorations = false;
@@ -206,7 +165,7 @@
 +
 +                for (org.bukkit.map.MapCursor cursor : render.cursors) {
 +                    if (cursor.isVisible()) {
-+                        icons.add(new MapDecoration(CraftMapCursor.CraftType.bukkitToMinecraftHolder(cursor.getType()), cursor.getX(), cursor.getY(), cursor.getDirection(), Optional.ofNullable(PaperAdventure.asVanilla(cursor.caption()))));
++                        icons.add(new MapDecoration(org.bukkit.craftbukkit.map.CraftMapCursor.CraftType.bukkitToMinecraftHolder(cursor.getType()), cursor.getX(), cursor.getY(), cursor.getDirection(), Optional.ofNullable(io.papermc.paper.adventure.PaperAdventure.asVanilla(cursor.caption()))));
 +                    }
 +                }
 +                collection = icons;

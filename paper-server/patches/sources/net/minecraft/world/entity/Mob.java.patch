@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -84,6 +84,17 @@
- import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+@@ -84,6 +_,18 @@
  import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
  import net.minecraft.world.phys.AABB;
+ 
 +// CraftBukkit start
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -15,10 +15,11 @@
 +import org.bukkit.event.entity.EntityUnleashEvent;
 +import org.bukkit.event.entity.EntityUnleashEvent.UnleashReason;
 +// CraftBukkit end
- 
++
  public abstract class Mob extends LivingEntity implements EquipmentUser, Leashable, Targeting {
- 
-@@ -112,6 +123,7 @@
+     private static final EntityDataAccessor<Byte> DATA_MOB_FLAGS_ID = SynchedEntityData.defineId(Mob.class, EntityDataSerializers.BYTE);
+     private static final int MOB_FLAG_NO_AI = 1;
+@@ -112,6 +_,7 @@
      private final BodyRotationControl bodyRotationControl;
      protected PathNavigation navigation;
      public GoalSelector goalSelector;
@@ -26,56 +27,49 @@
      public GoalSelector targetSelector;
      @Nullable
      private LivingEntity target;
-@@ -132,6 +144,8 @@
-     private BlockPos restrictCenter;
-     private float restrictRadius;
- 
+@@ -131,6 +_,7 @@
+     private Leashable.LeashData leashData;
+     private BlockPos restrictCenter = BlockPos.ZERO;
+     private float restrictRadius = -1.0F;
 +    public boolean aware = true; // CraftBukkit
-+
-     protected Mob(EntityType<? extends Mob> type, Level world) {
-         super(type, world);
-         this.handItems = NonNullList.withSize(2, ItemStack.EMPTY);
-@@ -157,8 +171,14 @@
-         if (world instanceof ServerLevel) {
-             this.registerGoals();
+ 
+     protected Mob(EntityType<? extends Mob> entityType, Level level) {
+         super(entityType, level);
+@@ -150,6 +_,12 @@
          }
-+
-+    }
+     }
  
 +    // CraftBukkit start
 +    public void setPersistenceRequired(boolean persistenceRequired) {
 +        this.persistenceRequired = persistenceRequired;
-     }
++    }
 +    // CraftBukkit end
++
+     protected void registerGoals() {
+     }
  
-     protected void registerGoals() {}
- 
-@@ -264,13 +284,44 @@
- 
-     @Nullable
-     protected final LivingEntity getTargetFromBrain() {
--        return (LivingEntity) this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse((Object) null);
-+        return (LivingEntity) this.getBrain().getMemory(MemoryModuleType.ATTACK_TARGET).orElse(null); // CraftBukkit - decompile error
+@@ -230,7 +_,40 @@
      }
  
      public void setTarget(@Nullable LivingEntity target) {
--        this.target = target;
 +        // CraftBukkit start - fire event
 +        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);
-     }
- 
-+    public boolean setTarget(LivingEntity entityliving, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
-+        if (this.getTarget() == entityliving) return false;
++    }
++
++    public boolean setTarget(LivingEntity target, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
++        if (this.getTarget() == target) {
++            return false;
++        }
 +        if (fireEvent) {
-+            if (reason == EntityTargetEvent.TargetReason.UNKNOWN && this.getTarget() != null && entityliving == null) {
++            if (reason == EntityTargetEvent.TargetReason.UNKNOWN && this.getTarget() != null && target == null) {
 +                reason = this.getTarget().isAlive() ? EntityTargetEvent.TargetReason.FORGOT_TARGET : EntityTargetEvent.TargetReason.TARGET_DIED;
 +            }
 +            if (reason == EntityTargetEvent.TargetReason.UNKNOWN) {
 +                this.level().getCraftServer().getLogger().log(java.util.logging.Level.WARNING, "Unknown target reason, please report on the issue tracker", new Exception());
 +            }
 +            CraftLivingEntity ctarget = null;
-+            if (entityliving != null) {
-+                ctarget = (CraftLivingEntity) entityliving.getBukkitEntity();
++            if (target != null) {
++                ctarget = (CraftLivingEntity) target.getBukkitEntity();
 +            }
 +            EntityTargetLivingEntityEvent event = new EntityTargetLivingEntityEvent(this.getBukkitEntity(), ctarget, reason);
 +            this.level().getCraftServer().getPluginManager().callEvent(event);
@@ -84,20 +78,18 @@
 +            }
 +
 +            if (event.getTarget() != null) {
-+                entityliving = ((CraftLivingEntity) event.getTarget()).getHandle();
++                target = ((CraftLivingEntity) event.getTarget()).getHandle();
 +            } else {
-+                entityliving = null;
++                target = null;
 +            }
 +        }
-+        this.target = entityliving;
+         this.target = target;
 +        return true;
 +        // CraftBukkit end
-+    }
-+
+     }
+ 
      @Override
-     public boolean canAttackType(EntityType<?> type) {
-         return type != EntityType.GHAST;
-@@ -399,6 +450,12 @@
+@@ -354,6 +_,12 @@
          return null;
      }
  
@@ -108,177 +100,162 @@
 +    // CraftBukkit end
 +
      @Override
-     public void addAdditionalSaveData(CompoundTag nbt) {
-         super.addAdditionalSaveData(nbt);
-@@ -473,13 +530,25 @@
-             nbt.putBoolean("NoAI", this.isNoAi());
+     public void addAdditionalSaveData(CompoundTag compound) {
+         super.addAdditionalSaveData(compound);
+@@ -413,13 +_,25 @@
+         if (this.isNoAi()) {
+             compound.putBoolean("NoAI", this.isNoAi());
          }
- 
-+        nbt.putBoolean("Bukkit.Aware", this.aware); // CraftBukkit
++        compound.putBoolean("Bukkit.Aware", this.aware); // CraftBukkit
      }
  
      @Override
-     public void readAdditionalSaveData(CompoundTag nbt) {
-         super.readAdditionalSaveData(nbt);
--        this.setCanPickUpLoot(nbt.getBoolean("CanPickUpLoot"));
--        this.persistenceRequired = nbt.getBoolean("PersistenceRequired");
+     public void readAdditionalSaveData(CompoundTag compound) {
+         super.readAdditionalSaveData(compound);
+-        this.setCanPickUpLoot(compound.getBoolean("CanPickUpLoot"));
+-        this.persistenceRequired = compound.getBoolean("PersistenceRequired");
 +        // CraftBukkit start - If looting or persistence is false only use it if it was set after we started using it
-+        if (nbt.contains("CanPickUpLoot", 99)) {
-+            boolean data = nbt.getBoolean("CanPickUpLoot");
-+            if (isLevelAtLeast(nbt, 1) || data) {
++        if (compound.contains("CanPickUpLoot", 99)) {
++            boolean data = compound.getBoolean("CanPickUpLoot");
++            if (isLevelAtLeast(compound, 1) || data) {
 +                this.setCanPickUpLoot(data);
 +            }
 +        }
 +
-+        boolean data = nbt.getBoolean("PersistenceRequired");
-+        if (isLevelAtLeast(nbt, 1) || data) {
++        boolean data = compound.getBoolean("PersistenceRequired");
++        if (isLevelAtLeast(compound, 1) || data) {
 +            this.persistenceRequired = data;
 +        }
 +        // CraftBukkit end
-         ListTag nbttaglist;
-         CompoundTag nbttagcompound1;
-         int i;
-@@ -540,13 +609,18 @@
-         this.readLeashData(nbt);
-         this.setLeftHanded(nbt.getBoolean("LeftHanded"));
-         if (nbt.contains("DeathLootTable", 8)) {
--            this.lootTable = Optional.of(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(nbt.getString("DeathLootTable"))));
-+            this.lootTable = Optional.ofNullable(ResourceLocation.tryParse(nbt.getString("DeathLootTable"))).map((rs) -> ResourceKey.create(Registries.LOOT_TABLE, rs)); // Paper - Validate ResourceLocation
+         if (compound.contains("ArmorItems", 9)) {
+             ListTag list = compound.getList("ArmorItems", 10);
+ 
+@@ -472,13 +_,18 @@
+         this.readLeashData(compound);
+         this.setLeftHanded(compound.getBoolean("LeftHanded"));
+         if (compound.contains("DeathLootTable", 8)) {
+-            this.lootTable = Optional.of(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(compound.getString("DeathLootTable"))));
++            this.lootTable = Optional.ofNullable(ResourceLocation.tryParse(compound.getString("DeathLootTable"))).map((rs) -> ResourceKey.create(Registries.LOOT_TABLE, rs)); // Paper - Validate ResourceLocation
          } else {
              this.lootTable = Optional.empty();
          }
  
-         this.lootTableSeed = nbt.getLong("DeathLootTableSeed");
-         this.setNoAi(nbt.getBoolean("NoAI"));
+         this.lootTableSeed = compound.getLong("DeathLootTableSeed");
+         this.setNoAi(compound.getBoolean("NoAI"));
 +        // CraftBukkit start
-+        if (nbt.contains("Bukkit.Aware")) {
-+            this.aware = nbt.getBoolean("Bukkit.Aware");
++        if (compound.contains("Bukkit.Aware")) {
++            this.aware = compound.getBoolean("Bukkit.Aware");
 +        }
 +        // CraftBukkit end
      }
  
      @Override
-@@ -608,6 +682,11 @@
-                     ItemEntity entityitem = (ItemEntity) iterator.next();
- 
-                     if (!entityitem.isRemoved() && !entityitem.getItem().isEmpty() && !entityitem.hasPickUpDelay() && this.wantsToPickUp(worldserver, entityitem.getItem())) {
-+                        // Paper start - Item#canEntityPickup
-+                        if (!entityitem.canMobPickup) {
-+                            continue;
-+                        }
-+                        // Paper end - Item#canEntityPickup
-                         this.pickUpItem(worldserver, entityitem);
-                     }
+@@ -540,6 +_,11 @@
+                     && !itemEntity.getItem().isEmpty()
+                     && !itemEntity.hasPickUpDelay()
+                     && this.wantsToPickUp(serverLevel, itemEntity.getItem())) {
++                    // Paper start - Item#canEntityPickup
++                    if (!itemEntity.canMobPickup) {
++                        continue;
++                    }
++                    // Paper end - Item#canEntityPickup
+                     this.pickUpItem(serverLevel, itemEntity);
                  }
-@@ -623,23 +702,29 @@
+             }
+@@ -554,18 +_,24 @@
  
-     protected void pickUpItem(ServerLevel world, ItemEntity itemEntity) {
-         ItemStack itemstack = itemEntity.getItem();
--        ItemStack itemstack1 = this.equipItemIfPossible(world, itemstack.copy());
-+        ItemStack itemstack1 = this.equipItemIfPossible(world, itemstack.copy(), itemEntity); // CraftBukkit - add item
- 
-         if (!itemstack1.isEmpty()) {
-             this.onItemPickup(itemEntity);
-             this.take(itemEntity, itemstack1.getCount());
-             itemstack.shrink(itemstack1.getCount());
-             if (itemstack.isEmpty()) {
--                itemEntity.discard();
-+                itemEntity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
+     protected void pickUpItem(ServerLevel level, ItemEntity entity) {
+         ItemStack item = entity.getItem();
+-        ItemStack itemStack = this.equipItemIfPossible(level, item.copy());
++        ItemStack itemStack = this.equipItemIfPossible(level, item.copy(), entity); // CraftBukkit - add item
+         if (!itemStack.isEmpty()) {
+             this.onItemPickup(entity);
+             this.take(entity, itemStack.getCount());
+             item.shrink(itemStack.getCount());
+             if (item.isEmpty()) {
+-                entity.discard();
++                entity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
              }
          }
- 
      }
  
-     public ItemStack equipItemIfPossible(ServerLevel world, ItemStack stack) {
--        EquipmentSlot enumitemslot = this.getEquipmentSlotForItem(stack);
+     public ItemStack equipItemIfPossible(ServerLevel level, ItemStack stack) {
 +        // CraftBukkit start - add item
-+        return this.equipItemIfPossible(world, stack, null);
++        return this.equipItemIfPossible(level, stack, null);
 +    }
 +
-+    public ItemStack equipItemIfPossible(ServerLevel worldserver, ItemStack itemstack, ItemEntity entityitem) {
++    public ItemStack equipItemIfPossible(ServerLevel level, ItemStack stack, ItemEntity entity) {
 +        // CraftBukkit end
-+        EquipmentSlot enumitemslot = this.getEquipmentSlotForItem(itemstack);
-         ItemStack itemstack1 = this.getItemBySlot(enumitemslot);
--        boolean flag = this.canReplaceCurrentItem(stack, itemstack1, enumitemslot);
-+        boolean flag = this.canReplaceCurrentItem(itemstack, itemstack1, enumitemslot);
- 
-         if (enumitemslot.isArmor() && !flag) {
-             enumitemslot = EquipmentSlot.MAINHAND;
-@@ -647,14 +732,22 @@
-             flag = itemstack1.isEmpty();
+         EquipmentSlot equipmentSlotForItem = this.getEquipmentSlotForItem(stack);
+         ItemStack itemBySlot = this.getItemBySlot(equipmentSlotForItem);
+         boolean canReplaceCurrentItem = this.canReplaceCurrentItem(stack, itemBySlot, equipmentSlotForItem);
+@@ -575,10 +_,18 @@
+             canReplaceCurrentItem = itemBySlot.isEmpty();
          }
  
--        if (flag && this.canHoldItem(stack)) {
+-        if (canReplaceCurrentItem && this.canHoldItem(stack)) {
 +        // CraftBukkit start
-+        boolean canPickup = flag && this.canHoldItem(itemstack);
-+        if (entityitem != null) {
-+            canPickup = !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entityitem, 0, !canPickup).isCancelled();
++        boolean canPickup = canReplaceCurrentItem && this.canHoldItem(stack);
++        if (entity != null) {
++            canPickup = !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entity, 0, !canPickup).isCancelled();
 +        }
 +        if (canPickup) {
 +            // CraftBukkit end
-             double d0 = (double) this.getEquipmentDropChance(enumitemslot);
- 
-             if (!itemstack1.isEmpty() && (double) Math.max(this.random.nextFloat() - 0.1F, 0.0F) < d0) {
--                this.spawnAtLocation(world, itemstack1);
+             double d = this.getEquipmentDropChance(equipmentSlotForItem);
+             if (!itemBySlot.isEmpty() && Math.max(this.random.nextFloat() - 0.1F, 0.0F) < d) {
 +                this.forceDrops = true; // CraftBukkit
-+                this.spawnAtLocation(worldserver, itemstack1);
+                 this.spawnAtLocation(level, itemBySlot);
 +                this.forceDrops = false; // CraftBukkit
              }
  
--            ItemStack itemstack2 = enumitemslot.limit(stack);
-+            ItemStack itemstack2 = enumitemslot.limit(itemstack);
- 
-             this.setItemSlotAndDropWhenKilled(enumitemslot, itemstack2);
-             return itemstack2;
-@@ -768,25 +861,29 @@
+             ItemStack itemStack = equipmentSlotForItem.limit(stack);
+@@ -703,22 +_,29 @@
      @Override
      public void checkDespawn() {
          if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
 -            this.discard();
 +            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
--            Player entityhuman = this.level().getNearestPlayer(this, -1.0D);
-+            Player entityhuman = this.level().findNearbyPlayer(this, -1.0D, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper - Affects Spawning API
- 
-             if (entityhuman != null) {
--                double d0 = entityhuman.distanceToSqr((Entity) this);
--                int i = this.getType().getCategory().getDespawnDistance();
--                int j = i * i;
--
--                if (d0 > (double) j && this.removeWhenFarAway(d0)) {
+-            Entity nearestPlayer = this.level().getNearestPlayer(this, -1.0);
++            Entity nearestPlayer = this.level().findNearbyPlayer(this, -1.0, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper - Affects Spawning API
+             if (nearestPlayer != null) {
+-                double d = nearestPlayer.distanceToSqr(this);
+-                int despawnDistance = this.getType().getCategory().getDespawnDistance();
+-                int i = despawnDistance * despawnDistance;
+-                if (d > i && this.removeWhenFarAway(d)) {
 -                    this.discard();
+-                }
 +                // Paper start - Configurable despawn distances
 +                final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
 +                final io.papermc.paper.configuration.type.DespawnRange.Shape shape = this.level().paperConfig().entities.spawning.despawnRangeShape;
-+                final double dy = Math.abs(entityhuman.getY() - this.getY());
++                final double dy = Math.abs(nearestPlayer.getY() - this.getY());
 +                final double dySqr = Math.pow(dy, 2);
-+                final double dxSqr = Math.pow(entityhuman.getX() - this.getX(), 2);
-+                final double dzSqr = Math.pow(entityhuman.getZ() - this.getZ(), 2);
++                final double dxSqr = Math.pow(nearestPlayer.getX() - this.getX(), 2);
++                final double dzSqr = Math.pow(nearestPlayer.getZ() - this.getZ(), 2);
 +                final double distanceSquared = dxSqr + dzSqr + dySqr;
 +                // Despawn if hard/soft limit is exceeded
 +                if (despawnRangePair.hard().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy) && this.removeWhenFarAway(distanceSquared)) {
 +                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-                 }
--
--                int k = this.getType().getCategory().getNoDespawnDistance();
--                int l = k * k;
--
--                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d0 > (double) l && this.removeWhenFarAway(d0)) {
++                 }
+ 
+-                int noDespawnDistance = this.getType().getCategory().getNoDespawnDistance();
+-                int i1 = noDespawnDistance * noDespawnDistance;
+-                if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && d > i1 && this.removeWhenFarAway(d)) {
 -                    this.discard();
--                } else if (d0 < (double) l) {
+-                } else if (d < i1) {
 +                if (despawnRangePair.soft().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy)) {
 +                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(distanceSquared)) {
 +                        this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
 +                    }
 +                } else {
-+                // Paper end - Configurable despawn distances
++                    // Paper end - Configurable despawn distances
                      this.noActionTime = 0;
                  }
              }
-@@ -799,6 +896,15 @@
+@@ -730,6 +_,15 @@
      @Override
      protected final void serverAiStep() {
-         ++this.noActionTime;
+         this.noActionTime++;
 +        // Paper start - Allow nerfed mobs to jump and float
 +        if (!this.aware) {
 +            if (goalFloat != null) {
@@ -288,10 +265,10 @@
 +            return;
 +        }
 +        // Paper end - Allow nerfed mobs to jump and float
-         ProfilerFiller gameprofilerfiller = Profiler.get();
- 
-         gameprofilerfiller.push("sensing");
-@@ -994,23 +1100,36 @@
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("sensing");
+         this.sensing.tick();
+@@ -908,26 +_,40 @@
  
      @Override
      public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
@@ -305,153 +282,132 @@
          this.verifyEquippedItem(stack);
          switch (slot.getType()) {
              case HAND:
--                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack);
-+                this.onEquipItem(slot, (ItemStack) this.handItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
+-                this.onEquipItem(slot, this.handItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(slot, this.handItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
                  break;
              case HUMANOID_ARMOR:
--                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack);
-+                this.onEquipItem(slot, (ItemStack) this.armorItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
+-                this.onEquipItem(slot, this.armorItems.set(slot.getIndex(), stack), stack);
++                this.onEquipItem(slot, this.armorItems.set(slot.getIndex(), stack), stack, silent); // Paper - Fix silent equipment change
                  break;
              case ANIMAL_ARMOR:
-                 ItemStack itemstack1 = this.bodyArmorItem;
- 
+                 ItemStack itemStack = this.bodyArmorItem;
                  this.bodyArmorItem = stack;
--                this.onEquipItem(slot, itemstack1, stack);
-+                this.onEquipItem(slot, itemstack1, stack, silent); // Paper - Fix silent equipment change
+-                this.onEquipItem(slot, itemStack, stack);
++                this.onEquipItem(slot, itemStack, stack, silent); // Paper - Fix silent equipment change
          }
- 
      }
- 
++
 +    // Paper start
 +    protected boolean shouldSkipLoot(EquipmentSlot slot) { // method to avoid to fallback into the global mob loot logic (i.e fox)
 +        return false;
 +    }
 +    // Paper end
-+
+ 
      @Override
-     protected void dropCustomDeathLoot(ServerLevel world, DamageSource source, boolean causedByPlayer) {
-         super.dropCustomDeathLoot(world, source, causedByPlayer);
-@@ -1018,6 +1137,7 @@
+     protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
+         super.dropCustomDeathLoot(level, damageSource, recentlyHit);
  
-         while (iterator.hasNext()) {
-             EquipmentSlot enumitemslot = (EquipmentSlot) iterator.next();
-+            if (this.shouldSkipLoot(enumitemslot)) continue; // Paper
-             ItemStack itemstack = this.getItemBySlot(enumitemslot);
-             float f = this.getEquipmentDropChance(enumitemslot);
- 
-@@ -1042,7 +1162,13 @@
+         for (EquipmentSlot equipmentSlot : EquipmentSlot.VALUES) {
++            if (this.shouldSkipLoot(equipmentSlot)) continue; // Paper
+             ItemStack itemBySlot = this.getItemBySlot(equipmentSlot);
+             float equipmentDropChance = this.getEquipmentDropChance(equipmentSlot);
+             if (equipmentDropChance != 0.0F) {
+@@ -951,7 +_,13 @@
                      }
  
-                     this.spawnAtLocation(world, itemstack);
+                     this.spawnAtLocation(level, itemBySlot);
 +                    if (this.clearEquipmentSlots) { // Paper
-                     this.setItemSlot(enumitemslot, ItemStack.EMPTY);
+                     this.setItemSlot(equipmentSlot, ItemStack.EMPTY);
 +                    // Paper start
 +                    } else {
-+                        this.clearedEquipmentSlots.add(enumitemslot);
++                        this.clearedEquipmentSlots.add(equipmentSlot);
 +                    }
 +                    // Paper end
                  }
              }
          }
-@@ -1338,7 +1464,7 @@
-         if (itemstack.getItem() instanceof SpawnEggItem) {
-             if (this.level() instanceof ServerLevel) {
-                 SpawnEggItem itemmonsteregg = (SpawnEggItem) itemstack.getItem();
--                Optional<Mob> optional = itemmonsteregg.spawnOffspringFromSpawnEgg(player, this, this.getType(), (ServerLevel) this.level(), this.position(), itemstack);
-+                Optional<Mob> optional = itemmonsteregg.spawnOffspringFromSpawnEgg(player, this, (EntityType<? extends Mob>) this.getType(), (ServerLevel) this.level(), this.position(), itemstack); // CraftBukkit - decompile error
- 
-                 optional.ifPresent((entityinsentient) -> {
-                     this.onOffspringSpawnedFromEgg(player, entityinsentient);
-@@ -1389,28 +1515,51 @@
-         return this.restrictRadius != -1.0F;
-     }
- 
-+    // CraftBukkit start
-     @Nullable
-     public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams context, EntitySpawnReason reason, ConversionParams.AfterConversion<T> finalizer) {
-+        return this.convertTo(entityType, context, reason, finalizer, EntityTransformEvent.TransformReason.UNKNOWN, CreatureSpawnEvent.SpawnReason.DEFAULT);
+@@ -1269,6 +_,22 @@
+     public <T extends Mob> T convertTo(
+         EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.AfterConversion<T> afterConversion
+     ) {
++        return this.convertTo(entityType, conversionParams, spawnReason, afterConversion, EntityTransformEvent.TransformReason.UNKNOWN, CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
-+    public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, EntitySpawnReason entityspawnreason, ConversionParams.AfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
++    public <T extends Mob> T convertTo(
++        EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.AfterConversion<T> afterConversion, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason creatureSpawnReason
++    ) {
 +    // Paper start - entity zap event - allow cancellation of conversion post creation
-+        return this.convertTo(entitytypes, conversionparams, entityspawnreason, e -> { conversionparams_a.finalizeConversion(e); return true; }, transformReason, spawnReason);
++        return this.convertTo(entityType, conversionParams, spawnReason, e -> { afterConversion.finalizeConversion(e); return true; }, transformReason, creatureSpawnReason);
 +    }
 +    @Nullable
-+    public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, EntitySpawnReason entityspawnreason, ConversionParams.CancellingAfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
-+    // Paper end - entity zap event - allow cancellation of conversion post creation
++    public <T extends Mob> T convertTo(
++        EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.CancellingAfterConversion<T> afterConversion, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason creatureSpawnReason
++    ) {
++        // Paper end - entity zap event - allow cancellation of conversion post creation
 +        // CraftBukkit end
          if (this.isRemoved()) {
              return null;
          } else {
--            T t0 = (Mob) entityType.create(this.level(), reason);
-+            T t0 = entitytypes.create(this.level(), EntitySpawnReason.CONVERSION); // CraftBukkit - decompile error
- 
-             if (t0 == null) {
+@@ -1277,13 +_,23 @@
                  return null;
              } else {
--                context.type().convert(this, t0, context);
--                finalizer.finalizeConversion(t0);
-+                conversionparams.type().convert(this, t0, conversionparams);
-+                if (!conversionparams_a.finalizeConversionOrCancel(t0)) return null; // Paper - entity zap event - return null if conversion was cancelled
-                 Level world = this.level();
- 
+                 conversionParams.type().convert(this, mob, conversionParams);
+-                afterConversion.finalizeConversion(mob);
++                if (!afterConversion.finalizeConversionOrCancel(mob)) return null; // Paper - entity zap event - return null if conversion was cancelled
 +                // CraftBukkit start
 +                if (transformReason == null) {
 +                    // Special handling for slime split and pig lightning
-+                    return t0;
++                    return mob;
 +                }
 +
-+                if (CraftEventFactory.callEntityTransformEvent(this, t0, transformReason).isCancelled()) {
++                if (CraftEventFactory.callEntityTransformEvent(this, mob, transformReason).isCancelled()) {
 +                    return null;
 +                }
 +                // CraftBukkit end
-                 if (world instanceof ServerLevel) {
-                     ServerLevel worldserver = (ServerLevel) world;
- 
--                    worldserver.addFreshEntity(t0);
-+                    worldserver.addFreshEntity(t0, spawnReason); // CraftBukkit
+                 if (this.level() instanceof ServerLevel serverLevel) {
+-                    serverLevel.addFreshEntity(mob);
++                    serverLevel.addFreshEntity(mob, creatureSpawnReason); // CraftBukkit
                  }
  
--                if (context.type().shouldDiscardAfterConversion()) {
+                 if (conversionParams.type().shouldDiscardAfterConversion()) {
 -                    this.discard();
-+                if (conversionparams.type().shouldDiscardAfterConversion()) {
 +                    this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause
                  }
  
-                 return t0;
-@@ -1420,10 +1569,22 @@
+                 return mob;
+@@ -1293,7 +_,20 @@
  
      @Nullable
-     public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams context, ConversionParams.AfterConversion<T> finalizer) {
--        return this.convertTo(entityType, context, EntitySpawnReason.CONVERSION, finalizer);
+     public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.AfterConversion<T> afterConversion) {
+-        return this.convertTo(entityType, coversionParams, EntitySpawnReason.CONVERSION, afterConversion);
 +        // CraftBukkit start
-+        return this.convertTo(entityType, context, finalizer, EntityTransformEvent.TransformReason.UNKNOWN, CreatureSpawnEvent.SpawnReason.DEFAULT);
-     }
- 
-     @Nullable
-+    public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, ConversionParams.AfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
-+    // Paper start - entity zap event - allow cancellation of conversion post creation
-+        return this.convertTo(entitytypes, conversionparams, e -> { conversionparams_a.finalizeConversion(e); return true; }, transformReason, spawnReason);
-+    }
-+    public <T extends Mob> T convertTo(EntityType<T> entitytypes, ConversionParams conversionparams, ConversionParams.CancellingAfterConversion<T> conversionparams_a, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason spawnReason) {
-+    // Paper start - entity zap event - allow cancellation of conversion post creation
-+        return this.convertTo(entitytypes, conversionparams, EntitySpawnReason.CONVERSION, conversionparams_a, transformReason, spawnReason);
-+        // CraftBukkit end
++        return this.convertTo(entityType, coversionParams, afterConversion, EntityTransformEvent.TransformReason.UNKNOWN, CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
-     @Override
-     public Leashable.LeashData getLeashData() {
-         return this.leashData;
-@@ -1458,7 +1619,15 @@
-         boolean flag1 = super.startRiding(entity, force);
++    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.AfterConversion<T> afterConversion, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++    // Paper start - entity zap event - allow cancellation of conversion post creation
++        return this.convertTo(entityType, coversionParams, e -> { afterConversion.finalizeConversion(e); return true; }, transformReason, creatureSpawnReason);
++    }
++    @Nullable
++    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.CancellingAfterConversion<T> afterConversion, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
++    // Paper start - entity zap event - allow cancellation of conversion post creation
++        return this.convertTo(entityType, coversionParams, EntitySpawnReason.CONVERSION, afterConversion, transformReason, creatureSpawnReason);
++        // CraftBukkit end
+     }
  
-         if (flag1 && this.isLeashed()) {
+     @Nullable
+@@ -1329,7 +_,17 @@
+     public boolean startRiding(Entity entity, boolean force) {
+         boolean flag = super.startRiding(entity, force);
+         if (flag && this.isLeashed()) {
 -            this.dropLeash();
 +            // Paper start - Expand EntityUnleashEvent
 +            EntityUnleashEvent event = new EntityUnleashEvent(this.getBukkitEntity(), EntityUnleashEvent.UnleashReason.UNKNOWN, true);
-+            if (!event.callEvent()) { return flag1; }
++            if (!event.callEvent()) {
++                return flag;
++            }
 +            if (event.isDropLeash()) {
 +                this.dropLeash();
 +            } else {
@@ -460,13 +416,13 @@
 +            // Paper end - Expand EntityUnleashEvent
          }
  
-         return flag1;
-@@ -1542,7 +1711,7 @@
- 
-             if (f1 > 0.0F && target instanceof LivingEntity) {
-                 entityliving = (LivingEntity) target;
--                entityliving.knockback((double) (f1 * 0.5F), (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)));
-+                entityliving.knockback((double) (f1 * 0.5F), (double) Mth.sin(this.getYRot() * 0.017453292F), (double) (-Mth.cos(this.getYRot() * 0.017453292F)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events
-                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.6D, 1.0D, 0.6D));
+         return flag;
+@@ -1412,7 +_,7 @@
+             float knockback = this.getKnockback(source, damageSource);
+             if (knockback > 0.0F && source instanceof LivingEntity livingEntity) {
+                 livingEntity.knockback(
+-                    knockback * 0.5F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
++                    knockback * 0.5F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0)), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK // CraftBukkit // Paper - knockback events
+                 );
+                 this.setDeltaMovement(this.getDeltaMovement().multiply(0.6, 1.0, 0.6));
              }
- 

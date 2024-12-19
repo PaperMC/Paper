@@ -1,30 +1,30 @@
 --- a/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java
 +++ b/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java
-@@ -19,6 +19,13 @@
+@@ -19,6 +_,13 @@
      private final List<Pair<EquipmentSlot, ItemStack>> slots;
  
-     public ClientboundSetEquipmentPacket(int entityId, List<Pair<EquipmentSlot, ItemStack>> equipmentList) {
-+        // Paper start - data sanitization
-+        this(entityId, equipmentList, false);
+     public ClientboundSetEquipmentPacket(int entity, List<Pair<EquipmentSlot, ItemStack>> slots) {
++    // Paper start - data sanitization
++        this(entity, slots, false);
 +    }
 +    private boolean sanitize;
-+    public ClientboundSetEquipmentPacket(int entityId, List<Pair<EquipmentSlot, ItemStack>> equipmentList, boolean sanitize) {
++    public ClientboundSetEquipmentPacket(int entity, List<Pair<EquipmentSlot, ItemStack>> slots, boolean sanitize) {
 +        this.sanitize = sanitize;
-+        // Paper end - data sanitization
-         this.entity = entityId;
-         this.slots = equipmentList;
++    // Paper end - data sanitization
+         this.entity = entity;
+         this.slots = slots;
      }
-@@ -40,6 +47,7 @@
-         buf.writeVarInt(this.entity);
-         int i = this.slots.size();
+@@ -40,6 +_,7 @@
+         buffer.writeVarInt(this.entity);
+         int size = this.slots.size();
  
-+        try (var ignored = io.papermc.paper.util.DataSanitizationUtil.start(this.sanitize)) {  // Paper - data sanitization
-         for (int j = 0; j < i; j++) {
-             Pair<EquipmentSlot, ItemStack> pair = this.slots.get(j);
++        try (io.papermc.paper.util.DataSanitizationUtil.DataSanitizer ignored = io.papermc.paper.util.DataSanitizationUtil.start(this.sanitize)) { // Paper - data sanitization
+         for (int i = 0; i < size; i++) {
+             Pair<EquipmentSlot, ItemStack> pair = this.slots.get(i);
              EquipmentSlot equipmentSlot = pair.getFirst();
-@@ -48,6 +56,7 @@
-             buf.writeByte(bl ? k | -128 : k);
-             ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, pair.getSecond());
+@@ -48,6 +_,7 @@
+             buffer.writeByte(flag ? ordinal | -128 : ordinal);
+             ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, pair.getSecond());
          }
 +        } // Paper - data sanitization
      }

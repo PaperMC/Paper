@@ -1,31 +1,30 @@
 --- a/net/minecraft/world/item/EndCrystalItem.java
 +++ b/net/minecraft/world/item/EndCrystalItem.java
-@@ -30,7 +30,7 @@
-         if (!iblockdata.is(Blocks.OBSIDIAN) && !iblockdata.is(Blocks.BEDROCK)) {
+@@ -27,7 +_,7 @@
+         if (!blockState.is(Blocks.OBSIDIAN) && !blockState.is(Blocks.BEDROCK)) {
              return InteractionResult.FAIL;
          } else {
--            BlockPos blockposition1 = blockposition.above();
-+            BlockPos blockposition1 = blockposition.above(); final BlockPos aboveBlockPosition = blockposition1; // Paper - OBFHELPER
- 
-             if (!world.isEmptyBlock(blockposition1)) {
+-            BlockPos blockPos = clickedPos.above();
++            BlockPos blockPos = clickedPos.above(); final BlockPos aboveBlockPosition = blockPos; // Paper - OBFHELPER
+             if (!level.isEmptyBlock(blockPos)) {
                  return InteractionResult.FAIL;
-@@ -47,12 +47,18 @@
-                         EndCrystal entityendercrystal = new EndCrystal(world, d0 + 0.5D, d1, d2 + 0.5D);
- 
-                         entityendercrystal.setShowBottom(false);
+             } else {
+@@ -41,11 +_,17 @@
+                     if (level instanceof ServerLevel) {
+                         EndCrystal endCrystal = new EndCrystal(level, d + 0.5, d1, d2 + 0.5);
+                         endCrystal.setShowBottom(false);
 +                        // CraftBukkit start
-+                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(context, entityendercrystal).isCancelled()) {
++                        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPlaceEvent(context, endCrystal).isCancelled()) {
 +                            if (context.getPlayer() != null) context.getPlayer().containerMenu.sendAllDataToRemote(); // Paper - Fix inventory desync
 +                            return InteractionResult.FAIL;
 +                        }
 +                        // CraftBukkit end
-                         world.addFreshEntity(entityendercrystal);
-                         world.gameEvent((Entity) context.getPlayer(), (Holder) GameEvent.ENTITY_PLACE, blockposition1);
-                         EndDragonFight enderdragonbattle = ((ServerLevel) world).getDragonFight();
- 
-                         if (enderdragonbattle != null) {
--                            enderdragonbattle.tryRespawn();
-+                            enderdragonbattle.tryRespawn(aboveBlockPosition); // Paper - Perf: Do crystal-portal proximity check before entity lookup
+                         level.addFreshEntity(endCrystal);
+                         level.gameEvent(context.getPlayer(), GameEvent.ENTITY_PLACE, blockPos);
+                         EndDragonFight dragonFight = ((ServerLevel)level).getDragonFight();
+                         if (dragonFight != null) {
+-                            dragonFight.tryRespawn();
++                            dragonFight.tryRespawn(aboveBlockPosition); // Paper - Perf: Do crystal-portal proximity check before entity lookup
                          }
                      }
  

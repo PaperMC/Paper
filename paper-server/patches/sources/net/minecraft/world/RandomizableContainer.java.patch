@@ -1,23 +1,23 @@
 --- a/net/minecraft/world/RandomizableContainer.java
 +++ b/net/minecraft/world/RandomizableContainer.java
-@@ -28,7 +28,7 @@
+@@ -28,7 +_,7 @@
  
      void setLootTable(@Nullable ResourceKey<LootTable> lootTable);
  
--    default void setLootTable(ResourceKey<LootTable> lootTableId, long lootTableSeed) {
-+    default void setLootTable(@Nullable ResourceKey<LootTable> lootTableId, long lootTableSeed) { // Paper - add nullable
-         this.setLootTable(lootTableId);
-         this.setLootTableSeed(lootTableSeed);
+-    default void setLootTable(ResourceKey<LootTable> lootTable, long seed) {
++    default void setLootTable(@Nullable ResourceKey<LootTable> lootTable, long seed) { // Paper - add nullable
+         this.setLootTable(lootTable);
+         this.setLootTableSeed(seed);
      }
-@@ -50,14 +50,15 @@
+@@ -50,14 +_,15 @@
  
-     default boolean tryLoadLootTable(CompoundTag nbt) {
-         if (nbt.contains("LootTable", 8)) {
--            this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(nbt.getString("LootTable"))));
-+            this.setLootTable(net.minecraft.Optionull.map(ResourceLocation.tryParse(nbt.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl))); // Paper - Validate ResourceLocation
-+            if (this.lootableData() != null && this.getLootTable() != null) this.lootableData().loadNbt(nbt); // Paper - LootTable API
-             if (nbt.contains("LootTableSeed", 4)) {
-                 this.setLootTableSeed(nbt.getLong("LootTableSeed"));
+     default boolean tryLoadLootTable(CompoundTag tag) {
+         if (tag.contains("LootTable", 8)) {
+-            this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(tag.getString("LootTable"))));
++            this.setLootTable(net.minecraft.Optionull.map(ResourceLocation.tryParse(tag.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl))); // Paper - Validate ResourceLocation
++            if (this.lootableData() != null && this.getLootTable() != null) this.lootableData().loadNbt(tag); // Paper - LootTable API
+             if (tag.contains("LootTableSeed", 4)) {
+                 this.setLootTableSeed(tag.getLong("LootTableSeed"));
              } else {
                  this.setLootTableSeed(0L);
              }
@@ -27,14 +27,14 @@
          } else {
              return false;
          }
-@@ -69,26 +70,44 @@
+@@ -69,26 +_,42 @@
              return false;
          } else {
-             nbt.putString("LootTable", resourceKey.location().toString());
-+            if (this.lootableData() != null) this.lootableData().saveNbt(nbt); // Paper - LootTable API
-             long l = this.getLootTableSeed();
-             if (l != 0L) {
-                 nbt.putLong("LootTableSeed", l);
+             tag.putString("LootTable", lootTable.location().toString());
++            if (this.lootableData() != null) this.lootableData().saveNbt(tag); // Paper - LootTable API
+             long lootTableSeed = this.getLootTableSeed();
+             if (lootTableSeed != 0L) {
+                 tag.putLong("LootTableSeed", lootTableSeed);
              }
  
 -            return true;
@@ -50,10 +50,10 @@
 +        // Paper end - LootTable API
          Level level = this.getLevel();
          BlockPos blockPos = this.getBlockPos();
-         ResourceKey<LootTable> resourceKey = this.getLootTable();
--        if (resourceKey != null && level != null && level.getServer() != null) {
+         ResourceKey<LootTable> lootTable = this.getLootTable();
+-        if (lootTable != null && level != null && level.getServer() != null) {
 +        // Paper start - LootTable API
-+        lootReplenish: if (resourceKey != null && level != null && level.getServer() != null) {
++        lootReplenish: if (lootTable != null && level != null && level.getServer() != null) {
 +            if (this.lootableData() != null && !this.lootableData().shouldReplenish(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) {
 +                if (forceClearLootTable) {
 +                    this.setLootTable(null);
@@ -61,27 +61,25 @@
 +                break lootReplenish;
 +            }
 +            // Paper end - LootTable API
-             LootTable lootTable = level.getServer().reloadableRegistries().getLootTable(resourceKey);
+             LootTable lootTable1 = level.getServer().reloadableRegistries().getLootTable(lootTable);
              if (player instanceof ServerPlayer) {
-                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, resourceKey);
+                 CriteriaTriggers.GENERATE_LOOT.trigger((ServerPlayer)player, lootTable);
              }
  
--            this.setLootTable(null);
-+            // Paper start - LootTable API
-+            if (forceClearLootTable || this.lootableData() == null || this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) {
-+                this.setLootTable(null);
-+            }
-+            // Paper end - LootTable API
++            if (forceClearLootTable || this.lootableData() == null || this.lootableData().shouldClearLootTable(this, com.destroystokyo.paper.loottable.PaperLootableInventoryData.CONTAINER, player)) { // Paper - LootTable API
+             this.setLootTable(null);
++            } // Paper - LootTable API
              LootParams.Builder builder = new LootParams.Builder((ServerLevel)level).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(blockPos));
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
-@@ -97,4 +116,16 @@
-             lootTable.fill(this, builder.create(LootContextParamSets.CHEST), this.getLootTableSeed());
+@@ -97,4 +_,17 @@
+             lootTable1.fill(this, builder.create(LootContextParamSets.CHEST), this.getLootTableSeed());
          }
      }
 +
 +    // Paper start - LootTable API
-+    @Nullable @org.jetbrains.annotations.Contract(pure = true)
++    @Nullable
++    @org.jetbrains.annotations.Contract(pure = true)
 +    default com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData() {
 +        return null; // some containers don't really have a "replenish" ability like decorated pots
 +    }

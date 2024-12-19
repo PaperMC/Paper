@@ -1,72 +1,90 @@
 --- a/net/minecraft/world/entity/monster/AbstractSkeleton.java
 +++ b/net/minecraft/world/entity/monster/AbstractSkeleton.java
-@@ -97,9 +97,15 @@
+@@ -64,6 +_,7 @@
+             AbstractSkeleton.this.setAggressive(true);
+         }
+     };
++    private boolean shouldBurnInDay = true; // Paper - shouldBurnInDay API
  
-     abstract SoundEvent getStepSound();
+     protected AbstractSkeleton(EntityType<? extends AbstractSkeleton> entityType, Level level) {
+         super(entityType, level);
+@@ -88,6 +_,16 @@
+         return Monster.createMonsterAttributes().add(Attributes.MOVEMENT_SPEED, 0.25);
+     }
  
 +    // Paper start - shouldBurnInDay API
-+    private boolean shouldBurnInDay = true;
-+    public boolean shouldBurnInDay() { return shouldBurnInDay; }
-+    public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
++    public boolean shouldBurnInDay() {
++        return this.shouldBurnInDay;
++    }
++
++    public void setShouldBurnInDay(boolean shouldBurnInDay) {
++        this.shouldBurnInDay = shouldBurnInDay;
++    }
 +    // Paper end - shouldBurnInDay API
 +
      @Override
+     protected void playStepSound(BlockPos pos, BlockState block) {
+         this.playSound(this.getStepSound(), 0.15F, 1.0F);
+@@ -97,7 +_,7 @@
+ 
+     @Override
      public void aiStep() {
--        boolean flag = this.isSunBurnTick();
-+        boolean flag = shouldBurnInDay && this.isSunBurnTick(); // Paper - shouldBurnInDay API
- 
-         if (flag) {
-             ItemStack itemstack = this.getItemBySlot(EquipmentSlot.HEAD);
-@@ -152,7 +158,7 @@
-         this.populateDefaultEquipmentSlots(randomsource, difficulty);
-         this.populateDefaultEquipmentEnchantments(world, randomsource, difficulty);
+-        boolean isSunBurnTick = this.isSunBurnTick();
++        boolean isSunBurnTick = this.shouldBurnInDay && this.isSunBurnTick(); // Paper - shouldBurnInDay API
+         if (isSunBurnTick) {
+             ItemStack itemBySlot = this.getItemBySlot(EquipmentSlot.HEAD);
+             if (!itemBySlot.isEmpty()) {
+@@ -145,7 +_,7 @@
+         this.populateDefaultEquipmentSlots(random, difficulty);
+         this.populateDefaultEquipmentEnchantments(level, random, difficulty);
          this.reassessWeaponGoal();
--        this.setCanPickUpLoot(randomsource.nextFloat() < 0.55F * difficulty.getSpecialMultiplier());
-+        this.setCanPickUpLoot(this.level().paperConfig().entities.behavior.mobsCanAlwaysPickUpLoot.skeletons || randomsource.nextFloat() < 0.55F * difficulty.getSpecialMultiplier()); // Paper - Add world settings for mobs picking up loot
+-        this.setCanPickUpLoot(random.nextFloat() < 0.55F * difficulty.getSpecialMultiplier());
++        this.setCanPickUpLoot(this.level().paperConfig().entities.behavior.mobsCanAlwaysPickUpLoot.skeletons || random.nextFloat() < 0.55F * difficulty.getSpecialMultiplier()); // Paper - Add world settings for mobs picking up loot
          if (this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
-             LocalDate localdate = LocalDate.now();
-             int i = localdate.get(ChronoField.DAY_OF_MONTH);
-@@ -209,7 +215,17 @@
-         Level world = this.level();
- 
-         if (world instanceof ServerLevel worldserver) {
--            Projectile.spawnProjectileUsingShoot(entityarrow, worldserver, itemstack1, d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - worldserver.getDifficulty().getId() * 4));
+             LocalDate localDate = LocalDate.now();
+             int i = localDate.get(ChronoField.DAY_OF_MONTH);
+@@ -196,9 +_,19 @@
+         double d2 = target.getZ() - this.getZ();
+         double squareRoot = Math.sqrt(d * d + d2 * d2);
+         if (this.level() instanceof ServerLevel serverLevel) {
 +            // CraftBukkit start
-+            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), entityarrow.getPickupItem(), entityarrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true); // Paper - improve entity shhot bow event - add arrow stack to event
++            org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(this, this.getMainHandItem(), arrow.getPickupItem(), arrow, net.minecraft.world.InteractionHand.MAIN_HAND, 0.8F, true); // Paper - improve entity shhot bow event - add arrow stack to event
 +            if (event.isCancelled()) {
 +                event.getProjectile().remove();
 +                return;
 +            }
 +
-+            if (event.getProjectile() == entityarrow.getBukkitEntity()) {
-+                Projectile.spawnProjectileUsingShoot(entityarrow, worldserver, itemstack1, d0, d1 + d3 * 0.20000000298023224D, d2, 1.6F, (float) (14 - worldserver.getDifficulty().getId() * 4));
-+            }
++            if (event.getProjectile() == arrow.getBukkitEntity()) {
 +            // CraftBukkit end
+             Projectile.spawnProjectileUsingShoot(
+                 arrow, serverLevel, projectile, d, d1 + squareRoot * 0.2F, d2, 1.6F, 14 - serverLevel.getDifficulty().getId() * 4
+             );
++            } // CraftBukkit
          }
  
          this.playSound(SoundEvents.SKELETON_SHOOT, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
-@@ -233,11 +249,24 @@
-     public void readAdditionalSaveData(CompoundTag nbt) {
-         super.readAdditionalSaveData(nbt);
+@@ -222,11 +_,23 @@
+     public void readAdditionalSaveData(CompoundTag compound) {
+         super.readAdditionalSaveData(compound);
          this.reassessWeaponGoal();
+-    }
 +        // Paper start - shouldBurnInDay API
-+        if (nbt.contains("Paper.ShouldBurnInDay")) {
-+            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
++        if (compound.contains("Paper.ShouldBurnInDay")) {
++            this.shouldBurnInDay = compound.getBoolean("Paper.ShouldBurnInDay");
 +        }
 +        // Paper end - shouldBurnInDay API
-     }
- 
++    }
 +    // Paper start - shouldBurnInDay API
-     @Override
--    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
--        super.setItemSlot(slot, stack);
-+    public void addAdditionalSaveData(CompoundTag nbt) {
++    @Override
++    public void addAdditionalSaveData(final net.minecraft.nbt.CompoundTag nbt) {
 +        super.addAdditionalSaveData(nbt);
 +        nbt.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay);
 +    }
 +    // Paper end - shouldBurnInDay API
-+
-+    @Override
+ 
+     @Override
+-    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+-        super.setItemSlot(slot, stack);
 +    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) { // Paper - Fix silent equipment change
 +        super.setItemSlot(slot, stack, silent); // Paper - Fix silent equipment change
          if (!this.level().isClientSide) {

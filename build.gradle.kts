@@ -8,9 +8,10 @@ import java.nio.file.Files
 import java.nio.file.SimpleFileVisitor
 import kotlin.io.path.*
 import java.nio.file.Path
+import kotlin.random.Random
 
 plugins {
-    id("io.papermc.paperweight.core") version "2.0.0-SNAPSHOT" apply false
+    id("io.papermc.paperweight.core") version "2.0.0-beta.5" apply false
 }
 
 subprojects {
@@ -71,21 +72,25 @@ subprojects {
 }
 
 tasks.register("printMinecraftVersion") {
+    val mcVersion = providers.gradleProperty("mcVersion")
     doLast {
-        println(providers.gradleProperty("mcVersion").get().trim())
+        println(mcVersion.get().trim())
     }
 }
 
 tasks.register("printPaperVersion") {
+    val paperVersion = provider { project.version }
     doLast {
-        println(project.version)
+        println(paperVersion.get())
     }
 }
 
 tasks.register("gibWork") {
-    @OptIn(ExperimentalPathApi::class)
+    val issue = providers.gradleProperty("updateTaskListIssue").get()
+    val patchesFolder = layout.projectDirectory.dir("paper-server/patches/").convertToPath()
+    val storage = layout.cache.resolve("last-updating-folder").also { it.parent.createDirectories() }
+
     doLast {
-        val issue = providers.gradleProperty("updateTaskListIssue").get()
         val html = URI(issue).toURL().readText()
 
         val beginMarker = "```[tasklist]"
@@ -93,28 +98,41 @@ tasks.register("gibWork") {
         val end = html.indexOf("```", start + beginMarker.length)
         val taskList = html.substring(start + beginMarker.length, end)
 
-        val next = taskList.split("\\n").first { it.startsWith("- [ ]") }.replace("- [ ] ", "")
+        // Extract all incomplete tasks and select a random one
+        val incompleteTasks = taskList.split("\\n").filter { it.startsWith("- [ ]") }.map { it.replace("- [ ] ", "") }
+        if (incompleteTasks.isEmpty()) {
+            error("No incomplete tasks found in the task list.")
+        }
+
+        val next = incompleteTasks[Random.nextInt(incompleteTasks.size)]
 
         println("checking out $next...")
-        val dir = layout.projectDirectory.dir("paper-server/patches/unapplied/").convertToPath().resolve(next)
-        dir.copyToRecursively(
-            layout.projectDirectory.dir("paper-server/patches/sources").convertToPath().resolve(next)
-                .also { it.createDirectories() }, overwrite = true, followLinks = false
-        )
-        dir.deleteRecursively()
+        val dir = patchesFolder.resolve("unapplied").resolve(next)
+        if (!dir.exists()) {
+            error("Unapplied patch folder $next does not exist, did someone else already check it out and forgot to mark it?")
+        }
+        dir.listDirectoryEntries("*.patch").forEach { patch ->
+            patch.copyTo(patchesFolder.resolve("sources").resolve(next).resolve(patch.fileName).also { it.createDirectories() }, overwrite = true)
+            patch.deleteIfExists()
+        }
+        if (dir.listDirectoryEntries().isEmpty()) {
+            dir.deleteIfExists()
+        }
 
+        storage.writeText(next)
         println("please tick the box in the issue: $issue")
         println("if you don't finish it, uncheck the task again after you commited")
     }
 }
 
 tasks.register("showWork") {
+    val patchDir = layout.projectDirectory.dir("paper-server/patches/unapplied/").convertToPath()
+
     doLast {
-        val parent = layout.projectDirectory.dir("paper-server/patches/unapplied/").convertToPath()
-        Files.walkFileTree(parent, object : SimpleFileVisitor<Path>() {
+        Files.walkFileTree(patchDir, object : SimpleFileVisitor<Path>() {
             override fun postVisitDirectory(dir: Path?, exc: IOException?): FileVisitResult {
                 dir?.takeIf { it.listDirectoryEntries("*.patch").isNotEmpty() }?.let {
-                    println("- [ ] ${parent.relativize(it).pathString.replace("\\", "/")}")
+                    println("- [ ] ${patchDir.relativize(it).pathString.replace("\\", "/")}")
                 }
                 return FileVisitResult.CONTINUE
             }
@@ -123,16 +141,40 @@ tasks.register("showWork") {
 }
 
 tasks.register("checkWork") {
+    notCompatibleWithConfigurationCache("This task is interactive")
+    fun expandUserHome(path: String): Path {
+        return Path.of(path.replaceFirst("^~".toRegex(), System.getProperty("user.home")))
+    }
+
+    val input = layout.cache.resolve("last-updating-folder").readText().trim()
+    val patchFolder = layout.projectDirectory.file("paper-server/patches/sources").convertToPath().resolve(input)
+    val sourceFolder = layout.projectDirectory.file("paper-server/src/vanilla/java/").convertToPath().resolve(input)
+    val targetFolder = expandUserHome(
+        providers.gradleProperty("cleanPaperRepo").orNull
+            ?: error("cleanPaperRepo is required, define it in gradle.properties")
+    ).resolve(input)
+
+    fun copy(back: Boolean = false) {
+        patchFolder.listDirectoryEntries().forEach {
+            val relative = patchFolder.relativize(it).toString().replace(".patch", "")
+            val source = sourceFolder.resolve(relative)
+            val target = targetFolder.resolve(relative)
+            if (target.isDirectory()) { return@forEach }
+            if (back) {
+                target.copyTo(source, overwrite = true)
+            } else {
+                source.copyTo(target, overwrite = true)
+            }
+        }
+    }
+
     doLast {
-        val input = project.findProperty("input") as String?
-            ?: error("Input property is required. Use gradlew checkWork -Pinput=net/minecraft/server/MinecraftServer.java")
-        val file = layout.projectDirectory.file("paper-server/src/vanilla/java/").convertToPath().resolve(input)
-        val target = Path.of(providers.gradleProperty("cleanPaperRepo").get()).resolve(input)
-        file.copyTo(target, overwrite = true)
-        println("Copied $file to $target")
-        println("Make it compile, then press enter to copy it back!")
+        copy()
+        val files = patchFolder.listDirectoryEntries().map { it.fileName.toString().replace(".patch", "") }
+        println("Copied $files from $sourceFolder to $targetFolder")
+        println("Make the files compile, then press enter to copy them back!")
         System.`in`.read()
-        target.copyTo(file, overwrite = true)
+        copy(back = true)
         println("copied back!")
     }
 }

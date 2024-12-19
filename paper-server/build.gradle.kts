@@ -11,7 +11,7 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.4+build.5")
+    mache("io.papermc:mache:1.21.4+build.6")
     paperclip("io.papermc:paperclip:3.0.3")
     remapper("net.fabricmc:tiny-remapper:0.10.3:fat")
 }
@@ -149,6 +149,11 @@ dependencies {
     runtimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
     runtimeOnly("com.mysql:mysql-connector-j:9.1.0")
     runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
+    // Paper start - Use Velocity cipher
+    implementation("com.velocitypowered:velocity-native:3.3.0-SNAPSHOT") {
+        isTransitive = false
+    }
+    // Paper end - Use Velocity cipher
 
     runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
@@ -176,12 +181,12 @@ dependencies {
     // Paper end - spark
 }
 
-
 tasks.jar {
     manifest {
         val git = Git(rootProject.layout.projectDirectory.path)
         val mcVersion = rootProject.providers.gradleProperty("mcVersion").get()
         val build = System.getenv("BUILD_NUMBER") ?: null
+        val buildTime = if (build != null) Instant.now() else Instant.EPOCH
         val gitHash = git.exec(providers, "rev-parse", "--short=7", "HEAD").get().trim()
         val implementationVersion = "$mcVersion-${build ?: "DEV"}-$gitHash"
         val date = git.exec(providers, "show", "-s", "--format=%ci", gitHash).get().trim() // Paper
@@ -197,7 +202,7 @@ tasks.jar {
             "Brand-Id" to "papermc:paper",
             "Brand-Name" to "Paper",
             "Build-Number" to (build ?: ""),
-            "Build-Time" to Instant.now().toString(),
+            "Build-Time" to buildTime.toString(),
             "Git-Branch" to gitBranch, // Paper
             "Git-Commit" to gitHash, // Paper
         )
@@ -256,7 +261,7 @@ fun TaskContainer.registerRunTask(
     name: String,
     block: JavaExec.() -> Unit
 ): TaskProvider<JavaExec> = register<JavaExec>(name) {
-    group = "paper"
+    group = "runs"
     mainClass.set("org.bukkit.craftbukkit.Main")
     standardInput = System.`in`
     workingDir = rootProject.layout.projectDirectory
@@ -317,7 +322,7 @@ tasks.registerRunTask("runBundler") {
 }
 tasks.registerRunTask("runReobfBundler") {
     description = "Spin up a test server from the reobf bundler jar"
-    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createReobfBundlerJar").flatMap { it.outputZip })
+    classpath(tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createReobfBundlerJar").flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
 tasks.registerRunTask("runPaperclip") {
@@ -327,6 +332,6 @@ tasks.registerRunTask("runPaperclip") {
 }
 tasks.registerRunTask("runReobfPaperclip") {
     description = "Spin up a test server from the reobf Paperclip jar"
-    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createReobfPaperclipJar").flatMap { it.outputZip })
+    classpath(tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createReobfPaperclipJar").flatMap { it.outputZip })
     mainClass.set(null as String?)
 }

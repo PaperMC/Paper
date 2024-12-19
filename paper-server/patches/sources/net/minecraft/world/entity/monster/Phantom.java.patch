@@ -1,6 +1,18 @@
 --- a/net/minecraft/world/entity/monster/Phantom.java
 +++ b/net/minecraft/world/entity/monster/Phantom.java
-@@ -139,7 +139,7 @@
+@@ -47,6 +_,11 @@
+     Vec3 moveTargetPoint = Vec3.ZERO;
+     public BlockPos anchorPoint = BlockPos.ZERO;
+     Phantom.AttackPhase attackPhase = Phantom.AttackPhase.CIRCLE;
++    // Paper start
++    @Nullable
++    public java.util.UUID spawningEntity;
++    public boolean shouldBurnInDay = true;
++    // Paper end
+ 
+     public Phantom(EntityType<? extends Phantom> entityType, Level level) {
+         super(entityType, level);
+@@ -141,7 +_,7 @@
  
      @Override
      public void aiStep() {
@@ -9,70 +21,42 @@
              this.igniteForSeconds(8.0F);
          }
  
-@@ -161,6 +161,14 @@
+@@ -165,6 +_,15 @@
          }
  
-         this.setPhantomSize(nbt.getInt("Size"));
+         this.setPhantomSize(compound.getInt("Size"));
++
 +        // Paper start
-+        if (nbt.hasUUID("Paper.SpawningEntity")) {
-+            this.spawningEntity = nbt.getUUID("Paper.SpawningEntity");
++        if (compound.hasUUID("Paper.SpawningEntity")) {
++            this.spawningEntity = compound.getUUID("Paper.SpawningEntity");
 +        }
-+        if (nbt.contains("Paper.ShouldBurnInDay")) {
-+            this.shouldBurnInDay = nbt.getBoolean("Paper.ShouldBurnInDay");
++        if (compound.contains("Paper.ShouldBurnInDay")) {
++            this.shouldBurnInDay = compound.getBoolean("Paper.ShouldBurnInDay");
 +        }
 +        // Paper end
      }
  
      @Override
-@@ -170,6 +178,12 @@
-         nbt.putInt("AY", this.anchorPoint.getY());
-         nbt.putInt("AZ", this.anchorPoint.getZ());
-         nbt.putInt("Size", this.getPhantomSize());
+@@ -174,6 +_,12 @@
+         compound.putInt("AY", this.anchorPoint.getY());
+         compound.putInt("AZ", this.anchorPoint.getZ());
+         compound.putInt("Size", this.getPhantomSize());
 +        // Paper start
 +        if (this.spawningEntity != null) {
-+            nbt.putUUID("Paper.SpawningEntity", this.spawningEntity);
++            compound.putUUID("Paper.SpawningEntity", this.spawningEntity);
 +        }
-+        nbt.putBoolean("Paper.ShouldBurnInDay", shouldBurnInDay);
++        compound.putBoolean("Paper.ShouldBurnInDay", this.shouldBurnInDay);
 +        // Paper end
      }
  
      @Override
-@@ -219,6 +233,20 @@
-         return predicate.test(world, this, target);
-     }
+@@ -247,7 +_,8 @@
  
-+    // Paper start
-+    @Nullable
-+    java.util.UUID spawningEntity;
-+
-+    @Nullable
-+    public java.util.UUID getSpawningEntity() {
-+        return this.spawningEntity;
-+    }
-+    public void setSpawningEntity(java.util.UUID entity) { this.spawningEntity = entity; }
-+    private boolean shouldBurnInDay = true;
-+    public boolean shouldBurnInDay() { return shouldBurnInDay; }
-+    public void setShouldBurnInDay(boolean shouldBurnInDay) { this.shouldBurnInDay = shouldBurnInDay; }
-+    // Paper end
-+
-     private static enum AttackPhase {
- 
-         CIRCLE, SWOOP;
-@@ -522,14 +550,15 @@
-                 List<Player> list = worldserver.getNearbyPlayers(this.attackTargeting, Phantom.this, Phantom.this.getBoundingBox().inflate(16.0D, 64.0D, 16.0D));
- 
-                 if (!list.isEmpty()) {
--                    list.sort(Comparator.comparing(Entity::getY).reversed());
-+                    list.sort(Comparator.comparing((Entity e) -> { return e.getY(); }).reversed()); // CraftBukkit - decompile error
-                     Iterator iterator = list.iterator();
- 
-                     while (iterator.hasNext()) {
-                         Player entityhuman = (Player) iterator.next();
- 
-                         if (Phantom.this.canAttack(worldserver, entityhuman, TargetingConditions.DEFAULT)) {
--                            Phantom.this.setTarget(entityhuman);
-+                            if (!level().paperConfig().entities.behavior.phantomsOnlyAttackInsomniacs || EntitySelector.IS_INSOMNIAC.test(entityhuman)) // Paper - Add phantom creative and insomniac controls
-+                            Phantom.this.setTarget(entityhuman, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit - reason
+                     for (Player player : nearbyPlayers) {
+                         if (Phantom.this.canAttack(serverLevel, player, TargetingConditions.DEFAULT)) {
+-                            Phantom.this.setTarget(player);
++                            if (!level().paperConfig().entities.behavior.phantomsOnlyAttackInsomniacs || EntitySelector.IS_INSOMNIAC.test(player)) // Paper - Add phantom creative and insomniac controls
++                            Phantom.this.setTarget(player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.CLOSEST_PLAYER, true); // CraftBukkit - reason
                              return true;
                          }
                      }

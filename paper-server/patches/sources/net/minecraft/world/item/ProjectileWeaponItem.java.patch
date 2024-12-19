@@ -1,24 +1,27 @@
 --- a/net/minecraft/world/item/ProjectileWeaponItem.java
 +++ b/net/minecraft/world/item/ProjectileWeaponItem.java
-@@ -54,9 +54,25 @@
-                 float f6 = f4 + f5 * (float) ((i + 1) / 2) * f3;
- 
-                 f5 = -f5;
--                Projectile.spawnProjectile(this.createProjectile(world, shooter, stack, itemstack1, critical), world, itemstack1, (iprojectile) -> {
--                    this.shootProjectile(shooter, iprojectile, i, speed, divergence, f6, target);
--                });
+@@ -62,12 +_,25 @@
+                 float f4 = f2 + f3 * ((i + 1) / 2) * f1;
+                 f3 = -f3;
+                 int i1 = i;
+-                Projectile.spawnProjectile(
+-                    this.createProjectile(level, shooter, weapon, itemStack, isCrit),
+-                    level,
+-                    itemStack,
+-                    projectile -> this.shootProjectile(shooter, projectile, i1, velocity, inaccuracy, f4, target)
+-                );
 +                // CraftBukkit start
-+                Projectile iprojectile = this.createProjectile(world, shooter, stack, itemstack1, critical);
-+                this.shootProjectile(shooter, iprojectile, i, speed, divergence, f6, target);
++                Projectile projectile = this.createProjectile(level, shooter, weapon, itemStack, isCrit);
++                this.shootProjectile(shooter, projectile, i1, velocity, inaccuracy, f4, target);
 +
-+                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, stack, itemstack1, iprojectile, hand, speed, true);
++                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, weapon, itemStack, projectile, hand, velocity, true);
 +                if (event.isCancelled()) {
 +                    event.getProjectile().remove();
 +                    return;
 +                }
 +
-+                if (event.getProjectile() == iprojectile.getBukkitEntity()) {
-+                    if (Projectile.spawnProjectile(iprojectile, world, itemstack1).isRemoved()) {
++                if (event.getProjectile() == projectile.getBukkitEntity()) {
++                    if (Projectile.spawnProjectile(projectile, level, itemStack).isRemoved()) {
 +                        if (shooter instanceof net.minecraft.server.level.ServerPlayer) {
 +                            ((net.minecraft.server.level.ServerPlayer) shooter).getBukkitEntity().updateInventory();
 +                        }
@@ -26,27 +29,27 @@
 +                    }
 +                }
 +                // CraftBukkit end
-                 stack.hurtAndBreak(this.getDurabilityUse(itemstack1), shooter, LivingEntity.getSlotForHand(hand));
-                 if (stack.isEmpty()) {
+                 weapon.hurtAndBreak(this.getDurabilityUse(itemStack), shooter, LivingEntity.getSlotForHand(hand));
+                 if (weapon.isEmpty()) {
                      break;
-@@ -93,6 +109,11 @@
+@@ -95,6 +_,11 @@
      }
  
-     protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter) {
+     protected static List<ItemStack> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter) {
 +        // Paper start
-+        return draw(stack, projectileStack, shooter, true);
++        return draw(weapon, ammo, shooter, true);
 +    }
-+    protected static List<ItemStack> draw(ItemStack stack, ItemStack projectileStack, LivingEntity shooter, boolean consume) {
++    protected static List<ItemStack> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean consume) {
 +        // Paper end
-         if (projectileStack.isEmpty()) {
+         if (ammo.isEmpty()) {
              return List.of();
          } else {
-@@ -112,7 +133,7 @@
-             ItemStack itemstack2 = projectileStack.copy();
+@@ -103,7 +_,7 @@
+             ItemStack itemStack = ammo.copy();
  
-             for (int k = 0; k < j; ++k) {
--                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0);
-+                ItemStack itemstack3 = ProjectileWeaponItem.useAmmo(stack, k == 0 ? projectileStack : itemstack2, shooter, k > 0 || !consume); // Paper
- 
-                 if (!itemstack3.isEmpty()) {
-                     list.add(itemstack3);
+             for (int i1 = 0; i1 < i; i1++) {
+-                ItemStack itemStack1 = useAmmo(weapon, i1 == 0 ? ammo : itemStack, shooter, i1 > 0);
++                ItemStack itemStack1 = useAmmo(weapon, i1 == 0 ? ammo : itemStack, shooter, i1 > 0 || !consume); // Paper
+                 if (!itemStack1.isEmpty()) {
+                     list.add(itemStack1);
+                 }

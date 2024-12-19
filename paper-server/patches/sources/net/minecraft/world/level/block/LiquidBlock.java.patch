@@ -1,24 +1,15 @@
 --- a/net/minecraft/world/level/block/LiquidBlock.java
 +++ b/net/minecraft/world/level/block/LiquidBlock.java
-@@ -42,7 +42,7 @@
- public class LiquidBlock extends Block implements BucketPickup {
- 
-     private static final Codec<FlowingFluid> FLOWING_FLUID = BuiltInRegistries.FLUID.byNameCodec().comapFlatMap((fluidtype) -> {
--        DataResult dataresult;
-+        DataResult<FlowingFluid> dataresult; // CraftBukkit - decompile error
- 
-         if (fluidtype instanceof FlowingFluid fluidtypeflowing) {
-             dataresult = DataResult.success(fluidtypeflowing);
-@@ -141,11 +141,31 @@
+@@ -135,9 +_,28 @@
      @Override
-     protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
-         if (this.shouldSpreadLiquid(world, pos, state)) {
--            world.scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay(world));
-+            world.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(world, pos)); // Paper - Configurable speed for water flowing over lava
-         }
- 
-     }
- 
+     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+         if (this.shouldSpreadLiquid(level, pos, state)) {
+-            level.scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay(level));
+-        }
+-    }
++            level.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(level, pos)); // Paper - Configurable speed for water flowing over lava
++        }
++    }
 +    // Paper start - Configurable speed for water flowing over lava
 +    public int getFlowSpeed(Level world, BlockPos blockposition) {
 +        if (net.minecraft.core.registries.BuiltInRegistries.FLUID.wrapAsHolder(this.fluid).is(FluidTags.WATER)) {
@@ -38,39 +29,38 @@
 +        return fluidState != null && fluidState.is(FluidTags.LAVA);
 +    }
 +    // Paper end - Configurable speed for water flowing over lava
-+
+ 
      @Override
-     protected BlockState updateShape(BlockState state, LevelReader world, ScheduledTickAccess tickView, BlockPos pos, Direction direction, BlockPos neighborPos, BlockState neighborState, RandomSource random) {
-         if (state.getFluidState().isSource() || neighborState.getFluidState().isSource()) {
-@@ -158,7 +178,7 @@
+     protected BlockState updateShape(
+@@ -160,7 +_,7 @@
      @Override
-     protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, @Nullable Orientation wireOrientation, boolean notify) {
-         if (this.shouldSpreadLiquid(world, pos, state)) {
--            world.scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay(world));
-+            world.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(world, pos)); // Paper - Configurable speed for water flowing over lava
+     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
+         if (this.shouldSpreadLiquid(level, pos, state)) {
+-            level.scheduleTick(pos, state.getFluidState().getType(), this.fluid.getTickDelay(level));
++            level.scheduleTick(pos, state.getFluidState().getType(), this.getFlowSpeed(level, pos)); // Paper - Configurable speed for water flowing over lava
          }
- 
      }
-@@ -175,14 +195,20 @@
-                 if (world.getFluidState(blockposition1).is(FluidTags.WATER)) {
-                     Block block = world.getFluidState(pos).isSource() ? Blocks.OBSIDIAN : Blocks.COBBLESTONE;
  
--                    world.setBlockAndUpdate(pos, block.defaultBlockState());
--                    this.fizz(world, pos);
+@@ -172,14 +_,20 @@
+                 BlockPos blockPos = pos.relative(direction.getOpposite());
+                 if (level.getFluidState(blockPos).is(FluidTags.WATER)) {
+                     Block block = level.getFluidState(pos).isSource() ? Blocks.OBSIDIAN : Blocks.COBBLESTONE;
+-                    level.setBlockAndUpdate(pos, block.defaultBlockState());
+-                    this.fizz(level, pos);
 +                    // CraftBukkit start
-+                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, pos, block.defaultBlockState())) {
-+                        this.fizz(world, pos);
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(level, pos, block.defaultBlockState())) {
++                        this.fizz(level, pos);
 +                    }
 +                    // CraftBukkit end
                      return false;
                  }
  
-                 if (flag && world.getBlockState(blockposition1).is(Blocks.BLUE_ICE)) {
--                    world.setBlockAndUpdate(pos, Blocks.BASALT.defaultBlockState());
--                    this.fizz(world, pos);
+                 if (isSoulSoil && level.getBlockState(blockPos).is(Blocks.BLUE_ICE)) {
+-                    level.setBlockAndUpdate(pos, Blocks.BASALT.defaultBlockState());
+-                    this.fizz(level, pos);
 +                    // CraftBukkit start
-+                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(world, pos, Blocks.BASALT.defaultBlockState())) {
-+                        this.fizz(world, pos);
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(level, pos, Blocks.BASALT.defaultBlockState())) {
++                        this.fizz(level, pos);
 +                    }
 +                    // CraftBukkit end
                      return false;

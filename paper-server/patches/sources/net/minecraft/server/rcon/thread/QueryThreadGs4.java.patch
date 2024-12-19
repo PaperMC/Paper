@@ -1,11 +1,11 @@
 --- a/net/minecraft/server/rcon/thread/QueryThreadGs4.java
 +++ b/net/minecraft/server/rcon/thread/QueryThreadGs4.java
-@@ -106,13 +106,32 @@
+@@ -106,13 +_,32 @@
                          NetworkDataOutputStream networkDataOutputStream = new NetworkDataOutputStream(1460);
                          networkDataOutputStream.write(0);
-                         networkDataOutputStream.writeBytes(this.getIdentBytes(packet.getSocketAddress()));
+                         networkDataOutputStream.writeBytes(this.getIdentBytes(requestPacket.getSocketAddress()));
 -                        networkDataOutputStream.writeString(this.serverName);
-+
++                        // Paper start
 +                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType queryType =
 +                            com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType.BASIC;
 +                        com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse queryResponse = com.destroystokyo.paper.event.server.GS4QueryEvent.QueryResponse.builder()
@@ -19,7 +19,7 @@
 +                            .serverVersion(org.bukkit.Bukkit.getServer().getName() + " on " + org.bukkit.Bukkit.getServer().getBukkitVersion())
 +                            .build();
 +                        com.destroystokyo.paper.event.server.GS4QueryEvent queryEvent =
-+                            new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, packet.getAddress(), queryResponse);
++                            new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, requestPacket.getAddress(), queryResponse);
 +                        queryEvent.callEvent();
 +                        queryResponse = queryEvent.getResponse();
 +
@@ -36,10 +36,10 @@
 +                        networkDataOutputStream.writeShort((short) queryResponse.getPort());
 +                        networkDataOutputStream.writeString(queryResponse.getHostname());
 +                        // Paper end
-                         this.sendTo(networkDataOutputStream.toByteArray(), packet);
+                         this.sendTo(networkDataOutputStream.toByteArray(), requestPacket);
                          LOGGER.debug("Status [{}]", socketAddress);
                      }
-@@ -147,31 +166,75 @@
+@@ -147,31 +_,75 @@
              this.rulesResponse.writeString("splitnum");
              this.rulesResponse.write(128);
              this.rulesResponse.write(0);
@@ -68,7 +68,7 @@
 +            com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType queryType =
 +                com.destroystokyo.paper.event.server.GS4QueryEvent.QueryType.FULL;
 +            com.destroystokyo.paper.event.server.GS4QueryEvent queryEvent =
-+                new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, packet.getAddress(), queryResponse);
++                new com.destroystokyo.paper.event.server.GS4QueryEvent(queryType, requestPacket.getAddress(), queryResponse);
 +            queryEvent.callEvent();
 +            queryResponse = queryEvent.getResponse();
              this.rulesResponse.writeString("hostname");
@@ -119,8 +119,8 @@
              this.rulesResponse.write(1);
              this.rulesResponse.writeString("player_");
              this.rulesResponse.write(0);
--            String[] strings = this.serverInterface.getPlayerNames();
-+            String[] strings = queryResponse.getPlayers().toArray(String[]::new);
+-            String[] playerNames = this.serverInterface.getPlayerNames();
++            String[] playerNames = queryResponse.getPlayers().toArray(String[]::new);
  
-             for (String string : strings) {
+             for (String string : playerNames) {
                  this.rulesResponse.writeString(string);
