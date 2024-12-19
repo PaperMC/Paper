@@ -28,7 +28,7 @@
                      BlockPos blockPos = entity.blockPosition();
                      chunkGetter.query(ChunkPos.asLong(blockPos), chunk -> {
                          MobSpawnSettings.MobSpawnCost mobSpawnCost = getRoughBiome(blockPos, chunk).getMobSettings().getMobSpawnCost(entity.getType());
-@@ -96,17 +_,37 @@
+@@ -96,17 +_,34 @@
          return chunk.getNoiseBiome(QuartPos.fromBlock(pos.getX()), QuartPos.fromBlock(pos.getY()), QuartPos.fromBlock(pos.getZ())).value();
      }
  
@@ -40,22 +40,12 @@
 +        LevelData worlddata = worldserver.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
 +        // CraftBukkit end
          List<MobCategory> list = new ArrayList<>(SPAWNING_CATEGORIES.length);
--
--        for (MobCategory mobCategory : SPAWNING_CATEGORIES) {
--            if ((spawnFriendlies || !mobCategory.isFriendly())
--                && (spawnEnemies || mobCategory.isFriendly())
--                && (spawnPassives || !mobCategory.isPersistent())
--                && spawnState.canSpawnForCategoryGlobal(mobCategory)) {
--                list.add(mobCategory);
-+        MobCategory[] aenumcreaturetype = NaturalSpawner.SPAWNING_CATEGORIES;
-+        int i = aenumcreaturetype.length;
-+
-+        for (int j = 0; j < i; ++j) {
-+            MobCategory enumcreaturetype = SPAWNING_CATEGORIES[j];
+ 
+         for (MobCategory mobCategory : SPAWNING_CATEGORIES) {
 +            // CraftBukkit start - Use per-world spawn limits
 +            boolean spawnThisTick = true;
-+            int limit = enumcreaturetype.getMaxInstancesPerChunk();
-+            SpawnCategory spawnCategory = CraftSpawnCategory.toBukkit(enumcreaturetype);
++            int limit = mobCategory.getMaxInstancesPerChunk();
++            SpawnCategory spawnCategory = CraftSpawnCategory.toBukkit(mobCategory);
 +            if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
 +                spawnThisTick = worldserver.ticksPerSpawnCategory.getLong(spawnCategory) != 0 && worlddata.getGameTime() % worldserver.ticksPerSpawnCategory.getLong(spawnCategory) == 0;
 +                limit = worldserver.getWorld().getSpawnLimit(spawnCategory);
@@ -65,11 +55,12 @@
 +                continue;
 +            }
 +
-+            if ((spawnFriendlies || !enumcreaturetype.isFriendly())
-+                && (spawnEnemies || enumcreaturetype.isFriendly())
-+                && (spawnPassives || !enumcreaturetype.isPersistent())
-+                && spawnState.canSpawnForCategoryGlobal(enumcreaturetype, limit)) { // Paper - Optional per player mob spawns; remove global check, check later during the local one
-+                list.add(enumcreaturetype);
+             if ((spawnFriendlies || !mobCategory.isFriendly())
+                 && (spawnEnemies || mobCategory.isFriendly())
+                 && (spawnPassives || !mobCategory.isPersistent())
+-                && spawnState.canSpawnForCategoryGlobal(mobCategory)) {
++                && spawnState.canSpawnForCategoryGlobal(mobCategory, limit)) { // Paper - Optional per player mob spawns; remove global check, check later during the local one
+                 list.add(mobCategory);
 +                // CraftBukkit end
              }
          }
@@ -164,20 +155,11 @@
          ServerLevel level,
          MobCategory category,
          StructureManager structureManager,
-@@ -235,16 +_,20 @@
+@@ -235,7 +_,20 @@
          double distance
      ) {
          EntityType<?> entityType = data.type;
 -        return entityType.getCategory() != MobCategory.MISC
--            && (
--                entityType.canSpawnFarFromPlayer()
--                    || !(distance > entityType.getCategory().getDespawnDistance() * entityType.getCategory().getDespawnDistance())
--            )
--            && entityType.canSummon()
--            && canSpawnMobAt(level, structureManager, generator, category, data, pos)
--            && SpawnPlacements.isSpawnPositionOk(entityType, level, pos)
--            && SpawnPlacements.checkSpawnRules(entityType, level, EntitySpawnReason.NATURAL, pos, level.random)
--            && level.noCollision(entityType.getSpawnAABB(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
 +
 +        // Paper start - PreCreatureSpawnEvent
 +        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
@@ -190,8 +172,16 @@
 +            }
 +            return PreSpawnStatus.CANCELLED;
 +        }
-+        // Paper end - PreCreatureSpawnEvent
-+        return entityType.getCategory() == MobCategory.MISC ? PreSpawnStatus.FAIL : (!entityType.canSpawnFarFromPlayer() && distance > (double) (entityType.getCategory().getDespawnDistance() * entityType.getCategory().getDespawnDistance()) ? PreSpawnStatus.FAIL : (entityType.canSummon() && NaturalSpawner.canSpawnMobAt(level, structureManager, generator, category, data, pos) ? (!SpawnPlacements.isSpawnPositionOk(entityType, level, pos) ? PreSpawnStatus.FAIL : (!SpawnPlacements.checkSpawnRules(entityType, level, EntitySpawnReason.NATURAL, pos, level.random) ? PreSpawnStatus.FAIL : level.noCollision(entityType.getSpawnAABB((double) pos.getX() + 0.5D, (double) pos.getY(), (double) pos.getZ() + 0.5D)) ? PreSpawnStatus.SUCCESS : PreSpawnStatus.FAIL)) : PreSpawnStatus.FAIL)); // Paper - PreCreatureSpawnEvent
++        final boolean success = entityType.getCategory() != MobCategory.MISC
++            // Paper end - PreCreatureSpawnEvent
+             && (
+                 entityType.canSpawnFarFromPlayer()
+                     || !(distance > entityType.getCategory().getDespawnDistance() * entityType.getCategory().getDespawnDistance())
+@@ -245,6 +_,7 @@
+             && SpawnPlacements.isSpawnPositionOk(entityType, level, pos)
+             && SpawnPlacements.checkSpawnRules(entityType, level, EntitySpawnReason.NATURAL, pos, level.random)
+             && level.noCollision(entityType.getSpawnAABB(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5));
++        return success ? PreSpawnStatus.SUCCESS : PreSpawnStatus.FAIL; // Paper - PreCreatureSpawnEvent
      }
  
      @Nullable
