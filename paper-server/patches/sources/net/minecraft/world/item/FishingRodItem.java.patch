@@ -1,50 +1,54 @@
 --- a/net/minecraft/world/item/FishingRodItem.java
 +++ b/net/minecraft/world/item/FishingRodItem.java
-@@ -14,6 +14,11 @@
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.gameevent.GameEvent;
- 
-+// CraftBukkit start
-+import org.bukkit.event.player.PlayerFishEvent;
-+import org.bukkit.craftbukkit.CraftEquipmentSlot;
-+// CraftBukkit end
-+
- public class FishingRodItem extends Item {
- 
-     public FishingRodItem(Item.Properties settings) {
-@@ -26,7 +31,7 @@
- 
-         if (user.fishing != null) {
-             if (!world.isClientSide) {
--                int i = user.fishing.retrieve(itemstack);
-+                int i = user.fishing.retrieve(hand, itemstack); // Paper - Add hand parameter to PlayerFishEvent
- 
-                 itemstack.hurtAndBreak(i, user, LivingEntity.getSlotForHand(hand));
+@@ -24,7 +_,7 @@
+         ItemStack itemInHand = player.getItemInHand(hand);
+         if (player.fishing != null) {
+             if (!level.isClientSide) {
+-                int i = player.fishing.retrieve(itemInHand);
++                int i = player.fishing.retrieve(hand, itemInHand); // Paper - Add hand parameter to PlayerFishEvent
+                 itemInHand.hurtAndBreak(i, player, LivingEntity.getSlotForHand(hand));
              }
-@@ -34,13 +39,24 @@
-             world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.NEUTRAL, 1.0F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
-             user.gameEvent(GameEvent.ITEM_INTERACT_FINISH);
-         } else {
--            world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.FISHING_BOBBER_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
-+            // world.playSound((EntityHuman) null, entityhuman.getX(), entityhuman.getY(), entityhuman.getZ(), SoundEffects.FISHING_BOBBER_THROW, SoundCategory.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
-             if (world instanceof ServerLevel) {
-                 ServerLevel worldserver = (ServerLevel) world;
-                 int j = (int) (EnchantmentHelper.getFishingTimeReduction(worldserver, itemstack, user) * 20.0F);
-                 int k = EnchantmentHelper.getFishingLuckBonus(worldserver, itemstack, user);
  
--                Projectile.spawnProjectile(new FishingHook(user, world, k, j), worldserver, itemstack);
+@@ -40,20 +_,31 @@
+             );
+             player.gameEvent(GameEvent.ITEM_INTERACT_FINISH);
+         } else {
+-            level.playSound(
+-                null,
+-                player.getX(),
+-                player.getY(),
+-                player.getZ(),
+-                SoundEvents.FISHING_BOBBER_THROW,
+-                SoundSource.NEUTRAL,
+-                0.5F,
+-                0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F)
+-            );
++            // CraftBukkit - moved down
+             if (level instanceof ServerLevel serverLevel) {
+                 int i1 = (int)(EnchantmentHelper.getFishingTimeReduction(serverLevel, itemInHand, player) * 20.0F);
+                 int fishingLuckBonus = EnchantmentHelper.getFishingLuckBonus(serverLevel, itemInHand, player);
+-                Projectile.spawnProjectile(new FishingHook(player, level, fishingLuckBonus, i1), serverLevel, itemInHand);
 +                // CraftBukkit start
-+                FishingHook entityfishinghook = new FishingHook(user, world, k, j);
-+                PlayerFishEvent playerFishEvent = new PlayerFishEvent((org.bukkit.entity.Player) user.getBukkitEntity(), null, (org.bukkit.entity.FishHook) entityfishinghook.getBukkitEntity(), CraftEquipmentSlot.getHand(hand), PlayerFishEvent.State.FISHING);
-+                world.getCraftServer().getPluginManager().callEvent(playerFishEvent);
++                FishingHook entityfishinghook = new FishingHook(player, level, fishingLuckBonus, i1);
++                org.bukkit.event.player.PlayerFishEvent playerFishEvent = new org.bukkit.event.player.PlayerFishEvent((org.bukkit.entity.Player) player.getBukkitEntity(), null, (org.bukkit.entity.FishHook) entityfishinghook.getBukkitEntity(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand), org.bukkit.event.player.PlayerFishEvent.State.FISHING);
++                level.getCraftServer().getPluginManager().callEvent(playerFishEvent);
 +
 +                if (playerFishEvent.isCancelled()) {
-+                    user.fishing = null;
++                    player.fishing = null;
 +                    return InteractionResult.PASS;
 +                }
-+                world.playSound((Player) null, user.getX(), user.getY(), user.getZ(), SoundEvents.FISHING_BOBBER_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
-+                Projectile.spawnProjectile(entityfishinghook, worldserver, itemstack);
++                level.playSound(
++                    null,
++                    player.getX(),
++                    player.getY(),
++                    player.getZ(),
++                    SoundEvents.FISHING_BOBBER_THROW,
++                    SoundSource.NEUTRAL,
++                    0.5F,
++                    0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F)
++                );
++                Projectile.spawnProjectile(entityfishinghook, serverLevel, itemInHand);
 +                // CraftBukkit end
              }
  
-             user.awardStat(Stats.ITEM_USED.get(this));
+             player.awardStat(Stats.ITEM_USED.get(this));

@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/registries/BuiltInRegistries.java
 +++ b/net/minecraft/core/registries/BuiltInRegistries.java
-@@ -296,6 +296,17 @@
+@@ -296,6 +_,17 @@
      public static final Registry<SlotDisplay.Type<?>> SLOT_DISPLAY = registerSimple(Registries.SLOT_DISPLAY, SlotDisplays::bootstrap);
      public static final Registry<RecipeBookCategory> RECIPE_BOOK_CATEGORY = registerSimple(Registries.RECIPE_BOOK_CATEGORY, RecipeBookCategories::bootstrap);
      public static final Registry<? extends Registry<?>> REGISTRY = WRITABLE_REGISTRY;
@@ -16,18 +16,17 @@
 +    });
 +    // Paper end - add built-in registry conversions
  
-     private static <T> Registry<T> registerSimple(ResourceKey<? extends Registry<T>> key, BuiltInRegistries.RegistryBootstrap<T> initializer) {
-         return internalRegister(key, new MappedRegistry<>(key, Lifecycle.stable(), false), initializer);
-@@ -323,14 +334,22 @@
-         ResourceKey<? extends Registry<T>> key, R registry, BuiltInRegistries.RegistryBootstrap<T> initializer
+     private static <T> Registry<T> registerSimple(ResourceKey<? extends Registry<T>> key, BuiltInRegistries.RegistryBootstrap<T> bootstrap) {
+         return internalRegister(key, new MappedRegistry<>(key, Lifecycle.stable(), false), bootstrap);
+@@ -321,6 +_,7 @@
+         ResourceKey<? extends Registry<T>> key, R registry, BuiltInRegistries.RegistryBootstrap<T> bootstrap
      ) {
          Bootstrap.checkBootstrapCalled(() -> "registry " + key.location());
 +        io.papermc.paper.registry.PaperRegistryAccess.instance().registerRegistry(registry.key(), registry); // Paper - initialize API registry
          ResourceLocation resourceLocation = key.location();
-         LOADERS.put(resourceLocation, () -> initializer.run(registry));
--        WRITABLE_REGISTRY.register((ResourceKey<WritableRegistry<?>>)key, registry, RegistrationInfo.BUILT_IN);
-+        WRITABLE_REGISTRY.register((ResourceKey)key, registry, RegistrationInfo.BUILT_IN); // Paper - decompile fix
-         return registry;
+         LOADERS.put(resourceLocation, () -> bootstrap.run(registry));
+         WRITABLE_REGISTRY.register((ResourceKey)key, registry, RegistrationInfo.BUILT_IN);
+@@ -328,7 +_,14 @@
      }
  
      public static void bootStrap() {
@@ -42,7 +41,7 @@
          freeze();
          validate(REGISTRY);
      }
-@@ -348,6 +367,7 @@
+@@ -346,6 +_,7 @@
  
          for (Registry<?> registry : REGISTRY) {
              bindBootstrappedTagsToEmpty(registry);

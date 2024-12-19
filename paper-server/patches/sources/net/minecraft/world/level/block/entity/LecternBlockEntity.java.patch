@@ -1,24 +1,6 @@
 --- a/net/minecraft/world/level/block/entity/LecternBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/LecternBlockEntity.java
-@@ -28,6 +28,17 @@
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.phys.Vec2;
- import net.minecraft.world.phys.Vec3;
-+// CraftBukkit start
-+import java.util.ArrayList;
-+import java.util.Arrays;
-+import java.util.List;
-+import org.bukkit.Location;
-+import org.bukkit.block.Lectern;
-+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-+import org.bukkit.craftbukkit.util.CraftLocation;
-+import org.bukkit.entity.HumanEntity;
-+import org.bukkit.inventory.InventoryHolder;
-+// CraftBukkit end
- 
- public class LecternBlockEntity extends BlockEntity implements Clearable, MenuProvider {
- 
-@@ -35,8 +46,55 @@
+@@ -32,7 +_,53 @@
      public static final int NUM_DATA = 1;
      public static final int SLOT_BOOK = 0;
      public static final int NUM_SLOTS = 1;
@@ -26,27 +8,26 @@
 +    // CraftBukkit start - add fields and methods
 +    public final Container bookAccess = new LecternInventory();
 +    public class LecternInventory implements Container {
-+
-+        public List<HumanEntity> transaction = new ArrayList<>();
++        public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
 +        private int maxStack = 1;
 +
-         @Override
-+        public List<ItemStack> getContents() {
-+            return Arrays.asList(LecternBlockEntity.this.book);
++        @Override
++        public java.util.List<net.minecraft.world.item.ItemStack> getContents() {
++            return java.util.List.of(LecternBlockEntity.this.book);
 +        }
 +
 +        @Override
-+        public void onOpen(CraftHumanEntity who) {
-+            this.transaction.add(who);
++        public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++            this.transaction.add(player);
 +        }
 +
 +        @Override
-+        public void onClose(CraftHumanEntity who) {
-+            this.transaction.remove(who);
++        public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++            this.transaction.remove(player);
 +        }
 +
 +        @Override
-+        public List<HumanEntity> getViewers() {
++        public java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
 +            return this.transaction;
 +        }
 +
@@ -56,14 +37,14 @@
 +        }
 +
 +        @Override
-+        public Location getLocation() {
++        public org.bukkit.Location getLocation() {
 +            if (LecternBlockEntity.this.level == null) return null;
-+            return CraftLocation.toBukkit(LecternBlockEntity.this.worldPosition, LecternBlockEntity.this.level.getWorld());
++            return io.papermc.paper.util.MCUtil.toLocation(LecternBlockEntity.this.level, LecternBlockEntity.this.worldPosition);
 +        }
 +
 +        @Override
-+        public InventoryHolder getOwner() {
-+            return (Lectern) LecternBlockEntity.this.getOwner();
++        public org.bukkit.inventory.InventoryHolder getOwner() {
++            return LecternBlockEntity.this.getOwner();
 +        }
 +
 +        public LecternBlockEntity getLectern() {
@@ -71,25 +52,22 @@
 +        }
 +        // CraftBukkit end
 +
-+        @Override
+         @Override
          public int getContainerSize() {
              return 1;
-         }
-@@ -80,11 +138,20 @@
-         }
+@@ -76,11 +_,19 @@
  
          @Override
--        public void setItem(int slot, ItemStack stack) {}
-+        // CraftBukkit start
-+        public void setItem(int slot, ItemStack stack) {
+         public void setItem(int slot, ItemStack stack) {
++            // CraftBukkit start
 +            if (slot == 0) {
 +                LecternBlockEntity.this.setBook(stack);
 +                if (LecternBlockEntity.this.getLevel() != null) {
 +                    LecternBlock.resetBookState(null, LecternBlockEntity.this.getLevel(), LecternBlockEntity.this.getBlockPos(), LecternBlockEntity.this.getBlockState(), LecternBlockEntity.this.hasBook());
 +                }
 +            }
-+        }
-+        // CraftBukkit end
++            // CraftBukkit end
+         }
  
          @Override
          public int getMaxStackSize() {
@@ -98,17 +76,17 @@
          }
  
          @Override
-@@ -164,7 +231,7 @@
-         if (j != this.page) {
-             this.page = j;
+@@ -158,7 +_,7 @@
+         if (i != this.page) {
+             this.page = i;
              this.setChanged();
 -            LecternBlock.signalPageChange(this.getLevel(), this.getBlockPos(), this.getBlockState());
 +            if (this.level != null) LecternBlock.signalPageChange(this.getLevel(), this.getBlockPos(), this.getBlockState()); // CraftBukkit
          }
- 
      }
-@@ -189,6 +256,35 @@
-         return book;
+ 
+@@ -179,6 +_,36 @@
+         return stack;
      }
  
 +    // CraftBukkit start
@@ -119,8 +97,10 @@
 +        }
 +
 +        @Override
-+        public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack wrapper) {
-+            return wrapper.getEntity() != null ? wrapper.getEntity().getBukkitEntity() : new org.bukkit.craftbukkit.command.CraftBlockCommandSender(wrapper, LecternBlockEntity.this);
++        public org.bukkit.command.CommandSender getBukkitSender(CommandSourceStack commandSourceStack) {
++            return commandSourceStack.getEntity() != null
++                ? commandSourceStack.getEntity().getBukkitEntity()
++                : new org.bukkit.craftbukkit.command.CraftBlockCommandSender(commandSourceStack, LecternBlockEntity.this);
 +        }
 +
 +        @Override
@@ -139,26 +119,24 @@
 +        }
 +    };
 +    // CraftBukkit end
-+
-     private CommandSourceStack createCommandSourceStack(@Nullable Player player, ServerLevel world) {
-         String s;
-         Object object;
-@@ -203,7 +299,8 @@
+     private CommandSourceStack createCommandSourceStack(@Nullable Player player, ServerLevel level) {
+         String string;
+         Component component;
+@@ -191,7 +_,7 @@
+         }
  
-         Vec3 vec3d = Vec3.atCenterOf(this.worldPosition);
- 
--        return new CommandSourceStack(CommandSource.NULL, vec3d, Vec2.ZERO, world, 2, s, (Component) object, world.getServer(), player);
-+        // CraftBukkit - commandSource
-+        return new CommandSourceStack(this.commandSource, vec3d, Vec2.ZERO, world, 2, s, (Component) object, world.getServer(), player);
+         Vec3 vec3 = Vec3.atCenterOf(this.worldPosition);
+-        return new CommandSourceStack(CommandSource.NULL, vec3, Vec2.ZERO, level, 2, string, component, level.getServer(), player);
++        return new CommandSourceStack(this.commandSource, vec3, Vec2.ZERO, level, 2, string, component, level.getServer(), player); // CraftBukkit - commandSource
      }
  
      @Override
-@@ -236,7 +333,7 @@
+@@ -223,7 +_,7 @@
  
      @Override
-     public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player player) {
--        return new LecternMenu(syncId, this.bookAccess, this.dataAccess);
-+        return new LecternMenu(syncId, this.bookAccess, this.dataAccess, playerInventory); // CraftBukkit
+     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+-        return new LecternMenu(containerId, this.bookAccess, this.dataAccess);
++        return new LecternMenu(containerId, this.bookAccess, this.dataAccess, playerInventory); // CraftBukkit
      }
  
      @Override

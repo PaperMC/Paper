@@ -1,44 +1,58 @@
 --- a/net/minecraft/server/gui/MinecraftServerGui.java
 +++ b/net/minecraft/server/gui/MinecraftServerGui.java
-@@ -59,6 +59,15 @@
-         jframe.pack();
-         jframe.setLocationRelativeTo((Component) null);
-         jframe.setVisible(true);
-+        jframe.setName("Minecraft server"); // Paper - Improve ServerGUI
-+
+@@ -53,6 +_,13 @@
+         jFrame.pack();
+         jFrame.setLocationRelativeTo(null);
+         jFrame.setVisible(true);
 +        // Paper start - Improve ServerGUI
++        jFrame.setName("Minecraft server");
 +        try {
-+            jframe.setIconImage(javax.imageio.ImageIO.read(Objects.requireNonNull(MinecraftServerGui.class.getClassLoader().getResourceAsStream("logo.png"))));
++            jFrame.setIconImage(javax.imageio.ImageIO.read(java.util.Objects.requireNonNull(MinecraftServerGui.class.getClassLoader().getResourceAsStream("logo.png"))));
 +        } catch (java.io.IOException ignore) {
 +        }
 +        // Paper end - Improve ServerGUI
-+
-         jframe.addWindowListener(new WindowAdapter() {
-             public void windowClosing(WindowEvent windowevent) {
-                 if (!servergui.isClosing.getAndSet(true)) {
-@@ -81,6 +90,7 @@
+         jFrame.addWindowListener(new WindowAdapter() {
+             @Override
+             public void windowClosing(WindowEvent event) {
+@@ -74,6 +_,7 @@
          this.setLayout(new BorderLayout());
  
          try {
 +            this.add(this.buildOnboardingPanel(), "North"); // Paper - Add onboarding message for initial server start
              this.add(this.buildChatPanel(), "Center");
              this.add(this.buildInfoPanel(), "West");
-         } catch (Exception exception) {
-@@ -95,8 +105,8 @@
+         } catch (Exception var3) {
+@@ -87,7 +_,7 @@
  
      private JComponent buildInfoPanel() {
-         JPanel jpanel = new JPanel(new BorderLayout());
--        StatsComponent guistatscomponent = new StatsComponent(this.server);
--        Collection collection = this.finalizers;
-+        com.destroystokyo.paper.gui.GuiStatsComponent guistatscomponent = new com.destroystokyo.paper.gui.GuiStatsComponent(this.server); // Paper - Make GUI graph fancier
-+        Collection<Runnable> collection = this.finalizers; // CraftBukkit - decompile error
- 
-         Objects.requireNonNull(guistatscomponent);
-         collection.add(guistatscomponent::close);
-@@ -106,6 +116,39 @@
-         return jpanel;
+         JPanel jPanel = new JPanel(new BorderLayout());
+-        StatsComponent statsComponent = new StatsComponent(this.server);
++        com.destroystokyo.paper.gui.GuiStatsComponent statsComponent = new com.destroystokyo.paper.gui.GuiStatsComponent(this.server); // Paper - Make GUI graph fancier
+         this.finalizers.add(statsComponent::close);
+         jPanel.add(statsComponent, "North");
+         jPanel.add(this.buildPlayerPanel(), "Center");
+@@ -150,6 +_,7 @@
+         this.finalizers.forEach(Runnable::run);
      }
  
++    private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\\e\\[[\\d;]*[^\\d;]"); // CraftBukkit // Paper
+     public void print(JTextArea textArea, JScrollPane scrollPane, String line) {
+         if (!SwingUtilities.isEventDispatchThread()) {
+             SwingUtilities.invokeLater(() -> this.print(textArea, scrollPane, line));
+@@ -162,7 +_,7 @@
+             }
+ 
+             try {
+-                document.insertString(document.getLength(), line, null);
++                document.insertString(document.getLength(), MinecraftServerGui.ANSI.matcher(line).replaceAll(""), null); // CraftBukkit
+             } catch (BadLocationException var8) {
+             }
+ 
+@@ -171,4 +_,37 @@
+             }
+         }
+     }
++
 +    // Paper start - Add onboarding message for initial server start
 +    private JComponent buildOnboardingPanel() {
 +        String onboardingLink = "https://docs.papermc.io/paper/next-steps";
@@ -71,33 +85,4 @@
 +        return jPanel;
 +    }
 +    // Paper end - Add onboarding message for initial server start
-+
-     private JComponent buildPlayerPanel() {
-         JList<?> jlist = new PlayerListComponent(this.server);
-         JScrollPane jscrollpane = new JScrollPane(jlist, 22, 30);
-@@ -132,7 +175,7 @@
- 
-             jtextfield.setText("");
-         });
--        jtextarea.addFocusListener(new FocusAdapter(this) {
-+        jtextarea.addFocusListener(new FocusAdapter() { // CraftBukkit - decompile error
-             public void focusGained(FocusEvent focusevent) {}
-         });
-         jpanel.add(jscrollpane, "Center");
-@@ -166,6 +209,7 @@
-         this.finalizers.forEach(Runnable::run);
-     }
- 
-+    private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\\e\\[[\\d;]*[^\\d;]"); // CraftBukkit // Paper
-     public void print(JTextArea textArea, JScrollPane scrollPane, String message) {
-         if (!SwingUtilities.isEventDispatchThread()) {
-             SwingUtilities.invokeLater(() -> {
-@@ -181,7 +225,7 @@
-             }
- 
-             try {
--                document.insertString(document.getLength(), message, (AttributeSet) null);
-+                document.insertString(document.getLength(), MinecraftServerGui.ANSI.matcher(message).replaceAll(""), (AttributeSet) null); // CraftBukkit
-             } catch (BadLocationException badlocationexception) {
-                 ;
-             }
+ }

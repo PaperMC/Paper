@@ -1,21 +1,7 @@
 --- a/net/minecraft/world/level/block/piston/PistonBaseBlock.java
 +++ b/net/minecraft/world/level/block/piston/PistonBaseBlock.java
-@@ -44,6 +44,13 @@
- import net.minecraft.world.phys.shapes.CollisionContext;
- import net.minecraft.world.phys.shapes.Shapes;
- import net.minecraft.world.phys.shapes.VoxelShape;
-+// CraftBukkit start
-+import com.google.common.collect.ImmutableList;
-+import java.util.AbstractList;
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.event.block.BlockPistonRetractEvent;
-+import org.bukkit.event.block.BlockPistonExtendEvent;
-+// CraftBukkit end
- 
- public class PistonBaseBlock extends DirectionalBlock {
- 
-@@ -155,6 +162,18 @@
-                 }
+@@ -145,6 +_,18 @@
+                 i = 2;
              }
  
 +            // CraftBukkit start
@@ -30,78 +16,82 @@
 +            // }
 +            // PAIL: checkME - what happened to setTypeAndData?
 +            // CraftBukkit end
-             world.blockEvent(pos, this, b0, enumdirection.get3DDataValue());
+             level.blockEvent(pos, this, i, direction.get3DDataValue());
          }
- 
-@@ -197,6 +216,12 @@
+     }
+@@ -174,6 +_,12 @@
      @Override
-     protected boolean triggerEvent(BlockState state, Level world, BlockPos pos, int type, int data) {
-         Direction enumdirection = (Direction) state.getValue(PistonBaseBlock.FACING);
+     protected boolean triggerEvent(BlockState state, Level level, BlockPos pos, int id, int param) {
+         Direction direction = state.getValue(FACING);
 +        // Paper start - Protect Bedrock and End Portal/Frames from being destroyed; prevent retracting when we're facing the wrong way (we were replaced before retraction could occur)
-+        Direction directionQueuedAs = Direction.from3DDataValue(data & 7); // Paper - copied from below
-+        if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits && enumdirection != directionQueuedAs) {
++        Direction directionQueuedAs = Direction.from3DDataValue(param & 7); // Paper - copied from below
++        if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits && direction != directionQueuedAs) {
 +            return false;
 +        }
 +        // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
-         BlockState iblockdata1 = (BlockState) state.setValue(PistonBaseBlock.EXTENDED, true);
- 
-         if (!world.isClientSide) {
-@@ -229,8 +254,15 @@
- 
-             BlockState iblockdata2 = (BlockState) ((BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(MovingPistonBlock.FACING, enumdirection)).setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
- 
+         BlockState blockState = state.setValue(EXTENDED, Boolean.valueOf(true));
+         if (!level.isClientSide) {
+             boolean neighborSignal = this.getNeighborSignal(level, pos, direction);
+@@ -205,10 +_,17 @@
+                 .defaultBlockState()
+                 .setValue(MovingPistonBlock.FACING, direction)
+                 .setValue(MovingPistonBlock.TYPE, this.isSticky ? PistonType.STICKY : PistonType.DEFAULT);
 +            // Paper start - Fix sticky pistons and BlockPistonRetractEvent; Move empty piston retract call to fix multiple event fires
 +            if (!this.isSticky) {
-+                if (!new BlockPistonRetractEvent(CraftBlock.at(world, pos), java.util.Collections.emptyList(), CraftBlock.notchToBlockFace(enumdirection)).callEvent()) {
++                if (!new org.bukkit.event.block.BlockPistonRetractEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), java.util.Collections.emptyList(), org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction)).callEvent()) {
 +                    return false;
 +                }
 +            }
 +            // Paper end - Fix sticky pistons and BlockPistonRetractEvent
-             world.setBlock(pos, iblockdata2, 20);
--            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata2, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true));
-+            world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(pos, iblockdata2, (BlockState) this.defaultBlockState().setValue(PistonBaseBlock.FACING, Direction.from3DDataValue(data & 7)), enumdirection, false, true)); // Paper - Protect Bedrock and End Portal/Frames from being destroyed; diff on change
-             world.blockUpdated(pos, iblockdata2.getBlock());
-             iblockdata2.updateNeighbourShapes(world, pos, 2);
-             if (this.isSticky) {
-@@ -255,11 +287,25 @@
-                     if (type == 1 && !iblockdata3.isAir() && PistonBaseBlock.isPushable(iblockdata3, world, blockposition1, enumdirection.getOpposite(), false, enumdirection) && (iblockdata3.getPistonPushReaction() == PushReaction.NORMAL || iblockdata3.is(Blocks.PISTON) || iblockdata3.is(Blocks.STICKY_PISTON))) {
-                         this.moveBlocks(world, pos, enumdirection, false);
-                     } else {
+             level.setBlock(pos, blockState1, 20);
+             level.setBlockEntity(
+                 MovingPistonBlock.newMovingBlockEntity(
+-                    pos, blockState1, this.defaultBlockState().setValue(FACING, Direction.from3DDataValue(param & 7)), direction, false, true
++                    pos, blockState1, this.defaultBlockState().setValue(FACING, Direction.from3DDataValue(param & 7)), direction, false, true // Paper - Protect Bedrock and End Portal/Frames from being destroyed; diff on change
+                 )
+             );
+             level.blockUpdated(pos, blockState1.getBlock());
+@@ -232,13 +_,27 @@
+                         || blockState2.getPistonPushReaction() != PushReaction.NORMAL
+                             && !blockState2.is(Blocks.PISTON)
+                             && !blockState2.is(Blocks.STICKY_PISTON)) {
 +                        // Paper start - Fix sticky pistons and BlockPistonRetractEvent; fire BlockPistonRetractEvent for sticky pistons retracting nothing (air)
-+                        if (type == TRIGGER_CONTRACT && iblockdata2.isAir()) {
-+                            if (!new BlockPistonRetractEvent(CraftBlock.at(world, pos), java.util.Collections.emptyList(), CraftBlock.notchToBlockFace(enumdirection)).callEvent()) {
++                        if (id == TRIGGER_CONTRACT && blockState1.isAir()) {
++                            if (!new org.bukkit.event.block.BlockPistonRetractEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), java.util.Collections.emptyList(), org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction)).callEvent()) {
 +                                return false;
 +                            }
 +                        }
 +                        // Paper end - Fix sticky pistons and BlockPistonRetractEvent
-                         world.removeBlock(pos.relative(enumdirection), false);
+                         level.removeBlock(pos.relative(direction), false);
+                     } else {
+                         this.moveBlocks(level, pos, direction, false);
                      }
                  }
              } else {
--                world.removeBlock(pos.relative(enumdirection), false);
+-                level.removeBlock(pos.relative(direction), false);
 +                // Paper start - Protect Bedrock and End Portal/Frames from being destroyed; fix headless pistons breaking blocks
-+                BlockPos headPos = pos.relative(enumdirection);
-+                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits || world.getBlockState(headPos) == Blocks.PISTON_HEAD.defaultBlockState().setValue(FACING, enumdirection)) { // double check to make sure we're not a headless piston.
-+                    world.removeBlock(headPos, false);
++                BlockPos headPos = pos.relative(direction);
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPermanentBlockBreakExploits || level.getBlockState(headPos) == Blocks.PISTON_HEAD.defaultBlockState().setValue(FACING, direction)) { // double check to make sure we're not a headless piston.
++                    level.removeBlock(headPos, false);
 +                } else {
-+                    ((ServerLevel) world).getChunkSource().blockChanged(headPos); // ... fix client desync
++                    ((ServerLevel) level).getChunkSource().blockChanged(headPos); // ... fix client desync
 +                }
 +                // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
              }
  
-             world.playSound((Player) null, pos, SoundEvents.PISTON_CONTRACT, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.15F + 0.6F);
-@@ -335,7 +381,49 @@
-             BlockState[] aiblockdata = new BlockState[list.size() + list2.size()];
-             Direction enumdirection1 = extend ? dir : dir.getOpposite();
+             level.playSound(null, pos, SoundEvents.PISTON_CONTRACT, SoundSource.BLOCKS, 0.5F, level.random.nextFloat() * 0.15F + 0.6F);
+@@ -305,12 +_,54 @@
+             BlockState[] blockStates = new BlockState[toPush.size() + toDestroy.size()];
+             Direction direction = extending ? facing : facing.getOpposite();
              int i = 0;
 +            // CraftBukkit start
-+            final org.bukkit.block.Block bblock = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            final org.bukkit.block.Block bblock = level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
 +
-+            final List<BlockPos> moved = pistonextendschecker.getToPush();
-+            final List<BlockPos> broken = pistonextendschecker.getToDestroy();
++            final List<BlockPos> moved = pistonStructureResolver.getToPush();
++            final List<BlockPos> broken = pistonStructureResolver.getToDestroy();
 +
-+            List<org.bukkit.block.Block> blocks = new AbstractList<org.bukkit.block.Block>() {
- 
++            List<org.bukkit.block.Block> blocks = new java.util.AbstractList<>() {
++
 +                @Override
 +                public int size() {
 +                    return moved.size() + broken.size();
@@ -112,69 +102,67 @@
 +                    if (index >= this.size() || index < 0) {
 +                        throw new ArrayIndexOutOfBoundsException(index);
 +                    }
-+                    BlockPos pos = (BlockPos) (index < moved.size() ? moved.get(index) : broken.get(index - moved.size()));
++                    BlockPos pos = index < moved.size() ? moved.get(index) : broken.get(index - moved.size());
 +                    return bblock.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
 +                }
 +            };
 +            org.bukkit.event.block.BlockPistonEvent event;
-+            if (extend) {
-+                event = new BlockPistonExtendEvent(bblock, blocks, CraftBlock.notchToBlockFace(enumdirection1));
++            if (extending) {
++                event = new org.bukkit.event.block.BlockPistonExtendEvent(bblock, blocks, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction));
 +            } else {
-+                event = new BlockPistonRetractEvent(bblock, blocks, CraftBlock.notchToBlockFace(enumdirection1));
++                event = new org.bukkit.event.block.BlockPistonRetractEvent(bblock, blocks, org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(direction));
 +            }
-+            world.getCraftServer().getPluginManager().callEvent(event);
++            level.getCraftServer().getPluginManager().callEvent(event);
 +
 +            if (event.isCancelled()) {
 +                for (BlockPos b : broken) {
-+                    world.sendBlockUpdated(b, Blocks.AIR.defaultBlockState(), world.getBlockState(b), 3);
++                    level.sendBlockUpdated(b, Blocks.AIR.defaultBlockState(), level.getBlockState(b), 3);
 +                }
 +                for (BlockPos b : moved) {
-+                    world.sendBlockUpdated(b, Blocks.AIR.defaultBlockState(), world.getBlockState(b), 3);
-+                    b = b.relative(enumdirection1);
-+                    world.sendBlockUpdated(b, Blocks.AIR.defaultBlockState(), world.getBlockState(b), 3);
++                    level.sendBlockUpdated(b, Blocks.AIR.defaultBlockState(), level.getBlockState(b), 3);
++                    b = b.relative(direction);
++                    level.sendBlockUpdated(b, Blocks.AIR.defaultBlockState(), level.getBlockState(b), 3);
 +                }
 +                return false;
 +            }
 +            // CraftBukkit end
-+
-             BlockPos blockposition3;
-             int j;
-             BlockState iblockdata1;
-@@ -345,7 +433,7 @@
-                 iblockdata1 = world.getBlockState(blockposition3);
-                 BlockEntity tileentity = iblockdata1.hasBlockEntity() ? world.getBlockEntity(blockposition3) : null;
  
--                dropResources(iblockdata1, world, blockposition3, tileentity);
-+                dropResources(iblockdata1, world, blockposition3, tileentity, pos); // Paper - Add BlockBreakBlockEvent
-                 world.setBlock(blockposition3, Blocks.AIR.defaultBlockState(), 18);
-                 world.gameEvent((Holder) GameEvent.BLOCK_DESTROY, blockposition3, GameEvent.Context.of(iblockdata1));
-                 if (!iblockdata1.is(BlockTags.FIRE)) {
-@@ -358,13 +446,25 @@
-             BlockState iblockdata2;
+             for (int i1 = toDestroy.size() - 1; i1 >= 0; i1--) {
+                 BlockPos blockPos2 = toDestroy.get(i1);
+                 BlockState blockState1 = level.getBlockState(blockPos2);
+                 BlockEntity blockEntity = blockState1.hasBlockEntity() ? level.getBlockEntity(blockPos2) : null;
+-                dropResources(blockState1, level, blockPos2, blockEntity);
++                dropResources(blockState1, level, blockPos2, blockEntity, pos); // Paper - Add BlockBreakBlockEvent
+                 level.setBlock(blockPos2, Blocks.AIR.defaultBlockState(), 18);
+                 level.gameEvent(GameEvent.BLOCK_DESTROY, blockPos2, GameEvent.Context.of(blockState1));
+                 if (!blockState1.is(BlockTags.FIRE)) {
+@@ -321,13 +_,26 @@
+             }
  
-             for (j = list.size() - 1; j >= 0; --j) {
--                blockposition3 = (BlockPos) list.get(j);
--                iblockdata1 = world.getBlockState(blockposition3);
+             for (int i1 = toPush.size() - 1; i1 >= 0; i1--) {
+-                BlockPos blockPos2 = toPush.get(i1);
+-                BlockState blockState1 = level.getBlockState(blockPos2);
 +                // Paper start - fix a variety of piston desync dupes
 +                boolean allowDesync = io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowPistonDuplication;
-+                BlockPos oldPos = blockposition3 = (BlockPos) list.get(j);
-+                iblockdata1 = allowDesync ? world.getBlockState(oldPos) : null;
++                BlockPos blockPos2;
++                BlockPos oldPos = blockPos2 = toPush.get(i1);
++                BlockState blockState1 = allowDesync ? level.getBlockState(oldPos) : null;
 +                // Paper end - fix a variety of piston desync dupes
-                 blockposition3 = blockposition3.relative(enumdirection1);
-                 map.remove(blockposition3);
-                 iblockdata2 = (BlockState) Blocks.MOVING_PISTON.defaultBlockState().setValue(PistonBaseBlock.FACING, dir);
-                 world.setBlock(blockposition3, iblockdata2, 68);
--                world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockposition3, iblockdata2, (BlockState) list1.get(j), dir, extend, false));
+                 blockPos2 = blockPos2.relative(direction);
+                 map.remove(blockPos2);
+                 BlockState blockState2 = Blocks.MOVING_PISTON.defaultBlockState().setValue(FACING, facing);
+                 level.setBlock(blockPos2, blockState2, 68);
+-                level.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockPos2, blockState2, list.get(i1), facing, extending, false));
 +                // Paper start - fix a variety of piston desync dupes
 +                if (!allowDesync) {
-+                    iblockdata1 = world.getBlockState(oldPos);
-+                    map.replace(oldPos, iblockdata1);
++                    blockState1 = level.getBlockState(oldPos);
++                    map.replace(oldPos, blockState1);
 +                }
-+                world.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockposition3, iblockdata2, allowDesync ? (BlockState) list1.get(j) : iblockdata1, dir, extend, false));
++                level.setBlockEntity(MovingPistonBlock.newMovingBlockEntity(blockPos2, blockState2, allowDesync ? list.get(i1) : blockState1, facing, extending, false));
 +                if (!allowDesync) {
-+                    world.setBlock(oldPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_MOVE_BY_PISTON | 1024); // set air to prevent later physics updates from seeing this block
++                    level.setBlock(oldPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_MOVE_BY_PISTON | 1024); // set air to prevent later physics updates from seeing this block
 +                }
 +                // Paper end - fix a variety of piston desync dupes
-                 aiblockdata[i++] = iblockdata1;
+                 blockStates[i++] = blockState1;
              }
  

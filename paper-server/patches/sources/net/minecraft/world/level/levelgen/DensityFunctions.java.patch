@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/levelgen/DensityFunctions.java
 +++ b/net/minecraft/world/level/levelgen/DensityFunctions.java
-@@ -509,6 +509,16 @@
+@@ -506,6 +_,16 @@
          );
          private static final float ISLAND_THRESHOLD = -0.9F;
          private final SimplexNoise islandNoise;
@@ -17,36 +17,39 @@
  
          public EndIslandDensityFunction(long seed) {
              RandomSource randomSource = new LegacyRandomSource(seed);
-@@ -521,15 +531,29 @@
-             int j = z / 2;
-             int k = x % 2;
-             int l = z % 2;
--            float f = 100.0F - Mth.sqrt((float)(x * x + z * z)) * 8.0F;
-+            float f = 100.0F - Mth.sqrt((long) x * (long) x + (long) z * (long) z) * 8.0F; // Paper - cast ints to long to avoid integer overflow
+@@ -518,15 +_,31 @@
+             int i1 = z / 2;
+             int i2 = x % 2;
+             int i3 = z % 2;
+-            float f = 100.0F - Mth.sqrt(x * x + z * z) * 8.0F;
++            float f = 100.0F - Mth.sqrt((long)x * (long)x + (long)z * (long)z) * 8.0F; // Paper - cast ints to long to avoid integer overflow
              f = Mth.clamp(f, -100.0F, 80.0F);
  
-+            NoiseCache cache = noiseCache.get().computeIfAbsent(sampler, noiseKey -> new NoiseCache()); // Paper - Perf: Optimize end generation
-             for (int m = -12; m <= 12; m++) {
-                 for (int n = -12; n <= 12; n++) {
-                     long o = (long)(i + m);
-                     long p = (long)(j + n);
--                    if (o * o + p * p > 4096L && sampler.getValue((double)o, (double)p) < -0.9F) {
--                        float g = (Mth.abs((float)o) * 3439.0F + Mth.abs((float)p) * 147.0F) % 13.0F + 9.0F;
++            NoiseCache cache = noiseCache.get().computeIfAbsent(noise, noiseKey -> new NoiseCache()); // Paper - Perf: Optimize end generation
+             for (int i4 = -12; i4 <= 12; i4++) {
+                 for (int i5 = -12; i5 <= 12; i5++) {
+-                    long l = i + i4;
+-                    long l1 = i1 + i5;
++                    long l = i + i4; final int chunkX = (int) l; // Paper - OBFHELPER
++                    long l1 = i1 + i5; final int chunkZ = (int) l1; // Paper - OBFHELPER
 +                    // Paper start - Perf: Optimize end generation by using a noise cache
-+                    long key = net.minecraft.world.level.ChunkPos.asLong((int) o, (int) p);
-+                    int index = (int) it.unimi.dsi.fastutil.HashCommon.mix(key) & 8191;
-+                    float g = Float.MIN_VALUE;
-+                    if (cache.keys[index] == key) {
-+                        g = cache.values[index];
++                    final long chunkKey = net.minecraft.world.level.ChunkPos.asLong(chunkX, chunkZ);
++                    final int cacheIndex = (int) it.unimi.dsi.fastutil.HashCommon.mix(chunkKey) & 8191;
++                    float f1 = Float.MIN_VALUE; // noise value
++                    if (cache.keys[cacheIndex] == chunkKey) {
++                        // Use cache
++                        f1 = cache.values[cacheIndex];
 +                    } else {
-+                        if (o * o + p * p > 4096L && sampler.getValue((double)o, (double)p) < -0.9F) {
-+                            g = (Mth.abs((float)o) * 3439.0F + Mth.abs((float)p) * 147.0F) % 13.0F + 9.0F;
-+                        }
-+                        cache.keys[index] = key;
-+                        cache.values[index] = g;
++                        // Vanilla function
+                     if (l * l + l1 * l1 > 4096L && noise.getValue(l, l1) < -0.9F) {
+-                        float f1 = (Mth.abs((float)l) * 3439.0F + Mth.abs((float)l1) * 147.0F) % 13.0F + 9.0F;
++                        f1 = (Mth.abs((float)l) * 3439.0F + Mth.abs((float)l1) * 147.0F) % 13.0F + 9.0F;
 +                    }
-+                    if (g != Float.MIN_VALUE) {
++                        cache.keys[cacheIndex] = chunkKey;
++                        cache.values[cacheIndex] = f1;
++                    }
++                    if (f1 != Float.MIN_VALUE) {
 +                        // Paper end - Perf: Optimize end generation
-                         float h = (float)(k - m * 2);
-                         float q = (float)(l - n * 2);
-                         float r = 100.0F - Mth.sqrt(h * h + q * q) * g;
+                         float f2 = i2 - i4 * 2;
+                         float f3 = i3 - i5 * 2;
+                         float f4 = 100.0F - Mth.sqrt(f2 * f2 + f3 * f3) * f1;

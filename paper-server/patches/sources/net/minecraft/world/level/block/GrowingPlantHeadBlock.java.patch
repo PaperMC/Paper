@@ -1,39 +1,36 @@
 --- a/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
 +++ b/net/minecraft/world/level/block/GrowingPlantHeadBlock.java
-@@ -44,16 +44,34 @@
+@@ -44,13 +_,31 @@
  
      @Override
-     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
--        if ((Integer) state.getValue(GrowingPlantHeadBlock.AGE) < 25 && random.nextDouble() < this.growPerTickProbability) {
+     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+-        if (state.getValue(AGE) < 25 && random.nextDouble() < this.growPerTickProbability) {
 +        // Spigot start
-+        int modifier;
++        int modifier = 100;
 +        if (this == Blocks.KELP) {
-+            modifier = world.spigotConfig.kelpModifier;
++            modifier = level.spigotConfig.kelpModifier;
 +        } else if (this == Blocks.TWISTING_VINES) {
-+            modifier = world.spigotConfig.twistingVinesModifier;
++            modifier = level.spigotConfig.twistingVinesModifier;
 +        } else if (this == Blocks.WEEPING_VINES) {
-+            modifier = world.spigotConfig.weepingVinesModifier;
-+        } else {
-+            modifier = world.spigotConfig.caveVinesModifier;
++            modifier = level.spigotConfig.weepingVinesModifier;
++        } else if (this == Blocks.CAVE_VINES) {
++            modifier = level.spigotConfig.caveVinesModifier;
 +        }
-+        if ((Integer) state.getValue(GrowingPlantHeadBlock.AGE) < 25 && random.nextDouble() < ((modifier / 100.0D) * this.growPerTickProbability)) { // Spigot - SPIGOT-7159: Better modifier resolution
++        if (state.getValue(AGE) < 25 && random.nextDouble() < ((modifier / 100.0D) * this.growPerTickProbability)) { // Spigot - SPIGOT-7159: Better modifier resolution
 +            // Spigot end
-             BlockPos blockposition1 = pos.relative(this.growthDirection);
- 
-             if (this.canGrowInto(world.getBlockState(blockposition1))) {
--                world.setBlockAndUpdate(blockposition1, this.getGrowIntoState(state, world.random));
-+                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(world, pos, blockposition1, this.getGrowIntoState(state, world.random, world)); // CraftBukkit // Paper - Fix Spigot growth modifiers
+             BlockPos blockPos = pos.relative(this.growthDirection);
+             if (this.canGrowInto(level.getBlockState(blockPos))) {
+-                level.setBlockAndUpdate(blockPos, this.getGrowIntoState(state, level.random));
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, blockPos, this.getGrowIntoState(state, level.random, level)); // CraftBukkit // Paper - Fix Spigot growth modifiers
              }
          }
- 
      }
- 
++
 +    // Paper start - Fix Spigot growth modifiers
 +    protected BlockState getGrowIntoState(BlockState state, RandomSource random, @javax.annotation.Nullable Level level) {
 +        return this.getGrowIntoState(state, random);
 +    }
 +    // Paper end - Fix Spigot growth modifiers
-+
+ 
      protected BlockState getGrowIntoState(BlockState state, RandomSource random) {
-         return (BlockState) state.cycle(GrowingPlantHeadBlock.AGE);
-     }
+         return state.cycle(AGE);

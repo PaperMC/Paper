@@ -1,6 +1,6 @@
 --- a/net/minecraft/network/chat/PlayerChatMessage.java
 +++ b/net/minecraft/network/chat/PlayerChatMessage.java
-@@ -17,6 +17,42 @@
+@@ -17,6 +_,43 @@
  public record PlayerChatMessage(
      SignedMessageLink link, @Nullable MessageSignature signature, SignedMessageBody signedBody, @Nullable Component unsignedContent, FilterMask filterMask
  ) {
@@ -40,20 +40,21 @@
 +        return new AdventureView();
 +    }
 +    // Paper end - adventure; support signed messages
++
      public static final MapCodec<PlayerChatMessage> MAP_CODEC = RecordCodecBuilder.mapCodec(
          instance -> instance.group(
-                     SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link),
-@@ -47,7 +83,14 @@
+                 SignedMessageLink.CODEC.fieldOf("link").forGetter(PlayerChatMessage::link),
+@@ -47,7 +_,14 @@
      }
  
-     public PlayerChatMessage withUnsignedContent(Component unsignedContent) {
--        Component component = !unsignedContent.equals(Component.literal(this.signedContent())) ? unsignedContent : null;
+     public PlayerChatMessage withUnsignedContent(Component message) {
+-        Component component = !message.equals(Component.literal(this.signedContent())) ? message : null;
 +        // Paper start - adventure
 +        final Component component;
-+        if (unsignedContent instanceof io.papermc.paper.adventure.AdventureComponent advComponent) {
-+            component = this.signedContent().equals(io.papermc.paper.adventure.AdventureCodecs.tryCollapseToString(advComponent.adventure$component())) ? null : unsignedContent;
++        if (message instanceof io.papermc.paper.adventure.AdventureComponent advComponent) {
++            component = this.signedContent().equals(io.papermc.paper.adventure.AdventureCodecs.tryCollapseToString(advComponent.adventure$component())) ? null : message;
 +        } else {
-+            component = !unsignedContent.equals(Component.literal(this.signedContent())) ? unsignedContent : null;
++            component = !message.equals(Component.literal(this.signedContent())) ? message : null;
 +        }
 +        // Paper end - adventure
          return new PlayerChatMessage(this.link, this.signature, this.signedBody, component, this.filterMask);

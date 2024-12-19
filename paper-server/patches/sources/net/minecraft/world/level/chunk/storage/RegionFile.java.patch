@@ -1,113 +1,63 @@
 --- a/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFile.java
-@@ -1,3 +1,4 @@
-+// mc-dev import
- package net.minecraft.world.level.chunk.storage;
+@@ -46,7 +_,7 @@
+     protected final RegionBitmap usedSectors = new RegionBitmap();
  
- import com.google.common.annotations.VisibleForTesting;
-@@ -49,7 +50,7 @@
-     protected final RegionBitmap usedSectors;
- 
-     public RegionFile(RegionStorageInfo storageKey, Path directory, Path path, boolean dsync) throws IOException {
--        this(storageKey, directory, path, RegionFileVersion.getSelected(), dsync);
-+        this(storageKey, directory, path, RegionFileVersion.getCompressionFormat(), dsync); // Paper - Configurable region compression format
+     public RegionFile(RegionStorageInfo info, Path path, Path externalFileDir, boolean sync) throws IOException {
+-        this(info, path, externalFileDir, RegionFileVersion.getSelected(), sync);
++        this(info, path, externalFileDir, RegionFileVersion.getCompressionFormat(), sync); // Paper - Configurable region compression format
      }
  
-     public RegionFile(RegionStorageInfo storageKey, Path path, Path directory, RegionFileVersion compressionFormat, boolean dsync) throws IOException {
-@@ -63,8 +64,8 @@
-         } else {
-             this.externalFileDir = directory;
-             this.offsets = this.header.asIntBuffer();
--            this.offsets.limit(1024);
--            this.header.position(4096);
-+            ((java.nio.Buffer) this.offsets).limit(1024); // CraftBukkit - decompile error
-+            ((java.nio.Buffer) this.header).position(4096); // CraftBukkit - decompile error
-             this.timestamps = this.header.asIntBuffer();
-             if (dsync) {
-                 this.file = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.DSYNC);
-@@ -73,7 +74,7 @@
-             }
- 
-             this.usedSectors.force(0, 2);
--            this.header.position(0);
-+            ((java.nio.Buffer) this.header).position(0); // CraftBukkit - decompile error
-             int i = this.file.read(this.header, 0L);
- 
-             if (i != -1) {
-@@ -89,6 +90,14 @@
-                     if (l != 0) {
-                         int i1 = RegionFile.getSectorNumber(l);
-                         int j1 = RegionFile.getNumSectors(l);
+     public RegionFile(RegionStorageInfo info, Path path, Path externalFileDir, RegionFileVersion version, boolean sync) throws IOException {
+@@ -82,6 +_,14 @@
+                     if (i2 != 0) {
+                         int sectorNumber = getSectorNumber(i2);
+                         int numSectors = getNumSectors(i2);
 +                        // Spigot start
-+                        if (j1 == 255) {
++                        if (numSectors == 255) {
 +                            // We're maxed out, so we need to read the proper length from the section
 +                            ByteBuffer realLen = ByteBuffer.allocate(4);
-+                            this.file.read(realLen, i1 * 4096);
-+                            j1 = (realLen.getInt(0) + 4) / 4096 + 1;
++                            this.file.read(realLen, sectorNumber * 4096);
++                            numSectors = (realLen.getInt(0) + 4) / 4096 + 1;
 +                        }
 +                        // Spigot end
- 
-                         if (i1 < 2) {
-                             RegionFile.LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", new Object[]{path, k, i1});
-@@ -128,11 +137,18 @@
+                         if (sectorNumber < 2) {
+                             LOGGER.warn("Region file {} has invalid sector at index: {}; sector {} overlaps with header", path, i1, sectorNumber);
+                             this.offsets.put(i1, 0);
+@@ -117,6 +_,13 @@
          } else {
-             int j = RegionFile.getSectorNumber(i);
-             int k = RegionFile.getNumSectors(i);
+             int sectorNumber = getSectorNumber(offset);
+             int numSectors = getNumSectors(offset);
 +            // Spigot start
-+            if (k == 255) {
++            if (numSectors == 255) {
 +                ByteBuffer realLen = ByteBuffer.allocate(4);
-+                this.file.read(realLen, j * 4096);
-+                k = (realLen.getInt(0) + 4) / 4096 + 1;
++                this.file.read(realLen, sectorNumber * 4096);
++                numSectors = (realLen.getInt(0) + 4) / 4096 + 1;
 +            }
 +            // Spigot end
-             int l = k * 4096;
-             ByteBuffer bytebuffer = ByteBuffer.allocate(l);
- 
-             this.file.read(bytebuffer, (long) (j * 4096));
--            bytebuffer.flip();
-+            ((java.nio.Buffer) bytebuffer).flip(); // CraftBukkit - decompile error
-             if (bytebuffer.remaining() < 5) {
-                 RegionFile.LOGGER.error("Chunk {} header is truncated: expected {} but read {}", new Object[]{pos, l, bytebuffer.remaining()});
-                 return null;
-@@ -246,7 +262,7 @@
- 
-             try {
-                 this.file.read(bytebuffer, (long) (j * 4096));
--                bytebuffer.flip();
-+                ((java.nio.Buffer) bytebuffer).flip(); // CraftBukkit - decompile error
-                 if (bytebuffer.remaining() != 5) {
-                     return false;
-                 } else {
-@@ -280,6 +296,7 @@
+             int i = numSectors * 4096;
+             ByteBuffer byteBuffer = ByteBuffer.allocate(i);
+             this.file.read(byteBuffer, sectorNumber * 4096);
+@@ -260,6 +_,7 @@
                      return true;
                  }
-             } catch (IOException ioexception) {
-+                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(ioexception); // Paper - ServerExceptionEvent
+             } catch (IOException var9) {
++                com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(var9); // Paper - ServerExceptionEvent
                  return false;
              }
          }
-@@ -349,7 +366,7 @@
+@@ -331,13 +_,18 @@
+         try (FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+             chunkData.position(5);
+             fileChannel.write(chunkData);
++            // Paper start - ServerExceptionEvent
++        } catch (Throwable throwable) {
++            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable);
++            throw throwable;
++            // Paper end - ServerExceptionEvent
+         }
  
-         bytebuffer.putInt(1);
-         bytebuffer.put((byte) (this.version.getId() | 128));
--        bytebuffer.flip();
-+        ((java.nio.Buffer) bytebuffer).flip(); // CraftBukkit - decompile error
-         return bytebuffer;
-     }
- 
-@@ -358,9 +375,10 @@
-         FileChannel filechannel = FileChannel.open(path1, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
- 
-         try {
--            buf.position(5);
-+            ((java.nio.Buffer) buf).position(5); // CraftBukkit - decompile error
-             filechannel.write(buf);
-         } catch (Throwable throwable) {
-+            com.destroystokyo.paper.exception.ServerInternalException.reportInternalException(throwable); // Paper - ServerExceptionEvent
-             if (filechannel != null) {
-                 try {
-                     filechannel.close();
-@@ -382,7 +400,7 @@
+         return () -> Files.move(path, externalChunkFile, StandardCopyOption.REPLACE_EXISTING);
      }
  
      private void writeHeader() throws IOException {
@@ -115,13 +65,4 @@
 +        ((java.nio.Buffer) this.header).position(0); // CraftBukkit - decompile error
          this.file.write(this.header, 0L);
      }
- 
-@@ -418,7 +436,7 @@
-         if (i != j) {
-             ByteBuffer bytebuffer = RegionFile.PADDING_BUFFER.duplicate();
- 
--            bytebuffer.position(0);
-+            ((java.nio.Buffer) bytebuffer).position(0); // CraftBukkit - decompile error
-             this.file.write(bytebuffer, (long) (j - 1));
-         }
  

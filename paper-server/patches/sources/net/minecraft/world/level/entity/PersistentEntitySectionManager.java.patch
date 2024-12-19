@@ -1,21 +1,6 @@
 --- a/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
 +++ b/net/minecraft/world/level/entity/PersistentEntitySectionManager.java
-@@ -29,8 +29,13 @@
- import net.minecraft.util.CsvOutput;
- import net.minecraft.util.VisibleForDebug;
- import net.minecraft.world.entity.Entity;
--import net.minecraft.world.level.ChunkPos;
- import org.slf4j.Logger;
-+import net.minecraft.world.level.ChunkPos;
-+// CraftBukkit start
-+import net.minecraft.world.level.chunk.storage.EntityStorage;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.event.entity.EntityRemoveEvent;
-+// CraftBukkit end
- 
- public class PersistentEntitySectionManager<T extends EntityAccess> implements AutoCloseable {
- 
-@@ -55,6 +60,16 @@
+@@ -52,6 +_,16 @@
          this.entityGetter = new LevelEntityGetterAdapter<>(this.visibleEntityStorage, this.sectionStorage);
      }
  
@@ -29,27 +14,27 @@
 +    }
 +    // CraftBukkit end
 +
-     void removeSectionIfEmpty(long sectionPos, EntitySection<T> section) {
+     void removeSectionIfEmpty(long sectionKey, EntitySection<T> section) {
          if (section.isEmpty()) {
-             this.sectionStorage.remove(sectionPos);
-@@ -63,6 +78,7 @@
+             this.sectionStorage.remove(sectionKey);
+@@ -59,6 +_,7 @@
      }
  
      private boolean addEntityUuid(T entity) {
 +        org.spigotmc.AsyncCatcher.catchOp("Entity add by UUID"); // Paper
          if (!this.knownUuids.add(entity.getUUID())) {
-             PersistentEntitySectionManager.LOGGER.warn("UUID of added entity already exists: {}", entity);
+             LOGGER.warn("UUID of added entity already exists: {}", entity);
              return false;
-@@ -76,6 +92,17 @@
+@@ -72,6 +_,17 @@
      }
  
-     private boolean addEntity(T entity, boolean existing) {
+     private boolean addEntity(T entity, boolean worldGenSpawned) {
 +        org.spigotmc.AsyncCatcher.catchOp("Entity add"); // Paper
 +        // Paper start - chunk system hooks
 +        // I don't want to know why this is a generic type.
 +        Entity entityCasted = (Entity)entity;
 +        boolean wasRemoved = entityCasted.isRemoved();
-+        boolean screened = ca.spottedleaf.moonrise.common.util.ChunkSystem.screenEntity((net.minecraft.server.level.ServerLevel)entityCasted.level(), entityCasted, existing, true);
++        boolean screened = ca.spottedleaf.moonrise.common.util.ChunkSystem.screenEntity((net.minecraft.server.level.ServerLevel)entityCasted.level(), entityCasted, worldGenSpawned, true);
 +        if ((!wasRemoved && entityCasted.isRemoved()) || !screened) {
 +            // removed by callback
 +            return false;
@@ -58,7 +43,7 @@
          if (!this.addEntityUuid(entity)) {
              return false;
          } else {
-@@ -119,19 +146,23 @@
+@@ -109,19 +_,23 @@
      }
  
      void startTicking(T entity) {
@@ -82,115 +67,91 @@
          this.callbacks.onTrackingEnd(entity);
          this.visibleEntityStorage.remove(entity);
      }
-@@ -143,6 +174,7 @@
+@@ -132,6 +_,7 @@
      }
  
-     public void updateChunkStatus(ChunkPos chunkPos, Visibility trackingStatus) {
+     public void updateChunkStatus(ChunkPos pos, Visibility visibility) {
 +        org.spigotmc.AsyncCatcher.catchOp("Update chunk status"); // Paper
-         long i = chunkPos.toLong();
- 
-         if (trackingStatus == Visibility.HIDDEN) {
-@@ -187,6 +219,7 @@
+         long packedChunkPos = pos.toLong();
+         if (visibility == Visibility.HIDDEN) {
+             this.chunkVisibility.remove(packedChunkPos);
+@@ -165,6 +_,7 @@
      }
  
-     public void ensureChunkQueuedForLoad(long chunkPos) {
+     public void ensureChunkQueuedForLoad(long chunkPosValue) {
 +        org.spigotmc.AsyncCatcher.catchOp("Entity chunk save"); // Paper
-         PersistentEntitySectionManager.ChunkLoadStatus persistententitysectionmanager_b = (PersistentEntitySectionManager.ChunkLoadStatus) this.chunkLoadStatuses.get(chunkPos);
- 
-         if (persistententitysectionmanager_b == PersistentEntitySectionManager.ChunkLoadStatus.FRESH) {
-@@ -196,33 +229,42 @@
+         PersistentEntitySectionManager.ChunkLoadStatus chunkLoadStatus = this.chunkLoadStatuses.get(chunkPosValue);
+         if (chunkLoadStatus == PersistentEntitySectionManager.ChunkLoadStatus.FRESH) {
+             this.requestChunkLoad(chunkPosValue);
+@@ -172,6 +_,11 @@
      }
  
-     private boolean storeChunkSections(long chunkPos, Consumer<T> action) {
--        PersistentEntitySectionManager.ChunkLoadStatus persistententitysectionmanager_b = (PersistentEntitySectionManager.ChunkLoadStatus) this.chunkLoadStatuses.get(chunkPos);
-+        // CraftBukkit start - add boolean for event call
-+        return this.storeChunkSections(chunkPos, action, false);
+     private boolean storeChunkSections(long chunkPosValue, Consumer<T> entityAction) {
++        // CraftBukkit start
++        return storeChunkSections(chunkPosValue, entityAction, false);
 +    }
- 
-+    private boolean storeChunkSections(long i, Consumer<T> consumer, boolean callEvent) {
++    private boolean storeChunkSections(long chunkPosValue, Consumer<T> entityAction, boolean callEvent) {
 +        // CraftBukkit end
-+        PersistentEntitySectionManager.ChunkLoadStatus persistententitysectionmanager_b = (PersistentEntitySectionManager.ChunkLoadStatus) this.chunkLoadStatuses.get(i);
-+
-         if (persistententitysectionmanager_b == PersistentEntitySectionManager.ChunkLoadStatus.PENDING) {
+         PersistentEntitySectionManager.ChunkLoadStatus chunkLoadStatus = this.chunkLoadStatuses.get(chunkPosValue);
+         if (chunkLoadStatus == PersistentEntitySectionManager.ChunkLoadStatus.PENDING) {
              return false;
-         } else {
--            List<T> list = (List) this.sectionStorage.getExistingSectionsInChunk(chunkPos).flatMap((entitysection) -> {
-+            List<T> list = (List) this.sectionStorage.getExistingSectionsInChunk(i).flatMap((entitysection) -> {
-                 return entitysection.getEntities().filter(EntityAccess::shouldBeSaved);
-             }).collect(Collectors.toList());
- 
+@@ -182,6 +_,7 @@
+                 .collect(Collectors.toList());
              if (list.isEmpty()) {
-                 if (persistententitysectionmanager_b == PersistentEntitySectionManager.ChunkLoadStatus.LOADED) {
--                    this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(chunkPos), ImmutableList.of()));
-+                    if (callEvent) CraftEventFactory.callEntitiesUnloadEvent(((EntityStorage) this.permanentStorage).level, new ChunkPos(i), ImmutableList.of()); // CraftBukkit
-+                    this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(i), ImmutableList.of()));
+                 if (chunkLoadStatus == PersistentEntitySectionManager.ChunkLoadStatus.LOADED) {
++                    if (callEvent) org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesUnloadEvent(((net.minecraft.world.level.chunk.storage.EntityStorage) this.permanentStorage).level, new ChunkPos(chunkPosValue), ImmutableList.of()); // CraftBukkit
+                     this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(chunkPosValue), ImmutableList.of()));
                  }
  
-                 return true;
-             } else if (persistententitysectionmanager_b == PersistentEntitySectionManager.ChunkLoadStatus.FRESH) {
--                this.requestChunkLoad(chunkPos);
-+                this.requestChunkLoad(i);
+@@ -190,6 +_,7 @@
+                 this.requestChunkLoad(chunkPosValue);
                  return false;
              } else {
--                this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(chunkPos), list));
--                list.forEach(action);
-+                if (callEvent) CraftEventFactory.callEntitiesUnloadEvent(((EntityStorage) this.permanentStorage).level, new ChunkPos(i), list.stream().map(entity -> (Entity) entity).collect(Collectors.toList())); // CraftBukkit
-+                this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(i), list));
-+                list.forEach(consumer);
++                if (callEvent) org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesUnloadEvent(((net.minecraft.world.level.chunk.storage.EntityStorage) this.permanentStorage).level, new ChunkPos(chunkPosValue), list.stream().map(entity -> (Entity) entity).collect(Collectors.toList())); // CraftBukkit
+                 this.permanentStorage.storeEntities(new ChunkEntities<>(new ChunkPos(chunkPosValue), list));
+                 list.forEach(entityAction);
                  return true;
-             }
-         }
+@@ -198,6 +_,7 @@
      }
  
-     private void requestChunkLoad(long chunkPos) {
+     private void requestChunkLoad(long chunkPosValue) {
 +        org.spigotmc.AsyncCatcher.catchOp("Entity chunk load request"); // Paper
-         this.chunkLoadStatuses.put(chunkPos, PersistentEntitySectionManager.ChunkLoadStatus.PENDING);
-         ChunkPos chunkcoordintpair = new ChunkPos(chunkPos);
-         CompletableFuture completablefuture = this.permanentStorage.loadEntities(chunkcoordintpair);
-@@ -236,9 +278,10 @@
+         this.chunkLoadStatuses.put(chunkPosValue, PersistentEntitySectionManager.ChunkLoadStatus.PENDING);
+         ChunkPos chunkPos = new ChunkPos(chunkPosValue);
+         this.permanentStorage.loadEntities(chunkPos).thenAccept(this.loadingInbox::add).exceptionally(throwable -> {
+@@ -207,7 +_,8 @@
      }
  
-     private boolean processChunkUnload(long chunkPos) {
+     private boolean processChunkUnload(long chunkPosValue) {
+-        boolean flag = this.storeChunkSections(chunkPosValue, entity -> entity.getPassengersAndSelf().forEach(this::unloadEntity));
 +        org.spigotmc.AsyncCatcher.catchOp("Entity chunk unload process"); // Paper
-         boolean flag = this.storeChunkSections(chunkPos, (entityaccess) -> {
-             entityaccess.getPassengersAndSelf().forEach(this::unloadEntity);
--        });
-+        }, true); // CraftBukkit - add boolean for event call
- 
++        boolean flag = this.storeChunkSections(chunkPosValue, entity -> entity.getPassengersAndSelf().forEach(this::unloadEntity), true); // CraftBukkit - add boolean for event call
          if (!flag) {
              return false;
-@@ -249,29 +292,35 @@
+         } else {
+@@ -217,7 +_,7 @@
      }
  
      private void unloadEntity(EntityAccess entity) {
 -        entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK);
-+        entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, EntityRemoveEvent.Cause.UNLOAD); // CraftBukkit - add Bukkit remove cause
++        entity.setRemoved(Entity.RemovalReason.UNLOADED_TO_CHUNK, org.bukkit.event.entity.EntityRemoveEvent.Cause.UNLOAD); // CraftBukkit - add Bukkit remove cause
          entity.setLevelCallback(EntityInLevelCallback.NULL);
      }
  
-     private void processUnloads() {
--        this.chunksToUnload.removeIf((i) -> {
-+        this.chunksToUnload.removeIf((java.util.function.LongPredicate) (i) -> { // CraftBukkit - decompile error
-             return this.chunkVisibility.get(i) != Visibility.HIDDEN ? true : this.processChunkUnload(i);
-         });
+@@ -227,14 +_,20 @@
      }
  
      private void processPendingLoads() {
--        ChunkEntities chunkentities;
 +        org.spigotmc.AsyncCatcher.catchOp("Entity chunk process pending loads"); // Paper
-+        ChunkEntities<T> chunkentities; // CraftBukkit - decompile error
- 
-         while ((chunkentities = (ChunkEntities) this.loadingInbox.poll()) != null) {
-             chunkentities.getEntities().forEach((entityaccess) -> {
-                 this.addEntity(entityaccess, true);
-             });
-             this.chunkLoadStatuses.put(chunkentities.getPos().toLong(), PersistentEntitySectionManager.ChunkLoadStatus.LOADED);
+         ChunkEntities<T> chunkEntities;
+         while ((chunkEntities = this.loadingInbox.poll()) != null) {
+             chunkEntities.getEntities().forEach(entity -> this.addEntity((T)entity, true));
+             this.chunkLoadStatuses.put(chunkEntities.getPos().toLong(), PersistentEntitySectionManager.ChunkLoadStatus.LOADED);
 +            // CraftBukkit start - call entity load event
-+            List<Entity> entities = this.getEntities(chunkentities.getPos());
-+            CraftEventFactory.callEntitiesLoadEvent(((EntityStorage) this.permanentStorage).level, chunkentities.getPos(), entities);
++            List<Entity> entities = this.getEntities(chunkEntities.getPos());
++            org.bukkit.craftbukkit.event.CraftEventFactory.callEntitiesLoadEvent(((net.minecraft.world.level.chunk.storage.EntityStorage) this.permanentStorage).level, chunkEntities.getPos(), entities);
 +            // CraftBukkit end
          }
- 
      }
  
      public void tick() {
@@ -198,79 +159,50 @@
          this.processPendingLoads();
          this.processUnloads();
      }
-@@ -292,7 +341,8 @@
+@@ -252,6 +_,7 @@
      }
  
      public void autoSave() {
--        this.getAllChunksToSave().forEach((i) -> {
 +        org.spigotmc.AsyncCatcher.catchOp("Entity manager autosave"); // Paper
-+        this.getAllChunksToSave().forEach((java.util.function.LongConsumer) (i) -> { // CraftBukkit - decompile error
-             boolean flag = this.chunkVisibility.get(i) == Visibility.HIDDEN;
- 
+         this.getAllChunksToSave().forEach(packedChunkPos -> {
+             boolean flag = this.chunkVisibility.get(packedChunkPos) == Visibility.HIDDEN;
              if (flag) {
-@@ -306,12 +356,13 @@
+@@ -263,6 +_,7 @@
      }
  
      public void saveAll() {
 +        org.spigotmc.AsyncCatcher.catchOp("Entity manager save"); // Paper
-         LongSet longset = this.getAllChunksToSave();
+         LongSet allChunksToSave = this.getAllChunksToSave();
  
-         while (!longset.isEmpty()) {
-             this.permanentStorage.flush(false);
-             this.processPendingLoads();
--            longset.removeIf((i) -> {
-+            longset.removeIf((java.util.function.LongPredicate) (i) -> { // CraftBukkit - decompile error
-                 boolean flag = this.chunkVisibility.get(i) == Visibility.HIDDEN;
+         while (!allChunksToSave.isEmpty()) {
+@@ -279,7 +_,13 @@
  
-                 return flag ? this.processChunkUnload(i) : this.storeChunkSections(i, (entityaccess) -> {
-@@ -323,7 +374,15 @@
-     }
- 
+     @Override
      public void close() throws IOException {
 -        this.saveAll();
-+        // CraftBukkit start - add save boolean
++        // CraftBukkit start
 +        this.close(true);
 +    }
 +
 +    public void close(boolean save) throws IOException {
-+        if (save) {
-+            this.saveAll();
-+        }
++        if (save) this.saveAll();
 +        // CraftBukkit end
          this.permanentStorage.close();
      }
  
-@@ -350,7 +409,7 @@
-     public void dumpSections(Writer writer) throws IOException {
-         CsvOutput csvwriter = CsvOutput.builder().addColumn("x").addColumn("y").addColumn("z").addColumn("visibility").addColumn("load_status").addColumn("entity_count").build(writer);
- 
--        this.sectionStorage.getAllChunksWithExistingSections().forEach((i) -> {
-+        this.sectionStorage.getAllChunksWithExistingSections().forEach((java.util.function.LongConsumer) (i) -> { // CraftBukkit - decompile error
-             PersistentEntitySectionManager.ChunkLoadStatus persistententitysectionmanager_b = (PersistentEntitySectionManager.ChunkLoadStatus) this.chunkLoadStatuses.get(i);
- 
-             this.sectionStorage.getExistingSectionPositionsInChunk(i).forEach((j) -> {
-@@ -394,7 +453,7 @@
-         private EntitySection<T> currentSection;
- 
-         Callback(final EntityAccess entityaccess, final long i, final EntitySection entitysection) {
--            this.entity = entityaccess;
-+            this.entity = (T) entityaccess; // CraftBukkit - decompile error
-             this.currentSectionKey = i;
-             this.currentSection = entitysection;
-         }
-@@ -405,6 +464,7 @@
-             long i = SectionPos.asLong(blockposition);
- 
-             if (i != this.currentSectionKey) {
+@@ -380,6 +_,7 @@
+             BlockPos blockPos = this.entity.blockPosition();
+             long packedSectionPos = SectionPos.asLong(blockPos);
+             if (packedSectionPos != this.currentSectionKey) {
 +                org.spigotmc.AsyncCatcher.catchOp("Entity move"); // Paper
-                 Visibility visibility = this.currentSection.getStatus();
- 
+                 Visibility status = this.currentSection.getStatus();
                  if (!this.currentSection.remove(this.entity)) {
-@@ -459,6 +519,7 @@
+                     PersistentEntitySectionManager.LOGGER
+@@ -427,6 +_,7 @@
  
          @Override
          public void onRemove(Entity.RemovalReason reason) {
 +            org.spigotmc.AsyncCatcher.catchOp("Entity remove"); // Paper
              if (!this.currentSection.remove(this.entity)) {
-                 PersistentEntitySectionManager.LOGGER.warn("Entity {} wasn't found in section {} (destroying due to {})", new Object[]{this.entity, SectionPos.of(this.currentSectionKey), reason});
-             }
+                 PersistentEntitySectionManager.LOGGER
+                     .warn("Entity {} wasn't found in section {} (destroying due to {})", this.entity, SectionPos.of(this.currentSectionKey), reason);

@@ -1,121 +1,70 @@
 --- a/net/minecraft/world/entity/projectile/ThrownEgg.java
 +++ b/net/minecraft/world/entity/projectile/ThrownEgg.java
-@@ -1,33 +1,39 @@
- package net.minecraft.world.entity.projectile;
- 
--import net.minecraft.core.particles.ItemParticleOption;
--import net.minecraft.core.particles.ParticleTypes;
--import net.minecraft.world.entity.EntityDimensions;
- import net.minecraft.world.entity.EntitySpawnReason;
--import net.minecraft.world.entity.EntityType;
- import net.minecraft.world.entity.LivingEntity;
--import net.minecraft.world.entity.animal.Chicken;
- import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.item.Items;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.phys.EntityHitResult;
- import net.minecraft.world.phys.HitResult;
-+import net.minecraft.core.particles.ItemParticleOption;
-+import net.minecraft.core.particles.ParticleTypes;
-+import net.minecraft.server.level.ServerPlayer;
-+import net.minecraft.world.entity.Entity;
-+import net.minecraft.world.entity.EntityDimensions;
-+import org.bukkit.entity.Ageable;
-+import org.bukkit.entity.EntityType;
-+import org.bukkit.entity.Player;
-+import org.bukkit.event.entity.EntityRemoveEvent;
-+import org.bukkit.event.player.PlayerEggThrowEvent;
-+// CraftBukkit end
- 
- public class ThrownEgg extends ThrowableItemProjectile {
- 
-     private static final EntityDimensions ZERO_SIZED_DIMENSIONS = EntityDimensions.fixed(0.0F, 0.0F);
- 
--    public ThrownEgg(EntityType<? extends ThrownEgg> type, Level world) {
-+    public ThrownEgg(net.minecraft.world.entity.EntityType<? extends ThrownEgg> type, Level world) {
-         super(type, world);
-     }
- 
-     public ThrownEgg(Level world, LivingEntity owner, ItemStack stack) {
--        super(EntityType.EGG, owner, world, stack);
-+        super(net.minecraft.world.entity.EntityType.EGG, owner, world, stack);
-     }
- 
-     public ThrownEgg(Level world, double x, double y, double z, ItemStack stack) {
--        super(EntityType.EGG, x, y, z, world, stack);
-+        super(net.minecraft.world.entity.EntityType.EGG, x, y, z, world, stack);
-     }
- 
-     @Override
-@@ -52,30 +58,65 @@
-     protected void onHit(HitResult hitResult) {
-         super.onHit(hitResult);
+@@ -59,28 +_,62 @@
+     protected void onHit(HitResult result) {
+         super.onHit(result);
          if (!this.level().isClientSide) {
 -            if (this.random.nextInt(8) == 0) {
 +            // CraftBukkit start
 +            boolean hatching = this.random.nextInt(8) == 0;
 +            if (true) {
 +            // CraftBukkit end
-                 byte b0 = 1;
- 
+                 int i = 1;
                  if (this.random.nextInt(32) == 0) {
-                     b0 = 4;
+                     i = 4;
                  }
- 
 +                // CraftBukkit start
-+                EntityType hatchingType = EntityType.CHICKEN;
++                org.bukkit.entity.EntityType hatchingType = org.bukkit.entity.EntityType.CHICKEN;
 +
-+                Entity shooter = this.getOwner();
++                net.minecraft.world.entity.Entity shooter = this.getOwner();
 +                if (!hatching) {
-+                    b0 = 0;
++                    i = 0;
 +                }
-+                if (shooter instanceof ServerPlayer) {
-+                    PlayerEggThrowEvent event = new PlayerEggThrowEvent((Player) shooter.getBukkitEntity(), (org.bukkit.entity.Egg) this.getBukkitEntity(), hatching, b0, hatchingType);
++                if (shooter instanceof net.minecraft.server.level.ServerPlayer) {
++                    org.bukkit.event.player.PlayerEggThrowEvent event = new org.bukkit.event.player.PlayerEggThrowEvent((org.bukkit.entity.Player) shooter.getBukkitEntity(), (org.bukkit.entity.Egg) this.getBukkitEntity(), hatching, (byte) i, hatchingType);
 +                    this.level().getCraftServer().getPluginManager().callEvent(event);
 +
-+                    b0 = event.getNumHatches();
++                    i = event.getNumHatches();
 +                    hatching = event.isHatching();
 +                    hatchingType = event.getHatchingType();
 +                    // If hatching is set to false, ensure child count is 0
 +                    if (!hatching) {
-+                        b0 = 0;
++                        i = 0;
 +                    }
 +                }
 +                // CraftBukkit end
 +                // Paper start - Add ThrownEggHatchEvent
-+                com.destroystokyo.paper.event.entity.ThrownEggHatchEvent event = new com.destroystokyo.paper.event.entity.ThrownEggHatchEvent((org.bukkit.entity.Egg) getBukkitEntity(), hatching, b0, hatchingType);
++                com.destroystokyo.paper.event.entity.ThrownEggHatchEvent event = new com.destroystokyo.paper.event.entity.ThrownEggHatchEvent((org.bukkit.entity.Egg) getBukkitEntity(), hatching, (byte) i, hatchingType);
 +                event.callEvent();
 +                hatching = event.isHatching();
-+                b0 = hatching ? event.getNumHatches() : 0; // If hatching is set to false, ensure child count is 0
++                i = hatching ? event.getNumHatches() : 0; // If hatching is set to false, ensure child count is 0
 +                hatchingType = event.getHatchingType();
 +                // Paper end - Add ThrownEggHatchEvent
-+
-                 for (int i = 0; i < b0; ++i) {
--                    Chicken entitychicken = (Chicken) EntityType.CHICKEN.create(this.level(), EntitySpawnReason.TRIGGERED);
-+                    Entity entitychicken = this.level().getWorld().makeEntity(new org.bukkit.Location(this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F), hatchingType.getEntityClass()); // CraftBukkit
  
-                     if (entitychicken != null) {
--                        entitychicken.setAge(-24000);
+                 for (int i1 = 0; i1 < i; i1++) {
+-                    Chicken chicken = EntityType.CHICKEN.create(this.level(), EntitySpawnReason.TRIGGERED);
++                    net.minecraft.world.entity.Entity chicken = this.level().getWorld().makeEntity(new org.bukkit.Location(this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F), hatchingType.getEntityClass()); // CraftBukkit
+                     if (chicken != null) {
+-                        chicken.setAge(-24000);
 +                        // CraftBukkit start
-+                        if (entitychicken.getBukkitEntity() instanceof Ageable) {
-+                            ((Ageable) entitychicken.getBukkitEntity()).setBaby();
++                        if (chicken.getBukkitEntity() instanceof org.bukkit.entity.Ageable ageable) {
++                            ageable.setBaby();
 +                        }
 +                        // CraftBukkit end
-                         entitychicken.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F);
-                         if (!entitychicken.fudgePositionAfterSizeChange(ThrownEgg.ZERO_SIZED_DIMENSIONS)) {
+                         chicken.moveTo(this.getX(), this.getY(), this.getZ(), this.getYRot(), 0.0F);
+                         if (!chicken.fudgePositionAfterSizeChange(ZERO_SIZED_DIMENSIONS)) {
                              break;
                          }
  
--                        this.level().addFreshEntity(entitychicken);
-+                        this.level().addFreshEntity(entitychicken, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // CraftBukkit
+-                        this.level().addFreshEntity(chicken);
++                        this.level().addFreshEntity(chicken, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.EGG); // CraftBukkit
                      }
                  }
              }
  
-             this.level().broadcastEntityEvent(this, (byte) 3);
+             this.level().broadcastEntityEvent(this, (byte)3);
 -            this.discard();
-+            this.discard(EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
++            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.HIT); // CraftBukkit - add Bukkit remove cause
          }
- 
      }
+ 

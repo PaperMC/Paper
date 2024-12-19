@@ -1,44 +1,17 @@
 --- a/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
 +++ b/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
-@@ -2,9 +2,6 @@
- 
- import com.mojang.logging.LogUtils;
- import javax.annotation.Nullable;
--import net.minecraft.core.BlockPos;
--import net.minecraft.nbt.CompoundTag;
--import net.minecraft.server.level.ServerLevel;
- import net.minecraft.world.damagesource.DamageSource;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.EntityType;
-@@ -15,13 +12,24 @@
- import net.minecraft.world.level.Explosion;
- import net.minecraft.world.level.GameRules;
- import net.minecraft.world.level.Level;
-+import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.phys.Vec3;
- import org.slf4j.Logger;
-+import net.minecraft.core.BlockPos;
-+import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.server.level.ServerLevel;
-+// CraftBukkit start
-+import net.minecraft.tags.DamageTypeTags;
-+import org.bukkit.entity.Hanging;
-+import org.bukkit.event.entity.EntityRemoveEvent;
-+import org.bukkit.event.hanging.HangingBreakByEntityEvent;
-+import org.bukkit.event.hanging.HangingBreakEvent;
-+// CraftBukkit end
+@@ -20,7 +_,7 @@
  
  public abstract class BlockAttachedEntity extends Entity {
- 
      private static final Logger LOGGER = LogUtils.getLogger();
 -    private int checkInterval;
 +    private int checkInterval; { this.checkInterval = this.getId() % this.level().spigotConfig.hangingTickFrequency; } // Paper - Perf: offset item frame ticking
      protected BlockPos pos;
  
-     protected BlockAttachedEntity(EntityType<? extends BlockAttachedEntity> type, Level world) {
-@@ -41,10 +49,28 @@
- 
-         if (world instanceof ServerLevel worldserver) {
+     protected BlockAttachedEntity(EntityType<? extends BlockAttachedEntity> entityType, Level level) {
+@@ -38,10 +_,26 @@
+     public void tick() {
+         if (this.level() instanceof ServerLevel serverLevel) {
              this.checkBelowWorld();
 -            if (this.checkInterval++ == 100) {
 +            if (this.checkInterval++ == this.level().spigotConfig.hangingTickFrequency) { // Spigot
@@ -46,38 +19,36 @@
                  if (!this.isRemoved() && !this.survives()) {
 -                    this.discard();
 +                    // CraftBukkit start - fire break events
-+                    BlockState material = this.level().getBlockState(this.blockPosition());
-+                    HangingBreakEvent.RemoveCause cause;
-+
-+                    if (!material.isAir()) {
++                    final org.bukkit.event.hanging.HangingBreakEvent.RemoveCause cause;
++                    if (!this.level().getBlockState(this.blockPosition()).isAir()) {
 +                        // TODO: This feels insufficient to catch 100% of suffocation cases
-+                        cause = HangingBreakEvent.RemoveCause.OBSTRUCTION;
++                        cause = org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.OBSTRUCTION;
 +                    } else {
-+                        cause = HangingBreakEvent.RemoveCause.PHYSICS;
++                        cause = org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.PHYSICS;
 +                    }
 +
-+                    HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), cause);
++                    org.bukkit.event.hanging.HangingBreakEvent event = new org.bukkit.event.hanging.HangingBreakEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), cause);
 +                    this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                    if (this.isRemoved() || event.isCancelled()) {
 +                        return;
 +                    }
 +                    // CraftBukkit end
-+                    this.discard(EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
-                     this.dropItem(worldserver, (Entity) null);
++                    this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DROP); // CraftBukkit - add Bukkit remove cause
+                     this.dropItem(serverLevel, null);
                  }
              }
-@@ -81,6 +107,22 @@
+@@ -74,6 +_,21 @@
              return false;
          } else {
              if (!this.isRemoved()) {
 +                // CraftBukkit start - fire break events
-+                Entity damager = (!source.isDirect() && source.getEntity() != null) ? source.getEntity() : source.getDirectEntity(); // Paper - fix DamageSource API
-+                HangingBreakEvent event;
++                Entity damager = (!damageSource.isDirect() && damageSource.getEntity() != null) ? damageSource.getEntity() : damageSource.getDirectEntity(); // Paper - fix DamageSource API
++                org.bukkit.event.hanging.HangingBreakEvent event;
 +                if (damager != null) {
-+                    event = new HangingBreakByEntityEvent((Hanging) this.getBukkitEntity(), damager.getBukkitEntity(), source.is(DamageTypeTags.IS_EXPLOSION) ? HangingBreakEvent.RemoveCause.EXPLOSION : HangingBreakEvent.RemoveCause.ENTITY);
++                    event = new org.bukkit.event.hanging.HangingBreakByEntityEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), damager.getBukkitEntity(), damageSource.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION) ? org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.EXPLOSION : org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.ENTITY);
 +                } else {
-+                    event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), source.is(DamageTypeTags.IS_EXPLOSION) ? HangingBreakEvent.RemoveCause.EXPLOSION : HangingBreakEvent.RemoveCause.DEFAULT);
++                    event = new org.bukkit.event.hanging.HangingBreakEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), damageSource.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION) ? org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.EXPLOSION : org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.DEFAULT);
 +                }
 +
 +                this.level().getCraftServer().getPluginManager().callEvent(event);
@@ -86,55 +57,55 @@
 +                    return true;
 +                }
 +                // CraftBukkit end
-+
-                 this.kill(world);
+                 this.kill(level);
                  this.markHurt();
-                 this.dropItem(world, source.getEntity());
-@@ -101,6 +143,16 @@
- 
-         if (world instanceof ServerLevel worldserver) {
-             if (!this.isRemoved() && movement.lengthSqr() > 0.0D) {
-+                // CraftBukkit start - fire break events
-+                // TODO - Does this need its own cause? Seems to only be triggered by pistons
-+                HangingBreakEvent event = new HangingBreakEvent((Hanging) this.getBukkitEntity(), HangingBreakEvent.RemoveCause.PHYSICS);
-+                this.level().getCraftServer().getPluginManager().callEvent(event);
-+
-+                if (this.isRemoved() || event.isCancelled()) {
-+                    return;
-+                }
-+                // CraftBukkit end
-+
-                 this.kill(worldserver);
-                 this.dropItem(worldserver, (Entity) null);
-             }
-@@ -109,11 +161,11 @@
-     }
- 
+                 this.dropItem(level, damageSource.getEntity());
+@@ -91,18 +_,36 @@
      @Override
--    public void push(double deltaX, double deltaY, double deltaZ) {
-+    public void push(double deltaX, double deltaY, double deltaZ, @Nullable Entity pushingEntity) { // Paper - override correct overload
-         Level world = this.level();
- 
-         if (world instanceof ServerLevel worldserver) {
--            if (!this.isRemoved() && deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ > 0.0D) {
-+            if (false && !this.isRemoved() && deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ > 0.0D) { // CraftBukkit - not needed
-                 this.kill(worldserver);
-                 this.dropItem(worldserver, (Entity) null);
-             }
-@@ -121,7 +173,16 @@
- 
-     }
- 
+     public void move(MoverType type, Vec3 movement) {
+         if (this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && movement.lengthSqr() > 0.0) {
+-            this.kill(serverLevel);
+-            this.dropItem(serverLevel, null);
+-        }
+-    }
+-
+-    @Override
+-    public void push(double x, double y, double z) {
+-        if (this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && x * x + y * y + z * z > 0.0) {
+-            this.kill(serverLevel);
+-            this.dropItem(serverLevel, null);
+-        }
+-    }
++            // CraftBukkit start - fire break events
++            // TODO - Does this need its own cause? Seems to only be triggered by pistons
++            org.bukkit.event.hanging.HangingBreakEvent event = new org.bukkit.event.hanging.HangingBreakEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.PHYSICS);
++            this.level().getCraftServer().getPluginManager().callEvent(event);
++
++            if (this.isRemoved() || event.isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
++            this.kill(serverLevel);
++            this.dropItem(serverLevel, null);
++        }
++    }
++
++    @Override
++    public void push(double x, double y, double z, @Nullable Entity pushingEntity) { // Paper - override correct overload
++        if (false && this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && x * x + y * y + z * z > 0.0) { // CraftBukkit - not needed
++            this.kill(serverLevel);
++            this.dropItem(serverLevel, null);
++        }
++    }
++
 +    // CraftBukkit start - selectively save tile position
-     @Override
-+    public void addAdditionalSaveData(CompoundTag nbttagcompound, boolean includeAll) {
++    @Override
++    public void addAdditionalSaveData(CompoundTag nbt, boolean includeAll) {
 +        if (includeAll) {
-+            this.addAdditionalSaveData(nbttagcompound);
++            this.addAdditionalSaveData(nbt);
 +        }
 +    }
 +    // CraftBukkit end
-+
-+    @Override
-     public void addAdditionalSaveData(CompoundTag nbt) {
-         BlockPos blockposition = this.getPos();
  
+     @Override
+     public void addAdditionalSaveData(CompoundTag tag) {
