@@ -191,7 +191,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * set by {@link #setAggressive(boolean)}. {@link Panda}'s are always
      * aggressive if their combined {@link Panda.Gene} is {@link Panda.Gene#AGGRESSIVE}.
      *
-     * @return wether the mob is aggressive or not
+     * @return whether the mob is aggressive or not
      */
     boolean isAggressive();
 
@@ -199,7 +199,7 @@ public interface Mob extends LivingEntity, Lootable, io.papermc.paper.entity.Lea
      * Some mobs will raise their arm(s) when aggressive,
      * see {@link #isAggressive()} for full list.
      *
-     * @param aggressive wether the mob should be aggressive or not
+     * @param aggressive whether the mob should be aggressive or not
      * @see #isAggressive()
      */
     void setAggressive(boolean aggressive);
