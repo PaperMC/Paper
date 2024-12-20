@@ -167,7 +167,7 @@
          this.player.setLastClientInput(packet.input());
      }
  
-@@ -390,25 +_,84 @@
+@@ -390,17 +_,29 @@
      public void handleMoveVehicle(ServerboundMoveVehiclePacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (containsInvalidValues(packet.position().x(), packet.position().y(), packet.position().z(), packet.yRot(), packet.xRot())) {
@@ -201,23 +201,21 @@
                  float f = Mth.wrapDegrees(packet.yRot());
                  float f1 = Mth.wrapDegrees(packet.xRot());
                  double d3 = d - this.vehicleFirstGoodX;
-                 double d4 = d1 - this.vehicleFirstGoodY;
+@@ -408,7 +_,53 @@
                  double d5 = d2 - this.vehicleFirstGoodZ;
                  double d6 = rootVehicle.getDeltaMovement().lengthSqr();
--                double d7 = d3 * d3 + d4 * d4 + d5 * d5;
+                 double d7 = d3 * d3 + d4 * d4 + d5 * d5;
 -                if (d7 - d6 > 100.0 && !this.isSingleplayerOwner()) {
-+                double d7 = d3 * d3 + d4 * d4 + d5 * d5; final double vehicleFirstGoodDistanceSquared = d7; // Paper - OBFHELPER
 +                // Paper start - fix large move vectors killing the server
 +                double currDeltaX = toX - x;
 +                double currDeltaY = toY - y;
 +                double currDeltaZ = toZ - z;
-+                double d10 = Math.max(vehicleFirstGoodDistanceSquared, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
++                d7 = Math.max(d7, (currDeltaX * currDeltaX + currDeltaY * currDeltaY + currDeltaZ * currDeltaZ) - 1);
 +                double otherFieldX = d3 - this.vehicleLastGoodX;
 +                double otherFieldY = d4 - this.vehicleLastGoodY;
 +                double otherFieldZ = d5 - this.vehicleLastGoodZ;
-+                d10 = Math.max(d10, (otherFieldX * otherFieldX + otherFieldY * otherFieldY + otherFieldZ * otherFieldZ) - 1);
++                d7 = Math.max(d7, (otherFieldX * otherFieldX + otherFieldY * otherFieldY + otherFieldZ * otherFieldZ) - 1);
 +                // Paper end - fix large move vectors killing the server
-+                //if (d7 - d6 > 100.0 && !this.isSingleplayerOwner()) {
 +
 +                // CraftBukkit start - handle custom speeds and skipped ticks
 +                this.allowedPlayerTicks += (System.currentTimeMillis() / 50) - this.lastTick;
@@ -231,7 +229,7 @@
 +                    i = 1;
 +                }
 +
-+                if (d10 > 0) {
++                if (d7 > 0) {
 +                    this.allowedPlayerTicks -= 1;
 +                } else {
 +                    this.allowedPlayerTicks = 20;
