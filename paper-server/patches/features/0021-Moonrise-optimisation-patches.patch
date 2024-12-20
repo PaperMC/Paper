@@ -22768,19 +22768,20 @@ index 0000000000000000000000000000000000000000..689ce367164e79e0426eeecb81dbbc52
 +    private SaveUtil() {}
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index 184e6c6fe2ba522d0ea0774604839320c4152371..b329eb069f5b3d4f33a94d2045cb8f250d2a5684 100644
+index 184e6c6fe2ba522d0ea0774604839320c4152371..460bb584db04b582f3297ae419183f430aff1ec0 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
-@@ -1,6 +1,8 @@
+@@ -1,6 +1,9 @@
  package io.papermc.paper;
  
  import io.papermc.paper.command.PaperSubcommand;
 +import io.papermc.paper.command.subcommands.ChunkDebugCommand;
 +import io.papermc.paper.command.subcommands.FixLightCommand;
++import it.unimi.dsi.fastutil.longs.LongIterator;
  import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
  import it.unimi.dsi.fastutil.longs.LongSet;
  import it.unimi.dsi.fastutil.longs.LongSets;
-@@ -31,9 +33,12 @@ import org.bukkit.World;
+@@ -31,9 +34,12 @@ import org.bukkit.World;
  public final class FeatureHooks {
  
      public static void initChunkTaskScheduler(final boolean useParallelGen) {
@@ -22793,7 +22794,35 @@ index 184e6c6fe2ba522d0ea0774604839320c4152371..b329eb069f5b3d4f33a94d2045cb8f25
      }
  
      public static LevelChunkSection createSection(final Registry<Biome> biomeRegistry, final Level level, final ChunkPos chunkPos, final int chunkSection) {
-@@ -79,89 +84,30 @@ public final class FeatureHooks {
+@@ -59,18 +65,19 @@ public final class FeatureHooks {
+     }
+ 
+     public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
+-        final LongSet keys = new LongOpenHashSet();
+-        player.getChunkTrackingView().forEach(pos -> keys.add(pos.longKey));
+-        return LongSets.unmodifiable(keys);
++        return LongSets.unmodifiable(player.moonrise$getChunkLoader().getSentChunksRaw().clone()); // Paper - rewrite chunk system
+     }
+ 
+     public static Set<Chunk> getSentChunks(final ServerPlayer player) {
+-        final ObjectSet<Chunk> chunks = new ObjectOpenHashSet<>();
++        // Paper start - rewrite chunk system
++        final LongOpenHashSet rawChunkKeys = player.moonrise$getChunkLoader().getSentChunksRaw();
++        final ObjectSet<org.bukkit.Chunk> chunks = new ObjectOpenHashSet<>(rawChunkKeys.size());
+         final World world = player.serverLevel().getWorld();
+-        player.getChunkTrackingView().forEach(pos -> {
+-            final org.bukkit.Chunk chunk = world.getChunkAt(pos.longKey);
+-            chunks.add(chunk);
+-        });
++        final LongIterator iter = player.moonrise$getChunkLoader().getSentChunksRaw().longIterator();
++        while (iter.hasNext()) {
++            chunks.add(world.getChunkAt(iter.nextLong(), false));
++        }
++        // Paper end - rewrite chunk system
+         return ObjectSets.unmodifiable(chunks);
+     }
+ 
+@@ -79,89 +86,30 @@ public final class FeatureHooks {
      }
  
      public static boolean isSpiderCollidingWithWorldBorder(final Spider spider) {
@@ -22888,7 +22917,7 @@ index 184e6c6fe2ba522d0ea0774604839320c4152371..b329eb069f5b3d4f33a94d2045cb8f25
              long chunkKey = chunkTickets.getLongKey();
              net.minecraft.util.SortedArraySet<net.minecraft.server.level.Ticket<?>> tickets = chunkTickets.getValue();
  
-@@ -183,15 +129,15 @@ public final class FeatureHooks {
+@@ -183,15 +131,15 @@ public final class FeatureHooks {
      }
  
      public static int getViewDistance(net.minecraft.server.level.ServerLevel world) {
@@ -22907,7 +22936,7 @@ index 184e6c6fe2ba522d0ea0774604839320c4152371..b329eb069f5b3d4f33a94d2045cb8f25
      }
  
      public static void setViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
-@@ -209,31 +155,31 @@ public final class FeatureHooks {
+@@ -209,31 +157,31 @@ public final class FeatureHooks {
      }
  
      public static void setSendViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {

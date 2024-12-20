@@ -7,89 +7,31 @@ Subject: [PATCH] Detail more information in watchdog dumps
 - Dump player name, player uuid, position, and world for packet handling
 
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index d3aebc7f833764351c8e5fe1fad1aa2f8718ca37..5a561c8f48f4b5f7a3077c21f5ddd19cbcaa6aac 100644
+index 460bb584db04b582f3297ae419183f430aff1ec0..c2d2bfa3c18daf27c163e5d11e8cea1f31b86c0a 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
-@@ -83,8 +83,72 @@ public final class FeatureHooks {
+@@ -93,9 +93,6 @@ public final class FeatureHooks {
+         ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(server, isLongTimeout); // Paper - rewrite chunk system
      }
  
-     public static void dumpTickingInfo() {
-+        java.util.logging.Logger log = org.bukkit.Bukkit.getServer().getLogger();
-+
-+        // ticking entities
-+        for (net.minecraft.world.entity.Entity entity : net.minecraft.server.level.ServerLevel.getCurrentlyTickingEntities()) {
-+            dumpEntity(entity);
-+            net.minecraft.world.entity.Entity vehicle = entity.getVehicle();
-+            if (vehicle != null) {
-+                log.log(java.util.logging.Level.SEVERE, "Detailing vehicle for above entity:");
-+                dumpEntity(vehicle);
-+            }
-+        }
-+
-+        // packet processors
-+        for (net.minecraft.network.PacketListener packetListener : net.minecraft.network.protocol.PacketUtils.getCurrentPacketProcessors()) {
-+            if (packetListener instanceof net.minecraft.server.network.ServerGamePacketListenerImpl) {
-+                net.minecraft.server.level.ServerPlayer player = ((net.minecraft.server.network.ServerGamePacketListenerImpl)packetListener).player;
-+                long totalPackets = net.minecraft.network.protocol.PacketUtils.getTotalProcessedPackets();
-+                if (player == null) {
-+                    log.log(java.util.logging.Level.SEVERE, "Handling packet for player connection or ticking player connection (null player): " + packetListener);
-+                    log.log(java.util.logging.Level.SEVERE, "Total packets processed on the main thread for all players: " + totalPackets);
-+                } else {
-+                    dumpEntity(player);
-+                    net.minecraft.world.entity.Entity vehicle = player.getVehicle();
-+                    if (vehicle != null) {
-+                        log.log(java.util.logging.Level.SEVERE, "Detailing vehicle for above entity:");
-+                        dumpEntity(vehicle);
-+                    }
-+                    log.log(java.util.logging.Level.SEVERE, "Total packets processed on the main thread for all players: " + totalPackets);
-+                }
-+            } else {
-+                log.log(java.util.logging.Level.SEVERE, "Handling packet for connection: " + packetListener);
-+            }
-+        }
+-    private static void dumpEntity(final Entity entity) {
+-    }
+-
+     public static org.bukkit.entity.Entity[] getChunkEntities(net.minecraft.server.level.ServerLevel world, int chunkX, int chunkZ) {
+         return world.getChunkEntities(chunkX, chunkZ); // Paper - rewrite chunk system
+     }
+@@ -184,4 +181,4 @@ public final class FeatureHooks {
+         ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)player).moonrise$getViewDistanceHolder().setSendViewDistance(distance); // Paper - rewrite chunk system
      }
  
-     private static void dumpEntity(final Entity entity) {
-+        java.util.logging.Logger log = org.bukkit.Bukkit.getServer().getLogger();
-+        double posX, posY, posZ;
-+        net.minecraft.world.phys.Vec3 mot;
-+        double moveStartX, moveStartY, moveStartZ;
-+        net.minecraft.world.phys.Vec3 moveVec;
-+        synchronized (entity.posLock) {
-+            posX = entity.getX();
-+            posY = entity.getY();
-+            posZ = entity.getZ();
-+            mot = entity.getDeltaMovement();
-+            moveStartX = entity.getMoveStartX();
-+            moveStartY = entity.getMoveStartY();
-+            moveStartZ = entity.getMoveStartZ();
-+            moveVec = entity.getMoveVector();
-+        }
-+
-+        String entityType = net.minecraft.world.entity.EntityType.getKey(entity.getType()).toString();
-+        java.util.UUID entityUUID = entity.getUUID();
-+        net.minecraft.world.level.Level world = entity.level();
-+
-+        log.log(java.util.logging.Level.SEVERE, "Ticking entity: " + entityType + ", entity class: " + entity.getClass().getName());
-+        log.log(java.util.logging.Level.SEVERE, "Entity status: removed: " + entity.isRemoved() + ", valid: " + entity.valid + ", alive: " + entity.isAlive() + ", is passenger: " + entity.isPassenger());
-+        log.log(java.util.logging.Level.SEVERE, "Entity UUID: " + entityUUID);
-+        log.log(java.util.logging.Level.SEVERE, "Position: world: '" + (world == null ? "unknown world?" : world.getWorld().getName()) + "' at location (" + posX + ", " + posY + ", " + posZ + ")");
-+        log.log(java.util.logging.Level.SEVERE, "Velocity: " + (mot == null ? "unknown velocity" : mot.toString()) + " (in blocks per tick)");
-+        log.log(java.util.logging.Level.SEVERE, "Entity AABB: " + entity.getBoundingBox());
-+        if (moveVec != null) {
-+            log.log(java.util.logging.Level.SEVERE, "Move call information: ");
-+            log.log(java.util.logging.Level.SEVERE, "Start position: (" + moveStartX + ", " + moveStartY + ", " + moveStartZ + ")");
-+            log.log(java.util.logging.Level.SEVERE, "Move vector: " + moveVec.toString());
-+        }
-     }
 -}
 \ No newline at end of file
 +}
 diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
-index 8fe485c5bf79804bb4d1f774f95a92b14a576e80..0bcae6256d3b3fb6b2e0c2f23907d4659b236ef3 100644
+index bfdc637a750602c00919422ca0e3943ba34db832..208efae06c7c44f220d4192219a86ec55c98a2fe 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -603,7 +603,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -601,7 +601,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              if (!(this.packetListener instanceof net.minecraft.server.network.ServerLoginPacketListenerImpl loginPacketListener)
                  || loginPacketListener.state != net.minecraft.server.network.ServerLoginPacketListenerImpl.State.VERIFYING
                  || Connection.joinAttemptsThisTick++ < MAX_PER_TICK) {
@@ -153,11 +95,11 @@ index e65c62dbe4c1560ae153e4c4344e9194c783a2f4..4535858701b2bb232b9d2feb2af65515
 +    // Paper end - detailed watchdog information
  }
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 9cc47bda7197ca3f63b0ede9905c9a13931f84ed..05f45b490e823a455b23b23b26a7da3b447059ea 100644
+index 131ebdaec9ff09635689001e3b85bbe5845fbf98..9caa06f09409d36abf9e0a770ba004f4049e8e09 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -956,7 +956,26 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
-         }
+@@ -1239,7 +1239,26 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+ 
      }
  
 +    // Paper start - log detailed entity tick information
@@ -183,7 +125,7 @@ index 9cc47bda7197ca3f63b0ede9905c9a13931f84ed..05f45b490e823a455b23b23b26a7da3b
          entity.setOldPosAndRot();
          ProfilerFiller profilerFiller = Profiler.get();
          entity.tickCount++;
-@@ -972,6 +991,13 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -1255,6 +1274,13 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          for (Entity entity1 : entity.getPassengers()) {
              this.tickPassenger(entity, entity1, isActive); // Paper - EAR 2
          }
@@ -198,10 +140,10 @@ index 9cc47bda7197ca3f63b0ede9905c9a13931f84ed..05f45b490e823a455b23b23b26a7da3b
  
      private void tickPassenger(Entity ridingEntity, Entity passengerEntity, final boolean isActive) { // Paper - EAR 2
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 5a67aa9f1fe103e5622ed6fa93bc4bc25ddbb688..1ff09959aa95d9822ccb6724bbb3f441c768511a 100644
+index 3fd7f6bcdeff271a9843b2f2454f92d92069f539..3cefe3de62e3d6af7b514eb2f3df8e63c5aa5c1f 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -956,8 +956,43 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -1062,8 +1062,43 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          return this.onGround;
      }
  
@@ -245,7 +187,7 @@ index 5a67aa9f1fe103e5622ed6fa93bc4bc25ddbb688..1ff09959aa95d9822ccb6724bbb3f441
          if (this.noPhysics) {
              this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
          } else {
-@@ -1075,6 +1110,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -1181,6 +1216,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
                  profilerFiller.pop();
              }
          }
@@ -259,7 +201,7 @@ index 5a67aa9f1fe103e5622ed6fa93bc4bc25ddbb688..1ff09959aa95d9822ccb6724bbb3f441
      }
  
      private void applyMovementEmissionAndPlaySound(Entity.MovementEmission movementEmission, Vec3 movement, BlockPos pos, BlockState state) {
-@@ -4348,7 +4390,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4643,7 +4685,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public void setDeltaMovement(Vec3 deltaMovement) {
@@ -269,7 +211,7 @@ index 5a67aa9f1fe103e5622ed6fa93bc4bc25ddbb688..1ff09959aa95d9822ccb6724bbb3f441
      }
  
      public void addDeltaMovement(Vec3 addend) {
-@@ -4445,7 +4489,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4749,7 +4793,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          }
          // Paper end - Fix MC-4
          if (this.position.x != x || this.position.y != y || this.position.z != z) {

@@ -48,22 +48,22 @@ index 0000000000000000000000000000000000000000..24a2090e068ad3c0d08705050944abdf
 +    }
 +}
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index d450d4af96716caff4b29a84d1d83ec4010854f0..8657e4fd7c5e0e23b69d9a982408a7d038f0a787 100644
+index 75efd8f11a42696319c0908b7cf911cf976a31b6..b7bb1b6b2c3c892712c44b4e006d9ceebbd8491a 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -1563,6 +1563,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-         for (ServerLevel serverLevel : this.getAllLevels()) {
+@@ -1704,6 +1704,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              serverLevel.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
              serverLevel.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
+             serverLevel.updateLagCompensationTick(); // Paper - lag compensation
 +            net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = serverLevel.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
              profilerFiller.push(() -> serverLevel + " " + serverLevel.dimension().location());
              /* Drop global time updates
              if (this.tickCount % 20 == 0) {
 diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index 50cd12def88c9449cad8875c553f5ed9ef1cd791..3d93bb1aac5ad4830fc1dceddb6bebacee28f72a 100644
+index c255e11cb0981bd7e0456d4fd401beb5257be597..d6361863d6a1e364de262d6199373cbd68d1c699 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -815,10 +815,16 @@ public final class ItemStack implements DataComponentHolder {
+@@ -808,10 +808,16 @@ public final class ItemStack implements DataComponentHolder {
      }
  
      public ItemStack copy() {
@@ -103,7 +103,7 @@ index 2ebdf1ad323bb53dfe9eed319e25856b35a1443c..77618757c0e678532dbab814aceed83f
          }
      }
 diff --git a/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 60e1e44f328e66d52ebf08476b533fef83bc5eba..eb02249b518c2d262315c4cd5965bec5d81166a1 100644
+index e58a32593e8b42bfc534d13457240860293dd3f4..5cd1326ad5d046c88b2b3449d610a78fa880b4cd 100644
 --- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
 @@ -139,18 +139,56 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen

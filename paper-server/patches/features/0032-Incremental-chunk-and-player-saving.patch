@@ -5,10 +5,10 @@ Subject: [PATCH] Incremental chunk and player saving
 
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index f4fba4e2d12c7ab4b4eb9858cd738a9678a2d203..a0a75c84379432ccc525ab22d476c358c77f663b 100644
+index d077debf5936050484856e0b84f764967b5d3f5c..75efd8f11a42696319c0908b7cf911cf976a31b6 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -862,7 +862,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -940,7 +940,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          boolean var4;
          try {
              this.isSaving = true;
@@ -17,7 +17,7 @@ index f4fba4e2d12c7ab4b4eb9858cd738a9678a2d203..a0a75c84379432ccc525ab22d476c358
              var4 = this.saveAllChunks(suppressLog, flush, forced);
          } finally {
              this.isSaving = false;
-@@ -1409,9 +1409,29 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1530,9 +1530,29 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
  
          this.ticksUntilAutosave--;
@@ -50,10 +50,10 @@ index f4fba4e2d12c7ab4b4eb9858cd738a9678a2d203..a0a75c84379432ccc525ab22d476c358
          ProfilerFiller profilerFiller = Profiler.get();
          this.runAllTasks(); // Paper - move runAllTasks() into full server tick (previously for timings)
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index c38eda42b33cfa4792625f40ebde6f30e591119b..c8129f0d8218daff9123f1ad2d8ca321a02e1c7e 100644
+index 9caa06f09409d36abf9e0a770ba004f4049e8e09..fc3b0db0f0a85fb42cb5fa8a1d78d4c4691ab519 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -1007,6 +1007,28 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -1316,6 +1316,28 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          return !this.server.isUnderSpawnProtection(this, pos, player) && this.getWorldBorder().isWithinBounds(pos);
      }
  
@@ -73,29 +73,29 @@ index c38eda42b33cfa4792625f40ebde6f30e591119b..c8129f0d8218daff9123f1ad2d8ca321
 +            ServerLevel serverLevel1 = this;
 +            this.serverLevelData.setWorldBorder(serverLevel1.getWorldBorder().createSettings());
 +            this.serverLevelData.setCustomBossEvents(this.server.getCustomBossEvents().save(this.registryAccess()));
-+            this.convertable.saveDataTag(this.server.registryAccess(), this.serverLevelData, this.server.getPlayerList().getSingleplayerData());
++            this.levelStorageAccess.saveDataTag(this.server.registryAccess(), this.serverLevelData, this.server.getPlayerList().getSingleplayerData());
 +        }
 +        // CraftBukkit end
 +    }
 +    // Paper end - Incremental chunk and player saving
 +
      public void save(@Nullable ProgressListener progress, boolean flush, boolean skipSave) {
-         ServerChunkCache chunkSource = this.getChunkSource();
-         if (!skipSave) {
+         // Paper start - add close param
+         this.save(progress, flush, skipSave, false);
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 92bd46cca1956f327fb0b407e988d68782f441a4..0f00db82e85c9e510c2e4fe4065291971c408dad 100644
+index bf4deeac50197eeb83c5b1e458b609aac5ad8a97..a97b0b177a1fb0557af2af4d1f192513d7c0390d 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -180,6 +180,7 @@ import org.slf4j.Logger;
  
- public class ServerPlayer extends Player {
+ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer { // Paper - rewrite chunk system
      private static final Logger LOGGER = LogUtils.getLogger();
 +    public long lastSave = MinecraftServer.currentTick; // Paper - Incremental chunk and player saving
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_XZ = 32;
      private static final int NEUTRAL_MOB_DEATH_NOTIFICATION_RADII_Y = 10;
      private static final int FLY_STAT_RECORDING_SPEED = 25;
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index bafeeab3edbc73f6f86474e18ab4a3d96ce17157..aaa6b8eee7b34fe6efa76f1fe997dcece827d5dd 100644
+index e5ae5e1161396280ffea1009f40dafa0398050bb..d74242a0d25c906d74b018c24d4b21d64415617d 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
 @@ -483,6 +483,7 @@ public abstract class PlayerList {

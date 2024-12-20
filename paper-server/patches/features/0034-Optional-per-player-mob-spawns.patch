@@ -5,11 +5,11 @@ Subject: [PATCH] Optional per player mob spawns
 
 
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 809f3fe1285e347f18709c2368923fcc8f953ded..6c5b2eb411fb60babbb0c74d5c075696ef70b38d 100644
+index ff6503bf8eb88d1264c3d848a89d0255b4b3ae68..9eed24939fc09f00a9dbce1be2ab9c34d024fd29 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -237,11 +237,29 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
-         this.chunksToEagerlySave.add(chunkPos.toLong());
+@@ -236,11 +236,29 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         // Paper - rewrite chunk system
      }
  
 -    // Paper start
@@ -43,19 +43,19 @@ index 809f3fe1285e347f18709c2368923fcc8f953ded..6c5b2eb411fb60babbb0c74d5c075696
      protected ChunkGenerator generator() {
          return this.worldGenContext.generator();
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 2f49dbc919f7f5eea9abce6106723c72f5ae45fb..078f208e104a652ce48458150389d19ede6808ef 100644
+index 87d4291a3944f706a694536da6de0f28c548ab8d..5576bf1d1d70ab7a010653d3207909b5de867e70 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
-@@ -435,7 +435,7 @@ public class ServerChunkCache extends ChunkSource {
-                     profilerFiller.push("filteringTickingChunks");
-                     this.collectTickingChunks(list);
+@@ -517,7 +517,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
                      profilerFiller.popPush("shuffleChunks");
--                    Util.shuffle(list, this.level.random);
+                     // Paper start - chunk tick iteration optimisation
+                     this.shuffleRandom.setSeed(this.level.random.nextLong());
+-                    Util.shuffle(list, this.shuffleRandom);
 +                    if (!this.level.paperConfig().entities.spawning.perPlayerMobSpawns) Util.shuffle(list, this.shuffleRandom); // Paper - Optional per player mob spawns; do not need this when per-player is enabled
+                     // Paper end - chunk tick iteration optimisation
                      this.tickChunks(profilerFiller, l, list);
                      profilerFiller.pop();
-                 } finally {
-@@ -474,9 +474,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -571,9 +571,18 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
      private void tickChunks(ProfilerFiller profiler, long timeInhabited, List<LevelChunk> chunks) {
          profiler.popPush("naturalSpawnCount");
          int naturalSpawnChunkCount = this.distanceManager.getNaturalSpawnChunkCount();
@@ -78,10 +78,10 @@ index 2f49dbc919f7f5eea9abce6106723c72f5ae45fb..078f208e104a652ce48458150389d19e
          profiler.popPush("spawnAndTick");
          boolean _boolean = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 0f00db82e85c9e510c2e4fe4065291971c408dad..dab58457ed02d3f8153c07de101262b1a0182d71 100644
+index a97b0b177a1fb0557af2af4d1f192513d7c0390d..4f8ef57d66a4562df0f5447988797cbdfbd3c9d5 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
-@@ -368,6 +368,10 @@ public class ServerPlayer extends Player {
+@@ -368,6 +368,10 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
      public boolean queueHealthUpdatePacket;
      public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
      // Paper end - cancellable death event
@@ -93,7 +93,7 @@ index 0f00db82e85c9e510c2e4fe4065291971c408dad..dab58457ed02d3f8153c07de101262b1
      public org.bukkit.craftbukkit.entity.CraftPlayer.TransferCookieConnection transferCookieConnection;
      public String displayName;
 diff --git a/net/minecraft/world/level/NaturalSpawner.java b/net/minecraft/world/level/NaturalSpawner.java
-index 6e6e028621ccc4597b2c24f54f53cb7f3de603e2..14e99450a8522b79e4c3805bd91439a950bc8f99 100644
+index 913ea92ace9d610c25bf28f703a3b227044aea63..ef8bacbbb43a9b80281a313ca43b7efff5a93e03 100644
 --- a/net/minecraft/world/level/NaturalSpawner.java
 +++ b/net/minecraft/world/level/NaturalSpawner.java
 @@ -72,6 +72,14 @@ public final class NaturalSpawner {
