@@ -22768,7 +22768,7 @@ index 0000000000000000000000000000000000000000..689ce367164e79e0426eeecb81dbbc52
 +    private SaveUtil() {}
 +}
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index d3aebc7f833764351c8e5fe1fad1aa2f8718ca37..046a6304ea7e9dd66cb9d4cb004a582f13018295 100644
+index e40b83502c74d7dcae05d9d0c865affeee186893..c4ddf4b6fee8086481581fab88a807f63e211b5c 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -1,6 +1,8 @@
@@ -22793,6 +22793,159 @@ index d3aebc7f833764351c8e5fe1fad1aa2f8718ca37..046a6304ea7e9dd66cb9d4cb004a582f
      }
  
      public static LevelChunkSection createSection(final Registry<Biome> biomeRegistry, final Level level, final ChunkPos chunkPos, final int chunkSection) {
+@@ -79,89 +84,30 @@ public final class FeatureHooks {
+     }
+ 
+     public static boolean isSpiderCollidingWithWorldBorder(final Spider spider) {
+-        return true; // ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isCollidingWithBorder(spider.level().getWorldBorder(), spider.getBoundingBox().inflate(ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON))
++        return ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isCollidingWithBorder(spider.level().getWorldBorder(), spider.getBoundingBox().inflate(ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON)); // Paper - rewrite collision system
+     }
+ 
+     public static void dumpAllChunkLoadInfo(net.minecraft.server.MinecraftServer server, boolean isLongTimeout) {
++        ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(server, isLongTimeout); // Paper - rewrite chunk system
+     }
+ 
+     private static void dumpEntity(final Entity entity) {
+     }
+ 
+     public static org.bukkit.entity.Entity[] getChunkEntities(net.minecraft.server.level.ServerLevel world, int chunkX, int chunkZ) {
+-        world.getChunk(chunkX, chunkZ); // ensure full loaded
+-
+-        net.minecraft.world.level.entity.PersistentEntitySectionManager<net.minecraft.world.entity.Entity> entityManager = world.entityManager;
+-        long pair = ChunkPos.asLong(chunkX, chunkZ);
+-
+-        if (entityManager.areEntitiesLoaded(pair)) {
+-            return entityManager.getEntities(new ChunkPos(chunkX, chunkZ)).stream()
+-                .map(net.minecraft.world.entity.Entity::getBukkitEntity)
+-                .filter(java.util.Objects::nonNull).toArray(org.bukkit.entity.Entity[]::new);
+-        }
+-
+-        entityManager.ensureChunkQueuedForLoad(pair); // Start entity loading
+-
+-        // SPIGOT-6772: Use entity mailbox and re-schedule entities if they get unloaded
+-        net.minecraft.util.thread.ConsecutiveExecutor mailbox = ((net.minecraft.world.level.chunk.storage.EntityStorage) entityManager.permanentStorage).entityDeserializerQueue;
+-        java.util.function.BooleanSupplier supplier = () -> {
+-            // only execute inbox if our entities are not present
+-            if (entityManager.areEntitiesLoaded(pair)) {
+-                return true;
+-            }
+-
+-            if (!entityManager.isPending(pair)) {
+-                // Our entities got unloaded, this should normally not happen.
+-                entityManager.ensureChunkQueuedForLoad(pair); // Re-start entity loading
+-            }
+-
+-            // tick loading inbox, which loads the created entities to the world
+-            // (if present)
+-            entityManager.tick();
+-            // check if our entities are loaded
+-            return entityManager.areEntitiesLoaded(pair);
+-        };
+-
+-        // now we wait until the entities are loaded,
+-        // the converting from NBT to entity object is done on the main Thread which is why we wait
+-        while (!supplier.getAsBoolean()) {
+-            if (mailbox.size() != 0) {
+-                mailbox.run();
+-            } else {
+-                Thread.yield();
+-                java.util.concurrent.locks.LockSupport.parkNanos("waiting for entity loading", 100000L);
+-            }
+-        }
+-
+-        return entityManager.getEntities(new ChunkPos(chunkX, chunkZ)).stream()
+-            .map(net.minecraft.world.entity.Entity::getBukkitEntity)
+-            .filter(java.util.Objects::nonNull).toArray(org.bukkit.entity.Entity[]::new);
++        return world.getChunkEntities(chunkX, chunkZ); // Paper - rewrite chunk system
+     }
+ 
+     public static java.util.Collection<org.bukkit.plugin.Plugin> getPluginChunkTickets(net.minecraft.server.level.ServerLevel world,
+                                                                                        int x, int z) {
+-        net.minecraft.server.level.DistanceManager chunkDistanceManager = world.getChunkSource().chunkMap.distanceManager;
+-        net.minecraft.util.SortedArraySet<net.minecraft.server.level.Ticket<?>> tickets = chunkDistanceManager.tickets.get(ChunkPos.asLong(x, z));
+-
+-        if (tickets == null) {
+-            return java.util.Collections.emptyList();
+-        }
+-
+-        com.google.common.collect.ImmutableList.Builder<org.bukkit.plugin.Plugin> ret = com.google.common.collect.ImmutableList.builder();
+-        for (net.minecraft.server.level.Ticket<?> ticket : tickets) {
+-            if (ticket.getType() == net.minecraft.server.level.TicketType.PLUGIN_TICKET) {
+-                ret.add((org.bukkit.plugin.Plugin) ticket.key);
+-            }
+-        }
+-
+-        return ret.build();
++        return world.moonrise$getChunkTaskScheduler().chunkHolderManager.getPluginChunkTickets(x, z); // Paper - rewrite chunk system
+     }
+ 
+     public static Map<org.bukkit.plugin.Plugin, java.util.Collection<org.bukkit.Chunk>> getPluginChunkTickets(net.minecraft.server.level.ServerLevel world) {
+         Map<org.bukkit.plugin.Plugin, com.google.common.collect.ImmutableList.Builder<Chunk>> ret = new HashMap<>();
+         net.minecraft.server.level.DistanceManager chunkDistanceManager = world.getChunkSource().chunkMap.distanceManager;
+ 
+-        for (it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry<net.minecraft.util.SortedArraySet<net.minecraft.server.level.Ticket<?>>> chunkTickets : chunkDistanceManager.tickets.long2ObjectEntrySet()) {
++        for (it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry<net.minecraft.util.SortedArraySet<net.minecraft.server.level.Ticket<?>>> chunkTickets : chunkDistanceManager.moonrise$getChunkHolderManager().getTicketsCopy().long2ObjectEntrySet()) { // Paper - rewrite chunk system
+             long chunkKey = chunkTickets.getLongKey();
+             net.minecraft.util.SortedArraySet<net.minecraft.server.level.Ticket<?>> tickets = chunkTickets.getValue();
+ 
+@@ -183,15 +129,15 @@ public final class FeatureHooks {
+     }
+ 
+     public static int getViewDistance(net.minecraft.server.level.ServerLevel world) {
+-        return world.getChunkSource().chunkMap.serverViewDistance;
++        return world.moonrise$getPlayerChunkLoader().getAPIViewDistance(); // Paper - rewrite chunk system
+     }
+ 
+     public static int getSimulationDistance(net.minecraft.server.level.ServerLevel world) {
+-        return world.getChunkSource().chunkMap.getDistanceManager().simulationDistance;
++        return world.moonrise$getPlayerChunkLoader().getAPITickDistance(); // Paper - rewrite chunk system
+     }
+ 
+     public static int getSendViewDistance(net.minecraft.server.level.ServerLevel world) {
+-        return getViewDistance(world);
++        return world.moonrise$getPlayerChunkLoader().getAPISendViewDistance(); // Paper - rewrite chunk system
+     }
+ 
+     public static void setViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
+@@ -209,31 +155,31 @@ public final class FeatureHooks {
+     }
+ 
+     public static void setSendViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
+-        throw new UnsupportedOperationException("Not implemented yet");
++        world.chunkSource.setSendViewDistance(distance); // Paper - rewrite chunk system
+     }
+ 
+     public static void tickEntityManager(net.minecraft.server.level.ServerLevel world) {
+-        world.entityManager.tick();
++        // Paper - rewrite chunk system
+     }
+ 
+     public static void closeEntityManager(net.minecraft.server.level.ServerLevel world, boolean save) {
+-        world.entityManager.close(save);
++        // Paper - rewrite chunk system
+     }
+ 
+     public static java.util.concurrent.Executor getWorldgenExecutor() {
+-        return net.minecraft.Util.backgroundExecutor();
++        return Runnable::run; // Paper - rewrite chunk system
+     }
+ 
+     public static void setViewDistance(ServerPlayer player, int distance) {
+-        throw new UnsupportedOperationException("Not implemented yet");
++        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)player).moonrise$getViewDistanceHolder().setLoadViewDistance(distance == -1 ? distance : distance + 1); // Paper - rewrite chunk system
+     }
+ 
+     public static void setSimulationDistance(ServerPlayer player, int distance) {
+-        throw new UnsupportedOperationException("Not implemented yet");
++        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)player).moonrise$getViewDistanceHolder().setTickViewDistance(distance); // Paper - rewrite chunk system
+     }
+ 
+     public static void setSendViewDistance(ServerPlayer player, int distance) {
+-        throw new UnsupportedOperationException("Not implemented yet");
++        ((ca.spottedleaf.moonrise.patches.chunk_system.player.ChunkSystemServerPlayer)player).moonrise$getViewDistanceHolder().setSendViewDistance(distance); // Paper - rewrite chunk system
+     }
+ 
+ }
 diff --git a/io/papermc/paper/command/subcommands/ChunkDebugCommand.java b/io/papermc/paper/command/subcommands/ChunkDebugCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..2dca7afbd93cfbb8686f336fcd3b45dd01fba0fc

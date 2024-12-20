@@ -1448,7 +1448,7 @@ public final class CraftServer implements Server {
         // Paper - Put world into worldlist before initing the world; move up
 
         this.getServer().prepareLevels(internal.getChunkSource().chunkMap.progressListener, internal);
-        internal.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
+        io.papermc.paper.FeatureHooks.tickEntityManager(internal); // SPIGOT-6526: Load pending entities so they are available to the API // Paper - chunk system
 
         this.pluginManager.callEvent(new WorldLoadEvent(internal.getWorld()));
         return internal.getWorld();
@@ -1493,7 +1493,7 @@ public final class CraftServer implements Server {
             }
 
             handle.getChunkSource().close(save);
-            handle.entityManager.close(save); // SPIGOT-6722: close entityManager
+            io.papermc.paper.FeatureHooks.closeEntityManager(handle, save); // SPIGOT-6722: close entityManager // Paper - chunk system
             handle.levelStorageAccess.close();
         } catch (Exception ex) {
             this.getLogger().log(Level.SEVERE, null, ex);

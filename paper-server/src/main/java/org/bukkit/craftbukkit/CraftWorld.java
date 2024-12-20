@@ -502,14 +502,17 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
         if (playerChunk == null) return false;
 
-        playerChunk.getTickingChunkFuture().thenAccept(either -> {
-            either.ifSuccess(chunk -> {
+        // Paper start - chunk system
+        net.minecraft.world.level.chunk.LevelChunk chunk = playerChunk.getChunkToSend();
+        if (chunk == null) {
+            return false;
+        }
+        // Paper end - chunk system
                 List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
-                if (playersInRange.isEmpty()) return;
+                if (playersInRange.isEmpty()) return true; // Paper - chunk system
 
                 FeatureHooks.sendChunkRefreshPackets(playersInRange, chunk);
-            });
-        });
+        // Paper - chunk system
 
         return true;
     }
@@ -611,47 +614,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Collection<Plugin> getPluginChunkTickets(int x, int z) {
-        DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-        SortedArraySet<Ticket<?>> tickets = chunkDistanceManager.tickets.get(ChunkPos.asLong(x, z));
-
-        if (tickets == null) {
-            return Collections.emptyList();
-        }
-
-        ImmutableList.Builder<Plugin> ret = ImmutableList.builder();
-        for (Ticket<?> ticket : tickets) {
-            if (ticket.getType() == TicketType.PLUGIN_TICKET) {
-                ret.add((Plugin) ticket.key);
-            }
-        }
-
-        return ret.build();
+        return FeatureHooks.getPluginChunkTickets(this.world, x, z); // Paper - chunk system
     }
 
     @Override
     public Map<Plugin, Collection<Chunk>> getPluginChunkTickets() {
-        Map<Plugin, ImmutableList.Builder<Chunk>> ret = new HashMap<>();
-        DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-
-        for (Long2ObjectMap.Entry<SortedArraySet<Ticket<?>>> chunkTickets : chunkDistanceManager.tickets.long2ObjectEntrySet()) {
-            long chunkKey = chunkTickets.getLongKey();
-            SortedArraySet<Ticket<?>> tickets = chunkTickets.getValue();
-
-            Chunk chunk = null;
-            for (Ticket<?> ticket : tickets) {
-                if (ticket.getType() != TicketType.PLUGIN_TICKET) {
-                    continue;
-                }
-
-                if (chunk == null) {
-                    chunk = this.getChunkAt(ChunkPos.getX(chunkKey), ChunkPos.getZ(chunkKey));
-                }
-
-                ret.computeIfAbsent((Plugin) ticket.key, (key) -> ImmutableList.builder()).add(chunk);
-            }
-        }
-
-        return ret.entrySet().stream().collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, (entry) -> entry.getValue().build()));
+        return FeatureHooks.getPluginChunkTickets(this.world); // Paper - chunk system
     }
 
     @NotNull
@@ -1336,12 +1304,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public int getViewDistance() {
-        return this.world.getChunkSource().chunkMap.serverViewDistance;
+        return FeatureHooks.getViewDistance(this.world); // Paper - chunk system
     }
 
     @Override
     public int getSimulationDistance() {
-        return this.world.getChunkSource().chunkMap.getDistanceManager().simulationDistance;
+        return FeatureHooks.getSimulationDistance(this.world); // Paper - chunk system
     }
 
     public BlockMetadataStore getBlockMetadata() {
@@ -2472,25 +2440,22 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setViewDistance(final int viewDistance) {
-        if (viewDistance < 2 || viewDistance > 32) {
-            throw new IllegalArgumentException("View distance " + viewDistance + " is out of range of [2, 32]");
-        }
-        this.getHandle().chunkSource.chunkMap.setServerViewDistance(viewDistance);
+        FeatureHooks.setViewDistance(this.world, viewDistance); // Paper - chunk system
     }
 
     @Override
     public void setSimulationDistance(final int simulationDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setSimulationDistance(this.world, simulationDistance); // Paper - chunk system
     }
 
     @Override
     public int getSendViewDistance() {
-        return this.getViewDistance();
+        return FeatureHooks.getSendViewDistance(this.world); // Paper - chunk system
     }
 
     @Override
     public void setSendViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setSendViewDistance(this.world, viewDistance); // Paper - chunk system
     }
 
     // Paper start - implement pointers

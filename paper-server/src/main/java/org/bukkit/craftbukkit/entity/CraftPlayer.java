@@ -3527,7 +3527,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setViewDistance(this.getHandle(), viewDistance); // Paper - chunk system
     }
 
     @Override
@@ -3537,7 +3537,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setSimulationDistance(final int simulationDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setSimulationDistance(this.getHandle(), simulationDistance); // Paper - chunk system
     }
 
     @Override
@@ -3547,7 +3547,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setSendViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setSendViewDistance(this.getHandle(), viewDistance); // Paper - chunk system
     }
 
     // Paper start - entity effect API

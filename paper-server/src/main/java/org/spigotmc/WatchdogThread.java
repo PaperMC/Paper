@@ -110,7 +110,7 @@ public class WatchdogThread extends Thread {
                 // Paper end - Different message for short timeout
                 logger.log(Level.SEVERE, "------------------------------");
                 logger.log(Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Paper!):"); // Paper
-                FeatureHooks.dumpTickingInfo(); // Paper - log detailed tick information
+                FeatureHooks.dumpAllChunkLoadInfo(MinecraftServer.getServer(), isLongTimeout); // Paper - log detailed tick information
                 WatchdogThread.dumpThread(ManagementFactory.getThreadMXBean().getThreadInfo(MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE), logger);
                 logger.log(Level.SEVERE, "------------------------------");
 
