@@ -30,12 +30,13 @@ This patch also specifically optimises other areas of code to
 use PoiAccess. For example, some villager AI and portaling code
 had to be specifically modified.
 
-diff --git a/src/main/java/io/papermc/paper/util/PoiAccess.java b/src/main/java/io/papermc/paper/util/PoiAccess.java
+
+diff --git a/io/papermc/paper/util/PoiAccess.java b/io/papermc/paper/util/PoiAccess.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000
+index 0000000000000000000000000000000000000000..f39294b1f83c4022be5ced4da781103a1eee2daf
 --- /dev/null
-+++ b/src/main/java/io/papermc/paper/util/PoiAccess.java
-@@ -0,0 +0,0 @@
++++ b/io/papermc/paper/util/PoiAccess.java
+@@ -0,0 +1,806 @@
 +package io.papermc.paper.util;
 +
 +import ca.spottedleaf.moonrise.common.util.CoordinateUtils;
@@ -842,38 +843,38 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +        throw new RuntimeException();
 +    }
 +}
-diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-@@ -0,0 +0,0 @@ public class AcquirePoi {
-                                             return true;
-                                         }
-                                     };
--                                    Set<Pair<Holder<PoiType>, BlockPos>> set = poiManager.findAllClosestFirstWithType(
--                                            poiPredicate, predicate2, entity.blockPosition(), 48, PoiManager.Occupancy.HAS_SPACE
--                                        )
--                                        .limit(5L)
--                                        .filter(pairx -> worldPosBiPredicate.test(world, (BlockPos)pairx.getSecond()))
--                                        .collect(Collectors.toSet());
-+                                    // Paper start - optimise POI access
-+                                    final java.util.List<Pair<Holder<PoiType>, BlockPos>> poiposes = new java.util.ArrayList<>();
-+                                    io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, poiPredicate, predicate2, entity.blockPosition(), 48, 48*48, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes);
-+                                    final Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes.size());
-+                                    for (final Pair<Holder<PoiType>, BlockPos> poiPose : poiposes) {
-+                                        if (worldPosBiPredicate.test(world, poiPose.getSecond())) {
-+                                            set.add(poiPose);
-+                                        }
-+                                    }
-+                                    // Paper end - optimise POI access
-                                     Path path = findPathToPois(entity, set);
-                                     if (path != null && path.canReach()) {
-                                         BlockPos blockPos = path.getTarget();
-diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
-@@ -0,0 +0,0 @@ public class NearestBedSensor extends Sensor<Mob> {
+diff --git a/net/minecraft/world/entity/ai/behavior/AcquirePoi.java b/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
+index 9de13a78b2a8be181c02ab330bfa9abb936a83db..b9174ae7e3a3e2de2d570b95ab5012ac3c3a2eda 100644
+--- a/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
++++ b/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
+@@ -84,12 +84,16 @@ public class AcquirePoi {
+                                     return true;
+                                 }
+                             };
+-                            Set<Pair<Holder<PoiType>, BlockPos>> set = poiManager.findAllClosestFirstWithType(
+-                                    acquirablePois, predicate1, mob.blockPosition(), 48, PoiManager.Occupancy.HAS_SPACE
+-                                )
+-                                .limit(5L)
+-                                .filter(pair1 -> predicate.test(level, pair1.getSecond()))
+-                                .collect(Collectors.toSet());
++                            // Paper start - optimise POI access
++                            final java.util.List<Pair<Holder<PoiType>, BlockPos>> poiposes = new java.util.ArrayList<>();
++                            io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, acquirablePois, predicate1, mob.blockPosition(), 48, 48*48, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes);
++                            final Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes.size());
++                            for (final Pair<Holder<PoiType>, BlockPos> poiPose : poiposes) {
++                                if (predicate.test(level, poiPose.getSecond())) {
++                                    set.add(poiPose);
++                                }
++                            }
++                            // Paper end - optimise POI access
+                             Path path = findPathToPois(mob, set);
+                             if (path != null && path.canReach()) {
+                                 BlockPos target = path.getTarget();
+diff --git a/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java b/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
+index 6e9325f0800a35637fdec5edb8a514ea03741762..066faa704338c573472381e1ebd063e0d52aaaa4 100644
+--- a/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
++++ b/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
+@@ -53,11 +53,12 @@ public class NearestBedSensor extends Sensor<Mob> {
                      return true;
                  }
              };
@@ -889,82 +890,82 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +            Path path = AcquirePoi.findPathToPois(entity, new java.util.HashSet<>(poiposes));
 +            // Paper end - optimise POI access
              if (path != null && path.canReach()) {
-                 BlockPos blockPos = path.getTarget();
-                 Optional<Holder<PoiType>> optional = poiManager.getType(blockPos);
-diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
+                 BlockPos target = path.getTarget();
+                 Optional<Holder<PoiType>> type = poiManager.getType(target);
+diff --git a/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/net/minecraft/world/entity/ai/village/poi/PoiManager.java
+index 5c5724f5e3ad640f55aecbc1d8f71d1f59ecdc62..618fc0eb4fe70e46e55f3aa28e8eac1d2d01b6d9 100644
+--- a/net/minecraft/world/entity/ai/village/poi/PoiManager.java
++++ b/net/minecraft/world/entity/ai/village/poi/PoiManager.java
+@@ -254,36 +254,47 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
      public Optional<BlockPos> find(
-         Predicate<Holder<PoiType>> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus
+         Predicate<Holder<PoiType>> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int distance, PoiManager.Occupancy status
      ) {
--        return this.findAll(typePredicate, posPredicate, pos, radius, occupationStatus).findFirst();
+-        return this.findAll(typePredicate, posPredicate, pos, distance, status).findFirst();
 +        // Paper start - re-route to faster logic
-+        BlockPos ret = io.papermc.paper.util.PoiAccess.findAnyPoiPosition(this, typePredicate, posPredicate, pos, radius, occupationStatus, false);
++        BlockPos ret = io.papermc.paper.util.PoiAccess.findAnyPoiPosition(this, typePredicate, posPredicate, pos, distance, status, false);
 +        return Optional.ofNullable(ret);
 +        // Paper end
      }
  
-     public Optional<BlockPos> findClosest(Predicate<Holder<PoiType>> typePredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus) {
--        return this.getInRange(typePredicate, pos, radius, occupationStatus)
--            .map(PoiRecord::getPos)
--            .min(Comparator.comparingDouble(poiPos -> poiPos.distSqr(pos)));
+     public Optional<BlockPos> findClosest(Predicate<Holder<PoiType>> typePredicate, BlockPos pos, int distance, PoiManager.Occupancy status) {
+-        return this.getInRange(typePredicate, pos, distance, status).map(PoiRecord::getPos).min(Comparator.comparingDouble(blockPos -> blockPos.distSqr(pos)));
 +        // Paper start - re-route to faster logic
-+        BlockPos closestPos = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, null, pos, radius, radius * radius, occupationStatus, false);
++        BlockPos closestPos = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, null, pos, distance, distance * distance, status, false);
 +        return Optional.ofNullable(closestPos);
 +        // Paper end - re-route to faster logic
      }
  
      public Optional<Pair<Holder<PoiType>, BlockPos>> findClosestWithType(
-         Predicate<Holder<PoiType>> typePredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus
+         Predicate<Holder<PoiType>> typePredicate, BlockPos pos, int distance, PoiManager.Occupancy status
      ) {
--        return this.getInRange(typePredicate, pos, radius, occupationStatus)
--            .min(Comparator.comparingDouble(poi -> poi.getPos().distSqr(pos)))
--            .map(poi -> Pair.of(poi.getPoiType(), poi.getPos()));
+-        return this.getInRange(typePredicate, pos, distance, status)
+-            .min(Comparator.comparingDouble(poiRecord -> poiRecord.getPos().distSqr(pos)))
+-            .map(poiRecord -> Pair.of(poiRecord.getPoiType(), poiRecord.getPos()));
 +        // Paper start - re-route to faster logic
 +        return Optional.ofNullable(io.papermc.paper.util.PoiAccess.findClosestPoiDataTypeAndPosition(
-+            this, typePredicate, null, pos, radius, radius * radius, occupationStatus, false
++            this, typePredicate, null, pos, distance, distance * distance, status, false
 +        ));
 +        // Paper end - re-route to faster logic
      }
  
      public Optional<BlockPos> findClosest(
-         Predicate<Holder<PoiType>> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int radius, PoiManager.Occupancy occupationStatus
+         Predicate<Holder<PoiType>> typePredicate, Predicate<BlockPos> posPredicate, BlockPos pos, int distance, PoiManager.Occupancy status
      ) {
--        return this.getInRange(typePredicate, pos, radius, occupationStatus)
+-        return this.getInRange(typePredicate, pos, distance, status)
 -            .map(PoiRecord::getPos)
 -            .filter(posPredicate)
--            .min(Comparator.comparingDouble(poiPos -> poiPos.distSqr(pos)));
+-            .min(Comparator.comparingDouble(blockPos -> blockPos.distSqr(pos)));
 +        // Paper start - re-route to faster logic
-+        BlockPos closestPos = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, posPredicate, pos, radius, radius * radius, occupationStatus, false);
++        BlockPos closestPos = io.papermc.paper.util.PoiAccess.findClosestPoiDataPosition(this, typePredicate, posPredicate, pos, distance, distance * distance, status, false);
 +        return Optional.ofNullable(closestPos);
 +        // Paper end - re-route to faster logic
      }
  
-     public Optional<BlockPos> take(Predicate<Holder<PoiType>> typePredicate, BiPredicate<Holder<PoiType>, BlockPos> posPredicate, BlockPos pos, int radius) {
--        return this.getInRange(typePredicate, pos, radius, PoiManager.Occupancy.HAS_SPACE)
--            .filter(poi -> posPredicate.test(poi.getPoiType(), poi.getPos()))
+     public Optional<BlockPos> take(
+         Predicate<Holder<PoiType>> typePredicate, BiPredicate<Holder<PoiType>, BlockPos> combinedTypePosPredicate, BlockPos pos, int distance
+     ) {
+-        return this.getInRange(typePredicate, pos, distance, PoiManager.Occupancy.HAS_SPACE)
+-            .filter(poiRecord -> combinedTypePosPredicate.test(poiRecord.getPoiType(), poiRecord.getPos()))
 -            .findFirst()
 +        // Paper start - re-route to faster logic
 +        final @javax.annotation.Nullable PoiRecord closest = io.papermc.paper.util.PoiAccess.findClosestPoiDataRecord(
-+            this, typePredicate, posPredicate, pos, radius, radius * radius, Occupancy.HAS_SPACE, false
++            this, typePredicate, combinedTypePosPredicate, pos, distance, distance * distance, Occupancy.HAS_SPACE, false
 +        );
 +        return Optional.ofNullable(closest)
 +            // Paper end - re-route to faster logic
-             .map(poi -> {
-                 poi.acquireTicket();
-                 return poi.getPos();
-@@ -0,0 +0,0 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
-         int radius,
+             .map(poiRecord -> {
+                 poiRecord.acquireTicket();
+                 return poiRecord.getPos();
+@@ -298,8 +309,21 @@ public class PoiManager extends SectionStorage<PoiSection, PoiSection.Packed> im
+         int distance,
          RandomSource random
      ) {
--        List<PoiRecord> list = Util.toShuffledList(this.getInRange(typePredicate, pos, radius, occupationStatus), random);
--        return list.stream().filter(poi -> positionPredicate.test(poi.getPos())).findFirst().map(PoiRecord::getPos);
+-        List<PoiRecord> list = Util.toShuffledList(this.getInRange(typePredicate, pos, distance, status), random);
+-        return list.stream().filter(poiRecord -> posPredicate.test(poiRecord.getPos())).findFirst().map(PoiRecord::getPos);
 +        // Paper start - re-route to faster logic
 +        List<PoiRecord> list = new java.util.ArrayList<>();
 +        io.papermc.paper.util.PoiAccess.findAnyPoiRecords(
-+            this, typePredicate, positionPredicate, pos, radius, occupationStatus, false, Integer.MAX_VALUE, list
++            this, typePredicate, posPredicate, pos, distance, status, false, Integer.MAX_VALUE, list
 +        );
 +
 +        // the old method shuffled the list and then tried to find the first element in it that
@@ -979,11 +980,11 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      }
  
      public boolean release(BlockPos pos) {
-diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
-+++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiSection.java
-@@ -0,0 +0,0 @@ import org.slf4j.Logger;
+diff --git a/net/minecraft/world/entity/ai/village/poi/PoiSection.java b/net/minecraft/world/entity/ai/village/poi/PoiSection.java
+index 39cd1e3d8192d7077d6b7864d33933097cc6b986..b92ba4d194fd3af94c7af5d8e150fc4297c73ab8 100644
+--- a/net/minecraft/world/entity/ai/village/poi/PoiSection.java
++++ b/net/minecraft/world/entity/ai/village/poi/PoiSection.java
+@@ -26,7 +26,7 @@ import org.slf4j.Logger;
  public class PoiSection implements ca.spottedleaf.moonrise.patches.chunk_system.level.poi.ChunkSystemPoiSection { // Paper - rewrite chunk system
      private static final Logger LOGGER = LogUtils.getLogger();
      private final Short2ObjectMap<PoiRecord> records = new Short2ObjectOpenHashMap<>();
@@ -992,48 +993,43 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
      private final Runnable setDirty;
      private boolean isValid;
  
-diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-+++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
-@@ -0,0 +0,0 @@ public class SectionStorage<R, P> implements AutoCloseable, ca.spottedleaf.moonr
+diff --git a/net/minecraft/world/level/chunk/storage/SectionStorage.java b/net/minecraft/world/level/chunk/storage/SectionStorage.java
+index 778bd73a938c94ecb85ca0f8b686ff4e1baee040..79d4ce7712f16995b0de3be86477fb43ab3961d7 100644
+--- a/net/minecraft/world/level/chunk/storage/SectionStorage.java
++++ b/net/minecraft/world/level/chunk/storage/SectionStorage.java
+@@ -131,11 +131,11 @@ public class SectionStorage<R, P> implements AutoCloseable, ca.spottedleaf.moonr
      }
  
      @Nullable
--    protected Optional<R> get(long pos) {
-+    public Optional<R> get(long pos) { // Paper - public
-         return this.storage.get(pos);
+-    protected Optional<R> get(long sectionKey) {
++    public Optional<R> get(long sectionKey) { // Paper - public
+         return this.storage.get(sectionKey);
      }
  
--    protected Optional<R> getOrLoad(long pos) {
-+    public Optional<R> getOrLoad(long pos) { // Paper - public
-         if (this.outsideStoredRange(pos)) {
+-    protected Optional<R> getOrLoad(long sectionKey) {
++    public Optional<R> getOrLoad(long sectionKey) { // Paper - public
+         if (this.outsideStoredRange(sectionKey)) {
              return Optional.empty();
          } else {
-diff --git a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
-index 0000000000000000000000000000000000000000..0000000000000000000000000000000000000000 100644
---- a/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
-+++ b/src/main/java/net/minecraft/world/level/portal/PortalForcer.java
-@@ -0,0 +0,0 @@ public class PortalForcer {
-         // int i = flag ? 16 : 128;
+diff --git a/net/minecraft/world/level/portal/PortalForcer.java b/net/minecraft/world/level/portal/PortalForcer.java
+index ada2da62d3a40d67e64f5f8d7299f78b5c6f53cb..90ae71eb8cc7f925eb212f39731d70f3bff5ef0a 100644
+--- a/net/minecraft/world/level/portal/PortalForcer.java
++++ b/net/minecraft/world/level/portal/PortalForcer.java
+@@ -48,13 +48,38 @@ public class PortalForcer {
+         PoiManager poiManager = this.level.getPoiManager();
+         // int i = isNether ? 16 : 128;
          // CraftBukkit end
- 
--        villageplace.ensureLoadedAndValid(this.level, blockposition, i);
--        Stream<BlockPos> stream = villageplace.getInSquare((holder) -> { // CraftBukkit - decompile error
--            return holder.is(PoiTypes.NETHER_PORTAL);
--        }, blockposition, i, PoiManager.Occupancy.ANY).map(PoiRecord::getPos);
--
--        Objects.requireNonNull(worldborder);
--        return stream.filter(worldborder::isWithinBounds).filter(pos -> !(this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> pos.getY() >= v))).filter((blockposition1) -> { // Paper - Configurable nether ceiling damage
--            return this.level.getBlockState(blockposition1).hasProperty(BlockStateProperties.HORIZONTAL_AXIS);
--        }).min(Comparator.comparingDouble((BlockPos blockposition1) -> { // CraftBukkit - decompile error
--            return blockposition1.distSqr(blockposition);
--        }).thenComparingInt(Vec3i::getY));
+-        poiManager.ensureLoadedAndValid(this.level, exitPos, i);
+-        return poiManager.getInSquare(holder -> holder.is(PoiTypes.NETHER_PORTAL), exitPos, i, PoiManager.Occupancy.ANY)
+-            .map(PoiRecord::getPos)
+-            .filter(worldBorder::isWithinBounds)
+-            .filter(pos -> !(this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> pos.getY() >= v))) // Paper - Configurable nether ceiling damage
+-            .filter(blockPos -> this.level.getBlockState(blockPos).hasProperty(BlockStateProperties.HORIZONTAL_AXIS))
+-            .min(Comparator.<BlockPos>comparingDouble(blockPos -> blockPos.distSqr(exitPos)).thenComparingInt(Vec3i::getY));
 +        // Paper start - optimise portals
-+        Optional<PoiRecord> optional;
 +        java.util.List<PoiRecord> records = new java.util.ArrayList<>();
 +        io.papermc.paper.util.PoiAccess.findClosestPoiDataRecords(
-+            villageplace,
++            poiManager,
 +            type -> type.is(PoiTypes.NETHER_PORTAL),
 +            (BlockPos pos) -> {
 +                net.minecraft.world.level.chunk.ChunkAccess lowest = this.level.getChunk(pos.getX() >> 4, pos.getZ() >> 4, net.minecraft.world.level.chunk.status.ChunkStatus.EMPTY);
@@ -1042,12 +1038,12 @@ index 0000000000000000000000000000000000000000..00000000000000000000000000000000
 +                    // why would we generate the chunk?
 +                    return false;
 +                }
-+                if (!worldborder.isWithinBounds(pos) || (this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> pos.getY() >= v))) { // Paper - Configurable nether ceiling damage
++                if (!worldBorder.isWithinBounds(pos) || (this.level.getTypeKey() == net.minecraft.world.level.dimension.LevelStem.NETHER && this.level.paperConfig().environment.netherCeilingVoidDamageHeight.test(v -> pos.getY() >= v))) { // Paper - Configurable nether ceiling damage
 +                    return false;
 +                }
 +                return lowest.getBlockState(pos).hasProperty(BlockStateProperties.HORIZONTAL_AXIS);
 +            },
-+            blockposition, i, Double.MAX_VALUE, PoiManager.Occupancy.ANY, true, records
++            exitPos, i, Double.MAX_VALUE, PoiManager.Occupancy.ANY, true, records
 +        );
 +
 +        // this gets us most of the way there, but we bias towards lower y values.
