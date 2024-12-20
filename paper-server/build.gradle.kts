@@ -13,7 +13,6 @@ val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 dependencies {
     mache("io.papermc:mache:1.21.4+build.6")
     paperclip("io.papermc:paperclip:3.0.3")
-    remapper("net.fabricmc:tiny-remapper:0.10.3:fat")
 }
 
 paperweight {
@@ -23,23 +22,24 @@ paperweight {
 
     paper {
         reobfMappingsPatch = layout.projectDirectory.file("../build-data/reobf-mappings-patch.tiny")
-        reobfPackagesToFix.addAll(
-            "co.aikar.timings",
-            "com.destroystokyo.paper",
-            "com.mojang",
-            "io.papermc.paper",
-            "ca.spottedleaf",
-            "net.kyori.adventure.bossbar",
-            "net.minecraft",
-            "org.bukkit.craftbukkit",
-            "org.spigotmc",
-        )
     }
 
     spigot {
         buildDataRef = "3edaf46ec1eed4115ce1b18d2846cded42577e42"
         packageVersion = "v1_21_R3" // also needs to be updated in MappingEnvironment
     }
+
+    reobfPackagesToFix.addAll(
+        "co.aikar.timings",
+        "com.destroystokyo.paper",
+        "com.mojang",
+        "io.papermc.paper",
+        "ca.spottedleaf",
+        "net.kyori.adventure.bossbar",
+        "net.minecraft",
+        "org.bukkit.craftbukkit",
+        "org.spigotmc",
+    )
 }
 
 tasks.generateDevelopmentBundle {
@@ -58,45 +58,45 @@ abstract class Services {
 }
 val services = objects.newInstance<Services>()
 
-publishing {
-    if (project.providers.gradleProperty("publishDevBundle").isPresent) {
-        val devBundleComponent = services.softwareComponentFactory.adhoc("devBundle")
-        components.add(devBundleComponent)
+if (project.providers.gradleProperty("publishDevBundle").isPresent) {
+    val devBundleComponent = services.softwareComponentFactory.adhoc("devBundle")
+    components.add(devBundleComponent)
 
-        val devBundle = configurations.consumable("devBundle") {
-            attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.ZIP))
-            outgoing.artifact(tasks.generateDevelopmentBundle.flatMap { it.devBundleFile })
-        }
-        devBundleComponent.addVariantsFromConfiguration(devBundle.get()) {}
+    val devBundle = configurations.consumable("devBundle") {
+        attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.ZIP))
+        outgoing.artifact(tasks.generateDevelopmentBundle.flatMap { it.devBundleFile })
+    }
+    devBundleComponent.addVariantsFromConfiguration(devBundle.get()) {}
 
-        val runtime = configurations.consumable("serverRuntimeClasspath") {
-            attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
-            attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-            extendsFrom(configurations.runtimeClasspath.get())
-        }
-        devBundleComponent.addVariantsFromConfiguration(runtime.get()) {
-            mapToMavenScope("runtime")
-        }
+    val runtime = configurations.consumable("serverRuntimeClasspath") {
+        attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
+        attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+        extendsFrom(configurations.runtimeClasspath.get())
+    }
+    devBundleComponent.addVariantsFromConfiguration(runtime.get()) {
+        mapToMavenScope("runtime")
+    }
 
-        val compile = configurations.consumable("serverCompileClasspath") {
-            attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
-            attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_API))
-            extendsFrom(configurations.compileClasspath.get())
-        }
-        devBundleComponent.addVariantsFromConfiguration(compile.get()) {
-            mapToMavenScope("compile")
-        }
+    val compile = configurations.consumable("serverCompileClasspath") {
+        attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
+        attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_API))
+        extendsFrom(configurations.compileClasspath.get())
+    }
+    devBundleComponent.addVariantsFromConfiguration(compile.get()) {
+        mapToMavenScope("compile")
+    }
 
-        tasks.withType(GenerateMavenPom::class).configureEach {
-            doLast {
-                val text = destination.readText()
-                // Remove dependencies from pom, dev bundle is designed for gradle module metadata consumers
-                destination.writeText(
-                    text.substringBefore("<dependencies>") + text.substringAfter("</dependencies>")
-                )
-            }
+    tasks.withType(GenerateMavenPom::class).configureEach {
+        doLast {
+            val text = destination.readText()
+            // Remove dependencies from pom, dev bundle is designed for gradle module metadata consumers
+            destination.writeText(
+                text.substringBefore("<dependencies>") + text.substringAfter("</dependencies>")
+            )
         }
+    }
 
+    publishing {
         publications.create<MavenPublication>("devBundle") {
             artifactId = "dev-bundle"
             from(devBundleComponent)
@@ -317,21 +317,21 @@ tasks.registerRunTask("runDevServer") {
 
 tasks.registerRunTask("runBundler") {
     description = "Spin up a test server from the Mojang mapped bundler jar"
-    classpath(tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createMojmapBundlerJar").flatMap { it.outputZip })
+    classpath(tasks.createMojmapBundlerJar.flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
 tasks.registerRunTask("runReobfBundler") {
     description = "Spin up a test server from the reobf bundler jar"
-    classpath(tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createReobfBundlerJar").flatMap { it.outputZip })
+    classpath(tasks.createReobfBundlerJar.flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
 tasks.registerRunTask("runPaperclip") {
     description = "Spin up a test server from the Mojang mapped Paperclip jar"
-    classpath(tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createMojmapPaperclipJar").flatMap { it.outputZip })
+    classpath(tasks.createMojmapPaperclipJar.flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
 tasks.registerRunTask("runReobfPaperclip") {
     description = "Spin up a test server from the reobf Paperclip jar"
-    classpath(tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createReobfPaperclipJar").flatMap { it.outputZip })
+    classpath(tasks.createReobfPaperclipJar.flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
