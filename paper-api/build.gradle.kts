@@ -121,8 +121,13 @@ configurations {
             }
             outgoing {
                 capability(mainCapability)
+                // Paper-MojangAPI has been merged into Paper-API
                 capability("io.papermc.paper:paper-mojangapi:${project.version}")
                 capability("com.destroystokyo.paper:paper-mojangapi:${project.version}")
+                // Conflict with old coordinates
+                capability("com.destroystokyo.paper:paper-api:${project.version}")
+                capability("org.spigotmc:spigot-api:${project.version}")
+                capability("org.bukkit:bukkit:${project.version}")
             }
         }
     }
