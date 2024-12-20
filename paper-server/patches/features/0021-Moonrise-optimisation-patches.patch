@@ -23521,7 +23521,7 @@ index 47c62090b421ebea1253ee3f1c896ed84119cea6..e738405e5112584e02e01df2d5ede267
                  thread1 -> {
                      DedicatedServer dedicatedServer1 = new DedicatedServer(
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index 5649482a8b85056bc009b868e19ca11f21d59fbf..0c35921acebd88f3a9a37676e47e7482dfea6d9c 100644
+index 5649482a8b85056bc009b868e19ca11f21d59fbf..c3318c2fa121d75363c6bc9eadf408dc8040c2bb 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -173,7 +173,7 @@ import net.minecraft.world.phys.Vec2;
@@ -23677,7 +23677,7 @@ index 5649482a8b85056bc009b868e19ca11f21d59fbf..0c35921acebd88f3a9a37676e47e7482
 +        LOGGER.info("Waiting for I/O tasks to complete...");
 +        ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.flush((MinecraftServer)(Object)this);
 +        LOGGER.info("All I/O tasks to complete");
-+        if ((Object)this instanceof DedicatedServer) {
++        if ((Object)this instanceof net.minecraft.server.dedicated.DedicatedServer) {
 +            ca.spottedleaf.moonrise.common.util.MoonriseCommon.haltExecutors();
 +        }
 +        // Paper end - rewrite chunk system
@@ -23720,7 +23720,7 @@ index 5649482a8b85056bc009b868e19ca11f21d59fbf..0c35921acebd88f3a9a37676e47e7482
      // CraftBukkit start
      public boolean isDebugging() {
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index 72409db938babd2da64a20746911cb8d45452d7f..fbc9b4d99bd1913a243a8d0424eb6f165e535747 100644
+index 72409db938babd2da64a20746911cb8d45452d7f..55d3f79af2e683b983d4d3f731bb9649dfe76f59 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -433,7 +433,33 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -23736,7 +23736,7 @@ index 72409db938babd2da64a20746911cb8d45452d7f..fbc9b4d99bd1913a243a8d0424eb6f16
 +            Runnable run = () -> {
 +                LOGGER.info("Async debug chunks executing");
 +                ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(this, false);
-+                CommandSender sender = MinecraftServer.getServer().console;
++                org.bukkit.command.CommandSender sender = MinecraftServer.getServer().console;
 +                java.io.File file = ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.getChunkDebugFile();
 +                sender.sendMessage(net.kyori.adventure.text.Component.text("Writing chunk information dump to " + file, net.kyori.adventure.text.format.NamedTextColor.GREEN));
 +                try {
@@ -24239,7 +24239,7 @@ index e823b8aac00158892538083bc877ccf99895909a..7d871318065f19540748363809de8265
      private static final ChunkStep FULL_CHUNK_STEP = ChunkPyramid.GENERATION_PYRAMID.getStepTo(ChunkStatus.FULL);
      public static final int RADIUS_AROUND_FULL_CHUNK = FULL_CHUNK_STEP.accumulatedDependencies().getRadius();
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index ad665c7535c615d2b03a3e7864be435f933235dd..9faf0ece0f074b8709b4e4fad0cab3e9c2224276 100644
+index ad665c7535c615d2b03a3e7864be435f933235dd..3dff97f13586be3b52bbe786852c185f6753a019 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
 @@ -96,7 +96,7 @@ import net.minecraft.world.level.storage.LevelStorageSource;
@@ -24367,7 +24367,7 @@ index ad665c7535c615d2b03a3e7864be435f933235dd..9faf0ece0f074b8709b4e4fad0cab3e9
      protected ChunkHolder getUpdatingChunkIfPresent(long chunkPos) {
 -        return this.updatingChunkMap.get(chunkPos);
 +        // Paper start - rewrite chunk system
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(pos);
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(chunkPos);
 +        return holder == null ? null : holder.vanillaChunkHolder;
 +        // Paper end - rewrite chunk system
      }
@@ -24376,7 +24376,7 @@ index ad665c7535c615d2b03a3e7864be435f933235dd..9faf0ece0f074b8709b4e4fad0cab3e9
      public ChunkHolder getVisibleChunkIfPresent(long chunkPos) {
 -        return this.visibleChunkMap.get(chunkPos);
 +        // Paper start - rewrite chunk system
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(pos);
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder holder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.level).moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(chunkPos);
 +        return holder == null ? null : holder.vanillaChunkHolder;
 +        // Paper end - rewrite chunk system
      }
@@ -25121,7 +25121,7 @@ index ad665c7535c615d2b03a3e7864be435f933235dd..9faf0ece0f074b8709b4e4fad0cab3e9
          boolean flag2 = lastSectionPos.asLong() != sectionPos.asLong();
          if (flag2 || flag != flag1) {
              this.updatePlayerPos(player);
-+            ((ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickDistanceManager)this.distanceManager).moonrise$updatePlayer(player, sectionposition, sectionposition1, flag, flag1); // Paper - chunk tick iteration optimisation
++            ((ca.spottedleaf.moonrise.patches.chunk_tick_iteration.ChunkTickDistanceManager)this.distanceManager).moonrise$updatePlayer(player, lastSectionPos, sectionPos, flag, flag1); // Paper - chunk tick iteration optimisation
              if (!flag) {
                  this.distanceManager.removePlayer(lastSectionPos, player);
              }
@@ -25194,7 +25194,7 @@ index ad665c7535c615d2b03a3e7864be435f933235dd..9faf0ece0f074b8709b4e4fad0cab3e9
 +                    if (((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$getTrackedEntity() != null) {
 +                        throw new IllegalStateException("Entity is already tracked");
 +                    }
-+                    ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$setTrackedEntity(playerchunkmap_entitytracker);
++                    ((ca.spottedleaf.moonrise.patches.entity_tracker.EntityTrackerEntity)entity).moonrise$setTrackedEntity(trackedEntity);
 +                    // Paper end - optimise entity tracker
                      trackedEntity.updatePlayers(this.level.players());
                      if (entity instanceof ServerPlayer serverPlayer) {
@@ -26188,7 +26188,7 @@ index cb66209c64b855dedf2e4e114a7716da13bc4587..da1366fdc4889d6a3befd43d81a19a81
      }
  }
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 2f49dbc919f7f5eea9abce6106723c72f5ae45fb..6c9c7c3124d5990ea34368eb4578eac695abd658 100644
+index 2f49dbc919f7f5eea9abce6106723c72f5ae45fb..87d4291a3944f706a694536da6de0f28c548ab8d 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
 @@ -52,7 +52,7 @@ import net.minecraft.world.level.storage.DimensionDataStorage;
@@ -26294,7 +26294,7 @@ index 2f49dbc919f7f5eea9abce6106723c72f5ae45fb..6c9c7c3124d5990ea34368eb4578eac6
 +        final ServerPlayer[] raw = players.getRawDataUnchecked();
 +        final int len = players.size();
 +
-+        Objects.checkFromIndexSize(0, len, raw.length);
++        java.util.Objects.checkFromIndexSize(0, len, raw.length);
 +        for (int i = 0; i < len; ++i) {
 +            if (chunkMap.playerIsCloseEnoughForSpawning(raw[i], chunkPos, 16384.0D)) { // Spigot (reducedRange = false)
 +                return true;
@@ -26704,7 +26704,7 @@ index 70f6d068b3f3665b282d9750310c883839120ab2..870b9efd445ddadb3725e88351555ad9
          if (!passengers.equals(this.lastPassengers)) {
              this.broadcastAndSend(new ClientboundSetPassengersPacket(this.entity)); // CraftBukkit
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index cdda7f6272cfc48638df4e0e51b496e91ed77ba5..ffb5bfdd76a92bac61c7c352fdded4200d13b3ae 100644
+index cdda7f6272cfc48638df4e0e51b496e91ed77ba5..bbb4bb0940765a12c45a99c8234ca82ef1934903 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -170,7 +170,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
@@ -27449,7 +27449,7 @@ index cdda7f6272cfc48638df4e0e51b496e91ed77ba5..ffb5bfdd76a92bac61c7c352fdded420
      public boolean isNaturalSpawningAllowed(ChunkPos chunkPos) {
 -        return this.entityManager.canPositionTick(chunkPos);
 +        // Paper start - rewrite chunk system
-+        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder chunkHolder = this.moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(pos));
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder chunkHolder = this.moonrise$getChunkTaskScheduler().chunkHolderManager.getChunkHolder(ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(chunkPos));
 +        return chunkHolder != null && chunkHolder.isEntityTickingReady();
 +        // Paper end - rewrite chunk system
      }
@@ -28341,7 +28341,7 @@ index 8cc5c0716392ba06501542ff5cbe71ee43979e5d..09fd99c9cbd23b5f3c899bfb00c9b896
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index d5b0db3095a563dd101a1b12b150401a7dc59f8e..eb333032d8117d8dec4a15f3f2803166431633bc 100644
+index d5b0db3095a563dd101a1b12b150401a7dc59f8e..997158b88a2ac8fc3b40589e615f85fd8e42d146 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -135,7 +135,7 @@ import net.minecraft.world.scores.ScoreHolder;
@@ -28592,10 +28592,11 @@ index d5b0db3095a563dd101a1b12b150401a7dc59f8e..eb333032d8117d8dec4a15f3f2803166
  
      public Entity(EntityType<?> entityType, Level level) {
          this.type = entityType;
-@@ -1286,34 +1392,76 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -1285,35 +1391,77 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         return distance;
      }
  
-     private Vec3 collide(Vec3 vec) {
+-    private Vec3 collide(Vec3 vec) {
 -        AABB boundingBox = this.getBoundingBox();
 -        List<VoxelShape> entityCollisions = this.level().getEntityCollisions(this, boundingBox.expandTowards(vec));
 -        Vec3 vec3 = vec.lengthSqr() == 0.0 ? vec : collideBoundingBox(this, vec, boundingBox, this.level(), entityCollisions);
@@ -28609,7 +28610,8 @@ index d5b0db3095a563dd101a1b12b150401a7dc59f8e..eb333032d8117d8dec4a15f3f2803166
 -            if (!flag3) {
 -                aabb1 = aabb1.expandTowards(0.0, -1.0E-5F, 0.0);
 -            }
-+        // Paper start - optimise collisions
++    // Paper start - optimise collisions
++    private Vec3 collide(Vec3 movement) {
 +        final boolean xZero = movement.x == 0.0;
 +        final boolean yZero = movement.y == 0.0;
 +        final boolean zZero = movement.z == 0.0;
@@ -29081,7 +29083,7 @@ index d5b0db3095a563dd101a1b12b150401a7dc59f8e..eb333032d8117d8dec4a15f3f2803166
  
      @Override
 diff --git a/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/net/minecraft/world/entity/ai/village/poi/PoiManager.java
-index 7d590dd06cc69c0925d22708425520c38e3cda25..c8590e0175dacd6d7efdb1830bd60c92325083f9 100644
+index 7d590dd06cc69c0925d22708425520c38e3cda25..5c5724f5e3ad640f55aecbc1d8f71d1f59ecdc62 100644
 --- a/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 +++ b/net/minecraft/world/entity/ai/village/poi/PoiManager.java
 @@ -38,12 +38,137 @@ import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
@@ -29227,7 +29229,7 @@ index 7d590dd06cc69c0925d22708425520c38e3cda25..c8590e0175dacd6d7efdb1830bd60c92
              levelHeightAccessor
          );
          this.distanceTracker = new PoiManager.DistanceTracker();
-+        this.world = (net.minecraft.server.level.ServerLevel)world; // Paper - rewrite chunk system
++        this.world = (net.minecraft.server.level.ServerLevel)levelHeightAccessor; // Paper - rewrite chunk system
      }
  
      public void add(BlockPos pos, Holder<PoiType> type) {
@@ -29254,18 +29256,19 @@ index 7d590dd06cc69c0925d22708425520c38e3cda25..c8590e0175dacd6d7efdb1830bd60c92
      }
  
      @Override
-     protected void setDirty(long sectionPos) {
+-    protected void setDirty(long sectionPos) {
 -        super.setDirty(sectionPos);
 -        this.distanceTracker.update(sectionPos, this.distanceTracker.getLevelFromSource(sectionPos), false);
++    public void setDirty(long sectionPos) { // Paper - public
 +        // Paper start - rewrite chunk system
-+        final int chunkX = ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkSectionX(pos);
-+        final int chunkZ = ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkSectionZ(pos);
++        final int chunkX = ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkSectionX(sectionPos);
++        final int chunkZ = ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkSectionZ(sectionPos);
 +        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkHolderManager manager = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)this.world).moonrise$getChunkTaskScheduler().chunkHolderManager;
 +        final ca.spottedleaf.moonrise.patches.chunk_system.level.poi.PoiChunk chunk = manager.getPoiChunkIfLoaded(chunkX, chunkZ, false);
 +        if (chunk != null) {
 +            chunk.setDirty(true);
 +        }
-+        this.updateDistanceTracking(pos);
++        this.updateDistanceTracking(sectionPos);
 +        // Paper end - rewrite chunk system
      }
  
@@ -29469,7 +29472,7 @@ index 300f3ed58109219d97846082941b860585f66fed..e81195df621159da67136f020fa7a6d3
  
      // Paper start - Affects Spawning API
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 0e4ab448755632696c4326f1df9f3855cd38a64d..72646473019424de969756ae1d0e9f789310889b 100644
+index 0e4ab448755632696c4326f1df9f3855cd38a64d..aff78499b73a98f7405aead0886c51e8ac262884 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -79,6 +79,7 @@ import net.minecraft.world.level.storage.LevelData;
@@ -29592,7 +29595,7 @@ index 0e4ab448755632696c4326f1df9f3855cd38a64d..72646473019424de969756ae1d0e9f78
 +
 +    @Override
 +    public boolean moonrise$areChunksLoaded(final int fromX, final int fromZ, final int toX, final int toZ) {
-+        final ChunkSource chunkSource = this.getChunkSource();
++        final net.minecraft.world.level.chunk.ChunkSource chunkSource = this.getChunkSource();
 +
 +        for (int currZ = fromZ; currZ <= toZ; ++currZ) {
 +            for (int currX = fromX; currX <= toX; ++currX) {
@@ -29932,7 +29935,7 @@ index 0e4ab448755632696c4326f1df9f3855cd38a64d..72646473019424de969756ae1d0e9f78
 +        final int minChunkZ = minBlockZ >> 4;
 +        final int maxChunkZ = maxBlockZ >> 4;
 +
-+        final ChunkSource chunkSource = this.getChunkSource();
++        final net.minecraft.world.level.chunk.ChunkSource chunkSource = this.getChunkSource();
 +
 +        for (int currChunkZ = minChunkZ; currChunkZ <= maxChunkZ; ++currChunkZ) {
 +            for (int currChunkX = minChunkX; currChunkX <= maxChunkX; ++currChunkX) {
@@ -31683,7 +31686,7 @@ index e7c0f4da8508fbca467326f475668d66454d7b77..41856c98d97e7eb0782f8e441b9a269a
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
 diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index 96b0342ab7b922aa16d07b6c00542e6cb66c974a..aff0937ad7eb81d9e32f56aa337a4ec7551f0faa 100644
+index 96b0342ab7b922aa16d07b6c00542e6cb66c974a..c1ae7755e8d6fa8501d2210dab7605d993c55722 100644
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -52,7 +52,7 @@ import net.minecraft.world.ticks.LevelChunkTicks;
@@ -31763,10 +31766,10 @@ index 96b0342ab7b922aa16d07b6c00542e6cb66c974a..aff0937ad7eb81d9e32f56aa337a4ec7
          this.persistentDataContainer = chunk.persistentDataContainer; // SPIGOT-6814: copy PDC to account for 1.17 to 1.18 chunk upgrading.
          // CraftBukkit end
 +        // Paper start - rewrite chunk system
-+        this.starlight$setBlockNibbles(((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)protoChunk).starlight$getBlockNibbles());
-+        this.starlight$setSkyNibbles(((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)protoChunk).starlight$getSkyNibbles());
-+        this.starlight$setSkyEmptinessMap(((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)protoChunk).starlight$getSkyEmptinessMap());
-+        this.starlight$setBlockEmptinessMap(((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)protoChunk).starlight$getBlockEmptinessMap());
++        this.starlight$setBlockNibbles(((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getBlockNibbles());
++        this.starlight$setSkyNibbles(((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getSkyNibbles());
++        this.starlight$setSkyEmptinessMap(((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getSkyEmptinessMap());
++        this.starlight$setBlockEmptinessMap(((ca.spottedleaf.moonrise.patches.starlight.chunk.StarlightChunk)chunk).starlight$getBlockEmptinessMap());
 +        // Paper end - rewrite chunk system
      }
  
@@ -32841,7 +32844,7 @@ index 783a2d80f6197dd0af0dc81909f0353a8ea2ecf4..7da388ffab162c282cad0f297bb7304f
      }
  
 diff --git a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 51bf310423013d0ae9d3202d66e36a053a767197..2661a21703994a18c4a9a44fba0f6931fd37151e 100644
+index 51bf310423013d0ae9d3202d66e36a053a767197..e35bb5534e2fbd2e30154a15ff6d39baa121608f 100644
 --- a/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -14,7 +14,7 @@ import net.minecraft.nbt.StreamTagVisitor;
@@ -32849,7 +32852,7 @@ index 51bf310423013d0ae9d3202d66e36a053a767197..2661a21703994a18c4a9a44fba0f6931
  import net.minecraft.world.level.ChunkPos;
  
 -public final class RegionFileStorage implements AutoCloseable {
-+public final class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.io.ChunkSystemRegionFileStorage { // Paper - rewrite chunk system
++public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise.patches.chunk_system.io.ChunkSystemRegionFileStorage { // Paper - rewrite chunk system
      public static final String ANVIL_EXTENSION = ".mca";
      private static final int MAX_CACHE_SIZE = 256;
      public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap<>();
@@ -33290,7 +33293,7 @@ index 7dc1ffffd9d0fec54dbc254c154ee85ee750174d..778bd73a938c94ecb85ca0f8b686ff4e
  
      record PackedChunk<T>(Int2ObjectMap<T> sectionsByY, boolean versionChanged) {
 diff --git a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
-index cf6e2053d81f7b0f8c8e58b9c0fad3285ebc047d..e8aafbd4bd9eaba4aaa448333b37c30a8dd719bf 100644
+index cf6e2053d81f7b0f8c8e58b9c0fad3285ebc047d..70a9972252576e039ac126f6057a6ed66b80cdfc 100644
 --- a/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 +++ b/net/minecraft/world/level/chunk/storage/SerializableChunkData.java
 @@ -148,7 +148,7 @@ public record SerializableChunkData(
@@ -33298,7 +33301,7 @@ index cf6e2053d81f7b0f8c8e58b9c0fad3285ebc047d..e8aafbd4bd9eaba4aaa448333b37c30a
                  ? new UpgradeData(tag.getCompound("UpgradeData"), levelHeightAccessor)
                  : UpgradeData.EMPTY;
 -            boolean _boolean = tag.getBoolean("isLightOn");
-+            boolean _boolean = chunkstatus.isOrAfter(ChunkStatus.LIGHT) && (nbt.get("isLightOn") != null && nbt.getInt(ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.STARLIGHT_VERSION_TAG) == ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.STARLIGHT_LIGHT_VERSION); // Paper - starlight
++            boolean _boolean = chunkStatus.isOrAfter(ChunkStatus.LIGHT) && (tag.get("isLightOn") != null && tag.getInt(ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.STARLIGHT_VERSION_TAG) == ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.STARLIGHT_LIGHT_VERSION); // Paper - starlight
              BlendingData.Packed packed;
              if (tag.contains("blending_data", 10)) {
                  packed = BlendingData.Packed.CODEC.parse(NbtOps.INSTANCE, tag.getCompound("blending_data")).resultOrPartial(LOGGER::error).orElse(null);
@@ -33309,11 +33312,11 @@ index cf6e2053d81f7b0f8c8e58b9c0fad3285ebc047d..e8aafbd4bd9eaba4aaa448333b37c30a
 -                list8.add(new SerializableChunkData.SectionData(_byte, levelChunkSection, dataLayer, dataLayer1));
 +                // Paper start - starlight
 +                SerializableChunkData.SectionData serializableChunkData = new SerializableChunkData.SectionData(_byte, levelChunkSection, dataLayer, dataLayer1);
-+                if (sectionData.contains(ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.BLOCKLIGHT_STATE_TAG, Tag.TAG_ANY_NUMERIC)) {
++                if (sectionData.contains(ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.BLOCKLIGHT_STATE_TAG, net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
 +                    ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)serializableChunkData).starlight$setBlockLightState(sectionData.getInt(ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.BLOCKLIGHT_STATE_TAG));
 +                }
 +
-+                if (sectionData.contains(ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.SKYLIGHT_STATE_TAG, Tag.TAG_ANY_NUMERIC)) {
++                if (sectionData.contains(ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.SKYLIGHT_STATE_TAG, net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
 +                    ((ca.spottedleaf.moonrise.patches.starlight.storage.StarlightSectionData)(Object)serializableChunkData).starlight$setSkyLightState(sectionData.getInt(ca.spottedleaf.moonrise.patches.starlight.util.SaveUtil.SKYLIGHT_STATE_TAG));
 +                }
 +                list8.add(serializableChunkData);
@@ -33395,7 +33398,7 @@ index cf6e2053d81f7b0f8c8e58b9c0fad3285ebc047d..e8aafbd4bd9eaba4aaa448333b37c30a
  
          if (chunkType == ChunkType.LEVELCHUNK) {
 -            return new ImposterProtoChunk((LevelChunk)chunkAccess, false);
-+            return this.loadStarlightLightData(new ImposterProtoChunk((LevelChunk)chunkAccess, false)); // Paper - starlight
++            return this.loadStarlightLightData(level, new ImposterProtoChunk((LevelChunk)chunkAccess, false)); // Paper - starlight
          } else {
              ProtoChunk protoChunk1 = (ProtoChunk)chunkAccess;
  
@@ -33762,7 +33765,7 @@ index 06b54c0bec4031689d5c2da5cfea4ef28dbd16bc..f7dc4957b38878ddd3bfc7546be8a4e0
              map.computeInt(structure, (structure1, integer) -> integer == null ? 1 : integer + 1);
              return map;
 diff --git a/net/minecraft/world/level/lighting/LevelLightEngine.java b/net/minecraft/world/level/lighting/LevelLightEngine.java
-index ca23af013967b50420ebee178878ea79333de53b..83c3ec06be51f632b7c1b682cfa8dce73ff7e0c0 100644
+index ca23af013967b50420ebee178878ea79333de53b..d41b9266625ca6c5e32c5126f35a1f7733159cfc 100644
 --- a/net/minecraft/world/level/lighting/LevelLightEngine.java
 +++ b/net/minecraft/world/level/lighting/LevelLightEngine.java
 @@ -9,151 +9,111 @@ import net.minecraft.world.level.LightLayer;
@@ -33869,7 +33872,7 @@ index ca23af013967b50420ebee178878ea79333de53b..83c3ec06be51f632b7c1b682cfa8dce7
 -        if (this.skyEngine != null) {
 -            this.skyEngine.updateSectionStatus(pos, isEmpty);
 -        }
-+        this.lightEngine.sectionChange(pos, notReady); // Paper - rewrite chunk system
++        this.lightEngine.sectionChange(pos, isEmpty); // Paper - rewrite chunk system
      }
  
      @Override
