@@ -55,7 +55,7 @@ public class CraftStrider extends CraftAnimals implements Strider {
         }
 
         int max = this.getHandle().steering.boostTimeTotal();
-        Preconditions.checkArgument(ticks >= 0 && ticks <= max, "boost ticks must not exceed 0 or %d (inclusive)", max);
+        Preconditions.checkArgument(ticks >= 0 && ticks <= max, "boost ticks must not exceed 0 or %s (inclusive)", max);
 
         this.getHandle().steering.boostTime = ticks;
     }
