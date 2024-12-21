@@ -206,30 +206,17 @@
                  if (thrownEnderpearl.isRemoved()) {
                      LOGGER.warn("Trying to save removed ender pearl, skipping");
                  } else {
-@@ -593,6 +_,29 @@
+@@ -593,6 +_,16 @@
          }
      }
  
-+    // CraftBukkit start - World fallback code, either respawn location or global spawn
-+    public void spawnIn(Level world) {
-+        this.setLevel(world);
-+        if (world == null) {
-+            this.unsetRemoved();
-+            Vec3 position = null;
-+            if (this.respawnDimension != null) {
-+                world = this.server.getLevel(this.respawnDimension);
-+                if (world != null && this.getRespawnPosition() != null) {
-+                    position = ServerPlayer.findRespawnAndUseSpawnBlock((ServerLevel) world, this.getRespawnPosition(), this.getRespawnAngle(), false, false).map(ServerPlayer.RespawnPosAngle::position).orElse(null);
-+                }
-+            }
-+            if (world == null || position == null) {
-+                world = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getServer().getWorlds().get(0)).getHandle();
-+                position = Vec3.atCenterOf(world.getSharedSpawnPos());
-+            }
-+            this.setLevel(world);
-+            this.setPosRaw(position.x(), position.y(), position.z()); // Paper - don't register to chunks yet
++    // CraftBukkit start
++    public void spawnIn(final ServerLevel level) {
++        if (level == null) {
++            throw new IllegalArgumentException("level can't be null");
 +        }
-+        this.gameMode.setLevel((ServerLevel) world);
++        this.setLevel(level);
++        this.gameMode.setLevel(level);
 +    }
 +    // CraftBukkit end
 +
@@ -840,7 +827,7 @@
 +
 +        {
 +            {
-+                Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> either = super.startSleepInBed(at, force).ifRight((unit) -> {
++                Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> either = super.startSleepInBed(at, force).ifRight(unit -> {
 +                    // CraftBukkit end
                      this.awardStat(Stats.SLEEP_IN_BED);
                      CriteriaTriggers.SLEPT_IN_BED.trigger(this);

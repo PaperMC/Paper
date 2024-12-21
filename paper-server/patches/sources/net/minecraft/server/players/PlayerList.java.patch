@@ -47,7 +47,7 @@
          GameProfile gameProfile = player.getGameProfile();
          GameProfileCache profileCache = this.server.getProfileCache();
          String string;
-@@ -150,30 +_,94 @@
+@@ -150,30 +_,93 @@
          }
  
          Optional<CompoundTag> optional = this.load(player);
@@ -136,7 +136,6 @@
 +        serverLevel = ((org.bukkit.craftbukkit.CraftWorld) loc.getWorld()).getHandle();
 +
 +        player.spawnIn(serverLevel);
-+        player.gameMode.setLevel((ServerLevel) player.level());
 +        // Paper start - set raw so we aren't fully joined to the world (not added to chunk or world)
 +        player.setPosRaw(loc.getX(), loc.getY(), loc.getZ());
 +        player.setRot(loc.getYaw(), loc.getPitch());
@@ -334,7 +333,7 @@
              }
  
              @Override
-@@ -309,67 +_,175 @@
+@@ -309,56 +_,162 @@
      }
  
      protected void save(ServerPlayer player) {
@@ -469,8 +468,6 @@
 -    public Component canPlayerLogin(SocketAddress socketAddress, GameProfile gameProfile) {
 -        if (this.bans.isBanned(gameProfile)) {
 -            UserBanListEntry userBanListEntry = this.bans.get(gameProfile);
--            MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned.reason", userBanListEntry.getReason());
--            if (userBanListEntry.getExpires() != null) {
 +    // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
 +    public ServerPlayer canPlayerLogin(net.minecraft.server.network.ServerLoginPacketListenerImpl loginlistener, GameProfile gameProfile) {
 +        // if (this.bans.isBanned(gameProfile)) {
@@ -507,14 +504,13 @@
 +        org.bukkit.event.player.PlayerLoginEvent event = new org.bukkit.event.player.PlayerLoginEvent(player, loginlistener.connection.hostname, ((java.net.InetSocketAddress) socketAddress).getAddress(), ((java.net.InetSocketAddress) loginlistener.connection.channel.remoteAddress()).getAddress());
 +
 +        // Paper start - Fix MC-158900
-+        UserBanListEntry gameprofilebanentry;
-+        if (this.bans.isBanned(gameProfile) && (gameprofilebanentry = this.bans.get(gameProfile)) != null) {
++        UserBanListEntry userBanListEntry;
++        if (this.bans.isBanned(gameProfile) && (userBanListEntry = this.bans.get(gameProfile)) != null) {
 +            // Paper end - Fix MC-158900
-+            MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned.reason", gameprofilebanentry.getReason());
-+            if (gameprofilebanentry.getExpires() != null) {
+             MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned.reason", userBanListEntry.getReason());
+             if (userBanListEntry.getExpires() != null) {
                  mutableComponent.append(
--                    Component.translatable("multiplayer.disconnect.banned.expiration", BAN_DATE_FORMAT.format(userBanListEntry.getExpires()))
-+                    Component.translatable("multiplayer.disconnect.banned.expiration", BAN_DATE_FORMAT.format(gameprofilebanentry.getExpires()))
+@@ -366,10 +_,12 @@
                  );
              }
  
