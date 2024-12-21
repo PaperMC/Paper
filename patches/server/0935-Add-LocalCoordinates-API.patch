@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ChristopheG <61288881+chrisgdt@users.noreply.github.com>
+Date: Sat, 13 Aug 2022 13:57:26 +0200
+Subject: [PATCH] Add LocalCoordinates API
+
+
+diff --git a/src/main/java/net/minecraft/commands/arguments/coordinates/LocalCoordinates.java b/src/main/java/net/minecraft/commands/arguments/coordinates/LocalCoordinates.java
+index ba10bf752687ef49b16dea53c791d4dd7480cda2..6e89ef2f3db5d9c22bb1fc939b3a046c4e11c12f 100644
+--- a/src/main/java/net/minecraft/commands/arguments/coordinates/LocalCoordinates.java
++++ b/src/main/java/net/minecraft/commands/arguments/coordinates/LocalCoordinates.java
+@@ -24,6 +24,12 @@ public class LocalCoordinates implements Coordinates {
+     public Vec3 getPosition(CommandSourceStack source) {
+         Vec2 vec2 = source.getRotation();
+         Vec3 vec3 = source.getAnchor().apply(source);
++        // Paper start
++        return getPosition(vec3, vec2);
++    }
++
++    public Vec3 getPosition(Vec3 vec3, Vec2 vec2) {
++        // Paper end
+         float f = Mth.cos((vec2.y + 90.0F) * ((float)Math.PI / 180F));
+         float g = Mth.sin((vec2.y + 90.0F) * ((float)Math.PI / 180F));
+         float h = Mth.cos(-vec2.x * ((float)Math.PI / 180F));
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index b777c1294370bdc68bc6265b039e2a405d89f2f5..697a2258356c3fe5c4316c84eca7fb98afa04f49 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1736,6 +1736,13 @@ public final class CraftServer implements Server {
+         return CraftItemStack.asBukkitCopy(stack);
+     }
+ 
++    // Paper start
++    @Override
++    public Location applyLocalCoordinates(Location location, double x, double y, double z) {
++        Vec3 result = new net.minecraft.commands.arguments.coordinates.LocalCoordinates(x, y, z).getPosition(new Vec3(location.getX(), location.getY(), location.getZ()), new net.minecraft.world.phys.Vec2(location.getPitch(), location.getYaw()));
++        return location.clone().set(result.x(), result.y(), result.z());
++    }
++    // Paper end
+     @Override
+     public void shutdown() {
+         this.console.halt(false);
