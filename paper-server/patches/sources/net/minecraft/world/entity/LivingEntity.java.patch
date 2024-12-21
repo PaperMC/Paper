@@ -1535,7 +1535,7 @@
      }
  
      protected void internalSetAbsorptionAmount(float absorptionAmount) {
-@@ -3115,6 +_,11 @@
+@@ -3115,6 +_,15 @@
          return (this.entityData.get(DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
      }
  
@@ -1544,10 +1544,28 @@
 +        this.resendPossiblyDesyncedDataValues(java.util.List.of(DATA_LIVING_ENTITY_FLAGS), serverPlayer);
 +    }
 +    // Paper end - Properly cancel usable items
++    // Paper start - lag compensate eating
++    protected long eatStartTime;
++    protected int totalEatTimeTicks;
++    // Paper end - lag compensate eating
      private void updatingUsingItem() {
          if (this.isUsingItem()) {
              if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
-@@ -3154,8 +_,13 @@
+@@ -3128,7 +_,12 @@
+ 
+     protected void updateUsingItem(ItemStack usingItem) {
+         usingItem.onUseTick(this.level(), this, this.getUseItemRemainingTicks());
+-        if (--this.useItemRemaining == 0 && !this.level().isClientSide && !usingItem.useOnRelease()) {
++        // Paper start - lag compensate eating
++        // we add 1 to the expected time to avoid lag compensating when we should not
++        final boolean shouldLagCompensate = this.useItem.has(DataComponents.FOOD) && this.eatStartTime != -1 && (System.nanoTime() - this.eatStartTime) > ((1L + this.totalEatTimeTicks) * 50L * (1000L * 1000L));
++        if ((--this.useItemRemaining == 0 || shouldLagCompensate) && !this.level().isClientSide && !usingItem.useOnRelease()) {
++            this.useItemRemaining = 0;
++            // Paper end - lag compensate eating
+             this.completeUsingItem();
+         }
+     }
+@@ -3154,10 +_,18 @@
      }
  
      public void startUsingItem(InteractionHand hand) {
@@ -1560,8 +1578,26 @@
 -        if (!itemInHand.isEmpty() && !this.isUsingItem()) {
 +        if (!itemInHand.isEmpty() && !this.isUsingItem() || forceUpdate) { // Paper - Prevent consuming the wrong itemstack
              this.useItem = itemInHand;
-             this.useItemRemaining = itemInHand.getUseDuration(this);
+-            this.useItemRemaining = itemInHand.getUseDuration(this);
++            // Paper start - lag compensate eating
++            this.useItemRemaining = this.totalEatTimeTicks = itemInHand.getUseDuration(this);
++            this.eatStartTime = System.nanoTime();
++            // Paper end - lag compensate eating
              if (!this.level().isClientSide) {
+                 this.setLivingEntityFlag(1, true);
+                 this.setLivingEntityFlag(2, hand == InteractionHand.OFF_HAND);
+@@ -3181,7 +_,10 @@
+                 }
+             } else if (!this.isUsingItem() && !this.useItem.isEmpty()) {
+                 this.useItem = ItemStack.EMPTY;
+-                this.useItemRemaining = 0;
++                // Paper start - lag compensate eating
++                this.useItemRemaining = this.totalEatTimeTicks = 0;
++                this.eatStartTime = -1L;
++                // Paper end - lag compensate eating
+             }
+         }
+     }
 @@ -3220,12 +_,49 @@
                  this.releaseUsingItem();
              } else {
@@ -1621,6 +1657,18 @@
              this.useItem.releaseUsing(this.level(), this, this.getUseItemRemainingTicks());
              if (this.useItem.useOnRelease()) {
                  this.updatingUsingItem();
+@@ -3267,7 +_,10 @@
+         }
+ 
+         this.useItem = ItemStack.EMPTY;
+-        this.useItemRemaining = 0;
++        // Paper start - lag compensate eating
++        this.useItemRemaining = this.totalEatTimeTicks = 0;
++        this.eatStartTime = -1L;
++        // Paper end - lag compensate eating
+     }
+ 
+     public boolean isBlocking() {
 @@ -3281,12 +_,69 @@
              if (item.getUseAnimation(this.useItem) != ItemUseAnimation.BLOCK) {
                  return null;

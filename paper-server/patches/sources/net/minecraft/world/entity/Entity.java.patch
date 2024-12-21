@@ -501,11 +501,47 @@
      }
  
      public boolean isFree(double x, double y, double z) {
-@@ -627,6 +_,7 @@
+@@ -626,7 +_,43 @@
+         return this.onGround;
      }
  
++    // Paper start - detailed watchdog information
++    public final Object posLock = new Object(); // Paper - log detailed entity tick information
++
++    private Vec3 moveVector;
++    private double moveStartX;
++    private double moveStartY;
++    private double moveStartZ;
++
++    public final Vec3 getMoveVector() {
++        return this.moveVector;
++    }
++
++    public final double getMoveStartX() {
++        return this.moveStartX;
++    }
++
++    public final double getMoveStartY() {
++        return this.moveStartY;
++    }
++
++    public final double getMoveStartZ() {
++        return this.moveStartZ;
++    }
++    // Paper end - detailed watchdog information
++
      public void move(MoverType type, Vec3 movement) {
 +        final Vec3 originalMovement = movement; // Paper - Expose pre-collision velocity
++        // Paper start - detailed watchdog information
++        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread("Cannot move an entity off-main");
++        synchronized (this.posLock) {
++            this.moveStartX = this.getX();
++            this.moveStartY = this.getY();
++            this.moveStartZ = this.getZ();
++            this.moveVector = movement;
++        }
++        try {
++        // Paper end - detailed watchdog information
          if (this.noPhysics) {
              this.setPos(this.getX() + movement.x, this.getY() + movement.y, this.getZ() + movement.z);
          } else {
@@ -538,6 +574,20 @@
                  if (!this.level().isClientSide() || this.isControlledByLocalInstance()) {
                      Entity.MovementEmission movementEmission = this.getMovementEmission();
                      if (movementEmission.emitsAnything() && !this.isPassenger()) {
+@@ -713,6 +_,13 @@
+                 profilerFiller.pop();
+             }
+         }
++        // Paper start - detailed watchdog information
++        } finally {
++            synchronized (this.posLock) { // Paper
++                this.moveVector = null;
++            } // Paper
++        }
++        // Paper end - detailed watchdog information
+     }
+ 
+     private void applyMovementEmissionAndPlaySound(Entity.MovementEmission movementEmission, Vec3 movement, BlockPos pos, BlockState state) {
 @@ -850,7 +_,7 @@
      }
  
@@ -1601,7 +1651,17 @@
                              }
                          }
                      }
-@@ -3480,7 +_,39 @@
+@@ -3417,7 +_,9 @@
+     }
+ 
+     public void setDeltaMovement(Vec3 deltaMovement) {
++        synchronized (this.posLock) { // Paper - detailed watchdog information
+         this.deltaMovement = deltaMovement;
++        } // Paper - detailed watchdog information
+     }
+ 
+     public void addDeltaMovement(Vec3 addend) {
+@@ -3480,9 +_,43 @@
          return this.getZ((2.0 * this.random.nextDouble() - 1.0) * scale);
      }
  
@@ -1639,8 +1699,12 @@
 +        }
 +        // Paper end - Fix MC-4
          if (this.position.x != x || this.position.y != y || this.position.z != z) {
++            synchronized (this.posLock) { // Paper - detailed watchdog information
              this.position = new Vec3(x, y, z);
++            } // Paper - detailed watchdog information
              int floor = Mth.floor(x);
+             int floor1 = Mth.floor(y);
+             int floor2 = Mth.floor(z);
 @@ -3496,6 +_,12 @@
  
              this.levelCallback.onMove();

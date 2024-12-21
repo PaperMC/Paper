@@ -338,7 +338,7 @@ index 0000000000000000000000000000000000000000..bd888ef719b9bfc93bace0b1d0fb771a
 +    }
 +}
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 8569f0670c13e3f635ef529f00e636bf7bca38b5..76e59a8b07ac58a38f368386e03aaa3d8586e21d 100644
+index d95413af04121fe91ca0f3b0c70025b9808acef9..ad665c7535c615d2b03a3e7864be435f933235dd 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
 @@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
@@ -366,7 +366,7 @@ index 8569f0670c13e3f635ef529f00e636bf7bca38b5..76e59a8b07ac58a38f368386e03aaa3d
  import org.slf4j.Logger;
  
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 2e479c02794de1eb9753b6f1e59afc2d9d6981ba..7702004b68b7735043914f93b54b4413cd21ba41 100644
+index 3164f3784131babf9a6663335517a12df7e88a7b..da8848e2a3e3745949eb2356a049451d30f763a7 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -551,6 +551,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -377,7 +377,7 @@ index 2e479c02794de1eb9753b6f1e59afc2d9d6981ba..7702004b68b7735043914f93b54b4413
              this.entityTickList
                  .forEach(
                      entity -> {
-@@ -960,16 +961,19 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -979,12 +980,15 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
          entity.tickCount++;
          profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
          profilerFiller.incrementCounter("tickNonPassenger");
@@ -392,6 +392,10 @@ index 2e479c02794de1eb9753b6f1e59afc2d9d6981ba..7702004b68b7735043914f93b54b4413
 -            this.tickPassenger(entity, entity1);
 +            this.tickPassenger(entity, entity1, isActive); // Paper - EAR 2
          }
+         // Paper start - log detailed entity tick information
+         } finally {
+@@ -995,7 +999,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         // Paper end - log detailed entity tick information
      }
  
 -    private void tickPassenger(Entity ridingEntity, Entity passengerEntity) {
@@ -399,7 +403,7 @@ index 2e479c02794de1eb9753b6f1e59afc2d9d6981ba..7702004b68b7735043914f93b54b4413
          if (passengerEntity.isRemoved() || passengerEntity.getVehicle() != ridingEntity) {
              passengerEntity.stopRiding();
          } else if (passengerEntity instanceof Player || this.entityTickList.contains(passengerEntity)) {
-@@ -978,12 +982,21 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -1004,12 +1008,21 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
              ProfilerFiller profilerFiller = Profiler.get();
              profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(passengerEntity.getType()).toString());
              profilerFiller.incrementCounter("tickPassenger");
@@ -451,7 +455,7 @@ index a9f01e616ef6b0d74caf57cd68eb371a4fd30fd5..179f4e4b9b1eb57f78bbb2f9fa34b11e
      public void aiStep() {
          super.aiStep();
 diff --git a/net/minecraft/world/entity/AreaEffectCloud.java b/net/minecraft/world/entity/AreaEffectCloud.java
-index b4a1202a9f43525caf215d2f5c86ad92ea4f6de7..47db6ac3ef23fd0da127cfb5a4d3ba9ebd2ab54d 100644
+index 24735284fda151414d99faad401d25ba60995f9a..23b342cc31c7e72ade0e1ccad86a9ccf34380f13 100644
 --- a/net/minecraft/world/entity/AreaEffectCloud.java
 +++ b/net/minecraft/world/entity/AreaEffectCloud.java
 @@ -128,6 +128,16 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
@@ -472,7 +476,7 @@ index b4a1202a9f43525caf215d2f5c86ad92ea4f6de7..47db6ac3ef23fd0da127cfb5a4d3ba9e
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 61b779fc48d88a2ba0cb7c289e7c031877bac61b..32ca912230a5999ea244cdf1c5c54855844f571b 100644
+index e7889c9c7b155db46730f5e168bb7fd3d1732a8c..334859c5ff7023c730513301cc11c9837b2c7823 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -380,6 +380,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -505,7 +509,7 @@ index 61b779fc48d88a2ba0cb7c289e7c031877bac61b..32ca912230a5999ea244cdf1c5c54855
          SynchedEntityData.Builder builder = new SynchedEntityData.Builder(this);
          builder.define(DATA_SHARED_FLAGS_ID, (byte)0);
          builder.define(DATA_AIR_SUPPLY_ID, this.getMaxAirSupply());
-@@ -946,6 +962,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -981,6 +997,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          } else {
              this.wasOnFire = this.isOnFire();
              if (type == MoverType.PISTON) {
@@ -514,7 +518,7 @@ index 61b779fc48d88a2ba0cb7c289e7c031877bac61b..32ca912230a5999ea244cdf1c5c54855
                  movement = this.limitPistonMovement(movement);
                  if (movement.equals(Vec3.ZERO)) {
                      return;
-@@ -959,6 +977,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -994,6 +1012,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
                  this.stuckSpeedMultiplier = Vec3.ZERO;
                  this.setDeltaMovement(Vec3.ZERO);
              }
@@ -529,10 +533,10 @@ index 61b779fc48d88a2ba0cb7c289e7c031877bac61b..32ca912230a5999ea244cdf1c5c54855
              movement = this.maybeBackOffFromEdge(movement, type);
              Vec3 vec3 = this.collide(movement);
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index e76889ab9766294e64afa2b89006d2efd218027c..9bf5addb07f40cc50e80a46c0ee7944e938620fb 100644
+index a71a153a91de5a564b946091d8d3ccbb330e4b89..195e1151f7b2a32d6c4eb67edd1952e38f58b266 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -3086,6 +3086,14 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3094,6 +3094,14 @@ public abstract class LivingEntity extends Entity implements Attackable {
          return false;
      }
  
@@ -647,7 +651,7 @@ index 789fea258d70e60d38271ebb31270562dc7eb3ab..d0ab3db7bbd2942db19f473474371b20
                          }
                      }
 diff --git a/net/minecraft/world/entity/item/ItemEntity.java b/net/minecraft/world/entity/item/ItemEntity.java
-index a9c7cf74174a2c998c182da149bdfeb87cca7b8d..e346edacf7705faf867430c9c44b8322a2bd9d72 100644
+index 8b034b6bda937b25dbb3d09b8293fed6d7dc512c..52a7ed0d991758bad0dcedcb7f97fb15ac6c6d04 100644
 --- a/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/net/minecraft/world/entity/item/ItemEntity.java
 @@ -124,6 +124,29 @@ public class ItemEntity extends Entity implements TraceableEntity {
@@ -824,7 +828,7 @@ index c553cf0592dfa606dbbb1e6854d3377b9feb5efb..8341e7f01606fca90e69384c16fc19bb
 +
  }
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index b6342c7161c2539b316be53e72640d44ce576b79..13dbd0da80b2199519370ac6e993ace53f42c1ea 100644
+index 32f184288f6065259c921293922c1b0163df4dc4..0f346faa82b988e86834c38837f6f11bea7f31c6 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -153,6 +153,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {

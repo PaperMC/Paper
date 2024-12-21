@@ -41,7 +41,7 @@
      @Nullable
      private KeyPair keyPair;
      @Nullable
-@@ -271,10 +_,35 @@
+@@ -271,10 +_,37 @@
      private final SuppressedExceptionCollector suppressedExceptions = new SuppressedExceptionCollector();
      private final DiscontinuousFrame tickFrame;
  
@@ -65,9 +65,11 @@
 +    // Spigot end
 +    public volatile boolean hasFullyShutdown; // Paper - Improved watchdog support
 +    public volatile boolean abnormalExit; // Paper - Improved watchdog support
++    public volatile Thread shutdownThread; // Paper - Improved watchdog support
 +    public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
 +    public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
 +    private final Set<String> pluginsBlockingSleep = new java.util.HashSet<>(); // Paper - API to allow/disallow tick sleeping
++    public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
 +
      public static <S extends MinecraftServer> S spin(Function<Thread, S> threadFunction) {
          AtomicReference<S> atomicReference = new AtomicReference<>();
@@ -110,7 +112,7 @@
              this.tickRateManager = new ServerTickRateManager(this);
              this.progressListenerFactory = progressListenerFactory;
              this.storageSource = storageSource;
-@@ -328,6 +_,37 @@
+@@ -328,6 +_,38 @@
              this.fuelValues = FuelValues.vanillaBurnTimes(this.registries.compositeAccess(), this.worldData.enabledFeatures());
              this.tickFrame = TracyClient.createDiscontinuousFrame("Server Tick");
          }
@@ -142,6 +144,7 @@
 +        }
 +        */
 +        // Paper end
++        io.papermc.paper.util.LogManagerShutdownThread.unhook(); // Paper - Improved watchdog support
 +        Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
 +        // CraftBukkit end
 +        this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
@@ -595,7 +598,7 @@
          if (flush) {
              for (ServerLevel serverLevel2 : this.getAllLevels()) {
                  LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", serverLevel2.getChunkSource().chunkMap.getStorageName());
-@@ -593,18 +_,46 @@
+@@ -593,18 +_,48 @@
          this.stopServer();
      }
  
@@ -617,6 +620,8 @@
 +            this.hasStopped = true;
 +        }
 +        if (!hasLoggedStop && isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread("Server stopped"); // Paper - Debugging
++        shutdownThread = Thread.currentThread(); // Paper - Improved watchdog support
++        org.spigotmc.WatchdogThread.doStop(); // Paper - Improved watchdog support
 +        // CraftBukkit end
          if (this.metricsRecorder.isRecording()) {
              this.cancelRecordingMetrics();
@@ -643,7 +648,7 @@
          }
  
          LOGGER.info("Saving worlds");
-@@ -646,6 +_,16 @@
+@@ -646,6 +_,25 @@
          } catch (IOException var4) {
              LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), var4);
          }
@@ -657,6 +662,15 @@
 +            this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
 +        }
 +        // Spigot end
++        // Paper start - Improved watchdog support - move final shutdown items here
++        Util.shutdownExecutors();
++        try {
++            net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
++        } catch (final Exception ignored) {
++        }
++        io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
++        this.onServerExit();
++        // Paper end - Improved watchdog support - move final shutdown items here
      }
  
      public String getLocalIp() {
@@ -733,12 +747,23 @@
      protected void runServer() {
          try {
              if (!this.initServer()) {
-@@ -681,6 +_,24 @@
+@@ -681,6 +_,35 @@
              this.statusIcon = this.loadStatusIcon().orElse(null);
              this.status = this.buildServerStatus();
  
 +            this.server.spark.enableBeforePlugins(); // Paper - spark
 +            // Spigot start
++            // Paper start
++            LOGGER.info("Running delayed init tasks");
++            this.server.getScheduler().mainThreadHeartbeat(); // run all 1 tick delay tasks during init,
++            // this is going to be the first thing the tick process does anyways, so move done and run it after
++            // everything is init before watchdog tick.
++            // anything at 3+ won't be caught here but also will trip watchdog....
++            // tasks are default scheduled at -1 + delay, and first tick will tick at 1
++            final long actualDoneTimeMs = System.currentTimeMillis() - org.bukkit.craftbukkit.Main.BOOT_TIME.toEpochMilli(); // Paper - Improve startup message
++            LOGGER.info("Done ({})! For help, type \"help\"", String.format(java.util.Locale.ROOT, "%.3fs", actualDoneTimeMs / 1000.00D)); // Paper - Improve startup message
++            org.spigotmc.WatchdogThread.tick();
++            // Paper end
 +            org.spigotmc.WatchdogThread.hasStarted = true; // Paper
 +            Arrays.fill(this.recentTps, 20);
 +            // Paper start - further improve server tick loop
@@ -798,21 +823,15 @@
                  this.nextTickTimeNanos += l;
  
                  try (Profiler.Scope scope = Profiler.use(this.createProfiler())) {
-@@ -755,6 +_,14 @@
+@@ -755,7 +_,7 @@
                      this.services.profileCache().clearExecutor();
                  }
  
-+                org.spigotmc.WatchdogThread.doStop(); // Spigot
-+                // CraftBukkit start - Restore terminal to original settings
-+                try {
-+                    net.minecrell.terminalconsole.TerminalConsoleAppender.close(); // Paper - Use TerminalConsoleAppender
-+                } catch (Exception ignored) {
-+                }
-+                // CraftBukkit end
-+                io.papermc.paper.log.CustomLogManager.forceReset(); // Paper - Reset loggers after shutdown
-                 this.onServerExit();
+-                this.onServerExit();
++                //this.onServerExit(); // Paper - Improved watchdog support; moved into stop
              }
          }
+     }
 @@ -807,7 +_,14 @@
      }
  
@@ -829,6 +848,19 @@
      }
  
      public static boolean throwIfFatalException() {
+@@ -852,6 +_,12 @@
+ 
+     @Override
+     public TickTask wrapRunnable(Runnable runnable) {
++        // Paper start - anything that does try to post to main during watchdog crash, run on watchdog
++        if (this.hasStopped && Thread.currentThread().equals(shutdownThread)) {
++            runnable.run();
++            runnable = () -> {};
++        }
++        // Paper end
+         return new TickTask(this.tickCount, runnable);
+     }
+ 
 @@ -871,15 +_,16 @@
          if (super.pollTask()) {
              return true;
@@ -952,7 +984,7 @@
              ObjectArrayList<GameProfile> list = new ObjectArrayList<>(min);
              int randomInt = Mth.nextInt(this.random, 0, players.size() - min);
  
-@@ -1046,17 +_,64 @@
+@@ -1046,17 +_,65 @@
      protected void tickChildren(BooleanSupplier hasTimeLeft) {
          ProfilerFiller profilerFiller = Profiler.get();
          this.getPlayerList().getPlayers().forEach(serverPlayer1 -> serverPlayer1.connection.suspendFlushing());
@@ -1006,6 +1038,7 @@
          for (ServerLevel serverLevel : this.getAllLevels()) {
 +            serverLevel.hasPhysicsEvent = org.bukkit.event.block.BlockPhysicsEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - BlockPhysicsEvent
 +            serverLevel.hasEntityMoveEvent = io.papermc.paper.event.entity.EntityMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Paper - Add EntityMoveEvent
++            serverLevel.updateLagCompensationTick(); // Paper - lag compensation
              profilerFiller.push(() -> serverLevel + " " + serverLevel.dimension().location());
 +            /* Drop global time updates
              if (this.tickCount % 20 == 0) {
@@ -1168,12 +1201,19 @@
                      this.resources.close();
                      this.resources = reloadableResources;
                      this.packRepository.setSelected(selectedIds);
-@@ -1529,11 +_,23 @@
+@@ -1529,11 +_,29 @@
                      this.worldData.setDataConfiguration(worldDataConfiguration);
                      this.resources.managers.updateStaticRegistryTags();
                      this.resources.managers.getRecipeManager().finalizeRecipeLoading(this.worldData.enabledFeatures());
+-                    this.getPlayerList().saveAll();
 +                    this.potionBrewing = this.potionBrewing.reload(this.worldData.enabledFeatures()); // Paper - Custom Potion Mixes
-                     this.getPlayerList().saveAll();
++                    if (Thread.currentThread() != this.serverThread) return; // Paper
++                    // Paper start - we don't need to save everything, just advancements
++                    // this.getPlayerList().saveAll();
++                    for (final ServerPlayer player : this.getPlayerList().getPlayers()) {
++                        player.getAdvancements().save();
++                    }
++                    // Paper end - we don't need to save everything, just advancements
                      this.getPlayerList().reloadResources();
                      this.functionManager.replaceLibrary(this.resources.managers.getFunctionLibrary());
                      this.structureTemplateManager.onResourceManagerReload(this.resources.resourceManager);
