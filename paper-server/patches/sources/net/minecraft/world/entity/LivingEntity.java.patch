@@ -497,7 +497,7 @@
              return false;
          } else if (damageSource.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
              return false;
-@@ -1116,10 +_,11 @@
+@@ -1116,47 +_,71 @@
                  amount = 0.0F;
              }
  
@@ -512,7 +512,11 @@
                  this.hurtCurrentlyUsedShield(amount);
                  f1 = amount;
                  amount = 0.0F;
-@@ -1130,33 +_,56 @@
+-                if (!damageSource.is(DamageTypeTags.IS_PROJECTILE) && damageSource.getDirectEntity() instanceof LivingEntity livingEntity) {
++                if (!damageSource.is(DamageTypeTags.IS_PROJECTILE) && damageSource.getDirectEntity() instanceof LivingEntity livingEntity && livingEntity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Check distance in entity interactions
+                     this.blockUsingShield(livingEntity);
+                 }
+ 
                  flag = true;
              }
  
@@ -584,9 +588,18 @@
                      this.markHurt();
                  }
  
-@@ -1186,7 +_,7 @@
+@@ -1185,8 +_,16 @@
+                         d = damageSource.getSourcePosition().x() - this.getX();
                          d1 = damageSource.getSourcePosition().z() - this.getZ();
                      }
++                    // Paper start - Check distance in entity interactions; see for loop in knockback method
++                    if (Math.abs(d) > 200) {
++                        d = Math.random() - Math.random();
++                    }
++                    if (Math.abs(d1) > 200) {
++                        d1 = Math.random() - Math.random();
++                    }
++                    // Paper end - Check distance in entity interactions
  
 -                    this.knockback(0.4F, d, d1);
 +                    this.knockback(0.4F, d, d1, damageSource.getDirectEntity(), damageSource.getDirectEntity() == null ? io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.DAMAGE : io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.ENTITY_ATTACK); // CraftBukkit // Paper - knockback events
@@ -1110,7 +1123,7 @@
 +                this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
 +                Entity entity = damageSource.getDirectEntity();
 +
-+                if (!damageSource.is(DamageTypeTags.IS_PROJECTILE) && entity instanceof LivingEntity) { // Paper - Fix shield disable inconsistency
++                if (!damageSource.is(DamageTypeTags.IS_PROJECTILE) && entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
 +                    this.blockUsingShield((LivingEntity) entity);
 +                }
 +            }
