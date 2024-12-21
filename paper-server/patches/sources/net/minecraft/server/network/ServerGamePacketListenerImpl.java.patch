@@ -256,7 +256,7 @@
                      LOGGER.warn(
                          "{} (vehicle of {}) moved too quickly! {},{},{}", rootVehicle.getName().getString(), this.player.getName().getString(), d3, d4, d5
                      );
-@@ -417,9 +_,9 @@
+@@ -417,15 +_,16 @@
                  }
  
                  boolean flag = serverLevel.noCollision(rootVehicle, rootVehicle.getBoundingBox().deflate(0.0625));
@@ -269,6 +269,13 @@
                  boolean flag1 = rootVehicle.verticalCollisionBelow;
                  if (rootVehicle instanceof LivingEntity livingEntity && livingEntity.onClimbable()) {
                      livingEntity.resetFallDistance();
+                 }
+ 
+                 rootVehicle.move(MoverType.PLAYER, new Vec3(d3, d4, d5));
++                double verticalDelta = d4; // Paper - Decompile fix, was named d11 previously, is now gone in the source
+                 d3 = d - rootVehicle.getX();
+                 d4 = d1 - rootVehicle.getY();
+                 if (d4 > -0.5 || d4 < 0.5) {
 @@ -435,18 +_,71 @@
                  d5 = d2 - rootVehicle.getZ();
                  d7 = d3 * d3 + d4 * d4 + d5 * d5;
@@ -342,6 +349,15 @@
  
                  this.player.serverLevel().getChunkSource().move(this.player);
                  rootVehicle.recordMovementThroughBlocks(new Vec3(x, y, z), rootVehicle.position());
+@@ -455,7 +_,7 @@
+                 rootVehicle.setOnGroundWithMovement(packet.onGround(), vec3);
+                 rootVehicle.doCheckFallDamage(vec3.x, vec3.y, vec3.z, packet.onGround());
+                 this.player.checkMovementStatistics(vec3.x, vec3.y, vec3.z);
+-                this.clientVehicleIsFloating = d4 >= -0.03125
++                this.clientVehicleIsFloating = verticalDelta >= -0.03125 // Paper - Decompile fix
+                     && !flag1
+                     && !this.server.isFlightAllowed()
+                     && !rootVehicle.isNoGravity()
 @@ -478,12 +_,12 @@
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
          if (packet.getId() == this.awaitingTeleport) {
@@ -694,7 +710,7 @@
                          if (this.player.isSleeping()) {
                              if (d7 > 1.0) {
                                  this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), f, f1);
-@@ -936,32 +_,104 @@
+@@ -936,32 +_,105 @@
                              if (serverLevel.tickRateManager().runsNormally()) {
                                  this.receivedMovePacketCount++;
                                  int i = this.receivedMovePacketCount - this.knownMovePacketCount;
@@ -805,10 +821,11 @@
 +                                return; // ... thanks Mojang for letting move calls teleport across dimensions.
 +                            }
 +                            // Paper end - prevent position desync
++                            double verticalDelta = d4; // Paper - Decompile fix, was named d11 previously, is now gone in the source
                              d3 = d - this.player.getX();
                              d4 = d1 - this.player.getY();
                              if (d4 > -0.5 || d4 < 0.5) {
-@@ -970,20 +_,101 @@
+@@ -970,23 +_,104 @@
  
                              d5 = d2 - this.player.getZ();
                              d7 = d3 * d3 + d4 * d4 + d5 * d5;
@@ -918,7 +935,11 @@
 +                                // CraftBukkit end
                                  this.player.absMoveTo(d, d1, d2, f, f1);
                                  boolean isAutoSpinAttack = this.player.isAutoSpinAttack();
-                                 this.clientIsFloating = d4 >= -0.03125
+-                                this.clientIsFloating = d4 >= -0.03125
++                                this.clientIsFloating = verticalDelta >= -0.03125 // Paper - Decompile fix
+                                     && !flag1
+                                     && this.player.gameMode.getGameModeForPlayer() != GameType.SPECTATOR
+                                     && !this.server.isFlightAllowed()
 @@ -1019,7 +_,7 @@
                                  this.lastGoodY = this.player.getY();
                                  this.lastGoodZ = this.player.getZ();

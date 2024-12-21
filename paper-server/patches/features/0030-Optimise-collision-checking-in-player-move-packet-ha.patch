@@ -6,7 +6,7 @@ Subject: [PATCH] Optimise collision checking in player move packet handling
 Move collision logic to just the hasNewCollision call instead of getCubes + hasNewCollision
 
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 96d36b2e285ec0a518b15ccdff4d7d1850b0a7e2..9a0a2a628d76a4e0410839d919a8bf38ff73a650 100644
+index 650126e6445c0458c6a6649c235908bfeea428cd..d248671b2e1c6256fc4d74320bdb29ca078bad0b 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -561,7 +561,7 @@ public class ServerGamePacketListenerImpl
@@ -23,10 +23,10 @@ index 96d36b2e285ec0a518b15ccdff4d7d1850b0a7e2..9a0a2a628d76a4e0410839d919a8bf38
  
                  rootVehicle.move(MoverType.PLAYER, new Vec3(d3, d4, d5));
 +                boolean didCollide = toX != rootVehicle.getX() || toY != rootVehicle.getY() || toZ != rootVehicle.getZ(); // Paper - needed here as the difference in Y can be reset - also note: this is only a guess at whether collisions took place, floating point errors can make this true when it shouldn't be...
+                 double verticalDelta = d4; // Paper - Decompile fix, was named d11 previously, is now gone in the source
                  d3 = d - rootVehicle.getX();
                  d4 = d1 - rootVehicle.getY();
-                 if (d4 > -0.5 || d4 < 0.5) {
-@@ -581,14 +582,22 @@ public class ServerGamePacketListenerImpl
+@@ -582,14 +583,22 @@ public class ServerGamePacketListenerImpl
                  d7 = d3 * d3 + d4 * d4 + d5 * d5;
                  boolean flag2 = false;
                  if (d7 > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
@@ -52,7 +52,7 @@ index 96d36b2e285ec0a518b15ccdff4d7d1850b0a7e2..9a0a2a628d76a4e0410839d919a8bf38
                      rootVehicle.absMoveTo(x, y, z, f, f1);
                      this.player.absMoveTo(x, y, z, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
                      this.send(ClientboundMoveVehiclePacket.fromEntity(rootVehicle));
-@@ -666,9 +675,32 @@ public class ServerGamePacketListenerImpl
+@@ -667,9 +676,32 @@ public class ServerGamePacketListenerImpl
      }
  
      private boolean noBlocksAround(Entity entity) {
@@ -88,7 +88,7 @@ index 96d36b2e285ec0a518b15ccdff4d7d1850b0a7e2..9a0a2a628d76a4e0410839d919a8bf38
      }
  
      @Override
-@@ -1360,7 +1392,7 @@ public class ServerGamePacketListenerImpl
+@@ -1361,7 +1393,7 @@ public class ServerGamePacketListenerImpl
                                  }
                              }
  
@@ -97,7 +97,7 @@ index 96d36b2e285ec0a518b15ccdff4d7d1850b0a7e2..9a0a2a628d76a4e0410839d919a8bf38
                              d3 = d - this.lastGoodX; // Paper - diff on change, used for checking large move vectors above
                              d4 = d1 - this.lastGoodY; // Paper - diff on change, used for checking large move vectors above
                              d5 = d2 - this.lastGoodZ; // Paper - diff on change, used for checking large move vectors above
-@@ -1399,6 +1431,7 @@ public class ServerGamePacketListenerImpl
+@@ -1400,6 +1432,7 @@ public class ServerGamePacketListenerImpl
                              boolean flag1 = this.player.verticalCollisionBelow;
                              this.player.move(MoverType.PLAYER, new Vec3(d3, d4, d5));
                              this.player.onGround = packet.isOnGround(); // CraftBukkit - SPIGOT-5810, SPIGOT-5835, SPIGOT-6828: reset by this.player.move
@@ -105,7 +105,7 @@ index 96d36b2e285ec0a518b15ccdff4d7d1850b0a7e2..9a0a2a628d76a4e0410839d919a8bf38
                              // Paper start - prevent position desync
                              if (this.awaitingPositionFromClient != null) {
                                  return; // ... thanks Mojang for letting move calls teleport across dimensions.
-@@ -1430,7 +1463,17 @@ public class ServerGamePacketListenerImpl
+@@ -1432,7 +1465,17 @@ public class ServerGamePacketListenerImpl
                              }
  
                              // Paper start - Add fail move event
@@ -124,7 +124,7 @@ index 96d36b2e285ec0a518b15ccdff4d7d1850b0a7e2..9a0a2a628d76a4e0410839d919a8bf38
                              if (teleportBack) {
                                  io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.CLIPPED_INTO_BLOCK,
                                      toX, toY, toZ, toYaw, toPitch, false);
-@@ -1566,7 +1609,7 @@ public class ServerGamePacketListenerImpl
+@@ -1568,7 +1611,7 @@ public class ServerGamePacketListenerImpl
  
      private boolean updateAwaitingTeleport() {
          if (this.awaitingPositionFromClient != null) {
@@ -133,7 +133,7 @@ index 96d36b2e285ec0a518b15ccdff4d7d1850b0a7e2..9a0a2a628d76a4e0410839d919a8bf38
                  this.awaitingTeleportTime = this.tickCount;
                  this.teleport(
                      this.awaitingPositionFromClient.x,
-@@ -1585,6 +1628,33 @@ public class ServerGamePacketListenerImpl
+@@ -1587,6 +1630,33 @@ public class ServerGamePacketListenerImpl
          }
      }
  
