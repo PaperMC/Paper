@@ -65,7 +65,7 @@ How To (Compiling Jar From Source)
 ------
 To compile Paper, you need JDK 21 and an internet connection.
 
-Clone this repo, run `./gradlew applyPatches`, then `./gradlew createMojmapBundlerJar` from your terminal. You can find the compiled jar in the project root's `build/libs` directory.
+Clone this repo, run `./gradlew applyPatches`, then `./gradlew createMojmapBundlerJar` from your terminal. You can find the compiled jar in the `paper-server/build/libs` directory.
 
 To get a full list of tasks, run `./gradlew tasks`.
 
