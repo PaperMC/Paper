@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jakub Zacek <dawon@dawon.eu>
+Date: Tue, 13 Feb 2024 18:58:43 +0100
+Subject: [PATCH] Expand PlayerDeathEvent API
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 58591bf2f63b9c5e97d9ce4188dff3366968a178..0fb77672fe6dc127835584e13736847be1fb007e 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -965,7 +965,7 @@ public class ServerPlayer extends Player {
+ 
+         String deathmessage = defaultMessage.getString();
+         this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
+-        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
++        org.bukkit.event.entity.PlayerDeathEvent event = CraftEventFactory.callPlayerDeathEvent(this, loot, PaperAdventure.asAdventure(defaultMessage), keepInventory, flag); // Paper - Adventure
+         // Paper start - cancellable death event
+         if (event.isCancelled()) {
+             // make compatible with plugins that might have already set the health in an event listener
+@@ -983,13 +983,14 @@ public class ServerPlayer extends Player {
+         }
+ 
+         net.kyori.adventure.text.Component deathMessage = event.deathMessage() != null ? event.deathMessage() : net.kyori.adventure.text.Component.empty(); // Paper - Adventure
++        Component deathScreenMessage = PaperAdventure.asVanilla(event.deathScreenMessage() != null && event.shouldDisplayDeathMessage() ? event.deathScreenMessage() : net.kyori.adventure.text.Component.empty()); // Paper - Expand PlayerDeathEvent API
+ 
+-        if (deathMessage != null && deathMessage != net.kyori.adventure.text.Component.empty() && flag) { // Paper - Adventure // TODO: allow plugins to override?
++        if (deathMessage != null && deathMessage != net.kyori.adventure.text.Component.empty() && event.shouldDisplayDeathMessage()) { // Paper - Adventure // Paper - Expand PlayerDeathEvent API
+             Component ichatbasecomponent = PaperAdventure.asVanilla(deathMessage); // Paper - Adventure
+ 
+-            this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), ichatbasecomponent), PacketSendListener.exceptionallySend(() -> {
++            this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), deathScreenMessage), PacketSendListener.exceptionallySend(() -> { // Paper - death screen api // Paper - Expand PlayerDeathEvent API
+                 boolean flag1 = true;
+-                String s = ichatbasecomponent.getString(256);
++                String s = deathScreenMessage.getString(256); // Paper - Expand PlayerDeathEvent API
+                 MutableComponent ichatmutablecomponent = Component.translatable("death.attack.message_too_long", Component.literal(s).withStyle(ChatFormatting.YELLOW));
+                 MutableComponent ichatmutablecomponent1 = Component.translatable("death.attack.even_more_magic", this.getDisplayName()).withStyle((chatmodifier) -> {
+                     return chatmodifier.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, ichatmutablecomponent));
+@@ -1009,7 +1010,7 @@ public class ServerPlayer extends Player {
+                 this.server.getPlayerList().broadcastSystemMessage(ichatbasecomponent, false);
+             }
+         } else {
+-            this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), CommonComponents.EMPTY));
++            this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), deathScreenMessage)); // Paper - Expand PlayerDeathEvent API
+         }
+ 
+         this.removeEntitiesOnShoulder();
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index 347bd2482c89e06716121bd7d05941203bab2a8b..06127d7b6f9add10d132a53f23905b879562d98e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1007,9 +1007,9 @@ public class CraftEventFactory {
+         return event;
+     }
+ 
+-    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, List<Entity.DefaultDrop> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory) { // Paper - Adventure & Restore vanilla drops behavior
++    public static PlayerDeathEvent callPlayerDeathEvent(ServerPlayer victim, List<Entity.DefaultDrop> drops, net.kyori.adventure.text.Component deathMessage, boolean keepInventory, boolean showDeathMessage) { // Paper - Adventure & Restore vanilla drops behavior // Paper - Expand PlayerDeathEvent API
+         CraftPlayer entity = victim.getBukkitEntity();
+-        PlayerDeathEvent event = new PlayerDeathEvent(entity, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(), 0, deathMessage); // Paper - Restore vanilla drops behavior
++        PlayerDeathEvent event = new PlayerDeathEvent(entity, new io.papermc.paper.util.TransformingRandomAccessList<>(drops, Entity.DefaultDrop::stack, FROM_FUNCTION), victim.getExpReward(), 0, deathMessage, showDeathMessage); // Paper - Restore vanilla drops behavior // Paper - Expand PlayerDeathEvent API
+         event.setKeepInventory(keepInventory);
+         event.setKeepLevel(victim.keepLevel); // SPIGOT-2222: pre-set keepLevel
+         populateFields(victim, event); // Paper - make cancellable
