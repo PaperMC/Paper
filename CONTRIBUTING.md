@@ -185,11 +185,11 @@ need to "save" the changes.
 
 ## Rebasing PRs
 
-Steps to rebase a PR to include the latest changes from `master`.  
+Steps to rebase a PR to include the latest changes from `main`.  
 These steps assume the `origin` remote is your fork of this repository and `upstream` is the official PaperMC repository.
 
-1. Pull the latest changes from upstreams master: `git switch main && git pull upstream main`.
-1. Checkout feature/fix branch and rebase on master: `git checkout patch-branch && git rebase main`.
+1. Pull the latest changes from upstreams main: `git switch main && git pull upstream main`.
+1. Checkout feature/fix branch and rebase on main: `git checkout patch-branch && git rebase main`.
 1. Apply updated patches: `./gradlew applyPatches`.
 1. If there are conflicts, fix them.
 1. If your PR creates new feature patches instead of modifying existing ones, ensure your newly-created patch is the last commit by either:
