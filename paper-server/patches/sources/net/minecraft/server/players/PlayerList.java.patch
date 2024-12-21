@@ -450,12 +450,12 @@
 +        // this.broadcastAll(new ClientboundPlayerInfoRemovePacket(List.of(player.getUUID())));
 +        ClientboundPlayerInfoRemovePacket packet = new ClientboundPlayerInfoRemovePacket(List.of(player.getUUID()));
 +        for (int i = 0; i < this.players.size(); i++) {
-+            ServerPlayer entityplayer2 = (ServerPlayer) this.players.get(i);
++            ServerPlayer otherPlayer = (ServerPlayer) this.players.get(i);
 +
-+            if (entityplayer2.getBukkitEntity().canSee(player.getBukkitEntity())) {
-+                entityplayer2.connection.send(packet);
++            if (otherPlayer.getBukkitEntity().canSee(player.getBukkitEntity())) {
++                otherPlayer.connection.send(packet);
 +            } else {
-+                entityplayer2.getBukkitEntity().onEntityRemove(player);
++                otherPlayer.getBukkitEntity().onEntityRemove(player);
 +            }
 +        }
 +        // This removes the scoreboard (and player reference) for the specific player in the manager
@@ -758,7 +758,7 @@
  
          return serverPlayer;
      }
-@@ -482,24 +_,65 @@
+@@ -482,24 +_,60 @@
      }
  
      public void sendActiveEffects(LivingEntity entity, ServerGamePacketListenerImpl connection) {
@@ -791,14 +791,9 @@
 -            this.broadcastAll(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY), this.players));
 +            // CraftBukkit start
 +            for (int i = 0; i < this.players.size(); ++i) {
-+                final ServerPlayer target = (ServerPlayer) this.players.get(i);
++                final ServerPlayer target = this.players.get(i);
 +
-+                target.connection.send(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY), this.players.stream().filter(new Predicate<ServerPlayer>() {
-+                    @Override
-+                    public boolean test(ServerPlayer input) {
-+                        return target.getBukkitEntity().canSee(input.getBukkitEntity());
-+                    }
-+                }).collect(java.util.stream.Collectors.toList())));
++                target.connection.send(new ClientboundPlayerInfoUpdatePacket(EnumSet.of(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_LATENCY), com.google.common.collect.Collections2.filter(this.players, t -> target.getBukkitEntity().canSee(t.getBukkitEntity()))));
 +            }
 +            // CraftBukkit end
              this.sendAllPlayerInfoIn = 0;
