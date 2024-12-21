@@ -25,10 +25,6 @@ subprojects {
         }
     }
 
-    dependencies {
-        "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
-    }
-
     tasks.withType<AbstractArchiveTask>().configureEach {
         isPreserveFileTimestamps = false
         isReproducibleFileOrder = true

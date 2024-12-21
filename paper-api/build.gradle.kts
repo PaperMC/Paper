@@ -92,6 +92,7 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.14.1")
     testImplementation("org.ow2.asm:asm-tree:9.7.1")
     mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 // Paper start
