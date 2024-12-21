@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.util.Holderable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -197,7 +198,6 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
     private final Class<?> bukkitClass; // Paper - relax preload class
     private final Map<NamespacedKey, B> cache = new HashMap<>();
-    private final Map<B, NamespacedKey> byValue = new java.util.IdentityHashMap<>(); // Paper - improve Registry
     private final net.minecraft.core.Registry<M> minecraftRegistry;
     private final io.papermc.paper.registry.entry.RegistryTypeMapper<M, B> minecraftToBukkit; // Paper - switch to Holder
     private final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater; // Paper - rename to make it *clear* what it is *only* for
@@ -251,7 +251,6 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         }
 
         this.cache.put(namespacedKey, bukkit);
-        this.byValue.put(bukkit, namespacedKey); // Paper - improve Registry
 
         return bukkit;
     }
@@ -298,7 +297,10 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     // Paper start - improve Registry
     @Override
     public NamespacedKey getKey(final B value) {
-        return this.byValue.get(value);
+        if (value instanceof Holderable<?> holderable) {
+            return holderable.getKeyOrNull();
+        }
+        return Registry.super.getKey(value);
     }
     // Paper end - improve Registry
 

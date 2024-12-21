@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory.trim;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.util.Holderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.contents.TranslatableContents;
@@ -77,8 +78,7 @@ public class CraftTrimPattern implements TrimPattern, io.papermc.paper.util.Hold
     @Override
     @NotNull
     public NamespacedKey getKey() {
-        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.TRIM_PATTERN.getKey(this), () -> this + " doesn't have a key"); // Paper
-        return this.key;
+        return Holderable.super.getKey();
     }
 
     @NotNull

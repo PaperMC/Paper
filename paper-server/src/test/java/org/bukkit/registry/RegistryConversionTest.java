@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 import static org.mockito.Mockito.*;
 import com.google.common.base.Joiner;
+import io.papermc.paper.registry.RegistryKey;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -259,6 +260,8 @@ public class RegistryConversionTest {
                 Joiner.on('\n').withKeyValueSeparator(" got: ").join(notMatching)));
     }
 
+    static final Set<RegistryKey<?>> IGNORE_FOR_DIRECT_HOLDER = Set.of(RegistryKey.TRIM_MATERIAL, RegistryKey.TRIM_PATTERN, RegistryKey.INSTRUMENT, RegistryKey.PAINTING_VARIANT, RegistryKey.BANNER_PATTERN, RegistryKey.SOUND_EVENT); // Paper
+
     /**
      * Minecraft registry can return a default key / value
      * when the passed minecraft value is not registry in this case, we want it to throw an error.
@@ -269,7 +272,7 @@ public class RegistryConversionTest {
                                                       Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) throws IllegalAccessException {
         this.checkValidMinecraftToBukkit(clazz);
 
-        if (type == io.papermc.paper.registry.RegistryKey.TRIM_MATERIAL || type == io.papermc.paper.registry.RegistryKey.TRIM_PATTERN || type == io.papermc.paper.registry.RegistryKey.INSTRUMENT) return; // Paper - manually skip for now
+        assumeFalse(IGNORE_FOR_DIRECT_HOLDER.contains(type), "skipped because these types support direct holders"); // Paper - manually skip for now
         try {
 
             Object minecraft = mock(minecraftClazz);

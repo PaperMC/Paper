@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.util.Holderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Instrument;
@@ -75,8 +76,7 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
     @NotNull
     @Override
     public NamespacedKey getKey() {
-        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.INSTRUMENT.getKey(this), () -> this + " doesn't have a key"); // Paper
-        return this.key;
+        return Holderable.super.getKey();
     }
 
     // Paper start - add translationKey methods
