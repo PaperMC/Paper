@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Aikar <aikar@aikar.co>
+Date: Mon, 29 Jun 2020 03:26:17 -0400
+Subject: [PATCH] Support old UUID format for NBT
+
+We have stored UUID in plenty of places that did not get DFU'd
+
+So just look for old format and load it if it exists.
+
+diff --git a/src/main/java/net/minecraft/nbt/CompoundTag.java b/src/main/java/net/minecraft/nbt/CompoundTag.java
+index e88161e662d5605b50aead673c9b3794874e5f7f..d7bb00a946346dff0b0269cbd65276e146a63fb0 100644
+--- a/src/main/java/net/minecraft/nbt/CompoundTag.java
++++ b/src/main/java/net/minecraft/nbt/CompoundTag.java
+@@ -232,6 +232,12 @@ public class CompoundTag implements Tag {
+     }
+ 
+     public void putUUID(String key, UUID value) {
++        // Paper start - Support old UUID format
++        if (this.contains(key + "Most", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC) && this.contains(key + "Least", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
++            this.tags.remove(key + "Most");
++            this.tags.remove(key + "Least");
++        }
++        // Paper end - Support old UUID format
+         this.tags.put(key, NbtUtils.createUUID(value));
+     }
+ 
+@@ -240,10 +246,20 @@ public class CompoundTag implements Tag {
+      * You must use {@link #hasUUID(String)} before or else it <b>will</b> throw an NPE.
+      */
+     public UUID getUUID(String key) {
++        // Paper start - Support old UUID format
++        if (!contains(key, 11) && this.contains(key + "Most", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC) && this.contains(key + "Least", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
++            return new UUID(this.getLong(key + "Most"), this.getLong(key + "Least"));
++        }
++        // Paper end - Support old UUID format
+         return NbtUtils.loadUUID(this.get(key));
+     }
+ 
+     public boolean hasUUID(String key) {
++        // Paper start - Support old UUID format
++        if (this.contains(key + "Most", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC) && this.contains(key + "Least", net.minecraft.nbt.Tag.TAG_ANY_NUMERIC)) {
++            return true;
++        }
++        // Paper end - Support old UUID format
+         Tag tag = this.get(key);
+         return tag != null && tag.getType() == IntArrayTag.TYPE && ((IntArrayTag)tag).getAsIntArray().length == 4;
+     }
+diff --git a/src/main/java/net/minecraft/world/item/component/ResolvableProfile.java b/src/main/java/net/minecraft/world/item/component/ResolvableProfile.java
+index 78863e72239a0f3535bc85758479da84d58c11c1..38bbe39a5cd96710b208d70ed78619057bb6e6fa 100644
+--- a/src/main/java/net/minecraft/world/item/component/ResolvableProfile.java
++++ b/src/main/java/net/minecraft/world/item/component/ResolvableProfile.java
+@@ -20,9 +20,10 @@ public record ResolvableProfile(Optional<String> name, Optional<UUID> id, Proper
+         instance -> instance.group(
+                     ExtraCodecs.PLAYER_NAME.optionalFieldOf("name").forGetter(ResolvableProfile::name),
+                     UUIDUtil.CODEC.optionalFieldOf("id").forGetter(ResolvableProfile::id),
++                    UUIDUtil.STRING_CODEC.lenientOptionalFieldOf("Id").forGetter($ -> Optional.empty()), // Paper
+                     ExtraCodecs.PROPERTY_MAP.optionalFieldOf("properties", new PropertyMap()).forGetter(ResolvableProfile::properties)
+                 )
+-                .apply(instance, ResolvableProfile::new)
++                .apply(instance, (s, uuid, uuid2, propertyMap) -> new ResolvableProfile(s, uuid2.or(() -> uuid), propertyMap)) // Paper
+     );
+     public static final Codec<ResolvableProfile> CODEC = Codec.withAlternative(
+         FULL_CODEC, ExtraCodecs.PLAYER_NAME, name -> new ResolvableProfile(Optional.of(name), Optional.empty(), new PropertyMap())

@@ -1,0 +1,138 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 13 Aug 2023 15:41:52 -0700
+Subject: [PATCH] Improve performance of mass crafts
+
+When the server crafts all available items in CraftingMenu or InventoryMenu the game
+checks either 4 or 9 times for each individual craft for a matching recipe for that container.
+This check can be expensive if 64 total crafts are being performed with the recipe matching logic
+being run 64 * 9 + 64 times. A breakdown of those times is below. This patch caches the last matching
+recipe so that it is checked first and only if it doesn't match does the rest of the matching logic run.
+
+Shift-click crafts are processed one at a time, so shift clicking on an item in the result of a iron block craft
+where all the 9 inputs are full stacks of iron will run 64 iron block crafts. For each of those crafts, the
+'remaining' blocks are calculated. This is due to recipes that have leftover items like buckets. This is done
+for each craft, and done once to get the full 9 leftover items which are usually air. Then 1 item is removed
+from each of the 9 inputs and each time that happens, logic is triggered to update the result itemstack. So
+for each craft, that logic is run 9 times (hence the 64 * 9). The + 64 is from the 64 checks for remaining items.
+
+After this patch, the full iteration over all recipes checking for a match should run once for a full craft to find the
+initial recipe match. Then that recipe will be checked first for all future recipe match checks.
+
+diff --git a/src/main/java/net/minecraft/world/inventory/CraftingContainer.java b/src/main/java/net/minecraft/world/inventory/CraftingContainer.java
+index 779d107a4d07820529273af5931421c09d1dc27f..4f6c8c43f5150e340704682accfbe2a5b1c5db19 100644
+--- a/src/main/java/net/minecraft/world/inventory/CraftingContainer.java
++++ b/src/main/java/net/minecraft/world/inventory/CraftingContainer.java
+@@ -18,11 +18,11 @@ public interface CraftingContainer extends Container, StackedContentsCompatible
+     List<ItemStack> getItems();
+ 
+     // CraftBukkit start
+-    default RecipeHolder<?> getCurrentRecipe() {
++    default RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> getCurrentRecipe() { // Paper - use correct generic
+         return null;
+     }
+ 
+-    default void setCurrentRecipe(RecipeHolder<?> recipe) {
++    default void setCurrentRecipe(RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> recipe) { // Paper - use correct generic
+     }
+     // CraftBukkit end
+ 
+diff --git a/src/main/java/net/minecraft/world/inventory/CraftingMenu.java b/src/main/java/net/minecraft/world/inventory/CraftingMenu.java
+index b572c905b2ef3cf79202c5f35eefd6a636e872f5..f9e4714cb0ee74505ed72200abed7756aa68dc90 100644
+--- a/src/main/java/net/minecraft/world/inventory/CraftingMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/CraftingMenu.java
+@@ -79,6 +79,7 @@ public class CraftingMenu extends RecipeBookMenu<CraftingInput, CraftingRecipe>
+             CraftingInput craftinginput = craftingInventory.asCraftInput();
+             ServerPlayer entityplayer = (ServerPlayer) player;
+             ItemStack itemstack = ItemStack.EMPTY;
++            if (recipe == null) recipe = craftingInventory.getCurrentRecipe(); // Paper - Perf: Improve mass crafting; check last recipe used first
+             Optional<RecipeHolder<CraftingRecipe>> optional = world.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftinginput, world, recipe);
+             craftingInventory.setCurrentRecipe(optional.orElse(null)); // CraftBukkit
+ 
+diff --git a/src/main/java/net/minecraft/world/inventory/ResultSlot.java b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
+index c75bc6bec06bb7c32eea81c0bc89441beb3d1150..37a89bf79017eb65f82276b054a70ddb5eb5e549 100644
+--- a/src/main/java/net/minecraft/world/inventory/ResultSlot.java
++++ b/src/main/java/net/minecraft/world/inventory/ResultSlot.java
+@@ -63,7 +63,7 @@ public class ResultSlot extends Slot {
+         CraftingInput craftingInput = positioned.input();
+         int i = positioned.left();
+         int j = positioned.top();
+-        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, craftingInput, player.level());
++        NonNullList<ItemStack> nonNullList = player.level().getRecipeManager().getRemainingItemsFor(RecipeType.CRAFTING, craftingInput, player.level(), this.craftSlots.getCurrentRecipe()); // Paper - Perf: Improve mass crafting; check last recipe used first
+ 
+         for (int k = 0; k < craftingInput.height(); k++) {
+             for (int l = 0; l < craftingInput.width(); l++) {
+diff --git a/src/main/java/net/minecraft/world/inventory/TransientCraftingContainer.java b/src/main/java/net/minecraft/world/inventory/TransientCraftingContainer.java
+index 341e1f70602ecdb4782c9cd74fa19135ac230d90..42207462c4e720677a5ddbba4129dae60420aaa3 100644
+--- a/src/main/java/net/minecraft/world/inventory/TransientCraftingContainer.java
++++ b/src/main/java/net/minecraft/world/inventory/TransientCraftingContainer.java
+@@ -27,7 +27,7 @@ public class TransientCraftingContainer implements CraftingContainer {
+ 
+     // CraftBukkit start - add fields
+     public List<HumanEntity> transaction = new java.util.ArrayList<HumanEntity>();
+-    private RecipeHolder<?> currentRecipe;
++    private RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> currentRecipe; // Paper - use correct generic
+     public Container resultInventory;
+     private Player owner;
+     private int maxStack = MAX_STACK;
+@@ -72,12 +72,12 @@ public class TransientCraftingContainer implements CraftingContainer {
+     }
+ 
+     @Override
+-    public RecipeHolder<?> getCurrentRecipe() {
++    public RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> getCurrentRecipe() { // Paper - use correct generic
+         return this.currentRecipe;
+     }
+ 
+     @Override
+-    public void setCurrentRecipe(RecipeHolder<?> currentRecipe) {
++    public void setCurrentRecipe(RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> currentRecipe) { // Paper - use correct generic
+         this.currentRecipe = currentRecipe;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+index 407f3c1938b5b5d893b09705fe4930dbdafa3c8e..de7c77c1b25680ecc65f0f43f2391aff269a974f 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
++++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+@@ -111,13 +111,20 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+     }
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> Optional<RecipeHolder<T>> getRecipeFor(RecipeType<T> type, I input, Level world, @Nullable RecipeHolder<T> recipe) {
+-        // CraftBukkit start
+-        List<RecipeHolder<T>> list = this.byType(type).stream().filter((recipeholder1) -> {
+-            return recipeholder1.value().matches(input, world);
+-        }).toList();
+-        Optional<RecipeHolder<T>> recipe1 = (list.isEmpty() || input.isEmpty()) ? Optional.empty() : (recipe != null && recipe.value().matches(input, world) ? Optional.of(recipe) : Optional.of(list.getLast())); // CraftBukkit - SPIGOT-4638: last recipe gets priority
+-        return recipe1;
+-        // CraftBukkit end
++        // Paper start - fix upstream's complete screw up of checking last used recipe
++        if (input.isEmpty()) {
++            return Optional.empty();
++        } else if (recipe != null && recipe.value().matches(input, world)) {
++            return Optional.of(recipe);
++        } else {
++            // CraftBukkit start
++            List<RecipeHolder<T>> list = this.byType(type).stream().filter((recipeholder1) -> {
++                return recipeholder1.value().matches(input, world);
++            }).toList();
++            return list.isEmpty() ? Optional.empty() : Optional.of(list.getLast()); // CraftBukkit - SPIGOT-4638: last recipe gets priority
++            // CraftBukkit end
++        }
++        // Paper end
+     }
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> List<RecipeHolder<T>> getAllRecipesFor(RecipeType<T> type) {
+@@ -137,7 +144,12 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+     }
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, I input, Level world) {
+-        Optional<RecipeHolder<T>> optional = this.getRecipeFor(type, input, world);
++        // Paper start - Perf: improve performance of mass crafts
++        return this.getRemainingItemsFor(type, input, world, null);
++    }
++    public <I extends RecipeInput, T extends Recipe<I>> NonNullList<ItemStack> getRemainingItemsFor(RecipeType<T> type, I input, Level world, @Nullable RecipeHolder<T> previousRecipe) {
++        Optional<RecipeHolder<T>> optional = this.getRecipeFor(type, input, world, previousRecipe);
++        // Paper end - Perf: improve performance of mass crafts
+ 
+         if (optional.isPresent()) {
+             return ((RecipeHolder) optional.get()).value().getRemainingItems(input);

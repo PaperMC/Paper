@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 16 Dec 2023 14:46:01 -0800
+Subject: [PATCH] add more scoreboard API
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+index b36e5574c10e6d70a399e2ac0704fd4f43dbb444..2d3abf2a1da487ead74d698cc5ea4eb729c35c8d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftObjective.java
+@@ -185,6 +185,19 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
+         final CraftObjective other = (CraftObjective) obj;
+         return !(this.objective != other.objective && (this.objective == null || !this.objective.equals(other.objective)));
+     }
++    // Paper start - add more score API
++    @Override
++    public boolean willAutoUpdateDisplay() {
++        this.checkState();
++        return this.objective.displayAutoUpdate();
++    }
++
++    @Override
++    public void setAutoUpdateDisplay(final boolean autoUpdateDisplay) {
++        this.checkState();
++        this.objective.setDisplayAutoUpdate(autoUpdateDisplay);
++    }
++    // Paper end - add more score API
+ 
+ 
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java
+index ceb1a39c02c3cfa7632a0fdca414c7046888fcb1..74d9c407e971804bed420370f7b684d8658eb5aa 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java
++++ b/src/main/java/org/bukkit/craftbukkit/scoreboard/CraftScore.java
+@@ -74,4 +74,44 @@ final class CraftScore implements Score {
+         board.resetSinglePlayerScore(entry, this.objective.getHandle());
+     }
+     // Paper end
++
++    // Paper start - add more score API
++    @Override
++    public boolean isTriggerable() {
++        if (this.objective.getTrackedCriteria() != org.bukkit.scoreboard.Criteria.TRIGGER) {
++            return false;
++        }
++        final Scoreboard board = this.objective.checkState().board;
++        final ReadOnlyScoreInfo scoreInfo = board.getPlayerScoreInfo(this.entry, this.objective.getHandle());
++        return scoreInfo != null && !scoreInfo.isLocked();
++    }
++
++    @Override
++    public void setTriggerable(final boolean triggerable) {
++        com.google.common.base.Preconditions.checkArgument(this.objective.getTrackedCriteria() == org.bukkit.scoreboard.Criteria.TRIGGER, "the criteria isn't 'trigger'");
++        final Scoreboard board = this.objective.checkState().board;
++        if (triggerable) {
++            board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).unlock();
++        } else {
++            board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).lock();
++        }
++    }
++
++    @Override
++    public net.kyori.adventure.text.Component customName() {
++        final Scoreboard board = this.objective.checkState().board;
++        final ReadOnlyScoreInfo scoreInfo = board.getPlayerScoreInfo(this.entry, this.objective.getHandle());
++        if (scoreInfo == null) {
++            return null; // If score doesn't exist, don't create one
++        }
++        final net.minecraft.network.chat.Component display = board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).display();
++        return display == null ? null : io.papermc.paper.adventure.PaperAdventure.asAdventure(display);
++    }
++
++    @Override
++    public void customName(final net.kyori.adventure.text.Component customName) {
++        final Scoreboard board = this.objective.checkState().board;
++        board.getOrCreatePlayerScore(this.entry, this.objective.getHandle()).display(io.papermc.paper.adventure.PaperAdventure.asVanilla(customName));
++    }
++    // Paper end - add more score API
+ }

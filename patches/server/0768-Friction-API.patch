@@ -1,0 +1,156 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Noah van der Aa <ndvdaa@gmail.com>
+Date: Wed, 15 Sep 2021 20:44:22 +0200
+Subject: [PATCH] Friction API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index f662a791e8cb045903a0de29778e5f30892fb766..2bb61084b628582ded44926d7697ee26d0bb1e8e 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -285,6 +285,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     public boolean bukkitPickUpLoot;
+     public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
+     public boolean silentDeath = false; // Paper - mark entity as dying silently for cancellable death event
++    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
+ 
+     @Override
+     public float getBukkitYaw() {
+@@ -706,7 +707,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     public boolean shouldDiscardFriction() {
+-        return this.discardFriction;
++        return !this.frictionState.toBooleanOrElse(!this.discardFriction); // Paper - Friction API
+     }
+ 
+     public void setDiscardFriction(boolean noDrag) {
+@@ -774,6 +775,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+     @Override
+     public void addAdditionalSaveData(CompoundTag nbt) {
++        // Paper start - Friction API
++        if (this.frictionState != net.kyori.adventure.util.TriState.NOT_SET) {
++            nbt.putString("Paper.FrictionState", this.frictionState.toString());
++        }
++        // Paper end - Friction API
+         nbt.putFloat("Health", this.getHealth());
+         nbt.putShort("HurtTime", (short) this.hurtTime);
+         nbt.putInt("HurtByTimestamp", this.lastHurtByMobTimestamp);
+@@ -817,6 +823,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         }
+         this.internalSetAbsorptionAmount(absorptionAmount);
+         // Paper end - Check for NaN
++        // Paper start - Friction API
++        if (nbt.contains("Paper.FrictionState")) {
++            String fs = nbt.getString("Paper.FrictionState");
++            try {
++                frictionState = net.kyori.adventure.util.TriState.valueOf(fs);
++            } catch (Exception ignored) {
++                LOGGER.error("Unknown friction state " + fs + " for " + this);
++            }
++        }
++        // Paper end - Friction API
+         if (nbt.contains("attributes", 9) && this.level() != null && !this.level().isClientSide) {
+             this.getAttributes().load(nbt.getList("attributes", 10));
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 446c319524183d6a1b4d0e6f0613a8db690677da..cbfb07bdf8d5e2e5a462835184be2d47e59d506c 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -63,6 +63,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+     private int lastTick = MinecraftServer.currentTick - 1; // CraftBukkit
+     public boolean canMobPickup = true; // Paper - Item#canEntityPickup
+     private int despawnRate = -1; // Paper - Alternative item-despawn-rate
++    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
+ 
+     public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
+         super(type, world);
+@@ -185,7 +186,11 @@ public class ItemEntity extends Entity implements TraceableEntity {
+                 this.move(MoverType.SELF, this.getDeltaMovement());
+                 float f = 0.98F;
+ 
+-                if (this.onGround()) {
++                // Paper start - Friction API
++                if (frictionState == net.kyori.adventure.util.TriState.FALSE) {
++                    f = 1F;
++                } else if (this.onGround()) {
++                    // Paper end - Friction API
+                     f = this.level().getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).getBlock().getFriction() * 0.98F;
+                 }
+ 
+@@ -393,6 +398,11 @@ public class ItemEntity extends Entity implements TraceableEntity {
+ 
+     @Override
+     public void addAdditionalSaveData(CompoundTag nbt) {
++        // Paper start - Friction API
++        if (this.frictionState != net.kyori.adventure.util.TriState.NOT_SET) {
++            nbt.putString("Paper.FrictionState", this.frictionState.toString());
++        }
++        // Paper end - Friction API
+         nbt.putShort("Health", (short) this.health);
+         nbt.putShort("Age", (short) this.age);
+         nbt.putShort("PickupDelay", (short) this.pickupDelay);
+@@ -435,6 +445,17 @@ public class ItemEntity extends Entity implements TraceableEntity {
+             this.setItem(ItemStack.EMPTY);
+         }
+ 
++        // Paper start - Friction API
++        if (nbt.contains("Paper.FrictionState")) {
++            String fs = nbt.getString("Paper.FrictionState");
++            try {
++                frictionState = net.kyori.adventure.util.TriState.valueOf(fs);
++            } catch (Exception ignored) {
++                com.mojang.logging.LogUtils.getLogger().error("Unknown friction state " + fs + " for " + this);
++            }
++        }
++        // Paper end - Friction API
++
+         if (this.getItem().isEmpty()) {
+             this.discard(null); // CraftBukkit - add Bukkit remove cause
+         }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
+index 1a291dd8a287db30e71dcb315599fc4b038764c4..30d62ee4d5cd2ddacb8783b5bbbf475d592b3e02 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftItem.java
+@@ -99,6 +99,18 @@ public class CraftItem extends CraftEntity implements Item {
+         this.getHandle().age = willAge ? 0 : NO_AGE_TIME;
+      }
+ 
++     @org.jetbrains.annotations.NotNull
++     @Override
++     public net.kyori.adventure.util.TriState getFrictionState() {
++        return this.getHandle().frictionState;
++     }
++
++     @Override
++     public void setFrictionState(@org.jetbrains.annotations.NotNull net.kyori.adventure.util.TriState state) {
++         java.util.Objects.requireNonNull(state, "state may not be null");
++         this.getHandle().frictionState = state;
++     }
++
+     @Override
+     public int getHealth() {
+         return this.getHandle().health;
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 2332f40fed84510741e63073aaf0a18aab85303e..516ea1ec9ae5069c3c0e4708f62164a91960b627 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -1179,4 +1179,17 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+         nmsStack.hurtAndBreak(amount, this.getHandle(), slot, true);
+     }
+     // Paper end - ItemStack damage API
++    // Paper start - friction API
++    @org.jetbrains.annotations.NotNull
++    @Override
++    public net.kyori.adventure.util.TriState getFrictionState() {
++        return this.getHandle().frictionState;
++    }
++
++    @Override
++    public void setFrictionState(@org.jetbrains.annotations.NotNull net.kyori.adventure.util.TriState state) {
++        java.util.Objects.requireNonNull(state, "state may not be null");
++        this.getHandle().frictionState = state;
++    }
++    // Paper end - friction API
+ }

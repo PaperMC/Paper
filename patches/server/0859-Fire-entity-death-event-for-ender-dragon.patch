@@ -1,0 +1,26 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Trevor Bedson <78997566+Prorickey@users.noreply.github.com>
+Date: Fri, 14 Jul 2023 20:47:02 -0400
+Subject: [PATCH] Fire entity death event for ender dragon
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+index 6306f7925ac4852d8eed7508a11764c636dd7d36..5868d2e9e05a698c77117cf87c79b636b50fe289 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
++++ b/src/main/java/net/minecraft/world/entity/boss/enderdragon/EnderDragon.java
+@@ -657,6 +657,15 @@ public class EnderDragon extends Mob implements Enemy {
+ 
+     @Override
+     public void kill() {
++        // Paper start - Fire entity death event
++        this.silentDeath = true;
++        org.bukkit.event.entity.EntityDeathEvent deathEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityDeathEvent(this, this.damageSources().genericKill());
++        if (deathEvent.isCancelled()) {
++            this.silentDeath = false; // Reset to default if event was cancelled
++            return;
++        }
++        // Paper end - Fire entity death event
++
+         this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
+         this.gameEvent(GameEvent.ENTITY_DIE);
+         if (this.dragonFight != null) {

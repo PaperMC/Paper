@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 29 Oct 2022 17:02:42 -0700
+Subject: [PATCH] Fix possible StackOverflowError for some dispenses
+
+For saddles, carpets, horse armor, and chests for horse-likes
+a BlockDispenseEvent handler that always mutated the item without
+changing the type would result in a SO error because when it went
+to find the replacement dispense behavior (since the item "changed")
+it didn't properly handle if the replacement was the same instance
+of dispense behavior.
+
+Additionally equippable mob heads, wither skulls, and carved pumpkins
+are subject to the same possible error.
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index 7826e2a52da47914aca39fef958b8f398a2ff937..0c0b8a49b3342cd015381c6a93fab23c32cd32e6 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -239,7 +239,7 @@ public interface DispenseItemBehavior {
+                         // Chain to handler for new item
+                         ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                         DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+-                        if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != ArmorItem.DISPENSE_ITEM_BEHAVIOR) {
++                        if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != this) { // Paper - fix possible StackOverflowError
+                             idispensebehavior.dispense(pointer, eventStack);
+                             return stack;
+                         }
+@@ -295,7 +295,7 @@ public interface DispenseItemBehavior {
+                     // Chain to handler for new item
+                     ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                     DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+-                    if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != ArmorItem.DISPENSE_ITEM_BEHAVIOR) {
++                    if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != this) { // Paper - fix possible StackOverflowError
+                         idispensebehavior.dispense(pointer, eventStack);
+                         return stack;
+                     }
+@@ -369,7 +369,7 @@ public interface DispenseItemBehavior {
+                     // Chain to handler for new item
+                     ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                     DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+-                    if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != ArmorItem.DISPENSE_ITEM_BEHAVIOR) {
++                    if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != this) { // Paper - fix possible StackOverflowError
+                         idispensebehavior.dispense(pointer, eventStack);
+                         return stack;
+                     }
+@@ -690,7 +690,7 @@ public interface DispenseItemBehavior {
+         OptionalDispenseItemBehavior dispensebehaviormaybe1 = new OptionalDispenseItemBehavior() {
+             @Override
+             protected ItemStack execute(BlockSource pointer, ItemStack stack) {
+-                this.setSuccess(ArmorItem.dispenseArmor(pointer, stack));
++                this.setSuccess(ArmorItem.dispenseArmor(pointer, stack, this)); // Paper - fix possible StackOverflowError
+                 return stack;
+             }
+         };
+@@ -744,7 +744,7 @@ public interface DispenseItemBehavior {
+                     stack.shrink(1);
+                     this.setSuccess(true);
+                 } else {
+-                    this.setSuccess(ArmorItem.dispenseArmor(pointer, stack));
++                    this.setSuccess(ArmorItem.dispenseArmor(pointer, stack, this)); // Paper - fix possible StackOverflowError
+                 }
+ 
+                 return stack;
+@@ -790,7 +790,7 @@ public interface DispenseItemBehavior {
+                     stack.shrink(1);
+                     this.setSuccess(true);
+                 } else {
+-                    this.setSuccess(ArmorItem.dispenseArmor(pointer, stack));
++                    this.setSuccess(ArmorItem.dispenseArmor(pointer, stack, this)); // Paper - fix possible StackOverflowError
+                 }
+ 
+                 return stack;
+@@ -918,7 +918,7 @@ public interface DispenseItemBehavior {
+                         // Chain to handler for new item
+                         ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                         DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+-                        if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != ArmorItem.DISPENSE_ITEM_BEHAVIOR) {
++                        if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != this) { // Paper - fix possible StackOverflowError
+                             idispensebehavior.dispense(pointer, eventStack);
+                             return stack;
+                         }
+diff --git a/src/main/java/net/minecraft/world/item/ArmorItem.java b/src/main/java/net/minecraft/world/item/ArmorItem.java
+index fb518f87cc4ccd810fb32cade2fdd7e09ab0abfc..647a4601deace52f8d855f512a73671f82b4762a 100644
+--- a/src/main/java/net/minecraft/world/item/ArmorItem.java
++++ b/src/main/java/net/minecraft/world/item/ArmorItem.java
+@@ -39,14 +39,20 @@ public class ArmorItem extends Item implements Equipable {
+     public static final DispenseItemBehavior DISPENSE_ITEM_BEHAVIOR = new DefaultDispenseItemBehavior() {
+         @Override
+         protected ItemStack execute(BlockSource pointer, ItemStack stack) {
+-            return ArmorItem.dispenseArmor(pointer, stack) ? stack : super.execute(pointer, stack);
++            return ArmorItem.dispenseArmor(pointer, stack, this) ? stack : super.execute(pointer, stack); // Paper - fix possible StackOverflowError
+         }
+     };
+     protected final ArmorItem.Type type;
+     protected final Holder<ArmorMaterial> material;
+     private final Supplier<ItemAttributeModifiers> defaultModifiers;
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+     public static boolean dispenseArmor(BlockSource pointer, ItemStack armor) {
++        // Paper start
++        return dispenseArmor(pointer, armor, null);
++    }
++    public static boolean dispenseArmor(BlockSource pointer, ItemStack armor, @javax.annotation.Nullable DispenseItemBehavior currentBehavior) {
++        // Paper end
+         BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
+         List<LivingEntity> list = pointer.level().getEntitiesOfClass(LivingEntity.class, new AABB(blockposition), EntitySelector.NO_SPECTATORS.and(new EntitySelector.MobCanWearArmorEntitySelector(armor)));
+ 
+@@ -77,7 +83,7 @@ public class ArmorItem extends Item implements Equipable {
+                 // Chain to handler for new item
+                 ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
+                 DispenseItemBehavior idispensebehavior = (DispenseItemBehavior) DispenserBlock.DISPENSER_REGISTRY.get(eventStack.getItem());
+-                if (idispensebehavior != DispenseItemBehavior.NOOP && idispensebehavior != ArmorItem.DISPENSE_ITEM_BEHAVIOR) {
++                if (idispensebehavior != DispenseItemBehavior.NOOP && (currentBehavior == null || idispensebehavior != currentBehavior)) { // Paper - fix possible StackOverflowError
+                     idispensebehavior.dispense(pointer, eventStack);
+                     return true;
+                 }

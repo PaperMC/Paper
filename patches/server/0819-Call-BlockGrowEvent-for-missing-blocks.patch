@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lulu13022002 <41980282+Lulu13022002@users.noreply.github.com>
+Date: Fri, 9 Jun 2023 13:04:42 +0200
+Subject: [PATCH] Call BlockGrowEvent for missing blocks
+
+Call the event for pitcher crops and sniffer egg
+
+diff --git a/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java b/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
+index d06e3892cf42723f8e3f621b5497c5348fa1a715..5f1ec3f69295760b7b8097916c82cbf9ddd49700 100644
+--- a/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PitcherCropBlock.java
+@@ -133,7 +133,7 @@ public class PitcherCropBlock extends DoublePlantBlock implements BonemealableBl
+         int i = Math.min(state.getValue(AGE) + amount, 4);
+         if (this.canGrow(world, pos, state, i)) {
+             BlockState blockState = state.setValue(AGE, Integer.valueOf(i));
+-            world.setBlock(pos, blockState, 2);
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, blockState, 2)) return; // Paper
+             if (isDouble(i)) {
+                 world.setBlock(pos.above(), blockState.setValue(HALF, DoubleBlockHalf.UPPER), 3);
+             }
+diff --git a/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java b/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
+index f53808e200bd83ab80954ec5c1e9c14250302be8..b943384eb6a4612993556036f0d3beec6939a559 100644
+--- a/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/SnifferEggBlock.java
+@@ -71,8 +71,13 @@ public class SnifferEggBlock extends Block {
+     @Override
+     public void tick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+         if (!this.isReadyToHatch(state)) {
++            // Paper start
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(HATCH, Integer.valueOf(this.getHatchLevel(state) + 1)), 2)) {
++                this.rescheduleTick(world, pos);
++                return;
++            }
++            // Paper end
+             world.playSound(null, pos, SoundEvents.SNIFFER_EGG_CRACK, SoundSource.BLOCKS, 0.7F, 0.9F + random.nextFloat() * 0.2F);
+-            world.setBlock(pos, state.setValue(HATCH, Integer.valueOf(this.getHatchLevel(state) + 1)), 2);
+         } else {
+             // Paper start - Call BlockFadeEvent
+             if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(world, pos, state.getFluidState().createLegacyBlock()).isCancelled()) {
