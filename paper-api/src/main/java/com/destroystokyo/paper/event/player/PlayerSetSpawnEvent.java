@@ -66,7 +66,7 @@ public class PlayerSetSpawnEvent extends PlayerEvent implements Cancellable {
      * @param location the spawn location, or {@code null} to remove the spawn location
      */
     public void setLocation(final @Nullable Location location) {
-        this.location = location;
+        this.location = location != null ? location.clone() : null;
     }
 
     /**

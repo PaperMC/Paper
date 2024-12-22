@@ -99,7 +99,7 @@ public class EntityKnockbackEvent extends EntityEvent implements Cancellable {
     public void setFinalKnockback(@NotNull Vector knockback) {
         Preconditions.checkArgument(knockback != null, "Knockback cannot be null");
 
-        this.knockback = knockback;
+        this.knockback = knockback.clone();
     }
 
     @Override
