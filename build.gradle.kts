@@ -145,7 +145,7 @@ tasks.register("checkWork") {
 
     val input = providers.fileContents(layout.projectDirectory.file("$CACHE_PATH/last-updating-folder")).asText.map { it.trim() }
     val patchFolder = layout.projectDirectory.dir("paper-server/patches/sources").dir(input)
-    val sourceFolder = layout.projectDirectory.dir("paper-server/src/vanilla/java").dir(input)
+    val sourceFolder = layout.projectDirectory.dir("paper-server/src/minecraft/java").dir(input)
     val targetFolder = providers.gradleProperty("cleanPaperRepo").map {
         expandUserHome(it).resolve(input.get())
     }

@@ -66,16 +66,16 @@ Assuming you have already forked the repository:
 2. Type `./gradlew applyPatches` in a terminal to apply the changes from upstream.
 On Windows, replace the `./` with `.\` at the beginning for all `gradlew` commands;
 3. cd into `paper-server` for server changes, and `paper-api` for API changes.
-**Only changes made in `paper-server/src/vanilla` have to deal with the patch system.**
+**Only changes made in `paper-server/src/minecraft` have to deal with the patch system.**
 
-`paper-server/src/vanilla` is not a git repositories in the traditional sense. Its
-initial commits are the decompiled and deobfuscated Vanilla source files. The per-file
+`paper-server/src/minecraft` is not a git repositories in the traditional sense. Its
+initial commits are the decompiled and deobfuscated Minecraft source files. The per-file
 patches are applied on top of these files as a single, large commit, which is then followed
 by the individual feature-patch commits.
 
-### Modifying (per-file) Vanilla patches
+### Modifying (per-file) Minecraft patches
 
-This is generally what you need to do when editing Vanilla files. Updating our
+This is generally what you need to do when editing Minecraft files. Updating our
 per-file patches is as easy as making your changes and then running
 # TODO
 in the root directory. If nothing went wrong, you can rebuild patches with
