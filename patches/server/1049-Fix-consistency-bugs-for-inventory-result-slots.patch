@@ -1,0 +1,117 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 13 May 2024 18:39:33 -0700
+Subject: [PATCH] Fix consistency bugs for inventory result slots
+
+== AT ==
+public net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity SLOT_RESULT
+public net.minecraft.world.level.block.entity.BrewingStandBlockEntity INGREDIENT_SLOT
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryBrewer.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryBrewer.java
+index fa3a302283b668cfc2c1d3f3e97ccc4827367417..75f89da0bb1c1d2ccd6c4ea0b6657a900070ffc7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryBrewer.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryBrewer.java
+@@ -10,6 +10,13 @@ public class CraftInventoryBrewer extends CraftInventory implements BrewerInvent
+         super(inventory);
+     }
+ 
++    // Paper start - exclude result slot(s) for consistency
++    @Override
++    public org.bukkit.inventory.ItemStack[] getStorageContents() {
++        return this.asCraftMirror(this.getInventory().getContents().subList(net.minecraft.world.level.block.entity.BrewingStandBlockEntity.INGREDIENT_SLOT, this.getInventory().getContainerSize()));
++    }
++    // Paper end - exclude result slot(s) for consistency
++
+     @Override
+     public ItemStack getIngredient() {
+         return this.getItem(3);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCrafting.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCrafting.java
+index 3c7012802d13f96f9d013b930f8efb0e445079e2..cf221ae71fd388ddaa878ed663be44b00956304a 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCrafting.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryCrafting.java
+@@ -36,6 +36,18 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
+         this.setContents(items[0], Arrays.copyOfRange(items, 1, items.length));
+     }
+ 
++    // Paper start - exclude result slot(s) for consistency & fix isEmpty
++    @Override
++    public org.bukkit.inventory.ItemStack[] getStorageContents() {
++        return this.asCraftMirror(this.getMatrixInventory().getContents());
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return this.getInventory().isEmpty() && this.getResultInventory().isEmpty();
++    }
++    // Paper end - exclude result slot(s) for consistency & fix isEmpty
++
+     @Override
+     public ItemStack[] getContents() {
+         ItemStack[] items = new ItemStack[this.getSize()];
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryFurnace.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryFurnace.java
+index 4ce9fd8e4e124600f48f34c6943512f39444cb9b..46bcc811fc5e048a8e33c80c12c8f1a95d56c42e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryFurnace.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryFurnace.java
+@@ -10,6 +10,13 @@ public class CraftInventoryFurnace extends CraftInventory implements FurnaceInve
+         super(inventory);
+     }
+ 
++    // Paper start - exclude result slot(s) for consistency
++    @Override
++    public org.bukkit.inventory.ItemStack[] getStorageContents() {
++        return this.asCraftMirror(this.getInventory().getContents().subList(0, AbstractFurnaceBlockEntity.SLOT_RESULT));
++    }
++    // Paper end - exclude result slot(s) for consistency
++
+     @Override
+     public ItemStack getResult() {
+         return this.getItem(2);
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryMerchant.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryMerchant.java
+index 9f2c4352c01196abf8679bfd2cb4d20770c6642b..776f14c98e78943132e89d013c58f6ec7becba9e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryMerchant.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventoryMerchant.java
+@@ -14,6 +14,13 @@ public class CraftInventoryMerchant extends CraftInventory implements MerchantIn
+         this.merchant = merchant;
+     }
+ 
++    // Paper start - exclude result slot(s) for consistency
++    @Override
++    public org.bukkit.inventory.ItemStack[] getStorageContents() {
++        return this.asCraftMirror(this.getInventory().getContents().subList(0, 2));
++    }
++    // Paper end - exclude result slot(s) for consistency
++
+     @Override
+     public int getSelectedRecipeIndex() {
+         return this.getInventory().selectionHint;
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftResultInventory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftResultInventory.java
+index d4ad8c00e567c6769694b457f8e870669fecb7a8..78336b24783e6931485aee553800d30eaa66f103 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftResultInventory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftResultInventory.java
+@@ -20,6 +20,26 @@ public class CraftResultInventory extends CraftInventory {
+         return this.inventory;
+     }
+ 
++    // Paper start - fix inventory methods with multiple Containers
++    @Override
++    public boolean isEmpty() {
++        return this.getInventory().isEmpty() && this.getResultInventory().isEmpty();
++    }
++
++    @Override
++    public ItemStack[] getStorageContents() {
++        return this.asCraftMirror(this.getIngredientsInventory().getContents());
++    }
++
++    @Override
++    public ItemStack[] getContents() {
++        final java.util.List<net.minecraft.world.item.ItemStack> contents = new java.util.ArrayList<>();
++        contents.addAll(this.getIngredientsInventory().getContents());
++        contents.addAll(this.getResultInventory().getContents());
++        return this.asCraftMirror(contents);
++    }
++    // Paper end - fix inventory methods with multiple Containers
++
+     @Override
+     public ItemStack getItem(int slot) {
+         if (slot < this.getIngredientsInventory().getContainerSize()) {
