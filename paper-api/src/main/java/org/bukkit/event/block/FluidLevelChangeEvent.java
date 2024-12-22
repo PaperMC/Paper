@@ -15,7 +15,6 @@ public class FluidLevelChangeEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
-    //
     private BlockData newData;
 
     public FluidLevelChangeEvent(@NotNull Block theBlock, @NotNull BlockData newData) {
