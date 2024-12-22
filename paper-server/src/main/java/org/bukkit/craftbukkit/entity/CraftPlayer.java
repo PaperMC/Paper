@@ -543,7 +543,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public String getDisplayName() {
-        if(true) return io.papermc.paper.adventure.DisplayNames.getLegacy(this); // Paper
+        if (true) return io.papermc.paper.adventure.DisplayNames.getLegacy(this); // Paper
         return this.getHandle().displayName;
     }
 
@@ -3522,32 +3522,32 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public int getViewDistance() {
-        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getViewDistance(this.getHandle());
+        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getViewDistance(this.getHandle());
     }
 
     @Override
     public void setViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setViewDistance(this.getHandle(), viewDistance); // Paper - chunk system
     }
 
     @Override
     public int getSimulationDistance() {
-        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getTickViewDistance(this.getHandle());
+        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getTickViewDistance(this.getHandle());
     }
 
     @Override
     public void setSimulationDistance(final int simulationDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setSimulationDistance(this.getHandle(), simulationDistance); // Paper - chunk system
     }
 
     @Override
     public int getSendViewDistance() {
-        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getSendViewDistance(this.getHandle());
+        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getSendViewDistance(this.getHandle());
     }
 
     @Override
     public void setSendViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setSendViewDistance(this.getHandle(), viewDistance); // Paper - chunk system
     }
 
     // Paper start - entity effect API

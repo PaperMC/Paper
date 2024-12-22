@@ -193,8 +193,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isOnGround() {
-        if (this.entity instanceof AbstractArrow) {
-            return ((AbstractArrow) this.entity).isInGround();
+        if (this.entity instanceof AbstractArrow abstractArrow) {
+            return abstractArrow.isInGround();
         }
         return this.entity.onGround();
     }
@@ -417,7 +417,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public org.bukkit.entity.Entity getPassenger() {
-        return this.isEmpty() ? null : this.getHandle().passengers.get(0).getBukkitEntity();
+        return this.isEmpty() ? null : this.getHandle().getPassengers().getFirst().getBukkitEntity();
     }
 
     @Override
@@ -433,7 +433,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public List<org.bukkit.entity.Entity> getPassengers() {
-        return Lists.newArrayList(Lists.transform(this.getHandle().passengers, (Function<Entity, org.bukkit.entity.Entity>) input -> input.getBukkitEntity()));
+        return Lists.newArrayList(Lists.transform(this.getHandle().getPassengers(), (Function<Entity, org.bukkit.entity.Entity>) Entity::getBukkitEntity));
     }
 
     @Override
@@ -852,12 +852,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public int getPortalCooldown() {
-        return this.getHandle().portalCooldown;
+        return this.getHandle().getPortalCooldown();
     }
 
     @Override
     public void setPortalCooldown(int cooldown) {
-        this.getHandle().portalCooldown = cooldown;
+        this.getHandle().setPortalCooldown(cooldown);
     }
 
     @Override
@@ -1252,12 +1252,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     // Paper start - missing entity api
     @Override
-    public boolean isInvisible() {  // Paper - moved up from LivingEntity
+    public boolean isInvisible() { // Paper - moved up from LivingEntity
         return this.getHandle().isInvisible();
     }
 
     @Override
-    public void setInvisible(boolean invisible) {  // Paper - moved up from LivingEntity
+    public void setInvisible(boolean invisible) { // Paper - moved up from LivingEntity
         this.getHandle().persistentInvisibility = invisible;
         this.getHandle().setSharedFlag(Entity.FLAG_INVISIBLE, invisible);
     }

@@ -66,16 +66,16 @@ Assuming you have already forked the repository:
 2. Type `./gradlew applyPatches` in a terminal to apply the changes from upstream.
 On Windows, replace the `./` with `.\` at the beginning for all `gradlew` commands;
 3. cd into `paper-server` for server changes, and `paper-api` for API changes.
-**Only changes made in `paper-server/src/vanilla` have to deal with the patch system.**
+**Only changes made in `paper-server/src/minecraft` have to deal with the patch system.**
 
-`paper-server/src/vanilla` is not a git repositories in the traditional sense. Its
-initial commits are the decompiled and deobfuscated Vanilla source files. The per-file
+`paper-server/src/minecraft` is not a git repositories in the traditional sense. Its
+initial commits are the decompiled and deobfuscated Minecraft source files. The per-file
 patches are applied on top of these files as a single, large commit, which is then followed
 by the individual feature-patch commits.
 
-### Modifying (per-file) Vanilla patches
+### Modifying (per-file) Minecraft patches
 
-This is generally what you need to do when editing Vanilla files. Updating our
+This is generally what you need to do when editing Minecraft files. Updating our
 per-file patches is as easy as making your changes and then running
 # TODO
 in the root directory. If nothing went wrong, you can rebuild patches with
@@ -169,13 +169,14 @@ move it under the line of the patch you wish to modify;
 
 1. Make your change while at HEAD;
 1. Make a fixup commit. `git commit -a --fixup <hashOfPatchToFix>`;
+   - If you want to modify a per-file patch, use `git commit -a --fixup file`
    - You can also use `--squash` instead of `--fixup` if you want the commit
    message to also be changed.
    - You can get the hash by looking at `git log` or `git blame`; your IDE can
   assist you too.
    - Alternatively, if you only know the name of the patch, you can do
   `git commit -a --fixup "Subject of Patch name"`.
-1. Rebase with autosquash: `git rebase -i --autosquash base`.
+1. Rebase with autosquash: `git rebase -i --autosquash mache/main`.
 This will automatically move your fixup commit to the right place, and you just
 need to "save" the changes.
 1. Type `./gradlew rebuildPatches` in the root directory;
@@ -184,11 +185,11 @@ need to "save" the changes.
 
 ## Rebasing PRs
 
-Steps to rebase a PR to include the latest changes from `master`.  
+Steps to rebase a PR to include the latest changes from `main`.  
 These steps assume the `origin` remote is your fork of this repository and `upstream` is the official PaperMC repository.
 
-1. Pull the latest changes from upstreams master: `git switch main && git pull upstream main`.
-1. Checkout feature/fix branch and rebase on master: `git checkout patch-branch && git rebase main`.
+1. Pull the latest changes from upstreams main: `git switch main && git pull upstream main`.
+1. Checkout feature/fix branch and rebase on main: `git checkout patch-branch && git rebase main`.
 1. Apply updated patches: `./gradlew applyPatches`.
 1. If there are conflicts, fix them.
 1. If your PR creates new feature patches instead of modifying existing ones, ensure your newly-created patch is the last commit by either:

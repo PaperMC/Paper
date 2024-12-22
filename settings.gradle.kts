@@ -3,7 +3,6 @@ import java.util.Locale
 pluginManagement {
     repositories {
         gradlePluginPortal()
-        mavenLocal()
         maven("https://repo.papermc.io/repository/maven-public/")
     }
 }
@@ -25,7 +24,7 @@ if (!file(".git").exists()) {
          Built Paper jars are available for download at
          https://papermc.io/downloads/paper
          
-         See https://github.com/PaperMC/Paper/blob/master/CONTRIBUTING.md
+         See https://github.com/PaperMC/Paper/blob/main/CONTRIBUTING.md
          for further information on building and modifying Paper.
         ===================================================
     """.trimIndent()

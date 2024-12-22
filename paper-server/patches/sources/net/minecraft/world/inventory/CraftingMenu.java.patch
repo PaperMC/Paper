@@ -1,0 +1,87 @@
+--- a/net/minecraft/world/inventory/CraftingMenu.java
++++ b/net/minecraft/world/inventory/CraftingMenu.java
+@@ -30,13 +_,16 @@
+     public final ContainerLevelAccess access;
+     private final Player player;
+     private boolean placingRecipe;
++    // CraftBukkit start
++    private org.bukkit.craftbukkit.inventory.CraftInventoryView bukkitEntity = null;
++    // CraftBukkit end
+ 
+     public CraftingMenu(int containerId, Inventory playerInventory) {
+         this(containerId, playerInventory, ContainerLevelAccess.NULL);
+     }
+ 
+     public CraftingMenu(int containerId, Inventory playerInventory, ContainerLevelAccess access) {
+-        super(MenuType.CRAFTING, containerId, 3, 3);
++        super(MenuType.CRAFTING, containerId, 3, 3, playerInventory); // CraftBukkit - pass player
+         this.access = access;
+         this.player = playerInventory.player;
+         this.addResultSlot(this.player, 124, 35);
+@@ -55,7 +_,32 @@
+         CraftingInput craftInput = craftSlots.asCraftInput();
+         ServerPlayer serverPlayer = (ServerPlayer)player;
+         ItemStack itemStack = ItemStack.EMPTY;
++        // Paper start - Perf: Improve mass crafting; check last recipe used first
++        /*
++        When the server crafts all available items in CraftingMenu or InventoryMenu the game
++        checks either 4 or 9 times for each individual craft for a matching recipe for that container.
++        This check can be expensive if 64 total crafts are being performed with the recipe matching logic
++        being run 64 * 9 + 64 times. A breakdown of those times is below. This caches the last matching
++        recipe so that it is checked first and only if it doesn't match does the rest of the matching logic run.
++
++        Shift-click crafts are processed one at a time, so shift clicking on an item in the result of a iron block craft
++        where all the 9 inputs are full stacks of iron will run 64 iron block crafts. For each of those crafts, the
++        'remaining' blocks are calculated. This is due to recipes that have leftover items like buckets. This is done
++        for each craft, and done once to get the full 9 leftover items which are usually air. Then 1 item is removed
++        from each of the 9 inputs and each time that happens, logic is triggered to update the result itemstack. So
++        for each craft, that logic is run 9 times (hence the 64 * 9). The + 64 is from the 64 checks for remaining items.
++
++        After this change, the full iteration over all recipes checking for a match should run once for a full craft to find the
++        initial recipe match. Then that recipe will be checked first for all future recipe match checks.
++
++        See also: ResultSlot class
++         */
++        if (recipe == null) {
++            recipe = craftSlots.getCurrentRecipe();
++        }
++        // Paper end - Perf: Improve mass crafting; check last recipe used first
+         Optional<RecipeHolder<CraftingRecipe>> recipeFor = level.getServer().getRecipeManager().getRecipeFor(RecipeType.CRAFTING, craftInput, level, recipe);
++        craftSlots.setCurrentRecipe(recipeFor.orElse(null)); // CraftBukkit
+         if (recipeFor.isPresent()) {
+             RecipeHolder<CraftingRecipe> recipeHolder = recipeFor.get();
+             CraftingRecipe craftingRecipe = recipeHolder.value();
+@@ -66,6 +_,7 @@
+                 }
+             }
+         }
++        itemStack = org.bukkit.craftbukkit.event.CraftEventFactory.callPreCraftEvent(craftSlots, resultSlots, itemStack, menu.getBukkitView(), recipeFor.map(RecipeHolder::value).orElse(null) instanceof net.minecraft.world.item.crafting.RepairItemRecipe); // CraftBukkit
+ 
+         resultSlots.setItem(0, itemStack);
+         menu.setRemoteSlot(0, itemStack);
+@@ -102,6 +_,7 @@
+ 
+     @Override
+     public boolean stillValid(Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return stillValid(this.access, player, Blocks.CRAFTING_TABLE);
+     }
+ 
+@@ -176,4 +_,17 @@
+     protected Player owner() {
+         return this.player;
+     }
++
++    // CraftBukkit start
++    @Override
++    public org.bukkit.craftbukkit.inventory.CraftInventoryView getBukkitView() {
++        if (this.bukkitEntity != null) {
++            return this.bukkitEntity;
++        }
++
++        org.bukkit.craftbukkit.inventory.CraftInventoryCrafting inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryCrafting(this.craftSlots, this.resultSlots);
++        this.bukkitEntity = new org.bukkit.craftbukkit.inventory.CraftInventoryView(this.player.getBukkitEntity(), inventory, this);
++        return this.bukkitEntity;
++    }
++    // CraftBukkit end
+ }

@@ -1,0 +1,236 @@
+--- /dev/null
++++ b/io/papermc/paper/FeatureHooks.java
+@@ -1,0 +_,233 @@
++package io.papermc.paper;
++
++import io.papermc.paper.command.PaperSubcommand;
++import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
++import it.unimi.dsi.fastutil.longs.LongSet;
++import it.unimi.dsi.fastutil.longs.LongSets;
++import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
++import it.unimi.dsi.fastutil.objects.ObjectSet;
++import it.unimi.dsi.fastutil.objects.ObjectSets;
++import java.util.List;
++import java.util.Map;
++import java.util.Set;
++import net.minecraft.core.Registry;
++import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
++import net.minecraft.server.level.ServerPlayer;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.monster.Spider;
++import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.biome.Biome;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.Blocks;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.chunk.LevelChunk;
++import net.minecraft.world.level.chunk.LevelChunkSection;
++import net.minecraft.world.level.chunk.PalettedContainer;
++import org.bukkit.Chunk;
++import org.bukkit.World;
++
++public final class FeatureHooks {
++
++    public static void initChunkTaskScheduler(final boolean useParallelGen) {
++    }
++
++    public static void registerPaperCommands(final Map<Set<String>, PaperSubcommand> commands) {
++    }
++
++    public static LevelChunkSection createSection(final Registry<Biome> biomeRegistry, final Level level, final ChunkPos chunkPos, final int chunkSection) {
++        return new LevelChunkSection(biomeRegistry);
++    }
++
++    public static void sendChunkRefreshPackets(final List<ServerPlayer> playersInRange, final LevelChunk chunk) {
++        final ClientboundLevelChunkWithLightPacket refreshPacket = new ClientboundLevelChunkWithLightPacket(chunk, chunk.level.getLightEngine(), null, null);
++        for (final ServerPlayer player : playersInRange) {
++            if (player.connection == null) continue;
++
++            player.connection.send(refreshPacket);
++        }
++    }
++
++    public static PalettedContainer<BlockState> emptyPalettedBlockContainer() {
++        return new PalettedContainer<>(Block.BLOCK_STATE_REGISTRY, Blocks.AIR.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
++    }
++
++    public static Set<Long> getSentChunkKeys(final ServerPlayer player) {
++        final LongSet keys = new LongOpenHashSet();
++        player.getChunkTrackingView().forEach(pos -> keys.add(pos.longKey));
++        return LongSets.unmodifiable(keys);
++    }
++
++    public static Set<Chunk> getSentChunks(final ServerPlayer player) {
++        final ObjectSet<Chunk> chunks = new ObjectOpenHashSet<>();
++        final World world = player.serverLevel().getWorld();
++        player.getChunkTrackingView().forEach(pos -> {
++            final org.bukkit.Chunk chunk = world.getChunkAt(pos.longKey);
++            chunks.add(chunk);
++        });
++        return ObjectSets.unmodifiable(chunks);
++    }
++
++    public static boolean isChunkSent(final ServerPlayer player, final long chunkKey) {
++        return player.getChunkTrackingView().contains(new ChunkPos(chunkKey));
++    }
++
++    public static boolean isSpiderCollidingWithWorldBorder(final Spider spider) {
++        return true; // ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isCollidingWithBorder(spider.level().getWorldBorder(), spider.getBoundingBox().inflate(ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON))
++    }
++
++    public static void dumpAllChunkLoadInfo(net.minecraft.server.MinecraftServer server, boolean isLongTimeout) {
++    }
++
++    private static void dumpEntity(final Entity entity) {
++    }
++
++    public static org.bukkit.entity.Entity[] getChunkEntities(net.minecraft.server.level.ServerLevel world, int chunkX, int chunkZ) {
++        world.getChunk(chunkX, chunkZ); // ensure full loaded
++
++        net.minecraft.world.level.entity.PersistentEntitySectionManager<net.minecraft.world.entity.Entity> entityManager = world.entityManager;
++        long pair = ChunkPos.asLong(chunkX, chunkZ);
++
++        if (entityManager.areEntitiesLoaded(pair)) {
++            return entityManager.getEntities(new ChunkPos(chunkX, chunkZ)).stream()
++                .map(net.minecraft.world.entity.Entity::getBukkitEntity)
++                .filter(java.util.Objects::nonNull).toArray(org.bukkit.entity.Entity[]::new);
++        }
++
++        entityManager.ensureChunkQueuedForLoad(pair); // Start entity loading
++
++        // SPIGOT-6772: Use entity mailbox and re-schedule entities if they get unloaded
++        net.minecraft.util.thread.ConsecutiveExecutor mailbox = ((net.minecraft.world.level.chunk.storage.EntityStorage) entityManager.permanentStorage).entityDeserializerQueue;
++        java.util.function.BooleanSupplier supplier = () -> {
++            // only execute inbox if our entities are not present
++            if (entityManager.areEntitiesLoaded(pair)) {
++                return true;
++            }
++
++            if (!entityManager.isPending(pair)) {
++                // Our entities got unloaded, this should normally not happen.
++                entityManager.ensureChunkQueuedForLoad(pair); // Re-start entity loading
++            }
++
++            // tick loading inbox, which loads the created entities to the world
++            // (if present)
++            entityManager.tick();
++            // check if our entities are loaded
++            return entityManager.areEntitiesLoaded(pair);
++        };
++
++        // now we wait until the entities are loaded,
++        // the converting from NBT to entity object is done on the main Thread which is why we wait
++        while (!supplier.getAsBoolean()) {
++            if (mailbox.size() != 0) {
++                mailbox.run();
++            } else {
++                Thread.yield();
++                java.util.concurrent.locks.LockSupport.parkNanos("waiting for entity loading", 100000L);
++            }
++        }
++
++        return entityManager.getEntities(new ChunkPos(chunkX, chunkZ)).stream()
++            .map(net.minecraft.world.entity.Entity::getBukkitEntity)
++            .filter(java.util.Objects::nonNull).toArray(org.bukkit.entity.Entity[]::new);
++    }
++
++    public static java.util.Collection<org.bukkit.plugin.Plugin> getPluginChunkTickets(net.minecraft.server.level.ServerLevel world,
++                                                                                       int x, int z) {
++        net.minecraft.server.level.DistanceManager chunkDistanceManager = world.getChunkSource().chunkMap.distanceManager;
++        net.minecraft.util.SortedArraySet<net.minecraft.server.level.Ticket<?>> tickets = chunkDistanceManager.tickets.get(ChunkPos.asLong(x, z));
++
++        if (tickets == null) {
++            return java.util.Collections.emptyList();
++        }
++
++        com.google.common.collect.ImmutableList.Builder<org.bukkit.plugin.Plugin> ret = com.google.common.collect.ImmutableList.builder();
++        for (net.minecraft.server.level.Ticket<?> ticket : tickets) {
++            if (ticket.getType() == net.minecraft.server.level.TicketType.PLUGIN_TICKET) {
++                ret.add((org.bukkit.plugin.Plugin) ticket.key);
++            }
++        }
++
++        return ret.build();
++    }
++
++    public static Map<org.bukkit.plugin.Plugin, java.util.Collection<org.bukkit.Chunk>> getPluginChunkTickets(net.minecraft.server.level.ServerLevel world) {
++        Map<org.bukkit.plugin.Plugin, com.google.common.collect.ImmutableList.Builder<Chunk>> ret = new HashMap<>();
++        net.minecraft.server.level.DistanceManager chunkDistanceManager = world.getChunkSource().chunkMap.distanceManager;
++
++        for (it.unimi.dsi.fastutil.longs.Long2ObjectMap.Entry<net.minecraft.util.SortedArraySet<net.minecraft.server.level.Ticket<?>>> chunkTickets : chunkDistanceManager.tickets.long2ObjectEntrySet()) {
++            long chunkKey = chunkTickets.getLongKey();
++            net.minecraft.util.SortedArraySet<net.minecraft.server.level.Ticket<?>> tickets = chunkTickets.getValue();
++
++            org.bukkit.Chunk chunk = null;
++            for (net.minecraft.server.level.Ticket<?> ticket : tickets) {
++                if (ticket.getType() != net.minecraft.server.level.TicketType.PLUGIN_TICKET) {
++                    continue;
++                }
++
++                if (chunk == null) {
++                    chunk = world.getWorld().getChunkAt(ChunkPos.getX(chunkKey), ChunkPos.getZ(chunkKey));
++                }
++
++                ret.computeIfAbsent((org.bukkit.plugin.Plugin) ticket.key, (key) -> com.google.common.collect.ImmutableList.builder()).add(chunk);
++            }
++        }
++
++        return ret.entrySet().stream().collect(com.google.common.collect.ImmutableMap.toImmutableMap(Map.Entry::getKey, (entry) -> entry.getValue().build()));
++    }
++
++    public static int getViewDistance(net.minecraft.server.level.ServerLevel world) {
++        return world.getChunkSource().chunkMap.serverViewDistance;
++    }
++
++    public static int getSimulationDistance(net.minecraft.server.level.ServerLevel world) {
++        return world.getChunkSource().chunkMap.getDistanceManager().simulationDistance;
++    }
++
++    public static int getSendViewDistance(net.minecraft.server.level.ServerLevel world) {
++        return getViewDistance(world);
++    }
++
++    public static void setViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
++        if (distance < 2 || distance > 32) {
++            throw new IllegalArgumentException("View distance " + distance + " is out of range of [2, 32]");
++        }
++        world.chunkSource.chunkMap.setServerViewDistance(distance);
++    }
++
++    public static void setSimulationDistance(net.minecraft.server.level.ServerLevel world, int distance) {
++        if (distance < 2 || distance > 32) {
++            throw new IllegalArgumentException("Simulation distance " + distance + " is out of range of [2, 32]");
++        }
++        world.chunkSource.chunkMap.distanceManager.updateSimulationDistance(distance);
++    }
++
++    public static void setSendViewDistance(net.minecraft.server.level.ServerLevel world, int distance) {
++        throw new UnsupportedOperationException("Not implemented yet");
++    }
++
++    public static void tickEntityManager(net.minecraft.server.level.ServerLevel world) {
++        world.entityManager.tick();
++    }
++
++    public static void closeEntityManager(net.minecraft.server.level.ServerLevel world, boolean save) {
++        world.entityManager.close(save);
++    }
++
++    public static java.util.concurrent.Executor getWorldgenExecutor() {
++        return net.minecraft.Util.backgroundExecutor();
++    }
++
++    public static void setViewDistance(ServerPlayer player, int distance) {
++        throw new UnsupportedOperationException("Not implemented yet");
++    }
++
++    public static void setSimulationDistance(ServerPlayer player, int distance) {
++        throw new UnsupportedOperationException("Not implemented yet");
++    }
++
++    public static void setSendViewDistance(ServerPlayer player, int distance) {
++        throw new UnsupportedOperationException("Not implemented yet");
++    }
++
++}

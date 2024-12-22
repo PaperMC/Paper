@@ -1,0 +1,57 @@
+--- a/com/mojang/brigadier/tree/LiteralCommandNode.java
++++ b/com/mojang/brigadier/tree/LiteralCommandNode.java
+@@ -23,11 +_,19 @@
+ public class LiteralCommandNode<S> extends CommandNode<S> {
+     private final String literal;
+     private final String literalLowerCase;
++    private final String nonPrefixed; // Paper - prioritize mc commands in function parsing
+ 
+     public LiteralCommandNode(final String literal, final Command<S> command, final Predicate<S> requirement, final CommandNode<S> redirect, final RedirectModifier<S> modifier, final boolean forks) {
+         super(command, requirement, redirect, modifier, forks);
+         this.literal = literal;
+         this.literalLowerCase = literal.toLowerCase(Locale.ROOT);
++        // Paper start - prioritize mc commands in function parsing
++        if (literal.startsWith("minecraft:")) {
++            this.nonPrefixed = literal.substring("minecraft:".length());
++        } else {
++            this.nonPrefixed = null;
++        }
++        // Paper end - prioritize mc commands in function parsing
+     }
+ 
+     public String getLiteral() {
+@@ -42,7 +_,12 @@
+     @Override
+     public void parse(final StringReader reader, final CommandContextBuilder<S> contextBuilder) throws CommandSyntaxException {
+         final int start = reader.getCursor();
+-        final int end = parse(reader);
++        // Paper start - prioritize mc commands in function parsing
++        int end = parse(reader, false);
++        if (end == -1 && this.nonPrefixed != null) {
++            end = parse(reader, true);
++        }
++        // Paper end - prioritize mc commands in function parsing
+         if (end > -1) {
+             contextBuilder.withNode(this, StringRange.between(start, end));
+             return;
+@@ -51,7 +_,10 @@
+         throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect().createWithContext(reader, literal);
+     }
+ 
+-    private int parse(final StringReader reader) {
++    // Paper start - prioritize mc commands in function parsing
++    private int parse(final StringReader reader, final boolean secondPass) {
++        String literal = secondPass ? this.nonPrefixed : this.literal;
++        // Paper end - prioritize mc commands in function parsing
+         final int start = reader.getCursor();
+         if (reader.canRead(literal.length())) {
+             final int end = start + literal.length();
+@@ -78,7 +_,7 @@
+ 
+     @Override
+     public boolean isValidInput(final String input) {
+-        return parse(new StringReader(input)) > -1;
++        return parse(new StringReader(input), false) > -1; // Paper - prioritize mc commands in function parsing
+     }
+ 
+     @Override

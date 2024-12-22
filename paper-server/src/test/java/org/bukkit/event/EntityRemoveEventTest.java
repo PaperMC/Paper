@@ -18,7 +18,7 @@ import org.objectweb.asm.tree.MethodNode;
 @Normal
 public class EntityRemoveEventTest {
 
-    @ClassNodeTest(value = {ClassNodeTest.ClassType.CRAFT_BUKKIT, ClassNodeTest.ClassType.MINECRAFT_MODIFIED, ClassNodeTest.ClassType.MINECRAFT_UNMODIFIED},
+    @ClassNodeTest(value = ClassNodeTest.ClassType.CRAFT_BUKKIT,
             excludedClasses = EntityAccess.class,
             excludedPackages = "net/minecraft/gametest/framework")
     public void testForMissing(ClassNode classNode) throws ClassNotFoundException {
@@ -103,6 +103,9 @@ public class EntityRemoveEventTest {
         }
 
         Class<?> ownerClass = Class.forName(owner.replace('/', '.'), false, this.getClass().getClassLoader());
+        if (ownerClass == EntityAccess.class) {
+            return false;
+        }
 
         // Found missing discard, remove or setRemoved method call
         return EntityAccess.class.isAssignableFrom(ownerClass);

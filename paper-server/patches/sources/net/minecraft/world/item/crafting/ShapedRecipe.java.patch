@@ -1,0 +1,71 @@
+--- a/net/minecraft/world/item/crafting/ShapedRecipe.java
++++ b/net/minecraft/world/item/crafting/ShapedRecipe.java
+@@ -103,6 +_,68 @@
+         );
+     }
+ 
++    // CraftBukkit start
++    @Override
++    public org.bukkit.inventory.ShapedRecipe toBukkitRecipe(org.bukkit.NamespacedKey id) {
++        org.bukkit.craftbukkit.inventory.CraftItemStack result = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.result);
++        org.bukkit.craftbukkit.inventory.CraftShapedRecipe recipe = new org.bukkit.craftbukkit.inventory.CraftShapedRecipe(id, result, this);
++        recipe.setGroup(this.group);
++        recipe.setCategory(org.bukkit.craftbukkit.inventory.CraftRecipe.getCategory(this.category()));
++
++        switch (this.pattern.height()) {
++        case 1:
++            switch (this.pattern.width()) {
++            case 1:
++                recipe.shape("a");
++                break;
++            case 2:
++                recipe.shape("ab");
++                break;
++            case 3:
++                recipe.shape("abc");
++                break;
++            }
++            break;
++        case 2:
++            switch (this.pattern.width()) {
++            case 1:
++                recipe.shape("a","b");
++                break;
++            case 2:
++                recipe.shape("ab","cd");
++                break;
++            case 3:
++                recipe.shape("abc","def");
++                break;
++            }
++            break;
++        case 3:
++            switch (this.pattern.width()) {
++            case 1:
++                recipe.shape("a","b","c");
++                break;
++            case 2:
++                recipe.shape("ab","cd","ef");
++                break;
++            case 3:
++                recipe.shape("abc","def","ghi");
++                break;
++            }
++            break;
++        }
++        char c = 'a';
++        for (Optional<Ingredient> list : this.pattern.ingredients()) {
++            org.bukkit.inventory.RecipeChoice choice = org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(list);
++            if (choice != org.bukkit.inventory.RecipeChoice.empty()) { // Paper
++                recipe.setIngredient(c, choice);
++            }
++
++            c++;
++        }
++        return recipe;
++    }
++    // CraftBukkit end
++
+     public static class Serializer implements RecipeSerializer<ShapedRecipe> {
+         public static final MapCodec<ShapedRecipe> CODEC = RecordCodecBuilder.mapCodec(
+             instance -> instance.group(

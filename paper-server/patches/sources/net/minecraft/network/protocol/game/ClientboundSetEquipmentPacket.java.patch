@@ -1,0 +1,32 @@
+--- a/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundSetEquipmentPacket.java
+@@ -19,6 +_,13 @@
+     private final List<Pair<EquipmentSlot, ItemStack>> slots;
+ 
+     public ClientboundSetEquipmentPacket(int entity, List<Pair<EquipmentSlot, ItemStack>> slots) {
++    // Paper start - data sanitization
++        this(entity, slots, false);
++    }
++    private boolean sanitize;
++    public ClientboundSetEquipmentPacket(int entity, List<Pair<EquipmentSlot, ItemStack>> slots, boolean sanitize) {
++        this.sanitize = sanitize;
++    // Paper end - data sanitization
+         this.entity = entity;
+         this.slots = slots;
+     }
+@@ -40,6 +_,7 @@
+         buffer.writeVarInt(this.entity);
+         int size = this.slots.size();
+ 
++        try (io.papermc.paper.util.DataSanitizationUtil.DataSanitizer ignored = io.papermc.paper.util.DataSanitizationUtil.start(this.sanitize)) { // Paper - data sanitization
+         for (int i = 0; i < size; i++) {
+             Pair<EquipmentSlot, ItemStack> pair = this.slots.get(i);
+             EquipmentSlot equipmentSlot = pair.getFirst();
+@@ -48,6 +_,7 @@
+             buffer.writeByte(flag ? ordinal | -128 : ordinal);
+             ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, pair.getSecond());
+         }
++        } // Paper - data sanitization
+     }
+ 
+     @Override

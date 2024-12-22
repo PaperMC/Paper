@@ -1,0 +1,60 @@
+--- a/net/minecraft/world/level/block/entity/BellBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BellBlockEntity.java
+@@ -60,6 +_,11 @@
+ 
+         if (blockEntity.ticks >= 50) {
+             blockEntity.shaking = false;
++            // Paper start - Fix bell block entity memory leak
++            if (!blockEntity.resonating) {
++                blockEntity.nearbyEntities.clear();
++            }
++            // Paper end - Fix bell block entity memory leak
+             blockEntity.ticks = 0;
+         }
+ 
+@@ -73,6 +_,7 @@
+                 blockEntity.resonationTicks++;
+             } else {
+                 resonationEndAction.run(level, pos, blockEntity.nearbyEntities);
++                blockEntity.nearbyEntities.clear(); // Paper - Fix bell block entity memory leak
+                 blockEntity.resonating = false;
+             }
+         }
+@@ -113,6 +_,8 @@
+                 }
+             }
+         }
++
++        this.nearbyEntities.removeIf(e -> !e.isAlive()); // Paper - Fix bell block entity memory leak
+     }
+ 
+     private static boolean areRaidersNearby(BlockPos pos, List<LivingEntity> raiders) {
+@@ -129,7 +_,10 @@
+     }
+ 
+     private static void makeRaidersGlow(Level level, BlockPos pos, List<LivingEntity> raiders) {
+-        raiders.stream().filter(raider -> isRaiderWithinRange(pos, raider)).forEach(BellBlockEntity::glow);
++        // Paper start - call bell resonate event and bell reveal raider event
++        final List<org.bukkit.entity.LivingEntity> inRangeRaiders = raiders.stream().filter(raider -> isRaiderWithinRange(pos, raider)).map(e -> (org.bukkit.entity.LivingEntity) e.getBukkitEntity()).toList();
++        org.bukkit.craftbukkit.event.CraftEventFactory.handleBellResonateEvent(level, pos, inRangeRaiders).forEach(e -> glow(e, pos));
++        // Paper end - call bell resonate event and bell reveal raider event
+     }
+ 
+     private static void showBellParticles(Level level, BlockPos pos, List<LivingEntity> raiders) {
+@@ -159,7 +_,16 @@
+         return raider.isAlive() && !raider.isRemoved() && pos.closerToCenterThan(raider.position(), 48.0) && raider.getType().is(EntityTypeTags.RAIDERS);
+     }
+ 
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add BellRevealRaiderEvent
+     private static void glow(LivingEntity entity) {
++        // Paper start - Add BellRevealRaiderEvent
++        glow(entity, null);
++    }
++
++    private static void glow(LivingEntity entity, @javax.annotation.Nullable BlockPos pos) {
++        if (pos != null && !new io.papermc.paper.event.block.BellRevealRaiderEvent(org.bukkit.craftbukkit.block.CraftBlock.at(entity.level(), pos), (org.bukkit.entity.Raider) entity.getBukkitEntity()).callEvent())
++            return;
++        // Paper end - Add BellRevealRaiderEvent
+         entity.addEffect(new MobEffectInstance(MobEffects.GLOWING, 60));
+     }
+ 

@@ -1,0 +1,68 @@
+--- a/net/minecraft/world/level/block/ConcretePowderBlock.java
++++ b/net/minecraft/world/level/block/ConcretePowderBlock.java
+@@ -38,16 +_,33 @@
+     @Override
+     public void onLand(Level level, BlockPos pos, BlockState state, BlockState replaceableState, FallingBlockEntity fallingBlock) {
+         if (shouldSolidify(level, pos, replaceableState)) {
+-            level.setBlock(pos, this.concrete.defaultBlockState(), 3);
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(level, pos, this.concrete.defaultBlockState(), 3); // CraftBukkit
+         }
+     }
+ 
+     @Override
+     public BlockState getStateForPlacement(BlockPlaceContext context) {
+-        BlockGetter level = context.getLevel();
++        Level level = context.getLevel(); // Paper
+         BlockPos clickedPos = context.getClickedPos();
+         BlockState blockState = level.getBlockState(clickedPos);
+-        return shouldSolidify(level, clickedPos, blockState) ? this.concrete.defaultBlockState() : super.getStateForPlacement(context);
++        // CraftBukkit start
++        if (!ConcretePowderBlock.shouldSolidify(level, clickedPos, blockState)) {
++            return super.getStateForPlacement(context);
++        }
++
++        // TODO: An event factory call for methods like this
++        org.bukkit.craftbukkit.block.CraftBlockState craftBlockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState((net.minecraft.world.level.LevelAccessor) level, clickedPos);
++        craftBlockState.setData(this.concrete.defaultBlockState());
++
++        org.bukkit.event.block.BlockFormEvent event = new org.bukkit.event.block.BlockFormEvent(craftBlockState.getBlock(), craftBlockState);
++        level.getServer().server.getPluginManager().callEvent(event);
++
++        if (!event.isCancelled()) {
++            return craftBlockState.getHandle();
++        }
++
++        return super.getStateForPlacement(context);
++        // CraftBukkit end
+     }
+ 
+     private static boolean shouldSolidify(BlockGetter level, BlockPos pos, BlockState state) {
+@@ -88,9 +_,25 @@
+         BlockState neighborState,
+         RandomSource random
+     ) {
+-        return touchesLiquid(level, pos)
+-            ? this.concrete.defaultBlockState()
+-            : super.updateShape(state, level, scheduledTickAccess, pos, direction, neighborPos, neighborState, random);
++        // CraftBukkit start
++        if (ConcretePowderBlock.touchesLiquid(level, pos)) {
++            // Suppress during worldgen
++            if (!(level instanceof Level world1)) {
++                return this.concrete.defaultBlockState();
++            }
++            org.bukkit.craftbukkit.block.CraftBlockState blockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(world1, pos);
++            blockState.setData(this.concrete.defaultBlockState());
++
++            org.bukkit.event.block.BlockFormEvent event = new org.bukkit.event.block.BlockFormEvent(blockState.getBlock(), blockState);
++            world1.getCraftServer().getPluginManager().callEvent(event);
++
++            if (!event.isCancelled()) {
++                return blockState.getHandle();
++            }
++        }
++
++        return super.updateShape(state, level, scheduledTickAccess, pos, direction, neighborPos, neighborState, random);
++        // CraftBukkit end
+     }
+ 
+     @Override

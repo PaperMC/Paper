@@ -1,0 +1,67 @@
+--- a/com/mojang/brigadier/CommandDispatcher.java
++++ b/com/mojang/brigadier/CommandDispatcher.java
+@@ -297,15 +_,21 @@
+         List<ParseResults<S>> potentials = null;
+         final int cursor = originalReader.getCursor();
+ 
+-        for (final CommandNode<S> child : node.getRelevantNodes(originalReader)) {
++        for (final CommandNode<S> child : node.getRelevantNodes(originalReader, source)) { // Paper - prioritize mc commands in function parsing
+             if (!child.canUse(source)) {
+                 continue;
+             }
+             final CommandContextBuilder<S> context = contextSoFar.copy();
+             final StringReader reader = new StringReader(originalReader);
++            boolean stop = false; // Paper - Handle non-recoverable exceptions
+             try {
+                 try {
+                     child.parse(reader, context);
++                    // Paper start - Handle non-recoverable exceptions
++                } catch (final io.papermc.paper.brigadier.TagParseCommandSyntaxException e) {
++                    stop = true;
++                    throw e;
++                    // Paper end - Handle non-recoverable exceptions
+                 } catch (final RuntimeException ex) {
+                     throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherParseException().createWithContext(reader, ex.getMessage());
+                 }
+@@ -320,6 +_,7 @@
+                 }
+                 errors.put(child, ex);
+                 reader.setCursor(cursor);
++                if (stop) return new ParseResults<>(contextSoFar, originalReader, errors); // Paper - Handle non-recoverable exceptions
+                 continue;
+             }
+ 
+@@ -451,7 +_,7 @@
+     }
+ 
+     private String getSmartUsage(final CommandNode<S> node, final S source, final boolean optional, final boolean deep) {
+-        if (!node.canUse(source)) {
++        if (source != null && !node.canUse(source)) { // Paper
+             return null;
+         }
+ 
+@@ -465,7 +_,7 @@
+                 final String redirect = node.getRedirect() == root ? "..." : "-> " + node.getRedirect().getUsageText();
+                 return self + ARGUMENT_SEPARATOR + redirect;
+             } else {
+-                final Collection<CommandNode<S>> children = node.getChildren().stream().filter(c -> c.canUse(source)).collect(Collectors.toList());
++                final Collection<CommandNode<S>> children = node.getChildren().stream().filter(c -> source == null || c.canUse(source)).collect(Collectors.toList()); // Paper
+                 if (children.size() == 1) {
+                     final String usage = getSmartUsage(children.iterator().next(), source, childOptional, childOptional);
+                     if (usage != null) {
+@@ -537,10 +_,14 @@
+         int i = 0;
+         for (final CommandNode<S> node : parent.getChildren()) {
+             CompletableFuture<Suggestions> future = Suggestions.empty();
++            // Paper start - Don't suggest if the requirement isn't met
++            if (parent != this.root || node.canUse(context.getSource())) {
+             try {
+-                future = node.listSuggestions(context.build(truncatedInput), new SuggestionsBuilder(truncatedInput, truncatedInputLowerCase, start));
++                future = node.listSuggestions(context.build(truncatedInput), new SuggestionsBuilder(truncatedInput, truncatedInputLowerCase, start)); // CraftBukkit
+             } catch (final CommandSyntaxException ignored) {
+             }
++            }
++            // Paper end - Don't suggest if the requirement isn't met
+             futures[i++] = future;
+         }
+ 

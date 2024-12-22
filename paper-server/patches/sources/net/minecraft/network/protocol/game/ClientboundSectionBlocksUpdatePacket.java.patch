@@ -1,0 +1,29 @@
+--- a/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
++++ b/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
+@@ -30,10 +_,25 @@
+ 
+         for (short s : positions) {
+             this.positions[i] = s;
+-            this.states[i] = section.getBlockState(SectionPos.sectionRelativeX(s), SectionPos.sectionRelativeY(s), SectionPos.sectionRelativeZ(s));
++            this.states[i] = (section != null) ? section.getBlockState(SectionPos.sectionRelativeX(s), SectionPos.sectionRelativeY(s), SectionPos.sectionRelativeZ(s)) : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(); // CraftBukkit - SPIGOT-6076, Mojang bug when empty chunk section notified
+             i++;
+         }
+     }
++    // CraftBukkit start - Add constructor
++    public ClientboundSectionBlocksUpdatePacket(SectionPos sectionposition, ShortSet shortset, BlockState[] states) {
++        this.sectionPos = sectionposition;
++        this.positions = shortset.toShortArray();
++        this.states = states;
++    }
++    // CraftBukkit end
++    // Paper start - Multi Block Change API
++    public ClientboundSectionBlocksUpdatePacket(SectionPos sectionPos, it.unimi.dsi.fastutil.shorts.Short2ObjectMap<BlockState> blockChanges) {
++        this.sectionPos = sectionPos;
++        this.positions = blockChanges.keySet().toShortArray();
++        this.states = blockChanges.values().toArray(new BlockState[0]);
++    }
++    // Paper end - Multi Block Change API
++
+ 
+     private ClientboundSectionBlocksUpdatePacket(FriendlyByteBuf buffer) {
+         this.sectionPos = SectionPos.of(buffer.readLong());

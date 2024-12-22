@@ -1,0 +1,50 @@
+--- a/net/minecraft/world/level/levelgen/structure/StructureCheck.java
++++ b/net/minecraft/world/level/levelgen/structure/StructureCheck.java
+@@ -40,7 +_,7 @@
+     private final ChunkScanAccess storageAccess;
+     private final RegistryAccess registryAccess;
+     private final StructureTemplateManager structureTemplateManager;
+-    private final ResourceKey<Level> dimension;
++    private final ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension; // Paper - fix missing CB diff
+     private final ChunkGenerator chunkGenerator;
+     private final RandomState randomState;
+     private final LevelHeightAccessor heightAccessor;
+@@ -54,7 +_,7 @@
+         ChunkScanAccess storageAccess,
+         RegistryAccess registryAccess,
+         StructureTemplateManager structureTemplateManager,
+-        ResourceKey<Level> dimension,
++        ResourceKey<net.minecraft.world.level.dimension.LevelStem> dimension, // Paper - fix missing CB diff
+         ChunkGenerator chunkGenerator,
+         RandomState randomState,
+         LevelHeightAccessor heightAccessor,
+@@ -74,6 +_,20 @@
+         this.fixerUpper = fixerUpper;
+     }
+ 
++    // Paper start - add missing structure salt configs
++    @Nullable
++    private Integer getSaltOverride(Structure type) {
++        if (this.heightAccessor instanceof net.minecraft.server.level.ServerLevel serverLevel) {
++            if (type instanceof net.minecraft.world.level.levelgen.structure.structures.MineshaftStructure) {
++                return serverLevel.spigotConfig.mineshaftSeed;
++            } else if (type instanceof net.minecraft.world.level.levelgen.structure.structures.BuriedTreasureStructure) {
++                return serverLevel.spigotConfig.buriedTreasureSeed;
++            }
++        }
++        return null;
++    }
++    // Paper end - add missing structure seed configs
++
+     public StructureCheckResult checkStart(ChunkPos chunkPos, Structure structure, StructurePlacement placement, boolean skipKnownStructures) {
+         long packedChunkPos = chunkPos.toLong();
+         Object2IntMap<Structure> map = this.loadedChunks.get(packedChunkPos);
+@@ -83,7 +_,7 @@
+             StructureCheckResult structureCheckResult = this.tryLoadFromStorage(chunkPos, structure, skipKnownStructures, packedChunkPos);
+             if (structureCheckResult != null) {
+                 return structureCheckResult;
+-            } else if (!placement.applyAdditionalChunkRestrictions(chunkPos.x, chunkPos.z, this.seed)) {
++            } else if (!placement.applyAdditionalChunkRestrictions(chunkPos.x, chunkPos.z, this.seed, this.getSaltOverride(structure))) { // Paper - add missing structure seed configs
+                 return StructureCheckResult.START_NOT_PRESENT;
+             } else {
+                 boolean flag = this.featureChecks

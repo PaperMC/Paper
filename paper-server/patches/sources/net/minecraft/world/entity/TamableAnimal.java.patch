@@ -1,0 +1,73 @@
+--- a/net/minecraft/world/entity/TamableAnimal.java
++++ b/net/minecraft/world/entity/TamableAnimal.java
+@@ -84,7 +_,7 @@
+         }
+ 
+         this.orderedToSit = compound.getBoolean("Sitting");
+-        this.setInSittingPose(this.orderedToSit);
++        this.setInSittingPose(this.orderedToSit, false); // Paper - Add EntityToggleSitEvent
+     }
+ 
+     @Override
+@@ -95,8 +_,16 @@
+     @Override
+     public boolean handleLeashAtDistance(Entity leashHolder, float distance) {
+         if (this.isInSittingPose()) {
+-            if (distance > 10.0F) {
+-                this.dropLeash();
++            if (distance > (float) this.level().paperConfig().misc.maxLeashDistance.or(Leashable.LEASH_TOO_FAR_DIST)) { // Paper - Configurable max leash distance
++                // Paper start - Expand EntityUnleashEvent
++                org.bukkit.event.entity.EntityUnleashEvent event = new org.bukkit.event.entity.EntityUnleashEvent(this.getBukkitEntity(), org.bukkit.event.entity.EntityUnleashEvent.UnleashReason.DISTANCE, true);
++                if (!event.callEvent()) return false;
++                if (event.isDropLeash()) {
++                    this.dropLeash();
++                } else {
++                    this.removeLeash();
++                }
++                // Paper end - Expand EntityUnleashEvent
+             }
+ 
+             return false;
+@@ -155,6 +_,12 @@
+     }
+ 
+     public void setInSittingPose(boolean sitting) {
++        // Paper start - Add EntityToggleSitEvent
++        this.setInSittingPose(sitting, true);
++    }
++    public void setInSittingPose(boolean sitting, boolean callEvent) {
++        if (callEvent && !new io.papermc.paper.event.entity.EntityToggleSitEvent(this.getBukkitEntity(), sitting).callEvent()) return;
++        // Paper end - Add EntityToggleSitEvent
+         byte b = this.entityData.get(DATA_FLAGS_ID);
+         if (sitting) {
+             this.entityData.set(DATA_FLAGS_ID, (byte)(b | 1));
+@@ -227,7 +_,12 @@
+         if (this.level() instanceof ServerLevel serverLevel
+             && serverLevel.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)
+             && this.getOwner() instanceof ServerPlayer serverPlayer) {
+-            serverPlayer.sendSystemMessage(this.getCombatTracker().getDeathMessage());
++            // Paper start - Add TameableDeathMessageEvent
++            io.papermc.paper.event.entity.TameableDeathMessageEvent event = new io.papermc.paper.event.entity.TameableDeathMessageEvent((org.bukkit.entity.Tameable) getBukkitEntity(), io.papermc.paper.adventure.PaperAdventure.asAdventure(this.getCombatTracker().getDeathMessage()));
++            if (event.callEvent()) {
++                serverPlayer.sendSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.deathMessage()));
++            }
++            // Paper end - Add TameableDeathMessageEvent
+         }
+ 
+         super.die(cause);
+@@ -270,7 +_,14 @@
+         if (!this.canTeleportTo(new BlockPos(x, y, z))) {
+             return false;
+         } else {
+-            this.moveTo(x + 0.5, y, z + 0.5, this.getYRot(), this.getXRot());
++            // CraftBukkit start
++            org.bukkit.event.entity.EntityTeleportEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(this, x + 0.5, y, z + 0.5);
++            if (event.isCancelled() || event.getTo() == null) { // Paper - prevent NP on null event to location
++                return false;
++            }
++            org.bukkit.Location to = event.getTo();
++            this.moveTo(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch());
++            // CraftBukkit end
+             this.navigation.stop();
+             return true;
+         }

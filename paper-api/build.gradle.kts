@@ -39,7 +39,7 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
 // Paper end - configure mockito agent that is needed in newer java versions
 
 dependencies {
-    api("com.mojang:brigadier:1.2.9") // Paper - Brigadier command api
+    api("com.mojang:brigadier:1.3.10") // Paper - Brigadier command api
     // api dependencies are listed transitively to API consumers
     api("com.google.guava:guava:33.3.1-jre")
     api("com.google.code.gson:gson:2.11.0")
@@ -92,6 +92,7 @@ dependencies {
     testImplementation("org.mockito:mockito-core:5.14.1")
     testImplementation("org.ow2.asm:asm-tree:9.7.1")
     mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 // Paper start
@@ -121,8 +122,13 @@ configurations {
             }
             outgoing {
                 capability(mainCapability)
+                // Paper-MojangAPI has been merged into Paper-API
                 capability("io.papermc.paper:paper-mojangapi:${project.version}")
                 capability("com.destroystokyo.paper:paper-mojangapi:${project.version}")
+                // Conflict with old coordinates
+                capability("com.destroystokyo.paper:paper-api:${project.version}")
+                capability("org.spigotmc:spigot-api:${project.version}")
+                capability("org.bukkit:bukkit:${project.version}")
             }
         }
     }

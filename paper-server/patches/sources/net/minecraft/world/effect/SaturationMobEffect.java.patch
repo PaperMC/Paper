@@ -1,0 +1,19 @@
+--- a/net/minecraft/world/effect/SaturationMobEffect.java
++++ b/net/minecraft/world/effect/SaturationMobEffect.java
+@@ -12,7 +_,15 @@
+     @Override
+     public boolean applyEffectTick(ServerLevel level, LivingEntity entity, int amplifier) {
+         if (entity instanceof Player player) {
+-            player.getFoodData().eat(amplifier + 1, 1.0F);
++            // CraftBukkit start
++            int oldFoodLevel = player.getFoodData().foodLevel;
++            org.bukkit.event.entity.FoodLevelChangeEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callFoodLevelChangeEvent(player, amplifier + 1 + oldFoodLevel);
++            if (!event.isCancelled()) {
++                player.getFoodData().eat(event.getFoodLevel() - oldFoodLevel, 1.0F);
++            }
++
++            ((org.bukkit.craftbukkit.entity.CraftPlayer) player.getBukkitEntity()).sendHealthUpdate();
++            // CraftBukkit end
+         }
+ 
+         return true;

@@ -105,13 +105,13 @@ public final class PaperInventoryCustomHolderContainer implements Container {
     }
 
     @Override
-    public void onOpen(CraftHumanEntity who) {
-        this.delegate.onOpen(who);
+    public void onOpen(CraftHumanEntity player) {
+        this.delegate.onOpen(player);
     }
 
     @Override
-    public void onClose(CraftHumanEntity who) {
-        this.delegate.onClose(who);
+    public void onClose(CraftHumanEntity player) {
+        this.delegate.onClose(player);
     }
 
     @Override

@@ -1,0 +1,67 @@
+--- a/net/neoforged/art/internal/RenamerImpl.java
++++ b/net/neoforged/art/internal/RenamerImpl.java
+@@ -35,7 +_,7 @@
+ import net.neoforged.cliutils.progress.ProgressReporter;
+ import org.objectweb.asm.Opcodes;
+ 
+-class RenamerImpl implements Renamer {
++public class RenamerImpl implements Renamer { // Paper - public
+     private static final ProgressReporter PROGRESS = ProgressReporter.getDefault();
+     static final int MAX_ASM_VERSION = Opcodes.ASM9;
+     private static final String MANIFEST_NAME = "META-INF/MANIFEST.MF";
+@@ -75,6 +_,11 @@
+ 
+     @Override
+     public void run(File input, File output) {
++        // Paper start - Add remappingSelf
++        this.run(input, output, false);
++    }
++    public void run(File input, File output, boolean remappingSelf) {
++        // Paper end
+         if (!this.setup)
+             this.setup();
+ 
+@@ -105,10 +_,10 @@
+                 String name = e.getName();
+                 byte[] data;
+                 try (InputStream entryInput = in.getInputStream(e)) {
+-                    data = readAllBytes(entryInput, e.getSize());
++                    data = entryInput.readAllBytes(); // Paper - Use readAllBytes
+                 }
+ 
+-                if (name.endsWith(".class"))
++                if (name.endsWith(".class") && !name.contains("META-INF/")) // Paper - Skip META-INF entries
+                     oldEntries.add(ClassEntry.create(name, e.getTime(), data));
+                 else if (name.equals(MANIFEST_NAME))
+                     oldEntries.add(ManifestEntry.create(e.getTime(), data));
+@@ -163,15 +_,29 @@
+             List<Entry> newEntries = async.invokeAll(oldEntries, Entry::getName, this::processEntry);
+ 
+             logger.accept("Adding extras");
+-            transformers.forEach(t -> newEntries.addAll(t.getExtras()));
++            // Paper start - I'm pretty sure the duplicates are because the input is already on the classpath
++            List<Entry> finalNewEntries = newEntries;
++            transformers.forEach(t -> finalNewEntries.addAll(t.getExtras()));
+ 
+             Set<String> seen = new HashSet<>();
++            if (remappingSelf) {
++                // deduplicate
++                List<Entry> n = new ArrayList<>();
++                for (final Entry e : newEntries) {
++                    if (seen.add(e.getName())) {
++                        n.add(e);
++                    }
++                }
++                newEntries = n;
++            } else {
+             String dupes = newEntries.stream().map(Entry::getName)
+                 .filter(n -> !seen.add(n))
+                 .sorted()
+                 .collect(Collectors.joining(", "));
+             if (!dupes.isEmpty())
+                 throw new IllegalStateException("Duplicate entries detected: " + dupes);
++            }
++            // Paper end
+ 
+             // We care about stable output, so sort, and single thread write.
+             logger.accept("Sorting");

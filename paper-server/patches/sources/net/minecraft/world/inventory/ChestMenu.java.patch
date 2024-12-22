@@ -1,0 +1,50 @@
+--- a/net/minecraft/world/inventory/ChestMenu.java
++++ b/net/minecraft/world/inventory/ChestMenu.java
+@@ -9,6 +_,29 @@
+ public class ChestMenu extends AbstractContainerMenu {
+     private final Container container;
+     private final int containerRows;
++    // CraftBukkit start
++    private org.bukkit.craftbukkit.inventory.CraftInventoryView bukkitEntity = null;
++    private Inventory player;
++
++    @Override
++    public org.bukkit.craftbukkit.inventory.CraftInventoryView getBukkitView() {
++        if (this.bukkitEntity != null) {
++            return this.bukkitEntity;
++        }
++
++        org.bukkit.craftbukkit.inventory.CraftInventory inventory;
++        if (this.container instanceof Inventory) {
++            inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryPlayer((Inventory) this.container);
++        } else if (this.container instanceof net.minecraft.world.CompoundContainer) {
++            inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest((net.minecraft.world.CompoundContainer) this.container);
++        } else {
++            inventory = new org.bukkit.craftbukkit.inventory.CraftInventory(this.container);
++        }
++
++        this.bukkitEntity = new org.bukkit.craftbukkit.inventory.CraftInventoryView(this.player.player.getBukkitEntity(), inventory, this);
++        return this.bukkitEntity;
++    }
++    // CraftBukkit end
+ 
+     private ChestMenu(MenuType<?> type, int containerId, Inventory playerInventory, int rows) {
+         this(type, containerId, playerInventory, new SimpleContainer(9 * rows), rows);
+@@ -52,6 +_,9 @@
+         this.container = container;
+         this.containerRows = rows;
+         container.startOpen(playerInventory.player);
++        // CraftBukkit start - Save player
++        this.player = playerInventory;
++        // CraftBukkit end
+         int i = 18;
+         this.addChestGrid(container, 8, 18);
+         int i1 = 18 + this.containerRows * 18 + 13;
+@@ -68,6 +_,7 @@
+ 
+     @Override
+     public boolean stillValid(Player player) {
++        if (!this.checkReachable) return true; // CraftBukkit
+         return this.container.stillValid(player);
+     }
+ 

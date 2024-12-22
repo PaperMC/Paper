@@ -1,0 +1,31 @@
+--- a/net/minecraft/server/ServerAdvancementManager.java
++++ b/net/minecraft/server/ServerAdvancementManager.java
+@@ -22,7 +_,7 @@
+ 
+ public class ServerAdvancementManager extends SimpleJsonResourceReloadListener<Advancement> {
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    public Map<ResourceLocation, AdvancementHolder> advancements = Map.of();
++    public Map<ResourceLocation, AdvancementHolder> advancements = new java.util.HashMap<>(); // CraftBukkit - SPIGOT-7734: mutable
+     private AdvancementTree tree = new AdvancementTree();
+     private final HolderLookup.Provider registries;
+ 
+@@ -35,12 +_,18 @@
+     protected void apply(Map<ResourceLocation, Advancement> object, ResourceManager resourceManager, ProfilerFiller profiler) {
+         Builder<ResourceLocation, AdvancementHolder> builder = ImmutableMap.builder();
+         object.forEach((resourceLocation, advancement) -> {
++            // Spigot start
++            if (org.spigotmc.SpigotConfig.disabledAdvancements != null && (org.spigotmc.SpigotConfig.disabledAdvancements.contains("*") || org.spigotmc.SpigotConfig.disabledAdvancements.contains(resourceLocation.toString()) || org.spigotmc.SpigotConfig.disabledAdvancements.contains(resourceLocation.getNamespace()))) {
++                return;
++            }
++            // Spigot end
+             this.validate(resourceLocation, advancement);
+             builder.put(resourceLocation, new AdvancementHolder(resourceLocation, advancement));
+         });
+-        this.advancements = builder.buildOrThrow();
++        this.advancements = new java.util.HashMap<>(builder.buildOrThrow()); // CraftBukkit - SPIGOT-7734: mutable
+         AdvancementTree advancementTree = new AdvancementTree();
+         advancementTree.addAll(this.advancements.values());
++        LOGGER.info("Loaded {} advancements", advancementTree.nodes().size()); // Paper - Improve logging and errors; moved from AdvancementTree#addAll
+ 
+         for (AdvancementNode advancementNode : advancementTree.roots()) {
+             if (advancementNode.holder().value().display().isPresent()) {

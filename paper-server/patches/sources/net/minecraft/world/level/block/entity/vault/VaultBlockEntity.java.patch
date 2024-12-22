@@ -1,0 +1,26 @@
+--- a/net/minecraft/world/level/block/entity/vault/VaultBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/vault/VaultBlockEntity.java
+@@ -272,6 +_,11 @@
+                     if (!list.isEmpty()) {
+                         player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
+                         stack.consume(config.keyItem().getCount(), player);
++                        // CraftBukkit start
++                        org.bukkit.event.block.BlockDispenseLootEvent vaultDispenseLootEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDispenseLootEvent(level, pos, player, list);
++                        if (vaultDispenseLootEvent.isCancelled()) return;
++                        list = vaultDispenseLootEvent.getDispensedLoot().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).toList();
++                        // CraftBukkit end
+                         unlock(level, state, pos, config, serverData, sharedData, list);
+                         serverData.addToRewardedPlayers(player);
+                         sharedData.updateConnectedPlayersWithinRange(level, pos, serverData, config, config.deactivationRange());
+@@ -294,6 +_,11 @@
+                 ItemStack randomDisplayItemFromLootTable = getRandomDisplayItemFromLootTable(
+                     level, pos, config.overrideLootTableToDisplay().orElse(config.lootTable())
+                 );
++                // CraftBukkit start
++                org.bukkit.event.block.VaultDisplayItemEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callVaultDisplayItemEvent(level, pos, randomDisplayItemFromLootTable);
++                if (event.isCancelled()) return;
++                randomDisplayItemFromLootTable = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getDisplayItem());
++                // CraftBukkit end
+                 sharedData.setDisplayItem(randomDisplayItemFromLootTable);
+             }
+         }

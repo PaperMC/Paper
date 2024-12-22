@@ -1,0 +1,36 @@
+--- a/net/minecraft/network/chat/SignedMessageChain.java
++++ b/net/minecraft/network/chat/SignedMessageChain.java
+@@ -40,14 +_,14 @@
+                 if (signature == null) {
+                     throw new SignedMessageChain.DecodeException(SignedMessageChain.DecodeException.MISSING_PROFILE_KEY);
+                 } else if (publicKey.data().hasExpired()) {
+-                    throw new SignedMessageChain.DecodeException(SignedMessageChain.DecodeException.EXPIRED_PROFILE_KEY);
++                    throw new SignedMessageChain.DecodeException(SignedMessageChain.DecodeException.EXPIRED_PROFILE_KEY,  org.bukkit.event.player.PlayerKickEvent.Cause.EXPIRED_PROFILE_PUBLIC_KEY); // Paper - kick event causes
+                 } else {
+                     SignedMessageLink signedMessageLink = SignedMessageChain.this.nextLink;
+                     if (signedMessageLink == null) {
+                         throw new SignedMessageChain.DecodeException(SignedMessageChain.DecodeException.CHAIN_BROKEN);
+                     } else if (body.timeStamp().isBefore(SignedMessageChain.this.lastTimeStamp)) {
+                         this.setChainBroken();
+-                        throw new SignedMessageChain.DecodeException(SignedMessageChain.DecodeException.OUT_OF_ORDER_CHAT);
++                        throw new SignedMessageChain.DecodeException(SignedMessageChain.DecodeException.OUT_OF_ORDER_CHAT, org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event causes
+                     } else {
+                         SignedMessageChain.this.lastTimeStamp = body.timeStamp();
+                         PlayerChatMessage playerChatMessage = new PlayerChatMessage(signedMessageLink, signature, body, null, FilterMask.PASS_THROUGH);
+@@ -80,8 +_,15 @@
+         static final Component INVALID_SIGNATURE = Component.translatable("chat.disabled.invalid_signature");
+         static final Component OUT_OF_ORDER_CHAT = Component.translatable("chat.disabled.out_of_order_chat");
+ 
+-        public DecodeException(Component component) {
++        // Paper start
++        public final org.bukkit.event.player.PlayerKickEvent.Cause kickCause;
++        public DecodeException(Component component, org.bukkit.event.player.PlayerKickEvent.Cause event) {
+             super(component);
++            this.kickCause = event;
++        }
++        // Paper end
++        public DecodeException(Component component) {
++            this(component, org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN); // Paper
+         }
+     }
+ 

@@ -1,17 +1,15 @@
 package org.bukkit.craftbukkit;
 
-import com.google.common.base.Preconditions;
-import java.util.Locale;
+import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.util.OldEnumHolderable;
+import net.kyori.adventure.text.Component;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.decoration.PaintingVariant;
 import org.bukkit.Art;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.craftbukkit.util.Handleable;
-import org.jetbrains.annotations.NotNull;
 
-public class CraftArt implements Art, Handleable<PaintingVariant> {
+public class CraftArt extends OldEnumHolderable<Art, PaintingVariant> implements Art {
 
     private static int count = 0;
 
@@ -20,7 +18,7 @@ public class CraftArt implements Art, Handleable<PaintingVariant> {
     }
 
     public static Art minecraftHolderToBukkit(Holder<PaintingVariant> minecraft) {
-        return CraftArt.minecraftToBukkit(minecraft.value());
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registry.ART);
     }
 
     public static PaintingVariant bukkitToMinecraft(Art bukkit) {
@@ -28,118 +26,41 @@ public class CraftArt implements Art, Handleable<PaintingVariant> {
     }
 
     public static Holder<PaintingVariant> bukkitToMinecraftHolder(Art bukkit) {
-        Preconditions.checkArgument(bukkit != null);
-
-        net.minecraft.core.Registry<PaintingVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT);
-
-        if (registry.wrapAsHolder(CraftArt.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<PaintingVariant> holder) {
-            return holder;
-        }
-
-        throw new IllegalArgumentException("No Reference holder found for " + bukkit
-                + ", this can happen if a plugin creates its own painting variant with out properly registering it.");
+        return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.PAINTING_VARIANT);
     }
 
-    private final NamespacedKey key;
-    private final PaintingVariant paintingVariant;
-    private final String name;
-    private final int ordinal;
-
-    public CraftArt(NamespacedKey key, PaintingVariant paintingVariant) {
-        this.key = key;
-        this.paintingVariant = paintingVariant;
-        // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
-        // in case plugins use for example the name as key in a config file to receive art specific values.
-        // Custom arts will return the key with namespace. For a plugin this should look than like a new art
-        // (which can always be added in new minecraft versions and the plugin should therefore handle it accordingly).
-        if (NamespacedKey.MINECRAFT.equals(key.getNamespace())) {
-            this.name = key.getKey().toUpperCase(Locale.ROOT);
-        } else {
-            this.name = key.toString();
-        }
-        this.ordinal = CraftArt.count++;
-    }
-
-    @Override
-    public PaintingVariant getHandle() {
-        return this.paintingVariant;
+    public CraftArt(Holder<PaintingVariant> paintingVariant) {
+        super(paintingVariant, count++);
     }
 
     @Override
     public int getBlockWidth() {
-        return this.paintingVariant.width();
+        return this.getHandle().width();
     }
 
     @Override
     public int getBlockHeight() {
-        return this.paintingVariant.height();
+        return this.getHandle().height();
     }
 
     // Paper start - Expand Art API
     @Override
-    public net.kyori.adventure.text.Component title() {
-        return this.paintingVariant.title().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).orElse(null);
+    public Component title() {
+        return this.getHandle().title().map(PaperAdventure::asAdventure).orElse(null);
     }
 
     @Override
     public net.kyori.adventure.text.Component author() {
-        return this.paintingVariant.author().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).orElse(null);
+        return this.getHandle().author().map(PaperAdventure::asAdventure).orElse(null);
     }
 
     public net.kyori.adventure.key.Key assetId() {
-        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.paintingVariant.assetId());
+        return PaperAdventure.asAdventure(this.getHandle().assetId());
     }
     // Paper end - Expand Art API
 
     @Override
     public int getId() {
-        return CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getId(this.paintingVariant);
-    }
-
-    @NotNull
-    @Override
-    public NamespacedKey getKey() {
-        if (true) return java.util.Objects.requireNonNull(org.bukkit.Registry.ART.getKey(this), () -> this + " doesn't have a key"); // Paper
-        return this.key;
-    }
-
-    @Override
-    public int compareTo(@NotNull Art art) {
-        return this.ordinal - art.ordinal();
-    }
-
-    @NotNull
-    @Override
-    public String name() {
-        return this.name;
-    }
-
-    @Override
-    public int ordinal() {
-        return this.ordinal;
-    }
-
-    @Override
-    public String toString() {
-        // For backwards compatibility
-        return this.name();
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-
-        if (!(other instanceof CraftArt otherArt)) {
-            return false;
-        }
-
-        return this.getKey().equals(otherArt.getKey());
-    }
-
-    @Override
-    public int hashCode() {
-        return this.getKey().hashCode();
+        return CraftRegistry.getMinecraftRegistry(Registries.PAINTING_VARIANT).getId(this.getHandle());
     }
 }

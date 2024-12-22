@@ -1,0 +1,45 @@
+--- a/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
++++ b/net/minecraft/core/dispenser/BoatDispenseItemBehavior.java
+@@ -40,13 +_,39 @@
+             d4 = 0.0;
+         }
+ 
++        // CraftBukkit start
++        ItemStack singleItemStack = item.copyWithCount(1); // Paper - shrink at end and single item in event
++        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(serverLevel, blockSource.pos());
++        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleItemStack);
++
++        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector(d1, d2 + d4, d3));
++        if (!DispenserBlock.eventFired) {
++            serverLevel.getCraftServer().getPluginManager().callEvent(event);
++        }
++
++        if (event.isCancelled()) {
++            // stack.grow(1); // Paper - shrink below
++            return item;
++        }
++
++        boolean shrink = true; // Paper
++        if (!event.getItem().equals(craftItem)) {
++            shrink = false; // Paper - shrink below
++            // Chain to handler for new item
++            ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
++            DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack); // Paper - Fix NPE with equippable and items without behavior
++            if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
++                dispenseBehavior.dispense(blockSource, eventStack);
++                return item;
++            }
++        }
++        // CraftBukkit end
+         AbstractBoat abstractBoat = this.type.create(serverLevel, EntitySpawnReason.DISPENSER);
+         if (abstractBoat != null) {
+-            abstractBoat.setInitialPos(d1, d2 + d4, d3);
++            abstractBoat.setInitialPos(event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ()); // CraftBukkit
+             EntityType.<AbstractBoat>createDefaultStackConfig(serverLevel, item, null).accept(abstractBoat);
+             abstractBoat.setYRot(direction.toYRot());
+-            serverLevel.addFreshEntity(abstractBoat);
+-            item.shrink(1);
++            if (serverLevel.addFreshEntity(abstractBoat) && shrink) item.shrink(1); // Paper - if entity add was successful and supposed to shrink
+         }
+ 
+         return item;

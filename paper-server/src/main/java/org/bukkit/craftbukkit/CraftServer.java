@@ -904,13 +904,13 @@ public final class CraftServer implements Server {
 
     @Override
     public long getConnectionThrottle() {
-        // Spigot Start - Automatically set connection throttle for bungee configurations
+        // Spigot start - Automatically set connection throttle for bungee configurations
         if (org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) { // Paper - Add Velocity IP Forwarding Support
             return -1;
         } else {
             return this.configuration.getInt("settings.connection-throttle");
         }
-        // Spigot End
+        // Spigot end
     }
 
     @Override
@@ -1288,7 +1288,7 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(creator != null, "WorldCreator cannot be null");
 
         String name = creator.name();
-        ChunkGenerator generator = creator.generator();
+        ChunkGenerator chunkGenerator = creator.generator();
         BiomeProvider biomeProvider = creator.biomeProvider();
         File folder = new File(this.getWorldContainer(), name);
         World world = this.getWorld(name);
@@ -1307,151 +1307,170 @@ public final class CraftServer implements Server {
             Preconditions.checkArgument(folder.isDirectory(), "File (%s) exists and isn't a folder", name);
         }
 
-        if (generator == null) {
-            generator = this.getGenerator(name);
+        if (chunkGenerator == null) {
+            chunkGenerator = this.getGenerator(name);
         }
 
         if (biomeProvider == null) {
             biomeProvider = this.getBiomeProvider(name);
         }
 
-        ResourceKey<LevelStem> actualDimension;
-        switch (creator.environment()) {
-            case NORMAL:
-                actualDimension = LevelStem.OVERWORLD;
-                break;
-            case NETHER:
-                actualDimension = LevelStem.NETHER;
-                break;
-            case THE_END:
-                actualDimension = LevelStem.END;
-                break;
-            default:
-                throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
-        }
+        ResourceKey<LevelStem> actualDimension = switch (creator.environment()) {
+            case NORMAL -> LevelStem.OVERWORLD;
+            case NETHER -> LevelStem.NETHER;
+            case THE_END -> LevelStem.END;
+            default -> throw new IllegalArgumentException("Illegal dimension (" + creator.environment() + ")");
+        };
 
-        LevelStorageSource.LevelStorageAccess worldSession;
+        LevelStorageSource.LevelStorageAccess levelStorageAccess;
         try {
-            worldSession = LevelStorageSource.createDefault(this.getWorldContainer().toPath()).validateAndCreateAccess(name, actualDimension);
+            levelStorageAccess = LevelStorageSource.createDefault(this.getWorldContainer().toPath()).validateAndCreateAccess(name, actualDimension);
         } catch (IOException | ContentValidationException ex) {
             throw new RuntimeException(ex);
         }
 
-        Dynamic<?> dynamic;
-        if (worldSession.hasWorldData()) {
-            net.minecraft.world.level.storage.LevelSummary worldinfo;
-
+        Dynamic<?> dataTag;
+        if (levelStorageAccess.hasWorldData()) {
+            net.minecraft.world.level.storage.LevelSummary summary;
             try {
-                dynamic = worldSession.getDataTag();
-                worldinfo = worldSession.getSummary(dynamic);
-            } catch (NbtException | ReportedNbtException | IOException ioexception) {
-                LevelStorageSource.LevelDirectory convertable_b = worldSession.getLevelDirectory();
-
-                MinecraftServer.LOGGER.warn("Failed to load world data from {}", convertable_b.dataFile(), ioexception);
+                dataTag = levelStorageAccess.getDataTag();
+                summary = levelStorageAccess.getSummary(dataTag);
+            } catch (NbtException | ReportedNbtException | IOException e) {
+                LevelStorageSource.LevelDirectory levelDirectory = levelStorageAccess.getLevelDirectory();
+                MinecraftServer.LOGGER.warn("Failed to load world data from {}", levelDirectory.dataFile(), e);
                 MinecraftServer.LOGGER.info("Attempting to use fallback");
 
                 try {
-                    dynamic = worldSession.getDataTagFallback();
-                    worldinfo = worldSession.getSummary(dynamic);
-                } catch (NbtException | ReportedNbtException | IOException ioexception1) {
-                    MinecraftServer.LOGGER.error("Failed to load world data from {}", convertable_b.oldDataFile(), ioexception1);
-                    MinecraftServer.LOGGER.error("Failed to load world data from {} and {}. World files may be corrupted. Shutting down.", convertable_b.dataFile(), convertable_b.oldDataFile());
+                    dataTag = levelStorageAccess.getDataTagFallback();
+                    summary = levelStorageAccess.getSummary(dataTag);
+                } catch (NbtException | ReportedNbtException | IOException e1) {
+                    MinecraftServer.LOGGER.error("Failed to load world data from {}", levelDirectory.oldDataFile(), e1);
+                    MinecraftServer.LOGGER.error(
+                        "Failed to load world data from {} and {}. World files may be corrupted. Shutting down.",
+                        levelDirectory.dataFile(),
+                        levelDirectory.oldDataFile()
+                    );
                     return null;
                 }
 
-                worldSession.restoreLevelDataFromOld();
+                levelStorageAccess.restoreLevelDataFromOld();
             }
 
-            if (worldinfo.requiresManualConversion()) {
+            if (summary.requiresManualConversion()) {
                 MinecraftServer.LOGGER.info("This world must be opened in an older version (like 1.6.4) to be safely converted");
                 return null;
             }
 
-            if (!worldinfo.isCompatible()) {
+            if (!summary.isCompatible()) {
                 MinecraftServer.LOGGER.info("This world was created by an incompatible version.");
                 return null;
             }
         } else {
-            dynamic = null;
+            dataTag = null;
         }
 
         boolean hardcore = creator.hardcore();
 
-        PrimaryLevelData worlddata;
-        WorldLoader.DataLoadContext worldloader_a = this.console.worldLoader;
-        RegistryAccess.Frozen iregistrycustom_dimension = worldloader_a.datapackDimensions();
-        net.minecraft.core.Registry<LevelStem> iregistry = iregistrycustom_dimension.lookupOrThrow(Registries.LEVEL_STEM);
-        if (dynamic != null) {
-            LevelDataAndDimensions leveldataanddimensions = LevelStorageSource.getLevelDataAndDimensions(dynamic, worldloader_a.dataConfiguration(), iregistry, worldloader_a.datapackWorldgen());
-
-            worlddata = (PrimaryLevelData) leveldataanddimensions.worldData();
-            iregistrycustom_dimension = leveldataanddimensions.dimensions().dimensionsRegistryAccess();
+        PrimaryLevelData primaryLevelData;
+        WorldLoader.DataLoadContext context = this.console.worldLoader;
+        RegistryAccess.Frozen registryAccess = context.datapackDimensions();
+        net.minecraft.core.Registry<LevelStem> contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
+        if (dataTag != null) {
+            LevelDataAndDimensions levelDataAndDimensions = LevelStorageSource.getLevelDataAndDimensions(
+                dataTag, context.dataConfiguration(), contextLevelStemRegistry, context.datapackWorldgen()
+            );
+            primaryLevelData = (PrimaryLevelData) levelDataAndDimensions.worldData();
+            registryAccess = levelDataAndDimensions.dimensions().dimensionsRegistryAccess();
         } else {
-            LevelSettings worldsettings;
-            WorldOptions worldoptions = new WorldOptions(creator.seed(), creator.generateStructures(), false);
-            WorldDimensions worlddimensions;
+            LevelSettings levelSettings;
+            WorldOptions worldOptions = new WorldOptions(creator.seed(), creator.generateStructures(), false);
+            WorldDimensions worldDimensions;
 
             DedicatedServerProperties.WorldDimensionData properties = new DedicatedServerProperties.WorldDimensionData(GsonHelper.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.type().name().toLowerCase(Locale.ROOT));
+            levelSettings = new LevelSettings(
+                name,
+                GameType.byId(this.getDefaultGameMode().getValue()),
+                hardcore, Difficulty.EASY,
+                false,
+                new GameRules(context.dataConfiguration().enabledFeatures()),
+                context.dataConfiguration())
+            ;
+            worldDimensions = properties.create(context.datapackWorldgen());
 
-            worldsettings = new LevelSettings(name, GameType.byId(this.getDefaultGameMode().getValue()), hardcore, Difficulty.EASY, false, new GameRules(worldloader_a.dataConfiguration().enabledFeatures()), worldloader_a.dataConfiguration());
-            worlddimensions = properties.create(worldloader_a.datapackWorldgen());
+            WorldDimensions.Complete complete = worldDimensions.bake(contextLevelStemRegistry);
+            Lifecycle lifecycle = complete.lifecycle().add(context.datapackWorldgen().allRegistriesLifecycle());
 
-            WorldDimensions.Complete worlddimensions_b = worlddimensions.bake(iregistry);
-            Lifecycle lifecycle = worlddimensions_b.lifecycle().add(worldloader_a.datapackWorldgen().allRegistriesLifecycle());
-
-            worlddata = new PrimaryLevelData(worldsettings, worldoptions, worlddimensions_b.specialWorldProperty(), lifecycle);
-            iregistrycustom_dimension = worlddimensions_b.dimensionsRegistryAccess();
+            primaryLevelData = new PrimaryLevelData(levelSettings, worldOptions, complete.specialWorldProperty(), lifecycle);
+            registryAccess = complete.dimensionsRegistryAccess();
         }
-        iregistry = iregistrycustom_dimension.lookupOrThrow(Registries.LEVEL_STEM);
-        worlddata.customDimensions = iregistry;
-        worlddata.checkName(name);
-        worlddata.setModdedInfo(this.console.getServerModName(), this.console.getModdedStatus().shouldReportAsModified());
+
+        contextLevelStemRegistry = registryAccess.lookupOrThrow(Registries.LEVEL_STEM);
+        primaryLevelData.customDimensions = contextLevelStemRegistry;
+        primaryLevelData.checkName(name);
+        primaryLevelData.setModdedInfo(this.console.getServerModName(), this.console.getModdedStatus().shouldReportAsModified());
 
         if (this.console.options.has("forceUpgrade")) {
-            net.minecraft.server.Main.forceUpgrade(worldSession, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, iregistrycustom_dimension, this.console.options.has("recreateRegionFiles"));
+            net.minecraft.server.Main.forceUpgrade(levelStorageAccess, DataFixers.getDataFixer(), this.console.options.has("eraseCache"), () -> true, registryAccess, this.console.options.has("recreateRegionFiles"));
         }
 
-        long j = BiomeManager.obfuscateSeed(worlddata.worldGenOptions().seed()); // Paper - use world seed
-        List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(worlddata));
-        LevelStem worlddimension = iregistry.getValue(actualDimension);
+        long i = BiomeManager.obfuscateSeed(primaryLevelData.worldGenOptions().seed());
+        List<CustomSpawner> list = ImmutableList.of(
+            new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(primaryLevelData)
+        );
+        LevelStem customStem = contextLevelStemRegistry.getValue(actualDimension);
 
-        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), worlddimension.type().value(), worlddimension.generator(), this.getHandle().getServer().registryAccess()); // Paper - Expose vanilla BiomeProvider from WorldInfo
-        if (biomeProvider == null && generator != null) {
-            biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
+        WorldInfo worldInfo = new CraftWorldInfo(primaryLevelData, levelStorageAccess, creator.environment(), customStem.type().value(), customStem.generator(), this.getHandle().getServer().registryAccess()); // Paper - Expose vanilla BiomeProvider from WorldInfo
+        if (biomeProvider == null && chunkGenerator != null) {
+            biomeProvider = chunkGenerator.getDefaultBiomeProvider(worldInfo);
         }
 
-        ResourceKey<net.minecraft.world.level.Level> worldKey;
+        ResourceKey<net.minecraft.world.level.Level> dimensionKey;
         String levelName = this.getServer().getProperties().levelName;
         if (name.equals(levelName + "_nether")) {
-            worldKey = net.minecraft.world.level.Level.NETHER;
+            dimensionKey = net.minecraft.world.level.Level.NETHER;
         } else if (name.equals(levelName + "_the_end")) {
-            worldKey = net.minecraft.world.level.Level.END;
+            dimensionKey = net.minecraft.world.level.Level.END;
         } else {
-            worldKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
+            dimensionKey = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(creator.key().namespace(), creator.key().value()));
         }
 
         // If set to not keep spawn in memory (changed from default) then adjust rule accordingly
         if (creator.keepSpawnLoaded() == net.kyori.adventure.util.TriState.FALSE) { // Paper
-            worlddata.getGameRules().getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0, null);
+            primaryLevelData.getGameRules().getRule(GameRules.RULE_SPAWN_CHUNK_RADIUS).set(0, null);
         }
-        ServerLevel internal = (ServerLevel) new ServerLevel(this.console, this.console.executor, worldSession, worlddata, worldKey, worlddimension, this.getServer().progressListenerFactory.create(worlddata.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS)),
-                worlddata.isDebugWorld(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, this.console.overworld().getRandomSequences(), creator.environment(), generator, biomeProvider);
+
+        ServerLevel serverLevel = new ServerLevel(
+            this.console,
+            this.console.executor,
+            levelStorageAccess,
+            primaryLevelData,
+            dimensionKey,
+            customStem,
+            this.getServer().progressListenerFactory.create(primaryLevelData.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS)),
+            primaryLevelData.isDebugWorld(),
+            i,
+            creator.environment() == Environment.NORMAL ? list : ImmutableList.of(),
+            true,
+            this.console.overworld().getRandomSequences(),
+            creator.environment(),
+            chunkGenerator, biomeProvider
+        );
 
         if (!(this.worlds.containsKey(name.toLowerCase(Locale.ROOT)))) {
             return null;
         }
 
-        this.console.addLevel(internal); // Paper - Put world into worldlist before initing the world; move up
-        this.console.initWorld(internal, worlddata, worlddata, worlddata.worldGenOptions());
+        this.console.addLevel(serverLevel); // Paper - Put world into worldlist before initing the world; move up
+        this.console.initWorld(serverLevel, primaryLevelData, primaryLevelData, primaryLevelData.worldGenOptions());
 
-        internal.setSpawnSettings(true);
+        serverLevel.setSpawnSettings(true);
         // Paper - Put world into worldlist before initing the world; move up
 
-        this.getServer().prepareLevels(internal.getChunkSource().chunkMap.progressListener, internal);
-        internal.entityManager.tick(); // SPIGOT-6526: Load pending entities so they are available to the API
+        this.getServer().prepareLevels(serverLevel.getChunkSource().chunkMap.progressListener, serverLevel);
+        io.papermc.paper.FeatureHooks.tickEntityManager(serverLevel); // SPIGOT-6526: Load pending entities so they are available to the API // Paper - chunk system
 
-        this.pluginManager.callEvent(new WorldLoadEvent(internal.getWorld()));
-        return internal.getWorld();
+        this.pluginManager.callEvent(new WorldLoadEvent(serverLevel.getWorld()));
+        return serverLevel.getWorld();
     }
 
     @Override
@@ -1493,8 +1512,8 @@ public final class CraftServer implements Server {
             }
 
             handle.getChunkSource().close(save);
-            handle.entityManager.close(save); // SPIGOT-6722: close entityManager
-            handle.convertable.close();
+            io.papermc.paper.FeatureHooks.closeEntityManager(handle, save); // SPIGOT-6722: close entityManager // Paper - chunk system
+            handle.levelStorageAccess.close();
         } catch (Exception ex) {
             this.getLogger().log(Level.SEVERE, null, ex);
         }
@@ -2131,7 +2150,7 @@ public final class CraftServer implements Server {
         if (result == null) {
             GameProfile profile = null;
             // Only fetch an online UUID in online mode
-            if (this.getOnlineMode() || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) { // Paper - Add setting for proxy online mode status
+            if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) { // Paper - Add setting for proxy online mode status
                 // This is potentially blocking :(
                 profile = this.console.getProfileCache().get(name).orElse(null);
             }
@@ -2585,12 +2604,11 @@ public final class CraftServer implements Server {
     }
 
     public List<String> tabCompleteCommand(Player player, String message, ServerLevel world, Vec3 pos) {
-        // Spigot Start
-        if ( (org.spigotmc.SpigotConfig.tabComplete < 0 || message.length() <= org.spigotmc.SpigotConfig.tabComplete) && !message.contains( " " ) )
-        {
+        // Spigot start
+        if ((org.spigotmc.SpigotConfig.tabComplete < 0 || message.length() <= org.spigotmc.SpigotConfig.tabComplete) && !message.contains(" ")) {
             return ImmutableList.of();
         }
-        // Spigot End
+        // Spigot end
 
         List<String> completions = null;
         try {

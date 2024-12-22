@@ -11,9 +11,9 @@ plugins {
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
 dependencies {
-    mache("io.papermc:mache:1.21.4+build.5")
+    mache("io.papermc:mache:1.21.4+build.6")
     paperclip("io.papermc:paperclip:3.0.3")
-    remapper("net.fabricmc:tiny-remapper:0.10.3:fat")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 paperweight {
@@ -23,23 +23,24 @@ paperweight {
 
     paper {
         reobfMappingsPatch = layout.projectDirectory.file("../build-data/reobf-mappings-patch.tiny")
-        reobfPackagesToFix.addAll(
-            "co.aikar.timings",
-            "com.destroystokyo.paper",
-            "com.mojang",
-            "io.papermc.paper",
-            "ca.spottedleaf",
-            "net.kyori.adventure.bossbar",
-            "net.minecraft",
-            "org.bukkit.craftbukkit",
-            "org.spigotmc",
-        )
     }
 
     spigot {
         buildDataRef = "3edaf46ec1eed4115ce1b18d2846cded42577e42"
         packageVersion = "v1_21_R3" // also needs to be updated in MappingEnvironment
     }
+
+    reobfPackagesToFix.addAll(
+        "co.aikar.timings",
+        "com.destroystokyo.paper",
+        "com.mojang",
+        "io.papermc.paper",
+        "ca.spottedleaf",
+        "net.kyori.adventure.bossbar",
+        "net.minecraft",
+        "org.bukkit.craftbukkit",
+        "org.spigotmc",
+    )
 }
 
 tasks.generateDevelopmentBundle {
@@ -58,45 +59,45 @@ abstract class Services {
 }
 val services = objects.newInstance<Services>()
 
-publishing {
-    if (project.providers.gradleProperty("publishDevBundle").isPresent) {
-        val devBundleComponent = services.softwareComponentFactory.adhoc("devBundle")
-        components.add(devBundleComponent)
+if (project.providers.gradleProperty("publishDevBundle").isPresent) {
+    val devBundleComponent = services.softwareComponentFactory.adhoc("devBundle")
+    components.add(devBundleComponent)
 
-        val devBundle = configurations.consumable("devBundle") {
-            attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.ZIP))
-            outgoing.artifact(tasks.generateDevelopmentBundle.flatMap { it.devBundleFile })
-        }
-        devBundleComponent.addVariantsFromConfiguration(devBundle.get()) {}
+    val devBundle = configurations.consumable("devBundle") {
+        attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.ZIP))
+        outgoing.artifact(tasks.generateDevelopmentBundle.flatMap { it.devBundleFile })
+    }
+    devBundleComponent.addVariantsFromConfiguration(devBundle.get()) {}
 
-        val runtime = configurations.consumable("serverRuntimeClasspath") {
-            attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
-            attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-            extendsFrom(configurations.runtimeClasspath.get())
-        }
-        devBundleComponent.addVariantsFromConfiguration(runtime.get()) {
-            mapToMavenScope("runtime")
-        }
+    val runtime = configurations.consumable("serverRuntimeClasspath") {
+        attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
+        attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+        extendsFrom(configurations.runtimeClasspath.get())
+    }
+    devBundleComponent.addVariantsFromConfiguration(runtime.get()) {
+        mapToMavenScope("runtime")
+    }
 
-        val compile = configurations.consumable("serverCompileClasspath") {
-            attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
-            attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_API))
-            extendsFrom(configurations.compileClasspath.get())
-        }
-        devBundleComponent.addVariantsFromConfiguration(compile.get()) {
-            mapToMavenScope("compile")
-        }
+    val compile = configurations.consumable("serverCompileClasspath") {
+        attributes.attribute(DevBundleOutput.ATTRIBUTE, objects.named(DevBundleOutput.SERVER_DEPENDENCIES))
+        attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_API))
+        extendsFrom(configurations.compileClasspath.get())
+    }
+    devBundleComponent.addVariantsFromConfiguration(compile.get()) {
+        mapToMavenScope("compile")
+    }
 
-        tasks.withType(GenerateMavenPom::class).configureEach {
-            doLast {
-                val text = destination.readText()
-                // Remove dependencies from pom, dev bundle is designed for gradle module metadata consumers
-                destination.writeText(
-                    text.substringBefore("<dependencies>") + text.substringAfter("</dependencies>")
-                )
-            }
+    tasks.withType(GenerateMavenPom::class).configureEach {
+        doLast {
+            val text = destination.readText()
+            // Remove dependencies from pom, dev bundle is designed for gradle module metadata consumers
+            destination.writeText(
+                text.substringBefore("<dependencies>") + text.substringAfter("</dependencies>")
+            )
         }
+    }
 
+    publishing {
         publications.create<MavenPublication>("devBundle") {
             artifactId = "dev-bundle"
             from(devBundleComponent)
@@ -149,6 +150,11 @@ dependencies {
     runtimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
     runtimeOnly("com.mysql:mysql-connector-j:9.1.0")
     runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
+    // Paper start - Use Velocity cipher
+    implementation("com.velocitypowered:velocity-native:3.3.0-SNAPSHOT") {
+        isTransitive = false
+    }
+    // Paper end - Use Velocity cipher
 
     runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
@@ -176,12 +182,12 @@ dependencies {
     // Paper end - spark
 }
 
-
 tasks.jar {
     manifest {
         val git = Git(rootProject.layout.projectDirectory.path)
         val mcVersion = rootProject.providers.gradleProperty("mcVersion").get()
         val build = System.getenv("BUILD_NUMBER") ?: null
+        val buildTime = if (build != null) Instant.now() else Instant.EPOCH
         val gitHash = git.exec(providers, "rev-parse", "--short=7", "HEAD").get().trim()
         val implementationVersion = "$mcVersion-${build ?: "DEV"}-$gitHash"
         val date = git.exec(providers, "show", "-s", "--format=%ci", gitHash).get().trim() // Paper
@@ -197,7 +203,7 @@ tasks.jar {
             "Brand-Id" to "papermc:paper",
             "Brand-Name" to "Paper",
             "Build-Number" to (build ?: ""),
-            "Build-Time" to Instant.now().toString(),
+            "Build-Time" to buildTime.toString(),
             "Git-Branch" to gitBranch, // Paper
             "Git-Commit" to gitHash, // Paper
         )
@@ -256,7 +262,7 @@ fun TaskContainer.registerRunTask(
     name: String,
     block: JavaExec.() -> Unit
 ): TaskProvider<JavaExec> = register<JavaExec>(name) {
-    group = "paper"
+    group = "runs"
     mainClass.set("org.bukkit.craftbukkit.Main")
     standardInput = System.`in`
     workingDir = rootProject.layout.projectDirectory
@@ -266,7 +272,7 @@ fun TaskContainer.registerRunTask(
         languageVersion.set(JavaLanguageVersion.of(21))
         vendor.set(JvmVendorSpec.JETBRAINS)
     })
-    jvmArgs("-XX:+AllowEnhancedClassRedefinition", "-XX:+AllowRedefinitionToAddDeleteMethods")
+    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
 
     if (rootProject.childProjects["test-plugin"] != null) {
         val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
@@ -312,21 +318,21 @@ tasks.registerRunTask("runDevServer") {
 
 tasks.registerRunTask("runBundler") {
     description = "Spin up a test server from the Mojang mapped bundler jar"
-    classpath(tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createMojmapBundlerJar").flatMap { it.outputZip })
+    classpath(tasks.createMojmapBundlerJar.flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
 tasks.registerRunTask("runReobfBundler") {
     description = "Spin up a test server from the reobf bundler jar"
-    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreateBundlerJar>("createReobfBundlerJar").flatMap { it.outputZip })
+    classpath(tasks.createReobfBundlerJar.flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
 tasks.registerRunTask("runPaperclip") {
     description = "Spin up a test server from the Mojang mapped Paperclip jar"
-    classpath(tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createMojmapPaperclipJar").flatMap { it.outputZip })
+    classpath(tasks.createMojmapPaperclipJar.flatMap { it.outputZip })
     mainClass.set(null as String?)
 }
 tasks.registerRunTask("runReobfPaperclip") {
     description = "Spin up a test server from the reobf Paperclip jar"
-    classpath(rootProject.tasks.named<io.papermc.paperweight.tasks.CreatePaperclipJar>("createReobfPaperclipJar").flatMap { it.outputZip })
+    classpath(tasks.createReobfPaperclipJar.flatMap { it.outputZip })
     mainClass.set(null as String?)
 }

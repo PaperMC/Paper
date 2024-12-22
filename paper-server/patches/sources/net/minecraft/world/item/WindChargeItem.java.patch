@@ -1,0 +1,44 @@
+--- a/net/minecraft/world/item/WindChargeItem.java
++++ b/net/minecraft/world/item/WindChargeItem.java
+@@ -27,7 +_,7 @@
+     public InteractionResult use(Level level, Player player, InteractionHand hand) {
+         ItemStack itemInHand = player.getItemInHand(hand);
+         if (level instanceof ServerLevel serverLevel) {
+-            Projectile.spawnProjectileFromRotation(
++            final Projectile.Delayed<WindCharge> windCharge = Projectile.spawnProjectileFromRotationDelayed( // Paper - PlayerLaunchProjectileEvent
+                 (level1, owner, spawnedFrom) -> new WindCharge(player, level, player.position().x(), player.getEyePosition().y(), player.position().z()),
+                 serverLevel,
+                 itemInHand,
+@@ -36,6 +_,22 @@
+                 PROJECTILE_SHOOT_POWER,
+                 1.0F
+             );
++            // Paper start - PlayerLaunchProjectileEvent
++            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemInHand), (org.bukkit.entity.Projectile) windCharge.projectile().getBukkitEntity());
++            if (!event.callEvent() || !windCharge.attemptSpawn()) {
++                player.containerMenu.sendAllDataToRemote();
++                if (player instanceof net.minecraft.server.level.ServerPlayer serverPlayer) {
++                    serverPlayer.connection.send(new net.minecraft.network.protocol.game.ClientboundCooldownPacket(player.getCooldowns().getCooldownGroup(itemInHand), 0)); // prevent visual desync of cooldown on the slot
++                }
++                return InteractionResult.FAIL;
++            }
++
++            player.awardStat(Stats.ITEM_USED.get(this));
++            if (event.shouldConsume()) itemInHand.consume(1, player);
++            else if (!player.hasInfiniteMaterials()) {
++                player.containerMenu.sendAllDataToRemote();
++            }
++            // Paper end - PlayerLaunchProjectileEvent
+         }
+ 
+         level.playSound(
+@@ -48,8 +_,7 @@
+             0.5F,
+             0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F)
+         );
+-        player.awardStat(Stats.ITEM_USED.get(this));
+-        itemInHand.consume(1, player);
++        // Paper - PlayerLaunchProjectileEvent; moved up
+         return InteractionResult.SUCCESS;
+     }
+ 

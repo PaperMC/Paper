@@ -52,7 +52,7 @@ public class WorldBorderCenterChangeEvent extends WorldBorderEvent implements Ca
      * @param newCenter the new center
      */
     public void setNewCenter(final Location newCenter) {
-        this.newCenter = newCenter;
+        this.newCenter = newCenter.clone();
     }
 
     @Override

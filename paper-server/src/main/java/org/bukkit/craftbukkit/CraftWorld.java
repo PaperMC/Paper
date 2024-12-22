@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
-import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
@@ -21,7 +20,6 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -32,7 +30,6 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
 import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.network.protocol.game.ClientboundSoundEntityPacket;
@@ -77,7 +74,6 @@ import org.bukkit.Chunk;
 import org.bukkit.ChunkSnapshot;
 import org.bukkit.Difficulty;
 import org.bukkit.Effect;
-import org.bukkit.FeatureFlag;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.GameRule;
 import org.bukkit.Instrument;
@@ -130,7 +126,6 @@ import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.Trident;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.event.weather.LightningStrikeEvent;
-import org.bukkit.event.world.SpawnChangeEvent;
 import org.bukkit.event.world.TimeSkipEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
@@ -221,7 +216,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public int getTileEntityCount() {
         // We don't use the full world tile entity list, so we must iterate chunks
         int size = 0;
-        for (ChunkHolder playerchunk : ca.spottedleaf.moonrise.common.util.ChunkSystem.getVisibleChunkHolders(this.world)) {
+        for (ChunkHolder playerchunk : ca.spottedleaf.moonrise.common.PlatformHooks.get().getVisibleChunkHolders(this.world)) {
             net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
             if (chunk == null) {
                 continue;
@@ -410,7 +405,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             return chunk instanceof ImposterProtoChunk || chunk instanceof net.minecraft.world.level.chunk.LevelChunk;
         }
         final java.util.concurrent.CompletableFuture<ChunkAccess> future = new java.util.concurrent.CompletableFuture<>();
-        ca.spottedleaf.moonrise.common.util.ChunkSystem.scheduleChunkLoad(
+        ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
             this.world, x, z, false, ChunkStatus.EMPTY, true, ca.spottedleaf.concurrentutil.util.Priority.NORMAL, future::complete
         );
         world.getChunkSource().mainThreadProcessor.managedBlock(future::isDone);
@@ -425,7 +420,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Chunk[] getLoadedChunks() {
-        List<ChunkHolder> chunks = ca.spottedleaf.moonrise.common.util.ChunkSystem.getVisibleChunkHolders(this.world); // Paper
+        List<ChunkHolder> chunks = ca.spottedleaf.moonrise.common.PlatformHooks.get().getVisibleChunkHolders(this.world); // Paper
         return chunks.stream().map(ChunkHolder::getFullChunkNow).filter(Objects::nonNull).map(CraftChunk::new).toArray(Chunk[]::new);
     }
 
@@ -507,14 +502,17 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
         if (playerChunk == null) return false;
 
-        playerChunk.getTickingChunkFuture().thenAccept(either -> {
-            either.ifSuccess(chunk -> {
+        // Paper start - chunk system
+        net.minecraft.world.level.chunk.LevelChunk chunk = playerChunk.getChunkToSend();
+        if (chunk == null) {
+            return false;
+        }
+        // Paper end - chunk system
                 List<ServerPlayer> playersInRange = playerChunk.playerProvider.getPlayers(playerChunk.getPos(), false);
-                if (playersInRange.isEmpty()) return;
+                if (playersInRange.isEmpty()) return true; // Paper - chunk system
 
                 FeatureHooks.sendChunkRefreshPackets(playersInRange, chunk);
-            });
-        });
+        // Paper - chunk system
 
         return true;
     }
@@ -589,10 +587,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(plugin != null, "null plugin");
         Preconditions.checkArgument(plugin.isEnabled(), "plugin is not enabled");
 
-        DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-
-        if (chunkDistanceManager.addRegionTicketAtDistance(TicketType.PLUGIN_TICKET, new ChunkPos(x, z), 2, plugin)) { // keep in-line with force loading, add at level 31
-            this.getChunkAt(x, z); // ensure loaded
+        final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.distanceManager;
+        if (distanceManager.addPluginRegionTicket(new ChunkPos(x, z), plugin)) {
+            this.getChunkAt(x, z); // ensure it's loaded
             return true;
         }
 
@@ -603,8 +600,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public boolean removePluginChunkTicket(int x, int z, Plugin plugin) {
         Preconditions.checkNotNull(plugin, "null plugin");
 
-        DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-        return chunkDistanceManager.removeRegionTicketAtDistance(TicketType.PLUGIN_TICKET, new ChunkPos(x, z), 2, plugin); // keep in-line with force loading, remove at level 31
+        final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.distanceManager;
+        return distanceManager.removePluginRegionTicket(new ChunkPos(x, z), plugin);
     }
 
     @Override
@@ -617,47 +614,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public Collection<Plugin> getPluginChunkTickets(int x, int z) {
-        DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-        SortedArraySet<Ticket<?>> tickets = chunkDistanceManager.tickets.get(ChunkPos.asLong(x, z));
-
-        if (tickets == null) {
-            return Collections.emptyList();
-        }
-
-        ImmutableList.Builder<Plugin> ret = ImmutableList.builder();
-        for (Ticket<?> ticket : tickets) {
-            if (ticket.getType() == TicketType.PLUGIN_TICKET) {
-                ret.add((Plugin) ticket.key);
-            }
-        }
-
-        return ret.build();
+        return FeatureHooks.getPluginChunkTickets(this.world, x, z); // Paper - chunk system
     }
 
     @Override
     public Map<Plugin, Collection<Chunk>> getPluginChunkTickets() {
-        Map<Plugin, ImmutableList.Builder<Chunk>> ret = new HashMap<>();
-        DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-
-        for (Long2ObjectMap.Entry<SortedArraySet<Ticket<?>>> chunkTickets : chunkDistanceManager.tickets.long2ObjectEntrySet()) {
-            long chunkKey = chunkTickets.getLongKey();
-            SortedArraySet<Ticket<?>> tickets = chunkTickets.getValue();
-
-            Chunk chunk = null;
-            for (Ticket<?> ticket : tickets) {
-                if (ticket.getType() != TicketType.PLUGIN_TICKET) {
-                    continue;
-                }
-
-                if (chunk == null) {
-                    chunk = this.getChunkAt(ChunkPos.getX(chunkKey), ChunkPos.getZ(chunkKey));
-                }
-
-                ret.computeIfAbsent((Plugin) ticket.key, (key) -> ImmutableList.builder()).add(chunk);
-            }
-        }
-
-        return ret.entrySet().stream().collect(ImmutableMap.toImmutableMap(Map.Entry::getKey, (entry) -> entry.getValue().build()));
+        return FeatureHooks.getPluginChunkTickets(this.world); // Paper - chunk system
     }
 
     @NotNull
@@ -1342,12 +1304,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public int getViewDistance() {
-        return this.world.getChunkSource().chunkMap.serverViewDistance;
+        return FeatureHooks.getViewDistance(this.world); // Paper - chunk system
     }
 
     @Override
     public int getSimulationDistance() {
-        return this.world.getChunkSource().chunkMap.getDistanceManager().simulationDistance;
+        return FeatureHooks.getSimulationDistance(this.world); // Paper - chunk system
     }
 
     public BlockMetadataStore getBlockMetadata() {
@@ -1631,7 +1593,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public File getWorldFolder() {
-        return this.world.convertable.getLevelPath(LevelResource.ROOT).toFile().getParentFile();
+        return this.world.levelStorageAccess.getLevelPath(LevelResource.ROOT).toFile().getParentFile();
     }
 
     @Override
@@ -2453,7 +2415,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public void getChunkAtAsync(int x, int z, boolean gen, boolean urgent, @NotNull Consumer<? super Chunk> cb) {
         warnUnsafeChunk("getting a faraway chunk async", x, z); // Paper
-        ca.spottedleaf.moonrise.common.util.ChunkSystem.scheduleChunkLoad(
+        ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
             this.getHandle(), x, z, gen, ChunkStatus.FULL, true,
             urgent ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL,
             (ChunkAccess chunk) -> {
@@ -2478,25 +2440,22 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public void setViewDistance(final int viewDistance) {
-        if (viewDistance < 2 || viewDistance > 32) {
-            throw new IllegalArgumentException("View distance " + viewDistance + " is out of range of [2, 32]");
-        }
-        this.getHandle().chunkSource.chunkMap.setServerViewDistance(viewDistance);
+        FeatureHooks.setViewDistance(this.world, viewDistance); // Paper - chunk system
     }
 
     @Override
     public void setSimulationDistance(final int simulationDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setSimulationDistance(this.world, simulationDistance); // Paper - chunk system
     }
 
     @Override
     public int getSendViewDistance() {
-        return this.getViewDistance();
+        return FeatureHooks.getSendViewDistance(this.world); // Paper - chunk system
     }
 
     @Override
     public void setSendViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setSendViewDistance(this.world, viewDistance); // Paper - chunk system
     }
 
     // Paper start - implement pointers

@@ -1,0 +1,98 @@
+--- a/net/minecraft/world/item/BlockItem.java
++++ b/net/minecraft/world/item/BlockItem.java
+@@ -30,6 +_,11 @@
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.phys.shapes.CollisionContext;
++// CraftBukkit start
++import org.bukkit.craftbukkit.block.CraftBlock;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.bukkit.event.block.BlockCanBuildEvent;
++// CraftBukkit end
+ 
+ public class BlockItem extends Item {
+     @Deprecated
+@@ -59,6 +_,14 @@
+                 return InteractionResult.FAIL;
+             } else {
+                 BlockState placementState = this.getPlacementState(blockPlaceContext);
++                // CraftBukkit start - special case for handling block placement with water lilies and snow buckets
++                org.bukkit.block.BlockState bukkitState = null;
++                if (this instanceof PlaceOnWaterBlockItem || this instanceof SolidBucketItem) {
++                    bukkitState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(blockPlaceContext.getLevel(), blockPlaceContext.getClickedPos());
++                }
++                final org.bukkit.block.BlockState oldBukkitState = bukkitState != null ? bukkitState : org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(blockPlaceContext.getLevel(), blockPlaceContext.getClickedPos()); // Paper - Reset placed block on exception
++                // CraftBukkit end
++
+                 if (placementState == null) {
+                     return InteractionResult.FAIL;
+                 } else if (!this.placeBlock(blockPlaceContext, placementState)) {
+@@ -71,15 +_,40 @@
+                     BlockState blockState = level.getBlockState(clickedPos);
+                     if (blockState.is(placementState.getBlock())) {
+                         blockState = this.updateBlockStateFromTag(clickedPos, level, itemInHand, blockState);
++                        // Paper start - Reset placed block on exception
++                        try {
+                         this.updateCustomBlockEntityTag(clickedPos, level, player, itemInHand, blockState);
+                         updateBlockEntityComponents(level, clickedPos, itemInHand);
++                        } catch (Exception ex) {
++                            oldBukkitState.update(true, false);
++                            if (player instanceof ServerPlayer serverPlayer) {
++                                org.apache.logging.log4j.LogManager.getLogger().error("Player {} tried placing invalid block", player.getScoreboardName(), ex);
++                                serverPlayer.getBukkitEntity().kickPlayer("Packet processing error");
++                                return InteractionResult.FAIL;
++                            }
++                            throw ex; // Rethrow exception if not placed by a player
++                        }
++                        // Paper end - Reset placed block on exception
+                         blockState.getBlock().setPlacedBy(level, clickedPos, blockState, player, itemInHand);
++                        // CraftBukkit start
++                        if (bukkitState != null) {
++                            org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent((net.minecraft.server.level.ServerLevel) level, player, blockPlaceContext.getHand(), bukkitState, clickedPos.getX(), clickedPos.getY(), clickedPos.getZ());
++                            if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
++                                bukkitState.update(true, false);
++
++                                // Paper - if the event is called here, the inventory should be updated
++                                player.containerMenu.sendAllDataToRemote(); // SPIGOT-4541
++                                return InteractionResult.FAIL;
++                            }
++                        }
++                        // CraftBukkit end
+                         if (player instanceof ServerPlayer) {
+                             CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer)player, clickedPos, itemInHand);
+                         }
+                     }
+ 
+                     SoundType soundType = blockState.getSoundType();
++                    if (player == null) // Paper - Fix block place logic; reintroduce this for the dispenser (i.e the shulker)
+                     level.playSound(
+                         player,
+                         clickedPos,
+@@ -140,8 +_,16 @@
+     protected boolean canPlace(BlockPlaceContext context, BlockState state) {
+         Player player = context.getPlayer();
+         CollisionContext collisionContext = player == null ? CollisionContext.empty() : CollisionContext.of(player);
+-        return (!this.mustSurvive() || state.canSurvive(context.getLevel(), context.getClickedPos()))
+-            && context.getLevel().isUnobstructed(state, context.getClickedPos(), collisionContext);
++        // CraftBukkit start
++        Level world = context.getLevel(); // Paper - Cancel hit for vanished players
++        boolean canBuild = (!this.mustSurvive() || state.canSurvive(world, context.getClickedPos())) && world.checkEntityCollision(state, player, collisionContext, context.getClickedPos(), true); // Paper - Cancel hit for vanished players
++        org.bukkit.entity.Player bukkitPlayer = (context.getPlayer() instanceof ServerPlayer) ? (org.bukkit.entity.Player) context.getPlayer().getBukkitEntity() : null;
++
++        BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(world, context.getClickedPos()), bukkitPlayer, CraftBlockData.fromData(state), canBuild, org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(context.getHand())); // Paper - Expose hand in BlockCanBuildEvent
++        world.getCraftServer().getPluginManager().callEvent(event);
++
++        return event.isBuildable();
++        // CraftBukkit end
+     }
+ 
+     protected boolean mustSurvive() {
+@@ -170,7 +_,7 @@
+                         return false;
+                     }
+ 
+-                    if (!type.onlyOpCanSetNbt() || player != null && player.canUseGameMasterBlocks()) {
++                    if (!type.onlyOpCanSetNbt() || player != null && (player.canUseGameMasterBlocks() || (player.getAbilities().instabuild && player.getBukkitEntity().hasPermission("minecraft.nbt.place")))) { // Spigot - add permission
+                         return customData.loadInto(blockEntity, level.registryAccess());
+                     }
+ 

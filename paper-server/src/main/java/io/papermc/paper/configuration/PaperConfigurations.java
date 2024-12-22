@@ -327,7 +327,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     private static ContextMap createWorldContextMap(ServerLevel level) {
-        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess(), level.getGameRules());
+        return createWorldContextMap(level.levelStorageAccess.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess(), level.getGameRules());
     }
 
     public static ContextMap createWorldContextMap(final Path dir, final String levelName, final ResourceLocation worldKey, final SpigotWorldConfig spigotConfig, final RegistryAccess registryAccess, final GameRules gameRules) {

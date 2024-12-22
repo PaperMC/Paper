@@ -40,7 +40,7 @@ public abstract class AbstractProjectile extends CraftEntity implements Projecti
 
     @Override
     public boolean canHitEntity(org.bukkit.entity.Entity entity) {
-        return this.getHandle().canHitEntity(((CraftEntity) entity).getHandle());
+        return this.getHandle().canHitEntityPublic(((CraftEntity) entity).getHandle());
     }
 
     @Override

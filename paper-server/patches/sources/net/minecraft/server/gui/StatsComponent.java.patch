@@ -1,0 +1,31 @@
+--- a/net/minecraft/server/gui/StatsComponent.java
++++ b/net/minecraft/server/gui/StatsComponent.java
+@@ -34,8 +_,17 @@
+ 
+     private void tick() {
+         long l = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
++        // Paper start - Improve ServerGUI
++        double[] tps = org.bukkit.Bukkit.getTPS();
++        String[] tpsAvg = new String[tps.length];
++
++        for (int g = 0; g < tps.length; g++) {
++            tpsAvg[g] = format(tps[g]);
++        }
+         this.msgs[0] = "Memory use: " + l / 1024L / 1024L + " mb (" + Runtime.getRuntime().freeMemory() * 100L / Runtime.getRuntime().maxMemory() + "% free)";
+         this.msgs[1] = "Avg tick: " + DECIMAL_FORMAT.format((double)this.server.getAverageTickTimeNanos() / TimeUtil.NANOSECONDS_PER_MILLISECOND) + " ms";
++        this.msgs[2] = "TPS from last 1m, 5m, 15m: " + String.join(", ", tpsAvg);
++        // Paper end - Improve ServerGUI
+         this.values[this.vp++ & 0xFF] = (int)(l * 100L / Runtime.getRuntime().maxMemory());
+         this.repaint();
+     }
+@@ -64,4 +_,10 @@
+     public void close() {
+         this.timer.stop();
+     }
++
++    // Paper start - Improve ServerGUI
++    private static String format(double tps) {
++        return (( tps > 21.0 ) ? "*" : "") + Math.min(Math.round(tps * 100.0) / 100.0, 20.0); // only print * at 21, we commonly peak to 20.02 as the tick sleep is not accurate enough, stop the noise
++    }
++    // Paper end - Improve ServerGUI
+ }

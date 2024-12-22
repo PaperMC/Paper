@@ -2361,7 +2361,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         for (Object object : addFrom) {
             // Paper start - support components
-            if(object instanceof net.md_5.bungee.api.chat.BaseComponent[] baseComponentArr) {
+            if (object instanceof net.md_5.bungee.api.chat.BaseComponent[] baseComponentArr) {
                 addTo.add(CraftChatMessage.fromJSON(net.md_5.bungee.chat.ComponentSerializer.toString(baseComponentArr)));
             } else
             // Paper end
