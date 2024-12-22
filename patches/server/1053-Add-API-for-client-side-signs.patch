@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lukas Planz <me@md5lukas.de>
+Date: Mon, 2 Oct 2023 15:48:13 +0200
+Subject: [PATCH] Add API for client-side signs
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 4ae88bfcead40cd05f9514a48a922a37767cb3cf..fbe255164e78b4bdfc4b5950d242df1b3451c9f4 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3448,6 +3448,15 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         if (worldserver.hasChunkAt(blockposition)) {
+             BlockEntity tileentity = worldserver.getBlockEntity(blockposition);
+ 
++            // Paper start - Add API for client-side signs
++            if (!new io.papermc.paper.event.packet.UncheckedSignChangeEvent(this.player.getBukkitEntity(),
++                io.papermc.paper.math.Position.block(blockposition.getX(), blockposition.getY(), blockposition.getZ()),
++                packet.isFrontText() ? org.bukkit.block.sign.Side.FRONT : org.bukkit.block.sign.Side.BACK,
++                signText.stream().map(line -> (net.kyori.adventure.text.Component) net.kyori.adventure.text.Component.text(line.raw())).toList())
++                .callEvent()) {
++                return;
++            }
++            // Paper end - Add API for client-side signs
+             if (!(tileentity instanceof SignBlockEntity)) {
+                 return;
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 7e6116963d835d4606ef3d93b69d3e44b61288e1..9e4e7b4856e448fc35d041552330939fc8bc4fad 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -3039,6 +3039,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public void openSign(@NotNull Sign sign, @NotNull Side side) {
+         CraftSign.openSign(sign, this, side);
+     }
++    // Paper start - Add API for client-side signs
++    @Override
++    public void openLocalSign(@NotNull io.papermc.paper.math.BlockPosition block, @NotNull Side side) {
++        getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundOpenSignEditorPacket(new net.minecraft.core.BlockPos(block.blockX(), block.blockY(), block.blockZ()), side == Side.FRONT));
++    }
++    // Paper end - Add API for client-side signs
+ 
+     @Override
+     public void showDemoScreen() {
