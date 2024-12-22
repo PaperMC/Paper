@@ -65,7 +65,7 @@ public class BlockDispenseEvent extends BlockEvent implements Cancellable {
      * @param vel the velocity of the item being dispensed
      */
     public void setVelocity(@NotNull Vector vel) {
-        velocity = vel;
+        velocity = vel.clone();
     }
 
     @Override

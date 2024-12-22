@@ -45,7 +45,7 @@ public class AsyncStructureSpawnEvent extends WorldEvent implements Cancellable 
      */
     @NotNull
     public BoundingBox getBoundingBox() {
-        return boundingBox;
+        return boundingBox.clone();
     }
 
     /**

@@ -24,7 +24,7 @@ public final class LootContext {
     private LootContext(@NotNull Location location, float luck, int lootingModifier, @Nullable Entity lootedEntity, @Nullable HumanEntity killer) {
         Preconditions.checkArgument(location != null, "LootContext location cannot be null");
         Preconditions.checkArgument(location.getWorld() != null, "LootContext World cannot be null");
-        this.location = location;
+        this.location = location.clone();
         this.luck = luck;
         this.lootingModifier = lootingModifier;
         this.lootedEntity = lootedEntity;
@@ -38,7 +38,7 @@ public final class LootContext {
      */
     @NotNull
     public Location getLocation() {
-        return location;
+        return location.clone();
     }
 
     /**
@@ -110,7 +110,7 @@ public final class LootContext {
          * @param location the location the LootContext should use
          */
         public Builder(@NotNull Location location) {
-            this.location = location;
+            this.location = location.clone();
         }
 
         /**
