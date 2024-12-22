@@ -1,0 +1,176 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: David Scandurra <david.scandurra@check24.de>
+Date: Mon, 30 Oct 2023 03:35:10 +0100
+Subject: [PATCH] Add Llama caravan events
+
+
+diff --git a/src/main/java/io/papermc/paper/event/entity/LlamaJoinCaravanEvent.java b/src/main/java/io/papermc/paper/event/entity/LlamaJoinCaravanEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3e5b95757be63261eba893a34caeb59afe3e575c
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/LlamaJoinCaravanEvent.java
+@@ -0,0 +1,86 @@
++package io.papermc.paper.event.entity;
++
++import org.bukkit.entity.Llama;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called just before a {@link Llama} joins a caravan.
++ */
++public class LlamaJoinCaravanEvent extends EntityEvent implements Cancellable {
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++    @NotNull
++    private final Llama appendTo;
++    @NotNull
++    private final Reason reason;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public LlamaJoinCaravanEvent(final @NotNull Llama what, final @NotNull Llama appendTo, final @NotNull Reason reason) {
++        super(what);
++        this.appendTo = appendTo;
++        this.reason = reason;
++    }
++
++    /**
++     * The {@link Llama} that tries to join a caravan.
++     */
++    @Override
++    public @NotNull Llama getEntity() {
++        return (Llama) super.getEntity();
++    }
++
++    /**
++     * The LLama {@link LlamaJoinCaravanEvent#getEntity()} is appended to.
++     * @return The LLama new {@link Llama#getCaravanHead()} of {@link LlamaJoinCaravanEvent#getEntity()}
++     */
++    public @NotNull Llama getAppendTo() {
++        return appendTo;
++    }
++
++    /**
++     * @return The reason for {@link LlamaJoinCaravanEvent#getEntity()} to join the caravan
++     */
++    public Reason getReason() {
++        return reason;
++    }
++
++    public enum Reason {
++        /**
++         * A LLama AI goal commanded the join.
++         */
++        AI_GOAL,
++        /**
++         * A plugin invoking {@link Llama#joinCaravan(Llama)}.
++         */
++        PLUGIN,
++        /**
++         * Undefined reason.
++         */
++        UNKNOWN
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/event/entity/LlamaLeaveCaravanEvent.java b/src/main/java/io/papermc/paper/event/entity/LlamaLeaveCaravanEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..3f99c0ae3e72e75b8609317e4739cf8b3d0a0995
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/entity/LlamaLeaveCaravanEvent.java
+@@ -0,0 +1,72 @@
++package io.papermc.paper.event.entity;
++
++import org.bukkit.entity.Llama;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.entity.EntityEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++/**
++ * Called just before a {@link Llama} leaves a caravan.
++ */
++public class LlamaLeaveCaravanEvent extends EntityEvent implements Cancellable {
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++    @NotNull
++    private final Reason reason;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public LlamaLeaveCaravanEvent(final @NotNull Llama what, final @NotNull Reason reason) {
++        super(what);
++        this.reason = reason;
++    }
++
++    @Override
++    public @NotNull Llama getEntity() {
++        return (Llama) super.getEntity();
++    }
++
++    /**
++     * @return The reason for {@link LlamaJoinCaravanEvent#getEntity()} to leave the caravan
++     */
++    public @NotNull Reason getReason() {
++        return reason;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancelled = cancel;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    public enum Reason {
++        /**
++         * Lost the head of this caravan. Either because it died or it got out of range.
++         */
++        LOST_HEAD,
++        /**
++         * A plugin invoking {@link Llama#leaveCaravan()}.
++         */
++        PLUGIN,
++        /**
++         * Undefined reason.
++         */
++        UNKNOWN
++    }
++
++    @NotNull
++    @Override
++    public HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    @NotNull
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++}
