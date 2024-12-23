@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 17 Jun 2023 22:20:44 -0700
+Subject: [PATCH] Improved AreaEffectCloud API
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/AreaEffectCloud.java b/src/main/java/net/minecraft/world/entity/AreaEffectCloud.java
+index 91e0328f847a2464a1cf65134520244a4cec705f..bc090ae6d3da98457fd7068124a9e52eb641d725 100644
+--- a/src/main/java/net/minecraft/world/entity/AreaEffectCloud.java
++++ b/src/main/java/net/minecraft/world/entity/AreaEffectCloud.java
+@@ -62,6 +62,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+     private net.minecraft.world.entity.LivingEntity owner;
+     @Nullable
+     private UUID ownerUUID;
++    public boolean forceApplyEffects = false; // Paper
+ 
+     public AreaEffectCloud(EntityType<? extends AreaEffectCloud> type, Level world) {
+         super(type, world);
+@@ -287,7 +288,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+                 }
+ 
+                 list.addAll(this.effects);
+-                if (list.isEmpty()) {
++                if (list.isEmpty() && !this.forceApplyEffects) { // Paper
+                     this.victims.clear();
+                 } else {
+                     List<net.minecraft.world.entity.LivingEntity> list1 = this.level().getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class, this.getBoundingBox());
+@@ -313,7 +314,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+                         org.bukkit.event.entity.AreaEffectCloudApplyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callAreaEffectCloudApplyEvent(this, entities);
+                         if (!event.isCancelled()) {
+                             for (LivingEntity entity : event.getAffectedEntities()) {
+-                                if (entity instanceof CraftLivingEntity) {
++                                if (entity instanceof CraftLivingEntity craftLivingEntity) { // Paper
+                                     net.minecraft.world.entity.LivingEntity entityliving = ((CraftLivingEntity) entity).getHandle();
+                                     // CraftBukkit end
+                                     this.victims.put(entityliving, this.tickCount + this.reapplicationDelay);
+@@ -329,7 +330,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+                                         }
+                                     }
+ 
+-                                    if (this.radiusOnUse != 0.0F) {
++                                    if (this.radiusOnUse != 0.0F && (event.getWasUsedOverride() == null || event.getWasUsedOverride().test(craftLivingEntity))) { // Paper - was used override
+                                         f += this.radiusOnUse;
+                                         if (f < 0.5F) {
+                                             this.discard();
+@@ -407,6 +408,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+         return this.owner;
+     }
+ 
++    private static final String PAPER_FORCE_APPLY_EFFECTS_KEY = "Paper.forceApplyEffects"; // Paper
+     @Override
+     protected void readAdditionalSaveData(CompoundTag nbt) {
+         this.tickCount = nbt.getInt("Age");
+@@ -451,6 +453,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+             }
+         }
+ 
++        this.forceApplyEffects = nbt.getBoolean(PAPER_FORCE_APPLY_EFFECTS_KEY); // Paper
+     }
+ 
+     @Override
+@@ -488,6 +491,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+ 
+             nbt.put("Effects", nbttaglist);
+         }
++        nbt.putBoolean(PAPER_FORCE_APPLY_EFFECTS_KEY, this.forceApplyEffects); // Paper
+ 
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java
+index 0f9e1d7aaee8ae870acd41934d52964c4d1aaff3..5e540c79ca0e0815198ce84e10b275627fdd0ede 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftAreaEffectCloud.java
+@@ -226,4 +226,16 @@ public class CraftAreaEffectCloud extends CraftEntity implements AreaEffectCloud
+             this.getHandle().setOwner(null);
+         }
+     }
++
++    // Paper start - force apply effect API
++    @Override
++    public void forceApplyEffects(final boolean force) {
++        this.getHandle().forceApplyEffects = force;
++    }
++
++    @Override
++    public boolean willForceApplyEffects() {
++        return this.getHandle().forceApplyEffects;
++    }
++    // Paper end
+ }
