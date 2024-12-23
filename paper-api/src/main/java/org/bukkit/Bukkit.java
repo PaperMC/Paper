@@ -971,8 +971,6 @@ public final class Bukkit {
      *
      * @param id the id of the map to get
      * @return a map view if it exists, or null otherwise
-     */
-    /**
      * @since 1.13.2
      */
     // @Deprecated(since = "1.6.2") // Paper - Not a magic value
