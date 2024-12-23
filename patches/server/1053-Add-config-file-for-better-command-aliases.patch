@@ -1,0 +1,395 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 25 Nov 2023 12:28:05 -0800
+Subject: [PATCH] Add config file for better command aliases
+
+
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/ReloadCommand.java b/src/main/java/io/papermc/paper/command/subcommands/ReloadCommand.java
+index bd68139ae635f2ad7ec8e7a21e0056a139c4c62e..06d955772a66d29cda5cf486421d975d12859889 100644
+--- a/src/main/java/io/papermc/paper/command/subcommands/ReloadCommand.java
++++ b/src/main/java/io/papermc/paper/command/subcommands/ReloadCommand.java
+@@ -26,6 +26,7 @@ public final class ReloadCommand implements PaperSubcommand {
+ 
+         MinecraftServer server = ((CraftServer) sender.getServer()).getServer();
+         server.paperConfigurations.reloadConfigs(server);
++        server.paperConfigurations.getAliasesConfig().reloadAliases(server.getCommands().getDispatcher(), ((CraftServer) sender.getServer()).getCommandMap());
+         server.server.reloadCount++;
+ 
+         Command.broadcastCommandMessage(sender, text("Paper config reload complete.", GREEN));
+diff --git a/src/main/java/io/papermc/paper/configuration/ConfigurationLoaders.java b/src/main/java/io/papermc/paper/configuration/ConfigurationLoaders.java
+index 227039a6c69c4c99bbd9c674b3aab0ef5e2c1374..25b0a15b8c606840d146047b47ebd3c2cfdd26d8 100644
+--- a/src/main/java/io/papermc/paper/configuration/ConfigurationLoaders.java
++++ b/src/main/java/io/papermc/paper/configuration/ConfigurationLoaders.java
+@@ -10,12 +10,15 @@ public final class ConfigurationLoaders {
+     private ConfigurationLoaders() {
+     }
+ 
+-    public static YamlConfigurationLoader.Builder naturallySorted() {
++    public static YamlConfigurationLoader.Builder builder() {
+         return YamlConfigurationLoader.builder()
+             .indent(2)
+             .nodeStyle(NodeStyle.BLOCK)
+-            .headerMode(HeaderMode.PRESET)
+-            .defaultOptions(options -> options.mapFactory(MapFactories.sortedNatural()));
++            .headerMode(HeaderMode.PRESET);
++    }
++
++    public static YamlConfigurationLoader.Builder naturallySorted() {
++        return builder().defaultOptions(options -> options.mapFactory(MapFactories.sortedNatural()));
+     }
+ 
+     public static YamlConfigurationLoader naturallySortedWithoutHeader(final Path path) {
+diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
+index c01b4393439838976965823298f12e4762e72eff..0ec591e3adf023422588e016f3d4f5ec4be8e466 100644
+--- a/src/main/java/io/papermc/paper/configuration/Configurations.java
++++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
+@@ -106,10 +106,10 @@ public abstract class Configurations<G, W> {
+         return this.initializeGlobalConfiguration(creator(this.globalConfigClass, true));
+     }
+ 
+-    private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
++    public static void trySaveFileNode(final YamlConfigurationLoader loader, final ConfigurationNode node, final String filename) throws ConfigurateException {
+         try {
+             loader.save(node);
+-        } catch (ConfigurateException ex) {
++        } catch (final ConfigurateException ex) {
+             if (ex.getCause() instanceof AccessDeniedException) {
+                 LOGGER.warn("Could not save {}: Paper could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.", filename, ex);
+             } else throw ex;
+diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+index fa1c0aee8c3a4d0868482cf5c703bbfd08e09874..637cd71058f7f4ce2279da1f5a2b836304a4a1cc 100644
+--- a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
++++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+@@ -4,6 +4,7 @@ import com.google.common.base.Suppliers;
+ import com.google.common.collect.Table;
+ import com.mojang.logging.LogUtils;
+ import io.leangen.geantyref.TypeToken;
++import io.papermc.paper.configuration.aliases.AliasesConfiguration;
+ import io.papermc.paper.configuration.legacy.RequiresSpigotInitialization;
+ import io.papermc.paper.configuration.mapping.InnerClassFieldDiscoverer;
+ import io.papermc.paper.configuration.serializer.ComponentSerializer;
+@@ -140,9 +141,15 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+     });
+     public static final ContextKey<Supplier<SpigotWorldConfig>> SPIGOT_WORLD_CONFIG_CONTEXT_KEY = new ContextKey<>(new TypeToken<Supplier<SpigotWorldConfig>>() {}, "spigot world config");
+ 
++    private final AliasesConfiguration aliases;
+ 
+     public PaperConfigurations(final Path globalFolder) {
+         super(globalFolder, GlobalConfiguration.class, WorldConfiguration.class, GLOBAL_CONFIG_FILE_NAME, WORLD_DEFAULTS_CONFIG_FILE_NAME, WORLD_CONFIG_FILE_NAME);
++        this.aliases = new AliasesConfiguration(globalFolder);
++    }
++
++    public AliasesConfiguration getAliasesConfig() {
++        return this.aliases;
+     }
+ 
+     @Override
+diff --git a/src/main/java/io/papermc/paper/configuration/aliases/AliasesConfiguration.java b/src/main/java/io/papermc/paper/configuration/aliases/AliasesConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..49ea8a00dc55b2107bcc24dc3716e9ba9c50aeb6
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/aliases/AliasesConfiguration.java
+@@ -0,0 +1,232 @@
++package io.papermc.paper.configuration.aliases;
++
++import com.google.common.base.Preconditions;
++import com.mojang.brigadier.CommandDispatcher;
++import com.mojang.brigadier.builder.LiteralArgumentBuilder;
++import com.mojang.brigadier.tree.CommandNode;
++import com.mojang.logging.LogUtils;
++import io.leangen.geantyref.TypeToken;
++import io.papermc.paper.configuration.Configuration;
++import io.papermc.paper.configuration.ConfigurationLoaders;
++import io.papermc.paper.configuration.Configurations;
++import java.lang.reflect.Type;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.Collections;
++import java.util.List;
++import java.util.Optional;
++import java.util.function.Predicate;
++import net.minecraft.commands.CommandSource;
++import net.minecraft.commands.CommandSourceStack;
++import net.minecraft.commands.Commands;
++import org.bukkit.command.SimpleCommandMap;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.checker.nullness.qual.Nullable;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.slf4j.Logger;
++import org.spongepowered.configurate.CommentedConfigurationNode;
++import org.spongepowered.configurate.ConfigurateException;
++import org.spongepowered.configurate.ConfigurationNode;
++import org.spongepowered.configurate.serialize.SerializationException;
++import org.spongepowered.configurate.serialize.TypeSerializer;
++import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
++
++import static java.util.Objects.requireNonNull;
++
++@DefaultQualifier(NonNull.class)
++public class AliasesConfiguration {
++
++    private static final Logger LOGGER = LogUtils.getClassLogger();
++    private static final String FILENAME = "command-aliases.yml";
++    private static final String FILE_HEADER = """
++        This file is used to configure aliases for commands. The format
++        is some input with no spaces followed by a list of strings. Tab completion
++        will function as if the aliased command was typed.
++        some-alias:
++            - command
++            - arg1
++            - arg2
++        
++        OR
++        
++        some-alias: single-word
++        """;
++    private static final int VERSION = 1;
++
++    private final Path aliasesFile;
++    private @Nullable List<Instance> aliases = null;
++
++    public AliasesConfiguration(final Path configDir) {
++        this.aliasesFile = configDir.resolve(FILENAME);
++    }
++
++    public void reloadAliases(final CommandDispatcher<CommandSourceStack> dispatcher, final SimpleCommandMap commandMap) {
++        if (this.aliases != null) {
++            this.aliases.forEach(instance -> {
++                dispatcher.getRoot().removeCommand(instance.alias());
++                commandMap.getKnownCommands().remove(instance.alias());
++            });
++        }
++        this.aliases = new ArrayList<>();
++        final ConfigurationNode rootNode;
++        try {
++            final YamlConfigurationLoader loader = ConfigurationLoaders.builder()
++                .defaultOptions(options -> options.header(FILE_HEADER).serializers(b -> b.register(Instance.class, new InstanceSerializer())))
++                .path(this.aliasesFile).build();
++            if (Files.notExists(this.aliasesFile)) {
++                rootNode = CommentedConfigurationNode.root(loader.defaultOptions());
++                rootNode.node(Configuration.VERSION_FIELD).raw(VERSION);
++            } else {
++                rootNode = loader.load();
++                final ConfigurationNode version = rootNode.node(Configuration.VERSION_FIELD);
++                if (version.virtual()) {
++                    LOGGER.warn("The aliases config file didn't have a version set, assuming latest");
++                    version.raw(VERSION);
++                } else if (version.getInt() > VERSION) {
++                    LOGGER.error("Loading a newer aliases configuration than is supported ({} > {})! You may have to backup & delete your aliases config file to start the server.", version.getInt(), VERSION);
++                }
++            }
++            // any versioned transformations here
++            Configurations.trySaveFileNode(loader, rootNode, this.aliasesFile.toString());
++        } catch (final ConfigurateException ex) {
++            throw new RuntimeException("Error handling the alias configuration from " + this.aliasesFile, ex);
++        }
++        rootNode.childrenMap().forEach((alias, node) -> {
++            if (alias.toString().equals(Configuration.VERSION_FIELD)) return; // skip _version field
++            final Instance aliasInstance;
++            try {
++                aliasInstance = node.require(Instance.class);
++                if (aliasInstance.register(dispatcher)) {
++                    this.aliases.add(aliasInstance);
++                }
++                commandMap.getKnownCommands().put(aliasInstance.alias(), new PaperAliasCommandWrapper(aliasInstance));
++            } catch (final SerializationException ex) {
++                throw new IllegalStateException("Invalid alias: " + alias + " " + node, ex);
++            }
++        });
++        LOGGER.info("Successfully registered {} alias(es) from {}", this.aliases.size(), this.aliasesFile);
++    }
++
++    private static <S> Optional<List<CommandNode<S>>> traverseTree(final CommandDispatcher<S> dispatcher, final Collection<String> path) {
++        final List<CommandNode<S>> visitNodes = new ArrayList<>();
++        CommandNode<S> node = dispatcher.getRoot();
++        for (final String name : path) {
++            node = node.getChild(name);
++            if (node == null) {
++                return Optional.empty();
++            }
++            while (node.getRedirect() != null) {
++                node = node.getRedirect();
++            }
++            visitNodes.add(node);
++        }
++        return Optional.of(visitNodes);
++    }
++
++    public record Instance(String alias, List<String> target, Optional<String> permission) {
++        
++        public Instance {
++            Preconditions.checkArgument(alias.indexOf(' ') == -1, "Alias must not have a space");
++            Preconditions.checkArgument(!target.isEmpty(), "Alias " + alias + " must provide a root command label");
++            target = List.copyOf(target);
++        }
++
++        public boolean register(final CommandDispatcher<CommandSourceStack> dispatcher) {
++            final Optional<List<CommandNode<CommandSourceStack>>> nodes = traverseTree(dispatcher, this.target());
++            if (nodes.isEmpty()) {
++                LOGGER.error("Alias {} does not point to a valid command node. Target: {}", this.alias, String.join(" ", this.target()));
++                return false;
++            }
++            final CommandNode<CommandSourceStack> target = nodes.get().get(nodes.get().size() - 1);
++
++            final LiteralArgumentBuilder<CommandSourceStack> builder = Commands.literal(this.alias())
++                .redirect(target);
++
++            // default permission behavior will be to inherit all perms on the path to the node
++            if (this.permission().isEmpty()) {
++                builder.requires(nodes.get().stream().reduce($ -> true, (predicate, node) -> node.requirement != null ? predicate.and(node.getRequirement()) : predicate, Predicate::and));
++            } else {
++                builder.requires(s -> s.source == CommandSource.NULL || s.getBukkitSender().hasPermission(this.permission().get()));
++            }
++
++            dispatcher.register(builder);
++            return true;
++        }
++    }
++
++    private static final class InstanceSerializer implements TypeSerializer<Instance> {
++
++        @Override
++        public Instance deserialize(final Type type, final ConfigurationNode node) throws SerializationException {
++            final String alias = requireNonNull(node.key()).toString();
++            final List<String> target;
++            final Optional<String> permission;
++            if (node.isList()) {
++                target = getTargetList(node);
++                permission = Optional.empty();
++            } else if (node.getString() != null) {
++                target = getTargetList(node);
++                permission = Optional.empty();
++            } else if (node.isMap()) {
++                target = getTargetList(node.node("target"));
++                final ConfigurationNode permNode = node.node("permission");
++                if (!permNode.virtual()) {
++                    permission = Optional.ofNullable(permNode.getString());
++                } else {
++                    permission = Optional.empty();
++                }
++            } else {
++                throw new SerializationException("Unexpected alias configuration node " + node + " at " + alias);
++            }
++            return new Instance(alias, target, permission);
++        }
++
++        private static List<String> getTargetList(final ConfigurationNode node) throws SerializationException {
++            if (node.isList()) {
++                return validateStringList(node.require(new TypeToken<List<String>>() {}));
++            } else if (node.getString() != null) {
++                return validateStringList(Collections.singletonList(node.require(String.class)));
++            } else {
++                throw new SerializationException("Unexpected node " + node + " for alias target argument list");
++            }
++        }
++
++        private static List<String> validateStringList(final List<String> list) throws SerializationException {
++            if (list.isEmpty()) {
++                throw new SerializationException("Must provide a least one target argument");
++            }
++            for (final String string : list) {
++                validateString(string);
++            }
++            return list;
++        }
++
++        private static void validateString(final @Nullable String s) throws SerializationException {
++            if (s == null || s.isBlank()) {
++                throw new SerializationException("Cannot include a blank string as an argument for an alias");
++            }
++        }
++
++        @Override
++        public void serialize(final Type type, final @Nullable Instance obj, final ConfigurationNode node) throws SerializationException {
++            if (obj != null) {
++                if (obj.permission().isPresent()) {
++                    node.node("permission").set(obj.permission().get());
++                    setTargetList(node.node("target"), obj.target());
++                } else {
++                    setTargetList(node, obj.target());
++                }
++            }
++        }
++
++        private static void setTargetList(final ConfigurationNode node, final List<String> target) throws SerializationException {
++            if (target.size() == 1) {
++                node.set(target.get(0));
++            } else {
++                node.set(target);
++            }
++        }
++    }
++}
+diff --git a/src/main/java/io/papermc/paper/configuration/aliases/PaperAliasCommandWrapper.java b/src/main/java/io/papermc/paper/configuration/aliases/PaperAliasCommandWrapper.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..98caf07e52d7b48fc53fb529a2b6db535916e4a1
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/configuration/aliases/PaperAliasCommandWrapper.java
+@@ -0,0 +1,48 @@
++package io.papermc.paper.configuration.aliases;
++
++import com.google.common.base.Joiner;
++import com.mojang.brigadier.ParseResults;
++import java.util.ArrayList;
++import java.util.List;
++import net.minecraft.commands.CommandSourceStack;
++import net.minecraft.server.MinecraftServer;
++import org.bukkit.command.CommandSender;
++import org.bukkit.command.defaults.BukkitCommand;
++import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public class PaperAliasCommandWrapper extends BukkitCommand {
++
++    private final AliasesConfiguration.Instance aliasInstance;
++
++    protected PaperAliasCommandWrapper(final AliasesConfiguration.Instance aliasInstance) {
++        super(aliasInstance.alias());
++        this.aliasInstance = aliasInstance;
++        // this.setPermission("paper.alias." + name);
++    }
++
++    @Override
++    public boolean execute(final CommandSender sender, final String commandLabel, final String[] args) {
++        // if (!this.testPermission(sender)) return true;
++        final CommandSourceStack stack = VanillaCommandWrapper.getListener(sender);
++        MinecraftServer.getServer().getCommands().performPrefixedCommand(stack, this.toDispatcher(args, this.getName()));
++        return true;
++    }
++
++    @Override
++    public List<String> tabComplete(final CommandSender sender, final String alias, final String[] args) throws IllegalArgumentException {
++        final CommandSourceStack stack = VanillaCommandWrapper.getListener(sender);
++        final ParseResults<CommandSourceStack> parseResults = MinecraftServer.getServer().getCommands().getDispatcher().parse(this.toDispatcher(args, this.getName()), stack);
++        final List<String> results = new ArrayList<>();
++        MinecraftServer.getServer().getCommands().getDispatcher().getCompletionSuggestions(parseResults).thenAccept(suggestions -> {
++            suggestions.getList().forEach(s -> results.add(s.getText()));
++        });
++        return results;
++    }
++
++    private String toDispatcher(final String[] args, final String name) {
++        return name + ((args.length > 0) ? " " + Joiner.on(' ').join(args) : "");
++    }
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 9c08303de2891de92e06de8a939a618b7a6f7321..1e09674f1460a6c5740487ad322d80f5185100c9 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -617,10 +617,11 @@ public final class CraftServer implements Server {
+                 dispatcher.vanillaCommandNodes.add(node); // Paper
+ 
+                 dispatcher.getDispatcher().getRoot().addChild(node);
+-            } else {
++            } else if (!(command instanceof io.papermc.paper.configuration.aliases.PaperAliasCommandWrapper)) { // Paper
+                 new BukkitCommandWrapper(this, entry.getValue()).register(dispatcher.getDispatcher(), label);
+             }
+         }
++        this.console.paperConfigurations.getAliasesConfig().reloadAliases(dispatcher.getDispatcher(), this.commandMap); // Paper
+ 
+         // Refresh commands
+         for (ServerPlayer player : this.getHandle().players) {
