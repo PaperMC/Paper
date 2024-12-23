@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
+import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
+import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.util.Holderable;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -304,7 +306,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         if (value instanceof Holderable<?> holderable) {
             return holderable.getKeyOrNull();
         }
-        return Registry.super.getKey(value);
+        return value.getKey();
     }
     // Paper end - improve Registry
 
@@ -318,6 +320,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     public io.papermc.paper.registry.tag.Tag<B> getTag(final io.papermc.paper.registry.tag.TagKey<B> key) {
         final net.minecraft.core.HolderSet.Named<M> namedHolderSet = this.minecraftRegistry.get(io.papermc.paper.registry.PaperRegistries.toNms(key)).orElseThrow();
         return new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(key, namedHolderSet);
+    }
+
+    @Override
+    public Stream<Tag<B>> getTags() {
+        return this.minecraftRegistry.getTags().map(NamedRegistryKeySetImpl::new);
     }
     // Paper end - RegistrySet API
 }

@@ -39,11 +39,6 @@ public final class DelayedRegistry<T extends Keyed, R extends Registry<T>> imple
     }
 
     @Override
-    public T getOrThrow(final NamespacedKey key) {
-        return this.delegate().getOrThrow(key);
-    }
-
-    @Override
     public Iterator<T> iterator() {
         return this.delegate().iterator();
     }
@@ -66,5 +61,10 @@ public final class DelayedRegistry<T extends Keyed, R extends Registry<T>> imple
     @Override
     public @NonNull Tag<T> getTag(final TagKey<T> key) {
         return this.delegate().getTag(key);
+    }
+
+    @Override
+    public Stream<Tag<T>> getTags() {
+        return this.delegate().getTags();
     }
 }
