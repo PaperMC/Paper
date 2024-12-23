@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Doc <nachito94@msn.com>
+Date: Sun, 9 Oct 2022 12:00:56 -0300
+Subject: [PATCH] Support for results of ItemStacks in CraftItemEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 63c9040ed2349eec500ba6e9090440347c514a3b..807aa6bccbfa62e84202ba12b1c5ffd58c79e862 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -3280,12 +3280,32 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                         org.bukkit.inventory.Inventory top = inventory.getTopInventory();
+                         if (packet.getSlotNum() == 0 && top instanceof CraftingInventory) {
+                             org.bukkit.inventory.Recipe recipe = ((CraftingInventory) top).getRecipe();
+-                            if (recipe != null) {
++                            // Paper start - add more data to CraftItemEvent
++                            org.bukkit.inventory.ItemStack baseResult = (((CraftingInventory) top).getResult() == null) ? null : ((CraftingInventory) top).getResult().clone();
++                            if (recipe != null && baseResult != null) {
++                                List<org.bukkit.inventory.ItemStack> results = new java.util.ArrayList<>();
++                                int itemResultCount = baseResult.getAmount();
++                                if (packet.getClickType() == net.minecraft.world.inventory.ClickType.QUICK_MOVE && action == InventoryAction.MOVE_TO_OTHER_INVENTORY) {
++                                    for (itemstack = this.player.containerMenu.quickMoveStack(this.player, packet.getSlotNum()); !itemstack.isEmpty() && ItemStack.isSame(this.player.containerMenu.slots.get(packet.getSlotNum()).getItem(), itemstack); itemstack = this.player.containerMenu.quickMoveStack(player, packet.getSlotNum())) {
++                                        if (this.player.containerMenu.slots.get(packet.getSlotNum()).mayPickup(this.player) && (this.player.getInventory().getSlotWithRemainingSpace(this.player.containerMenu.slots.get(packet.getSlotNum()).getItem()) != -1 || this.player.getInventory().getFreeSlot() != -1)) {
++                                            itemResultCount += itemstack.getCount();
++                                        }
++                                    }
++                                }
++                                int remainResults = itemResultCount;
++                                while(remainResults > 0) {
++                                    int resultAmount = Math.min(baseResult.getMaxStackSize(), remainResults);
++                                    remainResults -= resultAmount;
++                                    org.bukkit.inventory.ItemStack result = baseResult.clone();
++                                    result.setAmount(resultAmount);
++                                    results.add(result);
++                                }
+                                 if (click == ClickType.NUMBER_KEY) {
+-                                    event = new CraftItemEvent(recipe, inventory, type, packet.getSlotNum(), click, action, packet.getButtonNum());
++                                    event = new CraftItemEvent(recipe, inventory, type, packet.getSlotNum(), click, action, packet.getButtonNum(), results);
+                                 } else {
+-                                    event = new CraftItemEvent(recipe, inventory, type, packet.getSlotNum(), click, action);
++                                    event = new CraftItemEvent(recipe, inventory, type, packet.getSlotNum(), click, action, results);
+                                 }
++                                // Paper end
+                             }
+                         }
+ 
