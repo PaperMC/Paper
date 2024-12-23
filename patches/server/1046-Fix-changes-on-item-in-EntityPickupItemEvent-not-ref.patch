@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lilly <46890129+RainbowDashLabs@users.noreply.github.com>
+Date: Fri, 16 Feb 2024 20:18:33 +0100
+Subject: [PATCH] Fix changes on item in EntityPickupItemEvent not reflected
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index fa0b78139fecc0245e168ebeb4172ea2531a3fec..7d3140d0791e3a70e0e88e4a27e40dd8ebafadf9 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -735,7 +735,7 @@ public abstract class Mob extends LivingEntity implements Targeting {
+         // CraftBukkit start
+         boolean canPickup = flag && this.canHoldItem(itemstack);
+         if (entityitem != null) {
+-            canPickup = !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, entityitem, 0, !canPickup).isCancelled();
++            canPickup = !org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(this, itemstack1, entityitem, 0, !canPickup).isCancelled(); // Paper - Fix changes on item in EntityPickupItemEvent not reflected
+         }
+         if (canPickup) {
+             // CraftBukkit end
+@@ -746,15 +746,17 @@ public abstract class Mob extends LivingEntity implements Targeting {
+                 this.spawnAtLocation(itemstack1);
+                 this.forceDrops = false; // CraftBukkit
+             }
+-
+-            if (enumitemslot.isArmor() && itemstack.getCount() > 1) {
+-                ItemStack itemstack2 = itemstack.copyWithCount(1);
+-
++            // Paper start - Fix changes on item in EntityPickupItemEvent not reflected
++            if (enumitemslot.isArmor() && itemstack1.getCount() > 1) {
++                ItemStack itemstack2 = itemstack1.copyWithCount(1);
++            // Paper end - Fix changes on item in EntityPickupItemEvent not reflected
+                 this.setItemSlotAndDropWhenKilled(enumitemslot, itemstack2);
+                 return itemstack2;
+             } else {
+-                this.setItemSlotAndDropWhenKilled(enumitemslot, itemstack);
+-                return itemstack;
++                // Paper start - Fix changes on item in EntityPickupItemEvent not reflected
++                this.setItemSlotAndDropWhenKilled(enumitemslot, itemstack1);
++                return itemstack1;
++                // Paper end - Fix changes on item in EntityPickupItemEvent not reflected
+             }
+         } else {
+             return ItemStack.EMPTY;
+diff --git a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+index d677759ac6b6d3cfe5a2af76dc1f0034b216ac2d..dae5f17ebb56c52044c318dd2bcc91dc1d1e9565 100644
+--- a/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
++++ b/src/main/java/org/bukkit/craftbukkit/event/CraftEventFactory.java
+@@ -1926,7 +1926,13 @@ public class CraftEventFactory {
+     }
+ 
+     public static EntityPickupItemEvent callEntityPickupItemEvent(Entity who, ItemEntity item, int remaining, boolean cancelled) {
+-        EntityPickupItemEvent event = new EntityPickupItemEvent((LivingEntity) who.getBukkitEntity(), (Item) item.getBukkitEntity(), remaining);
++    // Paper start - Fix changes on item in EntityPickupItemEvent not reflected
++        return callEntityPickupItemEvent(who, item.getItem(), item, remaining, cancelled);
++    }
++
++    public static EntityPickupItemEvent callEntityPickupItemEvent(Entity who, ItemStack itemStack, ItemEntity item, int remaining, boolean cancelled) {
++        EntityPickupItemEvent event = new EntityPickupItemEvent((LivingEntity) who.getBukkitEntity(), itemStack.getBukkitStack(), (Item) item.getBukkitEntity(), remaining);
++    // Paper end - Fix changes on item in EntityPickupItemEvent not reflected
+         event.setCancelled(cancelled);
+         Bukkit.getPluginManager().callEvent(event);
+         return event;
