@@ -8,39 +8,35 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Called when a player tries to draw a bow or load a crossbow without having a suitable projectile in their inventory
+ * Called when a player tries to draw a bow or load a crossbow without having a suitable projectile item in their inventory
  */
 @NullMarked
 public class PlayerUseBowWithoutProjectileEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final ItemStack item;
-    private ItemStack projectile;
+    private final ItemStack weapon;
+    private ItemStack projectileItem;
 
     @ApiStatus.Internal
-    public PlayerUseBowWithoutProjectileEvent(final Player player, final ItemStack item) {
+    public PlayerUseBowWithoutProjectileEvent(final Player player, final ItemStack weapon) {
         super(player);
-        this.item = item;
-        this.projectile = ItemStack.empty();
+        this.weapon = weapon;
+        this.projectileItem = ItemStack.empty();
     }
 
     /**
-     *  Gets the item which the player tries to use
-     *
-     * @return the item
+     * @return The weapon wich the player tries to use
      */
-    public ItemStack getItem() {
-        return item.clone();
+    public ItemStack getWeapon() {
+        return weapon.clone();
     }
 
     /**
-     * Gets the projectile that should be used
-     * 
-     * @return the projectile
+     * @return The projectile that should be used
      */
-    public ItemStack getProjectile() {
-        return projectile.clone();
+    public ItemStack getProjectileItem() {
+        return projectileItem.clone();
     }
 
     /**
@@ -50,8 +46,8 @@ public class PlayerUseBowWithoutProjectileEvent extends PlayerEvent {
      * 
      * @param projectile the projectile
      */
-    public void setProjectile(ItemStack projectile) {
-        this.projectile = projectile.clone();
+    public void setProjectileItem(ItemStack projectile) {
+        this.projectileItem = projectile.clone();
     }
 
     @Override
