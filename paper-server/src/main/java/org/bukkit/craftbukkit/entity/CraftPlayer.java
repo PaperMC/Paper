@@ -1381,25 +1381,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().lookAt(toNmsAnchor(playerAnchor), ((CraftEntity) entity).getHandle(), toNmsAnchor(entityAnchor));
     }
 
-    @Override
-    public void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
-        this.getHandle().lookAt(toNmsAnchor(playerAnchor), new net.minecraft.world.phys.Vec3(x, y, z));
-    }
-
-    public static net.minecraft.commands.arguments.EntityAnchorArgument.Anchor toNmsAnchor(io.papermc.paper.entity.LookAnchor nmsAnchor) {
-        return switch (nmsAnchor) {
-            case EYES -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES;
-            case FEET -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.FEET;
-        };
-    }
-
-    public static io.papermc.paper.entity.LookAnchor toApiAnchor(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor playerAnchor) {
-        return switch (playerAnchor) {
-            case EYES -> io.papermc.paper.entity.LookAnchor.EYES;
-            case FEET -> io.papermc.paper.entity.LookAnchor.FEET;
-        };
-    }
-
     public static net.minecraft.world.entity.Relative deltaRelativeToNMS(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
         return switch (apiFlag) {
             case VELOCITY_X -> net.minecraft.world.entity.Relative.DELTA_X;

@@ -300,6 +300,25 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
+    public void lookAt(double x, double y, double z, io.papermc.paper.entity.LookAnchor entityAnchor) {
+        this.getHandle().lookAt(toNmsAnchor(entityAnchor), new net.minecraft.world.phys.Vec3(x, y, z));
+    }
+
+    public static net.minecraft.commands.arguments.EntityAnchorArgument.Anchor toNmsAnchor(io.papermc.paper.entity.LookAnchor nmsAnchor) {
+        return switch (nmsAnchor) {
+            case EYES -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES;
+            case FEET -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.FEET;
+        };
+    }
+
+    public static io.papermc.paper.entity.LookAnchor toApiAnchor(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor playerAnchor) {
+        return switch (playerAnchor) {
+            case EYES -> io.papermc.paper.entity.LookAnchor.EYES;
+            case FEET -> io.papermc.paper.entity.LookAnchor.FEET;
+        };
+    }
+
+    @Override
     public List<org.bukkit.entity.Entity> getNearbyEntities(double x, double y, double z) {
         Preconditions.checkState(!this.entity.generation, "Cannot get nearby entities during world generation");
         org.spigotmc.AsyncCatcher.catchOp("getNearbyEntities"); // Spigot

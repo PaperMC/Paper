@@ -150,6 +150,26 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return <code>true</code> if the teleport was successful
      */
     boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags);
+
+    /**
+     * Causes the entity to look towards the given position.
+     *
+     * @param x x coordinate
+     * @param y y coordinate
+     * @param z z coordinate
+     * @param entityAnchor What part of the entity should face the given position
+     */
+    void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor);
+
+    /**
+     * Causes the entity to look towards the given position.
+     *
+     * @param position Position to look at in the player's current world
+     * @param entityAnchor What part of the entity should face the given position
+     */
+    default void lookAt(@NotNull io.papermc.paper.math.Position position, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor) {
+        this.lookAt(position.x(), position.y(), position.z(), entityAnchor);
+    }
     // Paper end - Teleport API
 
     /**

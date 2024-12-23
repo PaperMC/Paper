@@ -1309,8 +1309,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * they have seen it before because this method was called.
      * Note this method does not make the player invulnerable, which is normally expected when viewing credits.
      *
-     * @see #hasSeenWinScreen() 
-     * @see #setHasSeenWinScreen(boolean) 
+     * @see #hasSeenWinScreen()
+     * @see #setHasSeenWinScreen(boolean)
      * @see <a href="https://minecraft.wiki/wiki/End_Poem#Technical_details">https://minecraft.wiki/wiki/End_Poem#Technical_details</a>
      */
     public void showWinScreen();
@@ -3392,7 +3392,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param simulationDistance the player's new simulation distance
      */
     public void setSimulationDistance(int simulationDistance);
-    
+
     /**
      * Gets the no-ticking view distance for this player.
      * <p>
@@ -3729,26 +3729,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param pitch the pitch
      */
     void setRotation(float yaw, float pitch);
-
-    /**
-     * Causes the player to look towards the given position.
-     *
-     * @param x x coordinate
-     * @param y y coordinate
-     * @param z z coordinate
-     * @param playerAnchor What part of the player should face the given position
-     */
-    void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor);
-
-    /**
-     * Causes the player to look towards the given position.
-     *
-     * @param position Position to look at in the player's current world
-     * @param playerAnchor What part of the player should face the given position
-     */
-    default void lookAt(@NotNull io.papermc.paper.math.Position position, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
-        this.lookAt(position.x(), position.y(), position.z(), playerAnchor);
-    }
 
     /**
      * Causes the player to look towards the given entity.
