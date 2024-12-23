@@ -98,30 +98,6 @@ public class CraftDamageType implements DamageType, Handleable<net.minecraft.wor
         };
     }
 
-    public static DamageEffect damageEffectToBukkit(net.minecraft.world.damagesource.DamageEffects damageEffect) {
-        return switch (damageEffect) {
-            case HURT -> DamageEffect.HURT;
-            case THORNS -> DamageEffect.THORNS;
-            case DROWNING -> DamageEffect.DROWNING;
-            case BURNING -> DamageEffect.BURNING;
-            case POKING -> DamageEffect.POKING;
-            case FREEZING -> DamageEffect.FREEZING;
-            default -> throw new IllegalArgumentException("NMS DamageEffect." + damageEffect + " cannot be converted to a Bukkit DamageEffect");
-        };
-    }
-
-    public static net.minecraft.world.damagesource.DamageEffects damageEffectToNMS(DamageEffect damageEffect) {
-        return switch (damageEffect) {
-            case DamageEffect.HURT -> net.minecraft.world.damagesource.DamageEffects.HURT;
-            case DamageEffect.THORNS -> net.minecraft.world.damagesource.DamageEffects.THORNS;
-            case DamageEffect.DROWNING -> net.minecraft.world.damagesource.DamageEffects.DROWNING;
-            case DamageEffect.BURNING -> net.minecraft.world.damagesource.DamageEffects.BURNING;
-            case DamageEffect.POKING -> net.minecraft.world.damagesource.DamageEffects.POKING;
-            case DamageEffect.FREEZING -> net.minecraft.world.damagesource.DamageEffects.FREEZING;
-            default -> throw new IllegalArgumentException("Bukkit DamageEffect." + damageEffect + " cannot be converted to a NMS DamageEffect");
-        };
-    }
-
     public static DamageType minecraftHolderToBukkit(Holder<net.minecraft.world.damagesource.DamageType> minecraftHolder) {
         return CraftDamageType.minecraftToBukkit(minecraftHolder.value());
     }
