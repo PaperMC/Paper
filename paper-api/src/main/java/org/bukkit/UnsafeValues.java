@@ -36,11 +36,22 @@ import org.jetbrains.annotations.Nullable;
 public interface UnsafeValues {
     // Paper start
     net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener();
-    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
-    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainTextSerializer();
-    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
-    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
-    @Deprecated(forRemoval = true) net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
+
+    @Deprecated(forRemoval = true)
+    net.kyori.adventure.text.serializer.plain.PlainComponentSerializer plainComponentSerializer();
+
+    @Deprecated(forRemoval = true)
+    net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer plainTextSerializer();
+
+    @Deprecated(forRemoval = true)
+    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer gsonComponentSerializer();
+
+    @Deprecated(forRemoval = true)
+    net.kyori.adventure.text.serializer.gson.GsonComponentSerializer colorDownsamplingGsonComponentSerializer();
+
+    @Deprecated(forRemoval = true)
+    net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer legacyComponentSerializer();
+
     net.kyori.adventure.text.Component resolveWithContext(net.kyori.adventure.text.Component component, org.bukkit.command.CommandSender context, org.bukkit.entity.Entity scoreboardSubject, boolean bypassPermissions) throws java.io.IOException;
     // Paper end
 
@@ -76,7 +87,7 @@ public interface UnsafeValues {
      * <br>
      * Callers should be prepared for {@link Exception} to be thrown.
      *
-     * @param key the unique advancement key
+     * @param key         the unique advancement key
      * @param advancement representation of the advancement
      * @return the loaded advancement or null if an error occurred
      */
@@ -128,6 +139,7 @@ public interface UnsafeValues {
 
     @ApiStatus.Internal
     @Nullable
+    @Deprecated// Paper
     DamageEffect getDamageEffect(@NotNull String key);
 
     /**
@@ -160,6 +172,7 @@ public interface UnsafeValues {
     // Paper end
 
     // Paper start
+
     /**
      * Called once by the version command on first use, then cached.
      */
@@ -180,8 +193,8 @@ public interface UnsafeValues {
      * non-development purposes like plugin configurations or end-user input.
      *
      * @return json object representing this item.
-     * @see #deserializeItemFromJson(com.google.gson.JsonObject)
      * @throws IllegalArgumentException if the passed itemstack is {@link ItemStack#empty()}.
+     * @see #deserializeItemFromJson(com.google.gson.JsonObject)
      */
     @NotNull
     com.google.gson.JsonObject serializeItemAsJson(@NotNull ItemStack itemStack);
@@ -301,7 +314,7 @@ public interface UnsafeValues {
      * Returns false if either argument's type is not an item ({@link Material#isItem()}).
      *
      * @param itemToBeRepaired the itemstack to be repaired
-     * @param repairMaterial the repair material
+     * @param repairMaterial   the repair material
      * @return true if valid repair, false if not
      */
     public boolean isValidRepairItemStack(@org.jetbrains.annotations.NotNull ItemStack itemToBeRepaired, @org.jetbrains.annotations.NotNull ItemStack repairMaterial);
@@ -334,15 +347,16 @@ public interface UnsafeValues {
     // Paper end
 
     // Paper start - namespaced key biome methods
+
     /**
      * Gets the {@link NamespacedKey} for the biome at the given location.
      *
      * @param accessor The {@link RegionAccessor} of the provided coordinates
-     * @param x X-coordinate of the block
-     * @param y Y-coordinate of the block
-     * @param z Z-coordinate of the block
-     * @deprecated custom biomes are properly supported in API now
+     * @param x        X-coordinate of the block
+     * @param y        Y-coordinate of the block
+     * @param z        Z-coordinate of the block
      * @return the biome's {@link NamespacedKey}
+     * @deprecated custom biomes are properly supported in API now
      */
     @org.jetbrains.annotations.NotNull
     @Deprecated(since = "1.21.3", forRemoval = true)
@@ -355,12 +369,12 @@ public interface UnsafeValues {
      * will be thrown.
      *
      * @param accessor The {@link RegionAccessor} of the provided coordinates
-     * @param x X-coordinate of the block
-     * @param y Y-coordinate of the block
-     * @param z Z-coordinate of the block
+     * @param x        X-coordinate of the block
+     * @param y        Y-coordinate of the block
+     * @param z        Z-coordinate of the block
      * @param biomeKey Biome key
-     * @deprecated custom biomes are properly supported in API now
      * @throws IllegalStateException if no biome by the given key is registered.
+     * @deprecated custom biomes are properly supported in API now
      */
     @Deprecated(since = "1.21.3", forRemoval = true)
     void setBiomeKey(RegionAccessor accessor, int x, int y, int z, NamespacedKey biomeKey);
@@ -369,19 +383,22 @@ public interface UnsafeValues {
     String getStatisticCriteriaKey(@NotNull org.bukkit.Statistic statistic); // Paper - fix custom stats criteria creation
 
     // Paper start - spawn egg color visibility
+
     /**
      * Obtains the underlying color informating for a spawn egg of a given
      * entity type, or null if the entity passed does not have a spawn egg.
      * Spawn eggs have two colors - the background layer (0), and the
      * foreground layer (1)
+     *
      * @param entityType The entity type to get the color for
-     * @param layer The texture layer to get a color for
+     * @param layer      The texture layer to get a color for
      * @return The color of the layer for the entity's spawn egg
      */
     @Nullable org.bukkit.Color getSpawnEggLayerColor(org.bukkit.entity.EntityType entityType, int layer);
     // Paper end - spawn egg color visibility
 
     // Paper start - lifecycle event API
+
     /**
      * @hidden
      */
