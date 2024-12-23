@@ -98,7 +98,6 @@ public class CraftDamageType implements DamageType, Handleable<net.minecraft.wor
         };
     }
 
-    // Paper start
     public static DamageEffect damageEffectToBukkit(net.minecraft.world.damagesource.DamageEffects damageEffect) {
         return switch (damageEffect) {
             case HURT -> DamageEffect.HURT;
@@ -122,7 +121,6 @@ public class CraftDamageType implements DamageType, Handleable<net.minecraft.wor
             default -> throw new IllegalArgumentException("Bukkit DamageEffect." + damageEffect + " cannot be converted to a NMS DamageEffect");
         };
     }
-    // Paper end
 
     public static DamageType minecraftHolderToBukkit(Holder<net.minecraft.world.damagesource.DamageType> minecraftHolder) {
         return CraftDamageType.minecraftToBukkit(minecraftHolder.value());
