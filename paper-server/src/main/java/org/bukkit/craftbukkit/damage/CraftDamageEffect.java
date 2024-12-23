@@ -5,8 +5,10 @@ import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.damage.DamageEffect;
 
+// Paper start
 @Deprecated
 public class CraftDamageEffect  {
+// Paper end
 
     private final DamageEffects damageEffects;
 
@@ -19,7 +21,7 @@ public class CraftDamageEffect  {
     }
 
     public Sound getSound() {
-        return CraftSound.minecraftToBukkit(this.getHandle().sound());
+        return CraftSound.minecraftToBukkit(this.getHandle().sound()); // Paper
     }
 
     public static DamageEffect getById(String id) {
