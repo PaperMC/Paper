@@ -6,7 +6,6 @@ import org.bukkit.Sound;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-// Paper start
 /**
  * Represents a type of effect that occurs when damage is inflicted. Currently,
  * effects only determine the sound that plays.
@@ -55,4 +54,3 @@ public enum DamageEffect {
         return Bukkit.getUnsafe().getSoundForDamageEffect(this);
     }
 }
-// Paper end

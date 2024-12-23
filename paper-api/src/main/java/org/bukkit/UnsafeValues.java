@@ -128,7 +128,7 @@ public interface UnsafeValues {
 
     @ApiStatus.Internal
     @Nullable
-    @Deprecated // Paper
+    @Deprecated
     DamageEffect getDamageEffect(@NotNull String key);
 
     /**
