@@ -1,5 +1,7 @@
 package com.destroystokyo.paper;
 
+import org.jspecify.annotations.NullMarked;
+
 public interface SkinParts {
 
     boolean hasCapeEnabled();
@@ -17,4 +19,16 @@ public interface SkinParts {
     boolean hasHatsEnabled();
 
     int getRaw();
+
+    @NullMarked
+    interface Builder {
+        Builder withCape(boolean cape);
+        Builder withJacket(boolean jacket);
+        Builder withLeftSleeve(boolean leftSleeve);
+        Builder withRightSleeve(boolean rightSleeve);
+        Builder withLeftPants(boolean leftPants);
+        Builder withRightPants(boolean rightPants);
+        Builder withHat(boolean hat);
+        SkinParts build();
+    }
 }

@@ -2607,4 +2607,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     void allowPausing(@NotNull org.bukkit.plugin.Plugin plugin, boolean value);
     // Paper end - API to check if the server is sleeping
+    // Paper start - add disguise api
+    /**
+     * Creates a new skinparts builder used for overriding skin settings
+     * @return a new builder for skin parts
+     */
+    com.destroystokyo.paper.SkinParts.@NotNull Builder newSkinPartsBuilder();
+    // Paper end - add disguise api
 }

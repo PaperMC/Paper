@@ -2826,7 +2826,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         // SPIGOT-3813: Attributes before health
         if (this.getHandle().connection != null) {
+            if(!io.papermc.paper.disguise.DisguiseUtil.shouldSkipAttributeSending(this.getHandle())){ // Paper start - disguise api
             this.getHandle().connection.send(new ClientboundUpdateAttributesPacket(this.getHandle().getId(), set));
+            } // Paper end - disguise api
             if (sendHealth) {
                 this.sendHealthUpdate();
             }

@@ -1193,4 +1193,34 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     void broadcastHurtAnimation(@NotNull java.util.Collection<Player> players);
     // Paper end - broadcast hurt animation
+    // Paper start - disguise api
+
+    /**
+     * Gets the current {@link io.papermc.paper.disguise.DisguiseData} of the entity.
+     *
+     * @return {@link io.papermc.paper.disguise.DisguiseData.OriginalDisguise} if entity is not disguised.
+     * Otherwise, one of {@link io.papermc.paper.disguise.EntityTypeDisguise} or {@link io.papermc.paper.disguise.PlayerDisguise}
+     */
+    @NotNull io.papermc.paper.disguise.DisguiseData getDisguiseData();
+
+    /**
+     * Sets the current {@link io.papermc.paper.disguise.DisguiseData} of the entity.
+     * <p>
+     * Following {@link io.papermc.paper.disguise.DisguiseData} can be set:
+     * <ul>
+     *     <li>{@link io.papermc.paper.disguise.PlayerDisguise} use {@link io.papermc.paper.disguise.DisguiseData#player(com.destroystokyo.paper.profile.PlayerProfile)}.
+     *     It returns a builder where you are able to configure additional settings</li>
+     *     <li>{@link io.papermc.paper.disguise.EntityTypeDisguise} use {@link io.papermc.paper.disguise.DisguiseData#entity(EntityType)}</li>
+     *     <li>{@link io.papermc.paper.disguise.DisguiseData.OriginalDisguise} use {@link io.papermc.paper.disguise.DisguiseData#original()} or {@link io.papermc.paper.disguise.DisguiseData#reset()} to reset it again to the original state</li>
+     * </ul>
+     * <p>
+     * The following entities are not supported:
+     * <ul>
+     *     <li>{@link ExperienceOrb}</li>
+     * </ul>
+     *
+     * @param disguiseData the {@link io.papermc.paper.disguise.DisguiseData} that will be set.
+     */
+    void setDisguiseData(@NotNull io.papermc.paper.disguise.DisguiseData disguiseData);
+    // Paper end - disguise api
 }
