@@ -754,12 +754,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
             player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
         return lines.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).toList();
     }
-
-    @Override
-    public org.bukkit.Sound getSoundForDamageEffect(DamageEffect damageEffect) {
-        Preconditions.checkArgument(damageEffect != null, "key cannot be null");
-        return  org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(org.bukkit.craftbukkit.damage.CraftDamageType.damageEffectToNMS(damageEffect).sound());
-    }
     // Paper end
 
     // Paper start - spawn egg color visibility
