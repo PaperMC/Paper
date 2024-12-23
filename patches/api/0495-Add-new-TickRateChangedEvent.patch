@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Axionize <154778082+Axionize@users.noreply.github.com>
+Date: Tue, 8 Oct 2024 20:38:01 -0400
+Subject: [PATCH] Add new TickRateChangedEvent
+
+
+diff --git a/src/main/java/org/bukkit/event/server/TickRateChangeEvent.java b/src/main/java/org/bukkit/event/server/TickRateChangeEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c68ef49ea9fa61b869fce1ba3f73a9272bde2ce7
+--- /dev/null
++++ b/src/main/java/org/bukkit/event/server/TickRateChangeEvent.java
+@@ -0,0 +1,72 @@
++package org.bukkit.event.server;
++
++import com.google.common.base.Preconditions;
++import io.papermc.paper.command.brigadier.CommandSourceStack;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.jspecify.annotations.NullMarked;
++
++/**
++ * Fired when the server's target tickrate changes
++ */
++@NullMarked
++public class TickRateChangeEvent extends ServerEvent implements Cancellable {
++
++    private static final HandlerList HANDLER_LIST = new HandlerList();
++
++    private final CommandSourceStack commandSourceStack;
++    private float tickRate;
++    private boolean cancelled;
++
++    @ApiStatus.Internal
++    public TickRateChangeEvent(CommandSourceStack commandSourceStack, float tickRate) {
++        this.commandSourceStack = commandSourceStack;
++        this.tickRate = tickRate;
++    }
++
++    /**
++     * @return {@link io.papermc.paper.command.brigadier.CommandSourceStack} representing source of the /tick rate command
++     * Will return null if the tick rate was set by a plugin or setTickRate() was otherwise directly called
++     */
++    @Nullable
++    public CommandSourceStack getCommandSourceStack() {
++        return commandSourceStack;
++    }
++
++    /**
++     * @return float representing new tick rate of the server between 1.0F and 10,000F
++     */
++    public float getTickRate() {
++        return tickRate;
++    }
++
++    /**
++     * @param tickRate float overriding the new tickrate being applied to the server
++     */
++    public void setTickRate(float tickRate) {
++        Preconditions.checkArgument(tickRate >= 1.0F && tickRate <= 10_000.0F, "The given tick rate must not be less than 1.0 or greater than 10,000.0");
++        this.tickRate = tickRate;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLER_LIST;
++    }
++
++    public static HandlerList getHandlerList() {
++        return HANDLER_LIST;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancelled;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        cancelled = cancel;
++    }
++}
