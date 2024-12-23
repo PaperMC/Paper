@@ -16,6 +16,7 @@ import net.minecraft.resources.ResourceKey;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.support.environment.AllFeatures;
 import org.bukkit.support.provider.RegistryArgumentProvider;

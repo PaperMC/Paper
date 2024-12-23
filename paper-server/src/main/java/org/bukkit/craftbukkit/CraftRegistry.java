@@ -184,11 +184,17 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         this.lockReferenceHolders = !this.minecraftToBukkit.supportsDirectHolders();
     }
 
-    public boolean isUnloaded() {
-        return this.cache.isEmpty();
-    }
-
     public void lockReferenceHolders() {
+        Preconditions.checkState(this.cache.isEmpty(), "Registry %s is already loaded", this.minecraftRegistry.key());
+
+        try {
+            Class.forName(this.bukkitClass.getName()); // this should always trigger the initialization of the class
+        } catch (final ClassNotFoundException e) {
+            throw new IllegalStateException("Failed to load class " + this.bukkitClass.getSimpleName(), e);
+        }
+        if (!this.minecraftToBukkit.supportsDirectHolders()) {
+            return;
+        }
         Preconditions.checkState(!this.lockReferenceHolders, "Reference holders are already locked");
         this.lockReferenceHolders = true;
     }

@@ -1,6 +1,5 @@
 package io.papermc.paper.registry;
 
-import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.legacy.DelayedRegistry;
@@ -74,7 +73,7 @@ public class PaperRegistryAccess implements RegistryAccess {
         if (PaperRegistries.getEntry(key) == null) {
             throw new NoSuchElementException(key + " is not a valid registry key");
         }
-        final @Nullable RegistryHolder<T> registryHolder = (RegistryHolder<T>) this.registries.get(key);
+        final RegistryHolder<T> registryHolder = (RegistryHolder<T>) this.registries.get(key);
         if (registryHolder == null) {
             throw new IllegalArgumentException(key + " points to a registry that is not available yet");
         }
@@ -112,22 +111,16 @@ public class PaperRegistryAccess implements RegistryAccess {
             return;
         }
         final CraftRegistry<?, M> registry = (CraftRegistry<?, M>) this.getRegistry(entry.apiKey());
-        Preconditions.checkState(registry.isUnloaded(), "Registry %s is already loaded", resourceKey);
-        try {
-            Class.forName(serverSide.classToPreload().getName()); // this should always trigger the initialization of the class
-        } catch (final ClassNotFoundException e) {
-            throw new IllegalStateException("Failed to load class " + serverSide.classToPreload().getName(), e);
-        }
         registry.lockReferenceHolders();
     }
 
     @SuppressWarnings("unchecked") // this method should be called right after any new MappedRegistry instances are created to later be used by the server.
     private <M, B extends Keyed, R extends Registry<B>> void registerRegistry(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey, final net.minecraft.core.Registry<M> registry, final boolean replace) {
-        final @Nullable RegistryEntry<M, B> entry = PaperRegistries.getEntry(resourceKey);
+        final RegistryEntry<M, B> entry = PaperRegistries.getEntry(resourceKey);
         if (entry == null) { // skip registries that don't have API entries
             return;
         }
-        final @Nullable RegistryHolder<B> registryHolder = (RegistryHolder<B>) this.registries.get(entry.apiKey());
+        final RegistryHolder<B> registryHolder = (RegistryHolder<B>) this.registries.get(entry.apiKey());
         if (registryHolder == null || replace) {
             // if the holder doesn't exist yet, or is marked as "replaceable", put it in the map.
             this.registries.put(entry.apiKey(), entry.createRegistryHolder(registry));
