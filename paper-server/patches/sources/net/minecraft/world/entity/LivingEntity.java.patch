@@ -654,7 +654,7 @@
      }
  
      private boolean checkTotemDeathProtection(DamageSource damageSource) {
-@@ -1274,18 +_,37 @@
+@@ -1274,18 +_,39 @@
              ItemStack itemStack = null;
              DeathProtection deathProtection = null;
  
@@ -673,12 +673,14 @@
 +                }
 +            }
 +
-+            org.bukkit.inventory.EquipmentSlot handSlot = (hand != null) ? org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand) : null;
-+            EntityResurrectEvent event = new EntityResurrectEvent((org.bukkit.entity.LivingEntity) this.getBukkitEntity(), handSlot);
++            final org.bukkit.inventory.EquipmentSlot handSlot = (hand != null) ? org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand) : null;
++            final EntityResurrectEvent event = new EntityResurrectEvent((org.bukkit.entity.LivingEntity) this.getBukkitEntity(), handSlot);
 +            event.setCancelled(itemStack == null);
 +            this.level().getCraftServer().getPluginManager().callEvent(event);
-+
-+            if (!event.isCancelled()) {
++            if (event.isCancelled()) {
++                // Set death protection to null as the event was cancelled. Prevent any attempt at ressurection.
++                deathProtection = null;
++            } else {
 +                if (!itemInHand.isEmpty() && itemStack != null) { // Paper - only reduce item if actual totem was found
                      itemInHand.shrink(1);
 -                    break;
@@ -694,8 +696,8 @@
 +                    deathProtection = DeathProtection.TOTEM_OF_UNDYING;
 +                }
 +                // Paper end - fix NPE when pre-cancelled EntityResurrectEvent is uncancelled
-+                if (itemStack != null && this instanceof ServerPlayer serverPlayer) {
-+                    // CraftBukkit end
++                if (itemStack != null && this instanceof final ServerPlayer serverPlayer) {
++            // CraftBukkit end
                      serverPlayer.awardStat(Stats.ITEM_USED.get(itemStack.getItem()));
                      CriteriaTriggers.USED_TOTEM.trigger(serverPlayer, itemStack);
                      this.gameEvent(GameEvent.ITEM_INTERACT_FINISH);
