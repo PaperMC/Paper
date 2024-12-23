@@ -598,7 +598,7 @@
          if (flush) {
              for (ServerLevel serverLevel2 : this.getAllLevels()) {
                  LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", serverLevel2.getChunkSource().chunkMap.getStorageName());
-@@ -593,18 +_,48 @@
+@@ -593,19 +_,54 @@
          this.stopServer();
      }
  
@@ -628,7 +628,23 @@
          }
  
          LOGGER.info("Stopping server");
+-        this.getConnection().stop();
 +        Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
++
++        // Paper start - save players before disabling plugins (matches /restart behaviour)
+         this.isSaving = true;
+         if (this.playerList != null) {
+-            LOGGER.info("Saving players");
++            MinecraftServer.LOGGER.info("Saving players");
+             this.playerList.saveAll();
+-            this.playerList.removeAll();
+-        }
++            this.playerList.removeAll(this.isRestarting); // Paper
++            try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
++        }
++        this.isSaving = false;
++        // Paper end - save players before disabling plugins (matches /restart behaviour)
++
 +        // CraftBukkit start
 +        if (this.server != null) {
 +            this.server.spark.disable(); // Paper - spark
@@ -637,17 +653,10 @@
 +        }
 +        // CraftBukkit end
 +        if (io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper != null) io.papermc.paper.plugin.PluginInitializerManager.instance().pluginRemapper.shutdown(); // Paper - Plugin remapping
-         this.getConnection().stop();
-         this.isSaving = true;
-         if (this.playerList != null) {
-             LOGGER.info("Saving players");
-             this.playerList.saveAll();
--            this.playerList.removeAll();
-+            this.playerList.removeAll(this.isRestarting); // Paper
-+            try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
-         }
++        this.getConnection().stop();
  
          LOGGER.info("Saving worlds");
+ 
 @@ -646,6 +_,25 @@
          } catch (IOException var4) {
              LOGGER.error("Failed to unlock level {}", this.storageSource.getLevelId(), var4);
