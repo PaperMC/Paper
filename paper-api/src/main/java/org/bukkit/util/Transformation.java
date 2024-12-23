@@ -52,7 +52,7 @@ public class Transformation {
      */
     @NotNull
     public Vector3f getTranslation() {
-        return new Vector3f(this.translation);
+        return this.translation;
     }
 
     /**
@@ -62,7 +62,7 @@ public class Transformation {
      */
     @NotNull
     public Quaternionf getLeftRotation() {
-        return new Quaternionf(this.leftRotation);
+        return this.leftRotation;
     }
 
     /**
@@ -72,7 +72,7 @@ public class Transformation {
      */
     @NotNull
     public Vector3f getScale() {
-        return new Vector3f(this.scale);
+        return this.scale;
     }
 
     /**
@@ -82,7 +82,7 @@ public class Transformation {
      */
     @NotNull
     public Quaternionf getRightRotation() {
-        return new Quaternionf(this.rightRotation);
+        return this.rightRotation;
     }
 
     @Override
