@@ -85,12 +85,12 @@ public interface Inventory extends Iterable<ItemStack> {
      * index of the varargs parameter. If all items are stored, it will return
      * an empty HashMap.
      * <p>
-     * If you pass in ItemStacks which exceed the maximum stack size for the
-     * Material, first they will be added to partial stacks where
-     * Material.getMaxStackSize() is not exceeded, up to
-     * Material.getMaxStackSize(). When there are no partial stacks left
-     * stacks will be split on Inventory.getMaxStackSize() allowing you to
-     * exceed the maximum stack size for that material.
+     * Items resulted from this method will not exceed the minimum
+     * of {@link ItemStack#getMaxStackSize()} and {@link #getMaxStackSize()}.
+     * <p>
+     * First, this method will try to fill all the partial stacks in the inventory.
+     * Then it will try to fill empty slots, over-stacked items being able to
+     * fill several empty slots. The rest are placed in the returned map.
      * <p>
      * It is known that in some implementations this method will also set
      * the inputted argument amount to the number of that item not placed in
