@@ -41,9 +41,6 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
         return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(string, Instrument.CODEC, Registry.INSTRUMENT); // Paper - switch to Holder
     }
 
-    private final NamespacedKey key;
-    private final Instrument handle;
-
     // Paper start - switch to Holder
     @Override
     public boolean equals(final Object o) {
@@ -63,8 +60,6 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
     private final Holder<Instrument> holder;
     public CraftMusicInstrument(Holder<Instrument> holder) {
         this.holder = holder;
-        this.key = holder.unwrapKey().map(io.papermc.paper.util.MCUtil::fromResourceKey).orElse(null);
-        this.handle = holder.value();
         // Paper end - switch to Holder
     }
 
