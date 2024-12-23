@@ -310,7 +310,6 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
         return this.customName != null;
     }
 
-    // Paper start - Deprecated PotionMeta methods redirect
     @Override
     public boolean hasCustomName() {
         return this.hasCustomPotionName();
@@ -325,7 +324,6 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
     public void setCustomName(String name) {
         this.setCustomPotionName(name);
     }
-    // Paper end - Deprecated PotionMeta methods redirect
 
     @Override
     public String getCustomPotionName() {
