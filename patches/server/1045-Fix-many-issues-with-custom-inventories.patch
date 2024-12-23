@@ -1,0 +1,578 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 2 Jan 2022 22:09:46 -0800
+Subject: [PATCH] Fix many issues with custom inventories
+
+There are lots of issues with custom inventories and this tries
+to fix a bunch of them. Creating inventories with Bukkit.createInventory
+with types from non-tile-entities that have crafting detection did not
+work, namely anvils and smithing tables. Enchantment tables did
+literally nothing
+
+diff --git a/src/main/java/io/papermc/paper/inventory/PaperSliceContainer.java b/src/main/java/io/papermc/paper/inventory/PaperSliceContainer.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..47d4197688e464aac547938f1830bc7b47e27a75
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/inventory/PaperSliceContainer.java
+@@ -0,0 +1,145 @@
++package io.papermc.paper.inventory;
++
++import com.google.common.base.Preconditions;
++import java.util.List;
++import net.minecraft.core.NonNullList;
++import net.minecraft.world.Container;
++import net.minecraft.world.SimpleContainer;
++import net.minecraft.world.entity.player.Player;
++import net.minecraft.world.inventory.ResultContainer;
++import net.minecraft.world.item.ItemStack;
++import org.bukkit.Location;
++import org.bukkit.craftbukkit.entity.CraftHumanEntity;
++import org.bukkit.craftbukkit.inventory.CraftContainer;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.inventory.InventoryHolder;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++/**
++ * This merges an existing Container instance (usually CraftInventoryCustom.MinecraftInventory)
++ * with a new SimpleContainer instance (for the vanilla container logic).
++ */
++@DefaultQualifier(NonNull.class)
++public class PaperSliceContainer implements Container {
++
++    protected final Container top;
++    protected final SimpleContainer simpleContainerDelegate;
++
++    /**
++     * @param start inclusive
++     * @param end exclusive
++     */
++    public PaperSliceContainer(final Container top, final int start, final int end) {
++        this.top = top;
++        Preconditions.checkArgument(start < end, "start must be less than end; start: " + start + ", end: " + end);
++        this.simpleContainerDelegate = new SimpleContainer(new NonNullList<>(this.top.getContents().subList(start, end), ItemStack.EMPTY) {});
++    }
++
++    public static Container forCraftContainerDelegate(final Container delegate, final int start, final int end, final CraftContainer craftContainer) {
++        return new PaperSliceContainer(delegate, start, end) {
++            @Override
++            public void setChanged() {
++                craftContainer.slotsChanged(this);
++                craftContainer.delegate.slotsChanged(this);
++            }
++        };
++    }
++
++    public static ResultContainer result(final Container top, final int slot) {
++        return new Result(top, slot);
++    }
++
++    /* CraftBukkit container methods */
++    @Override
++    public List<ItemStack> getContents() {
++        return this.simpleContainerDelegate.getContents();
++    }
++
++    @Override
++    public void onOpen(final CraftHumanEntity who) {
++        this.top.onOpen(who);
++    }
++
++    @Override
++    public void onClose(final CraftHumanEntity who) {
++        this.top.onClose(who);
++    }
++
++    @Override
++    public List<HumanEntity> getViewers() {
++        return this.top.getViewers();
++    }
++
++    @Override
++    public int getMaxStackSize() {
++        return this.top.getMaxStackSize();
++    }
++
++    @Override
++    public void setMaxStackSize(final int size) {
++        this.top.setMaxStackSize(size);
++    }
++
++    @Override
++    public InventoryHolder getOwner() {
++        return this.top.getOwner();
++    }
++
++    @Override
++    public Location getLocation() {
++        return this.top.getLocation();
++    }
++
++    /* Vanilla container methods */
++    @Override
++    public int getContainerSize() {
++        return this.simpleContainerDelegate.getContainerSize();
++    }
++
++    @Override
++    public boolean isEmpty() {
++        return this.simpleContainerDelegate.isEmpty();
++    }
++
++    @Override
++    public ItemStack getItem(final int slot) {
++        return this.simpleContainerDelegate.getItem(slot);
++    }
++
++    @Override
++    public ItemStack removeItem(final int slot, final int amount) {
++        return this.simpleContainerDelegate.removeItem(slot, amount);
++    }
++
++    @Override
++    public ItemStack removeItemNoUpdate(final int slot) {
++        return this.simpleContainerDelegate.removeItemNoUpdate(slot);
++    }
++
++    @Override
++    public void setItem(final int slot, final ItemStack stack) {
++        this.simpleContainerDelegate.setItem(slot, stack);
++    }
++
++    @Override
++    public void setChanged() {
++        this.top.setChanged();
++    }
++
++    @Override
++    public boolean stillValid(final Player player) {
++        return this.top.stillValid(player);
++    }
++
++    @Override
++    public void clearContent() {
++        this.simpleContainerDelegate.clearContent();
++    }
++
++    public static class Result extends ResultContainer {
++        private Result(Container top, int slot) {
++            super(new NonNullList<>(top.getContents().subList(slot, slot + 1), ItemStack.EMPTY) {});
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 8e67853a7a93fa736c147e8b2df537746dc8e94f..ffd8eb5da9adc7dcc4be44461836f88ee1fd4795 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1001,7 +1001,10 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+         AbstractContainerMenu container = this.player.containerMenu;
+ 
+-        if (container instanceof AnvilMenu containeranvil) {
++        // Paper start - fix custom anvils
++        if (container instanceof AnvilMenu || (container instanceof org.bukkit.craftbukkit.inventory.CraftContainer menu && menu.delegate instanceof AnvilMenu)) {
++            AnvilMenu containeranvil = (AnvilMenu) (container instanceof org.bukkit.craftbukkit.inventory.CraftContainer menu ? menu.delegate : container);
++            // Paper end - fix custom anvils
+             if (!containeranvil.stillValid(this.player)) {
+                 ServerGamePacketListenerImpl.LOGGER.debug("Player {} interacted with invalid menu {}", this.player, containeranvil);
+                 return;
+diff --git a/src/main/java/net/minecraft/world/SimpleContainer.java b/src/main/java/net/minecraft/world/SimpleContainer.java
+index d04bf7d06855022c973073fb84c5d3d65f2553e1..7e00f56b540b0593bad2d92f35064e51a6f189fd 100644
+--- a/src/main/java/net/minecraft/world/SimpleContainer.java
++++ b/src/main/java/net/minecraft/world/SimpleContainer.java
+@@ -110,6 +110,12 @@ public class SimpleContainer implements Container, StackedContentsCompatible {
+         this.size = items.length;
+         this.items = NonNullList.of(ItemStack.EMPTY, items);
+     }
++    // Paper start
++    public SimpleContainer(NonNullList<ItemStack> items) {
++        this.size = items.size();
++        this.items = items;
++    }
++    // Paper end
+ 
+     public void addListener(ContainerListener listener) {
+         if (this.listeners == null) {
+diff --git a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
+index 2bd91b48eaa06f85a5b9b1ae052c70e966ae8e4c..2ac30abb6bd9a190cd5128aef01f1fcb70e73170 100644
+--- a/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AnvilMenu.java
+@@ -59,7 +59,12 @@ public class AnvilMenu extends ItemCombinerMenu {
+     }
+ 
+     public AnvilMenu(int syncId, Inventory inventory, ContainerLevelAccess context) {
+-        super(MenuType.ANVIL, syncId, inventory, context);
++        // Paper start
++        this(syncId, inventory, context, null, null);
++    }
++    public AnvilMenu(int syncId, Inventory inventory, ContainerLevelAccess context, @javax.annotation.Nullable ResultContainer resultSlots, @javax.annotation.Nullable net.minecraft.world.Container inputSlots) {
++        super(MenuType.ANVIL, syncId, inventory, context, resultSlots, inputSlots);
++        // Paper end
+         this.cost = DataSlot.standalone();
+         this.addDataSlot(this.cost);
+     }
+diff --git a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
+index 5b3e33807e0e13480e3359c0cf067719e5749237..8c6a75f7ef6c4bc8d9859dafb5c13ba541b27d06 100644
+--- a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
+@@ -58,8 +58,13 @@ public class EnchantmentMenu extends AbstractContainerMenu {
+     }
+ 
+     public EnchantmentMenu(int syncId, Inventory playerInventory, ContainerLevelAccess context) {
++        // Paper start
++        this(syncId, playerInventory, context, null);
++    }
++    public EnchantmentMenu(int syncId, Inventory playerInventory, ContainerLevelAccess context, @javax.annotation.Nullable Container enchantSlots) {
++        // Paper end
+         super(MenuType.ENCHANTMENT, syncId);
+-        this.enchantSlots = new SimpleContainer(this.createBlockHolder(context), 2) { // Paper - Add missing InventoryHolders
++        this.enchantSlots = enchantSlots != null ? enchantSlots : new SimpleContainer(this.createBlockHolder(context), 2) { // Paper - Add missing InventoryHolders & custom enchant slots
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+diff --git a/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java b/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
+index 7de5e47f9a54263734eeef855a2dc07ef64d30ea..e969127c15a52b7245d83881ce50bee9769e2333 100644
+--- a/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/ItemCombinerMenu.java
+@@ -28,13 +28,18 @@ public abstract class ItemCombinerMenu extends AbstractContainerMenu {
+     protected abstract boolean isValidBlock(BlockState state);
+ 
+     public ItemCombinerMenu(@Nullable MenuType<?> type, int syncId, Inventory playerInventory, ContainerLevelAccess context) {
++        // Paper start
++        this(type, syncId, playerInventory, context, null, null);
++    }
++    public ItemCombinerMenu(@Nullable MenuType<?> type, int syncId, Inventory playerInventory, ContainerLevelAccess context, @Nullable ResultContainer resultSlots, @Nullable Container inputSlots) {
++        // Paper end
+         super(type, syncId);
+         this.access = context;
+-        this.resultSlots = new ResultContainer(this.createBlockHolder(this.access)); // Paper - Add missing InventoryHolders; delay field init
++        this.resultSlots = java.util.Objects.requireNonNullElseGet(resultSlots, () -> new ResultContainer(this.createBlockHolder(this.access))); // Paper - Add missing InventoryHolders; delay field init // Paper - use result slots from constructor first
+         this.player = playerInventory.player;
+         ItemCombinerMenuSlotDefinition itemcombinermenuslotdefinition = this.createInputSlotDefinitions();
+ 
+-        this.inputSlots = this.createContainer(itemcombinermenuslotdefinition.getNumOfInputSlots());
++        this.inputSlots = java.util.Objects.requireNonNullElseGet(inputSlots, () -> this.createContainer(itemcombinermenuslotdefinition.getNumOfInputSlots())); // Paper - use result slots from constructor first
+         this.inputSlotIndexes = itemcombinermenuslotdefinition.getInputSlotIndexes();
+         this.resultSlotIndex = itemcombinermenuslotdefinition.getResultSlotIndex();
+         this.createInputSlots(itemcombinermenuslotdefinition);
+diff --git a/src/main/java/net/minecraft/world/inventory/LoomMenu.java b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+index 4f3f6ea43030853bd9df067358a1f4d16c40e6d4..89e9e407b1b47b123fa8b5feea12578f712b170b 100644
+--- a/src/main/java/net/minecraft/world/inventory/LoomMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/LoomMenu.java
+@@ -68,12 +68,17 @@ public class LoomMenu extends AbstractContainerMenu {
+     }
+ 
+     public LoomMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context) {
++        // Paper start
++        this(syncId, playerInventory, context, null, null);
++    }
++    public LoomMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context, @javax.annotation.Nullable Container inputContainer, @javax.annotation.Nullable Container outputContainer) {
++        // Paper end
+         super(MenuType.LOOM, syncId);
+         this.selectedBannerPatternIndex = DataSlot.standalone();
+         this.selectablePatterns = List.of();
+         this.slotUpdateListener = () -> {
+         };
+-        this.inputContainer = new SimpleContainer(this.createBlockHolder(context), 3) { // Paper - Add missing InventoryHolders
++        this.inputContainer = inputContainer != null ? inputContainer : new SimpleContainer(this.createBlockHolder(context), 3) { // Paper - Add missing InventoryHolders & custom input container
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+@@ -88,7 +93,7 @@ public class LoomMenu extends AbstractContainerMenu {
+             }
+             // CraftBukkit end
+         };
+-        this.outputContainer = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper - Add missing InventoryHolders
++        this.outputContainer = outputContainer != null ? outputContainer : new SimpleContainer(this.createBlockHolder(context), 1) { // Paper - Add missing InventoryHolders & custom output container
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+diff --git a/src/main/java/net/minecraft/world/inventory/ResultContainer.java b/src/main/java/net/minecraft/world/inventory/ResultContainer.java
+index 4c4266a85c38e41e6c7e6144a68624f4daa50c54..7ee31029fc6da1cfb1d93a09f2593b1796876395 100644
+--- a/src/main/java/net/minecraft/world/inventory/ResultContainer.java
++++ b/src/main/java/net/minecraft/world/inventory/ResultContainer.java
+@@ -71,6 +71,13 @@ public class ResultContainer implements Container, RecipeCraftingHolder {
+         this.itemStacks = NonNullList.withSize(1, ItemStack.EMPTY);
+     }
+ 
++    // Paper start - create ResultContainer with existing list
++    protected ResultContainer(NonNullList<ItemStack> list) {
++        com.google.common.base.Preconditions.checkArgument(list.size() == 1);
++        this.itemStacks = list;
++    }
++    // Paper end
++
+     @Override
+     public int getContainerSize() {
+         return 1;
+diff --git a/src/main/java/net/minecraft/world/inventory/SmithingMenu.java b/src/main/java/net/minecraft/world/inventory/SmithingMenu.java
+index 1e9e70263996afa294458364aa70e738b5aabea1..eb39f09a1c93ca224b576436c3345a9a29d0e9c7 100644
+--- a/src/main/java/net/minecraft/world/inventory/SmithingMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/SmithingMenu.java
+@@ -38,7 +38,12 @@ public class SmithingMenu extends ItemCombinerMenu {
+     }
+ 
+     public SmithingMenu(int syncId, Inventory playerInventory, ContainerLevelAccess context) {
+-        super(MenuType.SMITHING, syncId, playerInventory, context);
++        // Paper start
++        this(syncId, playerInventory, context, null, null);
++    }
++    public SmithingMenu(int syncId, Inventory playerInventory, ContainerLevelAccess context, @Nullable ResultContainer resultSlots, @Nullable net.minecraft.world.Container inputSlots) {
++        super(MenuType.SMITHING, syncId, playerInventory, context, resultSlots, inputSlots);
++        // Paper end
+         this.level = playerInventory.player.level();
+         this.recipes = this.level.getRecipeManager().getAllRecipesFor(RecipeType.SMITHING);
+     }
+diff --git a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+index eade15820dd9db38b6af2a5c4314acfb14ca03e9..34c210e8c9e663ba3164b89aa3ccbb84bc1b78c9 100644
+--- a/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/StonecutterMenu.java
+@@ -62,13 +62,18 @@ public class StonecutterMenu extends AbstractContainerMenu {
+     }
+ 
+     public StonecutterMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context) {
++        // Paper start
++        this(syncId, playerInventory, context, null, null);
++    }
++    public StonecutterMenu(int syncId, Inventory playerInventory, final ContainerLevelAccess context, @javax.annotation.Nullable Container container, @javax.annotation.Nullable ResultContainer resultContainer) {
++        // Paper end
+         super(MenuType.STONECUTTER, syncId);
+         this.selectedRecipeIndex = DataSlot.shared(new int[1], 0); // Paper - Add PlayerStonecutterRecipeSelectEvent
+         this.recipes = Lists.newArrayList();
+         this.input = ItemStack.EMPTY;
+         this.slotUpdateListener = () -> {
+         };
+-        this.container = new SimpleContainer(this.createBlockHolder(context), 1) { // Paper - Add missing InventoryHolders
++        this.container = container != null ? container : new SimpleContainer(this.createBlockHolder(context), 1) { // Paper - Add missing InventoryHolders & custom input container
+             @Override
+             public void setChanged() {
+                 super.setChanged();
+@@ -83,7 +88,7 @@ public class StonecutterMenu extends AbstractContainerMenu {
+             }
+             // CraftBukkit end
+         };
+-        this.resultContainer = new ResultContainer(this.createBlockHolder(context)); // Paper - Add missing InventoryHolders
++        this.resultContainer = java.util.Objects.requireNonNullElseGet(resultContainer, () -> new ResultContainer(this.createBlockHolder(context))); // Paper - Add missing InventoryHolders & custom result container
+         this.access = context;
+         this.level = playerInventory.player.level();
+         this.inputSlot = this.addSlot(new Slot(this.container, 0, 20, 33));
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+index 41f3cdec7deabf34358b8087df77169f85a5b919..14c26bc746deaaec6cc719ac10d68e57b8257384 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftHumanEntity.java
+@@ -435,12 +435,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
+             ((ServerPlayer) this.getHandle()).connection.handleContainerClose(new ServerboundContainerClosePacket(this.getHandle().containerMenu.containerId), org.bukkit.event.inventory.InventoryCloseEvent.Reason.OPEN_NEW); // Paper - Inventory close reason
+         }
+         ServerPlayer player = (ServerPlayer) this.getHandle();
+-        AbstractContainerMenu container;
+-        if (inventory instanceof CraftInventoryView) {
+-            container = ((CraftInventoryView) inventory).getHandle();
+-        } else {
+-            container = new CraftContainer(inventory, this.getHandle(), player.nextContainerCounter());
+-        }
++        AbstractContainerMenu container = ((CraftInventoryView) inventory).getHandle(); // Paper - only 1 impl of InventoryView now
+ 
+         // Trigger an INVENTORY_OPEN event
+         // Paper start - Add titleOverride to InventoryOpenEvent
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+index 977b77547f7ba62cef3640cf8d4f1c8e7cded53a..522011e32135b2924b9c2e1f082ad6832a87a7bc 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftContainer.java
+@@ -35,68 +35,21 @@ public class CraftContainer extends AbstractContainerMenu {
+ 
+     private final InventoryView view;
+     private InventoryType cachedType;
+-    private AbstractContainerMenu delegate;
++    public AbstractContainerMenu delegate; // Paper - private -> public
+ 
+-    public CraftContainer(InventoryView view, Player player, int id) {
+-        super(CraftContainer.getNotchInventoryType(view.getTopInventory()), id);
+-        this.view = view;
+-        // TODO: Do we need to check that it really is a CraftInventory?
+-        Container top = ((CraftInventory) view.getTopInventory()).getInventory();
+-        net.minecraft.world.entity.player.Inventory bottom = (net.minecraft.world.entity.player.Inventory) ((CraftInventory) view.getBottomInventory()).getInventory();
+-        this.cachedType = view.getType();
+-        this.setupSlots(top, bottom, player);
+-    }
++    // Paper - remove unneeded constructor
+ 
+     public CraftContainer(final Inventory inventory, final Player player, int id) {
+-        this(new InventoryView() {
+-
+-            private final String originalTitle = inventory instanceof CraftInventoryCustom ? ((CraftInventoryCustom) inventory).getTitle() : inventory.getType().getDefaultTitle(); // Paper
+-            private String title = this.originalTitle;
+-
+-            @Override
+-            public Inventory getTopInventory() {
+-                return inventory;
+-            }
+-
+-            @Override
+-            public Inventory getBottomInventory() {
+-                return this.getPlayer().getInventory();
+-            }
+-
+-            @Override
+-            public HumanEntity getPlayer() {
+-                return player.getBukkitEntity();
+-            }
+-
+-            @Override
+-            public InventoryType getType() {
+-                return inventory.getType();
+-            }
+-
+-            // Paper start
+-            @Override
+-            public net.kyori.adventure.text.Component title() {
+-                return inventory instanceof CraftInventoryCustom custom ? custom.title() : inventory.getType().defaultTitle(); // Paper
+-            }
+-            // Paper end
+-
+-            @Override
+-            public String getTitle() {
+-                return this.title;
+-            }
+-
+-            @Override
+-            public String getOriginalTitle() {
+-                return this.originalTitle;
+-            }
+-
+-            @Override
+-            public void setTitle(String title) {
+-                CraftInventoryView.sendInventoryTitleChange(this, title);
+-                this.title = title;
+-            }
+-
+-        }, player, id);
++        // Paper start - fix custom inventories
++        super(CraftContainer.getNotchInventoryType(inventory), id);
++        // TODO: Do we need to check that it really is a CraftInventory?
++        Container top = ((CraftInventory) inventory).getInventory();
++        net.minecraft.world.entity.player.Inventory bottom = (net.minecraft.world.entity.player.Inventory) ((CraftInventory) player.getBukkitEntity().getInventory()).getInventory();
++        this.cachedType = inventory.getType();
++        this.setupSlots(top, bottom, player);
++        this.setTitle(io.papermc.paper.adventure.PaperAdventure.asVanilla(inventory instanceof CraftInventoryCustom custom ? custom.title() : inventory.getType().defaultTitle()));
++        this.view = new CraftInventoryView(player.getBukkitEntity(), inventory, this);
++        // Paper end
+     }
+ 
+     @Override
+@@ -196,10 +149,20 @@ public class CraftContainer extends AbstractContainerMenu {
+                 break;
+             case CRAFTING: // TODO: This should be an error?
+             case WORKBENCH:
++                // Paper - TODO create new menu instead
+                 this.setupWorkbench(top, bottom); // SPIGOT-3812 - manually set up slots so we can use the delegated inventory and not the automatically created one
+                 break;
+             case ENCHANTING:
+-                this.delegate = new EnchantmentMenu(windowId, bottom);
++                // Paper start - fix custom inventories
++                AbstractContainerMenu.checkContainerSize(top, 2);
++                final Container topEnchantSlice = io.papermc.paper.inventory.PaperSliceContainer.forCraftContainerDelegate(top, 0, 2, this);
++                this.delegate = new EnchantmentMenu(windowId, bottom, net.minecraft.world.inventory.ContainerLevelAccess.create(entityhuman.level(), entityhuman.blockPosition()), topEnchantSlice) {
++                    @Override
++                    public void broadcastChanges() {
++                        CraftContainer.this.broadcastChanges();
++                    }
++                };
++                // Paper end
+                 break;
+             case BREWING:
+                 this.delegate = new BrewingStandMenu(windowId, bottom, top, new SimpleContainerData(2));
+@@ -208,10 +171,14 @@ public class CraftContainer extends AbstractContainerMenu {
+                 this.delegate = new HopperMenu(windowId, bottom, top);
+                 break;
+             case ANVIL:
+-                this.setupAnvil(top, bottom); // SPIGOT-6783 - manually set up slots so we can use the delegated inventory and not the automatically created one
++                // Paper start - fix custom inventories
++                AbstractContainerMenu.checkContainerSize(top, 3);
++                final Container topAnvilSlice = io.papermc.paper.inventory.PaperSliceContainer.forCraftContainerDelegate(top, 0, 2, this);
++                this.delegate = new AnvilMenu(windowId, bottom, net.minecraft.world.inventory.ContainerLevelAccess.NULL, io.papermc.paper.inventory.PaperSliceContainer.result(top, 2), topAnvilSlice);
++                // Paper end
+                 break;
+             case BEACON:
+-                this.delegate = new BeaconMenu(windowId, bottom);
++                this.delegate = new BeaconMenu(windowId, bottom); // TODO doesn't use top inventory
+                 break;
+             case SHULKER_BOX:
+                 this.delegate = new ShulkerBoxMenu(windowId, bottom, top);
+@@ -226,23 +193,41 @@ public class CraftContainer extends AbstractContainerMenu {
+                 this.delegate = new SmokerMenu(windowId, bottom, top, new SimpleContainerData(4));
+                 break;
+             case LOOM:
+-                this.delegate = new LoomMenu(windowId, bottom);
++                // Paper start - fix custom inventories
++                AbstractContainerMenu.checkContainerSize(top, 4);
++                final Container topLoomSliceInput = io.papermc.paper.inventory.PaperSliceContainer.forCraftContainerDelegate(top, 0, 3, this);
++                final Container topLoomSliceOutput = new io.papermc.paper.inventory.PaperSliceContainer(top, 3, 4);
++                this.delegate = new LoomMenu(windowId, bottom, net.minecraft.world.inventory.ContainerLevelAccess.NULL, topLoomSliceInput, topLoomSliceOutput);
++                // Paper end
+                 break;
+             case CARTOGRAPHY:
+-                this.delegate = new CartographyTableMenu(windowId, bottom);
++                this.delegate = new CartographyTableMenu(windowId, bottom); // TODO doesn't use top inventory
+                 break;
+             case GRINDSTONE:
+-                this.delegate = new GrindstoneMenu(windowId, bottom);
++                this.delegate = new GrindstoneMenu(windowId, bottom); // TODO doesn't use top inventory
+                 break;
+             case STONECUTTER:
+-                this.delegate = new StonecutterMenu(windowId, bottom);
++                // Paper start - fix custom inventories
++                AbstractContainerMenu.checkContainerSize(top, 2);
++                final Container topStonecutterSlice = io.papermc.paper.inventory.PaperSliceContainer.forCraftContainerDelegate(top, 0, 1, this);
++                this.delegate = new StonecutterMenu(windowId, bottom, net.minecraft.world.inventory.ContainerLevelAccess.NULL, topStonecutterSlice, io.papermc.paper.inventory.PaperSliceContainer.result(top, 1)) {
++                    @Override
++                    public void broadcastChanges() {
++                        CraftContainer.this.broadcastChanges();
++                    }
++                };
++                // Paper end
+                 break;
+             case MERCHANT:
+                 this.delegate = new MerchantMenu(windowId, bottom);
+                 break;
+             case SMITHING:
+             case SMITHING_NEW:
+-                this.setupSmithing(top, bottom); // SPIGOT-6783 - manually set up slots so we can use the delegated inventory and not the automatically created one
++                // Paper start - fix custom inventories
++                AbstractContainerMenu.checkContainerSize(top, 4);
++                final Container topSmithingSlice = io.papermc.paper.inventory.PaperSliceContainer.forCraftContainerDelegate(top, 0, 3, this);
++                this.delegate = new net.minecraft.world.inventory.SmithingMenu(windowId, bottom, net.minecraft.world.inventory.ContainerLevelAccess.NULL, io.papermc.paper.inventory.PaperSliceContainer.result(top, 3), topSmithingSlice);
++                // Paper end
+                 break;
+             case CRAFTER:
+                 this.delegate = new CrafterMenu(windowId, bottom);
+@@ -264,12 +249,19 @@ public class CraftContainer extends AbstractContainerMenu {
+             case WORKBENCH:
+                 this.delegate = new CraftingMenu(windowId, bottom);
+                 break;
+-            case ANVIL:
+-                this.delegate = new AnvilMenu(windowId, bottom);
+-                break;
++            // case ANVIL: // Paper - dramatically improve spigot's fix for anvils
++            //     this.delegate = new AnvilMenu(windowId, bottom);
++            //     break;
+         }
+     }
+ 
++    // Paper start - delegate menu button click
++    @Override
++    public boolean clickMenuButton(net.minecraft.world.entity.player.Player player, int id) {
++        return this.delegate.clickMenuButton(player, id);
++    }
++    // Paper end
++
+     private void setupWorkbench(Container top, Container bottom) {
+         // This code copied from ContainerWorkbench
+         this.addSlot(new Slot(top, 0, 124, 35));
+@@ -295,6 +287,7 @@ public class CraftContainer extends AbstractContainerMenu {
+         // End copy from ContainerWorkbench
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - don't use this/dramatically improve spigot's fix for anvils
+     private void setupAnvil(Container top, Container bottom) {
+         // This code copied from ContainerAnvilAbstract
+         this.addSlot(new Slot(top, 0, 27, 47));
