@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
+Date: Wed, 25 Nov 2020 23:20:44 -0800
+Subject: [PATCH] Implement TargetHitEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/TargetBlock.java b/src/main/java/net/minecraft/world/level/block/TargetBlock.java
+index fdaba168dd1ed25ed8d5b4cdd89d4ad801b10388..69eaf1341d282c4783dab84533ea2c053deed529 100644
+--- a/src/main/java/net/minecraft/world/level/block/TargetBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/TargetBlock.java
+@@ -35,6 +35,10 @@ public class TargetBlock extends Block {
+     @Override
+     public void onProjectileHit(Level world, BlockState state, BlockHitResult hit, Projectile projectile) {
+         int i = updateRedstoneOutput(world, state, hit, projectile);
++        // Paper start
++    }
++    private static void awardTargetHitCriteria(Projectile projectile, BlockHitResult hit, int i) {
++        // Paper end
+         Entity entity = projectile.getOwner();
+         if (entity instanceof ServerPlayer serverPlayer) {
+             serverPlayer.awardStat(Stats.TARGET_HIT);
+@@ -46,6 +50,20 @@ public class TargetBlock extends Block {
+     private static int updateRedstoneOutput(LevelAccessor world, BlockState state, BlockHitResult hitResult, Entity entity) {
+         int i = getRedstoneStrength(hitResult, hitResult.getLocation());
+         int j = entity instanceof AbstractArrow ? 20 : 8;
++        // Paper start
++        if (entity instanceof Projectile) {
++            final Projectile projectile = (Projectile) entity;
++            final org.bukkit.craftbukkit.block.CraftBlock craftBlock = org.bukkit.craftbukkit.block.CraftBlock.at(world, hitResult.getBlockPos());
++            final org.bukkit.block.BlockFace blockFace = org.bukkit.craftbukkit.block.CraftBlock.notchToBlockFace(hitResult.getDirection());
++            final io.papermc.paper.event.block.TargetHitEvent targetHitEvent = new io.papermc.paper.event.block.TargetHitEvent((org.bukkit.entity.Projectile) projectile.getBukkitEntity(), craftBlock, blockFace, i);
++            if (targetHitEvent.callEvent()) {
++                i = targetHitEvent.getSignalStrength();
++                awardTargetHitCriteria(projectile, hitResult, i);
++            } else {
++                return i;
++            }
++        }
++        // Paper end
+         if (!world.getBlockTicks().hasScheduledTick(hitResult.getBlockPos(), state.getBlock())) {
+             setOutputPower(world, state, i, hitResult.getBlockPos(), j);
+         }

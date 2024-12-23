@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: ruViolence <78062896+ruViolence@users.noreply.github.com>
+Date: Tue, 27 Jun 2023 15:38:18 +0800
+Subject: [PATCH] Configurable entity tracking range by Y coordinate
+
+Options to configure entity tracking by Y coordinate, also for each entity category.
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 4d406ced4a1996b8883574ce0b785dc17370793b..e3c1015a5538ad74b9f109837df5916e6ce7e711 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1420,6 +1420,15 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 double d1 = vec3d.x * vec3d.x + vec3d.z * vec3d.z;
+                 double d2 = d0 * d0;
+                 boolean flag = d1 <= d2 && this.entity.broadcastToPlayer(player) && ChunkMap.this.isChunkTracked(player, this.entity.chunkPosition().x, this.entity.chunkPosition().z);
++                // Paper start - check Y
++                if (flag && level.paperConfig().entities.trackingRangeY.enabled) {
++                    double rangeY = level.paperConfig().entities.trackingRangeY.get(this.entity, -1);
++                    if (rangeY != -1) {
++                        double vec3d_dy = player.getY() - this.entity.getY();
++                        flag = vec3d_dy * vec3d_dy <= rangeY * rangeY;
++                    }
++                }
++                // Paper end - check Y
+ 
+                 // CraftBukkit start - respect vanish API
+                 if (!player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) {

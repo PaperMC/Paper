@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 23 Feb 2023 13:19:13 -0800
+Subject: [PATCH] Fix SpawnEggMeta#get/setSpawnedType
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
+index f4ae4f7b927679c58322f0ec582bb9a5f6c236ec..18b9dcdc2b4bfacd4705085c947a5204a7a3cca3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaSpawnEgg.java
+@@ -216,6 +216,31 @@ public class CraftMetaSpawnEgg extends CraftMetaItem implements SpawnEggMeta {
+         throw new UnsupportedOperationException("Must change item type to set spawned type");
+     }
+ 
++    // Paper start
++    @Override
++    public EntityType getCustomSpawnedType() {
++        return java.util.Optional.ofNullable(this.entityTag)
++            .map(tag -> tag.getString(ENTITY_ID.NBT))
++            .flatMap(net.minecraft.world.entity.EntityType::byString)
++            .map(org.bukkit.craftbukkit.util.CraftMagicNumbers::getEntityType)
++            .orElse(null);
++    }
++
++    @Override
++    public void setCustomSpawnedType(final EntityType type) {
++        if (type == null) {
++            if (this.entityTag != null) {
++                this.entityTag.remove(ENTITY_ID.NBT);
++            }
++        } else {
++            if (this.entityTag == null) {
++                this.entityTag = new CompoundTag();
++            }
++            this.entityTag.putString(ENTITY_ID.NBT, type.key().toString());
++        }
++    }
++    // Paper end
++
+     @Override
+     boolean equalsCommon(CraftMetaItem meta) {
+         if (!super.equalsCommon(meta)) {
