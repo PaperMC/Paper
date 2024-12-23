@@ -1,21 +1,19 @@
 package io.papermc.paper.registry;
 
+import com.google.common.base.Preconditions;
 import com.mojang.serialization.Lifecycle;
+import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.data.util.Conversions;
-import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
-import io.papermc.paper.registry.entry.RegistryTypeMapper;
 import io.papermc.paper.registry.event.WritableRegistry;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.RegistrationInfo;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.ApiVersion;
+import org.jspecify.annotations.Nullable;
 
 public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> extends CraftRegistry<T, M> {
 
@@ -33,10 +31,17 @@ public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBu
         this.meta = meta;
     }
 
-    public void register(final TypedKey<T> key, final Consumer<? super B> value, final Conversions conversions) {
+    public void register(final TypedKey<T> key, final @Nullable TypedKey<T> copyFrom, final Consumer<? super B> value, final Conversions conversions) {
         final ResourceKey<M> resourceKey = PaperRegistries.toNms(key);
         this.registry.validateWrite(resourceKey);
-        final B builder = this.newBuilder(conversions);
+        final B builder;
+        if (copyFrom != null) {
+            final M existing = this.registry.temporaryUnfrozenMap.get(PaperAdventure.asVanilla(copyFrom));
+            Preconditions.checkArgument(existing != null, "Cannot copy from unregistered key: %s", copyFrom);
+            builder = this.meta.builderFiller().fill(conversions, existing);
+        } else {
+            builder = this.meta.builderFiller().create(conversions);
+        }
         value.accept(builder);
         PaperRegistryListenerManager.INSTANCE.registerWithListeners(
             this.registry,
@@ -52,10 +57,6 @@ public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBu
         return new ApiWritableRegistry(conversions);
     }
 
-    protected B newBuilder(final Conversions conversions) {
-        return this.meta.builderFiller().create(conversions);
-    }
-
     public class ApiWritableRegistry implements WritableRegistry<T, B> {
 
         private final Conversions conversions;
@@ -66,7 +67,12 @@ public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBu
 
         @Override
         public void register(final TypedKey<T> key, final Consumer<? super B> value) {
-            WritableCraftRegistry.this.register(key, value, this.conversions);
+            WritableCraftRegistry.this.register(key, null, value, this.conversions);
+        }
+
+        @Override
+        public void register(final TypedKey<T> key, final TypedKey<T> copyFrom, final Consumer<? super B> value) {
+            WritableCraftRegistry.this.register(key, copyFrom, value, this.conversions);
         }
     }
 }
