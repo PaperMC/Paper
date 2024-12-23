@@ -11,34 +11,35 @@ import org.jetbrains.annotations.NotNull;
  * effects only determine the sound that plays.
  */
 @ApiStatus.Experimental
-public interface DamageEffect {
+public enum DamageEffect {
 
     /**
      * The default damage effect.
      */
-    public static final DamageEffect HURT = getDamageEffect("hurt");
+    HURT,
     /**
      * Thorns.
      */
-    public static final DamageEffect THORNS = getDamageEffect("thorns");
+    THORNS,
     /**
      * Drowning.
      */
-    public static final DamageEffect DROWNING = getDamageEffect("drowning");
+    DROWNING,
     /**
      * A single burn tick (fire, lava, etc.).
      */
-    public static final DamageEffect BURNING = getDamageEffect("burning");
+    BURNING,
     /**
      * Poked by a berry bush.
      */
-    public static final DamageEffect POKING = getDamageEffect("poking");
+    POKING,
     /**
      * Freeze tick (powder snow).
      */
-    public static final DamageEffect FREEZING = getDamageEffect("freezing");
+    FREEZING;
 
     @NotNull
+    @Deprecated
     private static DamageEffect getDamageEffect(@NotNull String key) {
         return Preconditions.checkNotNull(Bukkit.getUnsafe().getDamageEffect(key), "No DamageEffect found for %s. This is a bug.", key);
     }
@@ -49,5 +50,7 @@ public interface DamageEffect {
      * @return the sound
      */
     @NotNull
-    public Sound getSound();
+    public Sound getSound() {
+        return Bukkit.getUnsafe().getSoundForDamageEffect(this);
+    }
 }

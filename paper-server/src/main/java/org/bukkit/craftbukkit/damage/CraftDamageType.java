@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.damage;
 import com.google.common.base.Preconditions;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.damagesource.DamageEffects;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -95,6 +96,30 @@ public class CraftDamageType implements DamageType, Handleable<net.minecraft.wor
             case WHEN_CAUSED_BY_LIVING_NON_PLAYER -> net.minecraft.world.damagesource.DamageScaling.WHEN_CAUSED_BY_LIVING_NON_PLAYER;
             case NEVER -> net.minecraft.world.damagesource.DamageScaling.NEVER;
             default -> throw new IllegalArgumentException("Bukkit DamageScaling." + damageScaling + " cannot be converted to a NMS DamageScaling");
+        };
+    }
+
+    public static DamageEffect damageEffectToBukkit(DamageEffects damageEffect) {
+        return switch (damageEffect) {
+            case HURT -> DamageEffect.HURT;
+            case THORNS -> DamageEffect.THORNS;
+            case DROWNING -> DamageEffect.DROWNING;
+            case BURNING -> DamageEffect.BURNING;
+            case POKING -> DamageEffect.POKING;
+            case FREEZING -> DamageEffect.FREEZING;
+            default -> throw new IllegalArgumentException("NMS DamageEffect." + damageEffect + " cannot be converted to a Bukkit DamageEffect");
+        };
+    }
+
+    public static DamageEffects damageEffectToNMS(DamageEffect damageEffect) {
+        return switch (damageEffect) {
+            case DamageEffect.HURT -> DamageEffects.HURT;
+            case DamageEffect.THORNS -> DamageEffects.THORNS;
+            case DamageEffect.DROWNING -> DamageEffects.DROWNING;
+            case DamageEffect.BURNING -> DamageEffects.BURNING;
+            case DamageEffect.POKING -> DamageEffects.POKING;
+            case DamageEffect.FREEZING -> DamageEffects.FREEZING;
+            default -> throw new IllegalArgumentException("Bukkit DamageEffect." + damageEffect + " cannot be converted to a NMS DamageEffect");
         };
     }
 

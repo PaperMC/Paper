@@ -322,6 +322,15 @@ public interface UnsafeValues {
      * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultEntityAttributes(NamespacedKey)} first)
      */
     @org.jetbrains.annotations.NotNull org.bukkit.attribute.Attributable getDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
+
+    /**
+     * Get the {@link Sound} played for this {@link DamageEffect}
+     *
+     * @param damageEffect the damageEffect
+     * @return the sound
+     */
+    @ApiStatus.Internal
+    Sound getSoundForDamageEffect(@NotNull DamageEffect damageEffect);
     // Paper end
 
     // Paper start - namespaced key biome methods

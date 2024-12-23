@@ -481,6 +481,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
+    @Deprecated
     public DamageEffect getDamageEffect(String key) {
         Preconditions.checkArgument(key != null, "key cannot be null");
         return CraftDamageEffect.getById(key);
@@ -753,6 +754,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
             net.minecraft.world.item.Item.TooltipContext.of(player == null ? net.minecraft.server.MinecraftServer.getServer().registryAccess() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
             player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
         return lines.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).toList();
+    }
+
+    @Override
+    public org.bukkit.Sound getSoundForDamageEffect(DamageEffect damageEffect) {
+        Preconditions.checkArgument(damageEffect != null, "key cannot be null");
+        return  org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(org.bukkit.craftbukkit.damage.CraftDamageType.damageEffectToNMS(damageEffect).sound());
     }
     // Paper end
 
