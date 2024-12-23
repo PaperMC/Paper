@@ -297,7 +297,7 @@ index 0000000000000000000000000000000000000000..1b8193587814225c2ef2c5d9e667436e
 +    }
 +}
 diff --git a/ca/spottedleaf/moonrise/paper/PaperHooks.java b/ca/spottedleaf/moonrise/paper/PaperHooks.java
-index 5577287398db2bb9d21f14409ef580b8ab9ea018..4d344559a20a0c35c181e297e81788c747363ec9 100644
+index 22d44fda8057e9f01ae6e51162626957e81618eb..60d0f1d0dd17704e85d1cee610adbf3b950400ee 100644
 --- a/ca/spottedleaf/moonrise/paper/PaperHooks.java
 +++ b/ca/spottedleaf/moonrise/paper/PaperHooks.java
 @@ -268,7 +268,7 @@ public final class PaperHooks extends BaseChunkSystemHooks implements PlatformHo
@@ -26735,7 +26735,7 @@ index 70f6d068b3f3665b282d9750310c883839120ab2..870b9efd445ddadb3725e88351555ad9
          if (!passengers.equals(this.lastPassengers)) {
              this.broadcastAndSend(new ClientboundSetPassengersPacket(this.entity)); // CraftBukkit
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 192977dd661ee795ada13db895db770293e9b402..95a4e37a3c93f9b3c56c7a7376ed521cd46fbb6f 100644
+index ada8a27ac26773670c9cda8d84bdf096cf2b3d57..55469573bf4420a378fff33fa5410571f57bcccc 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -170,7 +170,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
@@ -26960,7 +26960,8 @@ index 192977dd661ee795ada13db895db770293e9b402..95a4e37a3c93f9b3c56c7a7376ed521c
 -        return player != null && player.level() == this ? player : null;
 +    public final ca.spottedleaf.moonrise.patches.chunk_system.player.RegionizedPlayerChunkLoader.ViewDistanceHolder moonrise$getViewDistanceHolder() {
 +        return this.viewDistanceHolder;
-+    }
+     }
+-    // Paper end - optimise getPlayerByUUID
 +
 +    @Override
 +    public final long moonrise$getLastMidTickFailure() {
@@ -26975,8 +26976,7 @@ index 192977dd661ee795ada13db895db770293e9b402..95a4e37a3c93f9b3c56c7a7376ed521c
 +    @Override
 +    public final ca.spottedleaf.moonrise.common.misc.NearbyPlayers moonrise$getNearbyPlayers() {
 +        return this.nearbyPlayers;
-     }
--    // Paper end - optimise getPlayerByUUID
++    }
 +
 +    @Override
 +    public final ca.spottedleaf.moonrise.common.list.ReferenceList<net.minecraft.server.level.ServerChunkCache.ChunkAndHolder> moonrise$getLoadedChunks() {
@@ -27495,6 +27495,19 @@ index 192977dd661ee795ada13db895db770293e9b402..95a4e37a3c93f9b3c56c7a7376ed521c
          return crashReportCategory;
      }
  
+@@ -2373,7 +2689,11 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+             // CraftBukkit end
+             // Paper start - fire if tracking ends without calling Entity#setRemoved
+             if (entity.getRemovalReason() == null) {
+-                new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld(), com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.UNKNOWN).callEvent();
++                com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause;
++                if (entity.moonrise$getChunkStatus() == FullChunkStatus.INACCESSIBLE) cause = com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.INACCESSIBLE;
++                else cause = com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.UNKNOWN;
++
++                new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld(), cause).callEvent();
+             }
+             // Paper end - fire if tracking ends without calling Entity#setRemoved
+         }
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
 index ff5889f8fed0707a6654d9d21862e32e2ebc866d..e61fe83479f095e8addbd3e8f1d5179c998ae1eb 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
@@ -27976,7 +27989,7 @@ index 4eb040006f5d41b47e5ac9df5d9f19c4315d6343..7fa41dea184b01891f45d8e404bc1cba
          this.generatingStep = generatingStep;
          this.cache = cache;
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index ff0315cffdb282fdc0a1ffd15e2954caa76835c9..5e94dd9e26aa4fd6545dbaae2ae0cb51cb6f13e0 100644
+index 5cd7e0a7ff60a1d801bdcac3818ba53100e76f64..2835e93f4ea77ec9020ab201e9e704f522599f2a 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
 @@ -1312,7 +1312,7 @@ public abstract class PlayerList {
@@ -28372,7 +28385,7 @@ index 8cc5c0716392ba06501542ff5cbe71ee43979e5d..09fd99c9cbd23b5f3c899bfb00c9b896
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 45f69a914d5a0565196c4105d61541047301470f..f42bdae2f80805e5069212bd16e3ab6814aef9ee 100644
+index 21761e320600ed1655ad8c46ea9240a900446edd..e7efbc3a5bc8fb07a99fa0dedb627c730e0fc431 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -135,7 +135,7 @@ import net.minecraft.world.scores.ScoreHolder;
@@ -29085,14 +29098,14 @@ index 45f69a914d5a0565196c4105d61541047301470f..f42bdae2f80805e5069212bd16e3ab68
 @@ -4603,6 +4908,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
  
      @Override
-     public final void setRemoved(Entity.RemovalReason removalReason, org.bukkit.event.entity.EntityRemoveEvent.Cause cause) {
+     public final void setRemoved(Entity.RemovalReason removalReason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) { // Paper - EntityRemoveFromWorldEvent
 +        // Paper start - rewrite chunk system
 +        if (!((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)this.level).moonrise$getEntityLookup().canRemoveEntity((Entity)(Object)this)) {
 +            LOGGER.warn("Entity " + this + " is currently prevented from being removed from the world since it is processing section status updates", new Throwable());
 +            return;
 +        }
 +        // Paper end - rewrite chunk system
-         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityRemoveEvent(this, cause);
+         org.bukkit.craftbukkit.event.CraftEventFactory.callEntityRemoveEvent(this, removalReason, cause);
          // CraftBukkit end
          final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
 @@ -4614,7 +4925,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -29353,7 +29366,7 @@ index 324cc0686f0f5b1371b2bbea5b8c8fdb1f363006..39cd1e3d8192d7077d6b7864d3393309
          this(setDirty, true, ImmutableList.of());
      }
 diff --git a/net/minecraft/world/entity/decoration/ArmorStand.java b/net/minecraft/world/entity/decoration/ArmorStand.java
-index 33f6d6862731d22d6d3eeb7cf39a4a42049afae3..a3cc0001a949597e345d7919c3f6109fa4a949ad 100644
+index 3c1e817bf6bd9a383e4b20dcc3a94efde094c4bd..656228e30bde2f3a839b2a0171522330f38c252f 100644
 --- a/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -316,7 +316,7 @@ public class ArmorStand extends LivingEntity {
@@ -29503,7 +29516,7 @@ index 300f3ed58109219d97846082941b860585f66fed..e81195df621159da67136f020fa7a6d3
  
      // Paper start - Affects Spawning API
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 771d6ed6a7c889c09efd4ff6e20298c851eaa79f..8331b49185500ab3b4307e9ae05126b4f83a318a 100644
+index 6b81142c52cbef6f31606b0f33bafd2443d3f7f3..00900f0b87e0c183d681fed540bf75772a46a774 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -79,6 +79,7 @@ import net.minecraft.world.level.storage.LevelData;
@@ -30216,7 +30229,7 @@ index 771d6ed6a7c889c09efd4ff6e20298c851eaa79f..8331b49185500ab3b4307e9ae05126b4
          }
          this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
 @@ -865,6 +1505,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-             entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
+             entity.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DISCARD); // Paper - EntityRemoveFromWorldEvent
              // Paper end - Prevent block entity and entity crashes
          }
 +        this.moonrise$midTickTasks(); // Paper - rewrite chunk system
@@ -32481,7 +32494,7 @@ index 7a64b00ff31d1273d0b0b9a3cfd43808c88ef46a..c9d8a1c0a75c34ccd9f5cead02cccd77
          this.chunkType = chunkType;
          this.heightmapsAfter = heightmapsAfter;
 diff --git a/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java b/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
-index c953bc93de8a42bcc12b7e8f46b3ae804e54964e..2ccbdfdcf81556306e098277ecf119d5fd02138c 100644
+index 617750597ee21020aae0439b1c48aa6fbd62c760..c44a3628f63e1c3ad3c8fbba67999163eb3b2e55 100644
 --- a/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 +++ b/net/minecraft/world/level/chunk/status/ChunkStatusTasks.java
 @@ -182,7 +182,7 @@ public class ChunkStatusTasks {

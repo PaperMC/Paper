@@ -174,7 +174,7 @@
              item.shrink(itemStack.getCount());
              if (item.isEmpty()) {
 -                entity.discard();
-+                entity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++                entity.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PICKUP); // Paper - EntityRemoveFromWorldEvent
              }
          }
      }
@@ -214,7 +214,7 @@
      public void checkDespawn() {
          if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.shouldDespawnInPeaceful()) {
 -            this.discard();
-+            this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++            this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // Paper - EntityRemoveFromWorldEvent
          } else if (!this.isPersistenceRequired() && !this.requiresCustomPersistence()) {
 -            Entity nearestPlayer = this.level().getNearestPlayer(this, -1.0);
 +            Entity nearestPlayer = this.level().findNearbyPlayer(this, -1.0, EntitySelector.PLAYER_AFFECTS_SPAWNING); // Paper - Affects Spawning API
@@ -224,7 +224,6 @@
 -                int i = despawnDistance * despawnDistance;
 -                if (d > i && this.removeWhenFarAway(d)) {
 -                    this.discard();
--                }
 +                // Paper start - Configurable despawn distances
 +                final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
 +                final io.papermc.paper.configuration.type.DespawnRange.Shape shape = this.level().paperConfig().entities.spawning.despawnRangeShape;
@@ -235,8 +234,8 @@
 +                final double distanceSquared = dxSqr + dzSqr + dySqr;
 +                // Despawn if hard/soft limit is exceeded
 +                if (despawnRangePair.hard().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy) && this.removeWhenFarAway(distanceSquared)) {
-+                    this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
-+                 }
++                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // Paper - EntityRemoveFromWorldEvent
+                 }
  
 -                int noDespawnDistance = this.getType().getCategory().getNoDespawnDistance();
 -                int i1 = noDespawnDistance * noDespawnDistance;
@@ -245,7 +244,7 @@
 -                } else if (d < i1) {
 +                if (despawnRangePair.soft().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy)) {
 +                    if (this.noActionTime > 600 && this.random.nextInt(800) == 0 && this.removeWhenFarAway(distanceSquared)) {
-+                        this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
++                        this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN); // Paper - EntityRemoveFromWorldEvent
 +                    }
 +                } else {
 +                    // Paper end - Configurable despawn distances
@@ -372,7 +371,7 @@
  
                  if (conversionParams.type().shouldDiscardAfterConversion()) {
 -                    this.discard();
-+                    this.discard(EntityRemoveEvent.Cause.TRANSFORMATION); // CraftBukkit - add Bukkit remove cause
++                    this.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.TRANSFORMATION); // Paper - EntityRemoveFromWorldEvent
                  }
  
                  return mob;

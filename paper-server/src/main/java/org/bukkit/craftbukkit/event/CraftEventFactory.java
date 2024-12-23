@@ -2173,21 +2173,33 @@ public class CraftEventFactory {
     }
     // Paper end - replace knockback events
 
-    public static void callEntityRemoveEvent(Entity entity, EntityRemoveEvent.Cause cause) {
-        if (entity instanceof ServerPlayer) {
-            return; // Don't call for player
-        }
+    public static void callEntityRemoveEvent(Entity entity, Entity.RemovalReason removalReason, com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause cause) {
+        if (entity.generation) return;
 
         if (cause == null) {
-            // Don't call if cause is null
-            // This can happen when an entity changes dimension,
-            // the entity gets removed during world gen or
-            // the entity is removed before it is even spawned (when the spawn event is cancelled for example)
-            return;
+            cause = switch (removalReason) {
+                case KILLED -> com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DEATH;
+                case DISCARDED -> com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DISCARD;
+                case UNLOADED_TO_CHUNK -> com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.UNLOAD;
+                case UNLOADED_WITH_PLAYER -> com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.PLAYER_QUIT;
+                case CHANGED_DIMENSION -> com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.CHANGED_DIMENSION;
+            };
         }
 
-        Bukkit.getPluginManager().callEvent(new EntityRemoveEvent(entity.getBukkitEntity(), cause));
+        EntityRemoveEvent.Cause legacyCause;
+        try {
+            legacyCause = EntityRemoveEvent.Cause.valueOf(cause.name());
+        } catch (IllegalArgumentException e) {
+            legacyCause = null;
+        }
+
+        if (!(entity instanceof ServerPlayer) && legacyCause != null) {
+            Bukkit.getPluginManager().callEvent(new EntityRemoveEvent(entity.getBukkitEntity(), legacyCause));
+        }
+
+        new com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent(entity.getBukkitEntity(), entity.level().getWorld(), cause).callEvent();
     }
+
     // Paper start - PlayerUseUnknownEntityEvent
     public static void callPlayerUseUnknownEntityEvent(net.minecraft.world.entity.player.Player player, net.minecraft.network.protocol.game.ServerboundInteractPacket packet, InteractionHand hand, @Nullable net.minecraft.world.phys.Vec3 vector) {
         new com.destroystokyo.paper.event.player.PlayerUseUnknownEntityEvent(

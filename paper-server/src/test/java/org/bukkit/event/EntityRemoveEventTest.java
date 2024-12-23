@@ -29,7 +29,7 @@ public class EntityRemoveEventTest {
 
         for (MethodNode methodNode : classNode.methods) {
             if (methodNode.name.equals("remove") && methodNode.desc.contains("Lnet/minecraft/world/entity/Entity$RemovalReason;")) {
-                if (methodNode.desc.contains("Lorg/bukkit/event/entity/EntityRemoveEvent$Cause;")) {
+                if (methodNode.desc.contains("Lcom/destroystokyo/paper/event/entity/EntityRemoveFromWorldEvent$Cause;")) {
                     bukkitCause = true;
                 } else {
                     minecraftCause = true;
@@ -98,7 +98,7 @@ public class EntityRemoveEventTest {
             }
         }
 
-        if (desc.contains("Lorg/bukkit/event/entity/EntityRemoveEvent$Cause;")) {
+        if (desc.contains("Lcom/destroystokyo/paper/event/entity/EntityRemoveFromWorldEvent$Cause;")) {
             return false;
         }
 
