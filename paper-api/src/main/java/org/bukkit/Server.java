@@ -2472,8 +2472,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     Spigot spigot();
     // Spigot end
 
+    /**
+     * @since 1.9.4
+     */
     void reloadPermissions(); // Paper
 
+    /**
+     * @since 1.11
+     */
     boolean reloadCommandAliases(); // Paper
 
     // Paper start - allow preventing player name suggestions by default
