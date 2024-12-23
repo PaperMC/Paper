@@ -1,6 +1,6 @@
 --- a/net/minecraft/core/MappedRegistry.java
 +++ b/net/minecraft/core/MappedRegistry.java
-@@ -33,11 +_,11 @@
+@@ -33,17 +_,18 @@
  public class MappedRegistry<T> implements WritableRegistry<T> {
      private final ResourceKey<? extends Registry<T>> key;
      private final ObjectList<Holder.Reference<T>> byId = new ObjectArrayList<>(256);
@@ -17,6 +17,29 @@
      private Lifecycle registryLifecycle;
      private final Map<TagKey<T>, HolderSet.Named<T>> frozenTags = new IdentityHashMap<>();
      MappedRegistry.TagSet<T> allTags = MappedRegistry.TagSet.unbound();
+     private boolean frozen;
+     @Nullable
+     private Map<T, Holder.Reference<T>> unregisteredIntrusiveHolders;
++    public final Map<ResourceLocation, T> temporaryUnfrozenMap = new HashMap<>(); // Paper - support pre-filling in registry mod API
+ 
+     @Override
+     public Stream<HolderSet.Named<T>> listTags() {
+@@ -114,6 +_,7 @@
+             this.toId.put(value, size);
+             this.registrationInfos.put(key, registrationInfo);
+             this.registryLifecycle = this.registryLifecycle.add(registrationInfo.lifecycle());
++            this.temporaryUnfrozenMap.put(key.location(), value); // Paper - support pre-filling in registry mod API
+             return reference;
+         }
+     }
+@@ -275,6 +_,7 @@
+             return this;
+         } else {
+             this.frozen = true;
++            this.temporaryUnfrozenMap.clear(); // Paper - support pre-filling in registry mod API
+             this.byValue.forEach((object, reference) -> reference.bindValue((T)object));
+             List<ResourceLocation> list = this.byKey
+                 .entrySet()
 @@ -509,4 +_,13 @@
  
          Stream<HolderSet.Named<T>> getTags();
