@@ -1,0 +1,94 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: derverdox <mail.ysp@web.de>
+Date: Thu, 21 Mar 2024 16:54:14 +0100
+Subject: [PATCH] - Adding PredicateChoice
+
+
+diff --git a/src/main/java/org/bukkit/inventory/PredicateChoiceImpl.java b/src/main/java/org/bukkit/inventory/PredicateChoiceImpl.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..927917f9a875595e2ff0626cbda03a08b7e6e166
+--- /dev/null
++++ b/src/main/java/org/bukkit/inventory/PredicateChoiceImpl.java
+@@ -0,0 +1,38 @@
++package org.bukkit.inventory;
++
++import org.jetbrains.annotations.NotNull;
++import java.util.List;
++import java.util.function.Predicate;
++
++/**
++ * Package private implementation for {@link org.bukkit.inventory.RecipeChoice.PredicateChoice}
++ * @param predicate - The Item predicate
++ * @param choices - The recipe book choices
++ */
++record PredicateChoiceImpl(Predicate<ItemStack> predicate, List<ItemStack> choices) implements RecipeChoice.PredicateChoice {
++    @Override
++    public @NotNull ItemStack getItemStack() {
++        ItemStack stack = new ItemStack(choices.get(0));
++        // For compat
++        if (choices.size() > 1) {
++            stack.setDurability(Short.MAX_VALUE);
++            return stack;
++        }
++        return stack;
++    }
++
++    @Override
++    public @NotNull RecipeChoice clone() {
++        return new PredicateChoiceImpl(predicate, recipeBookExamples());
++    }
++
++    @Override
++    public boolean test(@NotNull final ItemStack itemStack) {
++        return predicate.test(itemStack);
++    }
++
++    @Override
++    public List<ItemStack> recipeBookExamples() {
++        return List.copyOf(choices);
++    }
++}
+diff --git a/src/main/java/org/bukkit/inventory/RecipeChoice.java b/src/main/java/org/bukkit/inventory/RecipeChoice.java
+index db8bcc66bdc4bedfffb4705db6338eda4c0ad29a..e331040030c484ad63444a0ee4e42790d639115e 100644
+--- a/src/main/java/org/bukkit/inventory/RecipeChoice.java
++++ b/src/main/java/org/bukkit/inventory/RecipeChoice.java
+@@ -233,4 +233,39 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+             return "ExactChoice{" + "choices=" + choices + '}';
+         }
+     }
++    // Paper start - Adding PredicateChoice
++    /**
++     * Represents a choice that matches when the item predicate is fulfilled.
++     */
++
++    interface PredicateChoice extends RecipeChoice {
++        static PredicateChoice create(@NotNull Predicate<ItemStack> predicate, ItemStack... recipeBookExamples){
++            Objects.requireNonNull(predicate, "The item predicate cannot be null!");
++            Objects.requireNonNull(predicate, "The mustHaveRecipeBookExample cannot be null!");
++            if(recipeBookExamples.length == 0)
++                throw new IllegalArgumentException("Please provide at least one recipe book example item!");
++            return new PredicateChoiceImpl(predicate, List.of(recipeBookExamples));
++        }
++
++        static PredicateChoice create(@NotNull Predicate<ItemStack> predicate, java.util.Collection<ItemStack> recipeBookExamples){
++            Objects.requireNonNull(predicate, "The item predicate cannot be null!");
++            Objects.requireNonNull(predicate, "The mustHaveRecipeBookExample cannot be null!");
++            if(recipeBookExamples.isEmpty())
++                throw new IllegalArgumentException("Please provide at least one recipe book example item!");
++            return new PredicateChoiceImpl(predicate, List.copyOf(recipeBookExamples));
++        }
++
++        /**
++         * Returns the Item predicate
++         * @return - The item predicate
++         */
++        Predicate<ItemStack> predicate();
++
++        /**
++         *
++         * @return
++         */
++        List<ItemStack> recipeBookExamples();
++    }
++    // Paper end - Adding PredicateChoice
+ }
