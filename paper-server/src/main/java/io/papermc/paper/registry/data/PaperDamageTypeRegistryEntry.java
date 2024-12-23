@@ -3,6 +3,7 @@ package io.papermc.paper.registry.data;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.util.Conversions;
 import net.minecraft.world.damagesource.*;
+import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageType;
 import org.bukkit.damage.DamageEffect;
 import org.jspecify.annotations.Nullable;
@@ -49,7 +50,7 @@ public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
 
     @Override
     public @Nullable DamageEffect damageEffect() {
-        return damageEffects == null ? null : CraftDamageType.damageEffectToBukkit(damageEffects);
+        return damageEffects == null ? null : CraftDamageEffect.toBukkit(damageEffects);
     }
 
     @Override
@@ -83,7 +84,7 @@ public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
 
         @Override
         public Builder damageEffect(@Nullable DamageEffect effect) {
-            this.damageEffects = effect == null ? null : CraftDamageType.damageEffectToNMS(effect);
+            this.damageEffects = effect == null ? null : ((CraftDamageEffect) effect).getHandle();
             return this;
         }
 

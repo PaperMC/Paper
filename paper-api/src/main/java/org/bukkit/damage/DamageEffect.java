@@ -1,6 +1,7 @@
 package org.bukkit.damage;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.StaticUnsafeValues;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.jetbrains.annotations.ApiStatus;
@@ -40,7 +41,7 @@ public interface DamageEffect {
 
     @NotNull
     private static DamageEffect getDamageEffect(@NotNull String key) {
-        return Preconditions.checkNotNull(Bukkit.getUnsafe().getDamageEffect(key), "No DamageEffect found for %s. This is a bug.", key);
+        return Preconditions.checkNotNull(StaticUnsafeValues.getProvider().getDamageEffect(key), "No DamageEffect found for %s. This is a bug.", key);
     }
 
     /**
