@@ -1,0 +1,166 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sun, 10 Apr 2022 11:03:15 -0700
+Subject: [PATCH] Fix cancelling PlayerDropItemEvent for carried items
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 1d4d02f26391ac55c7631817f09d05e2769b0d29..e5f90e0240ab65c7c7bbf72379cd0020fed3078e 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -2279,8 +2279,8 @@ public class ServerPlayer extends Player {
+     }
+ 
+     @Override
+-    public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership) {
+-        ItemEntity entityitem = super.drop(stack, throwRandomly, retainOwnership);
++    public ItemEntity drop(ItemStack stack, boolean throwRandomly, boolean retainOwnership, boolean callEvent, boolean carried) { // Paper - override proper method
++        ItemEntity entityitem = super.drop(stack, throwRandomly, retainOwnership, callEvent, carried); // Paper
+ 
+         if (entityitem == null) {
+             return null;
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 4d837c1530a3031a4c2a5a39d87bd013d60e14a6..f90ff422c8d11200fa77964e6e01610ad9ae0897 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -607,7 +607,7 @@ public abstract class PlayerList {
+         if (!entityplayer.containerMenu.getCarried().isEmpty()) {
+             net.minecraft.world.item.ItemStack carried = entityplayer.containerMenu.getCarried();
+             entityplayer.containerMenu.setCarried(net.minecraft.world.item.ItemStack.EMPTY);
+-            entityplayer.drop(carried, false);
++            entityplayer.drop(carried, false, false, true, true); // Paper
+         }
+         // Paper end
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/player/Inventory.java b/src/main/java/net/minecraft/world/entity/player/Inventory.java
+index 27c028ab6b1edb6e413af3bbaa27bf30f2d85540..2567d4ab53226624bed2c363e4e57e442abb3b87 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Inventory.java
++++ b/src/main/java/net/minecraft/world/entity/player/Inventory.java
+@@ -395,6 +395,12 @@ public class Inventory implements Container, Nameable {
+     }
+ 
+     public void placeItemBackInInventory(ItemStack stack, boolean notifiesClient) {
++        // Paper start
++        this.placeItemBackInInventory(stack, notifiesClient, false);
++    }
++
++    public void placeItemBackInInventory(final ItemStack stack, final boolean notifiesClient, final boolean isCarried) {
++        // Paper end
+         while (true) {
+             if (!stack.isEmpty()) {
+                 int i = this.getSlotWithRemainingSpace(stack);
+@@ -412,7 +418,7 @@ public class Inventory implements Container, Nameable {
+                     continue;
+                 }
+ 
+-                this.player.drop(stack, false);
++                this.player.drop(stack, false, false, true, isCarried); // Paper
+             }
+ 
+             return;
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 0629c471d38a77c44fc1c86ccdfcb0690f61ca17..5e2d0bbe98d1d23471e076aece3357ff2b21d3cd 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -719,6 +719,13 @@ public abstract class Player extends LivingEntity {
+ 
+     @Nullable
+     public ItemEntity drop(ItemStack itemstack, boolean flag, boolean flag1, boolean callEvent) {
++        // Paper start
++        return this.drop(itemstack, flag, flag1, callEvent, false);
++    }
++
++    @Nullable
++    public ItemEntity drop(ItemStack itemstack, boolean flag, boolean flag1, boolean callEvent, boolean carried) { // flag=throwRandomly flag1=retainOwnership
++        // Paper end
+         // CraftBukkit end
+         if (itemstack.isEmpty()) {
+             return null;
+@@ -730,7 +737,7 @@ public abstract class Player extends LivingEntity {
+             double d0 = this.getEyeY() - 0.30000001192092896D;
+             // Paper start
+             ItemStack tmp = itemstack.copy();
+-            itemstack.setCount(0);
++            ItemStack initialDrop = itemstack; // Paper - save initial drop, clear later
+             itemstack = tmp;
+             // Paper end
+             ItemEntity entityitem = new ItemEntity(this.level, this.getX(), d0, this.getZ(), itemstack);
+@@ -761,6 +768,7 @@ public abstract class Player extends LivingEntity {
+ 
+             // CraftBukkit start - fire PlayerDropItemEvent
+             if (!callEvent) { // SPIGOT-2942: Add boolean to call event
++                initialDrop.setCount(0); // Paper
+                 return entityitem;
+             }
+             org.bukkit.entity.Player player = (org.bukkit.entity.Player) this.getBukkitEntity();
+@@ -770,6 +778,17 @@ public abstract class Player extends LivingEntity {
+             this.level.getCraftServer().getPluginManager().callEvent(event);
+ 
+             if (event.isCancelled()) {
++                // Paper start
++                if (carried && !((ServerPlayer) this).hasDisconnected()) { // Don't reset to carried item if this is during a disconnect
++                    if (this.containerMenu.getCarried().isEmpty()) {
++                        this.containerMenu.setCarried(initialDrop);
++                    } else if (this.containerMenu.getCarried().is(initialDrop.getItem()) && initialDrop.getCount() == 1) {
++                        this.containerMenu.getCarried().grow(1);
++                        initialDrop.setCount(0);
++                    }
++                    return null;
++                }
++                // Paper end
+                 org.bukkit.inventory.ItemStack cur = player.getInventory().getItemInHand();
+                 if (flag1 && (cur == null || cur.getAmount() == 0)) {
+                     // The complete stack was dropped
+@@ -780,8 +799,14 @@ public abstract class Player extends LivingEntity {
+                     player.getInventory().setItemInHand(cur);
+                 } else {
+                     // Fallback
+-                    player.getInventory().addItem(drop.getItemStack());
++                    // Paper start
++                    final Map<Integer, org.bukkit.inventory.ItemStack> overflow = player.getInventory().addItem(drop.getItemStack());
++                    if (!overflow.isEmpty()) {
++                        event.getOverflowConsumer().accept(overflow.get(0));
++                    }
++                    // Paper end
+                 }
++                initialDrop.setCount(0); // Paper
+                 return null;
+             }
+             // CraftBukkit end
+@@ -794,6 +819,7 @@ public abstract class Player extends LivingEntity {
+             }
+             // Paper end
+ 
++            initialDrop.setCount(0); // Paper
+             return entityitem;
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index c84908095a93d42826b21bf5f3490410fb0a5708..8ffb0c21c7b014b2480a5b5cdc9a106dd920f6b0 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -520,10 +520,10 @@ public abstract class AbstractContainerMenu {
+                             // CraftBukkit start
+                             ItemStack carried = this.getCarried();
+                             this.setCarried(ItemStack.EMPTY);
+-                            player.drop(carried, true);
++                            player.drop(carried, false, true, true, true); // Paper
+                             // CraftBukkit start
+                         } else {
+-                            player.drop(this.getCarried().split(1), true);
++                            player.drop(this.getCarried().split(1), false, true, true, true); // Paper
+                         }
+                     }
+                 } else if (actionType == ClickType.QUICK_MOVE) {
+@@ -708,9 +708,9 @@ public abstract class AbstractContainerMenu {
+             if (!itemstack.isEmpty()) {
+                 this.setCarried(ItemStack.EMPTY); // CraftBukkit - SPIGOT-4556 - from below
+                 if (player.isAlive() && !((ServerPlayer) player).hasDisconnected()) {
+-                    player.getInventory().placeItemBackInInventory(itemstack);
++                    player.getInventory().placeItemBackInInventory(itemstack, true, true); // Paper
+                 } else {
+-                    player.drop(itemstack, false);
++                    player.drop(itemstack, false, false, true, true); // Paper
+                 }
+ 
+                 // this.setCarried(ItemStack.EMPTY); // CraftBukkit - moved up

@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 15 Apr 2023 17:11:01 -0700
+Subject: [PATCH] Fix cancelling PlayerDropItemEvent for carried items
+
+
+diff --git a/src/main/java/org/bukkit/event/player/PlayerDropItemEvent.java b/src/main/java/org/bukkit/event/player/PlayerDropItemEvent.java
+index aca500f32e2ae69095a1abce9f14a164df442638..6eb9c12d225a9bea0d2c79dce62670f5e2438416 100644
+--- a/src/main/java/org/bukkit/event/player/PlayerDropItemEvent.java
++++ b/src/main/java/org/bukkit/event/player/PlayerDropItemEvent.java
+@@ -8,11 +8,15 @@ import org.jetbrains.annotations.NotNull;
+ 
+ /**
+  * Thrown when a player drops an item from their inventory
++ * <p>
++ * Look at the documentation of {@link #setOverflowConsumer(java.util.function.Consumer)} for important
++ * information regarding cancelling of this event.
+  */
+ public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
+     private static final HandlerList handlers = new HandlerList();
+     private final Item drop;
+     private boolean cancel = false;
++    private java.util.function.Consumer<org.bukkit.inventory.ItemStack> overflowConsumer = stack -> stack.setAmount(0); // Paper
+ 
+     public PlayerDropItemEvent(@NotNull final Player player, @NotNull final Item drop) {
+         super(player);
+@@ -29,6 +33,23 @@ public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
+         return drop;
+     }
+ 
++    /**
++     * In certain cases, when this is event is cancelled via {@link #setCancelled(boolean)}, the
++     * server is unable to handle cancelling the event. An example of this might be canceling the
++     * event when the player is logging off with an itemstack in their cursor that doesn't stack with
++     * any itemstack in their inventory.
++     *
++     * @param overflowConsumer the consumer for any overflow stacks
++     */
++    public void setOverflowConsumer(final java.util.function.@NotNull Consumer<org.bukkit.inventory.@NotNull ItemStack> overflowConsumer) {
++        this.overflowConsumer = overflowConsumer;
++    }
++
++    @org.jetbrains.annotations.ApiStatus.Internal
++    public java.util.function.@NotNull Consumer<org.bukkit.inventory.@NotNull ItemStack> getOverflowConsumer() {
++        return this.overflowConsumer;
++    }
++
+     @Override
+     public boolean isCancelled() {
+         return cancel;
