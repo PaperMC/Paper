@@ -481,7 +481,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    @Deprecated
+    @Deprecated // Paper
     public DamageEffect getDamageEffect(String key) {
         Preconditions.checkArgument(key != null, "key cannot be null");
         return CraftDamageEffect.getById(key);

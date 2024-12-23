@@ -3,7 +3,6 @@ package org.bukkit.craftbukkit.damage;
 import com.google.common.base.Preconditions;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.damagesource.DamageEffects;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -99,7 +98,8 @@ public class CraftDamageType implements DamageType, Handleable<net.minecraft.wor
         };
     }
 
-    public static DamageEffect damageEffectToBukkit(DamageEffects damageEffect) {
+    // Paper start
+    public static DamageEffect damageEffectToBukkit(net.minecraft.world.damagesource.DamageEffects damageEffect) {
         return switch (damageEffect) {
             case HURT -> DamageEffect.HURT;
             case THORNS -> DamageEffect.THORNS;
@@ -111,17 +111,18 @@ public class CraftDamageType implements DamageType, Handleable<net.minecraft.wor
         };
     }
 
-    public static DamageEffects damageEffectToNMS(DamageEffect damageEffect) {
+    public static net.minecraft.world.damagesource.DamageEffects damageEffectToNMS(DamageEffect damageEffect) {
         return switch (damageEffect) {
-            case DamageEffect.HURT -> DamageEffects.HURT;
-            case DamageEffect.THORNS -> DamageEffects.THORNS;
-            case DamageEffect.DROWNING -> DamageEffects.DROWNING;
-            case DamageEffect.BURNING -> DamageEffects.BURNING;
-            case DamageEffect.POKING -> DamageEffects.POKING;
-            case DamageEffect.FREEZING -> DamageEffects.FREEZING;
+            case DamageEffect.HURT -> net.minecraft.world.damagesource.DamageEffects.HURT;
+            case DamageEffect.THORNS -> net.minecraft.world.damagesource.DamageEffects.THORNS;
+            case DamageEffect.DROWNING -> net.minecraft.world.damagesource.DamageEffects.DROWNING;
+            case DamageEffect.BURNING -> net.minecraft.world.damagesource.DamageEffects.BURNING;
+            case DamageEffect.POKING -> net.minecraft.world.damagesource.DamageEffects.POKING;
+            case DamageEffect.FREEZING -> net.minecraft.world.damagesource.DamageEffects.FREEZING;
             default -> throw new IllegalArgumentException("Bukkit DamageEffect." + damageEffect + " cannot be converted to a NMS DamageEffect");
         };
     }
+    // Paper end
 
     public static DamageType minecraftHolderToBukkit(Holder<net.minecraft.world.damagesource.DamageType> minecraftHolder) {
         return CraftDamageType.minecraftToBukkit(minecraftHolder.value());
