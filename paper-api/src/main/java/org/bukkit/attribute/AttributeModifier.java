@@ -165,9 +165,6 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
         return data;
     }
 
-    /**
-     * @since 1.13.1
-     */
     @Override
     public boolean equals(Object other) {
         if (!(other instanceof AttributeModifier)) {
@@ -178,9 +175,6 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
         return this.key.equals(mod.key) && this.amount == mod.amount && this.operation == mod.operation && slots;
     }
 
-    /**
-     * @since 1.13.1
-     */
     @Override
     public int hashCode() {
         int hash = 5;
@@ -191,9 +185,6 @@ public class AttributeModifier implements ConfigurationSerializable, Keyed {
         return hash;
     }
 
-    /**
-     * @since 1.13.1
-     */
     @Override
     public String toString() {
         return "AttributeModifier{"

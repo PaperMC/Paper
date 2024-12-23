@@ -535,9 +535,6 @@ public abstract class Command {
         }
     }
 
-    /**
-     * @since 1.3.2 R3.0
-     */
     @Override
     public String toString() {
         return getClass().getName() + '(' + name + ')';

@@ -94,9 +94,6 @@ public class RegisteredListener {
         return this.executor;
     }
 
-    /**
-     * @since 1.19.2
-     */
     @Override
     public String toString() {
         return "RegisteredListener{"

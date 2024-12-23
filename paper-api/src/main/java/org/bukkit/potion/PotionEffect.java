@@ -383,9 +383,6 @@ public class PotionEffect implements ConfigurationSerializable {
         return hash;
     }
 
-    /**
-     * @since 1.4.5 R1.0
-     */
     @Override
     public String toString() {
         return "PotionEffect{" + "amplifier=" + amplifier + ", duration=" + duration + ", type=" + type + ", ambient=" + ambient + ", particles=" + particles + ", icon=" + icon + ", hiddenEffect=" + hiddenEffect + '}'; // Paper

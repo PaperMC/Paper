@@ -578,9 +578,6 @@ public class ParticleBuilder implements Cloneable {
         return this.data(new Particle.DustTransition(fromColor, toColor, size));
     }
 
-    /**
-     * @since 1.20.4
-     */
     @Override
     public ParticleBuilder clone() {
         try {

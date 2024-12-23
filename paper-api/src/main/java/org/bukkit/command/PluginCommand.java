@@ -161,9 +161,6 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
         return completions;
     }
 
-    /**
-     * @since 1.3.2 R3.0
-     */
     @Override
     public String toString() {
         StringBuilder stringBuilder = new StringBuilder(super.toString());
