@@ -83,11 +83,13 @@ public class BukkitBrigForwardingMap extends HashMap<String, Command> {
             return null;
         }
 
-        if (node instanceof BukkitCommandNode bukkitCommandNode) {
-            return bukkitCommandNode.getBukkitCommand();
+        if (node.wrappedBukkitCommandCached != null) {
+            return node.wrappedBukkitCommandCached;
         }
 
-        return PaperBrigadier.wrapNode(node);
+        Command bukkitCommand = PaperBrigadier.wrapNode(node);
+        node.wrappedBukkitCommandCached = bukkitCommand;
+        return bukkitCommand;
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
