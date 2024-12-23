@@ -3,6 +3,7 @@ package org.bukkit.entity;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import io.papermc.paper.entity.LookAnchor;
 import org.bukkit.Chunk; // Paper
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
@@ -159,7 +160,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param z z coordinate
      * @param entityAnchor What part of the entity should face the given position
      */
-    void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor);
+    void lookAt(double x, double y, double z, @NotNull LookAnchor entityAnchor);
 
     /**
      * Causes the entity to look towards the given position.
@@ -167,7 +168,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param position Position to look at in the player's current world
      * @param entityAnchor What part of the entity should face the given position
      */
-    default void lookAt(@NotNull io.papermc.paper.math.Position position, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor) {
+    default void lookAt(@NotNull io.papermc.paper.math.Position position, @NotNull LookAnchor entityAnchor) {
         this.lookAt(position.x(), position.y(), position.z(), entityAnchor);
     }
     // Paper end - Teleport API

@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import io.papermc.paper.entity.LookAnchor;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -300,21 +301,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public void lookAt(double x, double y, double z, io.papermc.paper.entity.LookAnchor entityAnchor) {
+    public void lookAt(double x, double y, double z, LookAnchor entityAnchor) {
         this.getHandle().lookAt(toNmsAnchor(entityAnchor), new net.minecraft.world.phys.Vec3(x, y, z));
     }
 
-    public static net.minecraft.commands.arguments.EntityAnchorArgument.Anchor toNmsAnchor(io.papermc.paper.entity.LookAnchor nmsAnchor) {
+    public static net.minecraft.commands.arguments.EntityAnchorArgument.Anchor toNmsAnchor(LookAnchor nmsAnchor) {
         return switch (nmsAnchor) {
             case EYES -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES;
             case FEET -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.FEET;
         };
     }
 
-    public static io.papermc.paper.entity.LookAnchor toApiAnchor(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor playerAnchor) {
+    public static LookAnchor toApiAnchor(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor playerAnchor) {
         return switch (playerAnchor) {
-            case EYES -> io.papermc.paper.entity.LookAnchor.EYES;
-            case FEET -> io.papermc.paper.entity.LookAnchor.FEET;
+            case EYES -> LookAnchor.EYES;
+            case FEET -> LookAnchor.FEET;
         };
     }
 

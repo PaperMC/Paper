@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import io.papermc.paper.entity.LookAnchor;
 import org.bukkit.BanEntry;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
@@ -3737,7 +3738,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param playerAnchor What part of the player should face the entity
      * @param entityAnchor What part of the entity the player should face
      */
-    void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor);
+    void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull LookAnchor playerAnchor, @NotNull LookAnchor entityAnchor);
     // Paper end - Teleport API
 
     // Paper start
