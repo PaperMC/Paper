@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.util.Holderable;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -97,7 +98,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         // Paper start - support direct Holders
         final java.util.Optional<ResourceKey<M>> resourceKey = registry.getResourceKey(minecraft);
         if (resourceKey.isEmpty() && bukkitRegistry instanceof final CraftRegistry<?, ?> craftRegistry && craftRegistry.supportsDirectHolders()) {
-            return ((CraftRegistry<B, M>) registry).convertDirectHolder(Holder.direct(minecraft));
+            return ((CraftRegistry<B, M>) bukkitRegistry).convertDirectHolder(Holder.direct(minecraft));
         } else if (resourceKey.isEmpty()) {
             throw new IllegalStateException(String.format("Cannot convert '%s' to bukkit representation, since it is not registered.", minecraft));
         }
@@ -206,6 +207,9 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     public CraftRegistry(Class<?> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, BiFunction<? super NamespacedKey, M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater) { // Paper - relax preload class
         // Paper start - switch to Holder
         this(bukkitClass, minecraftRegistry, new io.papermc.paper.registry.entry.RegistryTypeMapper<>(minecraftToBukkit), serializationUpdater);
+    }
+    public CraftRegistry(final RegistryEntryMeta.ServerSide<M, B> meta, final net.minecraft.core.Registry<M> minecraftRegistry) {
+        this(meta.classToPreload(), minecraftRegistry, meta.registryTypeMapper(), meta.serializationUpdater());
     }
     public CraftRegistry(Class<?> bukkitClass, net.minecraft.core.Registry<M> minecraftRegistry, io.papermc.paper.registry.entry.RegistryTypeMapper<M, B> minecraftToBukkit, BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater) { // Paper - relax preload class
         // Paper end - support Holders

@@ -104,7 +104,7 @@ public final class PaperRegistries {
             start(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN).craft(TrimPattern.class, CraftTrimPattern::new).build().delayed(),
             start(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE).craft(DamageType.class, CraftDamageType::new).build().delayed(),
             start(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT).craft(Wolf.Variant.class, CraftWolf.CraftVariant::new).build().delayed(),
-            start(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT).craft(Enchantment.class, CraftEnchantment::new).writable(PaperEnchantmentRegistryEntry.PaperBuilder::new).withSerializationUpdater(FieldRename.ENCHANTMENT_RENAME).delayed(),
+            start(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT).craft(Enchantment.class, CraftEnchantment::new).serializationUpdater(FieldRename.ENCHANTMENT_RENAME).writable(PaperEnchantmentRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG).craft(JukeboxSong.class, CraftJukeboxSong::new).build().delayed(),
             start(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN).craft(PatternType.class, CraftPatternType::new).build().delayed(),
             start(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT).craft(Art.class, CraftArt::new).writable(PaperPaintingVariantRegistryEntry.PaperBuilder::new).delayed(),

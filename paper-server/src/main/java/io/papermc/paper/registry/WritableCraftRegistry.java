@@ -3,6 +3,7 @@ package io.papermc.paper.registry;
 import com.mojang.serialization.Lifecycle;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.entry.RegistryEntry;
+import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.entry.RegistryTypeMapper;
 import io.papermc.paper.registry.event.WritableRegistry;
 import java.util.Optional;
@@ -20,22 +21,16 @@ public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBu
 
     private static final RegistrationInfo FROM_PLUGIN = new RegistrationInfo(Optional.empty(), Lifecycle.experimental());
 
-    private final RegistryEntry.BuilderHolder<M, T, B> entry;
+    private final RegistryEntryMeta.Buildable<M, T, B> meta;
     private final MappedRegistry<M> registry;
-    private final PaperRegistryBuilder.Factory<M, T, ? extends B> builderFactory;
 
     public WritableCraftRegistry(
-        final RegistryEntry.BuilderHolder<M, T, B> entry,
-        final Class<?> classToPreload,
         final MappedRegistry<M> registry,
-        final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater,
-        final PaperRegistryBuilder.Factory<M, T, ? extends B> builderFactory,
-        final RegistryTypeMapper<M, T> minecraftToBukkit
+        final RegistryEntryMeta.Buildable<M, T, B> meta
     ) {
-        super(classToPreload, registry, minecraftToBukkit, serializationUpdater);
-        this.entry = entry;
+        super(meta, registry);
         this.registry = registry;
-        this.builderFactory = builderFactory;
+        this.meta = meta;
     }
 
     public void register(final TypedKey<T> key, final Consumer<? super B> value, final Conversions conversions) {
@@ -45,7 +40,7 @@ public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBu
         value.accept(builder);
         PaperRegistryListenerManager.INSTANCE.registerWithListeners(
             this.registry,
-            RegistryEntry.Modifiable.asModifiable(this.entry),
+            this.meta,
             resourceKey,
             builder,
             FROM_PLUGIN,
@@ -58,7 +53,7 @@ public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBu
     }
 
     protected B newBuilder(final Conversions conversions) {
-        return this.builderFactory.create(conversions);
+        return this.meta.builderFiller().create(conversions);
     }
 
     public class ApiWritableRegistry implements WritableRegistry<T, B> {

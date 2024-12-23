@@ -1,7 +1,7 @@
 package io.papermc.paper.registry;
 
-import io.papermc.paper.registry.entry.ApiRegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntry;
+import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.legacy.DelayedRegistry;
 import io.papermc.paper.registry.legacy.DelayedRegistryEntry;
 import io.papermc.paper.registry.legacy.LegacyRegistryIdentifiers;
@@ -31,7 +31,10 @@ public class PaperRegistryAccess implements RegistryAccess {
 
     @VisibleForTesting
     public Set<RegistryKey<?>> getLoadedServerBackedRegistries() {
-        return this.registries.keySet().stream().filter(registryHolder -> !(PaperRegistries.getEntry(registryHolder) instanceof ApiRegistryEntry)).collect(Collectors.toUnmodifiableSet());
+        return this.registries.keySet().stream().filter(registryHolder -> {
+            final RegistryEntry<?, ?> entry = PaperRegistries.getEntry(registryHolder);
+            return entry != null && !(entry.meta() instanceof RegistryEntryMeta.ApiOnly<?,?>);
+        }).collect(Collectors.toUnmodifiableSet());
     }
 
     @SuppressWarnings("unchecked")
