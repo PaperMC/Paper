@@ -395,6 +395,12 @@ public final class CraftServer implements Server {
         return ca.spottedleaf.moonrise.common.util.TickThread.isTickThread();
     }
     // Paper end - Folia reagion threading API
+    // Paper start - add disguise api
+    @Override
+    public com.destroystokyo.paper.SkinParts.@org.jetbrains.annotations.NotNull Builder newSkinPartsBuilder() {
+        return com.destroystokyo.paper.PaperSkinParts.builder();
+    }
+    // Paper end - add disguise api
 
     static {
         ConfigurationSerialization.registerClass(CraftOfflinePlayer.class);

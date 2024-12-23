@@ -6,6 +6,7 @@ plugins {
     `java-library`
     `maven-publish`
     id("io.papermc.paperweight.core")
+    idea
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
@@ -101,6 +102,22 @@ if (project.providers.gradleProperty("publishDevBundle").isPresent) {
         publications.create<MavenPublication>("devBundle") {
             artifactId = "dev-bundle"
             from(devBundleComponent)
+        }
+    }
+}
+
+val generatedServerPath: java.nio.file.Path =
+    rootProject.projectDir.toPath().resolve("paper-server-generator/generated")
+idea {
+    module {
+        generatedSourceDirs.add(generatedServerPath.toFile())
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir(generatedServerPath)
         }
     }
 }
