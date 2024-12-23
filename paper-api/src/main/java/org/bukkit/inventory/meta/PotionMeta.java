@@ -153,9 +153,7 @@ public interface PotionMeta extends ItemMeta {
      * @return true if this has a custom potion name
      */
     @Deprecated(forRemoval = true, since = "1.21.4")
-    default boolean hasCustomName() {
-        return this.hasCustomPotionName();
-    }
+    boolean hasCustomName();
 
     /**
      * Gets the potion name translation suffix that is set.
@@ -168,9 +166,7 @@ public interface PotionMeta extends ItemMeta {
      */
     @Deprecated(forRemoval = true, since = "1.21.4")
     @Nullable
-    default String getCustomName() {
-        return this.getCustomPotionName();
-    }
+    String getCustomName();
 
     /**
      * Sets the potion name translation suffix.
@@ -179,9 +175,7 @@ public interface PotionMeta extends ItemMeta {
      * @param name the name to set
      */
     @Deprecated(forRemoval = true, since = "1.21.4")
-    default void setCustomName(@Nullable String name) {
-        this.setCustomPotionName(name);
-    }
+    void setCustomName(@Nullable String name);
 
     /**
      * Checks for existence of a custom potion name translation suffix.
