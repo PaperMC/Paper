@@ -31,7 +31,7 @@ public interface DamageTypeRegistryEntry {
      *
      * @return the exhaustion
      */
-    Float exhaustion();
+    float exhaustion();
 
     /**
      * Provides the {@link DamageScaling} for this damage type.
@@ -45,16 +45,14 @@ public interface DamageTypeRegistryEntry {
      *
      * @return the damage effect
      */
-    @Nullable
-    DamageEffect damageEffect();
+    @Nullable DamageEffect damageEffect();
 
     /**
      * Provides the {@link DeathMessageType} for this damage type.
      *
      * @return the death message type
      */
-    @Nullable
-    DeathMessageType deathMessageType();
+    @Nullable DeathMessageType deathMessageType();
 
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
@@ -77,7 +75,7 @@ public interface DamageTypeRegistryEntry {
          * @see DamageType#getExhaustion()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder exhaustion(Float exhaustion);
+        Builder exhaustion(float exhaustion);
 
         /**
          * Sets the {@link DamageScaling} for this damage type.

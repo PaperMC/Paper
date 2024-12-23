@@ -12,7 +12,7 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
     protected @Nullable String messageId;
-    protected @Nullable Float exhaustion;
+    protected float exhaustion;
     protected @Nullable DamageScaling damageScaling;
     protected @Nullable DamageEffects damageEffects;
     protected @Nullable DeathMessageType deathMessageType;
@@ -39,8 +39,8 @@ public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
     }
 
     @Override
-    public Float exhaustion() {
-        return asConfigured(exhaustion, "exhaustion");
+    public float exhaustion() {
+        return exhaustion;
     }
 
     @Override
@@ -71,7 +71,7 @@ public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
         }
 
         @Override
-        public Builder exhaustion(Float exhaustion) {
+        public Builder exhaustion(float exhaustion) {
             this.exhaustion = exhaustion;
             return this;
         }
@@ -100,20 +100,20 @@ public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
                 return new DamageType(
                         asConfigured(this.messageId, "messsageId"),
                         asConfigured(this.damageScaling, "scaling"),
-                        asConfigured(this.exhaustion, "exhaustion"),
+                        this.exhaustion,
                         this.damageEffects,
                         this.deathMessageType);
             } else if (this.damageEffects != null) {
                 return new DamageType(
                         asConfigured(this.messageId, "messsageId"),
                         asConfigured(this.damageScaling, "scaling"),
-                        asConfigured(this.exhaustion, "exhaustion"),
+                        this.exhaustion,
                         this.damageEffects);
             } else {
                 return new DamageType(
                         asConfigured(this.messageId, "messsageId"),
                         asConfigured(this.damageScaling, "scaling"),
-                        asConfigured(this.exhaustion, "exhaustion")
+                        this.exhaustion
                 );
             }
         }
