@@ -1,0 +1,162 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Mon, 4 Jan 2021 23:47:30 -0800
+Subject: [PATCH] Added PlayerAngerPiglinByInteractionEvent
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+index d98c526676202741e628d5e317b8cdd3f4d3be0a..d52752a9c616a1bc9832fb66472fb97d61dc9b2c 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
++++ b/src/main/java/net/minecraft/world/entity/monster/piglin/PiglinAi.java
+@@ -480,13 +480,31 @@ public class PiglinAi {
+         }
+     }
+ 
++    @io.papermc.paper.annotation.DoNotUse // Paper - do not use outdated method.
+     public static void angerNearbyPiglins(Player player, boolean blockOpen) {
++        // Paper start - add PlayerAngerPiglinEvent
++        PiglinAi.angerNearbyPiglins(player, blockOpen, null, null);
++    }
++
++    public static void angerNearbyPiglins(Player player, boolean blockOpen, @javax.annotation.Nullable org.bukkit.Location location, @javax.annotation.Nullable org.bukkit.inventory.InventoryHolder inventoryHolder) {
++        // Paper end - add PlayerAngerPiglinEvent
+         if (!player.level().paperConfig().entities.behavior.piglinsGuardChests) return; // Paper
+         List<Piglin> list = player.level().getEntitiesOfClass(Piglin.class, player.getBoundingBox().inflate(16.0D));
+ 
+-        list.stream().filter(PiglinAi::isIdle).filter((entitypiglin) -> {
+-            return !blockOpen || BehaviorUtils.canSee(entitypiglin, player);
+-        }).forEach((entitypiglin) -> {
++        // Paper start - replace streams and call event
++        List<org.bukkit.entity.Piglin> piglinsToBeAngered = com.google.common.collect.Lists.newArrayList();
++        for (AbstractPiglin entitypiglin : list) {
++            if (PiglinAi.isIdle(entitypiglin) && (!blockOpen || BehaviorUtils.canSee(entitypiglin, player))) {
++                piglinsToBeAngered.add((org.bukkit.entity.Piglin) entitypiglin.getBukkitEntity()); // safe cast because the original list gets the Piglin class
++            }
++        }
++        if (location != null) {
++            io.papermc.paper.event.player.PlayerAngerPiglinByInteractionEvent event = new io.papermc.paper.event.player.PlayerAngerPiglinByInteractionEvent((org.bukkit.entity.Player) player.getBukkitEntity(), location, blockOpen, inventoryHolder, piglinsToBeAngered);
++            if (!event.callEvent()) return;
++        }
++        piglinsToBeAngered.forEach((bukkitPiglin) -> {
++            Piglin entitypiglin = ((org.bukkit.craftbukkit.entity.CraftPiglin) bukkitPiglin).getHandle();
++        // Paper end
+             if (entitypiglin.level().getGameRules().getBoolean(GameRules.RULE_UNIVERSAL_ANGER)) {
+                 PiglinAi.setAngerTargetToNearestTargetablePlayerIfFound(entitypiglin, player);
+             } else {
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
+index e88c39d405fc7068db64ad34a03dec8d559e749e..b684057cb334f8fbcf1b1e6b7da528f8ba5b01c1 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/ChestBoat.java
+@@ -100,7 +100,7 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
+ 
+             if (enuminteractionresult.consumesAction()) {
+                 this.gameEvent(GameEvent.CONTAINER_OPEN, player);
+-                PiglinAi.angerNearbyPiglins(player, true);
++                PiglinAi.angerNearbyPiglins(player, true, this.getLocation(), this.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder ? (org.bukkit.inventory.InventoryHolder) this.getBukkitEntity() : null); // Paper - add PlayerAngerPiglinEvent
+             }
+ 
+             return enuminteractionresult;
+@@ -112,7 +112,7 @@ public class ChestBoat extends Boat implements HasCustomInventoryScreen, Contain
+         player.openMenu(this);
+         if (!player.level().isClientSide) {
+             this.gameEvent(GameEvent.CONTAINER_OPEN, player);
+-            PiglinAi.angerNearbyPiglins(player, true);
++            PiglinAi.angerNearbyPiglins(player, true, this.getLocation(), this.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder ? (org.bukkit.inventory.InventoryHolder) this.getBukkitEntity() : null);  // Paper - add PlayerAngerPiglinEvent
+         }
+ 
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+index 7529751afa2932fd16bc4591189b0358268a7b14..ceda4df827dfb83738bd1b81be6f41d713aa1311 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/ContainerEntity.java
+@@ -80,7 +80,7 @@ public interface ContainerEntity extends Container, MenuProvider {
+             if (!world.isClientSide) {
+                 Entity entity = source.getDirectEntity();
+                 if (entity != null && entity.getType() == EntityType.PLAYER) {
+-                    PiglinAi.angerNearbyPiglins((Player)entity, true);
++                    PiglinAi.angerNearbyPiglins((Player)entity, true, getLocation(), this.getEntity().getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder ? (org.bukkit.inventory.InventoryHolder) this.getEntity().getBukkitEntity() : null); // Paper - add PlayerAngerPiglinEvent
+                 }
+             }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/MinecartChest.java b/src/main/java/net/minecraft/world/entity/vehicle/MinecartChest.java
+index fd2238f33cf61ca432f69d95455a9524b162f431..88940fe8e928005c1be7af1f8e549a9c6817601e 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/MinecartChest.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/MinecartChest.java
+@@ -66,7 +66,7 @@ public class MinecartChest extends AbstractMinecartContainer {
+         InteractionResult interactionResult = this.interactWithContainerVehicle(player);
+         if (interactionResult.consumesAction()) {
+             this.gameEvent(GameEvent.CONTAINER_OPEN, player);
+-            PiglinAi.angerNearbyPiglins(player, true);
++            PiglinAi.angerNearbyPiglins(player, true, this.getLocation(), this.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder ? (org.bukkit.inventory.InventoryHolder) this.getBukkitEntity() : null); // Paper - add PlayerAngerPiglinEvent
+         }
+ 
+         return interactionResult;
+diff --git a/src/main/java/net/minecraft/world/level/block/BarrelBlock.java b/src/main/java/net/minecraft/world/level/block/BarrelBlock.java
+index 79f19bc122f08d276d96b4490327e228224576fc..d4fe6a0993d66bdf6b297f47fc3937cf803e199e 100644
+--- a/src/main/java/net/minecraft/world/level/block/BarrelBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/BarrelBlock.java
+@@ -45,7 +45,8 @@ public class BarrelBlock extends BaseEntityBlock {
+             if (blockEntity instanceof BarrelBlockEntity) {
+                 player.openMenu((BarrelBlockEntity)blockEntity);
+                 player.awardStat(Stats.OPEN_BARREL);
+-                PiglinAi.angerNearbyPiglins(player, true);
++                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos); // Paper
++                PiglinAi.angerNearbyPiglins(player, true, block.getLocation(), block.getState() instanceof org.bukkit.inventory.InventoryHolder ? (org.bukkit.inventory.InventoryHolder) block.getState() : null); // Paper - add PlayerAngerPiglinEvent
+             }
+ 
+             return InteractionResult.CONSUME;
+diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
+index 9522e646529f3d849471931b4b3c0d133e7fcfc5..1c1ea199dc971d806f113565f347f5fadd2618d2 100644
+--- a/src/main/java/net/minecraft/world/level/block/Block.java
++++ b/src/main/java/net/minecraft/world/level/block/Block.java
+@@ -471,7 +471,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+     public void playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
+         this.spawnDestroyParticles(world, player, pos, state);
+         if (state.is(BlockTags.GUARDED_BY_PIGLINS)) {
+-            PiglinAi.angerNearbyPiglins(player, false);
++            PiglinAi.angerNearbyPiglins(player, false, io.papermc.paper.util.MCUtil.toLocation(world, pos), null); // Paper - add PlayerAngerPiglinEvent
+         }
+ 
+         world.gameEvent(GameEvent.BLOCK_DESTROY, pos, GameEvent.Context.of(player, state));
+diff --git a/src/main/java/net/minecraft/world/level/block/ChestBlock.java b/src/main/java/net/minecraft/world/level/block/ChestBlock.java
+index 5e22d175b1048a58802cdf64ac70a8b56329e915..2bd71be57a74e79d87583ea2277ba8fb33945605 100644
+--- a/src/main/java/net/minecraft/world/level/block/ChestBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ChestBlock.java
+@@ -268,7 +268,8 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
+             if (itileinventory != null) {
+                 player.openMenu(itileinventory);
+                 player.awardStat(this.getOpenChestStat());
+-                PiglinAi.angerNearbyPiglins(player, true);
++                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos); // Paper - add PlayerAngerPiglinEvent
++                PiglinAi.angerNearbyPiglins(player, true, block.getLocation(), block.getState() instanceof org.bukkit.inventory.InventoryHolder ? (org.bukkit.inventory.InventoryHolder) block.getState() : null); // Paper - add PlayerAngerPiglinEvent
+             }
+ 
+             return InteractionResult.CONSUME;
+diff --git a/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java b/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
+index 7385e91f32f070e86a4e0fd3d214f55d832c7979..bad23da20785a0821548beb034e34dd6e2ec14d0 100644
+--- a/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
+@@ -88,7 +88,8 @@ public class EnderChestBlock extends AbstractChestBlock<EnderChestBlockEntity> i
+                     return ChestMenu.threeRows(syncId, inventory, playerEnderChestContainer);
+                 }, CONTAINER_TITLE));
+                 player.awardStat(Stats.OPEN_ENDERCHEST);
+-                PiglinAi.angerNearbyPiglins(player, true);
++                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos); // Paper - add PlayerAngerPiglinEvent
++                PiglinAi.angerNearbyPiglins(player, true, block.getLocation(), null); // Paper - add PlayerAngerPiglinEvent
+                 return InteractionResult.CONSUME;
+             }
+         } else {
+diff --git a/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java b/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
+index b51155ad12515b2d0dd0f202580b9f455c114d9a..caf33b7884d7e5309e2b07713e8ff483c7879eaa 100644
+--- a/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ShulkerBoxBlock.java
+@@ -104,7 +104,8 @@ public class ShulkerBoxBlock extends BaseEntityBlock {
+                 if (canOpen(state, world, pos, shulkerBoxBlockEntity)) {
+                     player.openMenu(shulkerBoxBlockEntity);
+                     player.awardStat(Stats.OPEN_SHULKER_BOX);
+-                    PiglinAi.angerNearbyPiglins(player, true);
++                    org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, pos); // Paper - add PlayerAngerPiglinEvent
++                    PiglinAi.angerNearbyPiglins(player, true, block.getLocation(), block.getState() instanceof org.bukkit.inventory.InventoryHolder ? (org.bukkit.inventory.InventoryHolder) block.getState() : null); // Paper - add PlayerAngerPiglinEvent
+                 }
+ 
+                 return InteractionResult.CONSUME;
