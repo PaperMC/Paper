@@ -66,6 +66,8 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
     /**
      * Represents a choice of multiple matching Materials.
+     *
+     * @since 1.13.1
      */
     public static class MaterialChoice implements RecipeChoice {
 
@@ -179,6 +181,9 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             return "MaterialChoice{" + "choices=" + choices + '}';
         }
 
+        /**
+         * @since 1.20.6
+         */
         // Paper start - check valid ingredients
         @Override
         public @NotNull RecipeChoice validate(final boolean allowEmptyRecipes) {
@@ -193,6 +198,8 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     /**
      * Represents a choice that will be valid only if one of the stacks is
      * exactly matched (aside from stack size).
+     *
+     * @since 1.13.2
      */
     public static class ExactChoice implements RecipeChoice {
 
@@ -286,6 +293,9 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             return "ExactChoice{" + "choices=" + choices + '}';
         }
 
+        /**
+         * @since 1.20.6
+         */
         // Paper start - check valid ingredients
         @Override
         public @NotNull RecipeChoice validate(final boolean allowEmptyRecipes) {

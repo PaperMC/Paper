@@ -371,6 +371,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * Gets the effect attributes in an immutable map.
      *
      * @return the attribute map
+     * @since 1.18.1
      */
     public abstract @NotNull java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes();
 
@@ -381,6 +382,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * @param effectAmplifier the effect amplifier (0 indexed)
      * @return the modifier amount
      * @throws IllegalArgumentException if the supplied attribute is not present in the map from {@link #getEffectAttributes()}
+     * @since 1.18.1
      */
     public abstract double getAttributeModifierAmount(@NotNull org.bukkit.attribute.Attribute attribute, int effectAmplifier);
 
@@ -388,6 +390,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * Gets the category of this effect
      *
      * @return the category
+     * @since 1.18.1
      */
     public abstract @NotNull PotionEffectType.Category getEffectCategory();
 

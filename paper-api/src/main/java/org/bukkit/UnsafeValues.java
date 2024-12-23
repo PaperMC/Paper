@@ -202,13 +202,21 @@ public interface UnsafeValues {
     // Paper start
     /**
      * Called once by the version command on first use, then cached.
+     *
+     * @since 1.14.1
      */
     default com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
         return new com.destroystokyo.paper.util.VersionFetcher.DummyVersionFetcher();
     }
 
+    /**
+     * @since 1.15.2
+     */
     byte[] serializeItem(ItemStack item);
 
+    /**
+     * @since 1.15.2
+     */
     ItemStack deserializeItem(byte[] data);
 
     /**
@@ -222,6 +230,7 @@ public interface UnsafeValues {
      * @return json object representing this item.
      * @see #deserializeItemFromJson(com.google.gson.JsonObject)
      * @throws IllegalArgumentException if the passed itemstack is {@link ItemStack#empty()}.
+     * @since 1.21.1
      */
     @NotNull
     com.google.gson.JsonObject serializeItemAsJson(@NotNull ItemStack itemStack);
@@ -238,26 +247,40 @@ public interface UnsafeValues {
      * @return the deserialize item stack, migrated to the latest data version if needed.
      * @throws IllegalArgumentException if the json object is not a valid item
      * @see #serializeItemAsJson(ItemStack)
+     * @since 1.21.1
      */
     @NotNull ItemStack deserializeItemFromJson(@NotNull com.google.gson.JsonObject data) throws IllegalArgumentException;
 
+    /**
+     * @since 1.17.1
+     */
     byte[] serializeEntity(org.bukkit.entity.Entity entity);
 
+    /**
+     * @since 1.17.1
+     */
     default org.bukkit.entity.Entity deserializeEntity(byte[] data, World world) {
         return deserializeEntity(data, world, false);
     }
 
+    /**
+     * @since 1.17.1
+     */
     org.bukkit.entity.Entity deserializeEntity(byte[] data, World world, boolean preserveUUID);
 
     /**
      * Creates and returns the next EntityId available.
      * <p>
      * Use this when sending custom packets, so that there are no collisions on the client or server.
+     *
+     * @since 1.16.3
      */
     public int nextEntityId();
 
     /**
      * Just don't use it.
+     *
+     * @since 1.18.2
      */
     @org.jetbrains.annotations.NotNull String getMainLevelName();
 
@@ -265,6 +288,7 @@ public interface UnsafeValues {
      * Returns the server's protocol version.
      *
      * @return the server's protocol version
+     * @since 1.16.5
      */
     int getProtocolVersion();
 
@@ -275,6 +299,7 @@ public interface UnsafeValues {
      * @param itemToBeRepaired the itemstack to be repaired
      * @param repairMaterial the repair material
      * @return true if valid repair, false if not
+     * @since 1.16.5
      */
     public boolean isValidRepairItemStack(@org.jetbrains.annotations.NotNull ItemStack itemToBeRepaired, @org.jetbrains.annotations.NotNull ItemStack repairMaterial);
 
@@ -283,6 +308,7 @@ public interface UnsafeValues {
      *
      * @param entityKey the entity's key
      * @return true if it has default attributes
+     * @since 1.17.1
      */
     boolean hasDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
 
@@ -292,6 +318,7 @@ public interface UnsafeValues {
      * @param entityKey the entity's key
      * @return an unmodifiable instance of Attributable for reading default attributes.
      * @throws IllegalArgumentException if the entity does not exist of have default attributes (use {@link #hasDefaultEntityAttributes(NamespacedKey)} first)
+     * @since 1.17.1
      */
     @org.jetbrains.annotations.NotNull org.bukkit.attribute.Attributable getDefaultEntityAttributes(@org.jetbrains.annotations.NotNull NamespacedKey entityKey);
     // Paper end
@@ -328,6 +355,9 @@ public interface UnsafeValues {
     @Deprecated(since = "1.21.3", forRemoval = true)
     void setBiomeKey(RegionAccessor accessor, int x, int y, int z, NamespacedKey biomeKey);
     // Paper end - namespaced key biome methods
+    /**
+     * @since 1.20.1
+     */
 
     String getStatisticCriteriaKey(@NotNull org.bukkit.Statistic statistic); // Paper - fix custom stats criteria creation
 
@@ -340,6 +370,7 @@ public interface UnsafeValues {
      * @param entityType The entity type to get the color for
      * @param layer The texture layer to get a color for
      * @return The color of the layer for the entity's spawn egg
+     * @since 1.20.4
      */
     @Nullable org.bukkit.Color getSpawnEggLayerColor(org.bukkit.entity.EntityType entityType, int layer);
     // Paper end - spawn egg color visibility
@@ -352,7 +383,14 @@ public interface UnsafeValues {
     io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> createPluginLifecycleEventManager(final org.bukkit.plugin.java.JavaPlugin plugin, final java.util.function.BooleanSupplier registrationCheck);
     // Paper end - lifecycle event API
 
+    /**
+     * @since 1.20.4
+     */
     @NotNull java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(@NotNull ItemStack itemStack, @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, @Nullable org.bukkit.entity.Player player); // Paper - expose itemstack tooltip lines
 
+
+    /**
+     * @since 1.21
+     */
     ItemStack createEmptyStack(); // Paper - proxy ItemStack
 }

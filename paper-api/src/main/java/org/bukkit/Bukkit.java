@@ -1183,6 +1183,7 @@ public final class Bukkit {
      * @param recipe the recipe to add
      * @param resendRecipes true to update the client with the full set of recipes
      * @return true if the recipe was added, false if it wasn't for some reason
+     * @since 1.20.1
      */
     @Contract("null, _ -> false")
     public static boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
@@ -1196,6 +1197,7 @@ public final class Bukkit {
      *
      * @param result the item to match against recipe results
      * @return a list of recipes with the given result
+     * @since 1.1.0 R5
      */
     @NotNull
     public static List<Recipe> getRecipesFor(@NotNull ItemStack result) {
@@ -1207,6 +1209,7 @@ public final class Bukkit {
      *
      * @param recipeKey the key of the recipe to return
      * @return the recipe for the given key or null.
+     * @since 1.16.1
      */
     @Nullable
     public static Recipe getRecipe(@NotNull NamespacedKey recipeKey) {
@@ -1232,6 +1235,7 @@ public final class Bukkit {
      *                       Must not contain more than 9 items.
      * @param world The world the crafting takes place in.
      * @return the {@link Recipe} resulting from the given crafting matrix.
+     * @since 1.17.1
      */
     @Nullable
     public static Recipe getCraftingRecipe(@NotNull ItemStack[] craftingMatrix, @NotNull World world) {
@@ -1261,6 +1265,7 @@ public final class Bukkit {
      * @param world The world the crafting takes place in.
      * @param player The player to imitate the crafting event on.
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
+     * @since 1.20.2
      */
     @NotNull
     public static ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player) {
@@ -1283,6 +1288,7 @@ public final class Bukkit {
      *                       Must not contain more than 9 items.
      * @param world The world the crafting takes place in.
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
+     * @since 1.20.2
      */
     @NotNull
     public static ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world) {
@@ -1314,6 +1320,7 @@ public final class Bukkit {
      * @param player The player to imitate the crafting event on.
      * @return the {@link ItemStack} resulting from the given crafting matrix, if no recipe is found
      * an ItemStack of {@link Material#AIR} is returned.
+     * @since 1.17.1
      */
     @NotNull
     public static ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player) {
@@ -1337,6 +1344,7 @@ public final class Bukkit {
      * @param world The world the crafting takes place in.
      * @return the {@link ItemStack} resulting from the given crafting matrix, if no recipe is found
      * an ItemStack of {@link Material#AIR} is returned.
+     * @since 1.20.2
      */
     @NotNull
     public static ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world) {
@@ -1347,6 +1355,7 @@ public final class Bukkit {
      * Get an iterator through the list of crafting recipes.
      *
      * @return an iterator
+     * @since 1.1.0 R5
      */
     @NotNull
     public static Iterator<Recipe> recipeIterator() {
@@ -1355,6 +1364,8 @@ public final class Bukkit {
 
     /**
      * Clears the list of crafting recipes.
+     *
+     * @since 1.1.0 R5
      */
     public static void clearRecipes() {
         server.clearRecipes();
@@ -1362,6 +1373,8 @@ public final class Bukkit {
 
     /**
      * Resets the list of crafting recipes to the default.
+     *
+     * @since 1.1.0 R5
      */
     public static void resetRecipes() {
         server.resetRecipes();
@@ -1376,6 +1389,7 @@ public final class Bukkit {
      *
      * @param key NamespacedKey of recipe to remove.
      * @return True if recipe was removed
+     * @since 1.15.2
      */
     public static boolean removeRecipe(@NotNull NamespacedKey key) {
         return server.removeRecipe(key);
@@ -1393,6 +1407,7 @@ public final class Bukkit {
      * @param resendRecipes true to update all clients on the new recipe list.
      *                      Will only update if a recipe was actually removed
      * @return True if recipe was removed
+     * @since 1.20.1
      */
     public static boolean removeRecipe(@NotNull NamespacedKey key, boolean resendRecipes) {
         return server.removeRecipe(key, resendRecipes);
@@ -1433,6 +1448,7 @@ public final class Bukkit {
      *
      * @return true if the server should send a preview, false otherwise
      * @deprecated chat previews have been removed
+     * @since 1.19
      */
     @Deprecated(since = "1.19.3")
     public static boolean shouldSendChatPreviews() {
@@ -1444,6 +1460,7 @@ public final class Bukkit {
      * to join
      *
      * @return true if only Mojang-signed players can join, false otherwise
+     * @since 1.19
      */
     public static boolean isEnforcingSecureProfiles() {
         return server.isEnforcingSecureProfiles();
@@ -1454,6 +1471,7 @@ public final class Bukkit {
      * servers.
      *
      * @return true if the server accepts transfers, false otherwise
+     * @since 1.20.6
      */
     public static boolean isAcceptingTransfers() {
         return server.isAcceptingTransfers();
@@ -1463,6 +1481,7 @@ public final class Bukkit {
      * Gets whether the Server hide online players in server status.
      *
      * @return true if the server hide online players, false otherwise
+     * @since 1.18
      */
     public static boolean getHideOnlinePlayers() {
         return server.getHideOnlinePlayers();
@@ -1490,6 +1509,7 @@ public final class Bukkit {
      * Gets whether the server is in hardcore mode or not.
      *
      * @return true if the server mode is hardcore, false otherwise
+     * @since 1.4.5 R1.0
      */
     public static boolean isHardcore() {
         return server.isHardcore();
@@ -1511,6 +1531,7 @@ public final class Bukkit {
      *
      * @param message the message
      * @return the number of players
+     * @since 1.16.5
      */
     public static int broadcast(net.kyori.adventure.text.@NotNull Component message) {
         return server.broadcast(message);
@@ -1523,6 +1544,7 @@ public final class Bukkit {
      * @param permission the required permission {@link Permissible
      *     permissibles} must have to receive the broadcast
      * @return number of message recipients
+     * @since 1.16.5
      */
     public static int broadcast(net.kyori.adventure.text.@NotNull Component message, @NotNull String permission) {
         return server.broadcast(message, permission);
@@ -1577,6 +1599,7 @@ public final class Bukkit {
      * @return an offline player if cached, {@code null} otherwise
      * @see #getOfflinePlayer(String)
      * @see #getOfflinePlayer(java.util.UUID)
+     * @since 1.16.3
      */
     @Nullable
     public static OfflinePlayer getOfflinePlayerIfCached(@NotNull String name) {
@@ -1593,6 +1616,7 @@ public final class Bukkit {
      *
      * @param id the UUID of the player to retrieve
      * @return an offline player
+     * @since 1.7.10
      */
     @NotNull
     public static OfflinePlayer getOfflinePlayer(@NotNull UUID id) {
@@ -1608,6 +1632,7 @@ public final class Bukkit {
      * @throws IllegalArgumentException if both the unique id is
      * <code>null</code> and the name is <code>null</code> or blank
      * @deprecated use {@link #createProfile(UUID, String)}
+     * @since 1.18.1
      */
     @NotNull
     @Deprecated(since = "1.18.1") // Paper
@@ -1622,6 +1647,7 @@ public final class Bukkit {
      * @return the new PlayerProfile
      * @throws IllegalArgumentException if the unique id is <code>null</code>
      * @deprecated use {@link #createProfile(UUID)}
+     * @since 1.18.1
      */
     @NotNull
     @Deprecated(since = "1.18.1") // Paper
@@ -1637,6 +1663,7 @@ public final class Bukkit {
      * @throws IllegalArgumentException if the name is <code>null</code> or
      * blank
      * @deprecated use {@link #createProfile(String)}
+     * @since 1.18.1
      */
     @NotNull
     @Deprecated(since = "1.18.1") // Paper
@@ -1682,6 +1709,7 @@ public final class Bukkit {
      * Bans the specified address from the server.
      *
      * @param address the IP address to ban
+     * @since 1.20.1
      */
     public static void banIP(@NotNull InetAddress address) {
         server.banIP(address);
@@ -1691,6 +1719,7 @@ public final class Bukkit {
      * Unbans the specified address from the server.
      *
      * @param address the IP address to unban
+     * @since 1.20.1
      */
     public static void unbanIP(@NotNull InetAddress address) {
         server.unbanIP(address);
@@ -1728,6 +1757,7 @@ public final class Bukkit {
      * @param <B> The ban target
      *
      * @return a ban list of the specified type
+     * @since 1.20.4
      */
     @NotNull
     public static <B extends BanList<E>, E> B getBanList(final io.papermc.paper.ban.@NotNull BanListType<B> type) {
@@ -1749,6 +1779,7 @@ public final class Bukkit {
      * Gets the default {@link GameMode} for new players.
      *
      * @return the default game mode
+     * @since 1.1.0 R5
      */
     @NotNull
     public static GameMode getDefaultGameMode() {
@@ -1759,6 +1790,7 @@ public final class Bukkit {
      * Sets the default {@link GameMode} for new players.
      *
      * @param mode the new game mode
+     * @since 1.1.0 R5
      */
     public static void setDefaultGameMode(@NotNull GameMode mode) {
         server.setDefaultGameMode(mode);
@@ -1782,6 +1814,7 @@ public final class Bukkit {
      *
      * @param feedback feedback listener
      * @return a command sender
+     * @since 1.18.1
      */
     @NotNull
     public static CommandSender createCommandSender(final @NotNull java.util.function.Consumer<? super net.kyori.adventure.text.Component> feedback) {
@@ -1805,6 +1838,7 @@ public final class Bukkit {
      * <b>This method can be expensive as it loads all the player data files from the disk.</b>
      *
      * @return an array containing all previous players
+     * @since 1.1.0 R5
      */
     @NotNull
     public static OfflinePlayer[] getOfflinePlayers() {
@@ -1815,6 +1849,7 @@ public final class Bukkit {
      * Gets the {@link Messenger} responsible for this server.
      *
      * @return messenger responsible for this server
+     * @since 1.1.0 R1
      */
     @NotNull
     public static Messenger getMessenger() {
@@ -1825,6 +1860,7 @@ public final class Bukkit {
      * Gets the {@link HelpMap} providing help topics for this server.
      *
      * @return a help map for this server
+     * @since 1.1.0 R5
      */
     @NotNull
     public static HelpMap getHelpMap() {
@@ -1851,6 +1887,7 @@ public final class Bukkit {
      * viewed.
      *
      * @see InventoryType#isCreatable()
+     * @since 1.1.0 R5
      */
     @NotNull
     public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type) {
@@ -1881,6 +1918,7 @@ public final class Bukkit {
      * viewed.
      *
      * @see InventoryType#isCreatable()
+     * @since 1.16.5
      */
     @NotNull
     public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type, net.kyori.adventure.text.@NotNull Component title) {
@@ -1912,6 +1950,7 @@ public final class Bukkit {
      * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
      *
      * @see InventoryType#isCreatable()
+     * @since 1.7.10
      */
     @Deprecated // Paper
     @NotNull
@@ -1927,6 +1966,7 @@ public final class Bukkit {
      * @param size a multiple of 9 as the size of inventory to create
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
+     * @since 1.1.0 R5
      */
     @NotNull
     public static Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException {
@@ -1944,6 +1984,7 @@ public final class Bukkit {
      *     viewed
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
+     * @since 1.16.5
      */
     @NotNull
     public static Inventory createInventory(@Nullable InventoryHolder owner, int size, net.kyori.adventure.text.@NotNull Component title) throws IllegalArgumentException {
@@ -1962,6 +2003,7 @@ public final class Bukkit {
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
      * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
+     * @since 1.1.0 R5
      */
     @Deprecated // Paper
     @NotNull
@@ -1976,6 +2018,7 @@ public final class Bukkit {
      * @param title the title of the corresponding merchant inventory, displayed
      * when the merchant inventory is viewed
      * @return a new merchant
+     * @since 1.16.5
      */
     public static @NotNull Merchant createMerchant(net.kyori.adventure.text.@Nullable Component title) {
         return server.createMerchant(title);
@@ -1988,6 +2031,7 @@ public final class Bukkit {
      * when the merchant inventory is viewed
      * @return a new merchant
      * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
+     * @since 1.11
      */
     @NotNull
     @Deprecated // Paper
@@ -2001,6 +2045,7 @@ public final class Bukkit {
      *
      * @return the amount of consecutive neighbor updates, if the value is
      * negative then the limit it's not used
+     * @since 1.19
      */
     public static int getMaxChainedNeighborUpdates() {
         return server.getMaxChainedNeighborUpdates();
@@ -2012,6 +2057,7 @@ public final class Bukkit {
      *
      * @return the monster spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.2.5 R1.3
      */
     @Deprecated(since = "1.18.1")
     public static int getMonsterSpawnLimit() {
@@ -2024,6 +2070,7 @@ public final class Bukkit {
      *
      * @return the animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.2.5 R1.3
      */
     @Deprecated(since = "1.18.1")
     public static int getAnimalSpawnLimit() {
@@ -2036,6 +2083,7 @@ public final class Bukkit {
      *
      * @return the water animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.2.5 R1.3
      */
     @Deprecated(since = "1.18.1")
     public static int getWaterAnimalSpawnLimit() {
@@ -2048,6 +2096,7 @@ public final class Bukkit {
      *
      * @return the water ambient spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.16.1
      */
     @Deprecated(since = "1.18.1")
     public static int getWaterAmbientSpawnLimit() {
@@ -2060,6 +2109,7 @@ public final class Bukkit {
      *
      * @return the water underground creature limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.17.1
      */
     @Deprecated(since = "1.18.1")
     public static int getWaterUndergroundCreatureSpawnLimit() {
@@ -2072,6 +2122,7 @@ public final class Bukkit {
      *
      * @return the ambient spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
+     * @since 1.4.5 R1.0
      */
     @Deprecated(since = "1.18.1")
     public static int getAmbientSpawnLimit() {
@@ -2086,6 +2137,7 @@ public final class Bukkit {
      *
      * @param spawnCategory the category spawn
      * @return the {@link SpawnCategory} spawn limit
+     * @since 1.18.1
      */
     public static int getSpawnLimit(@NotNull SpawnCategory spawnCategory) {
         return server.getSpawnLimit(spawnCategory);
@@ -2102,6 +2154,7 @@ public final class Bukkit {
      *
      * @return true if the current thread matches the expected primary thread,
      *     false otherwise
+     * @since 1.3.1 R1.0
      */
     public static boolean isPrimaryThread() {
         return server.isPrimaryThread();
@@ -2112,6 +2165,7 @@ public final class Bukkit {
      * Gets the message that is displayed on the server list.
      *
      * @return the server's MOTD
+     * @since 1.16.5
      */
     @NotNull public static net.kyori.adventure.text.Component motd() {
         return server.motd();
@@ -2121,6 +2175,7 @@ public final class Bukkit {
      * Set the message that is displayed on the server list.
      *
      * @param motd The message to be displayed
+     * @since 1.20
      */
     public static void motd(final net.kyori.adventure.text.@NotNull Component motd) {
         server.motd(motd);
@@ -2130,6 +2185,7 @@ public final class Bukkit {
      * Gets the default message that is displayed when the server is stopped.
      *
      * @return the shutdown message
+     * @since 1.16.5
      */
     public static net.kyori.adventure.text.@Nullable Component shutdownMessage() {
         return server.shutdownMessage();
@@ -2141,6 +2197,7 @@ public final class Bukkit {
      *
      * @return the servers MOTD
      * @deprecated in favour of {@link #motd()}
+     * @since 1.3.1 R1.0
      */
     @NotNull
     @Deprecated // Paper
@@ -2153,6 +2210,7 @@ public final class Bukkit {
      *
      * @param motd The message to be displayed
      * @deprecated in favour of {@link #motd(net.kyori.adventure.text.Component)}
+     * @since 1.20
      */
     @Deprecated // Paper
     public static void setMotd(@NotNull String motd) {
@@ -2163,6 +2221,7 @@ public final class Bukkit {
      * Gets the server links which will be sent to clients
      *
      * @return the server's links
+     * @since 1.21
      */
     @NotNull
     @ApiStatus.Experimental
@@ -2175,6 +2234,7 @@ public final class Bukkit {
      *
      * @return the shutdown message
      * @deprecated in favour of {@link #shutdownMessage()}
+     * @since 1.4.5 R1.0
      */
     @Nullable
     @Deprecated // Paper
@@ -2186,6 +2246,7 @@ public final class Bukkit {
      * Gets the current warning state for the server.
      *
      * @return the configured warning state
+     * @since 1.3.1 R1.0
      */
     @NotNull
     public static WarningState getWarningState() {
@@ -2197,6 +2258,7 @@ public final class Bukkit {
      *
      * @return the item factory
      * @see ItemFactory
+     * @since 1.4.5 R1.0
      */
     @NotNull
     public static ItemFactory getItemFactory() {
@@ -2208,6 +2270,7 @@ public final class Bukkit {
      *
      * @return the entity factory
      * @see EntityFactory
+     * @since 1.20.6
      */
     @NotNull
     public static EntityFactory getEntityFactory() {
@@ -2220,6 +2283,7 @@ public final class Bukkit {
      * This will only exist after the first world has loaded.
      *
      * @return the scoreboard manager or null if no worlds are loaded.
+     * @since 1.5.1 R0.2
      */
     @NotNull // Paper
     public static ScoreboardManager getScoreboardManager() {
@@ -2232,6 +2296,7 @@ public final class Bukkit {
      * @param name the criteria name
      * @return the criteria
      * @see Criteria Criteria for a list of constants
+     * @since 1.19.2
      */
     @NotNull
     public static Criteria getScoreboardCriteria(@NotNull String name) {
@@ -2244,6 +2309,7 @@ public final class Bukkit {
      * @return the default server-icon; null values may be used by the
      *     implementation to indicate no defined icon, but this behavior is
      *     not guaranteed
+     * @since 1.7.2 R0.2
      */
     @Nullable
     public static CachedServerIcon getServerIcon() {
@@ -2263,6 +2329,7 @@ public final class Bukkit {
      * @throws IllegalArgumentException if image is null
      * @throws Exception if the image does not meet current server server-icon
      *     specifications
+     * @since 1.7.2 R0.2
      */
     @NotNull
     public static CachedServerIcon loadServerIcon(@NotNull File file) throws IllegalArgumentException, Exception {
@@ -2281,6 +2348,7 @@ public final class Bukkit {
      * @throws IllegalArgumentException if image is null
      * @throws Exception if the image does not meet current server
      *     server-icon specifications
+     * @since 1.7.2 R0.2
      */
     @NotNull
     public static CachedServerIcon loadServerIcon(@NotNull BufferedImage image) throws IllegalArgumentException, Exception {
@@ -2294,6 +2362,7 @@ public final class Bukkit {
      * A value of 0 will disable the idle kick timeout.
      *
      * @param threshold the idle timeout in minutes
+     * @since 1.7.2 R0.2
      */
     public static void setIdleTimeout(int threshold) {
         server.setIdleTimeout(threshold);
@@ -2303,6 +2372,7 @@ public final class Bukkit {
      * Gets the idle kick timeout.
      *
      * @return the idle timeout in minutes
+     * @since 1.7.2 R0.2
      */
     public static int getIdleTimeout() {
         return server.getIdleTimeout();
@@ -2314,6 +2384,7 @@ public final class Bukkit {
      * online.
      *
      * @return the pause threshold in seconds
+     * @since 1.21.3
      */
     public static int getPauseWhenEmptyTime() {
         return server.getPauseWhenEmptyTime();
@@ -2327,6 +2398,7 @@ public final class Bukkit {
      * A value of less than 1 will disable the setting
      *
      * @param seconds the pause threshold in seconds
+     * @since 1.21.3
      */
     public static void setPauseWhenEmptyTime(int seconds) {
         server.setPauseWhenEmptyTime(seconds);
@@ -2339,6 +2411,7 @@ public final class Bukkit {
      *
      * @param world the world to create the ChunkData for
      * @return a new ChunkData for the world
+     * @since 1.8.8
      *
      */
     @NotNull
@@ -2393,6 +2466,7 @@ public final class Bukkit {
      * e.g. bossbars created using the bossbar command
      *
      * @return a bossbar iterator
+     * @since 1.13.2
      */
     @NotNull
     public static Iterator<KeyedBossBar> getBossBars() {
@@ -2413,6 +2487,7 @@ public final class Bukkit {
      *
      * @param key unique bossbar key
      * @return bossbar or null if not exists
+     * @since 1.13.2
      */
     @Nullable
     public static KeyedBossBar getBossBar(@NotNull NamespacedKey key) {
@@ -2433,6 +2508,7 @@ public final class Bukkit {
      *
      * @param key unique bossbar key
      * @return true if removal succeeded or false
+     * @since 1.13.2
      */
     public static boolean removeBossBar(@NotNull NamespacedKey key) {
         return server.removeBossBar(key);
@@ -2443,6 +2519,7 @@ public final class Bukkit {
      *
      * @param uuid the UUID of the entity
      * @return the entity with the given UUID, or null if it isn't found
+     * @since 1.9.4
      */
     @Nullable
     public static Entity getEntity(@NotNull UUID uuid) {
@@ -2453,6 +2530,7 @@ public final class Bukkit {
     /**
      * Gets the current server TPS
      * @return current server TPS (1m, 5m, 15m in Paper-Server)
+     * @since 1.9.4
      */
     @NotNull
     public static double[] getTPS() {
@@ -2463,6 +2541,7 @@ public final class Bukkit {
      * Get a sample of the servers last tick times (in nanos)
      *
      * @return A sample of the servers last tick times (in nanos)
+     * @since 1.15.2
      */
     @NotNull
     public static long[] getTickTimes() {
@@ -2473,6 +2552,7 @@ public final class Bukkit {
      * Get the average tick time (in millis)
      *
      * @return Average tick time (in millis)
+     * @since 1.15.2
      */
     public static double getAverageTickTime() {
         return server == null ? 0D : server.getAverageTickTime();
@@ -2484,6 +2564,7 @@ public final class Bukkit {
      *
      * @param key unique advancement key
      * @return advancement or null if not exists
+     * @since 1.12
      */
     @Nullable
     public static Advancement getAdvancement(@NotNull NamespacedKey key) {
@@ -2495,6 +2576,7 @@ public final class Bukkit {
      * from this iterator,
      *
      * @return an advancement iterator
+     * @since 1.12
      */
     @NotNull
     public static Iterator<Advancement> advancementIterator() {
@@ -2507,6 +2589,7 @@ public final class Bukkit {
      *
      * @param material the material
      * @return new data instance
+     * @since 1.13
      */
     @NotNull
     public static BlockData createBlockData(@NotNull Material material) {
@@ -2520,6 +2603,7 @@ public final class Bukkit {
      * @param material the material
      * @param consumer consumer to run on new instance before returning
      * @return new data instance
+     * @since 1.13
      */
     @NotNull
     public static BlockData createBlockData(@NotNull Material material, @Nullable Consumer<? super BlockData> consumer) {
@@ -2533,6 +2617,7 @@ public final class Bukkit {
      * @param data data string
      * @return new data instance
      * @throws IllegalArgumentException if the specified data is not valid
+     * @since 1.13
      */
     @NotNull
     public static BlockData createBlockData(@NotNull String data) throws IllegalArgumentException {
@@ -2548,6 +2633,7 @@ public final class Bukkit {
      * @param data data string
      * @return new data instance
      * @throws IllegalArgumentException if the specified data is not valid
+     * @since 1.13
      */
     @NotNull
     @Contract("null, null -> fail")
@@ -2572,6 +2658,7 @@ public final class Bukkit {
      * @param tag the name of the tag
      * @param clazz the class of the tag entries
      * @return the tag or null
+     * @since 1.13
      */
     @Nullable
     public static <T extends Keyed> Tag<T> getTag(@NotNull String registry, @NotNull NamespacedKey tag, @NotNull Class<T> clazz) {
@@ -2590,6 +2677,7 @@ public final class Bukkit {
      * @param registry the tag registry to look at
      * @param clazz the class of the tag entries
      * @return all defined tags
+     * @since 1.13.2
      */
     @NotNull
     public static <T extends Keyed> Iterable<Tag<T>> getTags(@NotNull String registry, @NotNull Class<T> clazz) {
@@ -2601,6 +2689,7 @@ public final class Bukkit {
      *
      * @param key the name of the LootTable
      * @return the LootTable, or null if no LootTable is found with that name
+     * @since 1.13
      */
     @Nullable
     public static LootTable getLootTable(@NotNull NamespacedKey key) {
@@ -2626,6 +2715,7 @@ public final class Bukkit {
      * no further guarantees are made.
      * @throws IllegalArgumentException if the selector is malformed in any way
      * or a parameter is null
+     * @since 1.13.2
      */
     @NotNull
     public static List<Entity> selectEntities(@NotNull CommandSender sender, @NotNull String selector) throws IllegalArgumentException {
@@ -2636,6 +2726,7 @@ public final class Bukkit {
      * Gets the structure manager for loading and saving structures.
      *
      * @return the structure manager
+     * @since 1.17.1
      */
     @NotNull
     public static StructureManager getStructureManager() {
@@ -2655,6 +2746,7 @@ public final class Bukkit {
      * @return the corresponding registry or null if not present
      * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)}
      * with keys from {@link io.papermc.paper.registry.RegistryKey}
+     * @since 1.19
      */
     @Nullable
     @Deprecated(since = "1.20.6")
@@ -2665,6 +2757,7 @@ public final class Bukkit {
     /**
      * @return the unsafe values instance
      * @see UnsafeValues
+     * @since 1.7.2 R0.2
      */
     @Deprecated(since = "1.7.2")
     @NotNull
@@ -2678,6 +2771,7 @@ public final class Bukkit {
      * Gets the active {@link org.bukkit.command.CommandMap}
      *
      * @return the active command map
+     * @since 1.9.4
      */
     @NotNull
     public static org.bukkit.command.CommandMap getCommandMap() {
@@ -2686,6 +2780,8 @@ public final class Bukkit {
 
     /**
      * Reload the Permissions in permissions.yml
+     *
+     * @since 1.9.4
      */
     public static void reloadPermissions() {
         server.reloadPermissions();
@@ -2695,6 +2791,7 @@ public final class Bukkit {
      * Reload the Command Aliases in commands.yml
      *
      * @return Whether the reload was successful
+     * @since 1.11
      */
     public static boolean reloadCommandAliases() {
         return server.reloadCommandAliases();
@@ -2705,6 +2802,7 @@ public final class Bukkit {
      * their tab completion result.
      *
      * @return true if player names should be suggested
+     * @since 1.12
      */
     public static boolean suggestPlayerNamesWhenNullTabCompletions() {
         return server.suggestPlayerNamesWhenNullTabCompletions();
@@ -2715,6 +2813,7 @@ public final class Bukkit {
      *
      * @return the default message
      * @deprecated use {@link #permissionMessage()}
+     * @since 1.13.2
      */
     @NotNull
     @Deprecated
@@ -2726,6 +2825,7 @@ public final class Bukkit {
      * Gets the default no permission message used on the server
      *
      * @return the default message
+     * @since 1.19
      */
     @NotNull
     public static net.kyori.adventure.text.Component permissionMessage() {
@@ -2740,6 +2840,7 @@ public final class Bukkit {
      *
      * @param uuid UUID to create profile for
      * @return A PlayerProfile object
+     * @since 1.12.2
      */
     @NotNull
     public static com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull UUID uuid) {
@@ -2761,6 +2862,7 @@ public final class Bukkit {
      * @return A PlayerProfile object
      * @throws IllegalArgumentException if the name is longer than 16 characters
      * @throws IllegalArgumentException if the name contains invalid characters
+     * @since 1.12.2
      */
     @NotNull
     public static com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull String name) {
@@ -2787,6 +2889,7 @@ public final class Bukkit {
      * @return A PlayerProfile object
      * @throws IllegalArgumentException if the name is longer than 16 characters
      * @throws IllegalArgumentException if the name contains invalid characters
+     * @since 1.12.2
      */
     @NotNull
     public static com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nullable UUID uuid, @Nullable String name) {
@@ -2809,12 +2912,16 @@ public final class Bukkit {
      * @return A PlayerProfile object
      * @throws IllegalArgumentException if the name is longer than 16 characters
      * @throws IllegalArgumentException if the name contains invalid characters
+     * @since 1.18.2
      */
     @NotNull
     public static com.destroystokyo.paper.profile.PlayerProfile createProfileExact(@Nullable UUID uuid, @Nullable String name) {
         return server.createProfileExact(uuid, name);
     }
 
+    /**
+     * @since 1.13.2
+     */
     public static int getCurrentTick() {
         return server.getCurrentTick();
     }
@@ -2823,6 +2930,7 @@ public final class Bukkit {
      * Checks if the server is in the process of being shutdown.
      *
      * @return true if server is in the process of being shutdown
+     * @since 1.15.2
      */
     public static boolean isStopping() {
         return server.isStopping();
@@ -2832,6 +2940,7 @@ public final class Bukkit {
      * Returns the {@link com.destroystokyo.paper.entity.ai.MobGoals} manager
      *
      * @return the mob goals manager
+     * @since 1.15.2
      */
     @NotNull
     public static com.destroystokyo.paper.entity.ai.MobGoals getMobGoals() {
@@ -2840,6 +2949,7 @@ public final class Bukkit {
 
     /**
      * @return the datapack manager
+     * @since 1.16.5
      */
     @NotNull
     public static io.papermc.paper.datapack.DatapackManager getDatapackManager() {
@@ -2850,6 +2960,7 @@ public final class Bukkit {
      * Gets the potion brewer.
      *
      * @return the potion brewer
+     * @since 1.18.1
      */
     public static @NotNull org.bukkit.potion.PotionBrewer getPotionBrewer() {
         return server.getPotionBrewer();
@@ -2868,6 +2979,7 @@ public final class Bukkit {
      * </p>
      * <p><b>If you do not need/want to make your plugin run on Folia, use {@link #getScheduler()} instead.</b></p>
      * @return the region task scheduler
+     * @since 1.20.1
      */
     public static @NotNull io.papermc.paper.threadedregions.scheduler.RegionScheduler getRegionScheduler() {
         return server.getRegionScheduler();
@@ -2877,6 +2989,7 @@ public final class Bukkit {
      * Returns the async task scheduler. The async task scheduler can be used to schedule tasks
      * that execute asynchronously from the server tick process.
      * @return the async task scheduler
+     * @since 1.20.1
      */
     public static @NotNull io.papermc.paper.threadedregions.scheduler.AsyncScheduler getAsyncScheduler() {
         return server.getAsyncScheduler();
@@ -2891,6 +3004,7 @@ public final class Bukkit {
      * </p>
      * <p><b>If you do not need/want to make your plugin run on Folia, use {@link #getScheduler()} instead.</b></p>
      * @return the global region scheduler
+     * @since 1.20.1
      */
     public static @NotNull io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler getGlobalRegionScheduler() {
         return server.getGlobalRegionScheduler();
@@ -2901,6 +3015,7 @@ public final class Bukkit {
      * owns the chunk at the specified world and block position.
      * @param world Specified world.
      * @param position Specified block position.
+     * @since 1.20.1
      */
     public static boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull io.papermc.paper.math.Position position) {
         return server.isOwnedByCurrentRegion(world, position);
@@ -2915,6 +3030,7 @@ public final class Bukkit {
      * @param position Specified block position.
      * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
      *                           radius, but rather a <i>Chebyshev Distance</i>.
+     * @since 1.20.1
      */
     public static boolean isOwnedByCurrentRegion(@NotNull World world, @NotNull io.papermc.paper.math.Position position, int squareRadiusChunks) {
         return server.isOwnedByCurrentRegion(world, position, squareRadiusChunks);
@@ -2924,6 +3040,7 @@ public final class Bukkit {
      * Returns whether the current thread is ticking a region and that the region being ticked
      * owns the chunk at the specified world and block position as included in the specified location.
      * @param location Specified location, must have a non-null world.
+     * @since 1.20.1
      */
     public static boolean isOwnedByCurrentRegion(@NotNull Location location) {
         return server.isOwnedByCurrentRegion(location);
@@ -2938,6 +3055,7 @@ public final class Bukkit {
      * @param location Specified location, must have a non-null world.
      * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
      *                           radius, but rather a <i>Chebyshev Distance</i>.
+     * @since 1.20.1
      */
     public static boolean isOwnedByCurrentRegion(@NotNull Location location, int squareRadiusChunks) {
         return server.isOwnedByCurrentRegion(location, squareRadiusChunks);
@@ -2947,6 +3065,7 @@ public final class Bukkit {
      * Returns whether the current thread is ticking a region and that the region being ticked
      * owns the chunk at the specified block position.
      * @param block Specified block position.
+     * @since 1.20.1
      */
     public static boolean isOwnedByCurrentRegion(@NotNull org.bukkit.block.Block block) {
         return server.isOwnedByCurrentRegion(block.getLocation());
@@ -2958,6 +3077,7 @@ public final class Bukkit {
      * @param world Specified world.
      * @param chunkX Specified x-coordinate of the chunk position.
      * @param chunkZ Specified z-coordinate of the chunk position.
+     * @since 1.20.1
      */
     public static boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ) {
         return server.isOwnedByCurrentRegion(world, chunkX, chunkZ);
@@ -2974,6 +3094,7 @@ public final class Bukkit {
      * @param chunkZ Specified z-coordinate of the chunk position.
      * @param squareRadiusChunks Specified square radius. Must be >= 0. Note that this parameter is <i>not</i> a <i>squared</i>
      *                           radius, but rather a <i>Chebyshev Distance</i>.
+     * @since 1.20.1
      */
     public static boolean isOwnedByCurrentRegion(@NotNull World world, int chunkX, int chunkZ, int squareRadiusChunks) {
         return server.isOwnedByCurrentRegion(world, chunkX, chunkZ, squareRadiusChunks);
@@ -2989,6 +3110,7 @@ public final class Bukkit {
      * @param minChunkZ Specified z-coordinate of the minimum chunk position.
      * @param maxChunkX Specified x-coordinate of the maximum chunk position.
      * @param maxChunkZ Specified z-coordinate of the maximum chunk position.
+     * @since 1.21.3
      */
     public static boolean isOwnedByCurrentRegion(@NotNull World world, int minChunkX, int minChunkZ, int maxChunkX, int maxChunkZ) {
         return server.isOwnedByCurrentRegion(world, minChunkX, minChunkZ, maxChunkX, maxChunkZ);
@@ -3000,6 +3122,7 @@ public final class Bukkit {
      * for ownership of an entity, as retrieving the entity's location is undefined unless the entity is owned
      * by the current region.
      * @param entity Specified entity.
+     * @since 1.20.1
      */
     public static boolean isOwnedByCurrentRegion(@NotNull Entity entity) {
         return server.isOwnedByCurrentRegion(entity);
@@ -3008,12 +3131,16 @@ public final class Bukkit {
     /**
      * Returns whether the current thread is ticking the global region.
      * @see io.papermc.paper.threadedregions.scheduler.GlobalRegionScheduler
+     * @since 1.21.3
      */
     public static boolean isGlobalTickThread() {
         return server.isGlobalTickThread();
     }
     // Paper end - Folia region threading API
 
+    /**
+     * @since 1.7.10
+     */
     @NotNull
     public static Server.Spigot spigot() {
         return server.spigot();

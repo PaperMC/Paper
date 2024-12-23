@@ -329,6 +329,7 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
      * Sets the permission manager to be used for this server.
      *
      * @param permissionManager permission manager
+     * @since 1.19.3
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     void overridePermissionManager(@NotNull Plugin plugin, @Nullable io.papermc.paper.plugin.PermissionManager permissionManager);
