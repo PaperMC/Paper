@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a Zombie.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Zombie extends Monster, Ageable {
 
@@ -15,7 +15,7 @@ public interface Zombie extends Monster, Ageable {
      *
      * @return Whether the zombie is a baby
      * @deprecated see {@link Ageable#isAdult()}
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Deprecated(since = "1.16.2")
     public boolean isBaby();
@@ -25,7 +25,7 @@ public interface Zombie extends Monster, Ageable {
      *
      * @param flag Whether the zombie is a baby
      * @deprecated see {@link Ageable#setBaby()} and {@link Ageable#setAdult()}
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Deprecated(since = "1.16.2")
     public void setBaby(boolean flag);
@@ -35,7 +35,7 @@ public interface Zombie extends Monster, Ageable {
      *
      * @return Whether the zombie is a villager
      * @deprecated check if instanceof {@link ZombieVillager}.
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Deprecated(since = "1.10.2")
     public boolean isVillager();
@@ -43,7 +43,7 @@ public interface Zombie extends Monster, Ageable {
     /**
      * @param flag flag
      * @deprecated must spawn {@link ZombieVillager}.
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Deprecated(since = "1.9")
     @Contract("_ -> fail")

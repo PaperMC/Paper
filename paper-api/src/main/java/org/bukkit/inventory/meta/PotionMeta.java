@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a potion or item that can have custom effects.
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface PotionMeta extends ItemMeta {
 

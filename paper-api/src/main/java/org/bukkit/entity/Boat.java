@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a boat entity.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Boat extends Vehicle, io.papermc.paper.entity.Leashable { // Paper - Leashable API
 

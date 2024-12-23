@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when an entity is damaged by an entity
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class EntityDamageByEntityEvent extends EntityDamageEvent {
     private final Entity damager;

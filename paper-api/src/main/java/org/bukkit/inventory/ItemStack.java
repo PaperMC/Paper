@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  * use this class to encapsulate Materials for which {@link Material#isItem()}
  * returns false.</b>
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.persistence.PersistentDataViewHolder { // Paper
     private ItemStack craftDelegate; // Paper - always delegate to server-backed stack
@@ -340,7 +340,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param stack the item stack to compare to
      * @return true if the two stacks are equal, ignoring the amount
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public boolean isSimilar(@Nullable ItemStack stack) {
         return this.craftDelegate.isSimilar(stack); // Paper - delegate
@@ -362,7 +362,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param ench Enchantment to test
      * @return True if this has the given enchantment
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public boolean containsEnchantment(@NotNull Enchantment ench) {
         return this.craftDelegate.containsEnchantment(ench); // Paper - delegate
@@ -373,7 +373,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param ench Enchantment to check
      * @return Level of the enchantment, or 0
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public int getEnchantmentLevel(@NotNull Enchantment ench) {
         return this.craftDelegate.getEnchantmentLevel(ench); // Paper - delegate
@@ -383,7 +383,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Gets a map containing all enchantments and their levels on this item.
      *
      * @return Map of enchantments.
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public Map<Enchantment, Integer> getEnchantments() {
@@ -402,7 +402,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @throws IllegalArgumentException if any specific enchantment or level
      *     is null. <b>Warning</b>: Some enchantments may be added before this
      *     exception is thrown.
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @Utility
     public void addEnchantments(@NotNull Map<Enchantment, Integer> enchantments) {
@@ -422,7 +422,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param level Level of the enchantment
      * @throws IllegalArgumentException if enchantment null, or enchantment is
      *     not applicable
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @Utility
     public void addEnchantment(@NotNull Enchantment ench, int level) {
@@ -444,7 +444,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * each element of the map.
      *
      * @param enchantments Enchantments to add
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @Utility
     public void addUnsafeEnchantments(@NotNull Map<Enchantment, Integer> enchantments) {
@@ -464,7 +464,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param ench Enchantment to add
      * @param level Level of the enchantment
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
         this.craftDelegate.addUnsafeEnchantment(ench, level); // Paper - delegate
@@ -476,7 +476,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @param ench Enchantment to remove
      * @return Previous level, or 0
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public int removeEnchantment(@NotNull Enchantment ench) {
         return this.craftDelegate.removeEnchantment(ench); // Paper - delegate
@@ -643,7 +643,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Get a copy of this ItemStack's {@link ItemMeta}.
      *
      * @return a copy of the current ItemStack's ItemData
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @UndefinedNullability // Paper
     public ItemMeta getItemMeta() {
@@ -654,7 +654,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * Checks to see if any meta data has been defined.
      *
      * @return Returns true if some meta data has been set for this item
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public boolean hasItemMeta() {
         return this.craftDelegate.hasItemMeta(); // Paper - delegate
@@ -668,7 +668,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *     ItemFactory#isApplicable(ItemMeta, ItemStack)}
      * @throws IllegalArgumentException if the item meta was not created by
      *     the {@link ItemFactory}
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public boolean setItemMeta(@Nullable ItemMeta itemMeta) {
         return this.craftDelegate.setItemMeta(itemMeta); // Paper - delegate

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A note class to store a specific note.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class Note {
 
@@ -204,7 +204,7 @@ public class Note {
 
     /**
      * @return The note a semitone above this one.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public Note sharped() {
@@ -214,7 +214,7 @@ public class Note {
 
     /**
      * @return The note a semitone below this one.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public Note flattened() {

@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * <li>Frosted Ice formed by the Frost Walker enchantment.
  * </ul>
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class EntityBlockFormEvent extends BlockFormEvent {
     private final Entity entity;

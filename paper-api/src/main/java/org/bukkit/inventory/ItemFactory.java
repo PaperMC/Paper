@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * The ItemFactory is solely responsible for creating item meta containers to
  * apply on item stacks.
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface ItemFactory {
 
@@ -130,7 +130,7 @@ public interface ItemFactory {
      * Returns the default color for all leather armor.
      *
      * @return the default color for leather armor
-     * @since 1.4.6 R0.3
+     * @since 1.4.6
      */
     @NotNull
     Color getDefaultLeatherColor();

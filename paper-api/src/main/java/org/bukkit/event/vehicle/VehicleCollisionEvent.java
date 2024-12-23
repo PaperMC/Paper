@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Raised when a vehicle collides.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public abstract class VehicleCollisionEvent extends VehicleEvent {
     private static final org.bukkit.event.HandlerList HANDLER_LIST = new org.bukkit.event.HandlerList(); // Paper

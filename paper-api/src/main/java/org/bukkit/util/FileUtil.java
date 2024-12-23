@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Class containing file utilities
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class FileUtil {
 

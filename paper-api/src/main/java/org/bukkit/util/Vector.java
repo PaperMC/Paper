@@ -24,7 +24,7 @@ import org.joml.Vector3ic;
  * Vector later. If you want to keep around a Vector, it may be wise to call
  * <code>clone()</code> in order to get a copy.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 @SerializableAs("Vector")
 public class Vector implements Cloneable, ConfigurationSerializable {

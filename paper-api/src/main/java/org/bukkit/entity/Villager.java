@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a villager NPC
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Villager extends AbstractVillager {
 
@@ -24,7 +24,7 @@ public interface Villager extends AbstractVillager {
      * Gets the current profession of this villager.
      *
      * @return Current profession.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     @NotNull
     public Profession getProfession();
@@ -231,7 +231,7 @@ public interface Villager extends AbstractVillager {
      * Represents the various different Villager professions there may be.
      * Villagers have different trading options depending on their profession,
      *
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     interface Profession extends OldEnum<Profession>, Keyed, net.kyori.adventure.translation.Translatable {
 

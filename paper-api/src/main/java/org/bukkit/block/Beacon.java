@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a beacon.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public interface Beacon extends io.papermc.paper.block.LockableTileState { // Paper
 

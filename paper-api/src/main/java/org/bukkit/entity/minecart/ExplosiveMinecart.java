@@ -6,7 +6,7 @@ import org.bukkit.entity.Minecart;
 /**
  * Represents a Minecart with TNT inside it that can explode when triggered.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public interface ExplosiveMinecart extends Minecart, Explosive {
 

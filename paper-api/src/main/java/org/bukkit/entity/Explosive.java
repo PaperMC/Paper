@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * A representation of an explosive entity
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Explosive extends Entity {
 

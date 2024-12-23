@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a minecart entity.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { // Paper
 
@@ -19,7 +19,7 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
      * Sets a minecart's damage.
      *
      * @param damage over 40 to "kill" a minecart
-     * @since 1.6.1 R0.1
+     * @since 1.6.1
      */
     public void setDamage(double damage);
 

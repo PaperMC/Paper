@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a captured state of a chest.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Chest extends Container, LootableBlockInventory, Lidded { // Paper
 
@@ -26,7 +26,7 @@ public interface Chest extends Container, LootableBlockInventory, Lidded { // Pa
      * inventory snapshot instead.
      *
      * @return the inventory
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     @NotNull
     Inventory getBlockInventory();

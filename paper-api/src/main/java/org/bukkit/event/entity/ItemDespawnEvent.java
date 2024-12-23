@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * Cancelling the event results in the item being allowed to exist for 5 more
  * minutes. This behavior is not guaranteed and may change in future versions.
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class ItemDespawnEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -35,9 +35,6 @@ public class ItemDespawnEvent extends EntityEvent implements Cancellable {
         canceled = cancel;
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @NotNull
     @Override
     public Item getEntity() {

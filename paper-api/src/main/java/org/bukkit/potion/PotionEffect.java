@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * enhance its effects, and a {@link PotionEffectType}, that represents its
  * effect on an entity.
  *
- * @since 1.1.0 R4
+ * @since 1.1.0
  */
 @SerializableAs("PotionEffect")
 public class PotionEffect implements ConfigurationSerializable {
@@ -224,7 +224,7 @@ public class PotionEffect implements ConfigurationSerializable {
     }
 
     /**
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Override
     @NotNull
@@ -336,7 +336,7 @@ public class PotionEffect implements ConfigurationSerializable {
      * Makes potion effect produce more, translucent, particles.
      *
      * @return if this effect is ambient
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public boolean isAmbient() {
         return ambient;

@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * @see Server#loadServerIcon(java.awt.image.BufferedImage)
  * @see Server#loadServerIcon(java.io.File)
  * @see ServerListPingEvent#setServerIcon(CachedServerIcon)
- * @since 1.7.2 R0.2
+ * @since 1.7.2
  */
 public interface CachedServerIcon {
 

@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @since 1.7.2 R0.2
+ * @since 1.7.2
  */
 public interface CommandMinecart extends Minecart, io.papermc.paper.command.CommandBlockHolder { // Paper
 

@@ -58,7 +58,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a player, connected or not
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient { // Paper
 
@@ -508,7 +508,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated This value is controlled only by the client and is therefore
      * unreliable and vulnerable to spoofing and/or desync depending on the
      * context/time which it is accessed
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     @Override
     @Deprecated(since = "1.16.1")
@@ -612,7 +612,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @see #setRespawnLocation(Location)
      * @deprecated Misleading name. This method sets the player's respawn
      * location more generally and is not limited to beds.
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @Deprecated(since = "1.20.4")
     public void setBedSpawnLocation(@Nullable Location location);
@@ -635,7 +635,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @see #setRespawnLocation(Location, boolean)
      * @deprecated Misleading name. This method sets the player's respawn
      * location more generally and is not limited to beds.
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Deprecated(since = "1.20.4")
     public void setBedSpawnLocation(@Nullable Location location, boolean force);
@@ -709,7 +709,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param sound The sound to play
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
-     * @since 1.3.2 R1.0
+     * @since 1.3.2
      */
     public void playSound(@NotNull Location location, @NotNull Sound sound, float volume, float pitch);
 
@@ -724,7 +724,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param sound The internal sound name to play
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
-     * @since 1.6.2 R1.1
+     * @since 1.6.2
      */
     public void playSound(@NotNull Location location, @NotNull String sound, float volume, float pitch);
 
@@ -1947,7 +1947,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * used.
      *
      * @param type The WeatherType enum type the player should experience
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     public void setPlayerWeather(@NotNull WeatherType type);
 
@@ -1956,7 +1956,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return The WeatherType that the player is currently experiencing or
      *     null if player is seeing server weather.
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     @Nullable
     public WeatherType getPlayerWeather();
@@ -1965,7 +1965,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Restores the normal condition where the player's weather is controlled
      * by server conditions.
      *
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     public void resetPlayerWeather();
 
@@ -1974,7 +1974,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Gives the player the amount of experience specified.
      *
      * @param amount Exp amount to give
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public default void giveExp(int amount) {
         giveExp(amount, false);
@@ -2028,7 +2028,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * be taken by specifying a negative amount.
      *
      * @param amount amount of experience levels to give or take
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public void giveExpLevels(int amount);
 
@@ -2038,7 +2038,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * This is a percentage value. 0 is "no progress" and 1 is "next level".
      *
      * @return Current experience points
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public float getExp();
 
@@ -2048,7 +2048,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * This is a percentage value. 0 is "no progress" and 1 is "next level".
      *
      * @param exp New experience points
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public void setExp(float exp);
 
@@ -2160,7 +2160,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * in creative mode.
      *
      * @return True if the player is allowed to fly.
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public boolean getAllowFlight();
 
@@ -2169,7 +2169,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * creative mode.
      *
      * @param flight If flight should be allowed.
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public void setAllowFlight(boolean flight);
 
@@ -2197,7 +2197,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param player Player to hide
      * @deprecated see {@link #hidePlayer(Plugin, Player)}
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Deprecated(since = "1.12.2")
     public void hidePlayer(@NotNull Player player);
@@ -2216,7 +2216,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param player Player to show
      * @deprecated see {@link #showPlayer(Plugin, Player)}
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Deprecated(since = "1.12.2")
     public void showPlayer(@NotNull Player player);
@@ -2238,7 +2238,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param player Player to check
      * @return True if the provided player is not being hidden from this
      *     player
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     public boolean canSee(@NotNull Player player);
 
@@ -2305,7 +2305,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Checks to see if this player is currently flying or not.
      *
      * @return True if the player is flying, else false.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public boolean isFlying();
 
@@ -2313,7 +2313,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Makes this player start or stop flying.
      *
      * @param value True to fly.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public void setFlying(boolean value);
 
@@ -2324,7 +2324,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param value The new speed, from -1 to 1.
      * @throws IllegalArgumentException If new speed is less than -1 or
      *     greater than 1
-     * @since 1.3.2 R1.0
+     * @since 1.3.2
      */
     public void setFlySpeed(float value) throws IllegalArgumentException;
 
@@ -2335,7 +2335,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param value The new speed, from -1 to 1.
      * @throws IllegalArgumentException If new speed is less than -1 or
      *     greater than 1
-     * @since 1.3.2 R1.0
+     * @since 1.3.2
      */
     public void setWalkSpeed(float value) throws IllegalArgumentException;
 
@@ -2343,7 +2343,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Gets the current allowed speed that a client can fly.
      *
      * @return The current allowed speed, from -1 to 1
-     * @since 1.3.2 R1.0
+     * @since 1.3.2
      */
     public float getFlySpeed();
 
@@ -2351,7 +2351,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Gets the current allowed speed that a client can walk.
      *
      * @return The current allowed speed, from -1 to 1
-     * @since 1.3.2 R1.0
+     * @since 1.3.2
      */
     public float getWalkSpeed();
 
@@ -2384,7 +2384,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException Thrown if the URL is too long.
      * @deprecated Minecraft no longer uses textures packs. Instead you
      *     should use {@link #setResourcePack(UUID, String, byte[], net.kyori.adventure.text.Component, boolean)}.
-     * @since 1.4.6 R0.3
+     * @since 1.4.6
      */
     @Deprecated(since = "1.7.2")
     public void setTexturePack(@NotNull String url);
@@ -2418,7 +2418,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException Thrown if the URL is too long. The
      *     length restriction is an implementation specific arbitrary value.
      * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @Deprecated // Paper - adventure
     public void setResourcePack(@NotNull String url);
@@ -3056,7 +3056,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Gets the Scoreboard displayed to this player
      *
      * @return The current scoreboard seen by this player
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     @NotNull
     public Scoreboard getScoreboard();
@@ -3070,7 +3070,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     {@link org.bukkit.scoreboard.ScoreboardManager scoreboard manager}
      * @throws IllegalStateException if this is a player that is not logged
      *     yet or has logged out
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     public void setScoreboard(@NotNull Scoreboard scoreboard) throws IllegalArgumentException, IllegalStateException;
 
@@ -3126,7 +3126,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return if client health display is scaled
      * @see Player#setHealthScaled(boolean)
-     * @since 1.6.2 R1.1
+     * @since 1.6.2
      */
     public boolean isHealthScaled();
 
@@ -3138,7 +3138,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * getHealth() / getMaxHealth() * getHealthScale()</code>.
      *
      * @param scale if the client health display is scaled
-     * @since 1.6.2 R1.1
+     * @since 1.6.2
      */
     public void setHealthScaled(boolean scale);
 
@@ -3153,7 +3153,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException if scale is &lt;0
      * @throws IllegalArgumentException if scale is {@link Double#NaN}
      * @throws IllegalArgumentException if scale is too high
-     * @since 1.6.2 R1.1
+     * @since 1.6.2
      */
     public void setHealthScale(double scale) throws IllegalArgumentException;
 
@@ -3164,7 +3164,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     HealthScaling is set to true
      * @see Player#setHealthScale(double)
      * @see Player#setHealthScaled(boolean)
-     * @since 1.6.2 R1.1
+     * @since 1.6.2
      */
     public double getHealthScale();
 
@@ -3839,7 +3839,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     // Paper end - custom chat completions API
 
     /**
-     * @since 1.6.1 R0.1
+     * @since 1.6.1
      */
     // Spigot start
     public class Spigot extends Entity.Spigot {
@@ -3858,7 +3858,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
         /**
          * Respawns the player if dead.
          *
-         * @since 1.6.4 R2.1
+         * @since 1.6.4
          */
         public void respawn() {
             throw new UnsupportedOperationException("Not supported yet.");
@@ -4167,7 +4167,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     // Paper end
 
     /**
-     * @since 1.6.1 R0.1
+     * @since 1.6.1
      */
     @NotNull
     @Override

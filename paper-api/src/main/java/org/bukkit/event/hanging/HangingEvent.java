@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a hanging entity-related event.
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public abstract class HangingEvent extends Event {
     protected Hanging hanging;

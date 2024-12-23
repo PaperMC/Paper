@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Thrown when a player drops an item from their inventory
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -42,7 +42,7 @@ public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -51,7 +51,7 @@ public class PlayerDropItemEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

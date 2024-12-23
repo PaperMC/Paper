@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a horse jumps.
  *
- * @since 1.6.2 R1.1
+ * @since 1.6.2
  */
 public class HorseJumpEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

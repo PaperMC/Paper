@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @see PluginManager#callEvent(Event)
  * @see PluginManager#registerEvents(Listener,Plugin)
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public abstract class Event {
     private String name;
@@ -69,7 +69,7 @@ public abstract class Event {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public abstract HandlerList getHandlers();
@@ -95,7 +95,7 @@ public abstract class Event {
      * </ul>
      *
      * @return false by default, true if the event fires asynchronously
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     public final boolean isAsynchronous() {
         return async;

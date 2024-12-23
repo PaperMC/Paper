@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable; // Paper
 /**
  * Called when a players experience changes naturally
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class PlayerExpChangeEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();

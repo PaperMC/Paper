@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a dropped item.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Item extends Entity, io.papermc.paper.entity.Frictional { // Paper
 

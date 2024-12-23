@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
  * Consider rendering any translatable yourself with {@link net.kyori.adventure.translation.GlobalTranslator#render}
  * if the client's language is known.
  *
- * @since 1.3.1 R1.0
+ * @since 1.3.1
  */
 public class AsyncPlayerPreLoginEvent extends Event {
     private static final HandlerList handlers = new HandlerList();
@@ -72,7 +72,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
      * Gets the current result of the login, as an enum
      *
      * @return Current Result of the login
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @NotNull
     public Result getLoginResult() {

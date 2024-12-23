@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * Purpose is to allow clean, efficient copy of a chunk data to be made, and
  * then handed off for processing in another thread (e.g. map rendering)
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface ChunkSnapshot {
 
@@ -160,7 +160,7 @@ public interface ChunkSnapshot {
      *
      * @param sy - section Y coordinate (block Y / 16, world minHeight (inclusive) - world maxHeight (exclusive))
      * @return true if empty, false if not
-     * @since 1.2.2 R0.1
+     * @since 1.2.2
      */
     boolean isSectionEmpty(int sy);
 

@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
  * An ExactMatchConversationCanceller cancels a conversation if the user
  * enters an exact input string
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class ExactMatchConversationCanceller implements ConversationCanceller {
     private String escapeSequence;

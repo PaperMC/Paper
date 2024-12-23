@@ -6,7 +6,7 @@ import org.bukkit.loot.Lootable;
 /**
  * Represents a captured state of a hopper.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public interface Hopper extends Container, LootableBlockInventory { // Paper
     // Paper start - Expanded Hopper API

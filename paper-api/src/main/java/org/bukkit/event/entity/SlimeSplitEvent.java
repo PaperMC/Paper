@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a Slime splits into smaller Slimes upon death
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class SlimeSplitEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -31,7 +31,7 @@ public class SlimeSplitEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -58,7 +58,7 @@ public class SlimeSplitEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -67,7 +67,7 @@ public class SlimeSplitEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

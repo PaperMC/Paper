@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a {@link Material#FIREWORK_ROCKET} and its effects.
  *
- * @since 1.4.6 R0.3
+ * @since 1.4.6
  */
 public interface FireworkMeta extends ItemMeta {
 

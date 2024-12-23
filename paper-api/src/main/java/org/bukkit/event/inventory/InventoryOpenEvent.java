@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a player opens an inventory
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

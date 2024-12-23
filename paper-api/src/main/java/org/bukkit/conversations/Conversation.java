@@ -33,7 +33,7 @@ import org.jetbrains.annotations.Nullable;
  * You should not construct a conversation manually. Instead, use the {@link
  * ConversationFactory} for access to all available options.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class Conversation {
 
@@ -115,7 +115,7 @@ public class Conversation {
      * submitter's chat window.
      *
      * @return The status of local echo.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public boolean isLocalEchoEnabled() {
         return localEchoEnabled;
@@ -127,7 +127,7 @@ public class Conversation {
      * submitter's chat window.
      *
      * @param localEchoEnabled The status of local echo.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public void setLocalEchoEnabled(boolean localEchoEnabled) {
         this.localEchoEnabled = localEchoEnabled;
@@ -244,7 +244,7 @@ public class Conversation {
      * Adds a {@link ConversationAbandonedListener}.
      *
      * @param listener The listener to add.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public synchronized void addConversationAbandonedListener(@NotNull ConversationAbandonedListener listener) {
         abandonedListeners.add(listener);
@@ -254,7 +254,7 @@ public class Conversation {
      * Removes a {@link ConversationAbandonedListener}.
      *
      * @param listener The listener to remove.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public synchronized void removeConversationAbandonedListener(@NotNull ConversationAbandonedListener listener) {
         abandonedListeners.remove(listener);
@@ -273,7 +273,7 @@ public class Conversation {
      * normal chat behavior.
      *
      * @param details Details about why the conversation was abandoned
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public synchronized void abandon(@NotNull ConversationAbandonedEvent details) {
         if (!abandoned) {

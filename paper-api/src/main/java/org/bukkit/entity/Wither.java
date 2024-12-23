@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a Wither boss
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.RangedEntity { // Paper
 

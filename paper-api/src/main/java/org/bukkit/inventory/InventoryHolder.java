@@ -3,7 +3,7 @@ package org.bukkit.inventory;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public interface InventoryHolder {
 

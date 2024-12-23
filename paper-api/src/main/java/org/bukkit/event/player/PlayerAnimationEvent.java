@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * Represents a player animation event
  * <br>Use {@link io.papermc.paper.event.player.PlayerArmSwingEvent} for determining which arm was swung.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -53,7 +53,7 @@ public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -62,7 +62,7 @@ public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a Painting.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Painting extends Hanging {
 

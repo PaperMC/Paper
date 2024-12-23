@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  * ValidatingPrompt will keep replaying the prompt text until the user enters
  * a valid response.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public abstract class ValidatingPrompt implements Prompt {
     public ValidatingPrompt() {

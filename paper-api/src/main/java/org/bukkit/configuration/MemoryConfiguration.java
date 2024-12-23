@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * from any source, and stores all values in memory only.
  * This is useful for temporary Configurations for providing defaults.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class MemoryConfiguration extends MemorySection implements Configuration {
     protected Configuration defaults;

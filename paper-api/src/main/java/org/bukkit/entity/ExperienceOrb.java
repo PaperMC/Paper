@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable; // Paper
 /**
  * Represents an Experience Orb.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface ExperienceOrb extends Entity {
 

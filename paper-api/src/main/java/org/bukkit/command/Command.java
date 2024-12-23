@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a Command, which executes various tasks upon user input
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public abstract class Command {
     private String name;
@@ -80,7 +80,7 @@ public abstract class Command {
      * @return a list of tab-completions for the specified arguments. This
      *     will never be null. List may be immutable.
      * @throws IllegalArgumentException if sender, alias, or args is null
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @NotNull
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
@@ -215,7 +215,7 @@ public abstract class Command {
      *
      * @param target User to test
      * @return true if they can use it, otherwise false
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public boolean testPermissionSilent(@NotNull CommandSender target) {
         if ((permission == null) || (permission.length() == 0)) {
@@ -335,7 +335,7 @@ public abstract class Command {
      * command execution to the server. This message will only ever be shown to
      * consoles or when this command is executed with
      * {@link Bukkit#dispatchCommand(CommandSender, String)}.
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Deprecated(since = "1.20.4")
     @Nullable
@@ -407,7 +407,7 @@ public abstract class Command {
      * command execution to the server. This message will only ever be shown to
      * consoles or when this command is executed with
      * {@link Bukkit#dispatchCommand(CommandSender, String)}.
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Deprecated(since = "1.20.4")
     @NotNull
@@ -468,7 +468,7 @@ public abstract class Command {
     }
 
     /**
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     public static void broadcastCommandMessage(@NotNull CommandSender source, @NotNull String message, boolean sendToSource) {
         // Paper start

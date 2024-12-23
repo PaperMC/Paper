@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Creates simplex noise through unbiased octaves
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class SimplexOctaveGenerator extends OctaveGenerator {
     private double wScale = 1;

@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Represents a Pig Zombie.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface PigZombie extends Zombie {
 

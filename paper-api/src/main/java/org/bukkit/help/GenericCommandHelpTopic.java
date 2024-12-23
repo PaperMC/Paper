@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * can use this class as a base class for custom help topics, or as an example
  * for how to write your own.
  *
- * @since 1.2.5 R0.1
+ * @since 1.3.1
  */
 public class GenericCommandHelpTopic extends HelpTopic {
 

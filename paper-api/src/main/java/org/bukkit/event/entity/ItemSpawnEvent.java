@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when an item is spawned into a world
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class ItemSpawnEvent extends EntitySpawnEvent {
 
@@ -21,7 +21,7 @@ public class ItemSpawnEvent extends EntitySpawnEvent {
     }
 
     /**
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     @Override

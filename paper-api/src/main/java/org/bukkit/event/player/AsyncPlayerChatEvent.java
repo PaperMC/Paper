@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
  * appropriately.
  *
  * @deprecated use {@link io.papermc.paper.event.player.AsyncChatEvent} instead
- * @since 1.3.1 R1.0
+ * @since 1.3.1
  */
 @Deprecated // Paper
 @org.bukkit.Warning(value = false, reason = "Don't nag on old event yet") // Paper

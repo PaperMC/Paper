@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a sheep's wool is dyed
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class SheepDyeWoolEvent extends io.papermc.paper.event.entity.EntityDyeEvent implements Cancellable {
     // Paper - move everything to superclass
@@ -25,9 +25,6 @@ public class SheepDyeWoolEvent extends io.papermc.paper.event.entity.EntityDyeEv
         super(sheep, color, player); // Paper
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @NotNull
     @Override
     public Sheep getEntity() {

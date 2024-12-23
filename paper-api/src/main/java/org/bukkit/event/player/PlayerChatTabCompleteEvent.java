@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * Called when a player attempts to tab-complete a chat message.
  *
  * @deprecated This event is no longer fired due to client changes
- * @since 1.3.2 R3.0
+ * @since 1.3.2
  */
 @Deprecated(since = "1.13")
 @Warning(reason = "This event is no longer fired due to client changes")

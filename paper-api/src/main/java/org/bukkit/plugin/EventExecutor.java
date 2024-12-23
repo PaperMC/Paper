@@ -22,7 +22,7 @@ import com.google.common.base.Preconditions;
 /**
  * Interface which defines the class for event call backs to plugins
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface EventExecutor {
     public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException;

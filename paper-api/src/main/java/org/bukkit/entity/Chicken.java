@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Represents a Chicken.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 // Paper start
 public interface Chicken extends Animals {

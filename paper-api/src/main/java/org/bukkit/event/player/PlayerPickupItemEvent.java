@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Thrown when a player picks an item up from the ground
  * @deprecated {@link EntityPickupItemEvent}
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 @Deprecated(since = "1.12")
 @Warning(false)
@@ -83,7 +83,7 @@ public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -92,7 +92,7 @@ public class PlayerPickupItemEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

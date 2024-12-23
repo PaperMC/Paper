@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a player toggles their flying state
  *
- * @since 1.3.1 R1.0
+ * @since 1.3.1
  */
 public class PlayerToggleFlightEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

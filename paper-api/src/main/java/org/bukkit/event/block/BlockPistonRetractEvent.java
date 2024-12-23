@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a piston retracts
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class BlockPistonRetractEvent extends BlockPistonEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -47,7 +47,7 @@ public class BlockPistonRetractEvent extends BlockPistonEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -56,7 +56,7 @@ public class BlockPistonRetractEvent extends BlockPistonEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

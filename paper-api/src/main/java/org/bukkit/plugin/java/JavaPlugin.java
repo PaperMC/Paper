@@ -35,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
  * and fields for a plugin to be loaded and work properly. This is an indirect
  * implementation of {@link org.bukkit.plugin.Plugin}.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public abstract class JavaPlugin extends PluginBase {
     private boolean isEnabled = false;
@@ -202,7 +202,7 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @Override
     public void saveDefaultConfig() {
@@ -212,7 +212,7 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @Override
     public void saveResource(@NotNull String resourcePath, boolean replace) {
@@ -343,7 +343,7 @@ public abstract class JavaPlugin extends PluginBase {
     /**
      * {@inheritDoc}
      *
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @Override
     @Nullable
@@ -379,13 +379,13 @@ public abstract class JavaPlugin extends PluginBase {
     public void onLoad() {}
 
     /**
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Override
     public void onDisable() {}
 
     /**
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Override
     public void onEnable() {}
@@ -416,7 +416,7 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -452,7 +452,7 @@ public abstract class JavaPlugin extends PluginBase {
      *     given JavaPlugin
      * @throws ClassCastException if plugin that provided the class does not
      *     extend the class
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @NotNull
     public static <T extends JavaPlugin> T getPlugin(@NotNull Class<T> clazz) {
@@ -482,7 +482,7 @@ public abstract class JavaPlugin extends PluginBase {
      * @throws IllegalArgumentException if class is null
      * @throws IllegalStateException if called from the static initializer for
      *     given JavaPlugin
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @NotNull
     public static JavaPlugin getProvidingPlugin(@NotNull Class<?> clazz) {

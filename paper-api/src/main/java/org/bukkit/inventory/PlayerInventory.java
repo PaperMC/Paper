@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Interface to the inventory of a Player, including the four armor slots and any extra slots.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface PlayerInventory extends Inventory {
 
@@ -246,12 +246,12 @@ public interface PlayerInventory extends Inventory {
      * @param slot The new slot number
      * @throws IllegalArgumentException Thrown if slot is not between 0 and 8
      *     inclusive
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     public void setHeldItemSlot(int slot);
 
     /**
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Override
     @Nullable

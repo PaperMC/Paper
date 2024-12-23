@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * already been cleared. See {@link #getDamagerBlockState()} for a snapshot
  * of the block if it has already been changed.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class EntityDamageByBlockEvent extends EntityDamageEvent {
     private final Block damager;

@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a type of potion and its effect on an entity.
  *
- * @since 1.1.0 R4
+ * @since 1.1.0
  */
 public abstract class PotionEffectType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - implement Translatable & feature flag API
     private static final BiMap<Integer, PotionEffectType> ID_MAP = HashBiMap.create();

@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  * Called when an ItemStack is successfully enchanted (currently at
  * enchantment table)
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class EnchantItemEvent extends InventoryEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -147,7 +147,6 @@ public class EnchantItemEvent extends InventoryEvent implements Cancellable {
      * Which button was pressed to initiate the enchanting.
      *
      * @return The button index (0, 1, or 2).
-     * @since 1.1.0 R5
      */
     public int whichButton() {
         return button;

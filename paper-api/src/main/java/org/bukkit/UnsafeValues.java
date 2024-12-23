@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
  * may be poorly named, throw exceptions, have misleading parameters, or any
  * other bad programming practice.
  *
- * @since 1.7.2 R0.2
+ * @since 1.7.2
  */
 @Deprecated(since = "1.7.2")
 public interface UnsafeValues {
@@ -382,15 +382,14 @@ public interface UnsafeValues {
     @org.jetbrains.annotations.ApiStatus.Internal
     io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> createPluginLifecycleEventManager(final org.bukkit.plugin.java.JavaPlugin plugin, final java.util.function.BooleanSupplier registrationCheck);
     // Paper end - lifecycle event API
-
     /**
      * @since 1.20.4
      */
-    @NotNull java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(@NotNull ItemStack itemStack, @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, @Nullable org.bukkit.entity.Player player); // Paper - expose itemstack tooltip lines
-
 
     /**
      * @since 1.21
      */
+    @NotNull java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(@NotNull ItemStack itemStack, @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, @Nullable org.bukkit.entity.Player player); // Paper - expose itemstack tooltip lines
+
     ItemStack createEmptyStack(); // Paper - proxy ItemStack
 }

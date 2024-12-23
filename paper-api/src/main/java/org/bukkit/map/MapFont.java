@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a bitmap font drawable to a map.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class MapFont {
 

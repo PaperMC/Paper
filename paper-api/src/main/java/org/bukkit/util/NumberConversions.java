@@ -6,36 +6,30 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Utils for casting number types to other number types
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public final class NumberConversions {
     private NumberConversions() {}
 
-    /**
-     * @since 1.1.0 R5
-     */
     public static int floor(double num) {
         final int floor = (int) num;
         return floor == num ? floor : floor - (int) (Double.doubleToRawLongBits(num) >>> 63);
     }
 
     /**
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     public static int ceil(final double num) {
         final int floor = (int) num;
         return floor == num ? floor : floor + (int) (~Double.doubleToRawLongBits(num) >>> 63);
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     public static int round(double num) {
         return floor(num + 0.5d);
     }
 
     /**
-     * @since 1.6.4 R2.1
+     * @since 1.6.4
      */
     public static double square(double num) {
         return num * num;

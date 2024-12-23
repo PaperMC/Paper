@@ -32,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
  * (i.e. lighting and power) may not be able to be safely accessed during world
  * generation when used in cases like BlockPhysicsEvent!!!!
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Block extends Metadatable, Translatable, net.kyori.adventure.translation.Translatable { // Paper - translatable
 
@@ -118,7 +118,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * be ignored.
      *
      * @return Sky light level
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     byte getLightFromSky();
 
@@ -128,7 +128,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Any light given from other sources (such as the sun) will be ignored.
      *
      * @return Block light level
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     byte getLightFromBlocks();
 
@@ -271,7 +271,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param loc the location to copy into
      * @return The Location object provided or null
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Contract("null -> null; !null -> !null")
     @Nullable
@@ -411,7 +411,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Sets the biome that this block resides in
      *
      * @param bio new Biome type for this block
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     void setBiome(@NotNull Biome bio);
 
@@ -559,7 +559,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * of the tool.
      *
      * @return true if the block was destroyed
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     boolean breakNaturally();
 
@@ -569,7 +569,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param tool The tool or item in hand used for digging
      * @return true if the block was destroyed
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     boolean breakNaturally(@Nullable ItemStack tool);
 
@@ -678,7 +678,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * method as this just uses the block type's loot table.
      *
      * @return a list of dropped items for this type of block
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     Collection<ItemStack> getDrops();
@@ -692,7 +692,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @param tool The tool or item in hand used for digging
      * @return a list of dropped items for this type of block
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     Collection<ItemStack> getDrops(@Nullable ItemStack tool);

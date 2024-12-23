@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a skull block.
  *
- * @since 1.4.6 R0.3
+ * @since 1.4.6
  */
 public interface Skull extends TileState {
 

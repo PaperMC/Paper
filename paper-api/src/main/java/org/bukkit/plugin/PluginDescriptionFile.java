@@ -199,7 +199,7 @@ import org.yaml.snakeyaml.representer.Representer;
  *      inferno.burningdeaths: true
  *</pre></blockquote>
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public final class PluginDescriptionFile implements io.papermc.paper.plugin.configuration.PluginMeta { // Paper
     private static final Pattern VALID_NAME = Pattern.compile("^[A-Za-z0-9 _.-]+$");
@@ -708,7 +708,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      *
      * @return immutable list of plugins that should consider this plugin a
      *     soft-dependency
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     @NotNull
     public List<String> getLoadBefore() {
@@ -729,7 +729,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      * Example:<blockquote><pre>prefix: ex-why-zee</pre></blockquote>
      *
      * @return the prefixed logging token, or null if not specified
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Nullable
     public String getPrefix() {
@@ -1090,7 +1090,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
     /**
      * @return unused
      * @deprecated unused
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @Deprecated(since = "1.7.2")
     @Nullable

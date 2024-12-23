@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
  * NullConversationPrefix is a {@link ConversationPrefix} implementation that
  * displays nothing in front of conversation output.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class NullConversationPrefix implements ConversationPrefix {
 

@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Raised when a vehicle collides with a block.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
     private final Block block;

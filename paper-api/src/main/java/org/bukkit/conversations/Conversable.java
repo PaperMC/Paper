@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
  * The Conversable interface is used to indicate objects that can have
  * conversations.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public interface Conversable {
 
@@ -49,7 +49,7 @@ public interface Conversable {
      *
      * @param conversation The conversation to abandon
      * @param details Details about why the conversation was abandoned
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public void abandonConversation(@NotNull Conversation conversation, @NotNull ConversationAbandonedEvent details);
 

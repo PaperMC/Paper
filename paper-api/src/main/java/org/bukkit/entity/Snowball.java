@@ -3,6 +3,6 @@ package org.bukkit.entity;
 /**
  * Represents a snowball.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Snowball extends ThrowableProjectile {}

@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
  * This interface is implemented by all objects that can provide metadata
  * about themselves.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public interface Metadatable {
     /**

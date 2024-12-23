@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * The ConversationFactory implements a fluid API, allowing parameters to be
  * set as an extension to the constructor.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class ConversationFactory {
 
@@ -73,7 +73,7 @@ public class ConversationFactory {
      *
      * @param localEchoEnabled The status of local echo.
      * @return This object.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     @NotNull
     public ConversationFactory withLocalEcho(boolean localEchoEnabled) {
@@ -182,7 +182,7 @@ public class ConversationFactory {
      *
      * @param listener The listener to add.
      * @return This object.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     @NotNull
     public ConversationFactory addConversationAbandonedListener(@NotNull ConversationAbandonedListener listener) {

@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents an Entity-related event
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public abstract class EntityEvent extends Event {
     protected Entity entity;
@@ -31,7 +31,7 @@ public abstract class EntityEvent extends Event {
      * Gets the EntityType of the Entity involved in this event.
      *
      * @return EntityType of the Entity involved in this event
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public EntityType getEntityType() {

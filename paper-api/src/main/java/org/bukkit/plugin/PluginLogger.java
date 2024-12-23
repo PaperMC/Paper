@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
  * PluginLogger is exactly the same as {@link Logger}.
  *
  * @see Logger
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class PluginLogger extends Logger {
     private String pluginName;

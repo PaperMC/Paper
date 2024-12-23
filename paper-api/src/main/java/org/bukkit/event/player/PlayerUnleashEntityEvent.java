@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called prior to an entity being unleashed due to a player's action.
  *
- * @since 1.6.2 R1.1
+ * @since 1.6.2
  */
 public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Cancellable {
 

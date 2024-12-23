@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a Wolf
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.CollarColorable { // Paper - CollarColorable
 
@@ -34,7 +34,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      * Get the collar color of this wolf
      *
      * @return the color of the collar
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @NotNull
     @Override // Paper
@@ -44,7 +44,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      * Set the collar color of this wolf
      *
      * @param color the color to apply
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Override // Paper
     public void setCollarColor(@NotNull DyeColor color);

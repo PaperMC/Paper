@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * conversation to the player. The ConversationPrefix can be used to display
  * the plugin name or conversation status as the conversation evolves.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public interface ConversationPrefix {
 

@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface AnimalTamer {
 
@@ -13,7 +13,7 @@ public interface AnimalTamer {
      * This is the name of the specified AnimalTamer.
      *
      * @return The name to reference on tamed animals or null if a name cannot be obtained
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     @Nullable
     public String getName();

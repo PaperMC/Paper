@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a jukebox.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Jukebox extends io.papermc.paper.block.TileStateInventoryHolder { // Paper - TileStateInventoryHolder
 

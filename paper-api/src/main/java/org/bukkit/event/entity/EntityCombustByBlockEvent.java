@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a block causes an entity to combust.
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class EntityCombustByBlockEvent extends EntityCombustEvent {
     private final Block combuster;

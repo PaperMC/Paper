@@ -65,7 +65,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents the Bukkit core, for version and Server singleton handling
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public final class Bukkit {
     private static Server server;
@@ -271,7 +271,7 @@ public final class Bukkit {
      * Get world type (level-type setting) for default world.
      *
      * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     @NotNull
     public static String getWorldType() {
@@ -282,7 +282,7 @@ public final class Bukkit {
      * Get generate-structures setting.
      *
      * @return true if structure generation is enabled, false otherwise
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public static boolean getGenerateStructures() {
         return server.getGenerateStructures();
@@ -302,7 +302,7 @@ public final class Bukkit {
      * Gets whether this server allows the End or not.
      *
      * @return whether this server allows the End or not
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public static boolean getAllowEnd() {
         return server.getAllowEnd();
@@ -544,7 +544,7 @@ public final class Bukkit {
      * plugins at the right moment on a plugin load.
      *
      * @return the update folder
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public static File getUpdateFolderFile() {
@@ -555,7 +555,7 @@ public final class Bukkit {
      * Gets the value of the connection throttle setting.
      *
      * @return the value of the connection throttle setting
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public static long getConnectionThrottle() {
         return server.getConnectionThrottle();
@@ -580,7 +580,7 @@ public final class Bukkit {
      *
      * @return the default ticks per animal spawns value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Deprecated(since = "1.18.1")
     public static int getTicksPerAnimalSpawns() {
@@ -606,7 +606,7 @@ public final class Bukkit {
      *
      * @return the default ticks per monsters spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Deprecated(since = "1.18.1")
     public static int getTicksPerMonsterSpawns() {
@@ -1197,7 +1197,7 @@ public final class Bukkit {
      *
      * @param result the item to match against recipe results
      * @return a list of recipes with the given result
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public static List<Recipe> getRecipesFor(@NotNull ItemStack result) {
@@ -1355,7 +1355,7 @@ public final class Bukkit {
      * Get an iterator through the list of crafting recipes.
      *
      * @return an iterator
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public static Iterator<Recipe> recipeIterator() {
@@ -1365,7 +1365,7 @@ public final class Bukkit {
     /**
      * Clears the list of crafting recipes.
      *
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public static void clearRecipes() {
         server.clearRecipes();
@@ -1374,7 +1374,7 @@ public final class Bukkit {
     /**
      * Resets the list of crafting recipes to the default.
      *
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public static void resetRecipes() {
         server.resetRecipes();
@@ -1509,7 +1509,7 @@ public final class Bukkit {
      * Gets whether the server is in hardcore mode or not.
      *
      * @return true if the server mode is hardcore, false otherwise
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public static boolean isHardcore() {
         return server.isHardcore();
@@ -1779,7 +1779,7 @@ public final class Bukkit {
      * Gets the default {@link GameMode} for new players.
      *
      * @return the default game mode
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public static GameMode getDefaultGameMode() {
@@ -1790,7 +1790,7 @@ public final class Bukkit {
      * Sets the default {@link GameMode} for new players.
      *
      * @param mode the new game mode
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public static void setDefaultGameMode(@NotNull GameMode mode) {
         server.setDefaultGameMode(mode);
@@ -1838,7 +1838,7 @@ public final class Bukkit {
      * <b>This method can be expensive as it loads all the player data files from the disk.</b>
      *
      * @return an array containing all previous players
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public static OfflinePlayer[] getOfflinePlayers() {
@@ -1849,7 +1849,7 @@ public final class Bukkit {
      * Gets the {@link Messenger} responsible for this server.
      *
      * @return messenger responsible for this server
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static Messenger getMessenger() {
@@ -1860,7 +1860,7 @@ public final class Bukkit {
      * Gets the {@link HelpMap} providing help topics for this server.
      *
      * @return a help map for this server
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public static HelpMap getHelpMap() {
@@ -1887,7 +1887,7 @@ public final class Bukkit {
      * viewed.
      *
      * @see InventoryType#isCreatable()
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public static Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type) {
@@ -1966,7 +1966,7 @@ public final class Bukkit {
      * @param size a multiple of 9 as the size of inventory to create
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public static Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException {
@@ -2003,7 +2003,7 @@ public final class Bukkit {
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
      * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Deprecated // Paper
     @NotNull
@@ -2057,7 +2057,7 @@ public final class Bukkit {
      *
      * @return the monster spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     public static int getMonsterSpawnLimit() {
@@ -2070,7 +2070,7 @@ public final class Bukkit {
      *
      * @return the animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     public static int getAnimalSpawnLimit() {
@@ -2083,7 +2083,7 @@ public final class Bukkit {
      *
      * @return the water animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     public static int getWaterAnimalSpawnLimit() {
@@ -2122,7 +2122,7 @@ public final class Bukkit {
      *
      * @return the ambient spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Deprecated(since = "1.18.1")
     public static int getAmbientSpawnLimit() {
@@ -2154,7 +2154,7 @@ public final class Bukkit {
      *
      * @return true if the current thread matches the expected primary thread,
      *     false otherwise
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     public static boolean isPrimaryThread() {
         return server.isPrimaryThread();
@@ -2197,7 +2197,7 @@ public final class Bukkit {
      *
      * @return the servers MOTD
      * @deprecated in favour of {@link #motd()}
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     @NotNull
     @Deprecated // Paper
@@ -2234,7 +2234,7 @@ public final class Bukkit {
      *
      * @return the shutdown message
      * @deprecated in favour of {@link #shutdownMessage()}
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Nullable
     @Deprecated // Paper
@@ -2246,7 +2246,7 @@ public final class Bukkit {
      * Gets the current warning state for the server.
      *
      * @return the configured warning state
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     @NotNull
     public static WarningState getWarningState() {
@@ -2258,7 +2258,7 @@ public final class Bukkit {
      *
      * @return the item factory
      * @see ItemFactory
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @NotNull
     public static ItemFactory getItemFactory() {
@@ -2283,7 +2283,7 @@ public final class Bukkit {
      * This will only exist after the first world has loaded.
      *
      * @return the scoreboard manager or null if no worlds are loaded.
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     @NotNull // Paper
     public static ScoreboardManager getScoreboardManager() {
@@ -2309,7 +2309,7 @@ public final class Bukkit {
      * @return the default server-icon; null values may be used by the
      *     implementation to indicate no defined icon, but this behavior is
      *     not guaranteed
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @Nullable
     public static CachedServerIcon getServerIcon() {
@@ -2329,7 +2329,7 @@ public final class Bukkit {
      * @throws IllegalArgumentException if image is null
      * @throws Exception if the image does not meet current server server-icon
      *     specifications
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @NotNull
     public static CachedServerIcon loadServerIcon(@NotNull File file) throws IllegalArgumentException, Exception {
@@ -2348,7 +2348,7 @@ public final class Bukkit {
      * @throws IllegalArgumentException if image is null
      * @throws Exception if the image does not meet current server
      *     server-icon specifications
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @NotNull
     public static CachedServerIcon loadServerIcon(@NotNull BufferedImage image) throws IllegalArgumentException, Exception {
@@ -2362,7 +2362,7 @@ public final class Bukkit {
      * A value of 0 will disable the idle kick timeout.
      *
      * @param threshold the idle timeout in minutes
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     public static void setIdleTimeout(int threshold) {
         server.setIdleTimeout(threshold);
@@ -2372,7 +2372,7 @@ public final class Bukkit {
      * Gets the idle kick timeout.
      *
      * @return the idle timeout in minutes
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     public static int getIdleTimeout() {
         return server.getIdleTimeout();
@@ -2757,7 +2757,7 @@ public final class Bukkit {
     /**
      * @return the unsafe values instance
      * @see UnsafeValues
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @Deprecated(since = "1.7.2")
     @NotNull

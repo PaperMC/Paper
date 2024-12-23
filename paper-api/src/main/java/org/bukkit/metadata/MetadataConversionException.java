@@ -5,7 +5,7 @@ package org.bukkit.metadata;
  * LazyMetadataValue} attempts to convert a metadata value to an inappropriate
  * data type.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 @SuppressWarnings("serial")
 public class MetadataConversionException extends RuntimeException {

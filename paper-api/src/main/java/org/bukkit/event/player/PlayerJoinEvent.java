@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a player joins a server
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PlayerJoinEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -71,7 +71,7 @@ public class PlayerJoinEvent extends PlayerEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -80,7 +80,7 @@ public class PlayerJoinEvent extends PlayerEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

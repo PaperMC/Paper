@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * If the event is cancelled the effect will not be applied and the item will
  * not be removed from the player's inventory.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

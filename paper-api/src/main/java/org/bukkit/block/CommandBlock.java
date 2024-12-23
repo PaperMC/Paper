@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a command block.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public interface CommandBlock extends TileState, io.papermc.paper.command.CommandBlockHolder { // Paper
 

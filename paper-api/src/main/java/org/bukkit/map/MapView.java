@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a map item.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface MapView {
 

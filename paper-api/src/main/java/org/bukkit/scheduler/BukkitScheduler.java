@@ -8,7 +8,7 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface BukkitScheduler {
 
@@ -221,7 +221,7 @@ public interface BukkitScheduler {
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @NotNull
     public BukkitTask runTask(@NotNull Plugin plugin, @NotNull Runnable task) throws IllegalArgumentException;
@@ -261,7 +261,7 @@ public interface BukkitScheduler {
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @NotNull
     public BukkitTask runTaskAsynchronously(@NotNull Plugin plugin, @NotNull Runnable task) throws IllegalArgumentException;
@@ -303,7 +303,7 @@ public interface BukkitScheduler {
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @NotNull
     public BukkitTask runTaskLater(@NotNull Plugin plugin, @NotNull Runnable task, long delay) throws IllegalArgumentException;
@@ -348,7 +348,7 @@ public interface BukkitScheduler {
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @NotNull
     public BukkitTask runTaskLaterAsynchronously(@NotNull Plugin plugin, @NotNull Runnable task, long delay) throws IllegalArgumentException;
@@ -394,7 +394,7 @@ public interface BukkitScheduler {
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @NotNull
     public BukkitTask runTaskTimer(@NotNull Plugin plugin, @NotNull Runnable task, long delay, long period) throws IllegalArgumentException;
@@ -443,7 +443,7 @@ public interface BukkitScheduler {
      * @return a BukkitTask that contains the id number
      * @throws IllegalArgumentException if plugin is null
      * @throws IllegalArgumentException if task is null
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @NotNull
     public BukkitTask runTaskTimerAsynchronously(@NotNull Plugin plugin, @NotNull Runnable task, long delay, long period) throws IllegalArgumentException;

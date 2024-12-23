@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a skull that can have an owner.
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface SkullMeta extends ItemMeta {
 

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  * Represents all the map cursors on a {@link MapCanvas}. Like MapCanvas, a
  * MapCursorCollection is linked to a specific {@link MapRenderer}.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public final class MapCursorCollection {
     private List<MapCursor> cursors = new ArrayList<MapCursor>();

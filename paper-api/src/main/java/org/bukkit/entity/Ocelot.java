@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A wild tameable cat
  *
- * @since 1.2.2 R0.1
+ * @since 1.2.2
  */
 public interface Ocelot extends Animals {
 

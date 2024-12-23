@@ -50,7 +50,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a world, which may contain entities, chunks and blocks
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed, net.kyori.adventure.audience.ForwardingAudience { // Paper
 
@@ -413,7 +413,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated This method was added to facilitate chunk garbage collection.
      *     As of the current Minecraft version chunks are now strictly managed and
      *     will not be loaded for more than 1 tick unless they are in use.
-     * @since 1.3.2 R1.0
+     * @since 1.3.2
      */
     @Deprecated(since = "1.14")
     public boolean isChunkInUse(int x, int z);
@@ -860,7 +860,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param classes The classes representing the types of entity to match
      * @return A List of all Entities currently residing in this world that
      *     match the given class/interface
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Deprecated(since = "1.1")
     @NotNull
@@ -874,7 +874,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param cls The class representing the type of entity to match
      * @return A List of all Entities currently residing in this world that
      *     match the given class/interface
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public <T extends Entity> Collection<T> getEntitiesByClass(@NotNull Class<T> cls);
@@ -2283,7 +2283,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param setFire Whether or not to set blocks on fire
      * @param breakBlocks Whether or not to have blocks be destroyed
      * @return false if explosion was canceled, otherwise true
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks);
 
@@ -2602,7 +2602,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @throws IllegalArgumentException if {@link Location} or {@link
      *     Material} are null or {@link Material} is not a block
      * @deprecated Magic value. Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
-     * @since 1.3.2 R1.0
+     * @since 1.3.2
      */
     @Deprecated(since = "1.7.5")
     @NotNull
@@ -2713,7 +2713,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z coordinate of the block
      * @param bio new Biome type for this block
      * @deprecated biomes are now 3-dimensional
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     @Deprecated(since = "1.15")
     void setBiome(int x, int z, @NotNull Biome bio);
@@ -2962,7 +2962,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated world type is only used to select the default word generation
      * settings and is not stored in Vanilla worlds, making it impossible for
      * this method to always return the correct value.
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @Nullable
     @Deprecated(since = "1.16.1")
@@ -2972,7 +2972,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Gets whether or not structures are being generated.
      *
      * @return True if structures are being generated.
-     * @since 1.1.0 R2
+     * @since 1.1.0
      */
     public boolean canGenerateStructures();
 
@@ -3020,7 +3020,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return The world's ticks per animal spawns value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Deprecated(since = "1.18.1")
     public long getTicksPerAnimalSpawns();
@@ -3050,7 +3050,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param ticksPerAnimalSpawns the ticks per animal spawns value you want
      *     to set the world to
      * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Deprecated(since = "1.18.1")
     public void setTicksPerAnimalSpawns(int ticksPerAnimalSpawns);
@@ -3079,7 +3079,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return The world's ticks per monster spawns value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Deprecated(since = "1.18.1")
     public long getTicksPerMonsterSpawns();
@@ -3109,7 +3109,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param ticksPerMonsterSpawns the ticks per monster spawns value you
      *     want to set the world to
      * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Deprecated(since = "1.18.1")
     public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns);
@@ -3385,7 +3385,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return The monster spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     int getMonsterSpawnLimit();
@@ -3399,7 +3399,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param limit the new mob limit
      * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     void setMonsterSpawnLimit(int limit);
@@ -3410,7 +3410,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return The animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     int getAnimalSpawnLimit();
@@ -3424,7 +3424,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param limit the new mob limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     void setAnimalSpawnLimit(int limit);
@@ -3435,7 +3435,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return The water animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     int getWaterAnimalSpawnLimit();
@@ -3449,7 +3449,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param limit the new mob limit
      * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     void setWaterAnimalSpawnLimit(int limit);
@@ -3510,7 +3510,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return The ambient spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Deprecated(since = "1.18.1")
     int getAmbientSpawnLimit();
@@ -3524,7 +3524,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param limit the new mob limit
      * @deprecated Deprecated in favor of {@link #setSpawnLimit(SpawnCategory, int)}
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Deprecated(since = "1.18.1")
     void setAmbientSpawnLimit(int limit);
@@ -3574,7 +3574,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param sound The sound to play
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
-     * @since 1.3.2 R1.0
+     * @since 1.3.2
      */
     void playSound(@NotNull Location location, @NotNull Sound sound, float volume, float pitch);
 
@@ -3749,7 +3749,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Get an array containing the names of all the {@link GameRule}s.
      *
      * @return An array of {@link GameRule} names.
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @NotNull
     public String[] getGameRules();
@@ -3762,7 +3762,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param rule Rule to look up value of
      * @return String value of rule
      * @deprecated use {@link #getGameRuleValue(GameRule)} instead
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Deprecated(since = "1.13")
     @Contract("null -> null; !null -> !null")
@@ -3781,7 +3781,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param value Value to set rule to
      * @return True if rule was set
      * @deprecated use {@link #setGameRule(GameRule, Object)} instead.
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Deprecated(since = "1.13")
     public boolean setGameRuleValue(@NotNull String rule, @NotNull String value);
@@ -3791,7 +3791,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param rule Rule to check
      * @return True if rule exists
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public boolean isGameRule(@NotNull String rule);
 
@@ -4352,7 +4352,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * @deprecated Unsupported api
-     * @since 1.6.1 R0.1
+     * @since 1.6.1
      */
     @NotNull
     @Deprecated // Paper

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * An event that is called when a world's spawn changes. The world's previous
  * spawn location is included.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class SpawnChangeEvent extends WorldEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -31,7 +31,7 @@ public class SpawnChangeEvent extends WorldEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -40,7 +40,7 @@ public class SpawnChangeEvent extends WorldEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

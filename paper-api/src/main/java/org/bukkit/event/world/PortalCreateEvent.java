@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a portal is created
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PortalCreateEvent extends WorldEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -69,7 +69,7 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
      * Gets the reason for the portal's creation
      *
      * @return CreateReason for the portal's creation
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public CreateReason getReason() {
@@ -77,7 +77,7 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -86,7 +86,7 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

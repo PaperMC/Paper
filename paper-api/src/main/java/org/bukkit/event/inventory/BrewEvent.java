@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * Called when the brewing of the contents inside the Brewing Stand is
  * complete.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class BrewEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

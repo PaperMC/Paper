@@ -13,7 +13,7 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public abstract class MetadataStoreBase<T> {
     private Map<String, Map<Plugin, MetadataValue>> metadataMap = new java.util.concurrent.ConcurrentHashMap<String, Map<Plugin, MetadataValue>>(); // Paper

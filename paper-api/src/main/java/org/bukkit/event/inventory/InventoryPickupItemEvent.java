@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a hopper or hopper minecart picks up a dropped item.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public class InventoryPickupItemEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Interface to the inventory of a Brewing Stand.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public interface BrewerInventory extends Inventory {
 

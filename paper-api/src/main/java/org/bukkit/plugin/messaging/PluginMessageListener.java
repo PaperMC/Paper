@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * A listener for a specific Plugin Channel, which will receive notifications
  * of messages sent from a client.
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public interface PluginMessageListener {
 

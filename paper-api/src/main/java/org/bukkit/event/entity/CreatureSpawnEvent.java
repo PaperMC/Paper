@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * If a Creature Spawn event is cancelled, the creature will not spawn.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class CreatureSpawnEvent extends EntitySpawnEvent {
     private final SpawnReason spawnReason;
@@ -21,7 +21,7 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
     }
 
     /**
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     @Override

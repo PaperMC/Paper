@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Holds information for player teleport events
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PlayerTeleportEvent extends PlayerMoveEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -44,7 +44,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
      * Gets the cause of this teleportation event
      *
      * @return Cause of the event
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public TeleportCause getCause() {
@@ -132,7 +132,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
     // Paper end
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -141,7 +141,7 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

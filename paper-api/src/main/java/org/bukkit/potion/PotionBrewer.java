@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Used to manage custom {@link io.papermc.paper.potion.PotionMix}s.
  *
- * @since 1.1.0 R4
+ * @since 1.1.0
  */
 public interface PotionBrewer {
 

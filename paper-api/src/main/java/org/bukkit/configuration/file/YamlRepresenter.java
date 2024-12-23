@@ -11,7 +11,7 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.representer.Representer;
 
 /**
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class YamlRepresenter extends Representer {
 

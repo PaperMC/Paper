@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * return a new color. The color names listed as fields are HTML4 standards,
  * but subject to change.
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 @SerializableAs("Color")
 public final class Color implements ConfigurationSerializable {

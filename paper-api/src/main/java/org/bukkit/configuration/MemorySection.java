@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A type of {@link ConfigurationSection} that is stored in memory.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class MemorySection implements ConfigurationSection {
     protected final Map<String, SectionPathData> map = new LinkedHashMap<String, SectionPathData>();
@@ -805,7 +805,7 @@ public class MemorySection implements ConfigurationSection {
     }
 
     /**
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Override
     @Nullable
@@ -814,7 +814,7 @@ public class MemorySection implements ConfigurationSection {
     }
 
     /**
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Override
     @Contract("_, !null -> !null")
@@ -824,7 +824,7 @@ public class MemorySection implements ConfigurationSection {
     }
 
     /**
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Override
     public boolean isColor(@NotNull String path) {

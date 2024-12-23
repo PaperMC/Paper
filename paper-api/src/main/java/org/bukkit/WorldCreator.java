@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents various types of options that may be used to create a world.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class WorldCreator {
     private final NamespacedKey key; // Paper
@@ -215,7 +215,7 @@ public class WorldCreator {
      * Gets the type of the world that will be created or loaded
      *
      * @return World type
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public WorldType type() {
@@ -227,7 +227,7 @@ public class WorldCreator {
      *
      * @param type World type
      * @return This object, for chaining
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public WorldCreator type(@NotNull WorldType type) {
@@ -430,7 +430,7 @@ public class WorldCreator {
      *
      * @param generate Whether to generate structures
      * @return This object, for chaining
-     * @since 1.1.0 R2
+     * @since 1.1.0
      */
     @NotNull
     public WorldCreator generateStructures(boolean generate) {
@@ -443,7 +443,7 @@ public class WorldCreator {
      * Gets whether or not structures will be generated in the world.
      *
      * @return True if structures will be generated
-     * @since 1.1.0 R2
+     * @since 1.1.0
      */
     public boolean generateStructures() {
         return generateStructures;

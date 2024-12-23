@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
  * </ul>
  * will have no effect.
  *
- * @since 1.6.2 R1.1
+ * @since 1.6.2
  */
 public class EntityUnleashEvent extends EntityEvent implements org.bukkit.event.Cancellable { // Paper
     private static final HandlerList handlers = new HandlerList();

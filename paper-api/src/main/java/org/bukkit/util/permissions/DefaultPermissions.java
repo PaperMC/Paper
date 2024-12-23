@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public final class DefaultPermissions {
     private static final String ROOT = "craftbukkit";

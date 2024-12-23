@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a LivingEntity shoots a bow firing an arrow
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class EntityShootBowEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -69,9 +69,6 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
         this.consumeItem = consumeItem;
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @NotNull
     @Override
     public LivingEntity getEntity() {

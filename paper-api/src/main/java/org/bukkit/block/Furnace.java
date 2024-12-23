@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a captured state of a furnace.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Furnace extends Container {
 
@@ -140,7 +140,7 @@ public interface Furnace extends Container {
     // Paper end
 
     /**
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     @Override

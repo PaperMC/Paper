@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  * #getObjective() objective}. Changing this will not affect any other
  * objective or scoreboard.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public interface Score {
 

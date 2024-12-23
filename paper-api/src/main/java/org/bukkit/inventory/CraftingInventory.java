@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Interface to the crafting inventories
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public interface CraftingInventory extends Inventory {
 

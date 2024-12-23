@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when any Entity changes a block and a more specific event is not available.
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

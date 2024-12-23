@@ -50,7 +50,7 @@ import org.jetbrains.annotations.Nullable;
  * <li>{@link ChunkGenerator#shouldGenerateStructures()} or {@link ChunkGenerator#shouldGenerateStructures(WorldInfo, Random, int, int)}</li>
  * </ul>
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public abstract class ChunkGenerator {
 
@@ -218,7 +218,7 @@ public abstract class ChunkGenerator {
      * Custom generator is free to access and tailor values during
      * generateBlockSections() or generateExtBlockSections().
      * @deprecated Biomes are now set with {@link BiomeProvider}
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     @Deprecated(since = "1.17.1")
     public interface BiomeGrid {

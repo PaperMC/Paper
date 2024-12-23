@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a living entity, such as a monster or player
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface LivingEntity extends Attributable, Damageable, ProjectileSource, io.papermc.paper.entity.Frictional { // Paper
 
@@ -559,7 +559,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Sets the damage dealt within the current no damage ticks time period.
      *
      * @param damage amount of damage
-     * @since 1.6.1 R0.1
+     * @since 1.6.1
      */
     public void setLastDamage(double damage);
 
@@ -609,7 +609,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * May be null.
      *
      * @return killer player, or null if none found
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @Nullable
     public Player getKiller();
@@ -632,7 +632,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param effect PotionEffect to be added
      * @return whether the effect could be added
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     public boolean addPotionEffect(@NotNull PotionEffect effect);
 
@@ -647,7 +647,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return whether the effect could be added
      * @deprecated no need to force since multiple effects of the same type are
      * now supported.
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Deprecated(since = "1.15.2")
     public boolean addPotionEffect(@NotNull PotionEffect effect, boolean force);
@@ -661,7 +661,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param effects the effects to add
      * @return whether all of the effects could be added
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     public boolean addPotionEffects(@NotNull Collection<PotionEffect> effects);
 
@@ -671,7 +671,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param type the potion type to check
      * @return whether the living entity has this potion effect active on them
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     public boolean hasPotionEffect(@NotNull PotionEffectType type);
 
@@ -691,7 +691,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Removes any effects present of the given {@link PotionEffectType}.
      *
      * @param type the potion type to remove
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     public void removePotionEffect(@NotNull PotionEffectType type);
 
@@ -700,7 +700,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * entity.
      *
      * @return a collection of {@link PotionEffect}s
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @NotNull
     public Collection<PotionEffect> getActivePotionEffects();
@@ -723,7 +723,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param other the entity to determine line of sight to
      * @return true if there is a line of sight, false if not
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     public boolean hasLineOfSight(@NotNull Entity other);
 
@@ -747,7 +747,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * By default, animals are not removed while other mobs are.
      *
      * @return true if the living entity is removed when away from players
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public boolean getRemoveWhenFarAway();
 
@@ -756,7 +756,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * or not.
      *
      * @param remove the removal status
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public void setRemoveWhenFarAway(boolean remove);
 
@@ -764,7 +764,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Gets the inventory with the equipment worn by the living entity.
      *
      * @return the living entity's inventory
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Nullable
     public EntityEquipment getEquipment();
@@ -773,7 +773,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Sets whether or not the living entity can pick up items.
      *
      * @param pickup whether or not the living entity can pick up items
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public void setCanPickupItems(boolean pickup);
 
@@ -781,7 +781,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Gets if the living entity can pick up items.
      *
      * @return whether or not the living entity can pick up items
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public boolean getCanPickupItems();
 
@@ -789,7 +789,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Returns whether the entity is currently leashed.
      *
      * @return whether the entity is leashed
-     * @since 1.6.2 R1.1
+     * @since 1.6.2
      */
     public boolean isLeashed();
 
@@ -798,7 +798,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return the entity holding the leash
      * @throws IllegalStateException if not currently leashed
-     * @since 1.6.2 R1.1
+     * @since 1.6.2
      */
     @NotNull
     public Entity getLeashHolder() throws IllegalStateException;
@@ -812,7 +812,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param holder the entity to leash this entity to, or null to unleash
      * @return whether the operation was successful
-     * @since 1.6.2 R1.1
+     * @since 1.6.2
      */
     public boolean setLeashHolder(@Nullable Entity holder);
 

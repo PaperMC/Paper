@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * The use of {@link PluginBase} is recommended for actual Implementation
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner { // Paper
     /**
@@ -94,7 +94,7 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
      * <p>
      * This should fail silently if the config.yml already exists.
      *
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public void saveDefaultConfig();
 
@@ -111,7 +111,7 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
      *     contents of an existing file.
      * @throws IllegalArgumentException if the resource path is null, empty,
      *     or points to a nonexistent resource.
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public void saveResource(@NotNull String resourcePath, boolean replace);
 
@@ -208,7 +208,7 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
      * name.
      *
      * @return Logger associated with this plugin
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public Logger getLogger();
@@ -250,7 +250,7 @@ public interface Plugin extends TabExecutor, io.papermc.paper.plugin.lifecycle.e
      * comparison.
      *
      * @return name of the plugin
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public String getName();

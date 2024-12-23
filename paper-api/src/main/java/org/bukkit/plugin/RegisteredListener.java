@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Stores relevant information for plugin listeners
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class RegisteredListener {
     private final Listener listener;
@@ -76,7 +76,7 @@ public class RegisteredListener {
      * Whether this listener accepts cancelled events
      *
      * @return True when ignoring cancelled events
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     public boolean isIgnoringCancelled() {
         return ignoreCancelled;

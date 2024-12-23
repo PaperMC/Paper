@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
  * guarantee values will not be removed from this interface. As such, you should not
  * depend on the ordinal values of this class.
  *
- * @since 1.3.2 R1.0
+ * @since 1.3.2
  */
 public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
 

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
  * multiple plugins register a service, then the service with the highest
  * priority takes precedence.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface ServicesManager {
 

@@ -3,7 +3,7 @@ package org.bukkit.plugin;
 /**
  * Thrown when attempting to load an invalid PluginDescriptionFile
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class InvalidDescriptionException extends Exception {
     private static final long serialVersionUID = 5721389122281775896L;

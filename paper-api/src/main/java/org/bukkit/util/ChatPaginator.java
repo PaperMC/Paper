@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * into an array of strings appropriate for displaying on the Minecraft player
  * console.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class ChatPaginator {
     public static final int GUARANTEED_NO_WRAP_CHAT_PAGE_WIDTH = 55; // Will never wrap, even with the largest characters

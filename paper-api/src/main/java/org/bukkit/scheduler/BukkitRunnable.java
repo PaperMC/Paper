@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This class is provided as an easy way to handle scheduling tasks.
  *
- * @since 1.3.2 R3.0
+ * @since 1.3.2
  */
 public abstract class BukkitRunnable implements Runnable {
     private BukkitTask task;

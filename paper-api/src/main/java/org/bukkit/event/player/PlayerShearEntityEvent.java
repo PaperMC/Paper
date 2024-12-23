@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a player shears an entity
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * Thrown when a Living Entity creates a portal in a world.
  *
  * @deprecated Use {@link PortalCreateEvent}
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 @Deprecated(since = "1.14.1")
 public class EntityCreatePortalEvent extends EntityEvent implements Cancellable {
@@ -29,9 +29,6 @@ public class EntityCreatePortalEvent extends EntityEvent implements Cancellable 
         this.type = type;
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @NotNull
     @Override
     public LivingEntity getEntity() {

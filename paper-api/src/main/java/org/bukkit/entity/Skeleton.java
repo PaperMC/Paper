@@ -7,7 +7,7 @@ package org.bukkit.entity;
  * Other skeleton-like entities, such as the {@link WitherSkeleton} or the
  * {@link Stray} are not related to this type.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Skeleton extends AbstractSkeleton {
 

@@ -37,7 +37,7 @@ import org.jetbrains.annotations.Nullable;
  * An implementation will handle the creation and application for ItemMeta.
  * This class should not be implemented by a plugin in a live environment.
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface ItemMeta extends Cloneable, ConfigurationSerializable, PersistentDataHolder {
 
@@ -481,7 +481,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param ench enchantment to test
      * @return true if the enchantment conflicts, false otherwise
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     boolean hasConflictingEnchant(@NotNull Enchantment ench);
 

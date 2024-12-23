@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a sheep regrows its wool
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class SheepRegrowWoolEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -29,9 +29,6 @@ public class SheepRegrowWoolEvent extends EntityEvent implements Cancellable {
         this.cancel = cancel;
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @NotNull
     @Override
     public Sheep getEntity() {

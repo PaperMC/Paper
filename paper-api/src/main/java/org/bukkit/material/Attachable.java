@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Indicates that a block can be attached to another block
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Attachable extends Directional {
 

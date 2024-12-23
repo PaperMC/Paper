@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
  * MessagePrompt is the base class for any prompt that only displays a message
  * to the user and requires no input.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public abstract class MessagePrompt implements Prompt {
 

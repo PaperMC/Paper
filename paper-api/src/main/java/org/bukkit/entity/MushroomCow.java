@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a mushroom {@link Cow}
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface MushroomCow extends Cow, io.papermc.paper.entity.Shearable { // Paper
 

@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Stores data for damage events
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class EntityDamageEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -167,7 +167,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * value and the new one.
      *
      * @param damage The raw amount of damage caused by the event
-     * @since 1.6.1 R0.1
+     * @since 1.6.1
      */
     public void setDamage(double damage) {
         // These have to happen in the same order as the server calculates them, keep the enum sorted
@@ -227,7 +227,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -236,7 +236,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

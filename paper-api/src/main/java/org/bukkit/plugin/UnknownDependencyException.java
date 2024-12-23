@@ -3,7 +3,7 @@ package org.bukkit.plugin;
 /**
  * Thrown when attempting to load an invalid Plugin file
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class UnknownDependencyException extends RuntimeException {
 

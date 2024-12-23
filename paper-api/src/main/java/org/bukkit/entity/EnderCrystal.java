@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A crystal that heals nearby EnderDragons
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface EnderCrystal extends Entity {
 

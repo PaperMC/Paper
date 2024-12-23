@@ -13,7 +13,7 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.Tag;
 
 /**
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class YamlConstructor extends SafeConstructor {
 

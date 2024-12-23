@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * Workers are used to execute async tasks.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface BukkitWorker {
 

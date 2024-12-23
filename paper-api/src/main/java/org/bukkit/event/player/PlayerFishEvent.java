@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Thrown when a player is fishing
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PlayerFishEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -53,7 +53,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      * Gets the fishing hook.
      *
      * @return the entity representing the fishing hook/bobber.
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     @NotNull
     public FishHook getHook() {
@@ -77,7 +77,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      * State#CAUGHT_FISH}.
      *
      * @return the amount of experience to drop
-     * @since 1.4.6 R0.4
+     * @since 1.4.6
      */
     public int getExpToDrop() {
         return exp;
@@ -90,7 +90,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      * State#CAUGHT_FISH}.
      *
      * @param amount the amount of experience to drop
-     * @since 1.4.6 R0.4
+     * @since 1.4.6
      */
     public void setExpToDrop(int amount) {
         exp = amount;
@@ -122,7 +122,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -131,7 +131,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

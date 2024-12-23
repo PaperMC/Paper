@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a splash potion hits an area
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -34,9 +34,6 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
         this.affectedEntities = affectedEntities;
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @NotNull
     @Override
     public ThrownPotion getEntity() {

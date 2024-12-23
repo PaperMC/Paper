@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a Witch
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface Witch extends Raider, RangedEntity { // Paper
 

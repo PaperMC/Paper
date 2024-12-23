@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * change the state of the block and you will not know, or they may change the
  * block to another type entirely, causing your BlockState to become invalid.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface BlockState extends Metadatable {
 
@@ -126,7 +126,7 @@ public interface BlockState extends Metadatable {
      * If this block state is not placed the location's world will be null!
      *
      * @return the location
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     Location getLocation();
@@ -141,7 +141,7 @@ public interface BlockState extends Metadatable {
      *
      * @param loc the location to copy into
      * @return The Location object provided or null
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Contract("null -> null; !null -> !null")
     @Nullable
@@ -226,7 +226,7 @@ public interface BlockState extends Metadatable {
      * @param applyPhysics false to cancel updating physics on surrounding
      *     blocks
      * @return true if the update was successful, otherwise false
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     boolean update(boolean force, boolean applyPhysics);
 
@@ -240,7 +240,7 @@ public interface BlockState extends Metadatable {
     /**
      * @param data The new data value for the block.
      * @deprecated Magic value
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Deprecated(since = "1.6.2")
     public void setRawData(byte data);

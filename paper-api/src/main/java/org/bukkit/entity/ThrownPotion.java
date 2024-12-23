@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a thrown potion bottle
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface ThrownPotion extends ThrowableProjectile {
 
@@ -16,7 +16,7 @@ public interface ThrownPotion extends ThrowableProjectile {
      * Returns the effects that are applied by this potion.
      *
      * @return The potion effects
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @NotNull
     public Collection<PotionEffect> getEffects();
@@ -29,7 +29,7 @@ public interface ThrownPotion extends ThrowableProjectile {
      * #setItem(ItemStack) setItemStack} method.
      *
      * @return A copy of the ItemStack for this thrown potion.
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     @NotNull
     public ItemStack getItem();
@@ -38,7 +38,7 @@ public interface ThrownPotion extends ThrowableProjectile {
      * Set the ItemStack for this thrown potion.
      *
      * @param item New ItemStack
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     public void setItem(@NotNull ItemStack item);
 

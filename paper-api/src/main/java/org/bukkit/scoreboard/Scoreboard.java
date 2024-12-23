@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A scoreboard
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public interface Scoreboard {
 

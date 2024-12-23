@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull;
  * When adding a BlockPopulator manually to a world it is recommended to do so during
  * the {@link WorldInitEvent}.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public abstract class BlockPopulator {
 

@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * An abstract base class for events that describe an interaction between a
  * HumanEntity and the contents of an Inventory.
  *
- * @since 1.6.1 R0.1
+ * @since 1.6.1
  */
 public abstract class InventoryInteractEvent extends InventoryEvent implements Cancellable {
     private Result result = Result.DEFAULT;

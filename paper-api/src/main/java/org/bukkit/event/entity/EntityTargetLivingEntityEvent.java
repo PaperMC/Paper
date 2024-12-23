@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  * Called when an Entity targets a {@link LivingEntity} and can only target
  * LivingEntity's.
  *
- * @since 1.2.5 R0.1
+ * @since 1.3.1
  */
 public class EntityTargetLivingEntityEvent extends EntityTargetEvent {
     public EntityTargetLivingEntityEvent(@NotNull final Entity entity, @Nullable final LivingEntity target, @NotNull final TargetReason reason) { // Paper

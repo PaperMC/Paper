@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  * Represents a meta that can store a single FireworkEffect. An example
  * includes {@link Material#FIREWORK_STAR}.
  *
- * @since 1.4.6 R0.3
+ * @since 1.4.6
  */
 public interface FireworkEffectMeta extends ItemMeta {
 

@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * A simple wrapper for ease of selecting {@link Enchantment}s
  * @deprecated only for backwards compatibility, EnchantmentWrapper is no longer used.
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 @Deprecated(since = "1.20.3")
 public abstract class EnchantmentWrapper extends Enchantment {

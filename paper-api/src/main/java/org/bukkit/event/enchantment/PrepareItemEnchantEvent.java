@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * Called when an ItemStack is inserted in an enchantment table - can be
  * called multiple times
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

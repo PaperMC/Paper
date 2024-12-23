@@ -19,7 +19,7 @@ import org.jetbrains.annotations.Nullable;
  * player that is stored on the disk and can, thus, be retrieved without the
  * player needing to be online.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface OfflinePlayer extends ServerOperator, AnimalTamer, ConfigurationSerializable, io.papermc.paper.persistence.PersistentDataViewHolder { // Paper - Add Offline PDC API
 
@@ -240,7 +240,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * UTC.
      *
      * @return Date of first log-in for this player, or 0
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public long getFirstPlayed();
 
@@ -254,7 +254,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      *
      * @return Date of last log-in for this player, or 0
      * @deprecated The API contract is ambiguous and the implementation may or may not return the correct value given this API ambiguity. It is instead recommended use {@link #getLastLogin()} or {@link #getLastSeen()} depending on your needs.
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @Deprecated
     public long getLastPlayed();
@@ -263,7 +263,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * Checks if this player has played on this server before.
      *
      * @return True if the player has played before, otherwise false
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public boolean hasPlayedBefore();
 
@@ -276,7 +276,7 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @see #getRespawnLocation()
      * @deprecated Misleading name. This method also returns the location of
      * respawn anchors.
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @Nullable
     @Deprecated(since = "1.20.4")

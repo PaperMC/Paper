@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a human entity, such as an NPC or a player
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder {
 
@@ -55,7 +55,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * Get the player's EnderChest inventory
      *
      * @return The EnderChest of the player
-     * @since 1.3.2 R1.0
+     * @since 1.3.2
      */
     @NotNull
     public Inventory getEnderChest();
@@ -108,7 +108,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * have an inventory window open, it returns their internal crafting view.
      *
      * @return The inventory view.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public InventoryView getOpenInventory();
@@ -119,7 +119,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @param inventory The inventory to open
      * @return The newly opened inventory view
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Nullable
     public InventoryView openInventory(@NotNull Inventory inventory);
@@ -134,7 +134,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Nullable
     public InventoryView openWorkbench(@Nullable Location location, boolean force);
@@ -149,7 +149,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     location, no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Nullable
     public InventoryView openEnchanting(@Nullable Location location, boolean force);
@@ -164,7 +164,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * {@link InventoryView#getPlayer()}.
      *
      * @param inventory The view to open
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public void openInventory(@NotNull InventoryView inventory);
 
@@ -293,7 +293,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     /**
      * Force-closes the currently open inventory view for this player, if any.
      *
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public void closeInventory();
 
@@ -333,7 +333,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * always be empty if the player currently has no open window.
      *
      * @return The ItemStack of the item you are currently moving around.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public ItemStack getItemOnCursor();
@@ -344,7 +344,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * open window.
      *
      * @param item The ItemStack which will end up in the hand
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public void setItemOnCursor(@Nullable ItemStack item);
 
@@ -533,7 +533,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * Check if the player is currently blocking (ie with a shield).
      *
      * @return Whether they are blocking.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public boolean isBlocking();
 
@@ -552,7 +552,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * Get the total amount of experience required for the player to level
      *
      * @return Experience required to level up
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     public int getExpToLevel();
 

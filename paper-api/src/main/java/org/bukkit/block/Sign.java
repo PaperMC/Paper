@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of either a SignPost or a WallSign.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Sign extends TileState, Colorable {
     // Paper start

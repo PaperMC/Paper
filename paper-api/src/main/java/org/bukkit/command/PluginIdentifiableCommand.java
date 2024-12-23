@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * implementations will need to implement this interface to have a sub-index
  * automatically generated on the plugin's behalf.
  *
- * @since 1.2.5 R0.1
+ * @since 1.3.1
  */
 public interface PluginIdentifiableCommand {
 

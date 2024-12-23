@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * BooleanPrompt is the base class for any prompt that requires a boolean
  * response from the user.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public abstract class BooleanPrompt extends ValidatingPrompt {
 

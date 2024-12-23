@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Stores data for health-regain events
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class EntityRegainHealthEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -55,7 +55,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      * Sets the amount of regained health
      *
      * @param amount the amount of health the entity will regain
-     * @since 1.6.1 R0.1
+     * @since 1.6.1
      */
     public void setAmount(double amount) {
         this.amount = amount;
@@ -83,7 +83,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -92,7 +92,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

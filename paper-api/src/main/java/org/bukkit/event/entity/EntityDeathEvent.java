@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Thrown whenever a LivingEntity dies
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Cancellable { // Paper - make cancellable
     private static final HandlerList handlers = new HandlerList();
@@ -40,7 +40,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
     }
 
     /**
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -94,7 +94,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -103,7 +103,7 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

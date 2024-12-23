@@ -5,7 +5,7 @@ import com.destroystokyo.paper.entity.RangedEntity;
 /**
  * Represents a snowman entity
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Snowman extends Golem, RangedEntity, io.papermc.paper.entity.Shearable { // Paper
 

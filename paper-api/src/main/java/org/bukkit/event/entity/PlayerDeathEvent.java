@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Thrown whenever a {@link Player} dies
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PlayerDeathEvent extends EntityDeathEvent {
     private int newExp = 0;
@@ -130,7 +130,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
     // Paper end - shouldDropExperience API
 
     /**
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -225,7 +225,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * Gets the Level the Player should have at respawn.
      *
      * @return New Level of the respawned player
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public int getNewLevel() {
         return newLevel;
@@ -235,7 +235,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * Sets the Level the Player should have at respawn.
      *
      * @param level New Level of the respawned player
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public void setNewLevel(int level) {
         newLevel = level;
@@ -245,7 +245,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * Gets the Total EXP the Player should have at respawn.
      *
      * @return New Total EXP of the respawned player
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public int getNewTotalExp() {
         return newTotalExp;
@@ -255,7 +255,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * Sets the Total EXP the Player should have at respawn.
      *
      * @param totalExp New Total EXP of the respawned player
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public void setNewTotalExp(int totalExp) {
         newTotalExp = totalExp;
@@ -267,7 +267,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * This flag overrides other EXP settings
      *
      * @return True if Player should keep all pre-death exp
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public boolean getKeepLevel() {
         return keepLevel;
@@ -283,7 +283,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * EXP from dropping.</b>
      *
      * @param keepLevel True to keep all current value levels
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public void setKeepLevel(boolean keepLevel) {
         this.keepLevel = keepLevel;

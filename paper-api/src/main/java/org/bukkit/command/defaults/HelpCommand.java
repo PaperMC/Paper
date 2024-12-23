@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class HelpCommand extends BukkitCommand {
     public HelpCommand() {
@@ -113,7 +113,7 @@ public class HelpCommand extends BukkitCommand {
     }
 
     /**
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @NotNull
     @Override

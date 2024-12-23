@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a captured state of a brewing stand.
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public interface BrewingStand extends Container {
 
@@ -65,9 +65,6 @@ public interface BrewingStand extends Container {
      */
     void setFuelLevel(int level);
 
-    /**
-     * @since 1.1.0 R5
-     */
     @NotNull
     @Override
     BrewerInventory getInventory();

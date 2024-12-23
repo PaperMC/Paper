@@ -8,7 +8,7 @@ import org.bukkit.loot.Lootable;
 /**
  * Represents a Minecart with a Hopper inside it
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public interface HopperMinecart extends Minecart, InventoryHolder, LootableEntityInventory {
 

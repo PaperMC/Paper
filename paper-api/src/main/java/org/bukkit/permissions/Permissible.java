@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents an object that may be assigned permissions
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Permissible extends ServerOperator {
 

@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This class performs ray tracing and iterates along blocks on a line
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class BlockIterator implements Iterator<Block> {
 

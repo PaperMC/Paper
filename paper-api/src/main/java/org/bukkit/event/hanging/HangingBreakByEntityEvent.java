@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Triggered when a hanging entity is removed by an entity
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public class HangingBreakByEntityEvent extends HangingBreakEvent {
     private final Entity remover;

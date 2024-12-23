@@ -31,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
  * Not all methods are guaranteed to work/may have side effects when
  * {@link #isInWorld()} is false.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter { // Paper
 
@@ -51,7 +51,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param loc the location to copy into
      * @return The Location object provided or null
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Contract("null -> null; !null -> !null")
     @Nullable
@@ -107,7 +107,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @return True if entity is on ground.
      * @see Player#isOnGround()
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     public boolean isOnGround();
 
@@ -414,7 +414,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * reason, or has not been added to the world.
      *
      * @return True if valid.
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     public boolean isValid();
 
@@ -591,7 +591,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * If the effect is not applicable to this class of entity, it will not play.
      *
      * @param type Effect to play.
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public void playEffect(@NotNull EntityEffect type);
 
@@ -599,7 +599,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Get the type of the entity.
      *
      * @return The entity type.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public EntityType getType();
@@ -637,7 +637,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * Returns whether this entity is inside a vehicle.
      *
      * @return True if the entity is in a vehicle.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public boolean isInsideVehicle();
 
@@ -647,7 +647,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * returned.
      *
      * @return True if the entity was in a vehicle.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public boolean leaveVehicle();
 
@@ -656,7 +656,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * null will be returned.
      *
      * @return The current vehicle.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Nullable
     public Entity getVehicle();
@@ -1009,7 +1009,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     Entity copy(@NotNull Location to);
 
     /**
-     * @since 1.6.2 R1.1
+     * @since 1.6.2
      */
     // Spigot start
     public class Spigot extends CommandSender.Spigot {
@@ -1017,7 +1017,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     }
 
     /**
-     * @since 1.6.2 R1.1
+     * @since 1.6.2
      */
     @NotNull
     @Override

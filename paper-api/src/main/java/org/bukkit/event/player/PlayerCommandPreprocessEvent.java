@@ -45,7 +45,7 @@ import org.jetbrains.annotations.NotNull;
  * beginning of the message should be preserved. If a slash is added or
  * removed, unexpected behavior may result.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -66,7 +66,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
     }
 
     /**
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     @Override
     public boolean isCancelled() {
@@ -74,7 +74,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
     }
 
     /**
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     @Override
     public void setCancelled(boolean cancel) {
@@ -88,7 +88,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      * consider the first character when executing the content.
      *
      * @return Message the player is attempting to send
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     @NotNull
     public String getMessage() {
@@ -103,7 +103,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      *
      * @param command New message that the player will send
      * @throws IllegalArgumentException if command is null or empty
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     public void setMessage(@NotNull String command) throws IllegalArgumentException {
         Preconditions.checkArgument(command != null, "Command cannot be null");
@@ -144,7 +144,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -153,7 +153,7 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

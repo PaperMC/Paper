@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
  * has not been modified, the source inventory slot will be restored to its
  * former state. Otherwise any additional items will be discarded.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public class InventoryMoveItemEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

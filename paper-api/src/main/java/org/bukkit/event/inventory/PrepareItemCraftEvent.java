@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class PrepareItemCraftEvent extends InventoryEvent {
     private static final HandlerList handlers = new HandlerList();

@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a section of a {@link Configuration}
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface ConfigurationSection {
     /**
@@ -864,7 +864,7 @@ public interface ConfigurationSection {
      *
      * @param path Path of the Color to get.
      * @return Requested Color.
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Nullable
     public Color getColor(@NotNull String path);
@@ -881,7 +881,7 @@ public interface ConfigurationSection {
      * @param def The default value to return if the path is not found or is
      *     not a Color.
      * @return Requested Color.
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Contract("_, !null -> !null")
     @Nullable
@@ -897,7 +897,7 @@ public interface ConfigurationSection {
      *
      * @param path Path of the Color to check.
      * @return Whether or not the specified path is a Color.
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public boolean isColor(@NotNull String path);
 

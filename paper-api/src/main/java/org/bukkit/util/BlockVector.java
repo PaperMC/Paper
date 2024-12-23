@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * hash maps. Be aware that BlockVectors are mutable, but it is important
  * that BlockVectors are never changed once put into a hash set or hash map.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 @SerializableAs("BlockVector")
 public class BlockVector extends Vector {

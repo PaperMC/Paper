@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * The various type of enchantments that may be added to armour or weapons
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public abstract class Enchantment implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
     /**
@@ -296,7 +296,7 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
      *
      * @param other The enchantment to check against
      * @return True if there is a conflict.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public abstract boolean conflictsWith(@NotNull Enchantment other);
 

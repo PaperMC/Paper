@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
  * Extend this class if your plugin is not a {@link
  * org.bukkit.plugin.java.JavaPlugin}
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public abstract class PluginBase implements Plugin {
     @Override

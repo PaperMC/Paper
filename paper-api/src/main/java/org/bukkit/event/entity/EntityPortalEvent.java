@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * For players see {@link org.bukkit.event.player.PlayerPortalEvent}
  *
- * @since 1.4.7 R1.1
+ * @since 1.4.7
  */
 public class EntityPortalEvent extends EntityTeleportEvent {
     private static final HandlerList handlers = new HandlerList();

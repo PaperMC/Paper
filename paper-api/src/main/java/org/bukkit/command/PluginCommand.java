@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a {@link Command} belonging to a plugin
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public final class PluginCommand extends Command implements PluginIdentifiableCommand {
     private final Plugin owningPlugin;
@@ -84,7 +84,7 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
      * TabCompleter, then the executor will be used for tab completion.
      *
      * @param completer New tab completer
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     public void setTabCompleter(@Nullable TabCompleter completer) {
         this.completer = completer;
@@ -94,7 +94,7 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
      * Gets the {@link TabCompleter} associated with this command.
      *
      * @return TabCompleter object linked to this command
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @Nullable
     public TabCompleter getTabCompleter() {
@@ -128,7 +128,7 @@ public final class PluginCommand extends Command implements PluginIdentifiableCo
      * @throws CommandException if the completer or executor throw an
      *     exception during the process of tab-completing.
      * @throws IllegalArgumentException if sender, alias, or args is null
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @NotNull
     @Override

@@ -4,7 +4,7 @@ import org.bukkit.block.BlockFace;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Directional {
 

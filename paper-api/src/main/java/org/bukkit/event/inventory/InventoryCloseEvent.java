@@ -28,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
  * on the next tick. Also be aware that this is not an exhaustive list, and
  * other methods could potentially create issues as well.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class InventoryCloseEvent extends InventoryEvent {
     private static final HandlerList handlers = new HandlerList();

@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a Primed TNT.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface TNTPrimed extends Explosive {
 
@@ -38,7 +38,7 @@ public interface TNTPrimed extends Explosive {
      * {@link Entity#isValid()}.
      *
      * @return the source of this primed TNT
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     @Nullable
     public Entity getSource();

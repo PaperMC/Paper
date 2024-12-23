@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Triggered when a hanging entity is created in the world
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public class HangingPlaceEvent extends HangingEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

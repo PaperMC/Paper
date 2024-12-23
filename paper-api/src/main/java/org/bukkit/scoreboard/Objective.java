@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  * objective is only relevant to the display of the associated {@link
  * #getScoreboard() scoreboard}.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public interface Objective {
 

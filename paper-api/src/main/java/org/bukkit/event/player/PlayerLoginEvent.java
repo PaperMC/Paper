@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * process. It is recommended that most options involving the Player
  * <i>entity</i> be postponed to the {@link PlayerJoinEvent} instead.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PlayerLoginEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -159,7 +159,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      * blank if unknown
      *
      * @return The hostname
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     @NotNull
     public String getHostname() {
@@ -205,7 +205,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      *
      * @return The address for this player. For legacy compatibility, this may
      *     be null.
-     * @since 1.2.5 R1.0
+     * @since 1.3.1
      */
     @NotNull
     public InetAddress getAddress() {
@@ -218,7 +218,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      *
      * @return the player's connection address
      * @see #getAddress()
-     * @since 1.6.1 R0.1
+     * @since 1.6.1
      */
     @NotNull
     public InetAddress getRealAddress() {
@@ -226,7 +226,7 @@ public class PlayerLoginEvent extends PlayerEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -235,7 +235,7 @@ public class PlayerLoginEvent extends PlayerEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

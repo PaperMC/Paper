@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a dispenser.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Dispenser extends Container, Nameable, LootableBlockInventory { // Paper
 

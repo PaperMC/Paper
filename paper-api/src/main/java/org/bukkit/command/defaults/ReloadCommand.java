@@ -10,7 +10,7 @@ import org.bukkit.command.CommandSender;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class ReloadCommand extends BukkitCommand {
     public ReloadCommand(@NotNull String name) {
@@ -73,7 +73,7 @@ public class ReloadCommand extends BukkitCommand {
     }
 
     /**
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @NotNull
     @Override

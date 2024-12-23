@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
  * conversation flow. To halt a conversation, END_OF_CONVERSATION is returned
  * in liu of another Prompt object.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public interface Prompt extends Cloneable {
 

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * Warning: The order in which register and unregister events are called
  * should not be relied upon.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class ServiceUnregisterEvent extends ServiceEvent {
     private static final HandlerList handlers = new HandlerList();

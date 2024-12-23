@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * Holds information for player chat and commands
  *
  * @deprecated Listening to this event forces chat to wait for the main thread, delaying chat messages. It is recommended to use {@link io.papermc.paper.event.player.AsyncChatEvent} instead, wherever possible.
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 @Deprecated(since = "1.3.1")
 @Warning(reason = "Listening to this event forces chat to wait for the main thread, delaying chat messages.")
@@ -116,7 +116,7 @@ public class PlayerChatEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -125,7 +125,7 @@ public class PlayerChatEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

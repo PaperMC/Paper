@@ -3,7 +3,7 @@ package org.bukkit.plugin.messaging;
 /**
  * Thrown if a Plugin Message is sent that is too large to be sent.
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 @SuppressWarnings("serial")
 public class MessageTooLargeException extends RuntimeException {

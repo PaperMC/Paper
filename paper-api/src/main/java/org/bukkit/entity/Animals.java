@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents an Animal.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Animals extends Breedable {
 

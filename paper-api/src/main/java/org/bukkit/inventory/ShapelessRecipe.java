@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * Represents a shapeless recipe, where the arrangement of the ingredients on
  * the crafting grid does not matter.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class ShapelessRecipe extends CraftingRecipe {
     private final List<RecipeChoice> ingredients = new ArrayList<>();
@@ -210,7 +210,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      *
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public ShapelessRecipe removeIngredient(@NotNull Material ingredient) {
@@ -240,7 +240,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      * @param count The number of copies to remove.
      * @param ingredient The ingredient to remove
      * @return The changed recipe.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public ShapelessRecipe removeIngredient(int count, @NotNull Material ingredient) {
@@ -256,7 +256,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      * @param ingredient The ingredient to remove.
      * @return The changed recipe.
      * @deprecated use {@link #removeIngredient(int, Material)}
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     @Deprecated // Paper
@@ -273,7 +273,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      * @param rawdata The data value;
      * @return The changed recipe.
      * @deprecated Magic value
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Deprecated(since = "1.6.2")
     @NotNull
@@ -291,7 +291,7 @@ public class ShapelessRecipe extends CraftingRecipe {
      * @param rawdata The data value.
      * @return The changed recipe.
      * @deprecated Magic value
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Deprecated(since = "1.6.2")
     @NotNull

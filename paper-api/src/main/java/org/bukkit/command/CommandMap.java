@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface CommandMap {
 
@@ -110,7 +110,7 @@ public interface CommandMap {
      * @throws CommandException Thrown when the tab-completer for the given
      *     command fails with an unhandled exception
      * @throws IllegalArgumentException if either sender or cmdLine are null
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @Nullable
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String cmdLine) throws IllegalArgumentException;

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a cursor on a map.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public final class MapCursor {
     private byte x, y;
@@ -291,7 +291,7 @@ public final class MapCursor {
      * index in the file './assets/minecraft/textures/map/map_icons.png' from minecraft.jar or from a
      * resource pack.
      *
-     * @since 1.0.0 R1
+     * @since 1.0.0
      */
     public interface Type extends OldEnum<Type>, Keyed {
 

@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
  * There may be additional arts present in the server, for example from a {@link DataPack}
  * which can be accessed via {@link Registry#ART}.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Art extends OldEnum<Art>, Keyed {
 

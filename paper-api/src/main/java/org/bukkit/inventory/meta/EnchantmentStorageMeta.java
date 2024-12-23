@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * opposed to being enchanted. {@link Material#ENCHANTED_BOOK} is an example
  * of an item with enchantment storage.
  *
- * @since 1.4.6 R0.3
+ * @since 1.4.6
  */
 public interface EnchantmentStorageMeta extends ItemMeta {
 
@@ -75,7 +75,7 @@ public interface EnchantmentStorageMeta extends ItemMeta {
      *
      * @param ench enchantment to test
      * @return true if the enchantment conflicts, false otherwise
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     boolean hasConflictingStoredEnchant(@NotNull Enchantment ench);
 

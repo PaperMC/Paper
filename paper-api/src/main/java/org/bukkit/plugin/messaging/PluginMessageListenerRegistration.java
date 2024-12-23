@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * Contains information about a {@link Plugin}s registration to a plugin
  * channel.
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public final class PluginMessageListenerRegistration {
     private final Messenger messenger;

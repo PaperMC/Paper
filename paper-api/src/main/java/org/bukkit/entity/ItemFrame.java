@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents an Item Frame
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface ItemFrame extends Hanging {
 

@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This event is fired when the player is almost about to enter the bed.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
 
@@ -163,7 +163,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -172,7 +172,7 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

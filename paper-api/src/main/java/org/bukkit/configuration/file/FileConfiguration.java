@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
  * This is a base class for all File based implementations of {@link
  * Configuration}
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public abstract class FileConfiguration extends MemoryConfiguration {
 

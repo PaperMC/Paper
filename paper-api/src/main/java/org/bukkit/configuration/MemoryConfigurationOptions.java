@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
  * Various settings for controlling the input and output of a {@link
  * MemoryConfiguration}
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class MemoryConfigurationOptions extends ConfigurationOptions {
     protected MemoryConfigurationOptions(@NotNull MemoryConfiguration configuration) {

@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Interface to the inventory of an Anvil.
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface AnvilInventory extends Inventory {
 

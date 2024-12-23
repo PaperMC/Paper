@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * ConversationAbandonedEvent} to indicate that the conversation was manually
  * abandoned by programmatically calling the abandon() method on it.
  *
- * @since 1.2.5 R0.1
+ * @since 1.3.1
  */
 public class ManuallyAbandonedConversationCanceller implements ConversationCanceller {
     @Override

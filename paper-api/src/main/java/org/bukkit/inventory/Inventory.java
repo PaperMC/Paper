@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  *
  * @see #getContents()
  * @see #getStorageContents()
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Inventory extends Iterable<ItemStack> {
 
@@ -39,7 +39,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * Returns the maximum stack size for an ItemStack in this inventory.
      *
      * @return The maximum size for an ItemStack in this inventory.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public int getMaxStackSize();
 
@@ -58,7 +58,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * </ul>
      *
      * @param size The new maximum stack size for items in this inventory.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public void setMaxStackSize(int size);
 
@@ -265,7 +265,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * @param amount the minimum amount
      * @return false if item is null, true if amount less than 1, true if
      *     enough ItemStacks were found to add to the given amount
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Contract("null, _ -> false")
     public boolean containsAtLeast(@Nullable ItemStack item, int amount);
@@ -386,7 +386,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * never be assumed to be non-empty.
      *
      * @return A list of HumanEntities who are viewing this Inventory.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public List<HumanEntity> getViewers();
@@ -395,7 +395,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * Returns what type of inventory this is.
      *
      * @return The InventoryType representing the type of inventory.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public InventoryType getType();
@@ -404,7 +404,7 @@ public interface Inventory extends Iterable<ItemStack> {
      * Gets the block or entity belonging to the open inventory
      *
      * @return The holder of the inventory; null if it has no holder.
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Nullable
     public InventoryHolder getHolder();
@@ -422,7 +422,7 @@ public interface Inventory extends Iterable<ItemStack> {
     // Paper end
 
     /**
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -436,7 +436,7 @@ public interface Inventory extends Iterable<ItemStack> {
      *
      * @param index The index.
      * @return An iterator.
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     @NotNull
     public ListIterator<ItemStack> iterator(int index);

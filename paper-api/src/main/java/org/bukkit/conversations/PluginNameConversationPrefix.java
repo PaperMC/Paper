@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
  * PluginNameConversationPrefix is a {@link ConversationPrefix} implementation
  * that displays the plugin name in front of conversation output.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class PluginNameConversationPrefix implements ConversationPrefix {
 

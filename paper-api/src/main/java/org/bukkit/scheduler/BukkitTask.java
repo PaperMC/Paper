@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a task being executed by the scheduler
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface BukkitTask {
 
@@ -43,7 +43,7 @@ public interface BukkitTask {
     /**
      * Will attempt to cancel this task.
      *
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     public void cancel();
 }

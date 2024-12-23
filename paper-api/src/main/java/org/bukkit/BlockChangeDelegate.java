@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
  * between generation algorithms in the server implementation and utilizing
  * code.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface BlockChangeDelegate {
 
@@ -50,7 +50,7 @@ public interface BlockChangeDelegate {
      * @param y Y coordinate
      * @param z Z coordinate
      * @return True if the block is considered empty.
-     * @since 1.2.2 R0.1
+     * @since 1.2.2
      */
     public boolean isEmpty(int x, int y, int z);
 }

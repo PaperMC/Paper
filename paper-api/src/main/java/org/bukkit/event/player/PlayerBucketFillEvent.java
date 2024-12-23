@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a player fills a bucket
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PlayerBucketFillEvent extends PlayerBucketEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -32,7 +32,7 @@ public class PlayerBucketFillEvent extends PlayerBucketEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -41,7 +41,7 @@ public class PlayerBucketFillEvent extends PlayerBucketEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

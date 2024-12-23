@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * An InactivityConversationCanceller will cancel a {@link Conversation} after
  * a period of inactivity by the user.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class InactivityConversationCanceller implements ConversationCanceller {
     protected Plugin plugin;

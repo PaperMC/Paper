@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * properties. This team is only relevant to the display of the associated
  * {@link #getScoreboard() scoreboard}.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public interface Team extends net.kyori.adventure.audience.ForwardingAudience { // Paper - Make Team extend ForwardingAudience
 

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * If a Sign Change event is cancelled, the sign will not be changed.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class SignChangeEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -167,7 +167,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -176,7 +176,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

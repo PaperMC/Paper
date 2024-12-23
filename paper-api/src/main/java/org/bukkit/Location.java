@@ -30,7 +30,7 @@ import org.bukkit.entity.Player;
  * magnitude than 360 are valid, but may be normalized to any other equivalent
  * representation by the implementation.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class Location implements Cloneable, ConfigurationSerializable, io.papermc.paper.math.FinePosition { // Paper
     private Reference<World> world;
@@ -120,7 +120,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * Gets the chunk at the represented location
      *
      * @return Chunk at the represented location
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public Chunk getChunk() {
@@ -319,7 +319,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      *
      * @param vector the direction vector
      * @return the same location
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @NotNull
     public Location setDirection(@NotNull Vector vector) {

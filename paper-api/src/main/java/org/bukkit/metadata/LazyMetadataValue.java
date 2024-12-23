@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
  * level. Once invalidated, the LazyMetadataValue will recompute its value
  * when asked.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class LazyMetadataValue extends MetadataValueAdapter {
     private Callable<Object> lazyValue;

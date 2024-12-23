@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
  * event for each of those blocks (usually adjacent). If you are concerned about
  * monitoring these changes then you should check adjacent blocks yourself.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -100,7 +100,7 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -109,7 +109,7 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

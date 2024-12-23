@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * such as a {@link org.bukkit.block.Furnace}, {@link org.bukkit.block.Smoker},
  * or {@link org.bukkit.block.BlastFurnace}.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class FurnaceSmeltEvent extends BlockCookEvent {
 

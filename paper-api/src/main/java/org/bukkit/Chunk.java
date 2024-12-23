@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
  * then the chunk will only be generated as far as it needs to provide the
  * requested data.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Chunk extends PersistentDataHolder {
 

@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * If a preamble is provided to the constructor, that text will be displayed
  * before the first item in the index.
  *
- * @since 1.2.5 R0.1
+ * @since 1.3.1
  */
 public class IndexHelpTopic extends HelpTopic {
 

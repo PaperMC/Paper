@@ -4,7 +4,7 @@ import org.bukkit.block.Block;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface BlockCommandSender extends CommandSender {
 

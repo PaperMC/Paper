@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Standard implementation to {@link Messenger}
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public class StandardMessenger implements Messenger {
     private final Map<String, Set<PluginMessageListenerRegistration>> incomingByChannel = new HashMap<String, Set<PluginMessageListenerRegistration>>();

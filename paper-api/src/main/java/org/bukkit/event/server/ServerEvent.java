@@ -6,7 +6,7 @@ import org.bukkit.event.Event;
 /**
  * Miscellaneous server events
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public abstract class ServerEvent extends Event {
 

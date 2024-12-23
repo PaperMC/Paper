@@ -10,7 +10,7 @@ import org.bukkit.loot.Lootable;
  * minecarts} have their own inventory that can be accessed using methods
  * from the {@link InventoryHolder} interface.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public interface StorageMinecart extends Minecart, InventoryHolder, LootableEntityInventory { // Paper
 }

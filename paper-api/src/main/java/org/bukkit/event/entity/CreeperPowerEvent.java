@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * If a Creeper Power event is cancelled, the Creeper will not be powered.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class CreeperPowerEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -41,7 +41,7 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -70,7 +70,7 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -79,7 +79,7 @@ public class CreeperPowerEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

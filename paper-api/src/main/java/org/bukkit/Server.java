@@ -66,7 +66,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a server implementation.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Server extends PluginMessageRecipient, net.kyori.adventure.audience.ForwardingAudience { // Paper
 
@@ -215,7 +215,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get world type (level-type setting) for default world.
      *
      * @return the value of level-type (e.g. DEFAULT, FLAT, DEFAULT_1_1)
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     @NotNull
     public String getWorldType();
@@ -224,7 +224,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get generate-structures setting.
      *
      * @return true if structure generation is enabled, false otherwise
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public boolean getGenerateStructures();
 
@@ -240,7 +240,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets whether this server allows the End or not.
      *
      * @return whether this server allows the End or not
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     public boolean getAllowEnd();
 
@@ -456,7 +456,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the value of the connection throttle setting.
      *
      * @return the value of the connection throttle setting
-     * @since 1.2.5 R0.1
+     * @since 1.3.1
      */
     public long getConnectionThrottle();
 
@@ -479,7 +479,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the default ticks per animal spawns value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Deprecated(since = "1.18.1")
     public int getTicksPerAnimalSpawns();
@@ -503,7 +503,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the default ticks per monsters spawn value
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
-     * @since 1.1.0 R4
+     * @since 1.1.0
      */
     @Deprecated(since = "1.18.1")
     public int getTicksPerMonsterSpawns();
@@ -1031,7 +1031,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @param result the item to match against recipe results
      * @return a list of recipes with the given result
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public List<Recipe> getRecipesFor(@NotNull ItemStack result);
@@ -1174,7 +1174,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Get an iterator through the list of crafting recipes.
      *
      * @return an iterator
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public Iterator<Recipe> recipeIterator();
@@ -1182,14 +1182,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     /**
      * Clears the list of crafting recipes.
      *
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public void clearRecipes();
 
     /**
      * Resets the list of crafting recipes to the default.
      *
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     public void resetRecipes();
 
@@ -1300,7 +1300,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets whether the server is in hardcore mode or not.
      *
      * @return true if the server mode is hardcore, false otherwise
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     public boolean isHardcore();
 
@@ -1579,7 +1579,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * <b>This method can be expensive as it loads all the player data files from the disk.</b>
      *
      * @return an array containing all previous players
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public OfflinePlayer[] getOfflinePlayers();
@@ -1588,7 +1588,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the {@link Messenger} responsible for this server.
      *
      * @return messenger responsible for this server
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public Messenger getMessenger();
@@ -1597,7 +1597,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the {@link HelpMap} providing help topics for this server.
      *
      * @return a help map for this server
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public HelpMap getHelpMap();
@@ -1622,7 +1622,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * viewed.
      *
      * @see InventoryType#isCreatable()
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     Inventory createInventory(@Nullable InventoryHolder owner, @NotNull InventoryType type);
@@ -1695,7 +1695,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param size a multiple of 9 as the size of inventory to create
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     Inventory createInventory(@Nullable InventoryHolder owner, int size) throws IllegalArgumentException;
@@ -1728,7 +1728,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
      * @deprecated in favour of {@link #createInventory(InventoryHolder, int, net.kyori.adventure.text.Component)}
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @Deprecated // Paper
     @NotNull
@@ -1774,7 +1774,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the monster spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     int getMonsterSpawnLimit();
@@ -1785,7 +1785,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     int getAnimalSpawnLimit();
@@ -1796,7 +1796,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the water animal spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.2.5 R1.3
+     * @since 1.3.1
      */
     @Deprecated(since = "1.18.1")
     int getWaterAnimalSpawnLimit();
@@ -1828,7 +1828,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the ambient spawn limit
      * @deprecated Deprecated in favor of {@link #getSpawnLimit(SpawnCategory)}
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Deprecated(since = "1.18.1")
     int getAmbientSpawnLimit();
@@ -1856,7 +1856,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return true if the current thread matches the expected primary thread,
      *     false otherwise
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     boolean isPrimaryThread();
 
@@ -1891,7 +1891,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the servers MOTD
      * @deprecated in favour of {@link #motd()}
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     @NotNull
     @Deprecated // Paper
@@ -1922,7 +1922,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the shutdown message
      * @deprecated in favour of {@link #shutdownMessage()}
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @Nullable
     @Deprecated // Paper
@@ -1932,7 +1932,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the current warning state for the server.
      *
      * @return the configured warning state
-     * @since 1.3.1 R1.0
+     * @since 1.3.1
      */
     @NotNull
     public WarningState getWarningState();
@@ -1942,7 +1942,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return the item factory
      * @see ItemFactory
-     * @since 1.4.5 R1.0
+     * @since 1.4.5
      */
     @NotNull
     ItemFactory getItemFactory();
@@ -1963,7 +1963,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * This will only exist after the first world has loaded.
      *
      * @return the scoreboard manager or null if no worlds are loaded.
-     * @since 1.5.1 R0.2
+     * @since 1.5.1
      */
     @NotNull // Paper
     ScoreboardManager getScoreboardManager();
@@ -1985,7 +1985,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the default server-icon; null values may be used by the
      *     implementation to indicate no defined icon, but this behavior is
      *     not guaranteed
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @Nullable
     CachedServerIcon getServerIcon();
@@ -2003,7 +2003,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @throws IllegalArgumentException if image is null
      * @throws Exception if the image does not meet current server server-icon
      *     specifications
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @NotNull
     CachedServerIcon loadServerIcon(@NotNull File file) throws IllegalArgumentException, Exception;
@@ -2020,7 +2020,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @throws IllegalArgumentException if image is null
      * @throws Exception if the image does not meet current server
      *     server-icon specifications
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @NotNull
     CachedServerIcon loadServerIcon(@NotNull BufferedImage image) throws IllegalArgumentException, Exception;
@@ -2032,7 +2032,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * A value of 0 will disable the idle kick timeout.
      *
      * @param threshold the idle timeout in minutes
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     public void setIdleTimeout(int threshold);
 
@@ -2040,7 +2040,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Gets the idle kick timeout.
      *
      * @return the idle timeout in minutes
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     public int getIdleTimeout();
 
@@ -2387,7 +2387,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     /**
      * @return the unsafe values instance
      * @see UnsafeValues
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     @Deprecated(since = "1.7.2")
     @NotNull

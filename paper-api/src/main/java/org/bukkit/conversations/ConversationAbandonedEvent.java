@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
  * ConversationAbandonedEvent contains information about an abandoned
  * conversation.
  *
- * @since 1.2.5 R0.1
+ * @since 1.3.1
  */
 public class ConversationAbandonedEvent extends EventObject {
 

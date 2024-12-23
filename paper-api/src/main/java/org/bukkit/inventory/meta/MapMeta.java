@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a map that can be scalable.
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface MapMeta extends ItemMeta {
 

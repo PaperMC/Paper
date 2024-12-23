@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a projectile is launched.
  *
- * @since 1.2.5 R0.1
+ * @since 1.3.1
  */
 public class ProjectileLaunchEvent extends EntitySpawnEvent implements Cancellable {
     private boolean cancelled;

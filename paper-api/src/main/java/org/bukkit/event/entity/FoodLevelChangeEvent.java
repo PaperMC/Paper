@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a human entity's food level changes
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -29,7 +29,7 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -84,7 +84,7 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -93,7 +93,7 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

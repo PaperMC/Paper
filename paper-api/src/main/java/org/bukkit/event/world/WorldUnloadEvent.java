@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when a World is unloaded
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class WorldUnloadEvent extends WorldEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -29,7 +29,7 @@ public class WorldUnloadEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -38,7 +38,7 @@ public class WorldUnloadEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

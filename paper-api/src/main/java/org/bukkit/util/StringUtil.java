@@ -5,7 +5,7 @@ import java.util.Collection;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @since 1.3.2 R3.0
+ * @since 1.3.2
  */
 public class StringUtil {
 

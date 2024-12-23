@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a shootable entity.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Projectile extends Entity {
 

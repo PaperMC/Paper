@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * If changing player state, see {@link com.destroystokyo.paper.event.player.PlayerPostRespawnEvent}
  * because the player is "reset" between this event and that event and some changes won't persist.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PlayerRespawnEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -105,7 +105,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -114,7 +114,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

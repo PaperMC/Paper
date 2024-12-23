@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull;
  * <b>Note:</b> The players in {@link #iterator()} will not be shown in the
  * server info if {@link Bukkit#getHideOnlinePlayers()} is true.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class ServerListPingEvent extends ServerEvent implements Iterable<Player> {
     private static final int MAGIC_PLAYER_COUNT = Integer.MIN_VALUE;
@@ -225,14 +225,14 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      *     implementations
      * @throws UnsupportedOperationException if the caller of this event does
      *     not support setting the server icon
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     public void setServerIcon(@UndefinedNullability("implementation dependent") CachedServerIcon icon) throws IllegalArgumentException, UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -241,7 +241,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

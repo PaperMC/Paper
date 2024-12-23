@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * FixedSetPrompt is the base class for any prompt that requires a fixed set
  * response from the user.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public abstract class FixedSetPrompt extends ValidatingPrompt {
 

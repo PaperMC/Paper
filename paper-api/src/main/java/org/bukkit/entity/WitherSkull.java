@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Represents a wither skull {@link Fireball}.
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface WitherSkull extends Fireball {
 

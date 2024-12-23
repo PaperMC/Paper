@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
  * @deprecated This event causes synchronization from the login thread; {@link
  *     AsyncPlayerPreLoginEvent} is preferred to keep the secondary threads
  *     asynchronous.
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 @Deprecated(since = "1.3.2")
 @Warning(reason = "This event causes a login thread to synchronize with the main thread")
@@ -164,7 +164,7 @@ public class PlayerPreLoginEvent extends Event {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -184,7 +184,7 @@ public class PlayerPreLoginEvent extends Event {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

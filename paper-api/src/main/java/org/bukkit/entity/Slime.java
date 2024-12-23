@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * Represents a Slime.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Slime extends Mob, Enemy {
 

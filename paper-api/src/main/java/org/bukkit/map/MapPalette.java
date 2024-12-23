@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
  * These fields are hee base color ranges. Each entry corresponds to four
  * colors of varying shades with values entry to entry + 3.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public final class MapPalette {
     // Internal mechanisms

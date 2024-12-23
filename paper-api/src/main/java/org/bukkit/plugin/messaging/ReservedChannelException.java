@@ -4,7 +4,7 @@ package org.bukkit.plugin.messaging;
  * Thrown if a plugin attempts to register for a reserved channel (such as
  * "REGISTER")
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 @SuppressWarnings("serial")
 public class ReservedChannelException extends RuntimeException {

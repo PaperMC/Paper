@@ -7,7 +7,7 @@ import org.bukkit.spawner.Spawner;
  * Represents a Minecart with an {@link org.bukkit.block.CreatureSpawner
  * entity spawner} inside it.
  *
- * @since 1.5.1 R0.2
+ * @since 1.5.1
  */
 public interface SpawnerMinecart extends Minecart, Spawner {
 }

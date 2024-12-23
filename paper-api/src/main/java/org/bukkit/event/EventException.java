@@ -1,7 +1,7 @@
 package org.bukkit.event;
 
 /**
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class EventException extends Exception {
     private static final long serialVersionUID = 3532808232324183999L;

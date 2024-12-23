@@ -23,7 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class SimpleCommandMap implements CommandMap {
     protected final Map<String, Command> knownCommands; // Paper
@@ -202,7 +202,7 @@ public class SimpleCommandMap implements CommandMap {
     }
 
     /**
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @Override
     @Nullable
@@ -270,7 +270,7 @@ public class SimpleCommandMap implements CommandMap {
     }
 
     /**
-     * @since 1.1.0 R5
+     * @since 1.1.0
      */
     @NotNull
     public Collection<Command> getCommands() {

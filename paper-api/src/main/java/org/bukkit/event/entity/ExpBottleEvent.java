@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a ThrownExpBottle hits and releases experience.
  *
- * @since 1.2.5 R0.1
+ * @since 1.3.1
  */
 public class ExpBottleEvent extends ProjectileHitEvent {
     private static final HandlerList handlers = new HandlerList();

@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  * {@link org.bukkit.block.Furnace}, {@link org.bukkit.block.Smoker}, or
  * {@link org.bukkit.block.BlastFurnace}.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -108,7 +108,7 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -117,7 +117,7 @@ public class FurnaceBurnEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

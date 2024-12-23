@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a vehicle entity.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface Vehicle extends Entity {
 

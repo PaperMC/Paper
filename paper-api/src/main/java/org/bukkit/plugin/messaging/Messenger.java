@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
  * - i.e. they MUST be valid {@link NamespacedKey}. The "BungeeCord" channel is
  * an exception and may only take this form.
  *
- * @since 1.1.0 R1
+ * @since 1.1.0
  */
 public interface Messenger {
 

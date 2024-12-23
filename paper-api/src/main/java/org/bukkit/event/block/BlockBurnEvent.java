@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * If a Block Burn event is cancelled, the block will not be destroyed as a
  * result of being burnt by fire.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class BlockBurnEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
@@ -52,7 +52,7 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -61,7 +61,7 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

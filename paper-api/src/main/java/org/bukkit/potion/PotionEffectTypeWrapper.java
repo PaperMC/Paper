@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * @deprecated only for backwards compatibility, PotionEffectTypeWrapper is no longer used.
- * @since 1.1.0 R4
+ * @since 1.1.0
  */
 @Deprecated(since = "1.20.3")
 public abstract class PotionEffectTypeWrapper extends PotionEffectType {

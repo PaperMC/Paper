@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents an EnderSignal, which is created upon throwing an ender eye.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public interface EnderSignal extends Entity {
 

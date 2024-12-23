@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a falling block
  *
- * @since 1.3.2 R1.0
+ * @since 1.3.2
  */
 public interface FallingBlock extends Entity {
 

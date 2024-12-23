@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  * Represents a view linking two inventories and a single player (whose
  * inventory may or may not be one of the two).
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public interface InventoryView {
     public static final int OUTSIDE = -999;

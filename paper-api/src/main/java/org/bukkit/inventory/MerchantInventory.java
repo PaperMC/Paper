@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  * The holder of this Inventory is the owning Villager, or null if the player is
  * trading with a merchant created by a plugin.
  *
- * @since 1.3.1 R1.0
+ * @since 1.3.1
  */
 public interface MerchantInventory extends Inventory {
 

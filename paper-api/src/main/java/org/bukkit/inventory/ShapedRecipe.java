@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a shaped (ie normal) crafting recipe.
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class ShapedRecipe extends CraftingRecipe {
     private String[] rows;

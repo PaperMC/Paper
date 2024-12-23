@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
  * Material#LEATHER_HELMET}, {@link Material#LEATHER_HORSE_ARMOR} or {@link
  * Material#WOLF_ARMOR}) that can be colored.
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public interface LeatherArmorMeta extends ItemMeta {
 

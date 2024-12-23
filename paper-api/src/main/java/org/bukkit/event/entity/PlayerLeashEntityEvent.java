@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called immediately prior to a creature being leashed by a player.
  *
- * @since 1.6.2 R1.1
+ * @since 1.6.2
  */
 public class PlayerLeashEntityEvent extends Event implements Cancellable {
     private static final HandlerList handlers = new HandlerList();

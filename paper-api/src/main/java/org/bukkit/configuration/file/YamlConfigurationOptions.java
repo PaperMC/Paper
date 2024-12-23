@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
  * Various settings for controlling the input and output of a {@link
  * YamlConfiguration}
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class YamlConfigurationOptions extends FileConfigurationOptions {
     private int indent = 2;

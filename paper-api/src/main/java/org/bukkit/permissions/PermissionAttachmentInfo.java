@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
  * Holds information on a permission and which {@link PermissionAttachment}
  * provides it
  *
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class PermissionAttachmentInfo {
     private final Permissible permissible;

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
  * {@link org.bukkit.block.Furnace}, {@link org.bukkit.block.Smoker}, or
  * {@link org.bukkit.block.BlastFurnace}.
  *
- * @since 1.4.5 R1.0
+ * @since 1.4.5
  */
 public class FurnaceExtractEvent extends BlockExpEvent {
     private final Player player;

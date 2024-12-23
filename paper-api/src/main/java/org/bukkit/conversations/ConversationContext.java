@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
  * generic map for storing values that are shared between all {@link Prompt}
  * invocations.
  *
- * @since 1.1.0 R5
+ * @since 1.1.0
  */
 public class ConversationContext {
     private final Conversable forWhom;
@@ -56,7 +56,7 @@ public class ConversationContext {
      * May be directly modified to manipulate session data.
      *
      * @return The full sessionData map.
-     * @since 1.6.2 R1.1
+     * @since 1.6.2
      */
     @NotNull
     public Map<Object, Object> getAllSessionData() {

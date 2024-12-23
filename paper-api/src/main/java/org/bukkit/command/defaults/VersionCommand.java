@@ -35,7 +35,7 @@ import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 // Paper end - version command 2.0
 
 /**
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class VersionCommand extends BukkitCommand {
     private VersionFetcher versionFetcher; // Paper - version command 2.0
@@ -155,7 +155,7 @@ public class VersionCommand extends BukkitCommand {
     }
 
     /**
-     * @since 1.3.2 R3.0
+     * @since 1.3.2
      */
     @NotNull
     @Override

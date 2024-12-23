@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
  * If a Block Spread event is cancelled, the block will not spread.
  *
  * @see BlockFormEvent
- * @since 1.0.0 R1
+ * @since 1.0.0
  */
 public class BlockSpreadEvent extends BlockFormEvent {
     private static final HandlerList handlers = new HandlerList();
@@ -42,7 +42,7 @@ public class BlockSpreadEvent extends BlockFormEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     @Override
@@ -51,7 +51,7 @@ public class BlockSpreadEvent extends BlockFormEvent {
     }
 
     /**
-     * @since 1.1.0 R1
+     * @since 1.1.0
      */
     @NotNull
     public static HandlerList getHandlerList() {

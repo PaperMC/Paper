@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @since 1.4.6 R0.3
+ * @since 1.4.6
  */
 public interface Firework extends Projectile {
 
@@ -100,7 +100,7 @@ public interface Firework extends Projectile {
      * Cause this firework to explode at earliest opportunity, as if it has no
      * remaining fuse.
      *
-     * @since 1.7.2 R0.2
+     * @since 1.7.2
      */
     void detonate();
 
