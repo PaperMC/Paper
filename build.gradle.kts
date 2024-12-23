@@ -82,7 +82,9 @@ tasks.register("printPaperVersion") {
     }
 }
 
-tasks.register("gibWork") {
+/*
+// Used when updating to a new Minecraft version
+tasks.register("pickUpdateDirectory") {
     val issue = providers.gradleProperty("updateTaskListIssue").get()
     val patchesFolder = layout.projectDirectory.dir("paper-server/patches/").convertToPath()
     val storage = layout.cache.resolve("last-updating-folder").also { it.parent.createDirectories() }
@@ -122,7 +124,7 @@ tasks.register("gibWork") {
     }
 }
 
-tasks.register("showWork") {
+tasks.register("showUpdateDirectories") {
     val patchDir = layout.projectDirectory.dir("paper-server/patches/unapplied/").convertToPath()
 
     doLast {
@@ -137,7 +139,7 @@ tasks.register("showWork") {
     }
 }
 
-tasks.register("checkWork") {
+tasks.register("moveUpdateDirectory") {
     notCompatibleWithConfigurationCache("This task is interactive")
     fun expandUserHome(path: String): Path {
         return Path.of(path.replaceFirst("^~".toRegex(), System.getProperty("user.home")))
@@ -179,7 +181,6 @@ tasks.register("checkWork") {
 }
 
 // see gradle.properties
-/*
 if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
     tasks.collectAtsFromPatches {
         val dir = layout.projectDirectory.dir("patches/unapplied/server")

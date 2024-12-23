@@ -111,7 +111,7 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
 }
 val alsoShade: Configuration by configurations.creating
 
-// Paper start - configure mockito agent that is needed in newer java versions
+// Configure mockito agent that is needed in newer java versions
 val mockitoAgent = configurations.register("mockitoAgent")
 abstract class MockitoAgentProvider : CommandLineArgumentProvider {
     @get:CompileClasspath
@@ -121,65 +121,63 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
         return listOf("-javaagent:" + fileCollection.files.single().absolutePath)
     }
 }
-// Paper end - configure mockito agent that is needed in newer java versions
 
 dependencies {
     implementation(project(":paper-api"))
-    implementation("ca.spottedleaf:concurrentutil:0.0.2") // Paper - Add ConcurrentUtil dependency
-    // Paper start
+    implementation("ca.spottedleaf:concurrentutil:0.0.2")
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi:4.17.0") // Keep in sync with adventureVersion from Paper-API build file
+
     /*
-          Required to add the missing Log4j2Plugins.dat file from log4j-core
-          which has been removed by Mojang. Without it, log4j has to classload
-          all its classes to check if they are plugins.
-          Scanning takes about 1-2 seconds so adding this speeds up the server start.
+      Required to add the missing Log4j2Plugins.dat file from log4j-core
+      which has been removed by Mojang. Without it, log4j has to classload
+      all its classes to check if they are plugins.
+      Scanning takes about 1-2 seconds so adding this speeds up the server start.
      */
-    implementation("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - implementation
-    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
+    implementation("org.apache.logging.log4j:log4j-core:2.19.0")
+    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Needed to generate meta for our Log4j plugins
     runtimeOnly(log4jPlugins.output)
     alsoShade(log4jPlugins.output)
-    implementation("io.netty:netty-codec-haproxy:4.1.97.Final") // Paper - Add support for proxy protocol
-    // Paper end
-    implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1") // Paper - remove exclusion
-    implementation("org.ow2.asm:asm-commons:9.7.1")
-    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
-    implementation("commons-lang:commons-lang:2.6")
-    runtimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
-    runtimeOnly("com.mysql:mysql-connector-j:9.1.0")
-    runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
-    // Paper start - Use Velocity cipher
+
     implementation("com.velocitypowered:velocity-native:3.3.0-SNAPSHOT") {
         isTransitive = false
     }
-    // Paper end - Use Velocity cipher
+    implementation("io.netty:netty-codec-haproxy:4.1.97.Final") // Add support for proxy protocol
+    implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1")
+    implementation("org.ow2.asm:asm-commons:9.7.1")
+    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT")
+    implementation("commons-lang:commons-lang:2.6")
+    runtimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
+    runtimeOnly("com.mysql:mysql-connector-j:9.1.0")
+    runtimeOnly("com.lmax:disruptor:3.4.4")
 
     runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
     runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
     runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
 
-    testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
+    testImplementation("io.github.classgraph:classgraph:4.8.47") // For mob goal test
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
     testImplementation("org.junit.platform:junit-platform-suite-engine:1.10.0")
     testImplementation("org.hamcrest:hamcrest:2.2")
     testImplementation("org.mockito:mockito-core:5.14.1")
-    mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
+    mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Configure mockito agent that is needed in newer java versions
     testImplementation("org.ow2.asm:asm-tree:9.7.1")
-    testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
-    implementation("net.neoforged:srgutils:1.0.9") // Paper - mappings handling
-    implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
-    // Paper start - Remap reflection
+    testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // CartesianTest
+
+    implementation("net.neoforged:srgutils:1.0.9") // Mappings handling
+    implementation("net.neoforged:AutoRenamingTool:2.0.3") // Remap plugins
+
+    // Remap reflection
     val reflectionRewriterVersion = "0.0.3"
     implementation("io.papermc:reflection-rewriter:$reflectionRewriterVersion")
     implementation("io.papermc:reflection-rewriter-runtime:$reflectionRewriterVersion")
     implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
-    // Paper end - Remap reflection
-    // Paper start - spark
+
+    // Spark
     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
     implementation("me.lucko:spark-paper:1.10.119-SNAPSHOT")
-    // Paper end - spark
 }
 
 tasks.jar {
@@ -190,13 +188,13 @@ tasks.jar {
         val buildTime = if (build != null) Instant.now() else Instant.EPOCH
         val gitHash = git.exec(providers, "rev-parse", "--short=7", "HEAD").get().trim()
         val implementationVersion = "$mcVersion-${build ?: "DEV"}-$gitHash"
-        val date = git.exec(providers, "show", "-s", "--format=%ci", gitHash).get().trim() // Paper
-        val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim() // Paper
+        val date = git.exec(providers, "show", "-s", "--format=%ci", gitHash).get().trim()
+        val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
         attributes(
             "Main-Class" to "org.bukkit.craftbukkit.Main",
             "Implementation-Title" to "Paper",
             "Implementation-Version" to implementationVersion,
-            "Implementation-Vendor" to date, // Paper
+            "Implementation-Vendor" to date,
             "Specification-Title" to "Paper",
             "Specification-Version" to project.version,
             "Specification-Vendor" to "Paper Team",
@@ -204,8 +202,8 @@ tasks.jar {
             "Brand-Name" to "Paper",
             "Build-Number" to (build ?: ""),
             "Build-Time" to buildTime.toString(),
-            "Git-Branch" to gitBranch, // Paper
-            "Git-Commit" to gitHash, // Paper
+            "Git-Branch" to gitBranch,
+            "Git-Commit" to gitHash,
         )
         for (tld in setOf("net", "com", "org")) {
             attributes("$tld/bukkit", "Sealed" to true)
@@ -213,13 +211,11 @@ tasks.jar {
     }
 }
 
-// Paper start - compile tests with -parameters for better junit parameterized test names
+// Compile tests with -parameters for better junit parameterized test names
 tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
 }
-// Paper end
 
-// Paper start
 val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
     jarToScan.set(tasks.jar.flatMap { it.archiveFile })
@@ -228,8 +224,8 @@ val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.
 tasks.check {
     dependsOn(scanJar)
 }
-// Paper end
-// Paper start - use TCA for console improvements
+
+// Use TCA for console improvements
 tasks.jar {
     val archiveOperations = services.archiveOperations
     from(alsoShade.elements.map {
@@ -242,7 +238,6 @@ tasks.jar {
         }
     })
 }
-// Paper end - use TCA for console improvements
 
 tasks.test {
     include("**/**TestSuite.class")
@@ -251,11 +246,11 @@ tasks.test {
         forkEvery = 1
         excludeTags("Slow")
     }
-    // Paper start - configure mockito agent that is needed in newer java versions
+
+    // Configure mockito agent that is needed in newer java versions
     val provider = objects.newInstance<MockitoAgentProvider>()
     provider.fileCollection.from(mockitoAgent)
     jvmArgumentProviders.add(provider)
-    // Paper end - configure mockito agent that is needed in newer java versions
 }
 
 fun TaskContainer.registerRunTask(
