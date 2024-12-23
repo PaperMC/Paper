@@ -8,7 +8,6 @@ import org.bukkit.Material;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
- * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Dye extends MaterialData implements Colorable {
@@ -62,9 +61,6 @@ public class Dye extends MaterialData implements Colorable {
         return getColor() + " DYE(" + getData() + ")";
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @Override
     public Dye clone() {
         return (Dye) super.clone();

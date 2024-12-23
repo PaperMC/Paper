@@ -12,7 +12,6 @@ import org.bukkit.TreeSpecies;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
- * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Leaves extends Wood {
@@ -92,7 +91,6 @@ public class Leaves extends Wood {
      * Checks if this leaf block is in the process of decaying
      *
      * @return true if the leaf block is in the process of decaying
-     * @since 1.9.4
      */
     public boolean isDecaying() {
         return (getData() & 0x8) != 0;
@@ -102,7 +100,6 @@ public class Leaves extends Wood {
      * Set whether this leaf block is in the process of decaying
      *
      * @param isDecaying whether the block is decaying or not
-     * @since 1.9.4
      */
     public void setDecaying(boolean isDecaying) {
         setData((byte) ((getData() & 0x3) | (isDecaying
@@ -116,7 +113,6 @@ public class Leaves extends Wood {
      *
      * @return true if the leaf block is permanent or can decay when too far
      * from a log
-     * @since 1.9.4
      */
     public boolean isDecayable() {
         return (getData() & 0x4) == 0;
@@ -126,7 +122,6 @@ public class Leaves extends Wood {
      * Set whether this leaf block will disappear when too far from a log
      *
      * @param isDecayable whether the block is permanent or can disappear
-     * @since 1.9.4
      */
     public void setDecayable(boolean isDecayable) {
         setData((byte) ((getData() & 0x3) | (isDecayable
@@ -139,9 +134,6 @@ public class Leaves extends Wood {
         return getSpecies() + (isDecayable() ? " DECAYABLE " : " PERMANENT ") + (isDecaying() ? " DECAYING " : " ") + super.toString();
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @Override
     public Leaves clone() {
         return (Leaves) super.clone();

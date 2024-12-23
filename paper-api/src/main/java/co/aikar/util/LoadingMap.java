@@ -49,7 +49,6 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <K> Key
  * @param <V> Value
- * @since 1.9.4
  */
 @Deprecated(forRemoval = true)
 public class LoadingMap <K, V> extends AbstractMap<K, V> {
@@ -207,7 +206,6 @@ public class LoadingMap <K, V> extends AbstractMap<K, V> {
      * @param <K> Key Type of the Map
      * @param <V> Value Type of the Map
      * @return Map
-     * @since 1.12.2
      */
     @NotNull
     public static <K, V> Map<K, V> newHashMap(@NotNull Function<K, V> loader, int initialCapacity) {

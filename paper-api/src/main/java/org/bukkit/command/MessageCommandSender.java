@@ -17,7 +17,6 @@ import org.jetbrains.annotations.Nullable;
  * For when all you care about is just messaging
  *
  * @deprecated Timings will be removed in the future
- * @since 1.11.2
  */
 @Deprecated(forRemoval = true)
 public interface MessageCommandSender extends CommandSender {
@@ -29,17 +28,11 @@ public interface MessageCommandSender extends CommandSender {
         }
     }
 
-    /**
-     * @since 1.16.3
-     */
     @Override
     default void sendMessage(@Nullable UUID sender, @NotNull String message) {
         sendMessage(message);
     }
 
-    /**
-     * @since 1.16.3
-     */
     @Override
     default void sendMessage(@Nullable UUID sender, @NotNull String[] messages) {
         for (String message : messages) {
@@ -53,9 +46,6 @@ public interface MessageCommandSender extends CommandSender {
         return Bukkit.getServer();
     }
 
-    /**
-     * @since 1.17.1
-     */
     // Paper start
     @Override
     default net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component name() {
@@ -139,9 +129,6 @@ public interface MessageCommandSender extends CommandSender {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * @since 1.12
-     */
     @NotNull
     @Override
     default Spigot spigot() {

@@ -7,9 +7,6 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @since 1.12.2
- */
 @Deprecated(forRemoval = true)
 public class Counter <T> extends ForwardingMap<T, Long> {
     private final Map<T, Long> counts = new HashMap<>();

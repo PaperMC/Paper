@@ -21,7 +21,6 @@ import org.bukkit.block.BlockFace;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
- * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Door extends MaterialData implements Directional, Openable {
@@ -183,7 +182,6 @@ public class Door extends MaterialData implements Directional, Openable {
      * @see Material#LEGACY_JUNGLE_DOOR
      * @see Material#LEGACY_ACACIA_DOOR
      * @see Material#LEGACY_DARK_OAK_DOOR
-     * @since 1.8.8
      */
     public static Material getWoodDoorOfSpecies(TreeSpecies species) {
         switch (species) {
@@ -306,7 +304,6 @@ public class Door extends MaterialData implements Directional, Openable {
      * Undefined if <code>isTopHalf()</code> is false.
      *
      * @return false for left hinge, true for right hinge
-     * @since 1.8.8
      */
     public boolean getHinge() {
         return (getData() & 0x1) == 1;
@@ -318,15 +315,11 @@ public class Door extends MaterialData implements Directional, Openable {
      * Undefined if <code>isTopHalf()</code> is false.
      *
      * @param isHingeRight True if the hinge is on the right hand side, false if the hinge is on the left hand side.
-     * @since 1.8.8
      */
     public void setHinge(boolean isHingeRight) {
         setData((byte) (isHingeRight ? (getData() | 0x1) : (getData() & ~0x1)));
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @Override
     public Door clone() {
         return (Door) super.clone();

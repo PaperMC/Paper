@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * @param <F> backing list element type
  * @param <T> transformed list element type
- * @since 1.16.5
  */
 @NullMarked
 @ApiStatus.Internal

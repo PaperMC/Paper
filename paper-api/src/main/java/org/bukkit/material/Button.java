@@ -8,7 +8,6 @@ import org.bukkit.block.BlockFace;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
- * @since 1.0.0 R1
  */
 @Deprecated(forRemoval = true, since = "1.13")
 public class Button extends SimpleAttachableMaterialData implements Redstone {
@@ -124,9 +123,6 @@ public class Button extends SimpleAttachableMaterialData implements Redstone {
         return super.toString() + " " + (isPowered() ? "" : "NOT ") + "POWERED";
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @Override
     public Button clone() {
         return (Button) super.clone();

@@ -63,7 +63,6 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#BANNER_PATTERN}. PatternTypes can exist without a key.
-     * @since 1.21.3
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     @Override
@@ -74,7 +73,6 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#BANNER_PATTERN}. PatternTypes can exist without a key.
-     * @since 1.20.4
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     // Paper end - deprecate getKey

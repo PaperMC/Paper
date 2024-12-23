@@ -4315,9 +4315,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     void sendGameEvent(@Nullable Entity sourceEntity, @NotNull GameEvent gameEvent, @NotNull Vector position);
     // Paper end
 
-    /**
-     * @since 1.6.1 R0.1
-     */
     // Spigot start
     @Deprecated(forRemoval = true) // Paper
     public class Spigot {
@@ -4330,7 +4327,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @return The lightning entity.
          * @deprecated sound is now client side and cannot be removed
          * @see World#strikeLightning(org.bukkit.Location)
-         * @since 1.7.10
          */
         @NotNull
         @Deprecated(since = "1.20.4")
@@ -4346,7 +4342,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @return The lightning entity.
          * @deprecated sound is now client side and cannot be removed
          * @see World#strikeLightningEffect(org.bukkit.Location)
-         * @since 1.7.10
          */
         @NotNull
         @Deprecated(since = "1.20.4")

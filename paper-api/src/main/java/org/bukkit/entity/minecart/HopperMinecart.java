@@ -34,7 +34,6 @@ public interface HopperMinecart extends Minecart, InventoryHolder, LootableEntit
      *
      * @return ticks left on cooldown
      * @deprecated Hopper minecarts don't have cooldowns anymore
-     * @since 1.19.2
      */
     @Deprecated(forRemoval = true, since = "1.19.4")
     int getPickupCooldown();
@@ -44,7 +43,6 @@ public interface HopperMinecart extends Minecart, InventoryHolder, LootableEntit
      *
      * @param cooldown cooldown length in ticks
      * @deprecated Hopper minecarts don't have cooldowns anymore
-     * @since 1.19.2
      */
     @Deprecated(forRemoval = true, since = "1.19.4")
     void setPickupCooldown(int cooldown);

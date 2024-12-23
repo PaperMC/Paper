@@ -123,7 +123,6 @@ public final class PaperComponents {
      *
      * @return a serializer to plain text
      * @deprecated use {@link PlainTextComponentSerializer#plainText()}
-     * @since 1.18.1
      */
     @Deprecated(forRemoval = true, since = "1.18.2")
     public static PlainTextComponentSerializer plainTextSerializer() {

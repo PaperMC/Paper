@@ -54,7 +54,6 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      * @return the durability-to-xp operation
      * @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
      * The enchantment effects operation are too complex to reliably offer the inverse function.
-     * @since 1.19.4
      */
     @Contract("-> fail")
     @Deprecated(forRemoval = true, since = "1.21")
@@ -70,7 +69,6 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      * @param durabilityToXpOp the durability-to-xp operation
      * @deprecated the mending enchantment uses enchantment effects to compute how much durability is granted per xp.
      * The enchantment effects operation are too complex to reliably offer the inverse function.
-     * @since 1.19.4
      */
     @Contract("_ -> fail")
     @Deprecated(forRemoval = true, since = "1.21")

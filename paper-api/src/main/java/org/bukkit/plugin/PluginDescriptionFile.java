@@ -162,7 +162,7 @@ import org.yaml.snakeyaml.representer.Representer;
  *depend: [NewFire, FlameWire]
  *api-version: 1.13
  *libraries:
- *   - com.squareup.okhttp3:okhttp:4.9.0
+    - com.squareup.okhttp3:okhttp:4.9.0
  *
  *commands:
  *  flagrate:
@@ -264,9 +264,6 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
     private List<String> libraries = ImmutableList.of();
     // Paper start - plugin loader api
     private String paperPluginLoader;
-    /**
-     * @since 1.20.6
-     */
     @org.jetbrains.annotations.ApiStatus.Internal @org.jetbrains.annotations.Nullable
     public String getPaperPluginLoader() {
         return this.paperPluginLoader;
@@ -301,57 +298,36 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
         this.libraries = libraries;
     }
 
-    /**
-     * @since 1.19.3
-     */
     @Override
     public @NotNull String getMainClass() {
         return this.main;
     }
 
-    /**
-     * @since 1.19.3
-     */
     @Override
     public @NotNull PluginLoadOrder getLoadOrder() {
         return this.order;
     }
 
-    /**
-     * @since 1.19.3
-     */
     @Override
     public @Nullable String getLoggerPrefix() {
         return this.prefix;
     }
 
-    /**
-     * @since 1.19.3
-     */
     @Override
     public @NotNull List<String> getPluginDependencies() {
         return this.depend;
     }
 
-    /**
-     * @since 1.19.3
-     */
     @Override
     public @NotNull List<String> getPluginSoftDependencies() {
         return this.softDepend;
     }
 
-    /**
-     * @since 1.19.3
-     */
     @Override
     public @NotNull List<String> getLoadBeforePlugins() {
         return this.loadBefore;
     }
 
-    /**
-     * @since 1.19.3
-     */
     @Override
     public @NotNull List<String> getProvidedPlugins() {
         return this.provides;
@@ -446,7 +422,6 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      *- OldPluginName</pre></blockquote>
      *
      * @return immutable list of the plugin APIs which this plugin provides
-     * @since 1.15.2
      */
     @NotNull
     public List<String> getProvides() {
@@ -599,7 +574,6 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      * <blockquote><pre>authors: [Choco, md_5]</pre></blockquote>
      *
      * @return an immutable list of the plugin's contributors
-     * @since 1.16.1
      */
     @NotNull
     public List<String> getContributors() {
@@ -711,7 +685,6 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      *
      * @return immutable list of plugins that should consider this plugin a
      *     soft-dependency
-     * @since 1.2.5 R0.1
      */
     @NotNull
     public List<String> getLoadBefore() {
@@ -732,7 +705,6 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      * Example:<blockquote><pre>prefix: ex-why-zee</pre></blockquote>
      *
      * @return the prefixed logging token, or null if not specified
-     * @since 1.1.0 R5
      */
     @Nullable
     public String getPrefix() {
@@ -1035,7 +1007,6 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      * defines any awareness.
      *
      * @return a set containing every awareness for the plugin
-     * @since 1.7.10
      */
     @NotNull
     public Set<PluginAwareness> getAwareness() {
@@ -1066,7 +1037,6 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      * Example:<blockquote><pre>api-version: 1.13</pre></blockquote>
      *
      * @return the version of the plugin
-     * @since 1.13
      */
     @Nullable
     public String getAPIVersion() {
@@ -1083,7 +1053,6 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      *     - com.squareup.okhttp3:okhttp:4.9.0</pre></blockquote>
      *
      * @return required libraries
-     * @since 1.16.5
      */
     @NotNull
     public List<String> getLibraries() {
@@ -1093,7 +1062,6 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
     /**
      * @return unused
      * @deprecated unused
-     * @since 1.1.0 R1
      */
     @Deprecated(since = "1.7.2")
     @Nullable
@@ -1392,7 +1360,6 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
     /**
      * @return internal use
      * @apiNote Internal use
-     * @since 1.7.10
      */
     @ApiStatus.Internal
     @NotNull

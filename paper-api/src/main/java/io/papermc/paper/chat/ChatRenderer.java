@@ -36,9 +36,6 @@ public interface ChatRenderer {
         return new ViewerUnawareImpl.Default((source, sourceDisplayName, message) -> Component.translatable("chat.type.text", sourceDisplayName, message));
     }
 
-    /**
-     * @since 1.19.1
-     */
     @ApiStatus.Internal
     sealed interface Default extends ChatRenderer, ViewerUnaware permits ViewerUnawareImpl.Default {
     }

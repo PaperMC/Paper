@@ -9,7 +9,6 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * The sound group includes break, step, place, hit, and fall sounds.
  * @deprecated use {@link org.bukkit.SoundGroup}
- * @since 1.14.2
  */
 @Deprecated(forRemoval = true, since = "1.18.2")
 public interface BlockSoundGroup {

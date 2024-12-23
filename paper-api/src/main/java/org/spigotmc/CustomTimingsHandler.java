@@ -40,7 +40,6 @@ import java.util.logging.Level;
  *
  * @deprecated
  * @see co.aikar.timings.Timings#of
- * @since 1.6.1 R0.1
  */
 @Deprecated(forRemoval = true)
 public final class CustomTimingsHandler {

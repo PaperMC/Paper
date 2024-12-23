@@ -10,7 +10,6 @@ import org.jetbrains.annotations.NotNull;
  *
  * @see <a href="https://minecraft.wiki/w/Data_pack">Minecraft wiki</a>
  * @deprecated use {@link io.papermc.paper.datapack.Datapack}
- * @since 1.19.4
  */
 @Deprecated(forRemoval = true, since = "1.20") // Paper
 public interface DataPack extends Keyed {
@@ -53,7 +52,6 @@ public interface DataPack extends Keyed {
      * <a href="https://minecraft.wiki/w/Data_pack#Pack_format">Minecraft Wiki</a>.
      *
      * @return the min pack version supported
-     * @since 1.20.2
      */
     public int getMinSupportedPackFormat();
 
@@ -66,7 +64,6 @@ public interface DataPack extends Keyed {
      * <a href="https://minecraft.wiki/w/Data_pack#Pack_format">Minecraft Wiki</a>.
      *
      * @return the max pack version supported
-     * @since 1.20.2
      */
     public int getMaxSupportedPackFormat();
 

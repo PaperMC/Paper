@@ -250,7 +250,6 @@ public interface ItemFactory {
      * @return Display name of Item
      * @deprecated {@link ItemStack} implements {@link net.kyori.adventure.translation.Translatable}; use that and
      * {@link net.kyori.adventure.text.Component#translatable(net.kyori.adventure.translation.Translatable)} instead.
-     * @since 1.12
      */
     @Nullable
     @Deprecated(since = "1.18.1", forRemoval = true)

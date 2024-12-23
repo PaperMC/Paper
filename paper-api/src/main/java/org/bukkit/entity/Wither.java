@@ -47,7 +47,6 @@ public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.Ra
      *
      * @return amount of invulnerability ticks
      * @deprecated Duplicate api, use {@link #getInvulnerableTicks()}
-     * @since 1.19.4
      */
     @Deprecated(forRemoval = true) // Paper
     int getInvulnerabilityTicks();
@@ -59,7 +58,6 @@ public interface Wither extends Monster, Boss, com.destroystokyo.paper.entity.Ra
      *
      * @param ticks amount of invulnerability ticks
      * @deprecated Duplicate api, use {@link #setInvulnerableTicks(int)}
-     * @since 1.19.4
      */
     @Deprecated(forRemoval = true) // Paper
     void setInvulnerabilityTicks(int ticks);

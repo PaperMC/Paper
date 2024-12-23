@@ -250,7 +250,6 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @param itemStack The (tool) itemstack
      * @return whether the block will drop items
      * @deprecated partially replaced by {@link Block#isPreferredTool(ItemStack)}
-     * @since 1.16.5
      */
     @Deprecated(since = "1.21", forRemoval = true) // Paper
     boolean isValidTool(@NotNull ItemStack itemStack);
@@ -817,7 +816,6 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      *
      * @return the sound group for this block
      * @deprecated use {@link #getBlockSoundGroup()}
-     * @since 1.14.2
      */
     @NotNull
     @Deprecated(forRemoval = true, since = "1.18.2")
@@ -833,7 +831,6 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
 
     /**
      * @deprecated use {@link #translationKey()}
-     * @since 1.16.2
      */
     @NotNull
     @Deprecated(forRemoval = true)

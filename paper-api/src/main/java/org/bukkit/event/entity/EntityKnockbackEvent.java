@@ -13,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
  * Called when a living entity receives knockback.
  *
  * @deprecated use {@link io.papermc.paper.event.entity.EntityKnockbackEvent}
- * @since 1.20.4
  */
 @Deprecated(forRemoval = true) // Paper
 public class EntityKnockbackEvent extends EntityEvent implements Cancellable {

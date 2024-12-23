@@ -30,7 +30,6 @@ import org.jetbrains.annotations.Nullable;
  * Provides an ability to time sections of code within the Minecraft Server
  *
  * @deprecated Timings will be removed in the future
- * @since 1.9.4
  */
 @Deprecated(forRemoval = true)
 public interface Timing extends AutoCloseable {

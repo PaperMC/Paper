@@ -97,7 +97,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return block that the living entity has targeted,
      *     or null if no block is within maxDistance
      * @deprecated use {@link #getTargetBlockExact(int)}
-     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
@@ -163,7 +162,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return TargetBlockInfo about the block the living entity has targeted,
      *     or null if no block is targeted
      * @deprecated use {@link #rayTraceBlocks(double)}
-     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
@@ -214,7 +212,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return TargetEntityInfo about the entity being targeted,
      *     or null if no entity is targeted
      * @deprecated use {@link #rayTraceEntities(int)}
-     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
@@ -243,7 +240,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return TargetEntityInfo about the entity being targeted,
      *     or null if no entity is targeted
      * @deprecated use {@link #rayTraceEntities(int, boolean)}
-     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
     @Nullable
@@ -385,7 +381,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return the item being used by the player, or null if they are not using
      * an item
      * @deprecated Use {@link #getActiveItem()}
-     * @since 1.20.4
      */
     @Nullable
     @Deprecated(forRemoval = true, since = "1.20.4") // Paper
@@ -396,7 +391,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return The number of ticks remaining
      * @deprecated use {@link #getActiveItemRemainingTime()}
-     * @since 1.20.4
      */
     @Deprecated(forRemoval = true, since = "1.20.4") // Paper
     public int getItemInUseTicks();
@@ -408,7 +402,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @param ticks The number of ticks remaining
      * @deprecated use {@link #setActiveItemRemainingTime(int)}
-     * @since 1.20.4
      */
     @Deprecated(forRemoval = true, since = "1.20.4") // Paper
     public void setItemInUseTicks(int ticks);
@@ -1143,7 +1136,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      *
      * @return the entity category
      * @deprecated entity groupings are now managed by tags, not categories
-     * @since 1.16.2
      */
     @NotNull
     @Deprecated(since = "1.20.5", forRemoval = true) @org.jetbrains.annotations.Contract("-> fail") // Paper

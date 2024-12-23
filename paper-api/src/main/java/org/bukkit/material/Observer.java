@@ -8,7 +8,6 @@ import org.bukkit.block.BlockFace;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
- * @since 1.11.2
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Observer extends MaterialData implements Directional, Redstone {

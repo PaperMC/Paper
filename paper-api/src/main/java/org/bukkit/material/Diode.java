@@ -12,7 +12,6 @@ import org.bukkit.block.BlockFace;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
- * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Diode extends MaterialData implements Directional, Redstone {
@@ -178,9 +177,6 @@ public class Diode extends MaterialData implements Directional, Redstone {
         return super.toString() + " facing " + getFacing() + " with " + getDelay() + " ticks delay";
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @Override
     public Diode clone() {
         return (Diode) super.clone();
@@ -190,7 +186,6 @@ public class Diode extends MaterialData implements Directional, Redstone {
      * Checks if the diode is powered.
      *
      * @return true if the diode is powered
-     * @since 1.9.4
      */
     @Override
     public boolean isPowered() {

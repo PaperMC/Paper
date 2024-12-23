@@ -38,7 +38,6 @@ import static net.kyori.adventure.text.Component.text;
 
 /**
  * @deprecated Timings will be removed in the future
- * @since 1.9.4
  */
 @Deprecated(forRemoval = true)
 public class TimingsCommand extends BukkitCommand {

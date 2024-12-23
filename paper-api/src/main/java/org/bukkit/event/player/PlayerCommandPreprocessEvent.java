@@ -117,7 +117,6 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      * @param player New player which this event will execute as
      * @throws IllegalArgumentException if the player provided is null
      * @deprecated Only works for sign commands; use {@link Player#performCommand(String)}, including those cases
-     * @since 1.3.1 R1.0
      */
     @Deprecated(forRemoval = true)
     public void setPlayer(@NotNull final Player player) throws IllegalArgumentException {
@@ -137,7 +136,6 @@ public class PlayerCommandPreprocessEvent extends PlayerEvent implements Cancell
      *
      * @return All Players who will see this chat message
      * @deprecated This is simply the online players. Modifications have no effect
-     * @since 1.3.1 R1.0
      */
     @NotNull
     @Deprecated(since = "1.3.1", forRemoval = true)

@@ -3,9 +3,6 @@ package com.destroystokyo.paper.event.executor.asm;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
-/**
- * @since 1.9.4
- */
 @ApiStatus.Internal
 @NullMarked
 public interface ClassDefiner {

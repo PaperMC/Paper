@@ -171,7 +171,6 @@ public interface Panda extends Animals, Sittable {
      *
      * @param onBack is on its back
      * @deprecated use {@link #setOnBack(boolean)}
-     * @since 1.18.1
      */
     @Deprecated(forRemoval = true, since = "1.19")
     default void setIsOnBack(boolean onBack) {
@@ -183,7 +182,6 @@ public interface Panda extends Animals, Sittable {
      *
      * @param sitting is currently sitting
      * @deprecated use {@link #setSitting(boolean)}
-     * @since 1.18.1
      */
     @Deprecated(forRemoval = true, since = "1.19")
     default void setIsSitting(boolean sitting) {

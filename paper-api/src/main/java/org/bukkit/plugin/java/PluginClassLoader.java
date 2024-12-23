@@ -30,8 +30,6 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A ClassLoader for plugins, to allow shared classes across multiple plugins
- *
- * @since 1.0.0 R1
  */
 @org.jetbrains.annotations.ApiStatus.Internal // Paper
 public final class PluginClassLoader extends URLClassLoader implements io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader { // Paper
@@ -109,9 +107,6 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         }
     }
 
-    /**
-     * @since 1.15.1
-     */
     @Override
     public URL getResource(String name) {
         // Paper start
@@ -123,9 +118,6 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         // Paper end
     }
 
-    /**
-     * @since 1.15.1
-     */
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
         // Paper start
@@ -146,33 +138,21 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
     }
     // Paper end
 
-    /**
-     * @since 1.19.3
-     */
     // Paper start
     @Override
     public Class<?> loadClass(@NotNull String name, boolean resolve, boolean checkGlobal, boolean checkLibraries) throws ClassNotFoundException {
         return this.loadClass0(name, resolve, checkGlobal, checkLibraries);
     }
-    /**
-     * @since 1.19.3
-     */
     @Override
     public io.papermc.paper.plugin.configuration.PluginMeta getConfiguration() {
         return this.description;
     }
 
-    /**
-     * @since 1.19.3
-     */
     @Override
     public void init(JavaPlugin plugin) {
         this.initialize(plugin);
     }
 
-    /**
-     * @since 1.9.4
-     */
     @Override
     public JavaPlugin getPlugin() {
         return this.plugin;
@@ -274,9 +254,6 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         return result;
     }
 
-    /**
-     * @since 1.12.2
-     */
     @Override
     public void close() throws IOException {
         try {
@@ -297,9 +274,6 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         return classes.values();
     }
 
-    /**
-     * @since 1.19.3
-     */
     public synchronized void initialize(@NotNull JavaPlugin javaPlugin) { // Paper
         Preconditions.checkArgument(javaPlugin != null, "Initializing plugin cannot be null");
         Preconditions.checkArgument(javaPlugin.getClass().getClassLoader() == this, "Cannot initialize plugin outside of this class loader");
@@ -313,9 +287,6 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         javaPlugin.init(org.bukkit.Bukkit.getServer(), description, dataFolder, file, this, description, this.logger); // Paper
     }
 
-    /**
-     * @since 1.15.2
-     */
     // Paper start
     @Override
     public String toString() {
@@ -341,9 +312,6 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
         }
     }
 
-    /**
-     * @since 1.19.3
-     */
     @Override
     public @Nullable io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup getGroup() {
         return this.classLoaderGroup;

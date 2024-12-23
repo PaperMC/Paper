@@ -69,7 +69,6 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
      * @param duration the time in seconds to be alight for.
      * @see #setDuration(float)
      * @deprecated duration is now a float
-     * @since 1.1.0 R1
      */
     @Deprecated(since = "1.21", forRemoval = true)
     public void setDuration(int duration) {

@@ -78,7 +78,6 @@ public interface PotionBrewer {
      * @param extended Whether the potion is extended
      * @return The list of effects
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link PotionType#getPotionEffects()} instead
-     * @since 1.9.4
      */
     @NotNull
     @Deprecated(since = "1.20.2", forRemoval = true) // Paper

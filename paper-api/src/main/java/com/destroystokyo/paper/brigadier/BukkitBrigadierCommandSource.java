@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * @deprecated For removal, see {@link io.papermc.paper.command.brigadier.Commands} on how to use the new Brigadier API.
- * @since 1.20.6
  */
 @Deprecated(forRemoval = true)
 public interface BukkitBrigadierCommandSource {

@@ -11,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * {@link io.papermc.paper.plugin.loader.PluginLoader} is processed.
  *
  * @see io.papermc.paper.plugin.loader.PluginLoader
- * @since 1.19.3
  */
 @ApiStatus.Internal
 @NullMarked

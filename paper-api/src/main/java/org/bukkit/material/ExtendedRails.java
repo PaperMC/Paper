@@ -9,7 +9,6 @@ import org.bukkit.block.BlockFace;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
- * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class ExtendedRails extends Rails {
@@ -56,9 +55,6 @@ public class ExtendedRails extends Rails {
         setData((byte) (extraBitSet ? (getData() | 0x8) : (getData() & ~0x8)));
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @Override
     public ExtendedRails clone() {
         return (ExtendedRails) super.clone();

@@ -11,8 +11,6 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a plugin loader, which handles direct access to specific types
  * of plugins
- *
- * @since 1.0.0 R1
  */
 @Deprecated(forRemoval = true) // Paper - The PluginLoader system will not function in the near future
 public interface PluginLoader {
@@ -39,7 +37,6 @@ public interface PluginLoader {
      *     specified file
      * @throws InvalidDescriptionException If the plugin description file
      *     could not be created
-     * @since 1.1.0 R2
      */
     @NotNull
     public PluginDescriptionFile getPluginDescription(@NotNull File file) throws InvalidDescriptionException;
@@ -59,7 +56,6 @@ public interface PluginLoader {
      * @param listener The object that will handle the eventual call back
      * @param plugin The plugin to use when creating registered listeners
      * @return The registered listeners.
-     * @since 1.1.0 R1
      */
     @NotNull
     public Map<Class<? extends Event>, Set<RegisteredListener>> createRegisteredListeners(@NotNull Listener listener, @NotNull Plugin plugin);

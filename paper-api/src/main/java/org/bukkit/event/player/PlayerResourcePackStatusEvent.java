@@ -26,7 +26,6 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
     // Paper start - add hash (not used anymore)
     /**
      * @deprecated Hash does not seem to ever be set
-     * @since 1.9.4
      */
     @Deprecated(forRemoval = true)
     public String getHash() {

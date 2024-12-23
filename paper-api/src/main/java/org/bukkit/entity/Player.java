@@ -80,7 +80,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return an unmodifiable view of all known currently active bossbars
      * @since 4.14.0
-     * @since 1.20
      */
     @Override
     @org.jetbrains.annotations.UnmodifiableView @NotNull Iterable<? extends net.kyori.adventure.bossbar.BossBar> activeBossBars();
@@ -2968,7 +2967,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return the most recent hash or null
      * @deprecated This is no longer sent from the client and will always be null
-     * @since 1.9.4
      */
     @Deprecated(forRemoval = true, since = "1.13.2")
     @org.jetbrains.annotations.Contract("-> null")

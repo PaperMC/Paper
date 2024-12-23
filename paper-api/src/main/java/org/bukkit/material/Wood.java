@@ -12,7 +12,6 @@ import org.bukkit.TreeSpecies;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
- * @since 1.9.4
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Wood extends MaterialData {

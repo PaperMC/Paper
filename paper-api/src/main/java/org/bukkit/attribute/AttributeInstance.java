@@ -65,7 +65,6 @@ public interface AttributeInstance {
      * @param uuid the UUID of the modifier
      * @return the modifier, if it exists
      * @deprecated use {@link #getModifier(net.kyori.adventure.key.Key)}, modifiers are no longer stored by UUID
-     * @since 1.20.2
      */
     @Deprecated(forRemoval = true, since = "1.21")
     @org.jetbrains.annotations.Nullable AttributeModifier getModifier(@NotNull java.util.UUID uuid);
@@ -75,7 +74,6 @@ public interface AttributeInstance {
      *
      * @param uuid the UUID of the modifier
      * @deprecated use {@link #removeModifier(net.kyori.adventure.key.Key)}, modifiers are no longer stored by UUID
-     * @since 1.20.2
      */
     @Deprecated(forRemoval = true, since = "1.21")
     void removeModifier(@NotNull java.util.UUID uuid);

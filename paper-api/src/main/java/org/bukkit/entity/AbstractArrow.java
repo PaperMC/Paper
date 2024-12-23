@@ -146,7 +146,6 @@ public interface AbstractArrow extends Projectile {
      *
      * @return The picked up ItemStack
      * @deprecated use {@link #getItemStack()}
-     * @since 1.20.4
      */
     @NotNull
     @ApiStatus.Experimental
@@ -158,7 +157,6 @@ public interface AbstractArrow extends Projectile {
      *
      * @param item ItemStack set to be picked up
      * @deprecated use {@link #getItemStack()}
-     * @since 1.20.4
      */
     @ApiStatus.Experimental
     @Deprecated(forRemoval = true, since = "1.20.4") // Paper

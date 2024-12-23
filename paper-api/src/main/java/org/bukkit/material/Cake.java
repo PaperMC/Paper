@@ -5,7 +5,6 @@ import org.bukkit.Material;
 /**
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
- * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class Cake extends MaterialData {
@@ -73,9 +72,6 @@ public class Cake extends MaterialData {
         return super.toString() + " " + getSlicesEaten() + "/" + getSlicesRemaining() + " slices eaten/remaining";
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @Override
     public Cake clone() {
         return (Cake) super.clone();

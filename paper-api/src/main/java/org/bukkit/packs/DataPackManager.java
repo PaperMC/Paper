@@ -14,7 +14,6 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Manager of data packs.
  * @deprecated use {@link io.papermc.paper.datapack.DatapackManager}
- * @since 1.19.4
  */
 @Deprecated(forRemoval = true, since = "1.20") // Paper
 public interface DataPackManager {
@@ -70,7 +69,6 @@ public interface DataPackManager {
      * @param world World to check
      * @return {@code True} if the ItemType is enabled
      * @apiNote this method is not ready for public usage yet
-     * @since 1.20.6
      */
     @ApiStatus.Internal
     public boolean isEnabledByFeature(@NotNull ItemType itemType, @NotNull World world);
@@ -82,7 +80,6 @@ public interface DataPackManager {
      * @param world World to check
      * @return {@code True} if the BlockType is enabled
      * @apiNote this method is not ready for public usage yet
-     * @since 1.20.6
      */
     @ApiStatus.Internal
     public boolean isEnabledByFeature(@NotNull BlockType blockType, @NotNull World world);

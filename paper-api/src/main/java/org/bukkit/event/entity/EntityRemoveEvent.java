@@ -13,7 +13,6 @@ import org.jetbrains.annotations.NotNull;
  * of modifying the entity during or after this event is unspecified.
  * This event is not called for a {@link org.bukkit.entity.Player}.
  * @deprecated use {@link EntityRemoveFromWorldEvent} instead
- * @since 1.20.4
  */
 @Deprecated(forRemoval = true)
 public class EntityRemoveEvent extends EntityEvent {

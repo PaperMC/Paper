@@ -9,8 +9,6 @@ import org.jspecify.annotations.NullMarked;
  * <p>
  * This may for example be the server wide plugin manager itself, capable of validating if a dependency exists between
  * two {@link PluginMeta} instances, however the implementation is not limited to such a concrete use-case.
- *
- * @since 1.19.3
  */
 @NullMarked
 @ApiStatus.Internal

@@ -9,9 +9,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * @since 1.0.0 R1
- */
 @Deprecated(forRemoval = true) // Paper
 public class PluginsCommand extends BukkitCommand {
     public PluginsCommand(@NotNull String name) {
@@ -30,9 +27,6 @@ public class PluginsCommand extends BukkitCommand {
         return true;
     }
 
-    /**
-     * @since 1.7.2 R0.2
-     */
     @NotNull
     @Override
     public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {

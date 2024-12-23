@@ -262,7 +262,6 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @throws UnsupportedOperationException if the caller of this event does
      *     not support removing players
      * @deprecated the Iterable interface will be removed at some point
-     * @since 1.7.10
      */
     @NotNull
     @Override

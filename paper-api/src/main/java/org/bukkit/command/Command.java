@@ -42,7 +42,6 @@ public abstract class Command {
     public co.aikar.timings.Timing timings; // Paper
     /**
      * @deprecated Timings will be removed in the future
-     * @since 1.9.4
      */
     @Deprecated(forRemoval = true)
     @NotNull public String getTimingName() {return getName();} // Paper
@@ -544,9 +543,6 @@ public abstract class Command {
         return getClass().getName() + '(' + name + ')';
     }
 
-    /**
-     * @since 1.20.6
-     */
     // Paper start
     @org.jetbrains.annotations.ApiStatus.Internal
     public boolean canBeOverriden() { return false; }

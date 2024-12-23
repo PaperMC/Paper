@@ -8,7 +8,6 @@ import org.bukkit.block.BlockFace;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
- * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
@@ -35,9 +34,6 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
         return ((getData() & 0x4) == 0x4);
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @Override
     public void setOpen(boolean isOpen) {
         byte data = getData();
@@ -55,7 +51,6 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
      * Test if trapdoor is inverted
      *
      * @return true if inverted (top half), false if normal (bottom half)
-     * @since 1.5.1 R0.3
      */
     public boolean isInverted() {
         return ((getData() & 0x8) != 0);
@@ -65,7 +60,6 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
      * Set trapdoor inverted state
      *
      * @param inv - true if inverted (top half), false if normal (bottom half)
-     * @since 1.5.1 R0.3
      */
     public void setInverted(boolean inv) {
         int dat = getData() & 0x7;
@@ -121,9 +115,6 @@ public class TrapDoor extends SimpleAttachableMaterialData implements Openable {
         return (isOpen() ? "OPEN " : "CLOSED ") + super.toString() + " with hinges set " + getAttachedFace() + (isInverted() ? " inverted" : "");
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @Override
     public TrapDoor clone() {
         return (TrapDoor) super.clone();

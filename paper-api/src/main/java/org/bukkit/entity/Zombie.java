@@ -193,7 +193,6 @@ public interface Zombie extends Monster, Ageable {
      *
      * @return true if entity supports breaking doors
      * @deprecated Since 1.21.2 all zombie types can break doors if instructed as MC-137053 was fixed.
-     * @since 1.17.1
      */
     @Deprecated(since = "1.21.2", forRemoval = true)
     boolean supportsBreakingDoors();

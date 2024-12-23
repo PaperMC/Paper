@@ -675,9 +675,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     // Paper - delegate
-    /**
-     * @since 1.16.5
-     */
 
     @Override
     @NotNull
@@ -891,7 +888,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
 
     /**
      * @deprecated use {@link #getMaxItemUseDuration(org.bukkit.entity.LivingEntity)}; crossbows, later possibly more items require an entity parameter
-     * @since 1.12.2
      */
     @Deprecated(forRemoval = true)
     public int getMaxItemUseDuration() {
@@ -1115,7 +1111,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @return the itemstack rarity
      * @deprecated Use {@link ItemMeta#hasRarity()} and {@link ItemMeta#getRarity()}
-     * @since 1.16.5
      */
     @NotNull
     @Deprecated(forRemoval = true, since = "1.20.5")

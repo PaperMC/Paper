@@ -10,8 +10,6 @@ import org.jspecify.annotations.Nullable;
  * <p>
  * An example of this would be a classloader group that holds all direct and transitive dependencies a plugin declared,
  * allowing a plugins classloader to access classes included in these dependencies via this group.
- *
- * @since 1.19.3
  */
 @NullMarked
 @ApiStatus.Internal

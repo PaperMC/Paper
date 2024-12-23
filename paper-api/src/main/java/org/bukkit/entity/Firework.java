@@ -63,7 +63,6 @@ public interface Firework extends Projectile {
      * @param ticks the ticks to set. Must be greater than or equal to 0
      * @deprecated use {@link #setTicksFlown(int)}
      * @return true if the life was set, false if this firework has already detonated
-     * @since 1.19.2
      */
     @Deprecated(forRemoval = true) // Paper
     boolean setLife(int ticks);
@@ -74,7 +73,6 @@ public interface Firework extends Projectile {
      *
      * @deprecated use {@link #getTicksFlown()}
      * @return the life ticks
-     * @since 1.19.2
      */
     @Deprecated(forRemoval = true) // Paper
     int getLife();
@@ -85,7 +83,6 @@ public interface Firework extends Projectile {
      * @param ticks the ticks to set. Must be greater than 0
      * @deprecated use {@link #setTicksToDetonate(int)}
      * @return true if the time was set, false if this firework has already detonated
-     * @since 1.19.2
      */
     @Deprecated(forRemoval = true) // Paper
     boolean setMaxLife(int ticks);
@@ -95,7 +92,6 @@ public interface Firework extends Projectile {
      *
      * @deprecated use {@link #getTicksToDetonate()}
      * @return the maximum life in ticks
-     * @since 1.19.2
      */
     @Deprecated(forRemoval = true) // Paper
     int getMaxLife();

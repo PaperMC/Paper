@@ -321,9 +321,6 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
      */
     public boolean useTimings();
 
-    /**
-     * @since 1.19.3
-     */
     // Paper start
     @org.jetbrains.annotations.ApiStatus.Internal
     boolean isTransitiveDependency(io.papermc.paper.plugin.configuration.PluginMeta pluginMeta, io.papermc.paper.plugin.configuration.PluginMeta dependencyConfig);
@@ -332,7 +329,6 @@ public interface PluginManager extends io.papermc.paper.plugin.PermissionManager
      * Sets the permission manager to be used for this server.
      *
      * @param permissionManager permission manager
-     * @since 1.19.3
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     void overridePermissionManager(@NotNull Plugin plugin, @Nullable io.papermc.paper.plugin.PermissionManager permissionManager);

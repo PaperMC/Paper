@@ -15,9 +15,6 @@ import static org.objectweb.asm.Opcodes.INVOKESPECIAL;
 import static org.objectweb.asm.Opcodes.INVOKEVIRTUAL;
 import static org.objectweb.asm.Opcodes.V1_8;
 
-/**
- * @since 1.9.4
- */
 @ApiStatus.Internal
 @NullMarked
 public final class ASMEventExecutorGenerator {

@@ -228,7 +228,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @deprecated Use {@link ItemMeta#displayName()} and check if it is instanceof a {@link net.kyori.adventure.text.TranslatableComponent}.
      * @return true if this has a localized name
      * @deprecated meta no longer exists
-     * @since 1.11.2
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     boolean hasLocalizedName();
@@ -242,7 +241,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @deprecated Use {@link ItemMeta#displayName()} and cast it to a {@link net.kyori.adventure.text.TranslatableComponent}. No longer used by the client.
      * @return the localized name that is set
      * @deprecated meta no longer exists
-     * @since 1.11.2
      */
     @NotNull
     @Deprecated(since = "1.20.5", forRemoval = true)
@@ -254,7 +252,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * @deprecated Use {@link ItemMeta#displayName(Component)} with a {@link net.kyori.adventure.text.TranslatableComponent}. No longer used by the client.
      * @param name the name to set
      * @deprecated meta no longer exists
-     * @since 1.11.2
      */
     @Deprecated(since = "1.20.5", forRemoval = true)
     void setLocalizedName(@Nullable String name);
@@ -1145,7 +1142,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param version version
      * @apiNote  internal use only
-     * @since 1.14
      */
     @ApiStatus.Internal
     void setVersion(int version);
@@ -1160,7 +1156,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return Set of materials
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
-     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.14")
     Set<org.bukkit.Material> getCanDestroy();
@@ -1170,7 +1165,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param canDestroy Set of materials
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
-     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.14")
     void setCanDestroy(Set<org.bukkit.Material> canDestroy);
@@ -1180,7 +1174,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return Set of materials
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
-     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.14")
     Set<org.bukkit.Material> getCanPlaceOn();
@@ -1190,7 +1183,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param canPlaceOn Set of materials
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
-     * @since 1.13.1
      */
     @Deprecated(forRemoval = true, since = "1.14")
     void setCanPlaceOn(Set<org.bukkit.Material> canPlaceOn);
@@ -1200,7 +1192,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return Set of {@link com.destroystokyo.paper.Namespaced}
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
-     * @since 1.13.2
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     @NotNull
@@ -1211,7 +1202,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param canDestroy Collection of {@link com.destroystokyo.paper.Namespaced}
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
-     * @since 1.13.2
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     void setDestroyableKeys(@NotNull Collection<com.destroystokyo.paper.Namespaced> canDestroy);
@@ -1221,7 +1211,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return Set of {@link com.destroystokyo.paper.Namespaced}
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
-     * @since 1.13.2
      */
     @NotNull
     @Deprecated(forRemoval = true, since = "1.20.6")
@@ -1232,7 +1221,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @param canPlaceOn Collection of {@link com.destroystokyo.paper.Namespaced}
      * @deprecated this API is unsupported and will be replaced, its usage may result in data loss related to place/destroy predicates.
-     * @since 1.13.2
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     void setPlaceableKeys(@NotNull Collection<com.destroystokyo.paper.Namespaced> canPlaceOn);
@@ -1242,7 +1230,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return true if this item has placeable keys
      * @deprecated this API is unsupported and will be replaced
-     * @since 1.13.2
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     boolean hasPlaceableKeys();
@@ -1252,7 +1239,6 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return true if this item has destroyable keys
      * @deprecated this API is unsupported and will be replaced
-     * @since 1.13.2
      */
     @Deprecated(forRemoval = true, since = "1.20.6")
     boolean hasDestroyableKeys();

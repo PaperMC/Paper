@@ -7,7 +7,6 @@ import org.bukkit.Material;
  *
  * @deprecated all usage of MaterialData is deprecated and subject to removal.
  * Use {@link org.bukkit.block.data.BlockData}.
- * @since 1.0.0 R1
  */
 @Deprecated(since = "1.13", forRemoval = true)
 public class PoweredRail extends ExtendedRails implements Redstone {
@@ -43,9 +42,6 @@ public class PoweredRail extends ExtendedRails implements Redstone {
         setData((byte) (isPowered ? (getData() | 0x8) : (getData() & ~0x8)));
     }
 
-    /**
-     * @since 1.1.0 R5
-     */
     @Override
     public PoweredRail clone() {
         return (PoweredRail) super.clone();

@@ -488,7 +488,6 @@ public class WorldCreator {
      * @param keepSpawnInMemory Whether the spawn chunks will be kept loaded
      * @return This object, for chaining
      * @deprecated use {@link #keepSpawnLoaded(net.kyori.adventure.util.TriState)}
-     * @since 1.20.2
      */
     @NotNull
     @Deprecated(forRemoval = true) // Paper
@@ -501,7 +500,6 @@ public class WorldCreator {
      *
      * @return True if the spawn chunks will be kept loaded
      * @deprecated use {@link #keepSpawnLoaded()}
-     * @since 1.20.2
      */
     @Deprecated(forRemoval = true) // Paper
     public boolean keepSpawnInMemory() {

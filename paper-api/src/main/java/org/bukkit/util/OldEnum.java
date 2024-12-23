@@ -8,7 +8,6 @@ import org.jetbrains.annotations.NotNull;
  *
  * @param <T> the type of the old enum.
  * @deprecated only for backwards compatibility.
- * @since 1.21
  */
 @ApiStatus.Internal
 @Deprecated(since = "1.21", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils

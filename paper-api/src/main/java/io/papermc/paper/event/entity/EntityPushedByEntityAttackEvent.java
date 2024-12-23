@@ -51,7 +51,6 @@ public class EntityPushedByEntityAttackEvent extends EntityKnockbackEvent implem
      *
      * @param acceleration the new acceleration vector
      * @deprecated use {@link #setKnockback(Vector)}
-     * @since 1.20.4
      */
     @Deprecated(since = "1.20.6", forRemoval = true)
     public void setAcceleration(final Vector acceleration) {

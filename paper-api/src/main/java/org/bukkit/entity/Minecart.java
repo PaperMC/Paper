@@ -107,7 +107,6 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
      *
      * @param material the material to set as display block.
      * @deprecated use {@link #setDisplayBlockData(BlockData)}
-     * @since 1.8
      */
     @Deprecated(forRemoval = true, since = "1.13")
     public void setDisplayBlock(@Nullable MaterialData material);
@@ -118,7 +117,6 @@ public interface Minecart extends Vehicle, io.papermc.paper.entity.Frictional { 
      *
      * @return the block displayed by this minecart.
      * @deprecated use {@link #getDisplayBlockData()}
-     * @since 1.8
      */
     @NotNull
     @Deprecated(forRemoval = true, since = "1.13")

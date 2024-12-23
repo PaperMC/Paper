@@ -112,7 +112,6 @@ public class PlayerTeleportEvent extends PlayerMoveEvent {
      *
      * @return dismounted or not
      * @deprecated dismounting on tp is no longer controlled by the server
-     * @since 1.19
      */
     @Deprecated(forRemoval = true)
     public boolean willDismountPlayer() {
