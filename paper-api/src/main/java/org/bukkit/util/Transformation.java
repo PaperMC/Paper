@@ -27,9 +27,9 @@ public class Transformation {
         Preconditions.checkArgument(scale != null, "scale cannot be null");
         Preconditions.checkArgument(rightRotation != null, "rightRotation cannot be null");
 
-        this.translation = new Vector3f(translation);
+        this.translation = translation;
         this.leftRotation = new Quaternionf(leftRotation);
-        this.scale = new Vector3f(scale);
+        this.scale = scale;
         this.rightRotation = new Quaternionf(rightRotation);
     }
 
@@ -39,10 +39,10 @@ public class Transformation {
         Preconditions.checkArgument(scale != null, "scale cannot be null");
         Preconditions.checkArgument(rightRotation != null, "rightRotation cannot be null");
 
-        this.translation = new Vector3f(translation);
-        this.leftRotation = new Quaternionf(leftRotation);
-        this.scale = new Vector3f(scale);
-        this.rightRotation = new Quaternionf(rightRotation);
+        this.translation = translation;
+        this.leftRotation = leftRotation;
+        this.scale = scale;
+        this.rightRotation = rightRotation;
     }
 
     /**
@@ -52,7 +52,7 @@ public class Transformation {
      */
     @NotNull
     public Vector3f getTranslation() {
-        return new Vector3f(this.translation);
+        return this.translation;
     }
 
     /**
@@ -62,7 +62,7 @@ public class Transformation {
      */
     @NotNull
     public Quaternionf getLeftRotation() {
-        return new Quaternionf(this.leftRotation);
+        return this.leftRotation;
     }
 
     /**
@@ -72,7 +72,7 @@ public class Transformation {
      */
     @NotNull
     public Vector3f getScale() {
-        return new Vector3f(this.scale);
+        return this.scale;
     }
 
     /**
@@ -82,7 +82,7 @@ public class Transformation {
      */
     @NotNull
     public Quaternionf getRightRotation() {
-        return new Quaternionf(this.rightRotation);
+        return this.rightRotation;
     }
 
     @Override
