@@ -85,11 +85,12 @@ public interface Inventory extends Iterable<ItemStack> {
      * index of the varargs parameter. If all items are stored, it will return
      * an empty HashMap.
      * <p>
-     * The maximum size of the stack added to this inventory will be the minimum
+     * Items resulted from this method will not exceed the minimum
      * of {@link ItemStack#getMaxStackSize()} and {@link #getMaxStackSize()}.
      * <p>
-     * First, this method will try to fill the partial stacks in the inventory.
-     * Then, it will try to fill empty slots.
+     * First, this method will try to fill all the partial stacks in the inventory.
+     * Then it will try to fill empty slots, over-stacked items being able to
+     * fill several empty slots. The rest are placed in the returned map.
      * <p>
      * It is known that in some implementations this method will also set
      * the inputted argument amount to the number of that item not placed in
