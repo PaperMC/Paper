@@ -34,6 +34,6 @@ public class CraftDamageEffect  {
     }
 
     public static DamageEffect toBukkit(DamageEffects damageEffects) {
-        return CraftDamageType.damageEffectToBukkit(damageEffects);
+        return CraftDamageType.damageEffectToBukkit(damageEffects); // Paper
     }
 }
