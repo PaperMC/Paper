@@ -1,0 +1,115 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 29 Oct 2022 17:38:03 -0700
+Subject: [PATCH] Fix duplicate dispense events for some items
+
+Both wither skulls and carved pumpkins fired a
+BlockDispenseEvent twice if they didn't spawn a mob
+
+Also glass bottles if they weren't picking up
+Honey or Water
+
+diff --git a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+index a0c7c6208314d981e8577ad69ef1c5193290a085..772344c0fac5f42ae06905c38b632ce86c4721e7 100644
+--- a/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
++++ b/src/main/java/net/minecraft/core/dispenser/DispenseItemBehavior.java
+@@ -663,6 +663,7 @@ public interface DispenseItemBehavior {
+                     if (stack.isEmpty()) {
+                         stack = new ItemStack(item); // Paper - clear tag
+                     } else if (pointer.blockEntity().addItem(new ItemStack(item)) < 0) {
++                        // Paper - TODO this will also call a dispense event, should it?
+                         this.defaultDispenseItemBehavior.dispense(pointer, new ItemStack(item));
+                     }
+                     return stack;
+@@ -733,6 +734,7 @@ public interface DispenseItemBehavior {
+                             return new ItemStack(item);
+                         } else {
+                             if (pointer.blockEntity().addItem(new ItemStack(item)) < 0) {
++                                // Paper - TODO this will also call a dispense event, should it?
+                                 this.defaultDispenseItemBehavior.dispense(pointer, new ItemStack(item));
+                             }
+ 
+@@ -936,6 +938,7 @@ public interface DispenseItemBehavior {
+                 Direction enumdirection = (Direction) pointer.state().getValue(DispenserBlock.FACING);
+                 BlockPos blockposition = pointer.pos().relative(enumdirection);
+ 
++                if (worldserver.isEmptyBlock(blockposition) && WitherSkullBlock.canSpawnMob(worldserver, blockposition, stack)) { // Paper - moved from below to deduplicate event
+                 // CraftBukkit start
+                 org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack.copyWithCount(1)); // Paper - single item in event
+@@ -959,9 +962,8 @@ public interface DispenseItemBehavior {
+                     }
+                 }
+                 // CraftBukkit end
+-
+-                if (worldserver.isEmptyBlock(blockposition) && WitherSkullBlock.canSpawnMob(worldserver, blockposition, stack)) {
+-                    worldserver.setBlock(blockposition, (BlockState) Blocks.WITHER_SKELETON_SKULL.defaultBlockState().setValue(SkullBlock.ROTATION, RotationSegment.convertToSegment(enumdirection)), 3);
++                    // Paper - moved conditional up
++                    worldserver.setBlock(blockposition, (BlockState) Blocks.WITHER_SKELETON_SKULL.defaultBlockState().setValue(SkullBlock.ROTATION, enumdirection.getAxis() == Direction.Axis.Y ? 0 : enumdirection.getOpposite().get2DDataValue() * 4), 3);
+                     worldserver.gameEvent((Entity) null, GameEvent.BLOCK_PLACE, blockposition);
+                     BlockEntity tileentity = worldserver.getBlockEntity(blockposition);
+ 
+@@ -985,6 +987,7 @@ public interface DispenseItemBehavior {
+                 BlockPos blockposition = pointer.pos().relative((Direction) pointer.state().getValue(DispenserBlock.FACING));
+                 CarvedPumpkinBlock blockpumpkincarved = (CarvedPumpkinBlock) Blocks.CARVED_PUMPKIN;
+ 
++                if (worldserver.isEmptyBlock(blockposition) && blockpumpkincarved.canSpawnGolem(worldserver, blockposition)) { // Paper - moved from below to deduplicate event
+                 // CraftBukkit start
+                 org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack.copyWithCount(1)); // Paper - single item in event
+@@ -1008,8 +1011,7 @@ public interface DispenseItemBehavior {
+                     }
+                 }
+                 // CraftBukkit end
+-
+-                if (worldserver.isEmptyBlock(blockposition) && blockpumpkincarved.canSpawnGolem(worldserver, blockposition)) {
++                    // Paper - moved conditional up
+                     if (!worldserver.isClientSide) {
+                         worldserver.setBlock(blockposition, blockpumpkincarved.defaultBlockState(), 3);
+                         worldserver.gameEvent((Entity) null, GameEvent.BLOCK_PLACE, blockposition);
+@@ -1044,6 +1046,7 @@ public interface DispenseItemBehavior {
+                     return filledBottleStack.copy();
+                 } else {
+                     if (pointer.blockEntity().addItem(filledBottleStack.copy()) < 0) {
++                        // Paper - TODO this will also call a dispense event, should it?
+                         this.defaultDispenseItemBehavior.dispense(pointer, filledBottleStack.copy());
+                     }
+ 
+@@ -1059,6 +1062,7 @@ public interface DispenseItemBehavior {
+                 BlockState iblockdata = worldserver.getBlockState(blockposition);
+ 
+                 // CraftBukkit start
++                final java.util.function.Supplier<@org.jetbrains.annotations.Nullable ItemStack> callEvent = () -> { // Paper
+                 org.bukkit.block.Block bukkitBlock = CraftBlock.at(worldserver, pointer.pos());
+                 CraftItemStack craftItem = CraftItemStack.asCraftMirror(stack.copyWithCount(1)); // Paper - only single item in event
+ 
+@@ -1080,15 +1084,29 @@ public interface DispenseItemBehavior {
+                         return stack;
+                     }
+                 }
++                return null; // Paper
++                }; // Paper
+                 // CraftBukkit end
+ 
+                 if (iblockdata.is(BlockTags.BEEHIVES, (blockbase_blockdata) -> {
+                     return blockbase_blockdata.hasProperty(BeehiveBlock.HONEY_LEVEL) && blockbase_blockdata.getBlock() instanceof BeehiveBlock;
+                 }) && (Integer) iblockdata.getValue(BeehiveBlock.HONEY_LEVEL) >= 5) {
++                    // Paper start - call event once
++                    final ItemStack returnedStack = callEvent.get();
++                    if (returnedStack != null) {
++                        return returnedStack;
++                    }
++                    // Paper end
+                     ((BeehiveBlock) iblockdata.getBlock()).releaseBeesAndResetHoneyLevel(worldserver, iblockdata, blockposition, (Player) null, BeehiveBlockEntity.BeeReleaseStatus.BEE_RELEASED);
+                     this.setSuccess(true);
+                     return this.takeLiquid(pointer, stack, new ItemStack(Items.HONEY_BOTTLE));
+                 } else if (worldserver.getFluidState(blockposition).is(FluidTags.WATER)) {
++                    // Paper start - call event once
++                    ItemStack returnedStack = callEvent.get();
++                    if (returnedStack != null) {
++                        return returnedStack;
++                    }
++                    // Paper end
+                     this.setSuccess(true);
+                     return this.takeLiquid(pointer, stack, PotionUtils.setPotion(new ItemStack(Items.POTION), Potions.WATER));
+                 } else {
