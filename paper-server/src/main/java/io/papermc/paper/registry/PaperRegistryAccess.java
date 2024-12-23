@@ -1,5 +1,6 @@
 package io.papermc.paper.registry;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.legacy.DelayedRegistry;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.jspecify.annotations.Nullable;
 
@@ -102,6 +104,21 @@ public class PaperRegistryAccess implements RegistryAccess {
 
     public <M> void registerRegistry(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey, final net.minecraft.core.Registry<M> registry) {
         this.registerRegistry(resourceKey, registry, false);
+    }
+
+    public <M> void lockReferenceHolders(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey) {
+        final RegistryEntry<M, Keyed> entry = PaperRegistries.getEntry(resourceKey);
+        if (entry == null || !(entry.meta() instanceof final RegistryEntryMeta.ServerSide<M, Keyed> serverSide) || !serverSide.registryTypeMapper().supportsDirectHolders()) {
+            return;
+        }
+        final CraftRegistry<?, M> registry = (CraftRegistry<?, M>) this.getRegistry(entry.apiKey());
+        Preconditions.checkState(registry.isUnloaded(), "Registry %s is already loaded", resourceKey);
+        try {
+            Class.forName(serverSide.classToPreload().getName()); // this should always trigger the initialization of the class
+        } catch (final ClassNotFoundException e) {
+            throw new IllegalStateException("Failed to load class " + serverSide.classToPreload().getName(), e);
+        }
+        registry.lockReferenceHolders();
     }
 
     @SuppressWarnings("unchecked") // this method should be called right after any new MappedRegistry instances are created to later be used by the server.
