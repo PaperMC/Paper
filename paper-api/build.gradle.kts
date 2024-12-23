@@ -176,7 +176,7 @@ tasks.withType<Javadoc> {
         "https://guava.dev/releases/33.3.1-jre/api/docs/",
         "https://javadoc.io/doc/org.yaml/snakeyaml/2.2/",
         "https://javadoc.io/doc/org.jetbrains/annotations/$annotationsVersion/",
-        "https://javadoc.io/doc/org.joml/joml/1.10.8/index.html",
+        "https://javadoc.io/doc/org.joml/joml/1.10.8/",
         "https://www.javadoc.io/doc/com.google.code.gson/gson/2.11.0",
         "https://jspecify.dev/docs/api/",
         "https://jd.advntr.dev/api/$adventureVersion/",
