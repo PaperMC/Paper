@@ -313,7 +313,6 @@ tasks.registerRunTask("runReobfServer") {
 tasks.registerRunTask("runDevServer") {
     description = "Spin up a test server without assembling a jar"
     classpath(sourceSets.main.map { it.runtimeClasspath })
-    jvmArgs("-DPaper.pushPaperAssetsRoot=true")
 }
 
 tasks.registerRunTask("runBundler") {
