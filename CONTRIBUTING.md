@@ -11,15 +11,12 @@ of any minor nitpicks we might have. Often, it's better for us to solve these
 problems for you than make you go back and forth trying to fix them yourself.
 
 Unfortunately, if you use an organization for your PR, it prevents Paper from
-modifying it. This requires us to manually merge your PR, resulting in us
-closing the PR instead of marking it as merged.
-
-We much prefer to have PRs show as merged, so please do not use repositories
-on organizations for PRs.
+modifying it. To avoid this, please do not use repositories on organizations
+for PRs.
 
 ## Requirements
 
-To get started with PRing changes, you'll need the following software, most of
+To get started with making changes, you'll need the following software, most of
 which can be obtained in (most) package managers such as `apt` (Debian / Ubuntu;
 you will most likely use this for WSL), `homebrew` (macOS / Linux), and more:
 
@@ -39,22 +36,22 @@ If you're compiling with Docker, you can use Adoptium's
 [`eclipse-temurin`](https://hub.docker.com/_/eclipse-temurin/) images like so:
 
 ```console
-# docker run -it -v "$(pwd)":/data --rm eclipse-temurin:21.0.3_9-jdk bash
+# docker run -it -v "$(pwd)":/data --rm eclipse-temurin:21.0.5_11-jdk bash
 Pulling image...
 
 root@abcdefg1234:/# javac -version
-javac 21.0.3
+javac 21.0.5
 ```
 
 ## Understanding Patches
 
-Unlike the API and its implementation, modifications to Vanilla source files
+Unlike the API and its implementation, modifications to Minecraft source files
 are done through patches. These patches/extensions are split into different
 three different sets, which are:
 
-- `sources` - Per-file patches to individual Minecraft classes;
-- `resources` - Per-file patches to Minecraft data files;
-- `features` - Larger feature patches that modify multiple Minecraft classes.
+- `sources`: Per-file patches to Minecraft classes;
+- `resources`: Per-file patches to Minecraft data files;
+- `features`: Larger feature patches that modify multiple Minecraft classes.
 
 Because this entire structure is based on patches and git, a basic understanding
 of how to use git is required. A basic tutorial can be found here:
@@ -63,8 +60,8 @@ of how to use git is required. A basic tutorial can be found here:
 Assuming you have already forked the repository:
 
 1. Clone your fork to your local machine;
-2. Type `./gradlew applyPatches` in a terminal to apply the changes from upstream.
-On Windows, replace the `./` with `.\` at the beginning for all `gradlew` commands;
+2. Type `./gradlew applyPatches` in a terminal to apply the patches.
+On Windows, remove the `./` the beginning of `gradlew` commands;
 3. cd into `paper-server` for server changes, and `paper-api` for API changes.
 **Only changes made in `paper-server/src/minecraft` have to deal with the patch system.**
 
@@ -73,123 +70,108 @@ initial commits are the decompiled and deobfuscated Minecraft source files. The 
 patches are applied on top of these files as a single, large commit, which is then followed
 by the individual feature-patch commits.
 
-### Modifying (per-file) Minecraft patches
+## Modifying (per-file) Minecraft patches
 
 This is generally what you need to do when editing Minecraft files. Updating our
-per-file patches is as easy as making your changes and then running
-# TODO
-in the root directory. If nothing went wrong, you can rebuild patches with
-`./gradlew rebuildPatches` and finally commit and PR the patch changes.
+per-file patches is as easy as:
+1. Making your changes;
+2. Running `./gradlew fixupSourcePatches` in the root directory;
+3. If nothing went wrong, rebuilding patches with `./gradlew rebuildPatches`;
 
-### Adding larger feature patches
+### Resolving rebase conflicts
+If you run into conflicts while running `fixupSourcePatches`, you need to go a more
+manual route:
+
+This method works by temporarily resetting your `HEAD` to the desired commit to
+edit it using `git rebase`.
+
+0. If you have changes you are working on, type `git stash` to store them for
+   later;
+    - You can type `git stash pop` to get them back at any point.
+1. cd into `paper-server/src/minecraft/java` and run `git rebase -i base`;
+    - It should show something like
+      [this](https://gist.github.com/zachbr/21e92993cb99f62ffd7905d7b02f3159) in
+      the text editor you get.
+    - If your editor does not have a "menu" at the bottom, you're using `vim`.  
+      If you don't know how to use `vim` and don't want to
+      learn, enter `:q!` and press enter. Before redoing this step, do
+      `export EDITOR=nano` for an easier editor to use.
+1. Replace `pick` with `edit` for the commit/patch you want to modify (in this
+   case the very first commit, `paper File Patches`), and
+   "save" the changes;
+1. Make the changes you want to make to the patch;
+1. Run `git add .` to add your changes;
+1. Run `git commit --amend` to commit;
+1. Run `git rebase --continue` to finish rebasing;
+1. Run `./gradlew rebuildPatches` in the root directory;
+
+## Adding larger feature patches
 
 Feature patches are exclusively used for large-scale changes that are hard to
-track and maintain, and that can be optionally dropped, such as the more involved
+track and maintain and that can be optionally dropped, such as the more involved
 optimizations we have. This makes it easier to update Paper during Minecraft updates,
 since we can temporarily drop these patches and reapply them later.
 
-Adding such patches is very simple:
+There is only a very small chance that you will have to use this system, but adding
+such patches is very simple:
 
-1. Modify `paper-server/src/vanilla` with the appropriate changes;
-1. Type `git add .` inside these directories to add your changes;
+1. Modify `paper-server/src/minecraft` with the appropriate changes;
+1. Run `git add .` inside that directory to add your changes;
 1. Run `git commit` with the desired patch message;
-1. Run `./gradlew rebuildPatches` in the main directory to convert your commit into a new
-patch;
-1. PR the generated patch file(s) back to this repository.
+1. Run `./gradlew rebuildPatches` in the root directory.
 
 Your commit will be converted into a patch that you can then PR into Paper.
 
 > ❗ Please note that if you have some specific implementation detail you'd like
 > to document, you should do so in the patch message *or* in comments.
 
-### Modifying larger feature patches
+## Modifying larger feature patches
 
-Modifying existing feature patches is slightly more complex.
+One way of modifying feature patches is to reset to the patch commit and follow
+the instructions from the [rebase section](#resolving-rebase-conflicts). If you
+are sure there won't be any conflicts from later patches, you can also use the
+fixup method.
 
-#### Method 1
+### Fixup method
 
-This method works by temporarily resetting your `HEAD` to the desired commit to
-edit it using `git rebase`.
+#### Manual method
 
-> ❗ While in the middle of an edit, you will not be able to compile unless you
-> *also* reset the opposing module(s) to a related commit. In the API's case,
-> you must reset the Server, and reset the API if you're editing the Server.
-> Note also that either module _may_ not compile when doing so. This is not
-> ideal nor intentional, but it happens. Feel free to fix this in a PR to us!
-
-1. If you have changes you are working on, type `git stash` to store them for
-later;
-   - You can type `git stash pop` to get them back at any point.
-1. Type `git rebase -i base`;
-   - It should show something like
-   [this](https://gist.github.com/zachbr/21e92993cb99f62ffd7905d7b02f3159) in
-   the text editor you get.
-   - If your editor does not have a "menu" at the bottom, you're using `vim`.  
-   If you don't know how to use `vim` and don't want to
-   learn, enter `:q!` and press enter. Before redoing this step, do
-   `export EDITOR=nano` for an easier editor to use.
-1. Replace `pick` with `edit` for the commit/patch you want to modify, and
-"save" the changes;
-   - Only do this for **one** commit at a time.
-1. Make the changes you want to make to the patch;
-1. Type `git add .` to add your changes;
-1. Type `git commit --amend` to commit;
-   - **Make sure to add `--amend`** or else a new patch will be created.
-   - You can also modify the commit message and author here.
-1. Type `git rebase --continue` to finish rebasing;
-1. Type `./gradlew rebuildPatches` in the root directory;
-   - This will modify the appropriate patches based on your commits.
-1. PR your modified patch file(s) back to this repository.
-
-#### Method 2 - Fixup commits
-
-If you are simply editing a more recent commit or your change is small, simply
-making the change at HEAD and then moving the commit after you have tested it
-may be easier.
-
-This method has the benefit of being able to compile to test your change without
-messing with your HEADs.
-
-##### Manual method
-
-1. Make your change while at HEAD;
+1. Make your changes;
 1. Make a temporary commit. You don't need to make a message for this;
 1. Type `git rebase -i base`, move (cut) your temporary commit and
-move it under the line of the patch you wish to modify;
+   move it under the line of the patch you wish to modify;
 1. Change the `pick` to the appropriate action:
-   1. `f`/`fixup`: Merge your changes into the patch without touching the
-  message.
-   1. `s`/`squash`: Merge your changes into the patch and use your commit message
-  and subject.
-1. Type `./gradlew rebuildPatches` in the root directory;
-   - This will modify the appropriate patches based on your commits.
-1. PR your modified patch file(s) back to this repository.
+    1. `f`/`fixup`: Merge your changes into the patch without touching the
+       message.
+    1. `s`/`squash`: Merge your changes into the patch and use your commit message
+       and subject.
+1. Run `./gradlew rebuildPatches` in the root directory;
+    - This will modify the appropriate patches based on your commits.
 
-##### Automatic method
+#### Automatic method
 
-1. Make your change while at HEAD;
-1. Make a fixup commit. `git commit -a --fixup <hashOfPatchToFix>`;
-   - If you want to modify a per-file patch, use `git commit -a --fixup file`
-   - You can also use `--squash` instead of `--fixup` if you want the commit
-   message to also be changed.
-   - You can get the hash by looking at `git log` or `git blame`; your IDE can
-  assist you too.
-   - Alternatively, if you only know the name of the patch, you can do
-  `git commit -a --fixup "Subject of Patch name"`.
-1. Rebase with autosquash: `git rebase -i --autosquash mache/main`.
-This will automatically move your fixup commit to the right place, and you just
-need to "save" the changes.
-1. Type `./gradlew rebuildPatches` in the root directory;
-   - This will modify the appropriate patches based on your commits.
-1. PR your modified patch file(s) back to this repository.
+1. Make your changes;
+1. Make a fixup commit: `git commit -a --fixup <hash of patch to fix>`;
+    - If you want to modify a per-file patch, use `git commit -a --fixup file`
+    - You can also use `--squash` instead of `--fixup` if you want the commit
+      message to also be changed.
+    - You can get the hash by looking at `git log` or `git blame`; your IDE can
+      assist you too.
+    - Alternatively, if you only know the name of the patch, you can do
+      `git commit -a --fixup "Subject of Patch name"`.
+1. Rebase with autosquash: `git rebase -i --autosquash base`.
+   This will automatically move your fixup commit to the right place, and you just
+   need to "save" the changes.
+1. Run `./gradlew rebuildPatches` in the root directory. This will modify the
+   appropriate patches based on your commits.
 
 ## Rebasing PRs
 
 Steps to rebase a PR to include the latest changes from `main`.  
 These steps assume the `origin` remote is your fork of this repository and `upstream` is the official PaperMC repository.
 
-1. Pull the latest changes from upstreams main: `git switch main && git pull upstream main`.
-1. Checkout feature/fix branch and rebase on main: `git checkout patch-branch && git rebase main`.
+1. Fetch the latest changes from upstream's main: `git fetch upstream`.
+1. Checkout your feature/fix branch and rebase on main: `git switch patch-branch && git rebase upstream/main`.
 1. Apply updated patches: `./gradlew applyPatches`.
 1. If there are conflicts, fix them.
 1. If your PR creates new feature patches instead of modifying existing ones, ensure your newly-created patch is the last commit by either:
@@ -197,7 +179,7 @@ These steps assume the `origin` remote is your fork of this repository and `upst
     * Running `git rebase --interactive base` and moving the commits to the end.
 1. Rebuild patches: `./gradlew rebuildPatches`.
 1. Commit modified patches.
-1. Force push changes: `git push --force`.
+1. Force push changes: `git push --force`. Make sure you're not deleting any of your commits or changes here!
 
 ## PR Policy
 
@@ -212,7 +194,9 @@ when making and submitting changes.
 
 ## Formatting
 
-All modifications to Vanilla files should be marked.
+All modifications to Vanilla files should be marked. For historical reasons,
+API and API-implementation contain a lot of these too, but they are no longer
+required.
 
 - You need to add a comment with a short and identifiable description of the patch:
   `// Paper start - <COMMIT DESCRIPTION>`
@@ -224,16 +208,19 @@ All modifications to Vanilla files should be marked.
   with `// Paper end - <COMMIT DESCRIPTION>`.
 - One-line changes should have `// Paper - <COMMIT DESCRIPTION>` at the end of the line.
 
+> [!NOTE] These comments are incredibly important to be able to keep track of changes
+> across files and to remember what they are for, even a decade into the future.
+
 Here's an example of how to mark changes by Paper:
 
 ```java
-entity.getWorld().dontBeStupid(); // Paper - Was beStupid(), which is bad
+entity.getWorld().dontBeStupid(); // Paper - Move away from beStupid()
 entity.getFriends().forEach(Entity::explode);
 entity.updateFriends();
 
 // Paper start - Use plugin-set spawn
 // entity.getWorld().explode(entity.getWorld().getSpawn());
-Location spawnLocation = ((CraftWorld)entity.getWorld()).getSpawnLocation();
+Location spawnLocation = ((CraftWorld) entity.getWorld()).getSpawnLocation();
 entity.getWorld().explode(new BlockPosition(spawnLocation.getX(), spawnLocation.getY(), spawnLocation.getZ()));
 // Paper end - Use plugin-set spawn
 ```
@@ -244,16 +231,17 @@ into most IDEs and formatters by default. There are a few notes, however:
 There are exceptions, especially in Spigot-related files
 - When in doubt or the code around your change is in a clearly different style,
 use the same style as the surrounding code.
-- Usage of the `var` keyword is heavily discouraged, as it makes reading patch files
-a lot harder  and can lead to confusion during updates due to changed return types.
+- Usage of the `var` keyword is discouraged, as it makes reading patch files a
+lot harder and can lead to confusion during updates due to changed return types.
 The only exception to this is if a line would otherwise be way too long/filled with
-hard to parse generics in a case where the base type itself is already obvious
+hard to parse generics in a case where the base type itself is already obvious.
 
 ### Imports
-When adding new imports to a Vanilla class (or if you're editing feature patches), use the fully qualified class name
+When adding new imports to a Vanilla class, use the fully qualified class name
 instead of adding a new import to the top of the file. If you are using a type a significant number of times, you
-can add an import with a comment. However, if its only used a couple of times, the FQN is preferred to prevent future
+can add an import with a comment. However, if it's only used a couple of times, the FQN is preferred to prevent future
 patch conflicts in the import section of the file.
+
 
 ```java
 import net.minecraft.server.MinecraftServer;
@@ -272,7 +260,7 @@ We are in the process of switching nullability annotation libraries, so you migh
 `@Nullable` annotation from `org.jspecify.annotations`. Whenever you create a new class, add `@NullMarked`, meaning types
 are assumed to be non-null by default. For less obvious placing such as on generics or arrays, see the [JSpecify docs](https://jspecify.dev/docs/user-guide/).
 
-**For classes added by upstream**: Keep using both `@Nullable` and `@NotNull` from `org.jetbrains.annotations`. These
+**For other classes**: Keep using both `@Nullable` and `@NotNull` from `org.jetbrains.annotations`. These
 will be replaced later.
 
 ## Access Transformers
@@ -282,30 +270,7 @@ to change the visibility or remove the final modifier from fields, methods, and 
 file, you can add ATs that are applied when you `./gradlew applyPatches`. You can read about the format of ATs 
 [here](https://mcforge.readthedocs.io/en/latest/advanced/accesstransformers/#access-modifiers).
 
-### Important
-ATs should be included in the patch file which requires them within the commit message. Do not commit any changes to the
-`build-data/paper.at` file, just use it to initially change the visibility of members until you have finalized what you 
-need. Then, in the commit message for the patch which requires the ATs, add a header at the bottom of the commit message
-before any co-authors. It should look like the following after you `./gradlew rebuildPatches`.
-```
-From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Jake Potrebic <jake.m.potrebic@gmail.com>
-Date: Wed, 8 Jun 2022 22:20:16 -0700
-Subject: [PATCH] Paper config files
-
-This patch adds Paper configuration files.
-Access transformers for this patch are below, but before the co-authors.
-
-== AT ==
-public org.spigotmc.SpigotWorldConfig getBoolean(Ljava/lang/String;Z)Z
-public net.minecraft.world.level.NaturalSpawner SPAWNING_CATEGORIES
-
-Co-authored-by: Jason Penilla <11360596+jpenilla@users.noreply.github.com>
-
-diff --git a/build.gradle.kts b/build.gradle.kts
-...
-```
-
+<!--
 ## Patch Notes
 
 When submitting feature patches to Paper, we may ask you to add notes to the patch
@@ -356,6 +321,7 @@ index a92bf8967..d0ab87d0f 100644
 --- a/src/main/java/net/minecraft/server/PlayerConnection.java
 +++ b/src/main/java/net/minecraft/server/PlayerConnection.java
 ```
+-->
 
 ## Obfuscation Helpers
 
@@ -423,12 +389,6 @@ of the `net.minecraft.world.level.Level` which you can then access the config by
 int maxPlayers = level.paperConfig().misc.maxNumOfPlayers;
 ```
 
-#### Committing changes
-All changes to the `GlobalConfiguration` and `WorldConfiguration` files
-should be done in the commit that created them. So do an interactive rebase
-or fixup to apply just those changes to that commit, then add a new commit
-that includes the logic that uses that option in the server somewhere.
-
 ## Testing API changes
 
 ### Using the Paper Test Plugin
@@ -461,7 +421,7 @@ If you use Maven to build your plugin:
 
 ### My commit doesn't need a build, what do I do?
 
-Well, quite simple: You add `[ci skip]` to the start of your commit subject.
+Quite simple: You add `[ci skip]` to the start of your commit subject.
 
 This case most often applies to changes to files like `README.md`, this very
 file (`CONTRIBUTING.md`), the `LICENSE.md` file, and so forth.
@@ -471,8 +431,8 @@ file (`CONTRIBUTING.md`), the `LICENSE.md` file, and so forth.
 This only applies if you're running Windows. If you're running a prior Windows
 release, either update to Windows 10/11 or move to macOS/Linux/BSD.
 
-In order to speed up patching process on Windows, it's recommended you get WSL
-2. This is available in Windows 10 v2004, build 19041 or higher. (You can check
+In order to speed up patching process on Windows, it's recommended you get WSL 2.
+This is available in Windows 10 v2004, build 19041 or higher. (You can check
 your version by running `winver` in the run window (Windows key + R)). If you're
 using an out of date version of Windows 10, update your system with the
 [Windows 10 Update Assistant](https://www.microsoft.com/en-us/software-download/windows10) or [Windows 11 Update Assistant](https://www.microsoft.com/en-us/software-download/windows11).
