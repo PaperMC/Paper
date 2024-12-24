@@ -43,6 +43,7 @@ public class BukkitCommandNode extends LiteralCommandNode<CommandSourceStack> {
             null, null, false
         );
         this.command = command;
+        this.wrappedBukkitCommandCached = command;
     }
 
     public static BukkitCommandNode of(String name, Command command) {
