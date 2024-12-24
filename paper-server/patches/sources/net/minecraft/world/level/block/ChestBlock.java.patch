@@ -1,39 +1,53 @@
 --- a/net/minecraft/world/level/block/ChestBlock.java
 +++ b/net/minecraft/world/level/block/ChestBlock.java
-@@ -120,6 +_,38 @@
+@@ -85,7 +_,7 @@
+         @Override
+         public Optional<MenuProvider> acceptDouble(final ChestBlockEntity first, final ChestBlockEntity second) {
+             final Container container = new CompoundContainer(first, second);
+-            return Optional.of(new MenuProvider() {
++            return Optional.of(DoubleInventory.wrap(new MenuProvider() { // CraftBukkit - wrap for identification
+                 @Nullable
+                 @Override
+                 public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+@@ -106,7 +_,7 @@
+                         return (Component)(second.hasCustomName() ? second.getDisplayName() : Component.translatable("container.chestDouble"));
+                     }
+                 }
+-            });
++            }, (CompoundContainer) container)); // CraftBukkit - wrap for identification
+         }
+ 
+         @Override
+@@ -120,6 +_,34 @@
          }
      };
  
 +    // CraftBukkit start
 +    public static class DoubleInventory implements MenuProvider {
 +
-+        private final ChestBlockEntity tileentitychest;
-+        private final ChestBlockEntity tileentitychest1;
-+        public final CompoundContainer inventorylargechest;
++        private final MenuProvider delegate;
++        public final CompoundContainer container; // expose to api
 +
-+        public DoubleInventory(ChestBlockEntity tileentitychest, ChestBlockEntity tileentitychest1, CompoundContainer inventorylargechest) {
-+            this.tileentitychest = tileentitychest;
-+            this.tileentitychest1 = tileentitychest1;
-+            this.inventorylargechest = inventorylargechest;
++        private DoubleInventory(MenuProvider delegate, CompoundContainer container) {
++            this.delegate = delegate;
++            this.container = container;
++        }
++
++        public static DoubleInventory wrap(MenuProvider delegate, CompoundContainer container) {
++            return new DoubleInventory(delegate, container);
 +        }
 +
 +        @Nullable
 +        @Override
 +        public AbstractContainerMenu createMenu(int syncId, Inventory playerInventory, Player player) {
-+            if (this.tileentitychest.canOpen(player) && this.tileentitychest1.canOpen(player)) {
-+                this.tileentitychest.unpackLootTable(playerInventory.player);
-+                this.tileentitychest1.unpackLootTable(playerInventory.player);
-+                return ChestMenu.sixRows(syncId, playerInventory, this.inventorylargechest);
-+            } else {
-+                return null;
-+            }
++            return this.delegate.createMenu(syncId, playerInventory, player);
 +        }
 +
 +        @Override
 +        public Component getDisplayName() {
-+            return (Component) (this.tileentitychest.hasCustomName() ? this.tileentitychest.getDisplayName() : (this.tileentitychest1.hasCustomName() ? this.tileentitychest1.getDisplayName() : Component.translatable("container.chestDouble")));
++            return this.delegate.getDisplayName();
 +        }
-+    };
++    }
 +    // CraftBukkit end
 +
      @Override
