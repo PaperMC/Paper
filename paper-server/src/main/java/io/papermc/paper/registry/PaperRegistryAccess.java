@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
 import org.bukkit.Registry;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.jetbrains.annotations.VisibleForTesting;
 import org.jspecify.annotations.Nullable;
 
@@ -72,7 +73,7 @@ public class PaperRegistryAccess implements RegistryAccess {
         if (PaperRegistries.getEntry(key) == null) {
             throw new NoSuchElementException(key + " is not a valid registry key");
         }
-        final @Nullable RegistryHolder<T> registryHolder = (RegistryHolder<T>) this.registries.get(key);
+        final RegistryHolder<T> registryHolder = (RegistryHolder<T>) this.registries.get(key);
         if (registryHolder == null) {
             throw new IllegalArgumentException(key + " points to a registry that is not available yet");
         }
@@ -104,13 +105,22 @@ public class PaperRegistryAccess implements RegistryAccess {
         this.registerRegistry(resourceKey, registry, false);
     }
 
+    public <M> void lockReferenceHolders(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey) {
+        final RegistryEntry<M, Keyed> entry = PaperRegistries.getEntry(resourceKey);
+        if (entry == null || !(entry.meta() instanceof final RegistryEntryMeta.ServerSide<M, Keyed> serverSide) || !serverSide.registryTypeMapper().supportsDirectHolders()) {
+            return;
+        }
+        final CraftRegistry<?, M> registry = (CraftRegistry<?, M>) this.getRegistry(entry.apiKey());
+        registry.lockReferenceHolders();
+    }
+
     @SuppressWarnings("unchecked") // this method should be called right after any new MappedRegistry instances are created to later be used by the server.
     private <M, B extends Keyed, R extends Registry<B>> void registerRegistry(final ResourceKey<? extends net.minecraft.core.Registry<M>> resourceKey, final net.minecraft.core.Registry<M> registry, final boolean replace) {
-        final @Nullable RegistryEntry<M, B> entry = PaperRegistries.getEntry(resourceKey);
+        final RegistryEntry<M, B> entry = PaperRegistries.getEntry(resourceKey);
         if (entry == null) { // skip registries that don't have API entries
             return;
         }
-        final @Nullable RegistryHolder<B> registryHolder = (RegistryHolder<B>) this.registries.get(entry.apiKey());
+        final RegistryHolder<B> registryHolder = (RegistryHolder<B>) this.registries.get(entry.apiKey());
         if (registryHolder == null || replace) {
             // if the holder doesn't exist yet, or is marked as "replaceable", put it in the map.
             this.registries.put(entry.apiKey(), entry.createRegistryHolder(registry));
