@@ -22,6 +22,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.ShadowColor;
 import net.kyori.adventure.text.format.Style;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -278,6 +279,7 @@ class AdventureCodecsTest {
             style(TextDecoration.BOLD.withState(TextDecoration.State.NOT_SET)),
             style()
                 .font(key("kyori", "kittens"))
+                .shadowColor(ShadowColor.fromHexString("#FF00AAFF"))
                 .color(NamedTextColor.RED)
                 .decoration(TextDecoration.BOLD, true)
                 .clickEvent(openUrl("https://github.com"))
