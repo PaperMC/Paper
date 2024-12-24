@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 19 Nov 2022 12:38:28 -0800
+Subject: [PATCH] Expand Instrument API
+
+
+diff --git a/src/main/java/io/papermc/paper/world/block/state/PaperInstrument.java b/src/main/java/io/papermc/paper/world/block/state/PaperInstrument.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c7552a4d55ce6e8a67633a4b24a2eb85059b3895
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/block/state/PaperInstrument.java
+@@ -0,0 +1,36 @@
++package io.papermc.paper.world.block.state;
++
++import java.util.Objects;
++import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
++import org.bukkit.Instrument;
++import org.bukkit.Sound;
++import org.bukkit.block.data.BlockData;
++import org.bukkit.craftbukkit.CraftSound;
++import org.bukkit.craftbukkit.block.data.CraftBlockData;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public final class PaperInstrument {
++
++    @SuppressWarnings("deprecation")
++    public static Instrument toBukkit(NoteBlockInstrument nms) {
++        return Objects.requireNonNull(Instrument.getByType((byte) nms.ordinal()));
++    }
++
++    public static NoteBlockInstrument toNMS(Instrument bukkit) {
++        return CraftBlockData.toNMS(bukkit, NoteBlockInstrument.class);
++    }
++
++    public static final class InstrumentUtilImpl implements org.bukkit.Instrument.InstrumentUtil {
++        @Override
++        public Sound getSound(Instrument instrument) {
++            return CraftSound.getBukkit(toNMS(instrument).getSoundEvent());
++        }
++
++        @Override
++        public Instrument getSoundFor(BlockData blockData) {
++            return toBukkit(NoteBlockInstrument.byState(((CraftBlockData) blockData).getState()));
++        }
++    }
++}
+diff --git a/src/main/resources/META-INF/services/org.bukkit.Instrument$InstrumentUtil b/src/main/resources/META-INF/services/org.bukkit.Instrument$InstrumentUtil
+new file mode 100644
+index 0000000000000000000000000000000000000000..475a9e8344f7d43f686f43db95ec861c147595c1
+--- /dev/null
++++ b/src/main/resources/META-INF/services/org.bukkit.Instrument$InstrumentUtil
+@@ -0,0 +1 @@
++io.papermc.paper.world.block.state.PaperInstrument$InstrumentUtilImpl
