@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Cryptite <cryptite@gmail.com>
+Date: Mon, 1 May 2023 15:23:34 -0500
+Subject: [PATCH] Add PlayerPreRespawnLocationEvent
+
+
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 4d837c1530a3031a4c2a5a39d87bd013d60e14a6..203d43c0902132bed1e396bc956d2313447d3534 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -835,6 +835,14 @@ public abstract class PlayerList {
+ 
+         // CraftBukkit start - fire PlayerRespawnEvent
+         if (location == null) {
++            // Paper start
++            Player respawnPlayer = entityplayer1.getBukkitEntity();
++            io.papermc.paper.event.player.PlayerPreRespawnLocationEvent preRespawnEvent = new io.papermc.paper.event.player.PlayerPreRespawnLocationEvent(respawnPlayer, reason);
++            preRespawnEvent.callEvent();
++            location = preRespawnEvent.getRespawnLocation();
++
++            if (location == null) {
++            // Paper end
+             // boolean isBedSpawn = false; // Paper - moved up
+             ServerLevel worldserver1 = this.server.getLevel(entityplayer.getRespawnDimension());
+             if (worldserver1 != null) {
+@@ -876,8 +884,8 @@ public abstract class PlayerList {
+                 blockposition = entityplayer1.getSpawnPoint(worldserver1);
+                 location = new Location(worldserver1.getWorld(), (double) ((float) blockposition.getX() + 0.5F), (double) ((float) blockposition.getY() + 0.1F), (double) ((float) blockposition.getZ() + 0.5F), worldserver1.levelData.getSpawnAngle(), 0.0F); // Paper - use world spawn angle
+             }
++            } // Paper
+ 
+-            Player respawnPlayer = entityplayer1.getBukkitEntity();
+             PlayerRespawnEvent respawnEvent = new PlayerRespawnEvent(respawnPlayer, location, isBedSpawn && !isAnchorSpawn, isAnchorSpawn, reason, com.google.common.collect.ImmutableSet.<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag>builder().add(respawnFlags)); // Paper - Fix anchor respawn acting as a bed respawn from the end portal
+             this.cserver.getPluginManager().callEvent(respawnEvent);
+             // Spigot Start
