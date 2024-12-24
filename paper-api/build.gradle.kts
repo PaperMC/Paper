@@ -11,7 +11,7 @@ java {
 
 val annotationsVersion = "24.1.0"
 val bungeeCordChatVersion = "1.20-R0.2"
-val adventureVersion = "4.17.0"
+val adventureVersion = "4.18.0"
 val slf4jVersion = "2.0.9"
 val log4jVersion = "2.17.1"
 
