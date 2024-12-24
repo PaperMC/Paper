@@ -807,49 +807,48 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public @Nullable Item dropItem(final @NotNull ItemStack itemStack, final @Nullable UUID thrower, final boolean throwRandomly) {
+    public @Nullable Item dropItem(final @NotNull ItemStack itemStack, final boolean throwRandomly) {
         final int slot = this.inventory.first(itemStack);
         if (slot == -1) {
             return null;
         }
 
-        return this.dropItem(slot, thrower, throwRandomly);
+        return this.dropItem(slot, throwRandomly);
     }
 
     @Override
-    public @Nullable Item dropItem(final int slot, final @Nullable UUID thrower, final boolean throwRandomly) {
+    public @Nullable Item dropItem(final int slot, final boolean throwRandomly) {
         // Make sure the slot is in bounds
         if (slot < 0 || slot >= this.inventory.getSize()) {
             throw new IndexOutOfBoundsException("Slot " + slot + " out of range for inventory of size " + this.inventory.getSize());
         }
 
         final ItemStack stack = this.inventory.getItem(slot);
-        final Item itemEntity = dropItemRaw(stack, thrower, throwRandomly);
+        final Item itemEntity = dropItemRaw(stack, throwRandomly);
 
         this.inventory.setItem(slot, null);
         return itemEntity;
     }
 
     @Override
-    public @Nullable Item dropItem(final @NotNull EquipmentSlot slot, final @Nullable UUID thrower, final boolean throwRandomly) {
+    public @Nullable Item dropItem(final @NotNull EquipmentSlot slot, final boolean throwRandomly) {
         final ItemStack stack = this.inventory.getItem(slot);
-        final Item itemEntity = dropItemRaw(stack, thrower, throwRandomly);
+        final Item itemEntity = dropItemRaw(stack, throwRandomly);
 
         this.inventory.setItem(slot, null);
         return itemEntity;
     }
 
-    private Item dropItemRaw(final ItemStack itemStack, final @Nullable UUID thrower, final boolean throwRandomly) {
+    private Item dropItemRaw(final ItemStack itemStack, final boolean throwRandomly) {
         if (itemStack == null || itemStack.isEmpty()) {
             return null;
         }
 
-        final ItemEntity droppedEntity = this.getHandle().drop(CraftItemStack.asNMSCopy(itemStack), throwRandomly);
+        final ItemEntity droppedEntity = this.getHandle().drop(CraftItemStack.asNMSCopy(itemStack), throwRandomly, true);
         if (droppedEntity == null) {
             return null;
         }
 
-        droppedEntity.thrower = thrower;
         return (Item) droppedEntity.getBukkitEntity();
     }
 

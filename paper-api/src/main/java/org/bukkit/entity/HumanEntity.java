@@ -709,75 +709,41 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public boolean dropItem(boolean dropAll);
 
     /**
-     * Makes the entity drop the first declared {@link ItemStack} occurrence in the inventory
-     *
-     * @param itemStack The ItemStack to drop
-     * @return The dropped item, or null if the action was unsuccessful
-     */
-    public default @Nullable Item dropItem(final @NotNull ItemStack itemStack) {
-        return this.dropItem(itemStack, null, false);
-    }
-
-    /**
      * Makes the entity drop an item from their inventory based on the specified ItemStack.
      * <br>
-     * This method calls {@link HumanEntity#dropItem(int slot, UUID thrower, boolean throwRandomly)}
+     * This method calls {@link HumanEntity#dropItem(int slot, boolean throwRandomly)}
      * with the first {@link ItemStack} occurrence in the inventory
      *
      * @param itemStack     The ItemStack to drop
-     * @param thrower       The {@link UUID} to set the resulting {@link Item}'s thrower to
      * @param throwRandomly Whether the item should disperse randomly.
      *                      This means that instead of the item being dropped where the player is currently looking,
      *                      it instead throws it in any direction, similar to how items drop after a player's death.
      * @return The dropped item, or null if the action was unsuccessful
      */
-    public @Nullable Item dropItem(final @NotNull ItemStack itemStack, final @Nullable UUID thrower, final boolean throwRandomly);
-
-    /**
-     * Makes the entity drop an item from their inventory based on the slot.
-     *
-     * @param slot The slot to drop
-     * @return The dropped item, or null if the action was unsuccessful
-     * @throws IndexOutOfBoundsException If the slot is negative or bigger than the player's inventory
-     */
-    public default @Nullable Item dropItem(final int slot) {
-        return this.dropItem(slot, null, false);
-    }
+    public @Nullable Item dropItem(final @NotNull ItemStack itemStack, final boolean throwRandomly);
 
     /**
      * Makes the entity drop an item from their inventory based on the slot.
      *
      * @param slot          The slot to drop
-     * @param thrower       The {@link UUID} to set the resulting {@link Item}'s thrower to
      * @param throwRandomly Whether the item should disperse randomly.
      *                      This means that instead of the item being dropped where the player is currently looking,
      *                      it instead throws it in any direction, similar to how items drop after a player's death.
      * @return The dropped item entity, or null if the action was unsuccessful
      * @throws IndexOutOfBoundsException If the slot is negative or bigger than the player's inventory
      */
-    public @Nullable Item dropItem(final int slot, final @Nullable UUID thrower, final boolean throwRandomly);
-
-    /**
-     * Makes the entity drop an item from their inventory based on the {@link EquipmentSlot}
-     *
-     * @param slot The equipment slot to drop
-     * @return The dropped item entity, or null if the action was unsuccessful
-     */
-    public default @Nullable Item dropItem(final @NotNull EquipmentSlot slot) {
-        return this.dropItem(slot, null, false);
-    }
+    public @Nullable Item dropItem(final int slot, final boolean throwRandomly);
 
     /**
      * Makes the player drop an item from their inventory based on the equipment slot.
      *
      * @param slot          The equipment slot to drop
-     * @param thrower       The {@link UUID} to set the resulting {@link Item}'s thrower to
      * @param throwRandomly Whether the item should disperse randomly.
      *                      This means that instead of the item being dropped where the player is currently looking,
      *                      it instead throws it in any direction, similar to how items drop after a player's death.
      * @return The dropped item entity, or null if the action was unsuccessful
      */
-    public @Nullable Item dropItem(final @NotNull EquipmentSlot slot, final @Nullable UUID thrower, final boolean throwRandomly);
+    public @Nullable Item dropItem(final @NotNull EquipmentSlot slot, final boolean throwRandomly);
 
 
     /**
