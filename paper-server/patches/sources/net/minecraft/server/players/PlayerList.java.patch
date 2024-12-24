@@ -527,7 +527,7 @@
              IpBanListEntry ipBanListEntry = this.ipBans.get(socketAddress);
              MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned_ip.reason", ipBanListEntry.getReason());
              if (ipBanListEntry.getExpires() != null) {
-@@ -378,69 +_,129 @@
+@@ -378,69 +_,130 @@
                  );
              }
  
@@ -617,7 +617,7 @@
 +    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason) {
 +        return this.respawn(player, keepInventory, reason, eventReason, null);
 +    }
-+    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason, org.bukkit.Location location) {
++    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason, @Nullable org.bukkit.Location location) {
 +        player.stopRiding(); // CraftBukkit
          this.players.remove(player);
 +        this.playersByName.remove(player.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot
@@ -651,6 +651,7 @@
 +        // Paper start - Add PlayerPostRespawnEvent
 +        boolean isBedSpawn = false;
 +        boolean isRespawn = false;
++        boolean isAnchorSpawn = false;
 +        // Paper end - Add PlayerPostRespawnEvent
 +
 +        // CraftBukkit start - fire PlayerRespawnEvent
@@ -716,14 +717,18 @@
          serverPlayer.setHealth(serverPlayer.getHealth());
          BlockPos respawnPosition = serverPlayer.getRespawnPosition();
          ServerLevel level1 = this.server.getLevel(serverPlayer.getRespawnDimension());
-@@ -472,7 +_,40 @@
+@@ -472,7 +_,48 @@
                          )
                      );
              }
 -        }
 +            // Paper start - Add PlayerPostRespawnEvent
-+            if (blockState.is(net.minecraft.tags.BlockTags.BEDS) && !teleportTransition.missingRespawnBlock()) {
-+                isBedSpawn = true;
++            if (!teleportTransition.missingRespawnBlock()) {
++                if (blockState.is(net.minecraft.tags.BlockTags.BEDS)) {
++                    isBedSpawn = true;
++                } else if (blockState.is(Blocks.RESPAWN_ANCHOR)) {
++                    isAnchorSpawn = true;
++                }
 +            }
 +            // Paper end - Add PlayerPostRespawnEvent
 +        }
@@ -750,7 +755,11 @@
 +
 +        // Paper start - Add PlayerPostRespawnEvent
 +        if (isRespawn) {
-+            cserver.getPluginManager().callEvent(new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(player.getBukkitEntity(), location, isBedSpawn));
++            new com.destroystokyo.paper.event.player.PlayerPostRespawnEvent(
++                player.getBukkitEntity(), location,
++                isBedSpawn, isAnchorSpawn,
++                eventReason
++            ).callEvent();
 +        }
 +        // Paper end - Add PlayerPostRespawnEvent
 +
