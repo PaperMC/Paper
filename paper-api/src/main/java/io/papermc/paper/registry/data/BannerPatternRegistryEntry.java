@@ -5,13 +5,11 @@ import net.kyori.adventure.key.Key;
 import org.bukkit.block.banner.PatternType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A data-centric version-specific registry entry for the {@link PatternType} type.
  */
 @ApiStatus.Experimental
-@NullMarked
 @ApiStatus.NonExtendable
 public interface BannerPatternRegistryEntry {
 
