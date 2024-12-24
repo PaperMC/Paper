@@ -66,6 +66,8 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;  // Paper - Extend HumanEntity#dropItem API
+import org.jetbrains.annotations.Nullable; // Paper - Extend HumanEntity#dropItem API
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     private CraftInventoryPlayer inventory;
@@ -800,6 +802,86 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return true;
         // Paper end - Fix HumanEntity#drop not updating the client inv
     }
+
+    // Paper start - Extend HumanEntity#dropItem API
+    @Override
+    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull ItemStack itemStack) {
+        return this.dropItem(itemStack, null, false);
+    }
+
+    @Override
+    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull ItemStack itemStack, final @Nullable java.util.UUID thrower) {
+        return this.dropItem(itemStack, thrower, false);
+    }
+
+    @Override
+    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull ItemStack itemStack, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
+        final int slot = this.inventory.first(itemStack);
+        if (slot == -1) {
+            return null;
+        }
+
+        return this.dropItem(slot, thrower, throwRandomly);
+    }
+
+    @Override
+    public @Nullable org.bukkit.entity.Item dropItem(final int slot) {
+        return this.dropItem(slot, null, false);
+    }
+
+    @Override
+    public @Nullable org.bukkit.entity.Item dropItem(final int slot, final @Nullable java.util.UUID thrower) {
+        return this.dropItem(slot, thrower, false);
+    }
+
+    @Override
+    public @Nullable org.bukkit.entity.Item dropItem(final int slot, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
+        // Make sure the slot is in bounds
+        if (slot < 0 || this.inventory.getSize() <= slot) {
+            throw new IndexOutOfBoundsException("Slot " + slot + " out of range for inventory of size " + this.inventory.getSize());
+        }
+
+        final ItemStack stack = this.inventory.getItem(slot);
+        final org.bukkit.entity.Item itemEntity = dropItemRaw(stack, thrower, throwRandomly);
+
+        this.inventory.setItem(slot, null);
+        return itemEntity;
+    }
+
+    @Override
+    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot) {
+        return dropItem(slot, null, false);
+    }
+
+    @Override
+    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot, final @Nullable java.util.UUID thrower) {
+        return dropItem(slot, thrower, false);
+    }
+
+    @Override
+    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
+        final ItemStack stack = this.inventory.getItem(slot);
+        final org.bukkit.entity.Item itemEntity = dropItemRaw(stack, thrower, throwRandomly);
+
+        this.inventory.setItem(slot, null);
+        return itemEntity;
+    }
+
+    private org.bukkit.entity.Item dropItemRaw(final ItemStack is, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
+        if (is == null || is.getType() == Material.AIR) {
+            return null;
+        }
+
+        final net.minecraft.world.entity.item.ItemEntity droppedEntity = this.getHandle().drop(CraftItemStack.asNMSCopy(is), throwRandomly);
+        if (droppedEntity == null) {
+            return null;
+        }
+
+        droppedEntity.thrower = thrower;
+        return (org.bukkit.entity.Item) droppedEntity.getBukkitEntity();
+    }
+    // Paper end
+
 
     @Override
     public float getExhaustion() {
