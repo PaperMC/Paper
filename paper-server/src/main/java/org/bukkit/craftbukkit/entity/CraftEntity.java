@@ -1326,4 +1326,18 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
     }
     // Paper end - broadcast hurt animation
+    // Paper start - disguise api
+    private io.papermc.paper.disguise.DisguiseData disguiseData = io.papermc.paper.disguise.DisguiseData.original();
+    @Override
+    public @org.jetbrains.annotations.NotNull io.papermc.paper.disguise.DisguiseData getDisguiseData() {
+        return disguiseData;
+    }
+
+    @Override
+    public void setDisguiseData(@org.jetbrains.annotations.NotNull io.papermc.paper.disguise.DisguiseData disguiseData) {
+        getHandle().clearPlayers();
+        this.disguiseData = disguiseData;
+        getHandle().updatePlayers();
+    }
+    // Paper end - disguise api
 }

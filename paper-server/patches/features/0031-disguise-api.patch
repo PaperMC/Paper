@@ -1,0 +1,174 @@
+From ff31ccd6752ae4866da7efe41800d8051d0fb04a Mon Sep 17 00:00:00 2001
+From: Yannick Lamprecht <yannicklamprecht@live.de>
+Date: Mon, 23 Dec 2024 14:31:39 +0100
+Subject: [PATCH] disguise api
+
+---
+ net/minecraft/network/syncher/SynchedEntityData.java |  4 ++++
+ net/minecraft/server/level/ServerEntity.java         | 11 +++++++++--
+ net/minecraft/server/level/ServerPlayer.java         |  4 +++-
+ net/minecraft/world/entity/Entity.java               |  9 +++++++++
+ net/minecraft/world/entity/LivingEntity.java         |  3 ++-
+ net/minecraft/world/entity/Entity.java | 8 ++++++++
+ 6 files changed, 35 insertions(+), 4 deletions(-)
+
+diff --git a/net/minecraft/network/syncher/SynchedEntityData.java b/net/minecraft/network/syncher/SynchedEntityData.java
+index 7a83c00..7c25745 100644
+--- a/net/minecraft/network/syncher/SynchedEntityData.java
++++ b/net/minecraft/network/syncher/SynchedEntityData.java
+@@ -89,6 +89,7 @@ public class SynchedEntityData {
+             for (SynchedEntityData.DataItem<?> dataItem : this.itemsById) {
+                 if (dataItem.isDirty()) {
+                     dataItem.setDirty(false);
++                    if (io.papermc.paper.disguise.DisguiseUtil.shouldSkip((net.minecraft.world.entity.Entity) entity, dataItem.getAccessor())) continue; // Paper - disguise api
+                     list.add(dataItem.value());
+                 }
+             }
+@@ -102,6 +103,7 @@ public class SynchedEntityData {
+         List<SynchedEntityData.DataValue<?>> list = null;
+ 
+         for (SynchedEntityData.DataItem<?> dataItem : this.itemsById) {
++            if (io.papermc.paper.disguise.DisguiseUtil.shouldSkip((net.minecraft.world.entity.Entity) entity, dataItem.getAccessor())) continue; // Paper - disguise api
+             if (!dataItem.isSetToDefault()) {
+                 if (list == null) {
+                     list = new ArrayList<>();
+@@ -117,6 +119,7 @@ public class SynchedEntityData {
+     public void assignValues(List<SynchedEntityData.DataValue<?>> entries) {
+         for (SynchedEntityData.DataValue<?> dataValue : entries) {
+             SynchedEntityData.DataItem<?> dataItem = this.itemsById[dataValue.id];
++            if (io.papermc.paper.disguise.DisguiseUtil.shouldSkip((net.minecraft.world.entity.Entity) entity, dataItem.getAccessor())) continue; // Paper - disguise api
+             this.assignValue(dataItem, dataValue);
+             this.entity.onSyncedDataUpdated(dataItem.getAccessor());
+         }
+@@ -184,6 +187,7 @@ public class SynchedEntityData {
+     public List<SynchedEntityData.DataValue<?>> packAll() {
+         final List<SynchedEntityData.DataValue<?>> list = new ArrayList<>();
+         for (final DataItem<?> dataItem : this.itemsById) {
++            if (io.papermc.paper.disguise.DisguiseUtil.shouldSkip((net.minecraft.world.entity.Entity) entity, dataItem.getAccessor())) continue; // Paper - disguise api
+             list.add(dataItem.value());
+         }
+ 
+diff --git a/net/minecraft/server/level/ServerEntity.java b/net/minecraft/server/level/ServerEntity.java
+index a4da360..d1dbf46 100644
+--- a/net/minecraft/server/level/ServerEntity.java
++++ b/net/minecraft/server/level/ServerEntity.java
+@@ -303,6 +303,7 @@ public class ServerEntity {
+ 
+     public void removePairing(ServerPlayer player) {
+         this.entity.stopSeenByPlayer(player);
++        io.papermc.paper.disguise.DisguiseUtil.tryDespawn(player, this.entity); // Paper - disguise api
+         player.connection.send(new ClientboundRemoveEntitiesPacket(this.entity.getId()));
+     }
+ 
+@@ -322,9 +323,13 @@ public class ServerEntity {
+         }
+ 
+         Packet<ClientGamePacketListener> addEntityPacket = this.entity.getAddEntityPacket(this);
++        // Paper start - disguise api
++        if(!io.papermc.paper.disguise.DisguiseUtil.tryDisguise(player, entity, addEntityPacket)){
+         consumer.accept(addEntityPacket);
++        }
++        // Paper end - disguise api
+         if (this.trackedDataValues != null) {
+-            consumer.accept(new ClientboundSetEntityDataPacket(this.entity.getId(), this.trackedDataValues));
++            consumer.accept(new ClientboundSetEntityDataPacket(this.entity.getId(), io.papermc.paper.disguise.DisguiseUtil.filter(this.entity, this.trackedDataValues))); // Paper - disguise api
+         }
+ 
+         boolean flag = this.trackDelta;
+@@ -406,7 +411,7 @@ public class ServerEntity {
+             this.broadcastAndSend(new ClientboundSetEntityDataPacket(this.entity.getId(), list));
+         }
+ 
+-        if (this.entity instanceof LivingEntity) {
++        if (this.entity instanceof LivingEntity && !io.papermc.paper.disguise.DisguiseUtil.shouldSkipAttributeSending(this.entity)) { // Paper - disguise api
+             Set<AttributeInstance> attributesToSync = ((LivingEntity)this.entity).getAttributes().getAttributesToSync();
+             if (!attributesToSync.isEmpty()) {
+                 // CraftBukkit start - Send scaled max health
+@@ -414,7 +419,9 @@ public class ServerEntity {
+                     serverPlayer.getBukkitEntity().injectScaledMaxHealth(attributesToSync, false);
+                 }
+                 // CraftBukkit end
++                if(!io.papermc.paper.disguise.DisguiseUtil.shouldSkipAttributeSending(this.entity)) { // Paper start - disguise api
+                 this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), attributesToSync));
++                } // Paper end - disguise api
+             }
+ 
+             attributesToSync.clear();
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index e350c6b..82251c1 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -1663,7 +1663,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+             return;
+         }
+         // CraftBukkit end
+-        if (this.isSleeping()) {
++        if (this.isSleeping() && io.papermc.paper.disguise.DisguiseUtil.canSendAnimation(this) /* Paper - disguise api */) {
+             this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(this, 2));
+         }
+ 
+@@ -2169,11 +2169,13 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+ 
+     @Override
+     public void crit(Entity entityHit) {
++        if(!io.papermc.paper.disguise.DisguiseUtil.canSendAnimation(this)) return; // Paper - disguise api
+         this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(entityHit, 4));
+     }
+ 
+     @Override
+     public void magicCrit(Entity entityHit) {
++        if(!io.papermc.paper.disguise.DisguiseUtil.canSendAnimation(this)) return; // Paper - disguise api
+         this.serverLevel().getChunkSource().broadcastAndSend(this, new ClientboundAnimatePacket(entityHit, 5));
+     }
+ 
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index 3cefe3d..cb11234 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -505,6 +505,14 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         return steps;
+     }
+     // Paper end - optimise collisions
++    // Paper start - disguise api
++    public void clearPlayers() {
++        trackedEntity.moonrise$clearPlayers();
++    }
++    public void updatePlayers() {
++        trackedEntity.updatePlayers(((ServerLevel)level).players());
++    }
++    // Paper end - disguise api
+     // Paper start - optimise entity tracker
+     private net.minecraft.server.level.ChunkMap.TrackedEntity trackedEntity;
+ 
+@@ -675,6 +683,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+ 
+         final List<SynchedEntityData.DataValue<?>> values = new java.util.ArrayList<>(keys.size());
+         for (final EntityDataAccessor<?> key : keys) {
++            if (io.papermc.paper.disguise.DisguiseUtil.shouldSkip(this, key)) continue; // Paper - disguise api
+             final SynchedEntityData.DataItem<?> synchedValue = this.entityData.getItem(key);
+             values.add(synchedValue.value());
+         }
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 195e115..feca873 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -1273,7 +1273,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
+     private void refreshDirtyAttributes() {
+         Set<AttributeInstance> attributesToUpdate = this.getAttributes().getAttributesToUpdate();
+-
++        if (io.papermc.paper.disguise.DisguiseUtil.shouldSkipAttributeSending(this)) return; // Paper - disguise api
+         for (AttributeInstance attributeInstance : attributesToUpdate) {
+             this.onAttributeUpdated(attributeInstance.getAttribute());
+         }
+@@ -2477,6 +2477,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             this.swinging = true;
+             this.swingingArm = hand;
+             if (this.level() instanceof ServerLevel) {
++                if(!io.papermc.paper.disguise.DisguiseUtil.canSendAnimation(this)) return; // Paper - disguise api
+                 ClientboundAnimatePacket clientboundAnimatePacket = new ClientboundAnimatePacket(this, hand == InteractionHand.MAIN_HAND ? 0 : 3);
+                 ServerChunkCache chunkSource = ((ServerLevel)this.level()).getChunkSource();
+                 if (updateSelf) {
+-- 
+2.46.1
+
