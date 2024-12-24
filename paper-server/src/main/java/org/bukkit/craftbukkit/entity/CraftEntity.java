@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import io.papermc.paper.entity.LookAnchor;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -297,6 +298,25 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public boolean teleport(org.bukkit.entity.Entity destination, TeleportCause cause) {
         return this.teleport(destination.getLocation(), cause);
+    }
+
+    @Override
+    public void lookAt(double x, double y, double z, LookAnchor entityAnchor) {
+        this.getHandle().lookAt(toNmsAnchor(entityAnchor), new net.minecraft.world.phys.Vec3(x, y, z));
+    }
+
+    public static net.minecraft.commands.arguments.EntityAnchorArgument.Anchor toNmsAnchor(LookAnchor nmsAnchor) {
+        return switch (nmsAnchor) {
+            case EYES -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES;
+            case FEET -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.FEET;
+        };
+    }
+
+    public static LookAnchor toApiAnchor(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor playerAnchor) {
+        return switch (playerAnchor) {
+            case EYES -> LookAnchor.EYES;
+            case FEET -> LookAnchor.FEET;
+        };
     }
 
     @Override
