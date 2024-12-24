@@ -16,7 +16,7 @@ import org.jspecify.annotations.NullMarked;
  * Not intended for modifying server side state.
  */
 @NullMarked
-public class PlayerChunkLoadEvent extends ChunkEvent {
+public class PlayerChunkLoadEvent extends PlayerBiomesLoadEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
@@ -24,7 +24,7 @@ public class PlayerChunkLoadEvent extends ChunkEvent {
 
     @ApiStatus.Internal
     public PlayerChunkLoadEvent(final Chunk chunk, final Player player) {
-        super(chunk);
+        super(player, chunk);
         this.player = player;
     }
 

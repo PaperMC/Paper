@@ -303,7 +303,7 @@ public class CraftChunk implements Chunk {
         byte[][] sectionEmitLights = includeLightData ? new byte[cs.length][] : null;
         // Paper end - Add getChunkSnapshot includeLightData parameter
         boolean[] sectionEmpty = new boolean[cs.length];
-        PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
+        PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
 
         Registry<net.minecraft.world.level.biome.Biome> iregistry = this.worldServer.registryAccess().lookupOrThrow(Registries.BIOME);
 
