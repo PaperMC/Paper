@@ -1,0 +1,85 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 30 Dec 2021 13:47:25 -0800
+Subject: [PATCH] Add PlayerWashItemEvent
+
+
+diff --git a/src/main/java/io/papermc/paper/event/block/PlayerWashItemEvent.java b/src/main/java/io/papermc/paper/event/block/PlayerWashItemEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d1ec150d0ebc2f41ac7e458eca2f9798218a0c3b
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/event/block/PlayerWashItemEvent.java
+@@ -0,0 +1,73 @@
++package io.papermc.paper.event.block;
++
++import com.google.common.base.Preconditions;
++import org.bukkit.block.Block;
++import org.bukkit.block.BlockState;
++import org.bukkit.entity.HumanEntity;
++import org.bukkit.event.block.CauldronLevelChangeEvent;
++import org.bukkit.inventory.EquipmentSlot;
++import org.bukkit.inventory.ItemStack;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.NotNull;
++
++import java.util.Objects;
++
++/**
++ * Called when a player washes an item in a cauldron.
++ */
++public class PlayerWashItemEvent extends CauldronLevelChangeEvent {
++
++    private final ItemStack washedItem;
++    private final EquipmentSlot hand;
++
++    @ApiStatus.Internal
++    public PlayerWashItemEvent(@NotNull Block block, @NotNull HumanEntity entity, @NotNull ChangeReason reason, @NotNull BlockState newBlock, @NotNull ItemStack washedItem, @NotNull EquipmentSlot hand) {
++        super(block, entity, reason, newBlock);
++        Preconditions.checkArgument(hand.isHand(), "Only valid equipment slots are the two hands");
++        this.washedItem = washedItem;
++        this.hand = hand;
++    }
++
++    /**
++     * Helper method for {@link #getEntity()} since this event
++     * is only called with a {@link HumanEntity}.
++     *
++     * @return the player who initiated the item wash
++     */
++    public @NotNull HumanEntity getPlayer() {
++        return this.getEntity();
++    }
++
++    @Override
++    public @NotNull HumanEntity getEntity() {
++        return (HumanEntity) Objects.requireNonNull(super.getEntity());
++    }
++
++    /**
++     * Gets the washed item. Changes made to this item
++     * will be reflected in the player's inventory.
++     *
++     * @return the washed item
++     */
++    public @NotNull ItemStack getWashedItem() {
++        return this.washedItem;
++    }
++
++    /**
++     * Gets the item the player is washing.
++     *
++     * @return the item being washed
++     */
++    public @NotNull ItemStack getUnwashedItem() {
++        return this.getPlayer().getInventory().getItem(this.hand);
++    }
++
++    /**
++     * Get the player's hand that initiated the wash.
++     *
++     * @return the hand
++     */
++    public @NotNull EquipmentSlot getHand() {
++        return this.hand;
++    }
++}

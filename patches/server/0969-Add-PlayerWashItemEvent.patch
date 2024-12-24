@@ -1,0 +1,132 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Thu, 30 Dec 2021 13:47:39 -0800
+Subject: [PATCH] Add PlayerWashItemEvent
+
+
+diff --git a/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java b/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
+index c9cd5fe3e942d1ce0133c17d6dd2747b70878d4e..fbd52dad91ac8f928f6526ddcd42d3b56745fd3f 100644
+--- a/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
++++ b/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
+@@ -55,16 +55,16 @@ public interface CauldronInteraction {
+             return InteractionResult.PASS;
+         } else {
+             if (!world.isClientSide) {
+-                // CraftBukkit start
+-                if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.SHULKER_WASH)) {
+-                    return InteractionResult.SUCCESS;
+-                }
+-                // CraftBukkit end
+                 ItemStack itemstack1 = new ItemStack(Blocks.SHULKER_BOX);
+ 
+                 if (itemstack.hasTag()) {
+                     itemstack1.setTag(itemstack.getTag().copy());
+                 }
++                // CraftBukkit start // Paper - move to after itemstack creation
++                if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.SHULKER_WASH, itemstack1, enumhand)) {
++                    return InteractionResult.SUCCESS;
++                }
++                // CraftBukkit end
+ 
+                 entityhuman.setItemInHand(enumhand, itemstack1);
+                 entityhuman.awardStat(Stats.CLEAN_SHULKER_BOX);
+@@ -79,15 +79,15 @@ public interface CauldronInteraction {
+             return InteractionResult.PASS;
+         } else {
+             if (!world.isClientSide) {
+-                // CraftBukkit start
+-                if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.BANNER_WASH)) {
+-                    return InteractionResult.SUCCESS;
+-                }
+-                // CraftBukkit end
+                 ItemStack itemstack1 = itemstack.copy();
+ 
+                 itemstack1.setCount(1);
+                 BannerBlockEntity.removeLastPattern(itemstack1);
++                // CraftBukkit start // Paper - move to after itemstack creation
++                if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.BANNER_WASH, itemstack1, enumhand)) {
++                    return InteractionResult.SUCCESS;
++                }
++                // CraftBukkit end
+                 if (!entityhuman.getAbilities().instabuild) {
+                     itemstack.shrink(1);
+                 }
+@@ -119,12 +119,19 @@ public interface CauldronInteraction {
+                 return InteractionResult.PASS;
+             } else {
+                 if (!world.isClientSide) {
++                    // Paper start - make itemstack copy
++                    ItemStack copy = itemstack.copy();
++                    idyeable.clearColor(copy);
++                    // Paper end
+                     // CraftBukkit start
+-                    if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.ARMOR_WASH)) {
++                    if (!LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entityhuman, CauldronLevelChangeEvent.ChangeReason.ARMOR_WASH, copy, enumhand)) { // Paper
+                         return InteractionResult.SUCCESS;
+                     }
+                     // CraftBukkit end
+-                    idyeable.clearColor(itemstack);
++                    // Paper start - move clear to before event
++                    itemstack.setCount(0);
++                    entityhuman.setItemInHand(enumhand, copy);
++                    // Paper end
+                     entityhuman.awardStat(Stats.CLEAN_ARMOR);
+                     // LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition); // CraftBukkit
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+index e11eced0bf15dfecaf64f5e1c28e973c38746095..6110c43950a1090d634607513d6ff9fa73703a66 100644
+--- a/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/LayeredCauldronBlock.java
+@@ -90,10 +90,15 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+     }
+ 
+     public static boolean lowerFillLevel(BlockState iblockdata, Level world, BlockPos blockposition, Entity entity, CauldronLevelChangeEvent.ChangeReason reason) {
++        // Paper start
++        return LayeredCauldronBlock.lowerFillLevel(iblockdata, world, blockposition, entity, reason, null, null);
++    }
++    public static boolean lowerFillLevel(BlockState iblockdata, Level world, BlockPos blockposition, Entity entity, CauldronLevelChangeEvent.ChangeReason reason, @javax.annotation.Nullable net.minecraft.world.item.ItemStack washedItem, @javax.annotation.Nullable net.minecraft.world.InteractionHand hand) {
++        // Paper end
+         int i = (Integer) iblockdata.getValue(LayeredCauldronBlock.LEVEL) - 1;
+         BlockState iblockdata1 = i == 0 ? Blocks.CAULDRON.defaultBlockState() : (BlockState) iblockdata.setValue(LayeredCauldronBlock.LEVEL, i);
+ 
+-        return LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, iblockdata1, entity, reason);
++        return LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, iblockdata1, entity, reason, true, washedItem, hand); // Paper
+     }
+ 
+     // CraftBukkit start
+@@ -104,18 +109,34 @@ public class LayeredCauldronBlock extends AbstractCauldronBlock {
+ 
+     public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason, boolean sendGameEvent) { // Paper - entity is nullable
+     // Paper end
++        // Paper start
++        return LayeredCauldronBlock.changeLevel(iblockdata, world, blockposition, newBlock, entity, reason, sendGameEvent, null, null);
++    }
++    public static boolean changeLevel(BlockState iblockdata, Level world, BlockPos blockposition, BlockState newBlock, @javax.annotation.Nullable Entity entity, CauldronLevelChangeEvent.ChangeReason reason, boolean sendGameEvent, @javax.annotation.Nullable net.minecraft.world.item.ItemStack washedItem, @javax.annotation.Nullable net.minecraft.world.InteractionHand hand) {
++        // Paper end
+         CraftBlockState newState = CraftBlockStates.getBlockState(world, blockposition);
+         newState.setData(newBlock);
+ 
+-        CauldronLevelChangeEvent event = new CauldronLevelChangeEvent(
++        // Paper start
++        CauldronLevelChangeEvent event = null;
++        if (washedItem == null || hand == null) {
++            event = new CauldronLevelChangeEvent(
++                // Paper end
+                 world.getWorld().getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()),
+                 (entity == null) ? null : entity.getBukkitEntity(), reason, newState
+         );
++        // Paper start
++        } else if (entity instanceof net.minecraft.world.entity.player.Player player) {
++            event = new io.papermc.paper.event.block.PlayerWashItemEvent(org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition), player.getBukkitEntity(), reason, newState, org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(washedItem), ((hand == net.minecraft.world.InteractionHand.OFF_HAND) ? org.bukkit.inventory.EquipmentSlot.OFF_HAND : org.bukkit.inventory.EquipmentSlot.HAND));
++        }
++        if (event != null) {
++        // Paper end
+         world.getCraftServer().getPluginManager().callEvent(event);
+         if (event.isCancelled()) {
+             return false;
+         }
+         newState.update(true);
++        } // Paper
+         if (sendGameEvent) world.gameEvent(GameEvent.BLOCK_CHANGE, blockposition, GameEvent.Context.of(newBlock)); // Paper
+         return true;
+     }
