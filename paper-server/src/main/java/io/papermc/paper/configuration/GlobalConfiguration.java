@@ -7,8 +7,13 @@ import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minecraft.Util;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -16,10 +21,13 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
 import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 import org.spongepowered.configurate.objectmapping.meta.Required;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
+import org.spongepowered.configurate.serialize.SerializationException;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.Set;
 
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class GlobalConfiguration extends ConfigurationPart {
@@ -353,5 +361,69 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean disableTripwireUpdates = false;
         public boolean disableChorusPlantUpdates = false;
         public boolean disableMushroomBlockUpdates = false;
+    }
+
+    public Anticheat anticheat;
+
+    public class Anticheat extends ConfigurationPart {
+
+        public Obfuscation obfuscation;
+
+        public class Obfuscation extends ConfigurationPart {
+            public Items items = new Items();
+
+            public class Items extends ConfigurationPart {
+                public static Set<DataComponentType<?>> OVERRIDEN_TYPES = new HashSet<>();
+
+                public boolean enableItemObfuscation = false;
+                public AssetObfuscationConfiguration allModels = new AssetObfuscationConfiguration(true,
+                    Set.of(
+                        DataComponents.MAX_STACK_SIZE,
+                        DataComponents.MAX_DAMAGE,
+                        DataComponents.DAMAGE,
+                        DataComponents.UNBREAKABLE,
+                        DataComponents.CUSTOM_NAME,
+                        DataComponents.ITEM_NAME,
+                        DataComponents.LORE,
+                        DataComponents.RARITY,
+                        DataComponents.ENCHANTMENTS,
+                        DataComponents.ATTRIBUTE_MODIFIERS,
+                        DataComponents.CUSTOM_DATA,
+                        DataComponents.WRITABLE_BOOK_CONTENT,
+                        DataComponents.WRITTEN_BOOK_CONTENT,
+                        DataComponents.MAP_ID,
+                        DataComponents.MAP_DECORATIONS,
+                        DataComponents.MAP_POST_PROCESSING,
+                        DataComponents.LODESTONE_TRACKER
+                    )
+                );
+                public Map<String, AssetObfuscationConfiguration> modelOverrides = Map.of(
+                    net.minecraft.world.item.Items.ELYTRA.components().get(DataComponents.ITEM_MODEL).toString(), new AssetObfuscationConfiguration(
+                        true, Util.make(new HashSet<>(), (obj) -> {
+                            obj.addAll(allModels.sanitizedComponents());
+                            obj.remove(DataComponents.DAMAGE); // don't sanitize damage for elytra
+                        }
+                    )
+                ));
+
+                public AssetObfuscationConfiguration getAssetObfuscation(ItemStack resourceLocation) {
+                    return this.modelOverrides.getOrDefault(resourceLocation.get(DataComponents.ITEM_MODEL).toString(), this.allModels); // todo make optimized resourcelocation lookup
+                }
+
+                @ConfigSerializable
+                public record AssetObfuscationConfiguration(boolean sanitizeCount, Set<DataComponentType<?>> sanitizedComponents) {
+                }
+
+                @PostProcess
+                public void computeOverridenTypes() {
+                    OVERRIDEN_TYPES.addAll(this.allModels.sanitizedComponents);
+                    for (AssetObfuscationConfiguration configuration : this.modelOverrides.values()) {
+                        OVERRIDEN_TYPES.addAll(configuration.sanitizedComponents);
+                    }
+                }
+            }
+
+        }
+
     }
 }
