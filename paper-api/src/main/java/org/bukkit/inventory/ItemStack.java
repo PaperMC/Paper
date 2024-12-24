@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -717,7 +718,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * @return the effective name of this item stack
      */
-    public net.kyori.adventure.text.@NotNull Component effectiveName() {
+    public @NotNull Component effectiveName() {
         return this.craftDelegate.effectiveName();
     }
 
