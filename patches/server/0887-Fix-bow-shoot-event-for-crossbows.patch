@@ -1,0 +1,174 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Tue, 22 Mar 2022 01:04:20 -0700
+Subject: [PATCH] Fix bow shoot event for crossbows
+
+Cancelling the EntityShootBowEvent now leaves the crossbow
+charged. Also the shouldConsumeItem now has an effect of
+consuming the item if true, and not if false.
+
+diff --git a/src/main/java/net/minecraft/world/item/CrossbowItem.java b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+index c0c211c7227f4ce5d1e0e433419425e6bb13046f..027c54b3bff2d46b7ff902b2a7835d86c2db8878 100644
+--- a/src/main/java/net/minecraft/world/item/CrossbowItem.java
++++ b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+@@ -65,8 +65,9 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+         ItemStack itemstack = user.getItemInHand(hand);
+ 
+         if (CrossbowItem.isCharged(itemstack)) {
+-            CrossbowItem.performShooting(world, user, hand, itemstack, CrossbowItem.getShootingPower(itemstack), 1.0F);
++            if (CrossbowItem.performShooting0(world, user, hand, itemstack, CrossbowItem.getShootingPower(itemstack), 1.0F)) { // Paper
+             CrossbowItem.setCharged(itemstack, false);
++            } // Paper
+             return InteractionResultHolder.consume(itemstack);
+         } else if (!user.getProjectile(itemstack).isEmpty()) {
+             if (!CrossbowItem.isCharged(itemstack)) {
+@@ -174,6 +175,11 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+     }
+ 
+     private static void addChargedProjectile(ItemStack crossbow, ItemStack projectile) {
++        // Paper start
++        addChargedProjectiles(crossbow, java.util.Collections.singletonList(projectile), false);
++    }
++    private static void addChargedProjectiles(ItemStack crossbow, List<ItemStack> projectiles, boolean filterEmpty) {
++        // Paper end
+         CompoundTag nbttagcompound = crossbow.getOrCreateTag();
+         ListTag nbttaglist;
+ 
+@@ -183,10 +189,15 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+             nbttaglist = new ListTag();
+         }
+ 
++        // Paper start
++        for (ItemStack projectile : projectiles) {
++            if (projectile.isEmpty()) continue;
++        // Paper end
+         CompoundTag nbttagcompound1 = new CompoundTag();
+ 
+         projectile.save(nbttagcompound1);
+         nbttaglist.add(nbttagcompound1);
++        } // Paper
+         nbttagcompound.put("ChargedProjectiles", nbttaglist);
+     }
+ 
+@@ -227,7 +238,8 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+         });
+     }
+ 
+-    private static void shootProjectile(Level world, LivingEntity shooter, InteractionHand hand, ItemStack crossbow, ItemStack projectile, float soundPitch, boolean creative, float speed, float divergence, float simulated) {
++    private static ItemStack shootProjectile(Level world, LivingEntity shooter, InteractionHand hand, ItemStack crossbow, ItemStack projectile, float soundPitch, boolean creative, float speed, float divergence, float simulated) { // Paper - return leftover stack, or empty if used
++        ItemStack newProjectile = ItemStack.EMPTY; // Paper
+         if (!world.isClientSide) {
+             boolean flag1 = projectile.is(Items.FIREWORK_ROCKET);
+             Object object;
+@@ -259,8 +271,13 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+             org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, crossbow, projectile, (Entity) object, shooter.getUsedItemHand(), soundPitch, true);
+             if (event.isCancelled()) {
+                 event.getProjectile().remove();
+-                return;
++                return org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getConsumable()); // Paper
++            }
++            // Paper start
++            if (!event.shouldConsumeItem()) {
++                newProjectile = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getConsumable());
+             }
++            // Paper end
+             // CraftBukkit end
+ 
+             crossbow.hurtAndBreak(flag1 ? 3 : 1, shooter, (entityliving1) -> {
+@@ -272,12 +289,13 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+                     if (shooter instanceof ServerPlayer) {
+                         ((ServerPlayer) shooter).getBukkitEntity().updateInventory();
+                     }
+-                    return;
++                    return newProjectile; // Paper - the entity spawn cancelled doesn't cancel the shot
+                 }
+             }
+             // CraftBukkit end
+             world.playSound((Player) null, shooter.getX(), shooter.getY(), shooter.getZ(), SoundEvents.CROSSBOW_SHOOT, SoundSource.PLAYERS, 1.0F, soundPitch);
+         }
++        return newProjectile; // Paper
+     }
+ 
+     private static AbstractArrow getArrow(Level world, LivingEntity entity, ItemStack crossbow, ItemStack arrow) {
+@@ -300,25 +318,52 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+     }
+ 
+     public static void performShooting(Level world, LivingEntity entity, InteractionHand hand, ItemStack stack, float speed, float divergence) {
++        // Paper start
++        performShooting0(world, entity, hand, stack, speed, divergence);
++    }
++    public static boolean performShooting0(Level world, LivingEntity entity, InteractionHand hand, ItemStack stack, float speed, float divergence) {
++        // Paper end
+         List<ItemStack> list = CrossbowItem.getChargedProjectiles(stack);
+         float[] afloat = CrossbowItem.getShotPitches(entity.getRandom());
+ 
++        // Paper start
++        final List<ItemStack> newProjectiles = new java.util.ArrayList<>(3);
++        boolean noneCancelled = true;
++        boolean allCancelled = true;
++        // Paper end
+         for (int i = 0; i < list.size(); ++i) {
+             ItemStack itemstack1 = (ItemStack) list.get(i);
+             boolean flag = entity instanceof Player && ((Player) entity).getAbilities().instabuild;
+ 
+             if (!itemstack1.isEmpty()) {
+                 if (i == 0) {
+-                    CrossbowItem.shootProjectile(world, entity, hand, stack, itemstack1, afloat[i], flag, speed, divergence, 0.0F);
++                    itemstack1 = CrossbowItem.shootProjectile(world, entity, hand, stack, itemstack1, afloat[i], flag, speed, divergence, 0.0F); // Paper
+                 } else if (i == 1) {
+-                    CrossbowItem.shootProjectile(world, entity, hand, stack, itemstack1, afloat[i], flag, speed, divergence, -10.0F);
++                    itemstack1 = CrossbowItem.shootProjectile(world, entity, hand, stack, itemstack1, afloat[i], flag, speed, divergence, -10.0F); // Paper
+                 } else if (i == 2) {
+-                    CrossbowItem.shootProjectile(world, entity, hand, stack, itemstack1, afloat[i], flag, speed, divergence, 10.0F);
++                    // Paper start
++                    itemstack1 = CrossbowItem.shootProjectile(world, entity, hand, stack, itemstack1, afloat[i], flag, speed, divergence, 10.0F);
++                }
++                if (i < 3) {
++                    newProjectiles.add(itemstack1);
++                    if (!itemstack1.isEmpty()) {
++                        noneCancelled = false;
++                    } else {
++                        allCancelled = false;
++                    }
++                    // Paper end
+                 }
+             }
+         }
+ 
++        if (noneCancelled || !(entity instanceof Player)) { // Paper
+         CrossbowItem.onCrossbowShot(world, entity, stack);
++        // Paper start
++        } else {
++            CrossbowItem.onCrossbowShot(world, entity, stack, allCancelled, newProjectiles);
++        }
++        return noneCancelled;
++        // Paper end
+     }
+ 
+     private static float[] getShotPitches(Random random) {
+@@ -334,7 +379,12 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+     }
+ 
+     private static void onCrossbowShot(Level world, LivingEntity entity, ItemStack stack) {
+-        if (entity instanceof ServerPlayer) {
++        // Paper start
++        onCrossbowShot(world, entity, stack, false, null);
++    }
++    private static void onCrossbowShot(Level world, LivingEntity entity, ItemStack stack, boolean allCancelled, @Nullable List<ItemStack> projectiles) {
++        if (entity instanceof ServerPlayer && !allCancelled) {
++            // Paper end
+             ServerPlayer entityplayer = (ServerPlayer) entity;
+ 
+             if (!world.isClientSide) {
+@@ -345,6 +395,11 @@ public class CrossbowItem extends ProjectileWeaponItem implements Vanishable {
+         }
+ 
+         CrossbowItem.clearChargedProjectiles(stack);
++        // Paper start
++        if (projectiles != null) {
++            CrossbowItem.addChargedProjectiles(stack, projectiles, true);
++        }
++        // Paper end
+     }
+ 
+     @Override
