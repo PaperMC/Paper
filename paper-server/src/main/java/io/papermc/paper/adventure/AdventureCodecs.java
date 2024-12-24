@@ -79,7 +79,7 @@ public final class AdventureCodecs {
     public static final Codec<Component> COMPONENT_CODEC = recursive("adventure Component",  AdventureCodecs::createCodec);
     public static final StreamCodec<RegistryFriendlyByteBuf, Component> STREAM_COMPONENT_CODEC = ByteBufCodecs.fromCodecWithRegistriesTrusted(COMPONENT_CODEC);
 
-    static final Codec<ShadowColor> SHADOW_COLOR_CODEC = Codec.INT.xmap(ShadowColor::shadowColor, ShadowColor::value);
+    static final Codec<ShadowColor> SHADOW_COLOR_CODEC = ExtraCodecs.ARGB_COLOR_CODEC.xmap(ShadowColor::shadowColor, ShadowColor::value);
 
     static final Codec<TextColor> TEXT_COLOR_CODEC = Codec.STRING.comapFlatMap(s -> {
         if (s.startsWith("#")) {
