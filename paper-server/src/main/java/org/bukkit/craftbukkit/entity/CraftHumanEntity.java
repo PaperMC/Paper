@@ -803,7 +803,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         // Paper end - Fix HumanEntity#drop not updating the client inv
     }
 
-    // Paper start - Extend HumanEntity#dropItem API
     @Override
     public @Nullable org.bukkit.entity.Item dropItem(final @NotNull ItemStack itemStack, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
         final int slot = this.inventory.first(itemStack);
@@ -817,7 +816,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public @Nullable org.bukkit.entity.Item dropItem(final int slot, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
         // Make sure the slot is in bounds
-        if (slot < 0 || this.inventory.getSize() <= slot) {
+        if (slot < 0 || slot >= this.inventory.getSize()) {
             throw new IndexOutOfBoundsException("Slot " + slot + " out of range for inventory of size " + this.inventory.getSize());
         }
 
@@ -838,7 +837,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     private org.bukkit.entity.Item dropItemRaw(final ItemStack is, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
-        if (is == null || is.getType() == Material.AIR) {
+        if (is == null || is.isEmpty()) {
             return null;
         }
 
