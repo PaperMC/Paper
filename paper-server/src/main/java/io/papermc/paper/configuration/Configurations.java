@@ -80,7 +80,7 @@ public abstract class Configurations<G, W> {
     }
 
     @MustBeInvokedByOverriders
-    protected YamlConfigurationLoader.Builder createGlobalLoaderBuilder() {
+    protected YamlConfigurationLoader.Builder createGlobalLoaderBuilder(RegistryAccess registryAccess) {
         return this.createLoaderBuilder();
     }
 
@@ -104,7 +104,7 @@ public abstract class Configurations<G, W> {
     }
 
     public G initializeGlobalConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
-        return this.initializeGlobalConfiguration(creator(this.globalConfigClass, true));
+        return this.initializeGlobalConfiguration(registryAccess, creator(this.globalConfigClass, true));
     }
 
     private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
@@ -117,9 +117,9 @@ public abstract class Configurations<G, W> {
         }
     }
 
-    protected G initializeGlobalConfiguration(final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
+    protected G initializeGlobalConfiguration(final RegistryAccess registryAccess, final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
         final Path configFile = this.globalFolder.resolve(this.globalConfigFileName);
-        final YamlConfigurationLoader loader = this.createGlobalLoaderBuilder()
+        final YamlConfigurationLoader loader = this.createGlobalLoaderBuilder(registryAccess)
             .defaultOptions(this.applyObjectMapperFactory(this.createGlobalObjectMapperFactoryBuilder().build()))
             .path(configFile)
             .build();

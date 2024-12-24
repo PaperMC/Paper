@@ -21,14 +21,15 @@
 +            if (value.isEmpty() || value.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
                  buffer.writeVarInt(0);
              } else {
-                 buffer.writeVarInt(value.getCount());
+-                buffer.writeVarInt(value.getCount());
++                buffer.writeVarInt(io.papermc.paper.util.DataSanitizationUtil.sanitizeCount(value, value.getCount())); // Paper
                  ITEM_STREAM_CODEC.encode(buffer, value.getItemHolder());
 +                // Spigot start - filter
 +                // value = value.copy();
 +                // CraftItemStack.setItemMeta(value, CraftItemStack.getItemMeta(value)); // Paper - This is no longer with raw NBT being handled in metadata
 +                // Paper start - adventure; conditionally render translatable components
 +                boolean prev = net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.get();
-+                try {
++                try (io.papermc.paper.util.DataSanitizationUtil.SafeAutoClosable unused = io.papermc.paper.util.DataSanitizationUtil.passContext(value)) {
 +                    net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(true);
                  DataComponentPatch.STREAM_CODEC.encode(buffer, value.components.asPatch());
 +                } finally {
