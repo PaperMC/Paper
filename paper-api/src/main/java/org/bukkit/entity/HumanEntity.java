@@ -707,7 +707,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param dropAll True to drop entire stack, false to drop 1 of the stack
      * @return True if item was dropped successfully
      */
-    @Deprecated
+    @Deprecated(since = "1.21.4")
     public boolean dropItem(boolean dropAll);
 
     /**
