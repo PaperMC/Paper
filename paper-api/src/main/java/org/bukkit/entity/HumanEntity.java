@@ -706,6 +706,107 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     public boolean dropItem(boolean dropAll);
 
+    // Paper start - Extend HumanEntity#dropItem API
+    /**
+     * Makes the entity drop an item from their inventory.
+     * <br>
+     * This method calls {@link HumanEntity#dropItem(int slot)}
+     * with the first {@link ItemStack} occurrence in the inventory
+     *
+     * @param itemStack The ItemStack to drop
+     * @return The dropped item, or null if the action was unsuccessful
+     */
+    public @Nullable Item dropItem(final @NotNull ItemStack itemStack);
+
+    /**
+     * Makes the entity drop an item from their inventory.
+     * <br>
+     * This method calls {@link HumanEntity#dropItem(int slot, java.util.UUID thrower)}
+     * with the first {@link ItemStack} occurrence in the inventory
+     *
+     * @param itemStack The ItemStack to drop from their inventory
+     * @param thrower   The {@link java.util.UUID} to set the resulting {@link Item}'s thrower to
+     * @return The dropped item, or null if the action was unsuccessful
+     */
+    public @Nullable Item dropItem(final @NotNull ItemStack itemStack, final @Nullable java.util.UUID thrower);
+
+    /**
+     * Makes the entity drop an item from their inventory based on the specified ItemStack.
+     * <br>
+     * This method calls {@link HumanEntity#dropItem(int slot, java.util.UUID thrower, boolean throwRandomly)}
+     * with the first {@link ItemStack} occurrence in the inventory
+     *
+     * @param itemStack     The ItemStack to drop
+     * @param thrower       The {@link java.util.UUID} to set the resulting {@link Item}'s thrower to
+     * @param throwRandomly Whether the item should disperse randomly.
+     *                      This means that instead of the item being dropped where the player is currently looking,
+     *                      it instead throws it in any direction, similar to how items drop after a player's death.
+     * @return The dropped item, or null if the action was unsuccessful
+     */
+    public @Nullable Item dropItem(final @NotNull ItemStack itemStack, final @Nullable java.util.UUID thrower, final boolean throwRandomly);
+
+    /**
+     * Makes the entity drop an item from their inventory based on the slot.
+     *
+     * @param slot The slot to drop
+     * @return The dropped item, or null if the action was unsuccessful
+     * @throws IndexOutOfBoundsException If the slot is negative or bigger than the player's inventory
+     */
+    public @Nullable Item dropItem(final int slot);
+
+    /**
+     * Makes the entity drop an item from their inventory based on the slot.
+     *
+     * @param slot    The slot to drop
+     * @param thrower The {@link java.util.UUID} to set the resulting {@link Item}'s thrower to
+     * @return The dropped item, or null if the action was unsuccessful
+     * @throws IndexOutOfBoundsException If the slot is negative or bigger than the player's inventory
+     */
+    public @Nullable Item dropItem(final int slot, final @Nullable java.util.UUID thrower);
+
+    /**
+     * Makes the entity drop an item from their inventory based on the slot.
+     *
+     * @param slot          The slot to drop
+     * @param thrower       The {@link java.util.UUID} to set the resulting {@link Item}'s thrower to
+     * @param throwRandomly Whether the item should disperse randomly.
+     *                      This means that instead of the item being dropped where the player is currently looking,
+     *                      it instead throws it in any direction, similar to how items drop after a player's death.
+     * @return The dropped item entity, or null if the action was unsuccessful
+     * @throws IndexOutOfBoundsException If the slot is negative or bigger than the player's inventory
+     */
+    public @Nullable Item dropItem(final int slot, final @Nullable java.util.UUID thrower, final boolean throwRandomly);
+
+    /**
+     * Makes the entity drop an item from their inventory based on the {@link org.bukkit.inventory.EquipmentSlot}
+     *
+     * @param slot The equipment slot to drop
+     * @return The dropped item entity, or null if the action was unsuccessful
+     */
+    public @Nullable Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot);
+
+    /**
+     * Makes the entity drop an item from their inventory based on the {@link org.bukkit.inventory.EquipmentSlot}
+     *
+     * @param slot    The equipment slot to drop
+     * @param thrower The {@link java.util.UUID} to set the resulting {@link Item}'s thrower to
+     * @return The dropped item entity, or null if the action was unsuccessful
+     */
+    public @Nullable Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot, final @Nullable java.util.UUID thrower);
+
+    /**
+     * Makes the player drop an item from their inventory based on the equipment slot.
+     *
+     * @param slot          The equipment slot to drop
+     * @param thrower       The {@link java.util.UUID} to set the resulting {@link Item}'s thrower to
+     * @param throwRandomly Whether the item should disperse randomly.
+     *                      This means that instead of the item being dropped where the player is currently looking,
+     *                      it instead throws it in any direction, similar to how items drop after a player's death.
+     * @return The dropped item entity, or null if the action was unsuccessful
+     */
+    public @Nullable Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot, final @Nullable java.util.UUID thrower, final boolean throwRandomly);
+    // Paper end
+
     /**
      * Gets the players current exhaustion level.
      * <p>
