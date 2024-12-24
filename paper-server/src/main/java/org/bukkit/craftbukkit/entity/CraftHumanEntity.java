@@ -807,51 +807,52 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public @Nullable Item dropItem(final @NotNull ItemStack itemStack, final boolean throwRandomly) {
-        final int slot = this.inventory.first(itemStack);
-        if (slot == -1) {
-            return null;
-        }
-
-        return this.dropItem(slot, throwRandomly);
-    }
-
-    @Override
-    public @Nullable Item dropItem(final int slot, final boolean throwRandomly) {
+    public @Nullable Item dropItem(final int slot, final int amount) {
         // Make sure the slot is in bounds
         if (slot < 0 || slot >= this.inventory.getSize()) {
             throw new IndexOutOfBoundsException("Slot " + slot + " out of range for inventory of size " + this.inventory.getSize());
         }
 
-        final ItemStack stack = this.inventory.getItem(slot);
-        final Item itemEntity = dropItemRaw(stack, throwRandomly);
-
-        this.inventory.setItem(slot, null);
-        return itemEntity;
+        return dropItemRaw(this.inventory.getItem(slot), amount, false);
     }
 
     @Override
-    public @Nullable Item dropItem(final @NotNull EquipmentSlot slot, final boolean throwRandomly) {
-        final ItemStack stack = this.inventory.getItem(slot);
-        final Item itemEntity = dropItemRaw(stack, throwRandomly);
-
-        this.inventory.setItem(slot, null);
-        return itemEntity;
+    public @Nullable Item dropItem(final @NotNull EquipmentSlot slot, final int amount) {
+        return dropItemRaw(this.inventory.getItem(slot), amount, false);
     }
 
-    private Item dropItemRaw(final ItemStack itemStack, final boolean throwRandomly) {
-        if (itemStack == null || itemStack.isEmpty()) {
+    @Override
+    public @Nullable Item dropItemRandomly(final int slot, final int amount) {
+        // Make sure the slot is in bounds
+        if (slot < 0 || slot >= this.inventory.getSize()) {
+            throw new IndexOutOfBoundsException("Slot " + slot + " out of range for inventory of size " + this.inventory.getSize());
+        }
+
+        return dropItemRaw(this.inventory.getItem(slot), amount, true);
+    }
+
+    @Override
+    public @Nullable Item dropItemRandomly(final @NotNull EquipmentSlot slot, final int amount) {
+        return dropItemRaw(this.inventory.getItem(slot), amount, true);
+    }
+
+    private @Nullable Item dropItemRaw(final ItemStack originalItemStack, final int amount, final boolean throwRandomly) {
+        if (originalItemStack == null || originalItemStack.isEmpty() || amount <= 0) {
             return null;
         }
 
-        final ItemEntity droppedEntity = this.getHandle().drop(CraftItemStack.asNMSCopy(itemStack), throwRandomly, true);
+        final ItemStack clonedItemStack = originalItemStack.clone();
+        final int droppedAmount = Math.min(clonedItemStack.getAmount(), amount);
+        clonedItemStack.setAmount(droppedAmount);
+
+        final ItemEntity droppedEntity = this.getHandle().drop(CraftItemStack.asNMSCopy(clonedItemStack), throwRandomly, true);
         if (droppedEntity == null) {
             return null;
         }
 
-        return (Item) droppedEntity.getBukkitEntity();
+        originalItemStack.setAmount(originalItemStack.getAmount() - droppedAmount);
+        return new CraftItem(this.server, droppedEntity);
     }
-
 
     @Override
     public float getExhaustion() {

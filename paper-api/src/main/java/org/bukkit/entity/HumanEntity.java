@@ -703,48 +703,54 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * This will force the entity to drop the item they are holding with
      * an option to drop the entire {@link ItemStack} or just 1 of the items.
      *
+     * @deprecated You should instead use {@link #dropItem(EquipmentSlot, int)} with a {@link EquipmentSlot#HAND} parameter.
      * @param dropAll True to drop entire stack, false to drop 1 of the stack
      * @return True if item was dropped successfully
      */
+    @Deprecated
     public boolean dropItem(boolean dropAll);
-
-    /**
-     * Makes the entity drop an item from their inventory based on the specified ItemStack.
-     * <br>
-     * This method calls {@link HumanEntity#dropItem(int slot, boolean throwRandomly)}
-     * with the first {@link ItemStack} occurrence in the inventory
-     *
-     * @param itemStack     The ItemStack to drop
-     * @param throwRandomly Whether the item should disperse randomly.
-     *                      This means that instead of the item being dropped where the player is currently looking,
-     *                      it instead throws it in any direction, similar to how items drop after a player's death.
-     * @return The dropped item, or null if the action was unsuccessful
-     */
-    public @Nullable Item dropItem(final @NotNull ItemStack itemStack, final boolean throwRandomly);
 
     /**
      * Makes the entity drop an item from their inventory based on the slot.
      *
-     * @param slot          The slot to drop
-     * @param throwRandomly Whether the item should disperse randomly.
-     *                      This means that instead of the item being dropped where the player is currently looking,
-     *                      it instead throws it in any direction, similar to how items drop after a player's death.
+     * @param slot   The slot to drop
+     * @param amount The number of items to drop from this slot. Values below 1 don't drop an Item
      * @return The dropped item entity, or null if the action was unsuccessful
      * @throws IndexOutOfBoundsException If the slot is negative or bigger than the player's inventory
      */
-    public @Nullable Item dropItem(final int slot, final boolean throwRandomly);
+    public @Nullable Item dropItem(int slot, int amount);
 
     /**
      * Makes the player drop an item from their inventory based on the equipment slot.
      *
-     * @param slot          The equipment slot to drop
-     * @param throwRandomly Whether the item should disperse randomly.
-     *                      This means that instead of the item being dropped where the player is currently looking,
-     *                      it instead throws it in any direction, similar to how items drop after a player's death.
+     * @param slot   The equipment slot to drop
+     * @param amount The amount of items to drop from this equipment slot. Values below 1 don't drop an Item
      * @return The dropped item entity, or null if the action was unsuccessful
      */
-    public @Nullable Item dropItem(final @NotNull EquipmentSlot slot, final boolean throwRandomly);
+    public @Nullable Item dropItem(@NotNull EquipmentSlot slot, int amount);
 
+    /**
+     * Makes the entity drop an item from their inventory based on the slot.
+     * Instead of the item being dropped where the player is currently looking, this method makes it drop in
+     * a random direction, similar to how items are dropped after a player's death.
+     *
+     * @param slot   The slot to drop
+     * @param amount The number of items to drop from this slot. Values below 1 don't drop an Item
+     * @return The dropped item entity, or null if the action was unsuccessful
+     * @throws IndexOutOfBoundsException If the slot is negative or bigger than the player's inventory
+     */
+    public @Nullable Item dropItemRandomly(int slot, int amount);
+
+    /**
+     * Makes the player drop an item from their inventory based on the equipment slot.
+     * Instead of the item being dropped where the player is currently looking, this method makes it drop in
+     * a random direction, similar to how items are dropped after a player's death.
+     *
+     * @param slot   The equipment slot to drop
+     * @param amount The amount of items to drop from this equipment slot. Values below 1 don't drop an Item
+     * @return The dropped item entity, or null if the action was unsuccessful
+     */
+    public @Nullable Item dropItemRandomly(@NotNull EquipmentSlot slot, int amount);
 
     /**
      * Gets the players current exhaustion level.
