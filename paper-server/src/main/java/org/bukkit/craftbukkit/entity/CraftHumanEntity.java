@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -19,6 +20,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -51,9 +53,11 @@ import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Villager;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
@@ -803,7 +807,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull ItemStack itemStack, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
+    public @Nullable Item dropItem(final @NotNull ItemStack itemStack, final @Nullable UUID thrower, final boolean throwRandomly) {
         final int slot = this.inventory.first(itemStack);
         if (slot == -1) {
             return null;
@@ -813,42 +817,41 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public @Nullable org.bukkit.entity.Item dropItem(final int slot, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
+    public @Nullable Item dropItem(final int slot, final @Nullable UUID thrower, final boolean throwRandomly) {
         // Make sure the slot is in bounds
         if (slot < 0 || slot >= this.inventory.getSize()) {
             throw new IndexOutOfBoundsException("Slot " + slot + " out of range for inventory of size " + this.inventory.getSize());
         }
 
         final ItemStack stack = this.inventory.getItem(slot);
-        final org.bukkit.entity.Item itemEntity = dropItemRaw(stack, thrower, throwRandomly);
+        final Item itemEntity = dropItemRaw(stack, thrower, throwRandomly);
 
         this.inventory.setItem(slot, null);
         return itemEntity;
     }
 
     @Override
-    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
+    public @Nullable Item dropItem(final @NotNull EquipmentSlot slot, final @Nullable UUID thrower, final boolean throwRandomly) {
         final ItemStack stack = this.inventory.getItem(slot);
-        final org.bukkit.entity.Item itemEntity = dropItemRaw(stack, thrower, throwRandomly);
+        final Item itemEntity = dropItemRaw(stack, thrower, throwRandomly);
 
         this.inventory.setItem(slot, null);
         return itemEntity;
     }
 
-    private org.bukkit.entity.Item dropItemRaw(final ItemStack is, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
+    private Item dropItemRaw(final ItemStack is, final @Nullable UUID thrower, final boolean throwRandomly) {
         if (is == null || is.isEmpty()) {
             return null;
         }
 
-        final net.minecraft.world.entity.item.ItemEntity droppedEntity = this.getHandle().drop(CraftItemStack.asNMSCopy(is), throwRandomly);
+        final ItemEntity droppedEntity = this.getHandle().drop(CraftItemStack.asNMSCopy(is), throwRandomly);
         if (droppedEntity == null) {
             return null;
         }
 
         droppedEntity.thrower = thrower;
-        return (org.bukkit.entity.Item) droppedEntity.getBukkitEntity();
+        return (Item) droppedEntity.getBukkitEntity();
     }
-    // Paper end
 
 
     @Override
