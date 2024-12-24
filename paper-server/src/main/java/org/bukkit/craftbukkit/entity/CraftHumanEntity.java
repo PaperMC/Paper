@@ -839,12 +839,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return itemEntity;
     }
 
-    private Item dropItemRaw(final ItemStack is, final @Nullable UUID thrower, final boolean throwRandomly) {
-        if (is == null || is.isEmpty()) {
+    private Item dropItemRaw(final ItemStack itemStack, final @Nullable UUID thrower, final boolean throwRandomly) {
+        if (itemStack == null || itemStack.isEmpty()) {
             return null;
         }
 
-        final ItemEntity droppedEntity = this.getHandle().drop(CraftItemStack.asNMSCopy(is), throwRandomly);
+        final ItemEntity droppedEntity = this.getHandle().drop(CraftItemStack.asNMSCopy(itemStack), throwRandomly);
         if (droppedEntity == null) {
             return null;
         }
