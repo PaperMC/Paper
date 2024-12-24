@@ -4,6 +4,7 @@ import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
 import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.registry.tag.TagKey;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import net.minecraft.core.HolderSet;
 import net.minecraft.core.registries.BuiltInRegistries;
 import org.bukkit.Keyed;
@@ -50,5 +51,10 @@ public class PaperSimpleRegistry<T extends Enum<T> & Keyed, M> extends Registry.
     public Tag<T> getTag(final TagKey<T> key) {
         final HolderSet.Named<M> namedHolderSet = this.nmsRegistry.get(PaperRegistries.toNms(key)).orElseThrow();
         return new NamedRegistryKeySetImpl<>(key, namedHolderSet);
+    }
+
+    @Override
+    public Stream<Tag<T>> getTags() {
+        return this.nmsRegistry.getTags().map(NamedRegistryKeySetImpl::new);
     }
 }

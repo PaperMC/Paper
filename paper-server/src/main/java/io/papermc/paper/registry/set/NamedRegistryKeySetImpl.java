@@ -26,6 +26,10 @@ public record NamedRegistryKeySetImpl<T extends Keyed, M>( // TODO remove Keyed
     HolderSet.Named<M> namedSet
 ) implements Tag<T>, org.bukkit.Tag<T> {
 
+    public NamedRegistryKeySetImpl(final HolderSet.Named<M> namedSet) {
+        this(PaperRegistries.fromNms(namedSet.key()), namedSet);
+    }
+
     @Override
     public @Unmodifiable Collection<TypedKey<T>> values() {
         final ImmutableList.Builder<TypedKey<T>> builder = ImmutableList.builder();
