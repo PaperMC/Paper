@@ -79,10 +79,7 @@ public final class AdventureCodecs {
     public static final Codec<Component> COMPONENT_CODEC = recursive("adventure Component",  AdventureCodecs::createCodec);
     public static final StreamCodec<RegistryFriendlyByteBuf, Component> STREAM_COMPONENT_CODEC = ByteBufCodecs.fromCodecWithRegistriesTrusted(COMPONENT_CODEC);
 
-    static final Codec<ShadowColor> SHADOW_COLOR_CODEC = Codec.INT.comapFlatMap(s -> {
-        @Nullable ShadowColor value = ShadowColor.shadowColor(s);
-        return value != null ? DataResult.success(value) : DataResult.error(() -> "Cannot convert " + s + " to adventure ShadowColor");
-    }, ShadowColor::value);
+    static final Codec<ShadowColor> SHADOW_COLOR_CODEC = Codec.INT.xmap(ShadowColor::shadowColor, ShadowColor::value);
 
     static final Codec<TextColor> TEXT_COLOR_CODEC = Codec.STRING.comapFlatMap(s -> {
         if (s.startsWith("#")) {
@@ -225,6 +222,7 @@ public final class AdventureCodecs {
     public static final MapCodec<Style> STYLE_MAP_CODEC = mapCodec((instance) -> {
         return instance.group(
             TEXT_COLOR_CODEC.optionalFieldOf("color").forGetter(nullableGetter(Style::color)),
+            SHADOW_COLOR_CODEC.optionalFieldOf("shadow_color").forGetter(nullableGetter(Style::shadowColor)),
             Codec.BOOL.optionalFieldOf("bold").forGetter(decorationGetter(TextDecoration.BOLD)),
             Codec.BOOL.optionalFieldOf("italic").forGetter(decorationGetter(TextDecoration.ITALIC)),
             Codec.BOOL.optionalFieldOf("underlined").forGetter(decorationGetter(TextDecoration.UNDERLINED)),
@@ -233,11 +231,11 @@ public final class AdventureCodecs {
             CLICK_EVENT_CODEC.optionalFieldOf("clickEvent").forGetter(nullableGetter(Style::clickEvent)),
             HOVER_EVENT_CODEC.optionalFieldOf("hoverEvent").forGetter(nullableGetter(Style::hoverEvent)),
             Codec.STRING.optionalFieldOf("insertion").forGetter(nullableGetter(Style::insertion)),
-            KEY_CODEC.optionalFieldOf("font").forGetter(nullableGetter(Style::font)),
-            SHADOW_COLOR_CODEC.optionalFieldOf("shadow_color").forGetter(nullableGetter(Style::shadowColor))
-        ).apply(instance, (textColor, bold, italic, underlined, strikethrough, obfuscated, clickEvent, hoverEvent, insertion, font, shadowColor) -> {
+            KEY_CODEC.optionalFieldOf("font").forGetter(nullableGetter(Style::font))
+        ).apply(instance, (textColor, shadowColor,bold, italic, underlined, strikethrough, obfuscated, clickEvent, hoverEvent, insertion, font) -> {
             return Style.style(builder -> {
                 textColor.ifPresent(builder::color);
+                shadowColor.ifPresent(builder::shadowColor);
                 bold.ifPresent(styleBooleanConsumer(builder, TextDecoration.BOLD));
                 italic.ifPresent(styleBooleanConsumer(builder, TextDecoration.ITALIC));
                 underlined.ifPresent(styleBooleanConsumer(builder, TextDecoration.UNDERLINED));
@@ -247,7 +245,6 @@ public final class AdventureCodecs {
                 hoverEvent.ifPresent(builder::hoverEvent);
                 insertion.ifPresent(builder::insertion);
                 font.ifPresent(builder::font);
-                shadowColor.ifPresent(builder::shadowColor);
             });
         });
     });
