@@ -12,7 +12,7 @@ public abstract class CraftAbstractWindCharge extends CraftFireball implements A
     @Override
     public void explode() {
         this.getHandle().explode(this.getHandle().position());
-        this.getHandle().discard(EntityRemoveEvent.Cause.EXPLODE); // SPIGOT-7577 - explode doesn't discard the entity, this happens only in tick and onHitBlock
+        this.getHandle().discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.EXPLODE); // SPIGOT-7577 - explode doesn't discard the entity, this happens only in tick and onHitBlock
     }
 
     @Override

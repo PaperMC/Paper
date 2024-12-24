@@ -1881,7 +1881,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             final int consumedExperience = i > 0 ? i * amount / possibleDurabilityFromXp : possibleDurabilityFromXp; // Paper - taken from ExperienceOrb#repairPlayerItems + prevent division by 0
             org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, stackEntry.get().inSlot(), i, consumedExperience);
             i = event.getRepairAmount();
-            orb.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN);
+            orb.discard(com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent.Cause.DESPAWN);
             if (!event.isCancelled()) {
                 amount -= consumedExperience; // Use previously computed variable to reduce diff on change.
                 itemstack.setDamageValue(itemstack.getDamageValue() - i);
