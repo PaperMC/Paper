@@ -14,9 +14,19 @@ import org.jspecify.annotations.Nullable;
 @ApiStatus.NonExtendable
 public interface SoundEventRegistryEntry {
 
+    /**
+     * Gets the resource pack location for this sound event.
+     *
+     * @return the location
+     */
     @Contract(pure = true)
     Key location();
 
+    /**
+     * Gets the fixed range for this sound event, if present.
+     *
+     * @return the fixed range, or {@code null} if not present
+     */
     @Contract(pure = true)
     @Nullable Float fixedRange();
 
@@ -32,9 +42,21 @@ public interface SoundEventRegistryEntry {
     @ApiStatus.NonExtendable
     interface Builder extends SoundEventRegistryEntry, RegistryBuilder<Sound> {
 
+        /**
+         * Sets the resource pack location for this sound event.
+         *
+         * @param location the location
+         * @return this builder
+         */
         @Contract(value = "_ -> this", mutates = "this")
         Builder location(Key location);
 
+        /**
+         * Sets the fixed range for this sound event.
+         *
+         * @param fixedRange the fixed range
+         * @return this builder
+         */
         @Contract(value = "_ -> this", mutates = "this")
         Builder fixedRange(@Nullable Float fixedRange);
     }
