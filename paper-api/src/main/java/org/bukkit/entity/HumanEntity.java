@@ -708,27 +708,14 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
 
     // Paper start - Extend HumanEntity#dropItem API
     /**
-     * Makes the entity drop an item from their inventory.
-     * <br>
-     * This method calls {@link HumanEntity#dropItem(int slot)}
-     * with the first {@link ItemStack} occurrence in the inventory
+     * Makes the entity drop the first declared {@link ItemStack} occurrence in the inventory
      *
      * @param itemStack The ItemStack to drop
      * @return The dropped item, or null if the action was unsuccessful
      */
-    public @Nullable Item dropItem(final @NotNull ItemStack itemStack);
-
-    /**
-     * Makes the entity drop an item from their inventory.
-     * <br>
-     * This method calls {@link HumanEntity#dropItem(int slot, java.util.UUID thrower)}
-     * with the first {@link ItemStack} occurrence in the inventory
-     *
-     * @param itemStack The ItemStack to drop from their inventory
-     * @param thrower   The {@link java.util.UUID} to set the resulting {@link Item}'s thrower to
-     * @return The dropped item, or null if the action was unsuccessful
-     */
-    public @Nullable Item dropItem(final @NotNull ItemStack itemStack, final @Nullable java.util.UUID thrower);
+    public default @Nullable Item dropItem(final @NotNull ItemStack itemStack) {
+        return this.dropItem(itemStack, null, false);
+    }
 
     /**
      * Makes the entity drop an item from their inventory based on the specified ItemStack.
@@ -752,17 +739,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return The dropped item, or null if the action was unsuccessful
      * @throws IndexOutOfBoundsException If the slot is negative or bigger than the player's inventory
      */
-    public @Nullable Item dropItem(final int slot);
-
-    /**
-     * Makes the entity drop an item from their inventory based on the slot.
-     *
-     * @param slot    The slot to drop
-     * @param thrower The {@link java.util.UUID} to set the resulting {@link Item}'s thrower to
-     * @return The dropped item, or null if the action was unsuccessful
-     * @throws IndexOutOfBoundsException If the slot is negative or bigger than the player's inventory
-     */
-    public @Nullable Item dropItem(final int slot, final @Nullable java.util.UUID thrower);
+    public default @Nullable Item dropItem(final int slot) {
+        return this.dropItem(slot, null, false);
+    }
 
     /**
      * Makes the entity drop an item from their inventory based on the slot.
@@ -783,16 +762,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param slot The equipment slot to drop
      * @return The dropped item entity, or null if the action was unsuccessful
      */
-    public @Nullable Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot);
-
-    /**
-     * Makes the entity drop an item from their inventory based on the {@link org.bukkit.inventory.EquipmentSlot}
-     *
-     * @param slot    The equipment slot to drop
-     * @param thrower The {@link java.util.UUID} to set the resulting {@link Item}'s thrower to
-     * @return The dropped item entity, or null if the action was unsuccessful
-     */
-    public @Nullable Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot, final @Nullable java.util.UUID thrower);
+    public default @Nullable Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot) {
+        return this.dropItem(slot, null, false);
+    }
 
     /**
      * Makes the player drop an item from their inventory based on the equipment slot.

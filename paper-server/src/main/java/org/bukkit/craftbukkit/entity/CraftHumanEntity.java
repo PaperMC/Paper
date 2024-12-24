@@ -805,16 +805,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     // Paper start - Extend HumanEntity#dropItem API
     @Override
-    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull ItemStack itemStack) {
-        return this.dropItem(itemStack, null, false);
-    }
-
-    @Override
-    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull ItemStack itemStack, final @Nullable java.util.UUID thrower) {
-        return this.dropItem(itemStack, thrower, false);
-    }
-
-    @Override
     public @Nullable org.bukkit.entity.Item dropItem(final @NotNull ItemStack itemStack, final @Nullable java.util.UUID thrower, final boolean throwRandomly) {
         final int slot = this.inventory.first(itemStack);
         if (slot == -1) {
@@ -822,16 +812,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
 
         return this.dropItem(slot, thrower, throwRandomly);
-    }
-
-    @Override
-    public @Nullable org.bukkit.entity.Item dropItem(final int slot) {
-        return this.dropItem(slot, null, false);
-    }
-
-    @Override
-    public @Nullable org.bukkit.entity.Item dropItem(final int slot, final @Nullable java.util.UUID thrower) {
-        return this.dropItem(slot, thrower, false);
     }
 
     @Override
@@ -846,16 +826,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         this.inventory.setItem(slot, null);
         return itemEntity;
-    }
-
-    @Override
-    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot) {
-        return dropItem(slot, null, false);
-    }
-
-    @Override
-    public @Nullable org.bukkit.entity.Item dropItem(final @NotNull org.bukkit.inventory.EquipmentSlot slot, final @Nullable java.util.UUID thrower) {
-        return dropItem(slot, thrower, false);
     }
 
     @Override
