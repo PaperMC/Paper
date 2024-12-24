@@ -10,29 +10,7 @@ import org.jetbrains.annotations.NotNull;
  * Purpose is to allow clean, efficient copy of a chunk data to be made, and
  * then handed off for processing in another thread (e.g. map rendering)
  */
-public interface ChunkSnapshot {
-
-    /**
-     * Gets the X-coordinate of this chunk
-     *
-     * @return X-coordinate
-     */
-    int getX();
-
-    /**
-     * Gets the Z-coordinate of this chunk
-     *
-     * @return Z-coordinate
-     */
-    int getZ();
-
-    /**
-     * Gets name of the world containing this chunk
-     *
-     * @return Parent World Name
-     */
-    @NotNull
-    String getWorldName();
+public interface ChunkSnapshot extends BiomesSnapshot {
 
     /**
      * Get block type for block at corresponding coordinate in the chunk
@@ -111,17 +89,6 @@ public interface ChunkSnapshot {
     Biome getBiome(int x, int z);
 
     /**
-     * Get biome at given coordinates
-     *
-     * @param x X-coordinate (0-15)
-     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
-     * @param z Z-coordinate (0-15)
-     * @return Biome at given coordinate
-     */
-    @NotNull
-    Biome getBiome(int x, int y, int z);
-
-    /**
      * Get raw biome temperature at given coordinates
      *
      * @param x X-coordinate (0-15)
@@ -131,16 +98,6 @@ public interface ChunkSnapshot {
      */
     @Deprecated(since = "1.15")
     double getRawBiomeTemperature(int x, int z);
-
-    /**
-     * Get raw biome temperature at given coordinates
-     *
-     * @param x X-coordinate (0-15)
-     * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
-     * @param z Z-coordinate (0-15)
-     * @return temperature at given coordinate
-     */
-    double getRawBiomeTemperature(int x, int y, int z);
 
     /**
      * Get world full time when chunk snapshot was captured
@@ -164,12 +121,4 @@ public interface ChunkSnapshot {
      * @return if the block is contained within
      */
     boolean contains(@NotNull BlockData block);
-
-    /**
-     * Tests if this chunk contains the specified biome.
-     *
-     * @param biome biome to test
-     * @return if the biome is contained within
-     */
-    boolean contains(@NotNull Biome biome);
 }
