@@ -46,6 +46,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.SpawnCategory;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
@@ -955,7 +956,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public String getAsString() {
         CompoundTag tag = new CompoundTag();
-        if (!this.getHandle().saveAsPassenger(tag, false)) {
+        if (!this.getHandle().saveAsPassenger(tag, false, true, true)) {
             return null;
         }
 
@@ -988,7 +989,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     private Entity copy(net.minecraft.world.level.Level level) {
         CompoundTag compoundTag = new CompoundTag();
-        this.getHandle().saveAsPassenger(compoundTag, false);
+        this.getHandle().saveAsPassenger(compoundTag, false, true, true);
 
         return net.minecraft.world.entity.EntityType.loadEntityRecursive(compoundTag, level, EntitySpawnReason.LOAD, java.util.function.Function.identity());
     }
@@ -1224,17 +1225,21 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
     // Paper end - tracked players API
 
-    // Paper start - raw entity serialization API
     @Override
-    public boolean spawnAt(Location location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
+    public boolean spawnAt(Location location, CreatureSpawnEvent.SpawnReason reason) {
         Preconditions.checkNotNull(location, "location cannot be null");
         Preconditions.checkNotNull(reason, "reason cannot be null");
         this.entity.setLevel(((CraftWorld) location.getWorld()).getHandle());
         this.entity.setPos(location.getX(), location.getY(), location.getZ());
         this.entity.setRot(location.getYaw(), location.getPitch());
-        return !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
+        boolean spawned = !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
+        if (spawned) {
+            for (org.bukkit.entity.Entity pass : getPassengers()) {
+                pass.spawnAt(getLocation());
+            }
+        }
+        return spawned;
     }
-    // Paper end - raw entity serialization API
 
     // Paper start - entity powdered snow API
     @Override

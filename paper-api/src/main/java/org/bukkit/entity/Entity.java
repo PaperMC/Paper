@@ -14,6 +14,7 @@ import org.bukkit.World;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.command.CommandSender;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.material.Directional;
@@ -1072,11 +1073,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <p>
      * Also, this method will fire the same events as a normal entity spawn.
      *
-     * @param location The location to spawn the entity at.
-     * @return Whether the entity was successfully spawned.
+     * @param location the location to spawn the entity at
+     * @return whether the entity was successfully spawned
+     * @since 1.17.1
      */
-    public default boolean spawnAt(@NotNull Location location) {
-        return spawnAt(location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
+    default boolean spawnAt(@NotNull Location location) {
+        return spawnAt(location, CreatureSpawnEvent.SpawnReason.DEFAULT);
     }
 
     /**
@@ -1086,11 +1088,12 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * <p>
      * Also, this method will fire the same events as a normal entity spawn.
      *
-     * @param location The location to spawn the entity at.
-     * @param reason   The reason for the entity being spawned.
-     * @return Whether the entity was successfully spawned.
+     * @param location the location to spawn the entity at
+     * @param reason   the reason for the entity being spawned
+     * @return whether the entity was successfully spawned
+     * @since 1.17.1
      */
-    public boolean spawnAt(@NotNull Location location, @NotNull org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason);
+    boolean spawnAt(@NotNull Location location, @NotNull CreatureSpawnEvent.SpawnReason reason);
 
     /**
      * Check if entity is inside powdered snow.
