@@ -1,5 +1,6 @@
 package com.destroystokyo.paper.entity;
 
+import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import org.apache.commons.lang.Validate;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -97,6 +98,11 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
     @Override
     public void setCanFloat(boolean canFloat) {
         entity.getNavigation().pathFinder.nodeEvaluator.setCanFloat(canFloat);
+    }
+
+    @Override
+    public boolean canFly() {
+        return entity.getNavigation() instanceof FlyingPathNavigation;
     }
 
     public class PaperPathResult implements com.destroystokyo.paper.entity.PaperPathfinder.PathResult {

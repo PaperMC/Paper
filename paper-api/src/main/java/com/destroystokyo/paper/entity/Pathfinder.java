@@ -181,6 +181,13 @@ public interface Pathfinder {
     void setCanFloat(boolean canFloat);
 
     /**
+     * Checks if this pathfinder allows the mob to fly
+     *
+     * @return if this pathfinder allows the mob to fly
+     */
+    boolean canFly();
+
+    /**
      * Represents the result of a pathfinding calculation
      */
     interface PathResult {
