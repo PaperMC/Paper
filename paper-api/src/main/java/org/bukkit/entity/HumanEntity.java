@@ -13,6 +13,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MainHand;
+import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.FireworkMeta;
@@ -126,7 +127,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#CRAFTING}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openWorkbench(@Nullable Location location, boolean force);
 
@@ -140,7 +144,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     location, no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#ENCHANTMENT}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openEnchanting(@Nullable Location location, boolean force);
 
@@ -166,8 +173,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param trader The merchant to trade with. Cannot be null.
      * @param force whether to force the trade even if another player is trading
      * @return The newly opened inventory view, or null if it could not be
-     * opened.
+     * @deprecated This method can be replaced by using {@link MenuType#MERCHANT}
+     * in conjunction with {@link #openInventory(InventoryView)}.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openMerchant(@NotNull Villager trader, boolean force);
 
@@ -180,8 +189,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param merchant The merchant to trade with. Cannot be null.
      * @param force whether to force the trade even if another player is trading
      * @return The newly opened inventory view, or null if it could not be
-     * opened.
+     * @deprecated This method can be replaced by using {@link MenuType#MERCHANT}
+     * in conjunction with {@link #openInventory(InventoryView)}.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openMerchant(@NotNull Merchant merchant, boolean force);
 
@@ -196,7 +207,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#ANVIL}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openAnvil(@Nullable Location location, boolean force);
 
@@ -210,7 +224,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#CARTOGRAPHY_TABLE}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openCartographyTable(@Nullable Location location, boolean force);
 
@@ -224,7 +241,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#GRINDSTONE}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openGrindstone(@Nullable Location location, boolean force);
 
@@ -238,7 +258,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#LOOM}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openLoom(@Nullable Location location, boolean force);
 
@@ -252,7 +275,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#SMITHING}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openSmithingTable(@Nullable Location location, boolean force);
 
@@ -266,7 +292,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#STONECUTTER}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openStonecutter(@Nullable Location location, boolean force);
     // Paper end

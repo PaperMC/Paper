@@ -43,6 +43,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemCraftResult;
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -1565,11 +1566,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * <br>
      * {@link InventoryType#WORKBENCH} will not process crafting recipes if
      * created with this method. Use
-     * {@link Player#openWorkbench(Location, boolean)} instead.
+     * {@link MenuType#CRAFTING} instead.
      * <br>
      * {@link InventoryType#ENCHANTING} will not process {@link ItemStack}s
      * for possible enchanting results. Use
-     * {@link Player#openEnchanting(Location, boolean)} instead.
+     * {@link MenuType#ENCHANTMENT} instead.
      *
      * @param owner the holder of the inventory, or null to indicate no holder
      * @param type the type of inventory to create
@@ -1592,11 +1593,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * <br>
      * {@link InventoryType#WORKBENCH} will not process crafting recipes if
      * created with this method. Use
-     * {@link Player#openWorkbench(Location, boolean)} instead.
+     * {@link MenuType#CRAFTING} instead.
      * <br>
      * {@link InventoryType#ENCHANTING} will not process {@link ItemStack}s
      * for possible enchanting results. Use
-     * {@link Player#openEnchanting(Location, boolean)} instead.
+     * {@link MenuType#ENCHANTMENT)} instead.
      *
      * @param owner The holder of the inventory; can be null if there's no holder.
      * @param type The type of inventory to create.
@@ -1620,11 +1621,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * <br>
      * {@link InventoryType#WORKBENCH} will not process crafting recipes if
      * created with this method. Use
-     * {@link Player#openWorkbench(Location, boolean)} instead.
+     * {@link MenuType#CRAFTING} instead.
      * <br>
      * {@link InventoryType#ENCHANTING} will not process {@link ItemStack}s
      * for possible enchanting results. Use
-     * {@link Player#openEnchanting(Location, boolean)} instead.
+     * {@link MenuType#ENCHANTMENT} instead.
      *
      * @param owner The holder of the inventory; can be null if there's no holder.
      * @param type The type of inventory to create.
@@ -1691,21 +1692,12 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param title the title of the corresponding merchant inventory, displayed
      * when the merchant inventory is viewed
      * @return a new merchant
+     * @deprecated The title parameter is no-longer needed when used with
+     * {@link MenuType#MERCHANT} and {@link MenuType.Typed#builder()}.
      */
+    @Deprecated(since = "1.21.4")
     @NotNull Merchant createMerchant(net.kyori.adventure.text.@Nullable Component title);
     // Paper start
-    /**
-     * Creates an empty merchant.
-     *
-     * @param title the title of the corresponding merchant inventory, displayed
-     * when the merchant inventory is viewed
-     * @return a new merchant
-     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
-     */
-    @NotNull
-    @Deprecated // Paper
-    Merchant createMerchant(@Nullable String title);
-
     /**
      * Gets the amount of consecutive neighbor updates before skipping
      * additional ones.
@@ -1714,6 +1706,27 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * negative then the limit it's not used
      */
     int getMaxChainedNeighborUpdates();
+
+    /**
+     * Creates an empty merchant.
+     *
+     * @param title the title of the corresponding merchant inventory, displayed
+     * when the merchant inventory is viewed
+     * @return a new merchant
+     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}, The title parameter is
+     * no-longer needed when used with {@link MenuType#MERCHANT} and {@link MenuType.Typed#builder()}.
+     */
+    @NotNull
+    @Deprecated // Paper
+    Merchant createMerchant(@Nullable String title);
+
+    /**
+     * Creates an empty merchant.
+     *
+     * @return a new merchant
+     */
+    @NotNull
+    Merchant createMerchant();
 
     /**
      * Gets user-specified limit for number of monsters that can spawn in a

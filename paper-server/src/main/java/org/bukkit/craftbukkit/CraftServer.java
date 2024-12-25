@@ -258,6 +258,7 @@ import org.bukkit.scoreboard.Criteria;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.StringUtil;
 import org.bukkit.util.permissions.DefaultPermissions;
+import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -2483,6 +2484,11 @@ public final class CraftServer implements Server {
     @Deprecated // Paper
     public Merchant createMerchant(String title) {
         return new CraftMerchantCustom(title == null ? InventoryType.MERCHANT.getDefaultTitle() : title);
+    }
+
+    @Override
+    public @NotNull Merchant createMerchant() {
+        return new CraftMerchantCustom(net.kyori.adventure.text.Component.text(""));
     }
 
     @Override
