@@ -208,7 +208,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Particle
      */
-    Registry<Particle> PARTICLE_TYPE = RegistryAccess.registryAccess().getRegistry(RegistryKey.PARTICLE_TYPE); // Paper
+    Registry<Particle> PARTICLE_TYPE = registryFor(RegistryKey.PARTICLE_TYPE); // Paper
     /**
      * Server potions.
      *
@@ -234,7 +234,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see StructureType
      */
-    Registry<StructureType> STRUCTURE_TYPE = Objects.requireNonNull(RegistryAccess.registryAccess().getRegistry(RegistryKey.STRUCTURE_TYPE), "No registry present for StructureType. This is a bug."); // Paper
+    Registry<StructureType> STRUCTURE_TYPE = registryFor(RegistryKey.STRUCTURE_TYPE);
     /**
      * Sound events.
      *
@@ -346,16 +346,19 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     //<editor-fold desc="renames" defaultstate="collapsed">
     /**
      * @apiNote use {@link #MOB_EFFECT} instead
+     * @hidden
      */
     @ApiStatus.Obsolete(since = "1.21.4")
     Registry<PotionEffectType> EFFECT = MOB_EFFECT;
     /**
      * @apiNote use {@link #MOB_EFFECT} instead
+     * @hidden
      */
     @ApiStatus.Obsolete(since = "1.21.4")
     Registry<org.bukkit.potion.PotionEffectType> POTION_EFFECT_TYPE = EFFECT;
     /**
      * @apiNote use {@link #SOUND_EVENT}
+     * @hidden
      */
     @ApiStatus.Obsolete(since = "1.21.4")
     Registry<Sound> SOUNDS = registryFor(RegistryKey.SOUND_EVENT);
