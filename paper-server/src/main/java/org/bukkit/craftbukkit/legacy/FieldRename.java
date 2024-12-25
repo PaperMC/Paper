@@ -282,6 +282,7 @@ public class FieldRename {
             .change("PONDER", "PONDER_GOAT_HORN")
             .change("SING", "SING_GOAT_HORN")
             .change("SEEK", "SEEK_GOAT_HORN")
+            .change("FEEL", "FEEL_GOAT_HORN")
             .change("ADMIRE", "ADMIRE_GOAT_HORN")
             .change("CALL", "CALL_GOAT_HORN")
             .change("YEARN", "YEARN_GOAT_HORN")
