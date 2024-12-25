@@ -8,7 +8,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Represents a captured state of a ShulkerBox.
  */
-public interface ShulkerBox extends Container, LootableBlockInventory, Lidded { // Paper
+public interface ShulkerBox extends Container, LootableBlockInventory, Lidded, io.papermc.paper.block.Lidded { // Paper
 
     /**
      * Get the {@link DyeColor} corresponding to this ShulkerBox

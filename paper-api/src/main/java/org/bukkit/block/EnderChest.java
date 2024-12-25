@@ -3,7 +3,7 @@ package org.bukkit.block;
 /**
  * Represents a captured state of an ender chest.
  */
-public interface EnderChest extends Lidded, TileState {
+public interface EnderChest extends Lidded, TileState, io.papermc.paper.block.Lidded {
     // Paper start - More Chest Block API
     /**
      * Checks whether this ender chest is blocked by a block above

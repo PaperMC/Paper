@@ -9,8 +9,9 @@ import org.bukkit.World;
 import org.bukkit.block.Barrel;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
+import org.jetbrains.annotations.NotNull;
 
-public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Barrel {
+public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Barrel, io.papermc.paper.block.PaperLidded  {
 
     public CraftBarrel(World world, BarrelBlockEntity tileEntity) {
         super(world, tileEntity);
@@ -35,36 +36,6 @@ public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Bar
     }
 
     @Override
-    public void open() {
-        this.requirePlaced();
-        if (!this.getTileEntity().openersCounter.opened) {
-            BlockState blockData = this.getTileEntity().getBlockState();
-            boolean open = blockData.getValue(BarrelBlock.OPEN);
-
-            if (!open) {
-                this.getTileEntity().updateBlockState(blockData, true);
-                if (this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
-                    this.getTileEntity().playSound(blockData, SoundEvents.BARREL_OPEN);
-                }
-            }
-        }
-        this.getTileEntity().openersCounter.opened = true;
-    }
-
-    @Override
-    public void close() {
-        this.requirePlaced();
-        if (this.getTileEntity().openersCounter.opened) {
-            BlockState blockData = this.getTileEntity().getBlockState();
-            this.getTileEntity().updateBlockState(blockData, false);
-            if (this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
-                this.getTileEntity().playSound(blockData, SoundEvents.BARREL_CLOSE);
-            }
-        }
-        this.getTileEntity().openersCounter.opened = false;
-    }
-
-    @Override
     public CraftBarrel copy() {
         return new CraftBarrel(this, null);
     }
@@ -74,10 +45,54 @@ public class CraftBarrel extends CraftLootable<BarrelBlockEntity> implements Bar
         return new CraftBarrel(this, location);
     }
 
-    // Paper start - More Lidded Block API
     @Override
-    public boolean isOpen() {
-        return getTileEntity().openersCounter.opened;
+    public void startForceLiddedLidOpen() {
+        this.requirePlaced();
+        this.getTileEntity().openersCounter.startForceLiddedLidOpen(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
     }
-    // Paper end - More Lidded Block API
+
+    @Override
+    public void stopForceLiddedLidOpen() {
+        this.requirePlaced();
+        this.getTileEntity().openersCounter.stopForceLiddedLidOpen(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
+    }
+
+    @Override
+    public void startForceLiddedLidClose() {
+        this.requirePlaced();
+        this.getTileEntity().openersCounter.startForceLiddedLidClose(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
+    }
+
+    @Override
+    public void stopForceLiddedLidClose() {
+        this.requirePlaced();
+        this.getTileEntity().openersCounter.stopForceLiddedLidClose(this.getTileEntity().getLevel(), this.getTileEntity().getBlockPos(), this.getTileEntity().getBlockState());
+    }
+
+    @Override
+    public io.papermc.paper.block.@NotNull LidState getEffectiveLidState() {
+        this.requirePlaced();
+        return this.getTileEntity().openersCounter.getEffectiveLidState();
+    }
+
+    @Override
+    public io.papermc.paper.block.@NotNull LidState getTrueLidState() {
+        this.requirePlaced();
+        return this.getTileEntity().openersCounter.getTrueLidState();
+    }
+
+    @Override
+    public io.papermc.paper.block.@NotNull LidMode getLidMode() {
+        this.requirePlaced();
+        return this.getTileEntity().openersCounter.getLidMode();
+    }
+
+    @Override
+    public io.papermc.paper.block.@NotNull LidMode setLidMode(final io.papermc.paper.block.@NotNull LidMode targetLidMode) {
+        this.requirePlaced();
+        io.papermc.paper.block.LidMode newEffectiveMode = io.papermc.paper.block.PaperLidded.super.setLidMode(targetLidMode);
+        this.getTileEntity().openersCounter.setLidMode(newEffectiveMode);
+        return newEffectiveMode;
+    }
+
 }
