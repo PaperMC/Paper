@@ -2,9 +2,14 @@ package org.bukkit;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
+import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import java.util.Locale;
+import java.util.function.Consumer;
 import org.bukkit.packs.DataPack;
 import org.bukkit.util.OldEnum;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,6 +22,17 @@ import org.jetbrains.annotations.Nullable;
  * which can be accessed via {@link Registry#ART}.
  */
 public interface Art extends OldEnum<Art>, Keyed {
+
+    /**
+     * Create an inlined painting variant.
+     *
+     * @param value a consumer for the builder factory
+     * @return the created painting variant
+     */
+    @ApiStatus.Experimental
+    static @NotNull Art create(final @NotNull Consumer<RegistryBuilderFactory<Art, ? extends PaintingVariantRegistryEntry.Builder>> value) {
+        return InlinedRegistryBuilderProvider.instance().createPaintingVariant(value);
+    }
 
     Art KEBAB = getArt("kebab");
     Art AZTEC = getArt("aztec");
