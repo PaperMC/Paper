@@ -2,7 +2,6 @@ package io.papermc.paper.registry;
 
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.data.util.Conversions;
-import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import java.util.function.Function;
 import net.minecraft.resources.ResourceLocation;
 import org.bukkit.Keyed;
@@ -11,13 +10,13 @@ import org.jspecify.annotations.Nullable;
 public class PaperRegistryBuilderFactory<M, A extends Keyed, B extends PaperRegistryBuilder<M, A>> implements RegistryBuilderFactory<A, B> { // TODO remove Keyed
 
     private final Conversions conversions;
-    private final RegistryEntryMeta.Buildable<M, A, B> meta;
+    private final PaperRegistryBuilder.Filler<M, A, B> builderFiller;
     private final Function<? super ResourceLocation, ? extends @Nullable M> existingValueGetter;
     private @Nullable B builder;
 
-    public PaperRegistryBuilderFactory(final Conversions conversions, final RegistryEntryMeta.Buildable<M, A, B> meta, final Function<? super ResourceLocation, ? extends @Nullable M> existingValueGetter) {
+    public PaperRegistryBuilderFactory(final Conversions conversions, final PaperRegistryBuilder.Filler<M, A, B> builderFiller, final Function<? super ResourceLocation, ? extends @Nullable M> existingValueGetter) {
         this.conversions = conversions;
-        this.meta = meta;
+        this.builderFiller = builderFiller;
         this.existingValueGetter = existingValueGetter;
     }
 
@@ -37,7 +36,7 @@ public class PaperRegistryBuilderFactory<M, A extends Keyed, B extends PaperRegi
     @Override
     public B empty() {
         this.validate();
-        return this.builder = this.meta.builderFiller().create(this.conversions);
+        return this.builder = this.builderFiller.create(this.conversions);
     }
 
     @Override
@@ -47,6 +46,6 @@ public class PaperRegistryBuilderFactory<M, A extends Keyed, B extends PaperRegi
         if (existing == null) {
             throw new IllegalArgumentException("Key " + key + " doesn't exist");
         }
-        return this.builder = this.meta.builderFiller().fill(this.conversions, existing);
+        return this.builder = this.builderFiller.fill(this.conversions, existing);
     }
 }
