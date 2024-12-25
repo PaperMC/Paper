@@ -737,7 +737,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param slot   The slot to drop
      * @param amount The number of items to drop from this slot. Values below 1 don't drop an Item
      * @return The dropped item entity, or null if the action was unsuccessful
-     * @throws IndexOutOfBoundsException If the slot is negative or bigger than the player's inventory
+     * @throws IllegalArgumentException If the slot is negative or bigger than the player's inventory
      */
     public @Nullable Item dropItemRandomly(int slot, int amount);
 
