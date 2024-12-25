@@ -205,14 +205,16 @@ public class AnnotationTest {
 
     // Paper start - skip class if it's @NullMarked
     private static boolean isClassNullMarked(@NotNull ClassNode clazz, @NotNull Map<String, ClassNode> allClasses) {
+        if(isClassNullMarked0(clazz)) {
+            return true;
+        }
         if (clazz.nestHostClass != null) {
             final ClassNode nestHostNode = allClasses.get(clazz.nestHostClass);
             if (nestHostNode != null) {
-                return isClassNullMarked0(nestHostNode);
+                return isClassNullMarked(nestHostNode, allClasses);
             }
         }
-
-        return isClassNullMarked0(clazz);
+        return false;
     }
 
     private static boolean isClassNullMarked0(@NotNull ClassNode clazz) {
