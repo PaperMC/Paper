@@ -47,7 +47,7 @@ public class CraftEnchantmentView extends CraftInventoryView<EnchantmentMenu, En
 
     @Override
     public void setOffers(@NotNull final EnchantmentOffer[] offers) {
-        Preconditions.checkArgument(offers.length != 3, "There must be 3 offers given");
+        Preconditions.checkArgument(offers.length == 3, "There must be 3 offers given");
         IdMap<Holder<Enchantment>> registry = CraftRegistry.getMinecraftRegistry().lookupOrThrow(Registries.ENCHANTMENT).asHolderIdMap();
         for (int i = 0; i < offers.length; i++) {
             final EnchantmentOffer offer = offers[i];
