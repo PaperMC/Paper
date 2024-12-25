@@ -1050,9 +1050,16 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> ITEMS_REPAIRS_WOLF_ARMOR = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("repairs_wolf_armor"), Material.class);
     /**
-     * Vanilla item tag representing all furnace materials.
+     * Vanilla item tag representing all stone based materials for crafting.
      */
-    Tag<Material> ITEMS_FURNACE_MATERIALS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("furnace_materials"), Material.class);
+    Tag<Material> ITEMS_STONE_CRAFTING_MATERIALS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("stone_crafting_materials"), Material.class);
+    /**
+     * Vanilla item tag representing all furnace materials.
+     *
+     * @deprecated partially replaced by {@link #ITEMS_STONE_CRAFTING_MATERIALS}
+     */
+    @Deprecated(since = "1.16.2", forRemoval = true)
+    Tag<Material> ITEMS_FURNACE_MATERIALS = ITEMS_STONE_CRAFTING_MATERIALS;
     /**
      * Vanilla item tag representing all compasses.
      */
