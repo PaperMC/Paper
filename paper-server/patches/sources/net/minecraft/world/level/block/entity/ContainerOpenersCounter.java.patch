@@ -8,7 +8,7 @@
  
      protected abstract void onOpen(Level level, BlockPos pos, BlockState state);
  
-@@ -20,10 +_,94 @@
+@@ -20,10 +_,109 @@
  
      protected abstract void openerCountChanged(Level level, BlockPos pos, BlockState state, int count, int openCount);
  
@@ -33,13 +33,17 @@
 -    public void incrementOpeners(Player player, Level level, BlockPos pos, BlockState state) {
 +    // Paper start - add Improved Lidded API
 +    private io.papermc.paper.block.LidMode apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++    private final java.util.Set<Player> cancelledPlayers = new java.util.HashSet<>(); // Paper - store players whose opening was cancelled by PlayerLiddedOpenEvent
++
 +    public void startForceLiddedLidOpen(Level level, BlockPos pos, BlockState state) {
 +        incrementOpeners(null, level, pos, state);
 +    }
++
 +    public void stopForceLiddedLidOpen(Level level, BlockPos pos, BlockState state) {
 +        decrementOpeners(null, level, pos, state);
 +        apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
 +    }
++
 +    public void startForceLiddedLidClose(Level level, BlockPos pos, BlockState state) {
 +        if (this.getTrueLidState() == io.papermc.paper.block.LidState.OPEN) {
 +            this.onClose(level, pos, state);
@@ -47,6 +51,7 @@
 +        }
 +        this.openerCountChanged(level, pos, state, this.openCount, 0);
 +    }
++
 +    public void stopForceLiddedLidClose(Level level, BlockPos pos, BlockState state) {
 +        if (this.getTrueLidState() == io.papermc.paper.block.LidState.OPEN) {
 +            this.onOpen(level, pos, state);
@@ -56,12 +61,15 @@
 +        this.openerCountChanged(level, pos, state, 0, this.openCount);
 +        apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
 +    }
++
 +    public io.papermc.paper.block.LidMode getLidMode() {
 +        return apiLidMode;
 +    }
++
 +    public void setLidMode(final io.papermc.paper.block.LidMode targetLidMode) {
 +        apiLidMode = targetLidMode;
 +    }
++
 +    public io.papermc.paper.block.LidState getEffectiveLidState() {
 +        return switch (apiLidMode) {
 +            case OPEN_UNTIL_VIEWED, FORCED_OPEN -> io.papermc.paper.block.LidState.OPEN;
@@ -69,6 +77,7 @@
 +            default -> getTrueLidState();
 +        };
 +    }
++
 +    public io.papermc.paper.block.LidState getTrueLidState() {
 +        boolean virtualViewerPresent = (apiLidMode == io.papermc.paper.block.LidMode.FORCED_OPEN || apiLidMode == io.papermc.paper.block.LidMode.OPEN_UNTIL_VIEWED);
 +        int trueOpenCount = this.openCount - (virtualViewerPresent ? 1 : 0);
@@ -80,6 +89,12 @@
 +    // Paper end - add Improved Lidded API
 +
 +    public void incrementOpeners(@javax.annotation.Nullable Player player, Level level, BlockPos pos, BlockState state) {  // Paper - make player nullable for New Lidded API
++        // Paper start - Call PlayerLiddedOpenEvent
++        if (player != null && !org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLiddedOpenEvent(player, level, pos)) {
++            cancelledPlayers.add(player);
++            return;
++        }
++        // Paper end - Call PlayerLiddedOpenEvent
 +        // Paper start - add Improved Lidded API
 +        if (this.openCount == 0 && apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) {
 +            apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
@@ -104,7 +119,7 @@
          if (i == 0) {
              this.onOpen(level, pos, state);
              level.gameEvent(player, GameEvent.CONTAINER_OPEN, pos);
-@@ -31,11 +_,43 @@
+@@ -31,11 +_,44 @@
          }
  
          this.openerCountChanged(level, pos, state, i, this.openCount);
@@ -122,6 +137,7 @@
  
 -    public void decrementOpeners(Player player, Level level, BlockPos pos, BlockState state) {
 +    public void decrementOpeners(@javax.annotation.Nullable Player player, Level level, BlockPos pos, BlockState state) {  // Paper - make player nullable for New Lidded API
++        if (player != null && cancelledPlayers.remove(player)) return; // Paper - do not decrement if player's opening was cancelled by PlayerLiddedOpenEvent
 +        int oldPower = Math.max(0, Math.min(15, this.openCount)); // CraftBukkit - Get power before new viewer is added
 +        if (this.openCount == 0) return; // Paper - Prevent ContainerOpenersCounter openCount from going negative
          int i = this.openCount--;
@@ -149,7 +165,17 @@
          if (this.openCount == 0) {
              this.onClose(level, pos, state);
              level.gameEvent(player, GameEvent.CONTAINER_CLOSE, pos);
-@@ -59,8 +_,14 @@
+@@ -53,14 +_,24 @@
+ 
+     public void recheckOpeners(Level level, BlockPos pos, BlockState state) {
+         List<Player> playersWithContainerOpen = this.getPlayersWithContainerOpen(level, pos);
++        // Paper start - maintain cancelledPlayers, list of players with the chest open, but without the lid.
++        cancelledPlayers.removeIf(java.util.function.Predicate.not(playersWithContainerOpen::contains));
++        playersWithContainerOpen.removeIf(cancelledPlayers::contains);
++        // Paper end - maintain cancelledPlayers, list of players with the chest open, but without the lid.
+         this.maxInteractionRange = 0.0;
+ 
+         for (Player player : playersWithContainerOpen) {
              this.maxInteractionRange = Math.max(player.blockInteractionRange(), this.maxInteractionRange);
          }
  
