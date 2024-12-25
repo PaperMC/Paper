@@ -2,6 +2,11 @@ package org.bukkit.craftbukkit.scheduler;
 
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -45,6 +50,11 @@ import org.bukkit.scheduler.BukkitWorker;
  * </ul>
  */
 public class CraftScheduler implements BukkitScheduler {
+
+    /**
+     * Number of milliseconds per one tick
+     */
+    public static final int MILLISECONDS_PER_TICK = 50;
 
     /**
      * The start ID for the counter.
@@ -169,13 +179,34 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     @Override
+    public int scheduleSyncDelayedTask(final Plugin plugin, final Runnable task, final Duration delay) {
+        CraftScheduler.validate(delay);
+        return this.scheduleSyncDelayedTask(plugin, task, delay.toMillis() / MILLISECONDS_PER_TICK);
+    }
+
+    @Override
     public BukkitTask runTaskLater(Plugin plugin, Runnable runnable, long delay) {
         return this.runTaskTimer(plugin, runnable, delay, CraftTask.NO_REPEATING);
     }
 
     @Override
+    public BukkitTask runTaskLater(Plugin plugin, Runnable runnable, Duration delay) throws IllegalArgumentException {
+        return this.runTaskLater(plugin, (Object) runnable, delay);
+    }
+
+    @Override
     public void runTaskLater(Plugin plugin, Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException {
         this.runTaskTimer(plugin, task, delay, CraftTask.NO_REPEATING);
+    }
+
+    @Override
+    public void runTaskLater(Plugin plugin, Consumer<? super BukkitTask> task, Duration delay) throws IllegalArgumentException {
+        this.runTaskLater(plugin, (Object) task, delay);
+    }
+
+    public BukkitTask runTaskLater(Plugin plugin, Object runnable, Duration delay) throws IllegalArgumentException {
+        CraftScheduler.validate(delay);
+        return this.runTaskTimer(plugin, runnable, delay.toMillis() / MILLISECONDS_PER_TICK, CraftTask.NO_REPEATING);
     }
 
     @Deprecated
@@ -190,8 +221,23 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     @Override
+    public BukkitTask runTaskLaterAsynchronously(Plugin plugin, Runnable runnable, Duration delay) throws IllegalArgumentException {
+        return this.runTaskLaterAsynchronously(plugin, (Object) runnable, delay);
+    }
+
+    @Override
     public void runTaskLaterAsynchronously(Plugin plugin, Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException {
         this.runTaskTimerAsynchronously(plugin, task, delay, CraftTask.NO_REPEATING);
+    }
+
+    @Override
+    public void runTaskLaterAsynchronously(Plugin plugin, Consumer<? super BukkitTask> task, Duration delay) throws IllegalArgumentException {
+        this.runTaskLaterAsynchronously(plugin, (Object) task, delay);
+    }
+
+    public BukkitTask runTaskLaterAsynchronously(Plugin plugin, Object runnable, Duration delay) throws IllegalArgumentException {
+        CraftScheduler.validate(delay);
+        return this.runTaskTimerAsynchronously(plugin, runnable, delay.toMillis() / MILLISECONDS_PER_TICK, CraftTask.NO_REPEATING);
     }
 
     @Override
@@ -200,8 +246,18 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     @Override
+    public void runTaskTimerAsynchronously(Plugin plugin, Consumer<? super BukkitTask> task, Duration delay, Duration period) throws IllegalArgumentException {
+        this.runTaskTimerAsynchronously(plugin, (Object) task, delay, period);
+    }
+
+    @Override
     public int scheduleSyncRepeatingTask(final Plugin plugin, final Runnable runnable, long delay, long period) {
         return this.runTaskTimer(plugin, runnable, delay, period).getTaskId();
+    }
+
+    @Override
+    public int scheduleSyncRepeatingTask(final Plugin plugin, final Runnable runnable, Duration delay, Duration period) {
+        return this.scheduleSyncRepeatingTask(plugin, runnable, delay.toMillis() / MILLISECONDS_PER_TICK, period.toMillis() / MILLISECONDS_PER_TICK);
     }
 
     @Override
@@ -210,8 +266,18 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     @Override
+    public BukkitTask runTaskTimer(Plugin plugin, Runnable runnable, Duration delay, Duration period) {
+        return this.runTaskTimer(plugin, runnable, delay.toMillis() / MILLISECONDS_PER_TICK, period.toMillis() / MILLISECONDS_PER_TICK);
+    }
+
+    @Override
     public void runTaskTimer(Plugin plugin, Consumer<? super BukkitTask> task, long delay, long period) throws IllegalArgumentException {
         this.runTaskTimer(plugin, (Object) task, delay, period);
+    }
+
+    @Override
+    public void runTaskTimer(Plugin plugin, Consumer<? super BukkitTask> task, Duration delay, Duration period) throws IllegalArgumentException {
+        this.runTaskTimer(plugin, task, delay.toMillis() / MILLISECONDS_PER_TICK, period.toMillis() / MILLISECONDS_PER_TICK);
     }
 
     public BukkitTask runTaskTimer(Plugin plugin, Object runnable, long delay, long period) {
@@ -238,6 +304,16 @@ public class CraftScheduler implements BukkitScheduler {
         return this.runTaskTimerAsynchronously(plugin, (Object) runnable, delay, period);
     }
 
+    @Override
+    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, Runnable runnable, Duration delay, Duration period) {
+        return this.runTaskTimerAsynchronously(plugin, (Object) runnable, delay, period);
+    }
+
+    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, Object runnable, Duration delay, Duration period) {
+        CraftScheduler.validate(plugin, runnable);
+        return this.runTaskTimerAsynchronously(plugin, runnable, delay.toMillis() / MILLISECONDS_PER_TICK, period.toMillis() / MILLISECONDS_PER_TICK);
+    }
+
     public BukkitTask runTaskTimerAsynchronously(Plugin plugin, Object runnable, long delay, long period) {
         CraftScheduler.validate(plugin, runnable);
         if (delay < 0L) {
@@ -249,6 +325,75 @@ public class CraftScheduler implements BukkitScheduler {
             period = CraftTask.NO_REPEATING;
         }
         return this.handle(new CraftAsyncTask(this.asyncScheduler.runners, plugin, runnable, this.nextId(), period), delay); // Paper
+    }
+
+    @Override
+    public BukkitTask runTaskAtTime(Plugin plugin, Runnable runnable, LocalDateTime localDateTime) throws IllegalArgumentException {
+        return this.runTaskAtTime(plugin, (Object) runnable, localDateTime);
+    }
+
+    @Override
+    public void runTaskAtTime(Plugin plugin, Consumer<? super BukkitTask> task, LocalDateTime localDateTime) throws IllegalArgumentException {
+        this.runTaskAtTime(plugin, (Object) task, localDateTime);
+    }
+
+    public BukkitTask runTaskAtTime(Plugin plugin, Object runnable, LocalDateTime localDateTime) throws IllegalArgumentException {
+        ZoneId zone = ZoneId.systemDefault();
+        ZonedDateTime now = ZonedDateTime.now(zone);
+        ZonedDateTime scheduleTime = localDateTime.atZone(zone);
+
+        if (scheduleTime.isBefore(now)) {
+            throw new IllegalArgumentException("Scheduled datetime must be in the future");
+        }
+
+        long delayTicks = Duration.between(now.toInstant(), scheduleTime.toInstant()).toMillis() / MILLISECONDS_PER_TICK;
+        return this.runTaskTimer(plugin, runnable, delayTicks, CraftTask.NO_REPEATING);
+    }
+
+    @Override
+    public BukkitTask runTaskAtTimeAsynchronously(Plugin plugin, Runnable runnable, LocalDateTime localDateTime) throws IllegalArgumentException {
+        return this.runTaskAtTimeAsynchronously(plugin, (Object) runnable, localDateTime);
+    }
+
+    @Override
+    public void runTaskAtTimeAsynchronously(Plugin plugin, Consumer<? super BukkitTask> task, LocalDateTime localDateTime) throws IllegalArgumentException {
+        this.runTaskAtTimeAsynchronously(plugin, (Object) task, localDateTime);
+    }
+
+    public BukkitTask runTaskAtTimeAsynchronously(Plugin plugin, Object runnable, LocalDateTime localDateTime) throws IllegalArgumentException {
+        ZoneId zone = ZoneId.systemDefault();
+        ZonedDateTime now = ZonedDateTime.now(zone);
+        ZonedDateTime scheduleTime = localDateTime.atZone(zone);
+
+        if (scheduleTime.isBefore(now)) {
+            throw new IllegalArgumentException("Scheduled datetime must be in the future");
+        }
+
+        long delayTicks = Duration.between(now.toInstant(), scheduleTime.toInstant()).toMillis() / MILLISECONDS_PER_TICK;
+        return this.runTaskTimerAsynchronously(plugin, runnable, delayTicks, CraftTask.NO_REPEATING);
+    }
+
+    @Override
+    public BukkitTask runRepeatedTaskAtTime(Plugin plugin, Runnable runnable, LocalTime localTime) throws IllegalArgumentException {
+        return this.runRepeatedTaskAtTime(plugin, (Object) runnable, localTime);
+    }
+
+    @Override
+    public void runRepeatedTaskAtTime(Plugin plugin, Consumer<? super BukkitTask> task, LocalTime localTime) throws IllegalArgumentException {
+        this.runRepeatedTaskAtTime(plugin, (Object) task, localTime);
+    }
+
+    public BukkitTask runRepeatedTaskAtTime(Plugin plugin, Object runnable, LocalTime localTime) throws IllegalArgumentException {
+        CraftScheduler.validate(plugin, runnable);
+        Preconditions.checkArgument(localTime != null, "LocalTime cannot be null");
+
+        CraftSyncDailyTask task = new CraftSyncDailyTask(plugin, runnable, nextId(), localTime);
+
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+        ZonedDateTime firstRun = CraftSyncDailyTask.calculateNextRun(localTime, ZoneId.systemDefault());
+        long initialDelay = Math.max(0, Duration.between(now, firstRun).toMillis() / MILLISECONDS_PER_TICK);
+
+        return handle(task, initialDelay);
     }
 
     @Override
@@ -531,6 +676,15 @@ public class CraftScheduler implements BukkitScheduler {
         if (!plugin.isEnabled()) {
             throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
         }
+    }
+
+    private static void validate(final Duration delay) {
+        Preconditions.checkArgument(delay != null, "Delay duration cannot be null");
+    }
+
+    private static void validate(Duration delay, Duration period) {
+        Preconditions.checkArgument(delay != null, "Delay duration cannot be null");
+        Preconditions.checkArgument(period != null, "Period duration cannot be null");
     }
 
     private int nextId() {
