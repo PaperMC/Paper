@@ -46,12 +46,13 @@
              this.openCount = type;
              if (type == 0) {
                  this.animationStatus = ShulkerBoxBlockEntity.AnimationStatus.CLOSING;
-@@ -159,6 +_,71 @@
+@@ -159,6 +_,72 @@
          level.updateNeighborsAt(pos, state.getBlock());
      }
  
 +    // Paper start - add Improved Lidded API
 +    private io.papermc.paper.block.LidMode apiLidMode = io.papermc.paper.block.LidMode.DEFAULT;
++    private final java.util.Set<Player> cancelledPlayers = new java.util.HashSet<>(); // Paper - store players whose opening was cancelled by PlayerLiddedOpenEvent
 +
 +    public void startForceLiddedLidOpen() {
 +        this.openCount++;
@@ -118,10 +119,16 @@
      @Override
      public void startOpen(Player player) {
          if (!this.remove && !player.isSpectator()) {
-@@ -166,13 +_,36 @@
+@@ -166,20 +_,63 @@
                  this.openCount = 0;
              }
  
++            // Paper start - Call PlayerLiddedOpenEvent
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerLiddedOpenEvent(player, this.level, this.worldPosition)) {
++                cancelledPlayers.add(player);
++                return;
++            }
++            // Paper end - Call PlayerLiddedOpenEvent
 +            // Paper start - add Improved Lidded API
 +            if (this.openCount == 0) {
 +                if (apiLidMode == io.papermc.paper.block.LidMode.CLOSED_UNTIL_NOT_VIEWED) {
@@ -155,9 +162,10 @@
          }
      }
  
-@@ -180,6 +_,19 @@
+     @Override
      public void stopOpen(Player player) {
          if (!this.remove && !player.isSpectator()) {
++            if (cancelledPlayers.remove(player)) return; // Paper - do not decrement if player's opening was cancelled by PlayerLiddedOpenEvent
              this.openCount--;
 +
 +            // Paper start - add Improved Lidded API

@@ -2271,4 +2271,14 @@ public class CraftEventFactory {
         return event;
     }
     // Paper end - add EntityFertilizeEggEvent
+
+    public static boolean callPlayerLiddedOpenEvent(net.minecraft.world.entity.player.Player who, final Level world, final BlockPos pos) {
+        Player player = (Player) who.getBukkitEntity();
+        Block block = CraftBlock.at(world, pos);
+        io.papermc.paper.block.PaperLidded blockState = (io.papermc.paper.block.PaperLidded) CraftBlockStates.getBlockState(block);
+
+        io.papermc.paper.event.player.PlayerLiddedOpenEvent event = new io.papermc.paper.event.player.PlayerLiddedOpenEvent(player, blockState, block);
+
+        return event.callEvent();
+    }
 }
