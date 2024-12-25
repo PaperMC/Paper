@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -708,6 +709,17 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     public net.kyori.adventure.text.@NotNull Component displayName() {
         return Bukkit.getServer().getItemFactory().displayName(this);
+    }
+
+    /**
+     * Gets the effective name of this item stack shown to player in inventory.
+     * It takes into account the display name (with italics) from the item meta,
+     * the potion effect, translatable name, rarity etc.
+     *
+     * @return the effective name of this item stack
+     */
+    public @NotNull Component effectiveName() {
+        return this.craftDelegate.effectiveName();
     }
 
     /**

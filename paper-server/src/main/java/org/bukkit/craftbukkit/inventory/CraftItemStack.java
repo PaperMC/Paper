@@ -5,6 +5,8 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import io.papermc.paper.adventure.PaperAdventure;
+import net.kyori.adventure.text.Component;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.core.Holder;
@@ -25,6 +27,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
+import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(ItemStack.class)
 public final class CraftItemStack extends ItemStack {
@@ -465,6 +468,11 @@ public final class CraftItemStack extends ItemStack {
         // Paper - this is no longer needed
 
         return true;
+    }
+
+    @Override
+    public @NotNull Component effectiveName() {
+        return this.handle == null ? Component.empty() : PaperAdventure.asAdventure(this.handle.getStyledHoverName());
     }
 
     @Override
