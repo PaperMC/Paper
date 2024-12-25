@@ -5,9 +5,9 @@ import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
+import io.papermc.paper.util.DataSanitizationUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.minecraft.Util;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
@@ -21,8 +21,8 @@ import org.spongepowered.configurate.objectmapping.meta.Comment;
 import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 import org.spongepowered.configurate.objectmapping.meta.Required;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
-import org.spongepowered.configurate.serialize.SerializationException;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -373,54 +373,52 @@ public class GlobalConfiguration extends ConfigurationPart {
             public Items items = new Items();
 
             public class Items extends ConfigurationPart {
-                public static Set<DataComponentType<?>> OVERRIDEN_TYPES = new HashSet<>();
+                public static Set<DataComponentType<?>> BASE_OVERRIDERS = Set.of(
+                    DataComponents.MAX_STACK_SIZE,
+                    DataComponents.MAX_DAMAGE,
+                    DataComponents.DAMAGE,
+                    //DataComponents.UNBREAKABLE, - we cant really do anything about tihs
+                    DataComponents.CUSTOM_NAME,
+                    DataComponents.ITEM_NAME,
+                    DataComponents.LORE,
+                    DataComponents.RARITY,
+                    DataComponents.ENCHANTMENTS,
+                    DataComponents.ATTRIBUTE_MODIFIERS,
+                    DataComponents.CUSTOM_DATA,
+                    DataComponents.WRITABLE_BOOK_CONTENT,
+                    DataComponents.WRITTEN_BOOK_CONTENT,
+                    DataComponents.MAP_ID,
+                    DataComponents.LODESTONE_TRACKER
+                );
 
                 public boolean enableItemObfuscation = false;
                 public AssetObfuscationConfiguration allModels = new AssetObfuscationConfiguration(true,
-                    Set.of(
-                        DataComponents.MAX_STACK_SIZE,
-                        DataComponents.MAX_DAMAGE,
-                        DataComponents.DAMAGE,
-                        DataComponents.UNBREAKABLE,
-                        DataComponents.CUSTOM_NAME,
-                        DataComponents.ITEM_NAME,
-                        DataComponents.LORE,
-                        DataComponents.RARITY,
-                        DataComponents.ENCHANTMENTS,
-                        DataComponents.ATTRIBUTE_MODIFIERS,
-                        DataComponents.CUSTOM_DATA,
-                        DataComponents.WRITABLE_BOOK_CONTENT,
-                        DataComponents.WRITTEN_BOOK_CONTENT,
-                        DataComponents.MAP_ID,
-                        DataComponents.MAP_DECORATIONS,
-                        DataComponents.MAP_POST_PROCESSING,
-                        DataComponents.LODESTONE_TRACKER
+                    Set.of(DataComponents.LODESTONE_TRACKER),
+                    Set.of()
+                );
+
+                public Map<String, AssetObfuscationConfiguration> modelOverrides = Map.of(
+                    net.minecraft.world.item.Items.ELYTRA.components().get(DataComponents.ITEM_MODEL).toString(), new AssetObfuscationConfiguration(true,
+                        Set.of(DataComponents.DAMAGE),
+                        Set.of()
                     )
                 );
-                public Map<String, AssetObfuscationConfiguration> modelOverrides = Map.of(
-                    net.minecraft.world.item.Items.ELYTRA.components().get(DataComponents.ITEM_MODEL).toString(), new AssetObfuscationConfiguration(
-                        true, Util.make(new HashSet<>(), (obj) -> {
-                            obj.addAll(allModels.sanitizedComponents());
-                            obj.remove(DataComponents.DAMAGE); // don't sanitize damage for elytra
-                        }
-                    )
-                ));
-
-                public AssetObfuscationConfiguration getAssetObfuscation(ItemStack resourceLocation) {
-                    return this.modelOverrides.getOrDefault(resourceLocation.get(DataComponents.ITEM_MODEL).toString(), this.allModels); // todo make optimized resourcelocation lookup
-                }
 
                 @ConfigSerializable
-                public record AssetObfuscationConfiguration(boolean sanitizeCount, Set<DataComponentType<?>> sanitizedComponents) {
+                public record AssetObfuscationConfiguration(@Required boolean sanitizeCount, Set<DataComponentType<?>> dontObfuscate, Set<DataComponentType<?>> alsoObfuscate) {
+                    public AssetObfuscationConfiguration(final boolean sanitizeCount, final @Nullable Set<DataComponentType<?>> dontObfuscate, final @Nullable Set<DataComponentType<?>> alsoObfuscate) {
+                        this.sanitizeCount = sanitizeCount;
+                        this.dontObfuscate = Objects.requireNonNullElse(dontObfuscate, Set.of());
+                        this.alsoObfuscate = Objects.requireNonNullElse(alsoObfuscate, Set.of());
+                    }
+
                 }
 
                 @PostProcess
                 public void computeOverridenTypes() {
-                    OVERRIDEN_TYPES.addAll(this.allModels.sanitizedComponents);
-                    for (AssetObfuscationConfiguration configuration : this.modelOverrides.values()) {
-                        OVERRIDEN_TYPES.addAll(configuration.sanitizedComponents);
-                    }
+                    DataSanitizationUtil.compute(this);
                 }
+
             }
 
         }
