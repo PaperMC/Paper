@@ -202,7 +202,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see PotionEffectType
      */
-    @ApiStatus.Obsolete(since = "1.21.4")
     Registry<PotionEffectType> MOB_EFFECT = registryFor(RegistryKey.MOB_EFFECT);
     /**
      * Server particles.
