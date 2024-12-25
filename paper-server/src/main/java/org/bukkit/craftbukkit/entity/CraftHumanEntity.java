@@ -839,7 +839,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
 
         final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(originalItemStack);
-        final net.minecraft.world.item.ItemStack dropContent = nmsItemStack.split(originalItemStack.getAmount());
+        final net.minecraft.world.item.ItemStack dropContent = nmsItemStack.split(amount);
 
         final ItemEntity droppedEntity = this.getHandle().drop(dropContent, throwRandomly, true);
         if (droppedEntity == null) {
