@@ -9,6 +9,7 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.registry.tag.TagKey;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
@@ -490,7 +491,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @throws UnsupportedOperationException if this registry doesn't have or support tags
      */
     @ApiStatus.Experimental
-    Stream<Tag<T>> getTags();
+    Collection<Tag<T>> getTags();
     // Paper end - RegistrySet API
 
     /**
@@ -598,7 +599,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
 
         @Override
-        public Stream<Tag<A>> getTags() {
+        public Collection<Tag<A>> getTags() {
             throw new UnsupportedOperationException("This is not a real registry and therefore cannot support tags");
         }
     }
