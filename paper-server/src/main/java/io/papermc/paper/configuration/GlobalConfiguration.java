@@ -377,7 +377,7 @@ public class GlobalConfiguration extends ConfigurationPart {
                     DataComponents.MAX_STACK_SIZE,
                     DataComponents.MAX_DAMAGE,
                     DataComponents.DAMAGE,
-                    //DataComponents.UNBREAKABLE, - we cant really do anything about tihs
+                    //DataComponents.UNBREAKABLE, - we cant really do anything about this
                     DataComponents.CUSTOM_NAME,
                     DataComponents.ITEM_NAME,
                     DataComponents.LORE,
@@ -388,7 +388,8 @@ public class GlobalConfiguration extends ConfigurationPart {
                     DataComponents.WRITABLE_BOOK_CONTENT,
                     DataComponents.WRITTEN_BOOK_CONTENT,
                     DataComponents.MAP_ID,
-                    DataComponents.LODESTONE_TRACKER
+                    DataComponents.LODESTONE_TRACKER,
+                    DataComponents.POTION_CONTENTS
                 );
 
                 public boolean enableItemObfuscation = false;
