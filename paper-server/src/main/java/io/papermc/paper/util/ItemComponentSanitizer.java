@@ -62,9 +62,9 @@ final class ItemComponentSanitizer {
      *
      * Any components not present in this map, the prototype value will be sent.
      */
-    public static final Map<DataComponentType<?>, UnaryOperator<?>> SANITIZATION_OVERRIDES = Util.make(ImmutableMap.<DataComponentType<?>, UnaryOperator<?>>builder(), (map) -> {
+    public static final Map<DataComponentType<?>, OverrideConfig<?>> SANITIZATION_OVERRIDES = Util.make(ImmutableMap.<DataComponentType<?>, OverrideConfig<?>>builder(), (map) -> {
             put(map, DataComponents.LODESTONE_TRACKER, empty(new LodestoneTracker(Optional.empty(), false)));
-            put(map, DataComponents.ENCHANTMENTS, empty(dummyEnchantments()));
+            put(map, DataComponents.ENCHANTMENTS, empty(dummyEnchantments()), true); // ALWAYS OVERRIDE - patched is different
             put(map, DataComponents.MAX_DAMAGE, empty(1));
             put(map, DataComponents.DAMAGE, empty(0));
             put(map, DataComponents.CUSTOM_NAME, empty(Component.empty()));
@@ -91,8 +91,15 @@ final class ItemComponentSanitizer {
         }
     ).build();
 
+    private record OverrideConfig<T>(UnaryOperator<T> provider, boolean alwaysOverride) {
+    }
+
     private static <T> void put(ImmutableMap.Builder map, DataComponentType<T> type, UnaryOperator<T> object) {
-        map.put(type, object);
+        put(map, type, object, false);
+    }
+
+    private static <T> void put(ImmutableMap.Builder map, DataComponentType<T> type, UnaryOperator<T> object, boolean alwaysOverride) {
+        map.put(type, new OverrideConfig<>(object, alwaysOverride));
     }
 
     private static <T> UnaryOperator<T> empty(T object) {
@@ -109,7 +116,7 @@ final class ItemComponentSanitizer {
         // Now check the obfuscation, where we lookup if the type is overriden in any of the configurations, if so, wrap the codec
         GlobalConfiguration.Anticheat.Obfuscation.Items obfuscation = GlobalConfiguration.get().anticheat.obfuscation.items;
         if (obfuscation.enableItemObfuscation && DataSanitizationUtil.OVERRIDE_TYPES.contains(componentType)) {
-            return codec(vanillaCodec, new DefaultDataComponentSanitizer<>(componentType, (UnaryOperator) SANITIZATION_OVERRIDES.get(componentType)));
+            return codec(vanillaCodec, new DefaultDataComponentSanitizer<>(componentType, (OverrideConfig) SANITIZATION_OVERRIDES.get(componentType)));
         }
 
         return vanillaCodec;
@@ -192,7 +199,7 @@ final class ItemComponentSanitizer {
 
     // Serializer that will override the type depending on the asset of the item provided
     private record DefaultDataComponentSanitizer<A>(DataComponentType<?> type,
-                                                    @Nullable UnaryOperator<A> override) implements UnaryOperator<A> {
+                                                    @Nullable OverrideConfig<A> override) implements UnaryOperator<A> {
 
         @Override
         public A apply(final A oldvalue) {
@@ -202,9 +209,18 @@ final class ItemComponentSanitizer {
             if (!DataSanitizationUtil.getAssetObfuscation(targetItemstack).sanitize().contains(this.type)) {
                 return oldvalue;
             }
+            // Is we need to force use override, do that
+            if (this.override != null && this.override.alwaysOverride) {
+                return this.override.provider.apply(oldvalue);
+            }
 
-            // We don't need to check if its overriden because we KNOW it is if we are serializing it over to the client.
-            return this.override == null ? (A) scope.itemStack().getPrototype().getOrDefault(this.type, oldvalue) : this.override.apply(oldvalue);
+            // If we can use the prototype, lets try to do that whenever possible
+            A value = (A) scope.itemStack().getPrototype().get(this.type);
+            if (value != null) {
+                return value;
+            } else {
+                return this.override == null ? oldvalue : this.override.provider.apply(oldvalue);
+            }
         }
     }
 
