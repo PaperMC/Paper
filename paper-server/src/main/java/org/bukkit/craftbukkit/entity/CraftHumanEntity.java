@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -808,9 +807,8 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public @Nullable Item dropItem(final int slot, final int amount) {
-        // Make sure the slot is in bounds
         if (slot < 0 || slot >= this.inventory.getSize()) {
-            throw new IndexOutOfBoundsException("Slot " + slot + " out of range for inventory of size " + this.inventory.getSize());
+            throw new IllegalArgumentException("Slot " + slot + " is not a valid inventory slot.");
         }
 
         return dropItemRaw(this.inventory.getItem(slot), amount, false);
@@ -823,9 +821,8 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public @Nullable Item dropItemRandomly(final int slot, final int amount) {
-        // Make sure the slot is in bounds
         if (slot < 0 || slot >= this.inventory.getSize()) {
-            throw new IndexOutOfBoundsException("Slot " + slot + " out of range for inventory of size " + this.inventory.getSize());
+            throw new IllegalArgumentException("Slot " + slot + " is not a valid inventory slot.");
         }
 
         return dropItemRaw(this.inventory.getItem(slot), amount, true);
@@ -841,17 +838,15 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             return null;
         }
 
-        final ItemStack clonedItemStack = originalItemStack.clone();
-        final int droppedAmount = Math.min(clonedItemStack.getAmount(), amount);
-        clonedItemStack.setAmount(droppedAmount);
+        final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(originalItemStack);
+        final net.minecraft.world.item.ItemStack dropContent = nmsItemStack.split(Math.min(originalItemStack.getAmount(), amount));
 
-        final ItemEntity droppedEntity = this.getHandle().drop(CraftItemStack.asNMSCopy(clonedItemStack), throwRandomly, true);
+        final ItemEntity droppedEntity = this.getHandle().drop(dropContent, throwRandomly, true);
         if (droppedEntity == null) {
             return null;
         }
 
-        originalItemStack.setAmount(originalItemStack.getAmount() - droppedAmount);
-        return new CraftItem(this.server, droppedEntity);
+        return (Item) droppedEntity.getBukkitEntity();
     }
 
     @Override
