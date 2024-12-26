@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import io.papermc.paper.entity.EntitySerializationFlag;
 import net.minecraft.SharedConstants;
 import net.minecraft.advancements.AdvancementHolder;
@@ -40,6 +41,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.level.block.Block;
@@ -575,21 +577,42 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(entity instanceof CraftEntity, "Only CraftEntities can be serialized");
 
         Set<EntitySerializationFlag> flags = Set.of(serializationFlags);
-        boolean forceSerialization = flags.contains(EntitySerializationFlag.FORCE);
-        Preconditions.checkArgument((entity.isValid() && entity.isPersistent()) || forceSerialization, "Cannot serialize invalid or non-persistent entity without the FORCE flag");
+        final boolean serializePassangers = flags.contains(EntitySerializationFlag.PASSENGERS);
+        final boolean forceSerialization = flags.contains(EntitySerializationFlag.FORCE);
+        final boolean allowPlayerSerialization = flags.contains(EntitySerializationFlag.PLAYER);
+        final boolean allowMiscSerialization = flags.contains(EntitySerializationFlag.MISC);
+        final boolean includeNonSaveable = allowPlayerSerialization || allowMiscSerialization;
 
-        boolean includeNonSaveable;
         net.minecraft.world.entity.Entity nmsEntity = ((CraftEntity) entity).getHandle();
-        if (entity instanceof org.bukkit.entity.Player) {
-            includeNonSaveable = flags.contains(EntitySerializationFlag.PLAYER);
-            Preconditions.checkArgument(includeNonSaveable, "Cannot serialize Players without the PLAYER flag");
-        } else {
-            includeNonSaveable = flags.contains(EntitySerializationFlag.MISC);
-            Preconditions.checkArgument(nmsEntity.getType().canSerialize() || includeNonSaveable, String.format("Cannot serialize misc non-saveable entity (%s) without the MISC flag", entity.getType().name()));
-        }
+        (serializePassangers ? nmsEntity.getSelfAndPassengers() : Stream.of(nmsEntity)).forEach(e -> {
+            // Ensure force flag is not needed
+            Preconditions.checkArgument(
+                (e.getBukkitEntity().isValid() && e.getBukkitEntity().isPersistent()) || forceSerialization,
+                "Cannot serialize invalid or non-persistent entity %s(%s) without the FORCE flag",
+                e.getType().toShortString(),
+                e.getStringUUID()
+            );
+
+            if (e instanceof Player) {
+                // Ensure player flag is not needed
+                Preconditions.checkArgument(
+                    allowPlayerSerialization,
+                    "Cannot serialize player(%s) without the PLAYER flag",
+                    e.getStringUUID()
+                );
+            } else {
+                // Ensure player flag is not needed
+                Preconditions.checkArgument(
+                    nmsEntity.getType().canSerialize() || allowMiscSerialization,
+                    "Cannot serialize misc non-saveable entity %s(%s) without the MISC flag",
+                    e.getType().toShortString(),
+                    e.getStringUUID()
+                );
+            }
+        });
 
         CompoundTag compound = new CompoundTag();
-        if (flags.contains(EntitySerializationFlag.PASSENGERS)) {
+        if (serializePassangers) {
             if (!nmsEntity.saveAsPassenger(compound, true, includeNonSaveable, forceSerialization)) {
                 throw new IllegalArgumentException("Couldn't serialize entity");
             }
