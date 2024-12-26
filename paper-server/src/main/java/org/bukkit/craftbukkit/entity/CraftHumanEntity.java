@@ -840,13 +840,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     @Nullable
-    public Item dropAnyItem(final @Nullable ItemStack itemStack, final @Nullable Consumer<Item> entityOperation) {
+    public Item dropItem(final @Nullable ItemStack itemStack, final @Nullable Consumer<Item> entityOperation) {
         return dropAnyItemRaw(itemStack, false, entityOperation);
     }
 
     @Override
     @Nullable
-    public Item dropAnyItemRandomly(final @Nullable ItemStack itemStack, final @Nullable Consumer<Item> entityOperation) {
+    public Item dropItemRandomly(final @Nullable ItemStack itemStack, final @Nullable Consumer<Item> entityOperation) {
         return dropAnyItemRaw(itemStack, true, entityOperation);
     }
 

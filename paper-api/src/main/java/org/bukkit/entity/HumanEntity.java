@@ -820,19 +820,19 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
 
 
     @Nullable
-    public Item dropAnyItem(@Nullable ItemStack itemStack, @Nullable Consumer<Item> entityOperation);
+    public Item dropItem(@Nullable ItemStack itemStack, @Nullable Consumer<Item> entityOperation);
 
     @Nullable
-    public default Item dropAnyItem(@Nullable ItemStack itemStack) {
-        return this.dropAnyItem(itemStack, null);
+    public default Item dropItem(@Nullable ItemStack itemStack) {
+        return this.dropItem(itemStack, null);
     }
 
     @Nullable
-    public Item dropAnyItemRandomly(@Nullable ItemStack itemStack, @Nullable Consumer<Item> entityOperation);
+    public Item dropItemRandomly(@Nullable ItemStack itemStack, @Nullable Consumer<Item> entityOperation);
 
     @Nullable
-    public default Item dropAnyItemRandomly(@Nullable ItemStack itemStack) {
-        return this.dropAnyItemRandomly(itemStack, null);
+    public default Item dropItemRandomly(@Nullable ItemStack itemStack) {
+        return this.dropItemRandomly(itemStack, null);
     }
 
     /**
