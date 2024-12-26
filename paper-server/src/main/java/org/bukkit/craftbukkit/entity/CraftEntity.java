@@ -956,7 +956,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public String getAsString() {
         CompoundTag tag = new CompoundTag();
-        if (!this.getHandle().saveAsPassenger(tag, false, true, true)) {
+        if (!this.getHandle().saveAsPassenger(tag, false, false, false)) {
             return null;
         }
 
@@ -1232,13 +1232,11 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         this.entity.setLevel(((CraftWorld) location.getWorld()).getHandle());
         this.entity.setPos(location.getX(), location.getY(), location.getZ());
         this.entity.setRot(location.getYaw(), location.getPitch());
-        boolean spawned = !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
-        if (spawned) {
-            for (org.bukkit.entity.Entity pass : getPassengers()) {
-                pass.spawnAt(getLocation());
-            }
-        }
-        return spawned;
+        final boolean spawned = !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
+        if (!spawned) return false; // Do not attempt to spawn rest if root was not spawned in
+        // Like net.minecraft.world.level.ServerLevelAccessor.addFreshEntityWithPassengers(net.minecraft.world.entity.Entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason)
+        this.entity.getIndirectPassengers().forEach(e -> e.level().addFreshEntity(e, reason));
+        return true;
     }
 
     // Paper start - entity powdered snow API
