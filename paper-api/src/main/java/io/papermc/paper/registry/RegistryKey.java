@@ -1,6 +1,8 @@
 package io.papermc.paper.registry;
 
 import io.papermc.paper.datacomponent.DataComponentType;
+import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
 import org.bukkit.Art;
 import org.bukkit.Fluid;
@@ -200,4 +202,26 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<Particle> PARTICLE_TYPE = create("particle_type");
     RegistryKey<PotionType> POTION = create("potion");
     RegistryKey<MemoryKey<?>> MEMORY_MODULE_TYPE = create("memory_module_type");
+
+    /**
+     * Constructs a new {@link TypedKey} for this registry given the typed key's key.
+     *
+     * @param key the key of the typed key.
+     * @return the constructed typed key.
+     */
+    @ApiStatus.Experimental
+    default TypedKey<T> typedKey(final Key key) {
+        return TypedKey.create(this, key);
+    }
+
+    /**
+     * Constructs a new {@link TypedKey} for this registry given the typed key's key.
+     *
+     * @param key the string representation of the key that will be passed to {@link Key#key(String)}.
+     * @return the constructed typed key.
+     */
+    @ApiStatus.Experimental
+    default TypedKey<T> typedKey(final @KeyPattern String key) {
+        return TypedKey.create(this, key);
+    }
 }

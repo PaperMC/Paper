@@ -1,6 +1,7 @@
 package io.papermc.paper.registry;
 
 import net.kyori.adventure.key.Key;
+import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -41,5 +42,19 @@ public sealed interface TypedKey<T> extends Key permits TypedKeyImpl {
     @ApiStatus.Experimental
     static <T> TypedKey<T> create(final RegistryKey<T> registryKey, final Key key) {
         return new TypedKeyImpl<>(key, registryKey);
+    }
+
+    /**
+     * Create a typed key from a string and a registry key.
+     *
+     * @param registryKey the registry this key is for
+     * @param key         the string version of a {@link Key} that will be passed to {@link Key#key(String)} for parsing.
+     * @param <T>         value type
+     * @return a new key for the value key and registry key
+     * @see Key#key(String)
+     */
+    @ApiStatus.Experimental
+    static <T> TypedKey<T> create(final RegistryKey<T> registryKey, final @KeyPattern String key) {
+        return create(registryKey, Key.key(key));
     }
 }
