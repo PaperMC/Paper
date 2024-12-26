@@ -26,7 +26,7 @@ public interface WritableRegistry<T, B extends RegistryBuilder<T>> {
      * @param value a consumer for the entry's builder
      */
     default void register(final TypedKey<T> key, final Consumer<? super B> value) {
-        this.factoryRegister(key, factory -> value.accept(factory.empty()));
+        this.registerWith(key, factory -> value.accept(factory.empty()));
     }
 
     /**
@@ -38,5 +38,5 @@ public interface WritableRegistry<T, B extends RegistryBuilder<T>> {
      * @param key the entry's key (must be unique from others)
      * @param value a consumer of a builder factory
      */
-    void factoryRegister(TypedKey<T> key, Consumer<RegistryBuilderFactory<T, B>> value);
+    void registerWith(TypedKey<T> key, Consumer<RegistryBuilderFactory<T, B>> value);
 }

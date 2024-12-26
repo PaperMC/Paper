@@ -56,7 +56,7 @@ public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBu
         }
 
         @Override
-        public void factoryRegister(final TypedKey<T> key, final Consumer<RegistryBuilderFactory<T, B>> value) {
+        public void registerWith(final TypedKey<T> key, final Consumer<RegistryBuilderFactory<T, B>> value) {
             WritableCraftRegistry.this.register(key, value, this.conversions);
         }
     }

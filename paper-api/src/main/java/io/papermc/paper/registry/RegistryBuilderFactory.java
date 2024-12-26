@@ -6,7 +6,7 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * A factory to create a {@link RegistryBuilder} for a given {@link TypedKey}. For
- * each instance of this class, once either {@link #empty()} or {@link #copyOf(TypedKey)}
+ * each instance of this class, once either {@link #empty()} or {@link #copyFrom(TypedKey)}
  * is called once, any future calls to either method will throw an {@link IllegalStateException}.
  *
  * @param <T> The type of the registry
@@ -21,7 +21,7 @@ public interface RegistryBuilderFactory<T, B extends RegistryBuilder<T>> {
      * Creates a new empty {@link RegistryBuilder}.
      *
      * @return A new empty {@link RegistryBuilder}
-     * @throws IllegalStateException if this method or {@link #copyOf(TypedKey)}) has already been called once
+     * @throws IllegalStateException if this method or {@link #copyFrom(TypedKey)}) has already been called once
      */
     @Contract("-> new")
     B empty();
@@ -35,5 +35,5 @@ public interface RegistryBuilderFactory<T, B extends RegistryBuilder<T>> {
      * @throws IllegalArgumentException if key doesn't exist
      */
     @Contract("_ -> new")
-    B copyOf(TypedKey<T> key);
+    B copyFrom(TypedKey<T> key);
 }

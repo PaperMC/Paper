@@ -40,7 +40,7 @@ public class PaperRegistryBuilderFactory<M, A extends Keyed, B extends PaperRegi
     }
 
     @Override
-    public B copyOf(final TypedKey<A> key) {
+    public B copyFrom(final TypedKey<A> key) {
         this.validate();
         final M existing = this.existingValueGetter.apply(PaperAdventure.asVanilla(key));
         if (existing == null) {
