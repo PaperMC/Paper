@@ -1597,7 +1597,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * <br>
      * {@link InventoryType#ENCHANTING} will not process {@link ItemStack}s
      * for possible enchanting results. Use
-     * {@link MenuType#ENCHANTMENT)} instead.
+     * {@link MenuType#ENCHANTMENT} instead.
      *
      * @param owner The holder of the inventory; can be null if there's no holder.
      * @param type The type of inventory to create.

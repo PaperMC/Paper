@@ -14,17 +14,11 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Experimental
 public interface LocationInventoryViewBuilder<V extends InventoryView> extends InventoryViewBuilder<V> {
 
-    @NotNull
     @Override
     LocationInventoryViewBuilder<V> copy();
 
-    @NotNull
     @Override
     LocationInventoryViewBuilder<V> title(final @NotNull Component title);
-
-    @NotNull
-    @Override
-    LocationInventoryViewBuilder<V> title(final @NotNull String title);
 
     /**
      * Determines whether or not the server should check if the player can reach
@@ -41,7 +35,6 @@ public interface LocationInventoryViewBuilder<V extends InventoryView> extends I
      * @param checkReachable whether or not to check if the view is "reachable"
      * @return this builder
      */
-    @NotNull
     LocationInventoryViewBuilder<V> checkReachable(final boolean checkReachable);
 
     /**
@@ -58,6 +51,5 @@ public interface LocationInventoryViewBuilder<V extends InventoryView> extends I
      * @param location the location to bind to this view
      * @return this builder
      */
-    @NotNull
-    LocationInventoryViewBuilder<V> location(@NotNull final Location location);
+    LocationInventoryViewBuilder<V> location(final Location location);
 }

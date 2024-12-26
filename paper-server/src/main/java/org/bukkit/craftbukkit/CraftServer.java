@@ -2488,7 +2488,7 @@ public final class CraftServer implements Server {
 
     @Override
     public @NotNull Merchant createMerchant() {
-        return new CraftMerchantCustom(net.kyori.adventure.text.Component.text(""));
+        return new CraftMerchantCustom(net.kyori.adventure.text.Component.empty());
     }
 
     @Override

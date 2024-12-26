@@ -25,13 +25,6 @@ public abstract class CraftAbstractInventoryViewBuilder<V extends InventoryView>
         this.handle = handle;
     }
 
-    @NotNull
-    @Override
-    public InventoryViewBuilder<V> title(@NotNull final String title) {
-        this.title = LegacyComponentSerializer.legacySection().deserialize(title);
-        return this;
-    }
-
     @Override
     public @NotNull InventoryViewBuilder<V> title(final @NotNull Component title) {
         this.title = title;
