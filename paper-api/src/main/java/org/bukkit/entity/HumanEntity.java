@@ -3,6 +3,7 @@ package org.bukkit.entity;
 import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -703,9 +704,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * This will force the entity to drop the item they are holding with
      * an option to drop the entire {@link ItemStack} or just 1 of the items.
      *
-     * @deprecated You should instead use {@link #dropItem(EquipmentSlot, int)} with a {@link EquipmentSlot#HAND} parameter.
      * @param dropAll True to drop entire stack, false to drop 1 of the stack
      * @return True if item was dropped successfully
+     * @deprecated You should instead use {@link #dropItem(EquipmentSlot, int)} or {@link #dropItemAll(EquipmentSlot)} with a {@link EquipmentSlot#HAND} parameter.
      */
     @Deprecated(since = "1.21.4")
     public boolean dropItem(boolean dropAll);
@@ -718,7 +719,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return The dropped item entity, or null if the action was unsuccessful
      * @throws IllegalArgumentException If the slot is negative or bigger than the player's inventory
      */
-    public @Nullable Item dropItem(int slot, int amount);
+    public @Nullable Item dropItem(int slot, int amount, @Nullable Consumer<Item> entityOperation);
+
+    public default @Nullable Item dropItem(int slot, int amount) {
+        return this.dropItem(slot, amount, null);
+    }
 
     /**
      * Makes the player drop an item from their inventory based on the equipment slot.
@@ -727,7 +732,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param amount The amount of items to drop from this equipment slot. Values below 1 don't drop an Item
      * @return The dropped item entity, or null if the action was unsuccessful
      */
-    public @Nullable Item dropItem(@NotNull EquipmentSlot slot, int amount);
+    public @Nullable Item dropItem(@NotNull EquipmentSlot slot, int amount, @Nullable Consumer<Item> entityOperation);
+
+    public default @Nullable Item dropItem(@NotNull EquipmentSlot slot, int amount) {
+        return this.dropItem(slot, amount, null);
+    }
 
     /**
      * Makes the entity drop an item from their inventory based on the slot.
@@ -739,7 +748,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return The dropped item entity, or null if the action was unsuccessful
      * @throws IllegalArgumentException If the slot is negative or bigger than the player's inventory
      */
-    public @Nullable Item dropItemRandomly(int slot, int amount);
+    public @Nullable Item dropItemRandomly(int slot, int amount, @Nullable Consumer<Item> entityOperation);
+
+    public default @Nullable Item dropItemRandomly(int slot, int amount) {
+        return this.dropItemRandomly(slot, amount, null);
+    }
 
     /**
      * Makes the player drop an item from their inventory based on the equipment slot.
@@ -750,7 +763,58 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param amount The amount of items to drop from this equipment slot. Values below 1 don't drop an Item
      * @return The dropped item entity, or null if the action was unsuccessful
      */
-    public @Nullable Item dropItemRandomly(@NotNull EquipmentSlot slot, int amount);
+    public @Nullable Item dropItemRandomly(@NotNull EquipmentSlot slot, int amount, @Nullable Consumer<Item> entityOperation);
+
+    public default @Nullable Item dropItemRandomly(@NotNull EquipmentSlot slot, int amount) {
+        return this.dropItemRandomly(slot, amount, null);
+    }
+
+
+    public default @Nullable Item dropItemAll(int slot, @Nullable Consumer<Item> entityOperation) {
+        return this.dropItem(slot, Integer.MAX_VALUE, entityOperation);
+    }
+
+    public default @Nullable Item dropItemAll(int slot) {
+        return this.dropItemAll(slot, null);
+    }
+
+    public default @Nullable Item dropItemAll(@NotNull EquipmentSlot slot, @Nullable Consumer<Item> entityOperation) {
+        return this.dropItem(slot, Integer.MAX_VALUE, entityOperation);
+    }
+
+    public default @Nullable Item dropItemAll(@NotNull EquipmentSlot slot) {
+        return this.dropItemAll(slot, null);
+    }
+
+
+    public default @Nullable Item dropItemAllRandomly(int slot, @Nullable Consumer<Item> entityOperation) {
+        return this.dropItem(slot, Integer.MAX_VALUE, entityOperation);
+    }
+
+    public default @Nullable Item dropItemAllRandomly(int slot) {
+        return this.dropItemAllRandomly(slot, null);
+    }
+
+    public default @Nullable Item dropItemAllRandomly(@NotNull EquipmentSlot slot, @Nullable Consumer<Item> entityOperation) {
+        return this.dropItemRandomly(slot, Integer.MAX_VALUE, entityOperation);
+    }
+
+    public default @Nullable Item dropItemAllRandomly(@NotNull EquipmentSlot slot) {
+        return this.dropItemAllRandomly(slot, null);
+    }
+
+
+    public @Nullable Item dropAnyItem(@Nullable ItemStack itemStack, @Nullable Consumer<Item> entityOperation);
+
+    public default @Nullable Item dropAnyItem(@Nullable ItemStack itemStack) {
+        return this.dropAnyItem(itemStack, null);
+    }
+
+    public @Nullable Item dropAnyItemRandomly(@Nullable ItemStack itemStack, @Nullable Consumer<Item> entityOperation);
+
+    public default @Nullable Item dropAnyItemRandomly(@Nullable ItemStack itemStack) {
+        return this.dropAnyItemRandomly(itemStack, null);
+    }
 
     /**
      * Gets the players current exhaustion level.

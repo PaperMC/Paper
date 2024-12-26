@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -806,34 +807,47 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Override
-    public @Nullable Item dropItem(final int slot, final int amount) {
+    public @Nullable Item dropItem(final int slot, final int amount, final @Nullable Consumer<Item> entityOperation) {
         if (slot < 0 || slot >= this.inventory.getSize()) {
             throw new IllegalArgumentException("Slot " + slot + " is not a valid inventory slot.");
         }
 
-        return dropItemRaw(this.inventory.getItem(slot), amount, false);
+        return dropItemRaw(this.inventory.getItem(slot), amount, false, entityOperation);
     }
 
     @Override
-    public @Nullable Item dropItem(final @NotNull EquipmentSlot slot, final int amount) {
-        return dropItemRaw(this.inventory.getItem(slot), amount, false);
+    public @Nullable Item dropItem(final @NotNull EquipmentSlot slot, final int amount, final @Nullable Consumer<Item> entityOperation) {
+        return dropItemRaw(this.inventory.getItem(slot), amount, false, entityOperation);
     }
 
     @Override
-    public @Nullable Item dropItemRandomly(final int slot, final int amount) {
+    public @Nullable Item dropItemRandomly(final int slot, final int amount, final @Nullable Consumer<Item> entityOperation) {
         if (slot < 0 || slot >= this.inventory.getSize()) {
             throw new IllegalArgumentException("Slot " + slot + " is not a valid inventory slot.");
         }
 
-        return dropItemRaw(this.inventory.getItem(slot), amount, true);
+        return dropItemRaw(this.inventory.getItem(slot), amount, true, entityOperation);
     }
 
     @Override
-    public @Nullable Item dropItemRandomly(final @NotNull EquipmentSlot slot, final int amount) {
-        return dropItemRaw(this.inventory.getItem(slot), amount, true);
+    public @Nullable Item dropItemRandomly(final @NotNull EquipmentSlot slot, final int amount, final @Nullable Consumer<Item> entityOperation) {
+        return dropItemRaw(this.inventory.getItem(slot), amount, true, entityOperation);
     }
 
-    private @Nullable Item dropItemRaw(final ItemStack originalItemStack, final int amount, final boolean throwRandomly) {
+    @Override
+    public @Nullable Item dropAnyItem(final @Nullable ItemStack itemStack, final @Nullable Consumer<Item> entityOperation) {
+        return dropAnyItemRaw(itemStack, false, entityOperation);
+    }
+
+    @Override
+    public @Nullable Item dropAnyItemRandomly(final @Nullable ItemStack itemStack, final @Nullable Consumer<Item> entityOperation) {
+        return dropAnyItemRaw(itemStack, true, entityOperation);
+    }
+
+    private @Nullable Item dropItemRaw(
+        final ItemStack originalItemStack, final int amount, final boolean throwRandomly,
+        final @Nullable Consumer<Item> entityOperation
+    ) {
         if (originalItemStack == null || originalItemStack.isEmpty() || amount <= 0) {
             return null;
         }
@@ -841,7 +855,29 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(originalItemStack);
         final net.minecraft.world.item.ItemStack dropContent = nmsItemStack.split(amount);
 
-        final ItemEntity droppedEntity = this.getHandle().drop(dropContent, throwRandomly, true);
+        // final ItemEntity droppedEntity = this.getHandle().drop(dropContent, throwRandomly, true, true, entityOperation);
+        // TODO: Replace this once NMS changes are in
+        final ItemEntity droppedEntity = this.getHandle().drop(dropContent, throwRandomly, true, true);
+        if (droppedEntity == null) {
+            return null;
+        }
+
+        return (Item) droppedEntity.getBukkitEntity();
+    }
+
+    private @Nullable Item dropAnyItemRaw(
+        final ItemStack itemStack, final boolean throwRandomly,
+        final @Nullable Consumer<Item> entityOperation
+    ) {
+        if (itemStack == null || itemStack.isEmpty()) {
+            return null;
+        }
+
+        final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
+
+        // final ItemEntity droppedEntity = this.getHandle().drop(dropContent, throwRandomly, true, true, entityOperation);
+        // TODO: Replace this once NMS changes are in
+        final ItemEntity droppedEntity = this.getHandle().drop(nmsItemStack, throwRandomly, true, true);
         if (droppedEntity == null) {
             return null;
         }
