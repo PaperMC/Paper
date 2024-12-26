@@ -15,18 +15,11 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Experimental
 public interface MerchantInventoryViewBuilder<V extends InventoryView> extends InventoryViewBuilder<V> {
 
-    @NotNull
     @Override
     MerchantInventoryViewBuilder<V> copy();
 
-    @NotNull
     @Override
     MerchantInventoryViewBuilder<V> title(final @NotNull Component title);
-
-    @NotNull
-    @Override
-    MerchantInventoryViewBuilder<V> title(final @NotNull String title);
-
 
     /**
      * Adds a merchant to this builder
@@ -34,8 +27,7 @@ public interface MerchantInventoryViewBuilder<V extends InventoryView> extends I
      * @param merchant the merchant
      * @return this builder
      */
-    @NotNull
-    MerchantInventoryViewBuilder<V> merchant(@NotNull final Merchant merchant);
+    MerchantInventoryViewBuilder<V> merchant(final Merchant merchant);
 
     /**
      * Determines whether or not the server should check if the player can reach
@@ -48,6 +40,5 @@ public interface MerchantInventoryViewBuilder<V extends InventoryView> extends I
      * @param checkReachable whether or not to check if the view is "reachable"
      * @return this builder
      */
-    @NotNull
     MerchantInventoryViewBuilder<V> checkReachable(final boolean checkReachable);
 }
