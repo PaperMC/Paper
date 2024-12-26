@@ -2,7 +2,10 @@ package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
+import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
+import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.util.Holderable;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -10,59 +13,16 @@ import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import org.bukkit.Art;
-import org.bukkit.Fluid;
-import org.bukkit.GameEvent;
-import org.bukkit.JukeboxSong;
 import org.bukkit.Keyed;
-import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Registry;
-import org.bukkit.Sound;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.block.Biome;
-import org.bukkit.block.BlockType;
-import org.bukkit.block.banner.PatternType;
-import org.bukkit.craftbukkit.attribute.CraftAttribute;
-import org.bukkit.craftbukkit.block.CraftBiome;
-import org.bukkit.craftbukkit.block.CraftBlockType;
-import org.bukkit.craftbukkit.block.banner.CraftPatternType;
-import org.bukkit.craftbukkit.damage.CraftDamageType;
-import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
-import org.bukkit.craftbukkit.entity.CraftCat;
-import org.bukkit.craftbukkit.entity.CraftFrog;
-import org.bukkit.craftbukkit.entity.CraftVillager;
-import org.bukkit.craftbukkit.entity.CraftWolf;
-import org.bukkit.craftbukkit.generator.structure.CraftStructure;
-import org.bukkit.craftbukkit.generator.structure.CraftStructureType;
-import org.bukkit.craftbukkit.inventory.CraftItemType;
-import org.bukkit.craftbukkit.inventory.CraftMenuType;
-import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
-import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
 import org.bukkit.craftbukkit.legacy.FieldRename;
-import org.bukkit.craftbukkit.map.CraftMapCursor;
-import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.craftbukkit.util.ApiVersion;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Handleable;
-import org.bukkit.damage.DamageType;
-import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Cat;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Frog;
-import org.bukkit.entity.Villager;
-import org.bukkit.entity.Wolf;
-import org.bukkit.generator.structure.Structure;
-import org.bukkit.generator.structure.StructureType;
-import org.bukkit.inventory.ItemType;
-import org.bukkit.inventory.MenuType;
-import org.bukkit.inventory.meta.trim.TrimMaterial;
-import org.bukkit.inventory.meta.trim.TrimPattern;
-import org.bukkit.map.MapCursor;
-import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
@@ -304,7 +264,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         if (value instanceof Holderable<?> holderable) {
             return holderable.getKeyOrNull();
         }
-        return Registry.super.getKey(value);
+        return value.getKey();
     }
     // Paper end - improve Registry
 
@@ -318,6 +278,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     public io.papermc.paper.registry.tag.Tag<B> getTag(final io.papermc.paper.registry.tag.TagKey<B> key) {
         final net.minecraft.core.HolderSet.Named<M> namedHolderSet = this.minecraftRegistry.get(io.papermc.paper.registry.PaperRegistries.toNms(key)).orElseThrow();
         return new io.papermc.paper.registry.set.NamedRegistryKeySetImpl<>(key, namedHolderSet);
+    }
+
+    @Override
+    public Collection<Tag<B>> getTags() {
+        return this.minecraftRegistry.getTags().<Tag<B>>map(NamedRegistryKeySetImpl::new).toList();
     }
     // Paper end - RegistrySet API
 }
