@@ -6,13 +6,17 @@ import io.papermc.paper.registry.data.CatTypeRegistryEntry;
 import io.papermc.paper.registry.data.ChickenVariantRegistryEntry;
 import io.papermc.paper.registry.data.CowVariantRegistryEntry;
 import io.papermc.paper.registry.data.DamageTypeRegistryEntry;
+import io.papermc.paper.registry.data.DimensionTypeRegistryEntry;
 import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.FrogVariantRegistryEntry;
 import io.papermc.paper.registry.data.GameEventRegistryEntry;
 import io.papermc.paper.registry.data.JukeboxSongRegistryEntry;
+import io.papermc.paper.registry.data.LevelStemRegistryEntry;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import io.papermc.paper.registry.data.PigVariantRegistryEntry;
 import io.papermc.paper.registry.data.WolfVariantRegistryEntry;
+import io.papermc.paper.world.worldgen.DimensionType;
+import io.papermc.paper.world.worldgen.LevelStem;
 import org.bukkit.Art;
 import org.bukkit.GameEvent;
 import org.bukkit.JukeboxSong;
@@ -48,6 +52,8 @@ public final class RegistryEvents {
     public static final RegistryEventProvider<Chicken.Variant, ChickenVariantRegistryEntry.Builder> CHICKEN_VARIANT = create(RegistryKey.CHICKEN_VARIANT);
     public static final RegistryEventProvider<Cow.Variant, CowVariantRegistryEntry.Builder> COW_VARIANT = create(RegistryKey.COW_VARIANT);
     public static final RegistryEventProvider<Pig.Variant, PigVariantRegistryEntry.Builder> PIG_VARIANT = create(RegistryKey.PIG_VARIANT);
+    public static final RegistryEventProvider<DimensionType, DimensionTypeRegistryEntry.Builder> DIMENSION_TYPE = create(RegistryKey.DIMENSION_TYPE);
+    public static final RegistryEventProvider<LevelStem, LevelStemRegistryEntry.Builder> LEVEL_STEM = create(RegistryKey.LEVEL_STEM);
     // End generate - RegistryEvents
 
     private RegistryEvents() {

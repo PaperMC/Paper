@@ -1,6 +1,7 @@
 package io.papermc.paper.registry.data.util;
 
 import com.google.common.base.Preconditions;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.JavaOps;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.adventure.WrapperAwareSerializer;
@@ -102,4 +103,9 @@ public class Conversions {
         return new PaperRegistryBuilderFactory<>(registryKey, this, buildableMeta.builderFiller(), lookupForBuilders::getValueForCopying);
     }
 
+    public <T> T clone(final T obj, final Codec<T> directCodec) {
+        final RegistryOps<Object> javaOps = RegistryOps.create(JavaOps.INSTANCE, this.lookup);
+        final Object serialized = directCodec.encodeStart(javaOps, obj).getOrThrow(IllegalArgumentException::new);
+        return directCodec.parse(javaOps, serialized).getOrThrow(IllegalArgumentException::new);
+    }
 }

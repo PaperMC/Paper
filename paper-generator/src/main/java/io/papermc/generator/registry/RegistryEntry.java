@@ -26,7 +26,7 @@ public final class RegistryEntry<T> {
     private final ResourceKey<? extends Registry<T>> registryKey;
     private final RegistryKeyField<T> registryKeyField;
     private final Class<T> elementClass;
-    private final Class<?> holderElementsClass;
+    private final @Nullable Class<?> holderElementsClass;
     private boolean allowDirect;
 
     private final Class<? extends Keyed> apiClass; // TODO remove Keyed
@@ -44,7 +44,7 @@ public final class RegistryEntry<T> {
 
     private @Nullable Map<ResourceKey<T>, String> fieldNames;
 
-    public RegistryEntry(ResourceKey<? extends Registry<T>> registryKey, RegistryKeyField<T> registryKeyField, Class<?> holderElementsClass, Class<? extends Keyed> apiClass, String implClass) {
+    public RegistryEntry(ResourceKey<? extends Registry<T>> registryKey, RegistryKeyField<T> registryKeyField, @Nullable Class<?> holderElementsClass, Class<? extends Keyed> apiClass, String implClass) {
         this.registryKey = registryKey;
         this.registryKeyField = registryKeyField;
         this.elementClass = registryKeyField.elementClass();
@@ -165,6 +165,9 @@ public final class RegistryEntry<T> {
     }
 
     private <TO> Map<ResourceKey<T>, TO> getFields(Map<ResourceKey<T>, TO> map, Function<Field, @Nullable TO> transform) {
+        if (this.holderElementsClass == null) {
+            return map;
+        }
         Registry<T> registry = this.registry();
         try {
             for (Field field : this.holderElementsClass.getDeclaredFields()) {
