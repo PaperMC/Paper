@@ -9,7 +9,7 @@ import org.bukkit.util.OldEnum;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "DeprecatedIsStillUsed"})
 @Deprecated
 @NullMarked
 public abstract class OldEnumHolderable<A extends OldEnum<A>, M> implements Holderable<M>, OldEnum<A>, Keyed {
@@ -43,7 +43,7 @@ public abstract class OldEnumHolderable<A extends OldEnum<A>, M> implements Hold
 
     @Override
     @Deprecated
-    public int compareTo(A other) {
+    public int compareTo(final A other) {
         this.checkIsReference();
         return this.ordinal - other.ordinal();
     }
@@ -83,6 +83,10 @@ public abstract class OldEnumHolderable<A extends OldEnum<A>, M> implements Hold
 
     @Override
     public String toString() {
+        if (this.name != null) {
+            // TODO remove in next feature release or 1.22
+            return this.name;
+        }
         return this.implToString();
     }
 }
