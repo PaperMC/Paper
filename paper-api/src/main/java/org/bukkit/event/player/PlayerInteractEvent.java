@@ -241,6 +241,9 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     @Nullable
     @Deprecated // Paper
     public Vector getClickedPosition() {
+        if (this.clickedPosistion == null) {
+            return null;
+        }
         return clickedPosistion.clone();
     }
 
