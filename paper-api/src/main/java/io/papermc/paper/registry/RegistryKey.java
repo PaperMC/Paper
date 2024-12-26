@@ -209,6 +209,7 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @param key the key of the typed key.
      * @return the constructed typed key.
      */
+    @ApiStatus.Experimental
     default TypedKey<T> typedKey(final Key key) {
         return TypedKey.create(this, key);
     }
@@ -219,6 +220,7 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @param key the string representation of the key that will be passed to {@link Key#key(String)}.
      * @return the constructed typed key.
      */
+    @ApiStatus.Experimental
     default TypedKey<T> typedKey(final @KeyPattern String key) {
         return TypedKey.create(this, key);
     }
