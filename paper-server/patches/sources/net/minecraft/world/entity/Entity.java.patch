@@ -706,52 +706,44 @@
  
      public void awardKillScore(Entity entity, DamageSource damageSource) {
          if (entity instanceof ServerPlayer) {
-@@ -1752,34 +_,70 @@
+@@ -1752,15 +_,22 @@
      }
  
      public boolean saveAsPassenger(CompoundTag compound) {
+-        if (this.removalReason != null && !this.removalReason.shouldSave()) {
 +        // CraftBukkit start - allow excluding certain data when saving
-+        return this.saveAsPassenger(compound, true);
++        // Paper start - Raw entity serialization API
++        return this.saveAsPassenger(compound, true, false, false);
 +    }
-+
-+    public boolean saveAsPassenger(CompoundTag compound, boolean includeAll) {
++    public boolean saveAsPassenger(CompoundTag compound, boolean includeAll, boolean includeNonSaveable, boolean forceSerialization) {
++        // Paper end - Raw entity serialization API
 +        // CraftBukkit end
-         if (this.removalReason != null && !this.removalReason.shouldSave()) {
++        if (this.removalReason != null && !this.removalReason.shouldSave() && !forceSerialization) { // Paper - Raw entity serialization API
              return false;
          } else {
-             String encodeId = this.getEncodeId();
+-            String encodeId = this.getEncodeId();
 -            if (encodeId == null) {
-+            if (!this.persist || encodeId == null) { // CraftBukkit - persist flag
++            String encodeId = this.getEncodeId(includeNonSaveable); // Paper - Raw entity serialization API
++            if ((!this.persist && !forceSerialization) || encodeId == null) { // CraftBukkit - persist flag // Paper - Raw entity serialization API
                  return false;
              } else {
                  compound.putString("id", encodeId);
 -                this.saveWithoutId(compound);
-+                this.saveWithoutId(compound, includeAll); // CraftBukkit - pass on includeAll
++                this.saveWithoutId(compound, includeAll, includeNonSaveable, forceSerialization); // CraftBukkit - pass on includeAll // Paper - Raw entity serialization API
                  return true;
              }
          }
-     }
-+
-+    // Paper start - Entity serialization api
-+    public boolean serializeEntity(CompoundTag compound) {
-+        List<Entity> pass = new java.util.ArrayList<>(this.getPassengers());
-+        this.passengers = ImmutableList.of();
-+        boolean result = save(compound);
-+        this.passengers = ImmutableList.copyOf(pass);
-+        return result;
-+    }
-+    // Paper end - Entity serialization api
- 
-     public boolean save(CompoundTag compound) {
-         return !this.isPassenger() && this.saveAsPassenger(compound);
+@@ -1771,15 +_,37 @@
      }
  
      public CompoundTag saveWithoutId(CompoundTag compound) {
 +        // CraftBukkit start - allow excluding certain data when saving
-+        return this.saveWithoutId(compound, true);
++        // Paper start - Raw entity serialization API
++        return this.saveWithoutId(compound, true, false, false);
 +    }
 +
-+    public CompoundTag saveWithoutId(CompoundTag compound, boolean includeAll) {
++    public CompoundTag saveWithoutId(CompoundTag compound, boolean includeAll, boolean includeNonSaveable, boolean forceSerialization) {
++        // Paper end - Raw entity serialization API
 +        // CraftBukkit end
          try {
 -            if (this.vehicle != null) {
@@ -827,7 +819,7 @@
                  for (Entity entity : this.getPassengers()) {
                      CompoundTag compoundTag = new CompoundTag();
 -                    if (entity.saveAsPassenger(compoundTag)) {
-+                    if (entity.saveAsPassenger(compoundTag, includeAll)) { // CraftBukkit - pass on includeAll
++                    if (entity.saveAsPassenger(compoundTag, includeAll, includeNonSaveable, forceSerialization)) { // CraftBukkit - pass on includeAll // Paper - Raw entity serialization API
                          listTag.add(compoundTag);
                      }
                  }
@@ -935,19 +927,30 @@
          } catch (Throwable var17) {
              CrashReport crashReport = CrashReport.forThrowable(var17, "Loading entity NBT");
              CrashReportCategory crashReportCategory = crashReport.addCategory("Entity being loaded");
-@@ -1949,6 +_,12 @@
-         return type.canSerialize() && key != null ? key.toString() : null;
-     }
+@@ -1944,10 +_,21 @@
  
+     @Nullable
+     public final String getEncodeId() {
++        // Paper start - Raw entity serialization API
++        return getEncodeId(false);
++    }
++    public final @Nullable String getEncodeId(boolean includeNonSaveable) {
++        // Paper end - Raw entity serialization API
+         EntityType<?> type = this.getType();
+         ResourceLocation key = EntityType.getKey(type);
+-        return type.canSerialize() && key != null ? key.toString() : null;
+-    }
++        return (type.canSerialize() || includeNonSaveable) && key != null ? key.toString() : null; // Paper - Raw entity serialization API
++    }
++
 +    // CraftBukkit start - allow excluding certain data when saving
 +    protected void addAdditionalSaveData(CompoundTag tag, boolean includeAll) {
 +        this.addAdditionalSaveData(tag);
 +    }
 +    // CraftBukkit end
-+
+ 
      protected abstract void readAdditionalSaveData(CompoundTag tag);
  
-     protected abstract void addAdditionalSaveData(CompoundTag tag);
 @@ -1990,11 +_,61 @@
  
      @Nullable

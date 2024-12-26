@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import com.google.common.collect.Multimap;
+import io.papermc.paper.entity.EntitySerializationFlag;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -9,7 +10,9 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -198,13 +201,81 @@ public interface UnsafeValues {
      */
     @NotNull ItemStack deserializeItemFromJson(@NotNull com.google.gson.JsonObject data) throws IllegalArgumentException;
 
-    byte[] serializeEntity(org.bukkit.entity.Entity entity);
+    /**
+     * Serializes the provided entity.
+     *
+     * @param entity entity
+     * @return serialized entity data
+     * @see #serializeEntity(Entity, EntitySerializationFlag...)
+     * @see #deserializeEntity(byte[], World, boolean, boolean)
+     * @throws IllegalArgumentException if couldn't serialize the entity
+     * @since 1.17.1
+     */
+    default byte @NotNull [] serializeEntity(@NotNull Entity entity) {
+        return serializeEntity(entity, new EntitySerializationFlag[0]);
+    }
 
-    default org.bukkit.entity.Entity deserializeEntity(byte[] data, World world) {
+    /**
+     * Serializes the provided entity.
+     *
+     * @param entity entity
+     * @param serializationFlags serialization flags
+     * @return serialized entity data
+     * @throws IllegalArgumentException if couldn't serialize the entity
+     * @see #deserializeEntity(byte[], World, boolean, boolean)
+     * @since 1.21.4
+     */
+    byte @NotNull [] serializeEntity(@NotNull Entity entity, @NotNull EntitySerializationFlag... serializationFlags);
+
+    /**
+     * Deserializes the entity from data.
+     * <br>The entity's {@link java.util.UUID} as well as passengers will not be preserved.
+     *
+     * @param data serialized entity data
+     * @param world world
+     * @return deserialized entity
+     * @throws IllegalArgumentException if invalid serialized entity data provided
+     * @see #deserializeEntity(byte[], World, boolean, boolean)
+     * @see #serializeEntity(Entity, EntitySerializationFlag...)
+     * @see Entity#spawnAt(Location, CreatureSpawnEvent.SpawnReason)
+     * @since 1.17.1
+     */
+    default @NotNull Entity deserializeEntity(byte @NotNull [] data, @NotNull World world) {
         return deserializeEntity(data, world, false);
     }
 
-    org.bukkit.entity.Entity deserializeEntity(byte[] data, World world, boolean preserveUUID);
+    /**
+     * Deserializes the entity from data.
+     * <br>The entity's passengers will not be preserved.
+     *
+     * @param data serialized entity data
+     * @param world world
+     * @param preserveUUID whether to preserve the entity's uuid
+     * @return deserialized entity
+     * @throws IllegalArgumentException if invalid serialized entity data provided
+     * @see #deserializeEntity(byte[], World, boolean, boolean)
+     * @see #serializeEntity(Entity, EntitySerializationFlag...)
+     * @see Entity#spawnAt(Location, CreatureSpawnEvent.SpawnReason)
+     * @since 1.17.1
+     */
+    default @NotNull Entity deserializeEntity(byte @NotNull [] data, @NotNull World world, boolean preserveUUID) {
+        return deserializeEntity(data, world, preserveUUID, false);
+    }
+
+    /**
+     * Deserializes the entity from data.
+     *
+     * @param data serialized entity data
+     * @param world world
+     * @param preserveUUID whether to preserve uuids of the entity and its passengers
+     * @param preservePassengers whether to preserve passengers
+     * @return deserialized entity
+     * @throws IllegalArgumentException if invalid serialized entity data provided
+     * @see #serializeEntity(Entity, EntitySerializationFlag...)
+     * @see Entity#spawnAt(Location, CreatureSpawnEvent.SpawnReason)
+     * @since 1.21.4
+     */
+    @NotNull Entity deserializeEntity(byte @NotNull [] data, @NotNull World world, boolean preserveUUID, boolean preservePassengers);
 
     /**
      * Creates and returns the next EntityId available.
