@@ -719,9 +719,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return The dropped item entity, or null if the action was unsuccessful
      * @throws IllegalArgumentException If the slot is negative or bigger than the player's inventory
      */
-    public @Nullable Item dropItem(int slot, int amount, @Nullable Consumer<Item> entityOperation);
+    @Nullable
+    public Item dropItem(int slot, int amount, @Nullable Consumer<Item> entityOperation);
 
-    public default @Nullable Item dropItem(int slot, int amount) {
+    @Nullable
+    public default Item dropItem(int slot, int amount) {
         return this.dropItem(slot, amount, null);
     }
 
@@ -732,9 +734,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param amount The amount of items to drop from this equipment slot. Values below 1 don't drop an Item
      * @return The dropped item entity, or null if the action was unsuccessful
      */
-    public @Nullable Item dropItem(@NotNull EquipmentSlot slot, int amount, @Nullable Consumer<Item> entityOperation);
+    @Nullable
+    public Item dropItem(@NotNull EquipmentSlot slot, int amount, @Nullable Consumer<Item> entityOperation);
 
-    public default @Nullable Item dropItem(@NotNull EquipmentSlot slot, int amount) {
+    @Nullable
+    public default Item dropItem(@NotNull EquipmentSlot slot, int amount) {
         return this.dropItem(slot, amount, null);
     }
 
@@ -748,9 +752,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return The dropped item entity, or null if the action was unsuccessful
      * @throws IllegalArgumentException If the slot is negative or bigger than the player's inventory
      */
-    public @Nullable Item dropItemRandomly(int slot, int amount, @Nullable Consumer<Item> entityOperation);
+    @Nullable
+    public Item dropItemRandomly(int slot, int amount, @Nullable Consumer<Item> entityOperation);
 
-    public default @Nullable Item dropItemRandomly(int slot, int amount) {
+    @Nullable
+    public default Item dropItemRandomly(int slot, int amount) {
         return this.dropItemRandomly(slot, amount, null);
     }
 
@@ -763,56 +769,70 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param amount The amount of items to drop from this equipment slot. Values below 1 don't drop an Item
      * @return The dropped item entity, or null if the action was unsuccessful
      */
-    public @Nullable Item dropItemRandomly(@NotNull EquipmentSlot slot, int amount, @Nullable Consumer<Item> entityOperation);
+    @Nullable
+    public Item dropItemRandomly(@NotNull EquipmentSlot slot, int amount, @Nullable Consumer<Item> entityOperation);
 
-    public default @Nullable Item dropItemRandomly(@NotNull EquipmentSlot slot, int amount) {
+    @Nullable
+    public default Item dropItemRandomly(@NotNull EquipmentSlot slot, int amount) {
         return this.dropItemRandomly(slot, amount, null);
     }
 
 
-    public default @Nullable Item dropItemAll(int slot, @Nullable Consumer<Item> entityOperation) {
+    @Nullable
+    public default Item dropItemAll(int slot, @Nullable Consumer<Item> entityOperation) {
         return this.dropItem(slot, Integer.MAX_VALUE, entityOperation);
     }
 
-    public default @Nullable Item dropItemAll(int slot) {
+    @Nullable
+    public default Item dropItemAll(int slot) {
         return this.dropItemAll(slot, null);
     }
 
-    public default @Nullable Item dropItemAll(@NotNull EquipmentSlot slot, @Nullable Consumer<Item> entityOperation) {
+    @Nullable
+    public default Item dropItemAll(@NotNull EquipmentSlot slot, @Nullable Consumer<Item> entityOperation) {
         return this.dropItem(slot, Integer.MAX_VALUE, entityOperation);
     }
 
-    public default @Nullable Item dropItemAll(@NotNull EquipmentSlot slot) {
+    @Nullable
+    public default Item dropItemAll(@NotNull EquipmentSlot slot) {
         return this.dropItemAll(slot, null);
     }
 
 
-    public default @Nullable Item dropItemAllRandomly(int slot, @Nullable Consumer<Item> entityOperation) {
+    @Nullable
+    public default Item dropItemAllRandomly(int slot, @Nullable Consumer<Item> entityOperation) {
         return this.dropItem(slot, Integer.MAX_VALUE, entityOperation);
     }
 
-    public default @Nullable Item dropItemAllRandomly(int slot) {
+    @Nullable
+    public default Item dropItemAllRandomly(int slot) {
         return this.dropItemAllRandomly(slot, null);
     }
 
-    public default @Nullable Item dropItemAllRandomly(@NotNull EquipmentSlot slot, @Nullable Consumer<Item> entityOperation) {
+    @Nullable
+    public default Item dropItemAllRandomly(@NotNull EquipmentSlot slot, @Nullable Consumer<Item> entityOperation) {
         return this.dropItemRandomly(slot, Integer.MAX_VALUE, entityOperation);
     }
 
-    public default @Nullable Item dropItemAllRandomly(@NotNull EquipmentSlot slot) {
+    @Nullable
+    public default Item dropItemAllRandomly(@NotNull EquipmentSlot slot) {
         return this.dropItemAllRandomly(slot, null);
     }
 
 
-    public @Nullable Item dropAnyItem(@Nullable ItemStack itemStack, @Nullable Consumer<Item> entityOperation);
+    @Nullable
+    public Item dropAnyItem(@Nullable ItemStack itemStack, @Nullable Consumer<Item> entityOperation);
 
-    public default @Nullable Item dropAnyItem(@Nullable ItemStack itemStack) {
+    @Nullable
+    public default Item dropAnyItem(@Nullable ItemStack itemStack) {
         return this.dropAnyItem(itemStack, null);
     }
 
-    public @Nullable Item dropAnyItemRandomly(@Nullable ItemStack itemStack, @Nullable Consumer<Item> entityOperation);
+    @Nullable
+    public Item dropAnyItemRandomly(@Nullable ItemStack itemStack, @Nullable Consumer<Item> entityOperation);
 
-    public default @Nullable Item dropAnyItemRandomly(@Nullable ItemStack itemStack) {
+    @Nullable
+    public default Item dropAnyItemRandomly(@Nullable ItemStack itemStack) {
         return this.dropAnyItemRandomly(itemStack, null);
     }
 
