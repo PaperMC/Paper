@@ -3,9 +3,13 @@ package io.papermc.paper.registry.event;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.BannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.DamageTypeRegistryEntry;
+import io.papermc.paper.registry.data.DimensionTypeRegistryEntry;
 import io.papermc.paper.registry.data.EnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.GameEventRegistryEntry;
+import io.papermc.paper.registry.data.LevelStemRegistryEntry;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
+import io.papermc.paper.world.worldgen.DimensionType;
+import io.papermc.paper.world.worldgen.LevelStem;
 import org.bukkit.Art;
 import org.bukkit.GameEvent;
 import org.bukkit.block.banner.PatternType;
@@ -29,6 +33,8 @@ public final class RegistryEvents {
     public static final RegistryEventProvider<Art, PaintingVariantRegistryEntry.Builder> PAINTING_VARIANT = create(RegistryKey.PAINTING_VARIANT);
     public static final RegistryEventProvider<PatternType, BannerPatternRegistryEntry.Builder> BANNER_PATTERN = create(RegistryKey.BANNER_PATTERN);
     public static final RegistryEventProvider<DamageType, DamageTypeRegistryEntry.Builder> DAMAGE_TYPE = create(RegistryKey.DAMAGE_TYPE);
+    public static final RegistryEventProvider<DimensionType, DimensionTypeRegistryEntry.Builder> DIMENSION_TYPE = create(RegistryKey.DIMENSION_TYPE);
+    public static final RegistryEventProvider<LevelStem, LevelStemRegistryEntry.Builder> LEVEL_STEM = create(RegistryKey.LEVEL_STEM);
 
     private RegistryEvents() {
     }

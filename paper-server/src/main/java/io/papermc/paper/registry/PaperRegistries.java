@@ -4,14 +4,24 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
+import io.papermc.paper.math.provider.IntProviderType;
+import io.papermc.paper.math.provider.PaperIntProviderType;
 import io.papermc.paper.registry.data.PaperBannerPatternRegistryEntry;
 import io.papermc.paper.registry.data.PaperDamageTypeRegistryEntry;
+import io.papermc.paper.registry.data.PaperDimensionTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
+import io.papermc.paper.registry.data.PaperLevelStemRegistryEntry;
 import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.world.PaperWorldPreset;
+import io.papermc.paper.world.WorldPreset;
+import io.papermc.paper.world.worldgen.DimensionType;
+import io.papermc.paper.world.worldgen.LevelStem;
+import io.papermc.paper.world.worldgen.PaperDimensionType;
+import io.papermc.paper.world.worldgen.PaperLevelStem;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -99,6 +109,7 @@ public final class PaperRegistries {
             start(Registries.FLUID, RegistryKey.FLUID).craft(Fluid.class, CraftFluid::new).build(),
             start(Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT).craft(Sound.class, CraftSound::new, true).build(),
             start(Registries.DATA_COMPONENT_TYPE, RegistryKey.DATA_COMPONENT_TYPE).craft(DataComponentTypes.class, PaperDataComponentType::of).build(),
+            start(Registries.INT_PROVIDER_TYPE, RegistryKey.INT_PROVIDER_TYPE).craft(IntProviderType.class, PaperIntProviderType::new).build(),
 
             // data-drivens
             start(Registries.BIOME, RegistryKey.BIOME).craft(Biome.class, CraftBiome::new).build().delayed(),
@@ -112,6 +123,9 @@ public final class PaperRegistries {
             start(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN).craft(PatternType.class, CraftPatternType::new, true).writable(PaperBannerPatternRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT).craft(Art.class, CraftArt::new, true).writable(PaperPaintingVariantRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.INSTRUMENT, RegistryKey.INSTRUMENT).craft(MusicInstrument.class, CraftMusicInstrument::new, true).build().delayed(),
+            start(Registries.WORLD_PRESET, RegistryKey.WORLD_PRESET).craft(WorldPreset.class, PaperWorldPreset::new).build(),
+            start(Registries.DIMENSION_TYPE, RegistryKey.DIMENSION_TYPE).craft(DimensionType.class, PaperDimensionType::new).writable(PaperDimensionTypeRegistryEntry.PaperBuilder::new),
+            start(Registries.LEVEL_STEM, RegistryKey.LEVEL_STEM).craft(LevelStem.class, PaperLevelStem::new).writable(PaperLevelStemRegistryEntry.PaperBuilder::new),
 
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),

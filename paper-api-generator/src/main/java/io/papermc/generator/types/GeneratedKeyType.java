@@ -1,6 +1,7 @@
 package io.papermc.generator.types;
 
 import com.google.common.collect.Sets;
+import com.google.common.reflect.TypeToken;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -78,12 +79,12 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
         @return a new typed key
         """;
 
-    private final Class<A> apiType;
+    private final TypeToken<A> apiType;
     private final ResourceKey<? extends Registry<T>> registryKey;
     private final RegistryKey<A> apiRegistryKey;
     private final boolean publicCreateKeyMethod;
 
-    public GeneratedKeyType(final String keysClassName, final Class<A> apiType, final String pkg, final ResourceKey<? extends Registry<T>> registryKey, final RegistryKey<A> apiRegistryKey, final boolean publicCreateKeyMethod) {
+    public GeneratedKeyType(final String keysClassName, final TypeToken<A> apiType, final String pkg, final ResourceKey<? extends Registry<T>> registryKey, final RegistryKey<A> apiRegistryKey, final boolean publicCreateKeyMethod) {
         super(keysClassName, pkg);
         this.apiType = apiType;
         this.registryKey = registryKey;
@@ -102,7 +103,7 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
             .returns(returnType);
         if (this.publicCreateKeyMethod) {
             create.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO remove once not experimental
-            create.addJavadoc(CREATE_JAVADOC, this.apiType, this.registryKey.location().toString());
+            create.addJavadoc(CREATE_JAVADOC, this.apiType.getRawType(), this.registryKey.location().toString());
         }
         return create;
     }
@@ -127,7 +128,7 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
 
     @Override
     protected TypeSpec getTypeSpec() {
-        final TypeName typedKey = ParameterizedTypeName.get(TypedKey.class, this.apiType);
+        final TypeName typedKey = ParameterizedTypeName.get(TypedKey.class, this.apiType.getType());
 
         final TypeSpec.Builder typeBuilder = this.keyHolderType();
         final MethodSpec.Builder createMethod = this.createMethod(typedKey);

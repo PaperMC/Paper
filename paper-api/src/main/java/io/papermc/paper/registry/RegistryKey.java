@@ -1,6 +1,10 @@
 package io.papermc.paper.registry;
 
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.math.provider.IntProviderType;
+import io.papermc.paper.world.WorldPreset;
+import io.papermc.paper.world.worldgen.DimensionType;
+import io.papermc.paper.world.worldgen.LevelStem;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
 import net.kyori.adventure.key.Keyed;
@@ -132,7 +136,7 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * <!-- @see io.papermc.paper.registry.keys.DataComponentTypeKeys -->
      */
     RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
-
+    RegistryKey<IntProviderType<?>> INT_PROVIDER_TYPE = create("int_provider_type");
 
 
     /* ********************** *
@@ -193,6 +197,9 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.InstrumentKeys
      */
     RegistryKey<MusicInstrument> INSTRUMENT = create("instrument");
+    RegistryKey<WorldPreset> WORLD_PRESET = create("worldgen/world_preset");
+    RegistryKey<DimensionType> DIMENSION_TYPE = create("dimension_type");
+    RegistryKey<LevelStem> LEVEL_STEM = create("dimension");
 
 
     /* ******************* *
