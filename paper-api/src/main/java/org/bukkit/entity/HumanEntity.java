@@ -2,7 +2,6 @@ package org.bukkit.entity;
 
 import java.util.Collection;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.Consumer;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -706,7 +705,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @param dropAll True to drop entire stack, false to drop 1 of the stack
      * @return True if item was dropped successfully
-     * @deprecated You should instead use {@link #dropItem(EquipmentSlot, int)} or {@link #dropItemAll(EquipmentSlot)} with a {@link EquipmentSlot#HAND} parameter.
+     * @deprecated You should instead use {@link #dropItem(EquipmentSlot, int)} or {@link #dropItems(EquipmentSlot)} with a {@link EquipmentSlot#HAND} parameter.
      */
     @Deprecated(since = "1.21.4")
     public boolean dropItem(boolean dropAll);
@@ -779,44 +778,44 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
 
 
     @Nullable
-    public default Item dropItemAll(int slot, @Nullable Consumer<Item> entityOperation) {
+    public default Item dropItems(int slot, @Nullable Consumer<Item> entityOperation) {
         return this.dropItem(slot, Integer.MAX_VALUE, entityOperation);
     }
 
     @Nullable
-    public default Item dropItemAll(int slot) {
-        return this.dropItemAll(slot, null);
+    public default Item dropItems(int slot) {
+        return this.dropItems(slot, null);
     }
 
     @Nullable
-    public default Item dropItemAll(@NotNull EquipmentSlot slot, @Nullable Consumer<Item> entityOperation) {
+    public default Item dropItems(@NotNull EquipmentSlot slot, @Nullable Consumer<Item> entityOperation) {
         return this.dropItem(slot, Integer.MAX_VALUE, entityOperation);
     }
 
     @Nullable
-    public default Item dropItemAll(@NotNull EquipmentSlot slot) {
-        return this.dropItemAll(slot, null);
+    public default Item dropItems(@NotNull EquipmentSlot slot) {
+        return this.dropItems(slot, null);
     }
 
 
     @Nullable
-    public default Item dropItemAllRandomly(int slot, @Nullable Consumer<Item> entityOperation) {
+    public default Item dropItemsRandomly(int slot, @Nullable Consumer<Item> entityOperation) {
         return this.dropItem(slot, Integer.MAX_VALUE, entityOperation);
     }
 
     @Nullable
-    public default Item dropItemAllRandomly(int slot) {
-        return this.dropItemAllRandomly(slot, null);
+    public default Item dropItemsRandomly(int slot) {
+        return this.dropItemsRandomly(slot, null);
     }
 
     @Nullable
-    public default Item dropItemAllRandomly(@NotNull EquipmentSlot slot, @Nullable Consumer<Item> entityOperation) {
+    public default Item dropItemsRandomly(@NotNull EquipmentSlot slot, @Nullable Consumer<Item> entityOperation) {
         return this.dropItemRandomly(slot, Integer.MAX_VALUE, entityOperation);
     }
 
     @Nullable
-    public default Item dropItemAllRandomly(@NotNull EquipmentSlot slot) {
-        return this.dropItemAllRandomly(slot, null);
+    public default Item dropItemsRandomly(@NotNull EquipmentSlot slot) {
+        return this.dropItemsRandomly(slot, null);
     }
 
 
