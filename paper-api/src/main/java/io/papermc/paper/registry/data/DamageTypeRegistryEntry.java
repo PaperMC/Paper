@@ -7,7 +7,6 @@ import org.bukkit.damage.DamageType;
 import org.bukkit.damage.DeathMessageType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
 
 /**
  * A data-centric version-specific registry entry for the {@link DamageType} type.
@@ -45,15 +44,25 @@ public interface DamageTypeRegistryEntry {
      *
      * @return the damage effect
      */
-    @Nullable DamageEffect damageEffect();
+    DamageEffect damageEffect();
 
     /**
      * Provides the {@link DeathMessageType} for this damage type.
      *
      * @return the death message type
      */
-    @Nullable DeathMessageType deathMessageType();
+    DeathMessageType deathMessageType();
 
+    /**
+     * A mutable builder for the {@link DamageTypeRegistryEntry} plugins may change in applicable registry events.
+     * <p>
+     * The following values are required for each builder:
+     * <ul>
+     *     <li>{@link #messageId(String)}</li>
+     *     <li>{@link #exhaustion(float)}</li>
+     *     <li>{@link #damageScaling(DamageScaling)}</li>
+     * </ul>
+     */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DamageTypeRegistryEntry, RegistryBuilder<DamageType> {
@@ -95,7 +104,7 @@ public interface DamageTypeRegistryEntry {
          * @see DamageType#getDamageEffect()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder damageEffect(@Nullable DamageEffect effect);
+        Builder damageEffect(DamageEffect effect);
 
         /**
          * Sets the {@link DeathMessageType} for this damage type.
@@ -105,6 +114,6 @@ public interface DamageTypeRegistryEntry {
          * @see DamageType#getDeathMessageType()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder deathMessageType(@Nullable DeathMessageType deathMessageType);
+        Builder deathMessageType(DeathMessageType deathMessageType);
     }
 }

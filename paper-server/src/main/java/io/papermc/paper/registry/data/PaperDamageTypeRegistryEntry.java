@@ -12,10 +12,10 @@ import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
 public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
     protected @Nullable String messageId;
-    protected float exhaustion;
+    protected @Nullable Float exhaustion;
     protected @Nullable DamageScaling damageScaling;
-    protected @Nullable DamageEffects damageEffects;
-    protected @Nullable DeathMessageType deathMessageType;
+    protected DamageEffects damageEffects;
+    protected DeathMessageType deathMessageType;
 
     protected final Conversions conversions;
 
@@ -24,7 +24,11 @@ public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
             final @Nullable DamageType internal
     ) {
         this.conversions = conversions;
-        if (internal == null) return;
+        if (internal == null) {
+            this.damageEffects = DamageEffects.HURT;
+            this.deathMessageType = DeathMessageType.DEFAULT;
+            return;
+        }
 
         this.messageId = internal.msgId();
         this.exhaustion = internal.exhaustion();
@@ -40,7 +44,7 @@ public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
 
     @Override
     public float exhaustion() {
-        return exhaustion;
+        return asConfigured(exhaustion, "exhaustion");
     }
 
     @Override
@@ -49,13 +53,13 @@ public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
     }
 
     @Override
-    public @Nullable DamageEffect damageEffect() {
-        return damageEffects == null ? null : CraftDamageEffect.toBukkit(damageEffects);
+    public DamageEffect damageEffect() {
+        return CraftDamageEffect.toBukkit(damageEffects);
     }
 
     @Override
-    public org.bukkit.damage.@Nullable DeathMessageType deathMessageType() {
-        return deathMessageType == null ? null : CraftDamageType.deathMessageTypeToBukkit(deathMessageType);
+    public org.bukkit.damage.DeathMessageType deathMessageType() {
+        return CraftDamageType.deathMessageTypeToBukkit(deathMessageType);
     }
 
     public static final class PaperBuilder extends PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry.Builder, PaperRegistryBuilder<DamageType, org.bukkit.damage.DamageType> {
@@ -83,39 +87,25 @@ public class PaperDamageTypeRegistryEntry implements DamageTypeRegistryEntry {
         }
 
         @Override
-        public Builder damageEffect(@Nullable DamageEffect effect) {
-            this.damageEffects = effect == null ? null : ((CraftDamageEffect) effect).getHandle();
+        public Builder damageEffect(DamageEffect effect) {
+            this.damageEffects = ((CraftDamageEffect) effect).getHandle();
             return this;
         }
 
         @Override
-        public Builder deathMessageType(org.bukkit.damage.@Nullable DeathMessageType deathMessageType) {
-            this.deathMessageType = deathMessageType == null ? null : CraftDamageType.deathMessageTypeToNMS(deathMessageType);
+        public Builder deathMessageType(org.bukkit.damage.DeathMessageType deathMessageType) {
+            this.deathMessageType = CraftDamageType.deathMessageTypeToNMS(deathMessageType);
             return this;
         }
 
         @Override
         public DamageType build() {
-            if (this.damageEffects != null && this.deathMessageType != null) {
-                return new DamageType(
-                        asConfigured(this.messageId, "messsageId"),
-                        asConfigured(this.damageScaling, "scaling"),
-                        this.exhaustion,
-                        this.damageEffects,
-                        this.deathMessageType);
-            } else if (this.damageEffects != null) {
-                return new DamageType(
-                        asConfigured(this.messageId, "messsageId"),
-                        asConfigured(this.damageScaling, "scaling"),
-                        this.exhaustion,
-                        this.damageEffects);
-            } else {
-                return new DamageType(
-                        asConfigured(this.messageId, "messsageId"),
-                        asConfigured(this.damageScaling, "scaling"),
-                        this.exhaustion
-                );
-            }
+            return new DamageType(
+                    asConfigured(this.messageId, "messsageId"),
+                    asConfigured(this.damageScaling, "scaling"),
+                    asConfigured(this.exhaustion, "exhaustion"),
+                    this.damageEffects,
+                    this.deathMessageType);
         }
     }
 }
