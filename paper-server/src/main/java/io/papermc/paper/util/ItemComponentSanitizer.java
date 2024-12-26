@@ -185,6 +185,10 @@ final class ItemComponentSanitizer {
     // </editor-fold>
 
     public static int sanitizeCount(ItemStack itemStack, int count) {
+        if (DataSanitizationUtil.DATA_SANITIZER.get().isNotSanitizing()) {
+            return count;
+        }
+
         GlobalConfiguration.Anticheat.Obfuscation.Items items = GlobalConfiguration.get().anticheat.obfuscation.items;
         if (items.enableItemObfuscation && DataSanitizationUtil.getAssetObfuscation(itemStack).sanitizeCount()) {
             return 1;
