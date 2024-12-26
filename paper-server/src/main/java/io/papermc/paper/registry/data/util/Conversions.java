@@ -5,6 +5,7 @@ import com.mojang.serialization.JavaOps;
 import io.papermc.paper.adventure.WrapperAwareSerializer;
 import java.util.Optional;
 import net.kyori.adventure.text.Component;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryOps;
@@ -44,6 +45,10 @@ public class Conversions {
 
     public RegistryOps.RegistryInfoLookup lookup() {
         return this.lookup;
+    }
+
+    public <M> Holder.Reference<M> getReferenceHolder(final ResourceKey<M> key) {
+        return this.lookup.lookup(key.registryKey()).orElseThrow().getter().getOrThrow(key);
     }
 
     @Contract("null -> null; !null -> !null")
