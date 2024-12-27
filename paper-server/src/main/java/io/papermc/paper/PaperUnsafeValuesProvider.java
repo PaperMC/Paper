@@ -1,15 +1,15 @@
 package io.papermc.paper;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.damage.DamageEffect;
+import org.jspecify.annotations.NullMarked;
 
-public class PaperUnsafeValuesProvider implements StaticUnsafeValues.UnsafeValuesProvider {
+@NullMarked
+public class PaperUnsafeValuesProvider implements InternalAPIBridge {
     public static final PaperUnsafeValuesProvider INSTANCE = new PaperUnsafeValuesProvider();
 
     @Override
-    public DamageEffect getDamageEffect(String key) {
-        Preconditions.checkArgument(key != null, "key cannot be null");
-        return CraftDamageEffect.getById(key);
+    public DamageEffect createDamageEffectInstance(final String mojangKey) {
+        return CraftDamageEffect.getById(mojangKey);
     }
 }

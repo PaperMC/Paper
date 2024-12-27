@@ -1,17 +1,14 @@
 package io.papermc.paper.plugin.entrypoint;
 
-import io.papermc.paper.PaperUnsafeValuesProvider;
-import io.papermc.paper.StaticUnsafeValues;
 import io.papermc.paper.plugin.provider.PluginProvider;
 import io.papermc.paper.plugin.storage.BootstrapProviderStorage;
 import io.papermc.paper.plugin.storage.ProviderStorage;
 import io.papermc.paper.plugin.storage.ServerPluginProviderStorage;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
-import org.jetbrains.annotations.ApiStatus;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
  * Used by the server to register/load plugin bootstrappers and plugins.
@@ -34,7 +31,6 @@ public class LaunchEntryPointHandler implements EntrypointHandler {
 
     @Override
     public void enter(Entrypoint<?> entrypoint) {
-        StaticUnsafeValues.setProvider(PaperUnsafeValuesProvider.INSTANCE);
         ProviderStorage<?> storage = this.storage.get(entrypoint);
         if (storage == null) {
             throw new IllegalArgumentException("No storage registered for entrypoint %s.".formatted(entrypoint));
