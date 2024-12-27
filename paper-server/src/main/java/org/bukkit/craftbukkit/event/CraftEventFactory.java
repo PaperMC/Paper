@@ -5,6 +5,9 @@ import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Either;
+import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.PaperStatistics;
+import io.papermc.paper.statistic.Statistic;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -19,6 +22,7 @@ import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.stats.Stat;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
@@ -1570,49 +1574,14 @@ public class CraftEventFactory {
         return event; // Paper - custom shear drops
     }
 
-    public static Cancellable handleStatisticsIncrease(net.minecraft.world.entity.player.Player entityHuman, net.minecraft.stats.Stat<?> statistic, int current, int newValue) {
-        Player player = ((ServerPlayer) entityHuman).getBukkitEntity();
-        org.bukkit.Statistic stat = CraftStatistic.getBukkitStatistic(statistic);
-        if (stat == null) {
-            System.err.println("Unhandled statistic: " + statistic);
+    public static Cancellable handleStatisticsIncrease(final net.minecraft.world.entity.player.Player entityHuman, final Stat<?> statistic, final int current, final int newValue) {
+        final Player player = ((ServerPlayer) entityHuman).getBukkitEntity();
+        final Statistic<?> stat = PaperStatistics.getPaperStatistic(statistic);
+        if (stat.value() instanceof final CustomStatistic customStatistic && PaperStatistics.IGNORED_STATS_FOR_EVENT.contains(customStatistic)) {
+            // Do not process event for these - too spammy
             return null;
         }
-        switch (stat) {
-            case FALL_ONE_CM:
-            case BOAT_ONE_CM:
-            case CLIMB_ONE_CM:
-            case WALK_ON_WATER_ONE_CM:
-            case WALK_UNDER_WATER_ONE_CM:
-            case FLY_ONE_CM:
-            case HORSE_ONE_CM:
-            case MINECART_ONE_CM:
-            case PIG_ONE_CM:
-            case PLAY_ONE_MINUTE:
-            case SWIM_ONE_CM:
-            case WALK_ONE_CM:
-            case SPRINT_ONE_CM:
-            case CROUCH_ONE_CM:
-            case TIME_SINCE_DEATH:
-            case SNEAK_TIME:
-            case TOTAL_WORLD_TIME:
-            case TIME_SINCE_REST:
-            case AVIATE_ONE_CM:
-            case STRIDER_ONE_CM:
-                // Do not process event for these - too spammy
-                return null;
-            default:
-        }
-
-        final Event event;
-        if (stat.getType() == Type.UNTYPED) {
-            event = new PlayerStatisticIncrementEvent(player, stat, current, newValue);
-        } else if (stat.getType() == Type.ENTITY) {
-            EntityType entityType = CraftStatistic.getEntityTypeFromStatistic((net.minecraft.stats.Stat<net.minecraft.world.entity.EntityType<?>>) statistic);
-            event = new PlayerStatisticIncrementEvent(player, stat, current, newValue, entityType);
-        } else {
-            Material material = CraftStatistic.getMaterialFromStatistic(statistic);
-            event = new PlayerStatisticIncrementEvent(player, stat, current, newValue, material);
-        }
+        final Event event = new PlayerStatisticIncrementEvent(player, stat, current, newValue);
         event.callEvent();
         return (Cancellable) event;
     }

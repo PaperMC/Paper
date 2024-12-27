@@ -12,8 +12,8 @@ import org.jetbrains.annotations.NotNull;
  * Represents a scoreboard criteria, either custom or built-in to the Minecraft server, used to
  * keep track of and manually or automatically change scores on a scoreboard.
  * <p>
- * While this class outlines constants for standard criteria, see {@link #statistic(Statistic)}
- * (and its overloads) to create instances for statistically-backed criteria.
+ * While this class outlines constants for standard criteria, see {@link io.papermc.paper.statistic.Statistic}
+ * for statistically-backed criteria.
  */
 public interface Criteria {
 
@@ -241,8 +241,10 @@ public interface Criteria {
      * {@link Material#isBlock()} is false
      * @throws IllegalArgumentException if {@link Statistic#getType()} is {@link Type#ITEM}, but
      * {@link Material#isItem()} is false
+     * @deprecated use {@link io.papermc.paper.statistic.Statistic}
      */
     @NotNull
+    @Deprecated(since = "1.21.6")
     public static Criteria statistic(@NotNull Statistic statistic, @NotNull Material material) {
         Preconditions.checkArgument(statistic != null, "statistic must not be null");
         Preconditions.checkArgument(material != null, "material must not be null");
@@ -298,8 +300,10 @@ public interface Criteria {
      * @param entityType the relevant entity type
      * @return the criteria
      * @throws IllegalArgumentException if {@link Statistic#getType()} is not {@link Type#ENTITY}
+     * @deprecated use {@link io.papermc.paper.statistic.Statistic}
      */
     @NotNull
+    @Deprecated(since = "1.21.6") // Paper
     public static Criteria statistic(@NotNull Statistic statistic, @NotNull EntityType entityType) {
         Preconditions.checkArgument(statistic != null, "statistic must not be null");
         Preconditions.checkArgument(entityType != null, "entityType must not be null");
@@ -331,8 +335,10 @@ public interface Criteria {
      *
      * @param statistic the statistic for which to get a criteria
      * @return the criteria
+     * @deprecated Use {@link io.papermc.paper.statistic.Statistic}
      */
     @NotNull
+    @Deprecated(since = "1.21.6")
     public static Criteria statistic(@NotNull Statistic statistic) {
         Preconditions.checkArgument(statistic != null, "statistic must not be null");
         return Bukkit.getScoreboardCriteria(org.bukkit.Bukkit.getUnsafe().getStatisticCriteriaKey(statistic)); // Paper

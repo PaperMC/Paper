@@ -2,11 +2,17 @@ package org.bukkit.support.provider;
 
 import com.google.common.collect.Lists;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.PaperCustomStatistic;
+import io.papermc.paper.statistic.PaperStatisticType;
+import io.papermc.paper.statistic.StatisticType;
 import java.util.List;
 import java.util.stream.Stream;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.stats.StatType;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.animal.CatVariant;
 import net.minecraft.world.entity.animal.ChickenVariant;
@@ -115,6 +121,8 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(RegistryKey.CHICKEN_VARIANT, Chicken.Variant.class, Registries.CHICKEN_VARIANT, CraftChicken.CraftVariant.class, ChickenVariant.class);
         register(RegistryKey.COW_VARIANT, Cow.Variant.class, Registries.COW_VARIANT, CraftCow.CraftVariant.class, CowVariant.class);
         register(RegistryKey.PIG_VARIANT, Pig.Variant.class, Registries.PIG_VARIANT, CraftPig.CraftVariant.class, PigVariant.class);
+        register(RegistryKey.CUSTOM_STAT, CustomStatistic.class, Registries.CUSTOM_STAT, PaperCustomStatistic.class, ResourceLocation.class);
+        register(RegistryKey.STAT_TYPE, StatisticType.class, Registries.STAT_TYPE, PaperStatisticType.class, StatType.class);
     }
 
     private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft) { // Paper
