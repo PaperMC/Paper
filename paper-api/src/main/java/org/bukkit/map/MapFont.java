@@ -112,7 +112,7 @@ public class MapFont {
         private final int height;
         private final boolean[] data;
 
-        public CharacterSprite(int width, int height, @NotNull boolean[] data) {
+        public CharacterSprite(int width, int height, boolean @NotNull [] data) {
             this.width = width;
             this.height = height;
             this.data = data;

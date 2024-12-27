@@ -4,6 +4,7 @@ import org.bukkit.enchantments.EnchantmentOffer;
 import org.bukkit.inventory.EnchantingInventory;
 import org.bukkit.inventory.InventoryView;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An instance of {@link InventoryView} which provides extra methods related to
@@ -36,8 +37,7 @@ public interface EnchantmentView extends InventoryView {
      *
      * @return The enchantment offers that are provided
      */
-    @NotNull
-    EnchantmentOffer[] getOffers();
+    @NotNull EnchantmentOffer @Nullable [] getOffers();
 
     /**
      * Sets the offers to provide to the player.
@@ -45,5 +45,5 @@ public interface EnchantmentView extends InventoryView {
      * @param offers The offers to provide
      * @throws IllegalArgumentException if the array length isn't 3
      */
-    void setOffers(@NotNull EnchantmentOffer[] offers) throws IllegalArgumentException;
+    void setOffers(@NotNull EnchantmentOffer @Nullable [] offers) throws IllegalArgumentException;
 }

@@ -12,7 +12,7 @@ public abstract class OctaveGenerator {
     protected double yScale = 1;
     protected double zScale = 1;
 
-    protected OctaveGenerator(@NotNull NoiseGenerator[] octaves) {
+    protected OctaveGenerator(@NotNull NoiseGenerator @NotNull [] octaves) {
         this.octaves = octaves;
     }
 
@@ -90,7 +90,7 @@ public abstract class OctaveGenerator {
      * @return Clone of the individual octaves
      */
     @NotNull
-    public NoiseGenerator[] getOctaves() {
+    public NoiseGenerator @NotNull [] getOctaves() {
         return octaves.clone();
     }
 

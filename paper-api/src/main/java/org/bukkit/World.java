@@ -346,8 +346,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return Chunk[] containing all loaded chunks
      */
-    @NotNull
-    public Chunk[] getLoadedChunks();
+    public @NotNull Chunk @NotNull[] getLoadedChunks();
 
     /**
      * Loads the specified {@link Chunk}.
@@ -3563,8 +3562,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return An array of {@link GameRule} names.
      */
-    @NotNull
-    public String[] getGameRules();
+    public @NotNull String @NotNull [] getGameRules();
 
     /**
      * Gets the current state of the specified rule

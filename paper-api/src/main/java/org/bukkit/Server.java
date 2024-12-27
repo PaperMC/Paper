@@ -1018,7 +1018,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the {@link Recipe} resulting from the given crafting matrix.
      */
     @Nullable
-    public Recipe getCraftingRecipe(@NotNull ItemStack[] craftingMatrix, @NotNull World world);
+    public Recipe getCraftingRecipe(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world);
 
     /**
      * Get the crafted item using the list of {@link ItemStack} provided.
@@ -1046,7 +1046,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * an ItemStack of {@link Material#AIR} is returned.
      */
     @NotNull
-    public ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player);
+    public ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world, @NotNull Player player);
 
     /**
      * Get the crafted item using the list of {@link ItemStack} provided.
@@ -1067,7 +1067,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * an ItemStack of {@link Material#AIR} is returned.
      */
     @NotNull
-    public ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world);
+    public ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world);
 
     /**
      * Get the crafted item using the list of {@link ItemStack} provided.
@@ -1094,7 +1094,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
      */
     @NotNull
-    public ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player);
+    public ItemCraftResult craftItemResult(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world, @NotNull Player player);
 
     /**
      * Get the crafted item using the list of {@link ItemStack} provided.
@@ -1114,7 +1114,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
      */
     @NotNull
-    public ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world);
+    public ItemCraftResult craftItemResult(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world);
 
     /**
      * Get an iterator through the list of crafting recipes.
@@ -1503,8 +1503,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return an array containing all previous players
      */
-    @NotNull
-    public OfflinePlayer[] getOfflinePlayers();
+    public @NotNull OfflinePlayer @NotNull [] getOfflinePlayers();
 
     /**
      * Gets the {@link Messenger} responsible for this server.
@@ -2057,16 +2056,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return current server TPS (1m, 5m, 15m in Paper-Server)
      */
-    @NotNull
-    public double[] getTPS();
+    public double @NotNull [] getTPS();
 
     /**
      * Get a sample of the servers last tick times (in nanos)
      *
      * @return A sample of the servers last tick times (in nanos)
      */
-    @NotNull
-    long[] getTickTimes();
+    long @NotNull [] getTickTimes();
 
     /**
      * Get the average tick time (in millis)

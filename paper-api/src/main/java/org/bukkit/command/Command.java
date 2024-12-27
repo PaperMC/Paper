@@ -66,7 +66,7 @@ public abstract class Command {
      * @param args All arguments passed to the command, split via ' '
      * @return true if the command was successful, otherwise false
      */
-    public abstract boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String[] args);
+    public abstract boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, @NotNull String @NotNull [] args);
 
     /**
      * Executed on tab completion for this command, returning a list of
@@ -80,7 +80,7 @@ public abstract class Command {
      * @throws IllegalArgumentException if sender, alias, or args is null
      */
     @NotNull
-    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args) throws IllegalArgumentException {
+    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String @NotNull [] args) throws IllegalArgumentException {
         return tabComplete0(sender, alias, args, null);
     }
 
@@ -97,7 +97,7 @@ public abstract class Command {
      * @throws IllegalArgumentException if sender, alias, or args is null
      */
     @NotNull
-    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String[] args, @Nullable Location location) throws IllegalArgumentException {
+    public List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, @NotNull String @NotNull [] args, @Nullable Location location) throws IllegalArgumentException {
         return tabComplete(sender, alias, args);
     }
 

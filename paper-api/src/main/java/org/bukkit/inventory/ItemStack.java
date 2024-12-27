@@ -744,8 +744,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param bytes bytes representing an item in NBT
      * @return ItemStack migrated to this version of Minecraft if needed.
      */
-    @NotNull
-    public static ItemStack deserializeBytes(@NotNull byte[] bytes) {
+    public static @NotNull ItemStack deserializeBytes(final byte @NotNull [] bytes) {
         return org.bukkit.Bukkit.getUnsafe().deserializeItem(bytes);
     }
 
@@ -754,8 +753,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * use the built in data converter instead of bukkits dangerous serialization system.
      * @return bytes representing this item in NBT.
      */
-    @NotNull
-    public byte[] serializeAsBytes() {
+    public byte @NotNull [] serializeAsBytes() {
         return org.bukkit.Bukkit.getUnsafe().serializeItem(this);
     }
 

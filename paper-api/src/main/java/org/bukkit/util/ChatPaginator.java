@@ -150,7 +150,7 @@ public class ChatPaginator {
         private int pageNumber;
         private int totalPages;
 
-        public ChatPage(@NotNull String[] lines, int pageNumber, int totalPages) {
+        public ChatPage(@NotNull String @NotNull [] lines, int pageNumber, int totalPages) {
             this.lines = lines;
             this.pageNumber = pageNumber;
             this.totalPages = totalPages;
@@ -165,7 +165,7 @@ public class ChatPaginator {
         }
 
         @NotNull
-        public String[] getLines() {
+        public String @NotNull [] getLines() {
             return lines;
         }
     }

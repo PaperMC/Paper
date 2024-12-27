@@ -304,8 +304,7 @@ public class PaperServerListPingEvent extends ServerListPingEvent implements Can
         return new PlayerIterator();
     }
 
-    @NotNull
-    protected Object[] getOnlinePlayers() {
+    protected @NotNull Object @NotNull [] getOnlinePlayers() {
         return Bukkit.getOnlinePlayers().toArray();
     }
 

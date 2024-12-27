@@ -439,7 +439,7 @@ public class StandardMessenger implements Messenger {
     }
 
     @Override
-    public void dispatchIncomingMessage(@NotNull Player source, @NotNull String channel, @NotNull byte[] message) {
+    public void dispatchIncomingMessage(@NotNull Player source, @NotNull String channel, byte @NotNull [] message) {
         if (source == null) {
             throw new IllegalArgumentException("Player source cannot be null");
         }
@@ -534,7 +534,7 @@ public class StandardMessenger implements Messenger {
      * @throws ChannelNotRegisteredException Thrown if the channel is not
      *     registered for this plugin.
      */
-    public static void validatePluginMessage(@NotNull Messenger messenger, @NotNull Plugin source, @NotNull String channel, @NotNull byte[] message) {
+    public static void validatePluginMessage(@NotNull Messenger messenger, @NotNull Plugin source, @NotNull String channel, byte @NotNull [] message) {
         if (messenger == null) {
             throw new IllegalArgumentException("Messenger cannot be null");
         }

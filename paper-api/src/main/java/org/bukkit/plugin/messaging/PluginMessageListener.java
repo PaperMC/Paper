@@ -17,5 +17,5 @@ public interface PluginMessageListener {
      * @param player Source of the message.
      * @param message The raw message that was sent.
      */
-    public void onPluginMessageReceived(@NotNull String channel, @NotNull Player player, @NotNull byte[] message);
+    public void onPluginMessageReceived(@NotNull String channel, @NotNull Player player, byte @NotNull [] message);
 }
