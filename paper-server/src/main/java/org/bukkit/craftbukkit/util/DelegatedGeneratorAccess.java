@@ -613,8 +613,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public BlockHitResult clip(ClipContext context, BlockPos traversePos) {
-        return this.handle.clip(context, traversePos);
+    public BlockHitResult clip(ClipContext traverseContext, BlockPos traversePos) {
+        return this.handle.clip(traverseContext, traversePos);
     }
 
     @Override

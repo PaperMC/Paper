@@ -25,7 +25,7 @@
      FluidState getFluidState(BlockPos pos);
  
      default int getLightEmission(BlockPos pos) {
-@@ -66,19 +_,46 @@
+@@ -66,10 +_,25 @@
          );
      }
  
@@ -33,39 +33,31 @@
 -        return traverseBlocks(context.getFrom(), context.getTo(), context, (traverseContext, traversePos) -> {
 -            BlockState blockState = this.getBlockState(traversePos);
 -            FluidState fluidState = this.getFluidState(traversePos);
--            Vec3 from = traverseContext.getFrom();
--            Vec3 to = traverseContext.getTo();
--            VoxelShape blockShape = traverseContext.getBlockShape(blockState, this, traversePos);
 +    // CraftBukkit start - moved block handling into separate method for use by Block#rayTrace
-+    default BlockHitResult clip(ClipContext context, BlockPos traversePos) {
++    default BlockHitResult clip(ClipContext traverseContext, BlockPos traversePos) {
 +        // Paper start - Add predicate for blocks when raytracing
-+        return clip(context, traversePos, null);
++        return clip(traverseContext, traversePos, null);
 +    }
 +
-+    default BlockHitResult clip(ClipContext context, BlockPos traversePos, java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
++    default BlockHitResult clip(ClipContext traverseContext, BlockPos traversePos, java.util.function.Predicate<? super org.bukkit.block.Block> canCollide) {
 +        // Paper end - Add predicate for blocks when raytracing
 +        // Paper start - Prevent raytrace from loading chunks
 +        BlockState blockState = this.getBlockStateIfLoaded(traversePos);
 +        if (blockState == null) {
 +            // copied the last function parameter (listed below)
-+            Vec3 vec3d = context.getFrom().subtract(context.getTo());
++            Vec3 vec3d = traverseContext.getFrom().subtract(traverseContext.getTo());
 +
-+            return BlockHitResult.miss(context.getTo(), Direction.getApproximateNearest(vec3d.x, vec3d.y, vec3d.z), BlockPos.containing(context.getTo()));
++            return BlockHitResult.miss(traverseContext.getTo(), Direction.getApproximateNearest(vec3d.x, vec3d.y, vec3d.z), BlockPos.containing(traverseContext.getTo()));
 +        }
 +        // Paper end - Prevent raytrace from loading chunks
 +        if (blockState.isAir() || (canCollide != null && this instanceof LevelAccessor levelAccessor && !canCollide.test(org.bukkit.craftbukkit.block.CraftBlock.at(levelAccessor, traversePos)))) return null; // Paper - Perf: optimise air cases & check canCollide predicate
 +            FluidState fluidState = blockState.getFluidState(); // Paper - Perf: don't need to go to world state again
-+            Vec3 from = context.getFrom();
-+            Vec3 to = context.getTo();
-+            VoxelShape blockShape = context.getBlockShape(blockState, this, traversePos);
-             BlockHitResult blockHitResult = this.clipWithInteractionOverride(from, to, traversePos, blockShape, blockState);
--            VoxelShape fluidShape = traverseContext.getFluidShape(fluidState, this, traversePos);
-+            VoxelShape fluidShape = context.getFluidShape(fluidState, this, traversePos);
-             BlockHitResult blockHitResult1 = fluidShape.clip(from, to, traversePos);
--            double d = blockHitResult == null ? Double.MAX_VALUE : traverseContext.getFrom().distanceToSqr(blockHitResult.getLocation());
--            double d1 = blockHitResult1 == null ? Double.MAX_VALUE : traverseContext.getFrom().distanceToSqr(blockHitResult1.getLocation());
-+            double d = blockHitResult == null ? Double.MAX_VALUE : context.getFrom().distanceToSqr(blockHitResult.getLocation());
-+            double d1 = blockHitResult1 == null ? Double.MAX_VALUE : context.getFrom().distanceToSqr(blockHitResult1.getLocation());
+             Vec3 from = traverseContext.getFrom();
+             Vec3 to = traverseContext.getTo();
+             VoxelShape blockShape = traverseContext.getBlockShape(blockState, this, traversePos);
+@@ -79,6 +_,18 @@
+             double d = blockHitResult == null ? Double.MAX_VALUE : traverseContext.getFrom().distanceToSqr(blockHitResult.getLocation());
+             double d1 = blockHitResult1 == null ? Double.MAX_VALUE : traverseContext.getFrom().distanceToSqr(blockHitResult1.getLocation());
              return d <= d1 ? blockHitResult : blockHitResult1;
 +    }
 +    // CraftBukkit end
