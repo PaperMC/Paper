@@ -8,21 +8,21 @@ import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.RenderType;
 
 public final class CraftCriteria implements Criteria {
-    static final Map<String, CraftCriteria> DEFAULTS;
+    static final Map<String, Criteria> DEFAULTS; // Paper - stats api
     static final CraftCriteria DUMMY;
 
     static {
-        ImmutableMap.Builder<String, CraftCriteria> defaults = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Criteria> defaults = ImmutableMap.builder(); // Paper - stats api
 
         for (Map.Entry<String, ObjectiveCriteria> entry : ObjectiveCriteria.CRITERIA_CACHE.entrySet()) {
             String name = entry.getKey();
             ObjectiveCriteria criteria = entry.getValue();
 
-            defaults.put(name, new CraftCriteria(criteria));
+            defaults.put(name, convertFromNms(criteria)); // Paper - stats api
         }
 
         DEFAULTS = defaults.build();
-        DUMMY = DEFAULTS.get("dummy");
+        DUMMY = (CraftCriteria) DEFAULTS.get("dummy"); // Paper - stats api
     }
 
     final ObjectiveCriteria criteria;
@@ -54,22 +54,28 @@ public final class CraftCriteria implements Criteria {
     }
 
     // Paper start
-    public static CraftCriteria getFromNMS(ObjectiveCriteria criteria) {
-        return java.util.Objects.requireNonNullElseGet(CraftCriteria.DEFAULTS.get(criteria.getName()), () -> new CraftCriteria(criteria));
+    public static Criteria getFromNMS(ObjectiveCriteria criteria) { // Paper - stats api
+        return java.util.Objects.requireNonNullElseGet(CraftCriteria.DEFAULTS.get(criteria.getName()), () -> convertFromNms(criteria));
     }
     // Paper end
 
-    public static CraftCriteria getFromNMS(Objective objective) {
-        return java.util.Objects.requireNonNullElseGet(CraftCriteria.DEFAULTS.get(objective.getCriteria().getName()), () -> new CraftCriteria(objective.getCriteria())); // Paper
+    // Paper start - stats api
+    static Criteria convertFromNms(ObjectiveCriteria criteria) {
+        return criteria instanceof net.minecraft.stats.Stat<?> stat ? io.papermc.paper.statistic.PaperStatistics.getPaperStatistic(stat) : new CraftCriteria(criteria);
+    }
+    // Paper end - stats api
+
+    public static Criteria getFromNMS(Objective objective) { // Paper - stats api
+        return getFromNMS(objective.getCriteria()); // Paper - stats api
     }
 
-    public static CraftCriteria getFromBukkit(String name) {
-        CraftCriteria criteria = CraftCriteria.DEFAULTS.get(name);
+    public static Criteria getFromBukkit(String name) { // Paper - stats api
+        Criteria criteria = CraftCriteria.DEFAULTS.get(name); // Paper - stats api
         if (criteria != null) {
             return criteria;
         }
 
-        return ObjectiveCriteria.byName(name).map(CraftCriteria::new).orElseGet(() -> new CraftCriteria(name));
+        return ObjectiveCriteria.byName(name).map(CraftCriteria::convertFromNms).orElseGet(() -> new CraftCriteria(name)); // Paper - stats api
     }
 
     @Override

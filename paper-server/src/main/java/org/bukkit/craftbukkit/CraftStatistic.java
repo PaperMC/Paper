@@ -19,6 +19,7 @@ import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.entity.EntityType;
 
+@Deprecated(forRemoval = true) // Paper
 public enum CraftStatistic {
     DAMAGE_DEALT(Stats.DAMAGE_DEALT),
     DAMAGE_TAKEN(Stats.DAMAGE_TAKEN),

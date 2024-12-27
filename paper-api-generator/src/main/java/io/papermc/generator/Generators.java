@@ -1,10 +1,13 @@
 package io.papermc.generator;
 
+import com.google.common.reflect.TypeToken;
 import io.papermc.generator.types.GeneratedKeyType;
 import io.papermc.generator.types.GeneratedTagKeyType;
 import io.papermc.generator.types.SourceGenerator;
 import io.papermc.generator.types.goal.MobGoalGenerator;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.StatisticType;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -52,6 +55,8 @@ public interface Generators {
         simpleKey("AttributeKeys", Attribute.class, Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, false),
         simpleKey("FluidKeys", Fluid.class, Registries.FLUID, RegistryKey.FLUID, false),
         simpleKey("SoundEventKeys", Sound.class, Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT, false),
+        simpleKey("CustomStatisticKeys", CustomStatistic.class, Registries.CUSTOM_STAT, RegistryKey.CUSTOM_STAT, false),
+        simpleKey("StatisticTypeKeys", new TypeToken<StatisticType<?>>() {}, Registries.STAT_TYPE, RegistryKey.STAT_TYPE, false),
 
         // data-driven
         simpleKey("BiomeKeys", Biome.class, Registries.BIOME, RegistryKey.BIOME, true),
@@ -87,6 +92,10 @@ public interface Generators {
     };
 
     private static <T, A> SourceGenerator simpleKey(final String className, final Class<A> apiType, final ResourceKey<? extends Registry<T>> registryKey, final RegistryKey<A> apiRegistryKey, final boolean publicCreateKeyMethod) {
+        return simpleKey(className, TypeToken.of(apiType), registryKey, apiRegistryKey, publicCreateKeyMethod);
+    }
+
+    private static <T, A> SourceGenerator simpleKey(final String className, final TypeToken<A> apiType, final ResourceKey<? extends Registry<T>> registryKey, final RegistryKey<A> apiRegistryKey, final boolean publicCreateKeyMethod) {
         return new GeneratedKeyType<>(className, apiType, "io.papermc.paper.registry.keys", registryKey, apiRegistryKey, publicCreateKeyMethod);
     }
 

@@ -41,7 +41,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return CraftRegistry.registry;
     }
 
-    public static <E> net.minecraft.core.Registry<E> getMinecraftRegistry(ResourceKey<net.minecraft.core.Registry<E>> key) {
+    public static <E> net.minecraft.core.Registry<E> getMinecraftRegistry(ResourceKey<? extends net.minecraft.core.Registry<E>> key) { // Paper - use correct generic type
         return CraftRegistry.getMinecraftRegistry().lookupOrThrow(key);
     }
 
@@ -54,7 +54,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
      * @param bukkitRegistry the bukkit registry to use
      * @return the bukkit representation of the minecraft value
      */
-    public static <B extends Keyed, M> B minecraftToBukkit(M minecraft, ResourceKey<net.minecraft.core.Registry<M>> registryKey, Registry<B> bukkitRegistry) {
+    public static <B extends Keyed, M> B minecraftToBukkit(M minecraft, ResourceKey<? extends net.minecraft.core.Registry<M>> registryKey, Registry<B> bukkitRegistry) { // Paper - use correct generic type
         Preconditions.checkArgument(minecraft != null);
 
         net.minecraft.core.Registry<M> registry = CraftRegistry.getMinecraftRegistry(registryKey);
