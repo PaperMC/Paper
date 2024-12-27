@@ -39,14 +39,13 @@ import net.minecraft.world.damagesource.FallLocation;
 import net.minecraft.world.entity.ai.attributes.DefaultAttributes;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.decoration.Mannequin;
+import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.bukkit.GameRule;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Statistic;
 import org.bukkit.attribute.Attributable;
 import org.bukkit.block.Biome;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.CraftGameRule;
-import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
@@ -57,6 +56,7 @@ import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftMannequin;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
+import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftSpawnCategory;
@@ -71,6 +71,7 @@ import org.bukkit.entity.SpawnCategory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scoreboard.Criteria;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -211,12 +212,6 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public String getStatisticCriteriaKey(final Statistic statistic) {
-        if (statistic.getType() != Statistic.Type.UNTYPED) return "minecraft.custom:minecraft." + statistic.getKey().getKey();
-        return CraftStatistic.getNMSStatistic(statistic).getName();
-    }
-
-    @Override
     public LifecycleEventManager<Plugin> createPluginLifecycleEventManager(final JavaPlugin plugin, final BooleanSupplier registrationCheck) {
         return new PaperLifecycleEventManager<>(plugin, registrationCheck);
     }
@@ -256,5 +251,11 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public ComponentFlattener componentFlattener() {
         return PaperAdventure.FLATTENER;
+    }
+
+    @Override
+    public Criteria getCriteria(final String key) {
+        Preconditions.checkArgument(ObjectiveCriteria.getCustomCriteriaNames().contains(key));
+        return CraftCriteria.getFromNMS(ObjectiveCriteria.byName(key).orElseThrow());
     }
 }

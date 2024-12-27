@@ -2214,8 +2214,10 @@ public final class Bukkit {
      * @param name the criteria name
      * @return the criteria
      * @see Criteria Criteria for a list of constants
+     * @deprecated use constants in {@link Criteria} or {@link io.papermc.paper.statistic.Statistic}
      */
     @NotNull
+    @Deprecated(since = "26.2", forRemoval = true)
     public static Criteria getScoreboardCriteria(@NotNull String name) {
         return server.getScoreboardCriteria(name);
     }
