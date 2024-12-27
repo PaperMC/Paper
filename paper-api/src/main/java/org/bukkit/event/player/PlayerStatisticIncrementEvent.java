@@ -57,7 +57,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      * @deprecated use {@link #getStat()}
      */
     @NotNull
-    @Deprecated(since = "1.21") // Paper
+    @Deprecated(since = "1.21.4")
     public Statistic getStatistic() {
         return Statistic.toLegacy(this.statistic); // Paper
     }
@@ -88,7 +88,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      * @deprecated use {@link #getStat()}
      */
     @Nullable
-    @Deprecated(since = "1.21") // Paper
+    @Deprecated(since = "1.21.4")
     public EntityType getEntityType() {
         return entityType;
     }
@@ -101,7 +101,7 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      * @deprecated use {@link #getStat()}
      */
     @Nullable
-    @Deprecated(since = "1.21") // Paper
+    @Deprecated(since = "1.21,4")
     public Material getMaterial() {
         return material;
     }

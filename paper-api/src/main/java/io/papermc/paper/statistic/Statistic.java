@@ -1,7 +1,6 @@
 package io.papermc.paper.statistic;
 
 import org.bukkit.scoreboard.Criteria;
-import org.bukkit.scoreboard.RenderType;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -25,14 +24,4 @@ public interface Statistic<S> extends Criteria {
      * @return the stat type
      */
     StatisticType<S> type();
-
-    @Override
-    default boolean isReadOnly() {
-        return false;
-    }
-
-    @Override
-    default RenderType getDefaultRenderType() {
-        return RenderType.INTEGER;
-    }
 }

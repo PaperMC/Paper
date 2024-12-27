@@ -7,7 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * Represents a countable statistic, which is tracked by the server.
  * @deprecated use {@link io.papermc.paper.statistic.StatisticType} and {@link io.papermc.paper.statistic.Statistic}
  */
-@Deprecated(since = "1.21") // Paper
+@Deprecated(since = "1.21.4") // Paper
 public enum Statistic implements Keyed {
     DAMAGE_DEALT,
     DAMAGE_TAKEN,
