@@ -6,15 +6,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.block.bed.BedEnterProblem;
 import io.papermc.paper.connection.HorriblePlayerLoginEventHack;
@@ -23,6 +14,17 @@ import io.papermc.paper.event.block.BlockLockCheckEvent;
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent;
 import io.papermc.paper.event.entity.ItemTransportingEntityValidateTargetEvent;
 import io.papermc.paper.event.player.PlayerBedFailEnterEvent;
+import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.PaperStatistics;
+import io.papermc.paper.statistic.Statistic;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.Connection;
@@ -32,6 +34,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
+import net.minecraft.stats.Stat;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
@@ -45,14 +48,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Leashable;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.PathfinderMob;
-import net.minecraft.world.entity.animal.fish.AbstractFish;
-import net.minecraft.world.entity.animal.golem.AbstractGolem;
 import net.minecraft.world.entity.animal.Animal;
-import net.minecraft.world.entity.animal.fish.WaterAnimal;
+import net.minecraft.world.entity.animal.fish.AbstractFish;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.monster.Ghast;
-import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.monster.illager.SpellcasterIllager;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.entity.raid.Raid;
@@ -84,7 +82,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.PortalType;
-import org.bukkit.Statistic.Type;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
@@ -98,7 +95,6 @@ import org.bukkit.craftbukkit.CraftGameRule;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.CraftRaid;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftStatistic;
 import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.CraftBlockState;
@@ -120,7 +116,6 @@ import org.bukkit.entity.Animals;
 import org.bukkit.entity.AreaEffectCloud;
 import org.bukkit.entity.Bat;
 import org.bukkit.entity.Creeper;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.ExperienceOrb;
 import org.bukkit.entity.Explosive;
 import org.bukkit.entity.Firework;
@@ -1700,51 +1695,14 @@ public class CraftEventFactory {
         return event; // Paper - custom shear drops
     }
 
-    public static Cancellable handleStatisticsIncrease(net.minecraft.world.entity.player.Player entityHuman, net.minecraft.stats.Stat<?> statistic, int current, int newValue) {
-        Player player = ((ServerPlayer) entityHuman).getBukkitEntity();
-        org.bukkit.Statistic stat = CraftStatistic.getBukkitStatistic(statistic);
-        if (stat == null) {
-            System.err.println("Unhandled statistic: " + statistic);
+    public static Cancellable handleStatisticsIncrease(final net.minecraft.world.entity.player.Player entityHuman, final Stat<?> statistic, final int current, final int newValue) {
+        final Player player = ((ServerPlayer) entityHuman).getBukkitEntity();
+        final Statistic<?> stat = PaperStatistics.getPaperStatistic(statistic);
+        if (stat.owner() instanceof final CustomStatistic customStatistic && PaperStatistics.IGNORED_STATS_FOR_EVENT.contains(customStatistic.key())) {
+            // Do not process event for these - too spammy
             return null;
         }
-        switch (stat) {
-            case FALL_ONE_CM:
-            case BOAT_ONE_CM:
-            case CLIMB_ONE_CM:
-            case WALK_ON_WATER_ONE_CM:
-            case WALK_UNDER_WATER_ONE_CM:
-            case FLY_ONE_CM:
-            case HORSE_ONE_CM:
-            case MINECART_ONE_CM:
-            case PIG_ONE_CM:
-            case PLAY_ONE_MINUTE:
-            case SWIM_ONE_CM:
-            case WALK_ONE_CM:
-            case SPRINT_ONE_CM:
-            case CROUCH_ONE_CM:
-            case TIME_SINCE_DEATH:
-            case SNEAK_TIME:
-            case TOTAL_WORLD_TIME:
-            case TIME_SINCE_REST:
-            case AVIATE_ONE_CM:
-            case STRIDER_ONE_CM:
-            case HAPPY_GHAST_ONE_CM:
-            case NAUTILUS_ONE_CM:
-                // Do not process event for these - too spammy
-                return null;
-            default:
-        }
-
-        final Event event;
-        if (stat.getType() == Type.UNTYPED) {
-            event = new PlayerStatisticIncrementEvent(player, stat, current, newValue);
-        } else if (stat.getType() == Type.ENTITY) {
-            EntityType entityType = CraftStatistic.getEntityTypeFromStatistic((net.minecraft.stats.Stat<net.minecraft.world.entity.EntityType<?>>) statistic);
-            event = new PlayerStatisticIncrementEvent(player, stat, current, newValue, entityType);
-        } else {
-            Material material = CraftStatistic.getMaterialFromStatistic(statistic);
-            event = new PlayerStatisticIncrementEvent(player, stat, current, newValue, material);
-        }
+        final Event event = new PlayerStatisticIncrementEvent(player, stat, current, newValue);
         event.callEvent();
         return (Cancellable) event;
     }

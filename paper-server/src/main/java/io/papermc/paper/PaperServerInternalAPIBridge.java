@@ -2,6 +2,7 @@ package io.papermc.paper;
 
 import com.destroystokyo.paper.PaperSkinParts;
 import com.destroystokyo.paper.SkinParts;
+import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
@@ -18,6 +19,7 @@ import net.minecraft.Optionull;
 import net.minecraft.commands.Commands;
 import net.minecraft.world.damagesource.FallLocation;
 import net.minecraft.world.entity.decoration.Mannequin;
+import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.bukkit.GameRule;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.CraftGameRule;
@@ -26,10 +28,12 @@ import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftMannequin;
+import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Pose;
+import org.bukkit.scoreboard.Criteria;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -123,5 +127,11 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     @Override
     public Set<Pose> validMannequinPoses() {
         return CraftMannequin.VALID_POSES;
+    }
+
+    @Override
+    public Criteria getCriteria(final String key) {
+        Preconditions.checkArgument(ObjectiveCriteria.getCustomCriteriaNames().contains(key));
+        return CraftCriteria.getFromNMS(ObjectiveCriteria.byName(key).orElseThrow());
     }
 }
