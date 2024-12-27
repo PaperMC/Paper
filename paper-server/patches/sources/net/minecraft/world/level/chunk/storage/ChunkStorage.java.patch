@@ -1,41 +1,10 @@
 --- a/net/minecraft/world/level/chunk/storage/ChunkStorage.java
 +++ b/net/minecraft/world/level/chunk/storage/ChunkStorage.java
-@@ -38,17 +_,63 @@
+@@ -38,17 +_,30 @@
          return this.worker.isOldChunkAround(pos, radius);
      }
  
 +    // CraftBukkit start
-+    private boolean check(net.minecraft.server.level.ServerChunkCache cps, int x, int z) {
-+        if (true) return true; // Paper - Perf: this isn't even needed anymore, light is purged updating to 1.14+, why are we holding up the conversion process reading chunk data off disk - return true, we need to set light populated to true so the converter recognizes the chunk as being "full"
-+        ChunkPos pos = new ChunkPos(x, z);
-+        if (cps != null) {
-+            com.google.common.base.Preconditions.checkState(org.bukkit.Bukkit.isPrimaryThread(), "primary thread");
-+            if (cps.hasChunk(x, z)) {
-+                return true;
-+            }
-+        }
-+
-+        CompoundTag nbt;
-+        try {
-+            nbt = this.read(pos).get().orElse(null);
-+        } catch (InterruptedException | java.util.concurrent.ExecutionException ex) {
-+            throw new RuntimeException(ex);
-+        }
-+        if (nbt != null) {
-+            CompoundTag level = nbt.getCompound("Level");
-+            if (level.getBoolean("TerrainPopulated")) {
-+                return true;
-+            }
-+
-+            net.minecraft.world.level.chunk.status.ChunkStatus status = net.minecraft.world.level.chunk.status.ChunkStatus.byName(level.getString("Status"));
-+            if (status != null && status.isOrAfter(net.minecraft.world.level.chunk.status.ChunkStatus.FEATURES)) {
-+                return true;
-+            }
-+        }
-+
-+        return false;
-+    }
-+
      public CompoundTag upgradeChunkTag(
 -        ResourceKey<Level> levelKey,
 +        ResourceKey<net.minecraft.world.level.dimension.LevelStem> levelKey,
@@ -44,7 +13,7 @@
 -        Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> chunkGeneratorKey
 +        Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> chunkGeneratorKey,
 +        ChunkPos pos,
-+        @Nullable net.minecraft.world.level.LevelAccessor generatoraccess
++        @Nullable net.minecraft.world.level.LevelAccessor levelAccessor
 +        // CraftBukkit end
      ) {
          int version = getVersion(chunkData);
@@ -56,10 +25,8 @@
 +                if (version < 1466) {
 +                    CompoundTag level = chunkData.getCompound("Level");
 +                    if (level.getBoolean("TerrainPopulated") && !level.getBoolean("LightPopulated")) {
-+                        net.minecraft.server.level.ServerChunkCache cps = (generatoraccess == null) ? null : ((net.minecraft.server.level.ServerLevel) generatoraccess).getChunkSource();
-+                        if (this.check(cps, pos.x - 1, pos.z) && this.check(cps, pos.x - 1, pos.z - 1) && this.check(cps, pos.x, pos.z - 1)) {
-+                            level.putBoolean("LightPopulated", true);
-+                        }
++                        // Light is purged updating to 1.14+. We need to set light populated to true so the converter recognizes the chunk as being "full"
++                        level.putBoolean("LightPopulated", true);
 +                    }
 +                }
 +                // CraftBukkit end
@@ -72,7 +39,7 @@
  
 +                // Spigot start - SPIGOT-6806: Quick and dirty way to prevent below zero generation in old chunks, by setting the status to heightmap instead of empty
 +                boolean stopBelowZero = false;
-+                boolean belowZeroGenerationInExistingChunks = (generatoraccess != null) ? ((net.minecraft.server.level.ServerLevel) generatoraccess).spigotConfig.belowZeroGenerationInExistingChunks : org.spigotmc.SpigotConfig.belowZeroGenerationInExistingChunks;
++                boolean belowZeroGenerationInExistingChunks = (levelAccessor != null) ? ((net.minecraft.server.level.ServerLevel) levelAccessor).spigotConfig.belowZeroGenerationInExistingChunks : org.spigotmc.SpigotConfig.belowZeroGenerationInExistingChunks;
 +
 +                if (version <= 2730 && !belowZeroGenerationInExistingChunks) {
 +                    stopBelowZero = "full".equals(chunkData.getCompound("Level").getString("Status"));
