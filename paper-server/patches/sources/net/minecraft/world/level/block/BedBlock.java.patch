@@ -5,11 +5,11 @@
              }
  
 -            if (!canSetSpawn(level)) {
-+            if (false && !canSetSpawn(level)) { // CraftBukkit - moved world and biome check into EntityHuman
++            if (false && !canSetSpawn(level)) { // CraftBukkit - moved world and biome check into Player
                  level.removeBlock(pos, false);
                  BlockPos blockPos = pos.relative(state.getValue(FACING).getOpposite());
                  if (level.getBlockState(blockPos).is(this)) {
-@@ -103,22 +_,62 @@
+@@ -103,22 +_,56 @@
                  level.explode(null, level.damageSources().badRespawnPointExplosion(center), null, center, 5.0F, true, Level.ExplosionInteraction.BLOCK);
                  return InteractionResult.SUCCESS_SERVER;
              } else if (state.getValue(OCCUPIED)) {
@@ -21,20 +21,20 @@
                  return InteractionResult.SUCCESS_SERVER;
              } else {
 +                // CraftBukkit start
-+                BlockState finaliblockdata = state;
-+                BlockPos finalblockposition = pos;
++                final BlockState finalBlockState = state;
++                final BlockPos finalBlockPos = pos;
 +                // CraftBukkit end
                  player.startSleepInBed(pos).ifLeft(bedSleepingProblem -> {
 +                    // Paper start - PlayerBedFailEnterEvent
 +                    if (bedSleepingProblem != null) {
-+                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = new io.papermc.paper.event.player.PlayerBedFailEnterEvent((org.bukkit.entity.Player) player.getBukkitEntity(), io.papermc.paper.event.player.PlayerBedFailEnterEvent.FailReason.values()[bedSleepingProblem.ordinal()], org.bukkit.craftbukkit.block.CraftBlock.at(level, finalblockposition), !level.dimensionType().bedWorks(), io.papermc.paper.adventure.PaperAdventure.asAdventure(bedSleepingProblem.getMessage()));
++                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = new io.papermc.paper.event.player.PlayerBedFailEnterEvent((org.bukkit.entity.Player) player.getBukkitEntity(), io.papermc.paper.event.player.PlayerBedFailEnterEvent.FailReason.values()[bedSleepingProblem.ordinal()], org.bukkit.craftbukkit.block.CraftBlock.at(level, finalBlockPos), !level.dimensionType().bedWorks(), io.papermc.paper.adventure.PaperAdventure.asAdventure(bedSleepingProblem.getMessage()));
 +                        if (!event.callEvent()) {
 +                            return;
 +                        }
 +                        // Paper end - PlayerBedFailEnterEvent
 +                    // CraftBukkit start - handling bed explosion from below here
 +                    if (event.getWillExplode()) { // Paper - PlayerBedFailEnterEvent
-+                        this.explodeBed(finaliblockdata, level, finalblockposition);
++                        this.explodeBed(finalBlockState, level, finalBlockPos);
 +                    } else
 +                    // CraftBukkit end
                      if (bedSleepingProblem.getMessage() != null) {
@@ -49,24 +49,18 @@
          }
      }
  
-+    // CraftBukkit start
-+    private InteractionResult explodeBed(BlockState iblockdata, Level world, BlockPos blockposition) {
-+        {
-+            {
-+                org.bukkit.block.BlockState blockState = org.bukkit.craftbukkit.block.CraftBlock.at(world, blockposition).getState(); // CraftBukkit - capture BlockState before remove block
-+                world.removeBlock(blockposition, false);
-+                BlockPos blockposition1 = blockposition.relative(((Direction) iblockdata.getValue(BedBlock.FACING)).getOpposite());
++    // CraftBukkit start - Copied from the above method
++    private InteractionResult explodeBed(BlockState state, Level level, BlockPos pos) {
++        org.bukkit.block.BlockState blockState = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos).getState(); // CraftBukkit - capture BlockState before remove block
++        level.removeBlock(pos, false);
++        BlockPos blockPos = pos.relative(state.getValue(FACING).getOpposite());
++        if (level.getBlockState(blockPos).is(this)) {
++            level.removeBlock(blockPos, false);
++        }
 +
-+                if (world.getBlockState(blockposition1).getBlock() == this) {
-+                    world.removeBlock(blockposition1, false);
-+                }
-+
-+                Vec3 vec3d = blockposition.getCenter();
-+
-+                world.explode(null, world.damageSources().badRespawnPointExplosion(vec3d, blockState), null, vec3d, 5.0F, true, Level.ExplosionInteraction.BLOCK); // CraftBukkit - add state
-+                return InteractionResult.SUCCESS;
-+             }
-+         }
++        Vec3 center = pos.getCenter();
++        level.explode(null, level.damageSources().badRespawnPointExplosion(center, blockState), null, center, 5.0F, true, Level.ExplosionInteraction.BLOCK); // CraftBukkit - add state
++        return InteractionResult.SUCCESS_SERVER;
 +     }
 +    // CraftBukkit end
 +

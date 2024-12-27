@@ -1,11 +1,9 @@
 --- a/net/minecraft/world/level/block/entity/SignBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/SignBlockEntity.java
-@@ -54,11 +_,16 @@
-         return new SignText();
+@@ -55,10 +_,15 @@
      }
  
--    public boolean isFacingFrontText(Player player) {
-+    public boolean isFacingFrontText(net.minecraft.world.entity.player.Player player) {
+     public boolean isFacingFrontText(Player player) {
 +        // Paper start - More Sign Block API
 +        return this.isFacingFrontText(player.getX(), player.getZ());
 +    }
@@ -15,8 +13,8 @@
              Vec3 signHitboxCenterPosition = signBlock.getSignHitboxCenterPosition(this.getBlockState());
 -            double d = player.getX() - (this.getBlockPos().getX() + signHitboxCenterPosition.x);
 -            double d1 = player.getZ() - (this.getBlockPos().getZ() + signHitboxCenterPosition.z);
-+            double d = x - ((double) this.getBlockPos().getX() + signHitboxCenterPosition.x); // Paper - More Sign Block API
-+            double d1 = z - ((double) this.getBlockPos().getZ() + signHitboxCenterPosition.z); // Paper - More Sign Block AP
++            double d = x - (this.getBlockPos().getX() + signHitboxCenterPosition.x); // Paper - More Sign Block API
++            double d1 = z - (this.getBlockPos().getZ() + signHitboxCenterPosition.z); // Paper - More Sign Block AP
              float yRotationDegrees = signBlock.getYRotationDegrees(this.getBlockState());
              float f = (float)(Mth.atan2(d1, d) * 180.0F / (float)Math.PI) - 90.0F;
              return Mth.degreesDifferenceAbs(yRotationDegrees, f) <= 90.0F;
@@ -136,14 +134,14 @@
 +        }
 +    };
 +
-+    private CommandSourceStack createCommandSourceStack(@Nullable Player player, Level world, BlockPos pos) {
++    private CommandSourceStack createCommandSourceStack(@Nullable Player player, Level level, BlockPos pos) {
 +        // CraftBukkit end
          String string = player == null ? "Sign" : player.getName().getString();
          Component component = (Component)(player == null ? Component.literal("Sign") : player.getDisplayName());
 -        return new CommandSourceStack(CommandSource.NULL, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel)level, 2, string, component, level.getServer(), player);
 +
 +        // Paper start - Fix commands from signs not firing command events
-+        CommandSource commandSource = world.paperConfig().misc.showSignClickCommandFailureMsgsToPlayer ? new io.papermc.paper.commands.DelegatingCommandSource(this.commandSource) {
++        CommandSource commandSource = level.paperConfig().misc.showSignClickCommandFailureMsgsToPlayer ? new io.papermc.paper.commands.DelegatingCommandSource(this.commandSource) {
 +            @Override
 +            public void sendSystemMessage(Component message) {
 +                if (player instanceof final net.minecraft.server.level.ServerPlayer serverPlayer) {
@@ -158,7 +156,7 @@
 +        } : this.commandSource;
 +        // Paper end - Fix commands from signs not firing command events
 +        // CraftBukkit - this
-+        return new CommandSourceStack(commandSource, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel) world, 2, string, component, world.getServer(), player); // Paper - Fix commands from signs not firing command events
++        return new CommandSourceStack(commandSource, Vec3.atCenterOf(pos), Vec2.ZERO, (ServerLevel)level, 2, string, component, level.getServer(), player); // Paper - Fix commands from signs not firing command events
      }
  
      @Override
