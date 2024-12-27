@@ -41,6 +41,7 @@ public final class RegistryEntry<T> {
     private boolean delayed;
     private String apiAccessName = ConstantDescs.INIT_NAME;
     private Optional<String> apiRegistryField = Optional.empty();
+    private int genericArgCount = 0;
 
     private @Nullable Map<ResourceKey<T>, String> fieldNames;
 
@@ -89,6 +90,12 @@ public final class RegistryEntry<T> {
         return this;
     }
 
+    public RegistryEntry<T> genericArgCount(int count) {
+        Preconditions.checkArgument(count >= 0, "Generic argument count must be non-negative");
+        this.genericArgCount = count;
+        return this;
+    }
+
     public RegistryEntry<T> apiAccessName(String name) {
         Preconditions.checkArgument(SourceVersion.isIdentifier(name) && !SourceVersion.isKeyword(name), "Invalid accessor name");
         this.apiAccessName = name;
@@ -126,6 +133,10 @@ public final class RegistryEntry<T> {
 
     public @Nullable String apiRegistryBuilderImpl() {
         return this.apiRegistryBuilderImpl;
+    }
+
+    public int genericArgCount() {
+        return this.genericArgCount;
     }
 
     public @Nullable RegistryModificationApiSupport modificationApiSupport() {

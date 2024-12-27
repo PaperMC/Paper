@@ -386,6 +386,48 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         return this.server.getHandle().getPlayerStats(this.getUniqueId(), this.getName());
     }
 
+    // Paper start
+    @Override
+    public void incrementStatistic(io.papermc.paper.statistic.Statistic<?> statistic, int amount) {
+        if (this.isOnline()) {
+            this.getPlayer().incrementStatistic(statistic, amount);
+        } else {
+            ServerStatsCounter manager = getStatisticManager();
+            io.papermc.paper.statistic.PaperStatistics.changeStatistic(manager, statistic, amount);
+            manager.save();
+        }
+
+    }
+
+    @Override
+    public void setStatistic(io.papermc.paper.statistic.Statistic<?> statistic, int newAmount) {
+        if (this.isOnline()) {
+            this.getPlayer().setStatistic(statistic, newAmount);
+        } else {
+            ServerStatsCounter manager = getStatisticManager();
+            io.papermc.paper.statistic.PaperStatistics.setStatistic(manager, statistic, newAmount);
+            manager.save();
+        }
+    }
+
+    @Override
+    public int getStatistic(io.papermc.paper.statistic.Statistic<?> statistic) {
+        if (isOnline()) {
+            return this.getPlayer().getStatistic(statistic);
+        } else {
+            return io.papermc.paper.statistic.PaperStatistics.getStatistic(getStatisticManager(), statistic);
+        }
+    }
+
+    @Override
+    public String getFormattedValue(io.papermc.paper.statistic.Statistic<?> statistic) {
+        if (this.isOnline()) {
+            return this.getPlayer().getFormattedValue(statistic);
+        } else {
+            return io.papermc.paper.statistic.PaperStatistics.getFormattedValue(getStatisticManager(), statistic);
+        }
+    }
+    // Paper end
     @Override
     public void incrementStatistic(Statistic statistic) {
         if (this.isOnline()) {

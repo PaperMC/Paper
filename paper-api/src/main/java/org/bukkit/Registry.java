@@ -10,6 +10,8 @@ import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.registry.tag.TagKey;
+import io.papermc.paper.statistic.CustomStatistic;
+import io.papermc.paper.statistic.StatisticType;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Locale;
@@ -222,7 +224,9 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Server statistics.
      *
      * @see Statistic
+     * @deprecated use {@link #CUSTOM_STAT} and {@link #STAT_TYPE}
      */
+    @Deprecated(forRemoval = true, since = "1.21.6")
     Registry<Statistic> STATISTIC = new SimpleRegistry<>(Statistic.class);
     /**
      * Server structures.
@@ -351,6 +355,20 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see DataComponentType
      */
     Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE); // Paper
+
+    /**
+     * Custom statistics
+     *
+     * @see io.papermc.paper.statistic.CustomStatistic
+     */
+    Registry<CustomStatistic> CUSTOM_STAT = registryFor(RegistryKey.CUSTOM_STAT);
+
+    /**
+     * Statistic types
+     *
+     * @see io.papermc.paper.statistic.StatisticType
+     */
+    Registry<StatisticType<?>> STAT_TYPE = registryFor(RegistryKey.STAT_TYPE);
 
     //<editor-fold desc="renames" defaultstate="collapsed">
     /**

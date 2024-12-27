@@ -284,6 +284,79 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @return last seen time
      */
     public long getLastSeen();
+
+    /**
+     * Decrements the given stat for this player.
+     * <p>
+     * This is equivalent to the following code: {@code decrementStatistic(Statistic, 1)}
+     *
+     * @param statistic the stat to decrement
+     * @throws IllegalArgumentException if the stat is invalid OR decreasing the stat value would put the stat below 0
+     */
+    default void decrementStatistic(final io.papermc.paper.statistic.Statistic<?> statistic) {
+        this.decrementStatistic(statistic, 1);
+    }
+
+    /**
+     * Increments the given stat for this player.
+     * <p>
+     * This is equivalent to the following code: {@code incrementStatistic(Statistic, 1)}
+     *
+     * @param statistic the stat to increment
+     * @throws IllegalArgumentException if the stat is invalid
+     */
+    default void incrementStatistic(final io.papermc.paper.statistic.Statistic<?> statistic) {
+        this.incrementStatistic(statistic, 1);
+    }
+
+    /**
+     * Decrements the given stat for this player.
+     *
+     * @param statistic the stat to decrement
+     * @param amount the value to decrement by
+     * @throws IllegalArgumentException if the stat is invalid, the amount is nonpositive, or the stat
+     * would have a negative value after decrementing it
+     */
+    default void decrementStatistic(final io.papermc.paper.statistic.Statistic<?> statistic, final int amount) {
+        this.incrementStatistic(statistic, -amount);
+    }
+
+    /**
+     * Increments the given stat for this player.
+     *
+     * @param statistic the stat to increment
+     * @param amount the amount to increment by
+     * @throws IllegalArgumentException if the stat is invalid or the amount is nonpositive
+     */
+    void incrementStatistic(io.papermc.paper.statistic.Statistic<?> statistic, int amount);
+
+    /**
+     * Sets the given stat for this player.
+     *
+     * @param statistic the stat to set
+     * @param newAmount the value to set the stat to
+     * @throws IllegalArgumentException if the stat is invalid or the amount is negative
+     */
+    void setStatistic(io.papermc.paper.statistic.Statistic<?> statistic, int newAmount);
+
+    /**
+     * Gets the given stat for this player.
+     *
+     * @param statistic the stat to get
+     * @return the amount for the stat
+     * @throws IllegalArgumentException if the stat is invalid
+     */
+    int getStatistic(io.papermc.paper.statistic.Statistic<?> statistic);
+
+    /**
+     * Get the formatted value for this stat. This is how the stat might
+     * appear in the client's statistic window
+     *
+     * @param statistic the stat to get the formatted value for
+     * @return the formatted value
+     * @throws IllegalArgumentException if the stat is invalid
+     */
+    String getFormattedValue(io.papermc.paper.statistic.Statistic<?> statistic);
     // Paper end
 
     /**
@@ -320,7 +393,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic) throws IllegalArgumentException;
 
     /**
@@ -333,7 +408,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic) throws IllegalArgumentException;
 
     /**
@@ -345,7 +422,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic, int amount) throws IllegalArgumentException;
 
     /**
@@ -357,7 +436,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic, int amount) throws IllegalArgumentException;
 
     /**
@@ -369,7 +450,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if newValue is negative
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
+    @Deprecated(since = "1.21.6")
     public void setStatistic(Statistic statistic, int newValue) throws IllegalArgumentException;
 
     /**
@@ -380,7 +463,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if statistic is null
      * @throws IllegalArgumentException if the statistic requires an
      *     additional parameter
+     * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
      */
+    @Deprecated(since = "1.21.6")
     public int getStatistic(Statistic statistic) throws IllegalArgumentException;
 
     /**
@@ -395,7 +480,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if material is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException;
 
     /**
@@ -410,7 +497,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if material is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic, Material material) throws IllegalArgumentException;
 
     /**
@@ -423,7 +512,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if material is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
      */
+    @Deprecated(since = "1.21.6")
     public int getStatistic(Statistic statistic, Material material) throws IllegalArgumentException;
 
     /**
@@ -437,7 +528,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic, Material material, int amount) throws IllegalArgumentException;
 
     /**
@@ -451,7 +544,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic, Material material, int amount) throws IllegalArgumentException;
 
     /**
@@ -465,7 +560,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if newValue is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
+    @Deprecated(since = "1.21.6")
     public void setStatistic(Statistic statistic, Material material, int newValue) throws IllegalArgumentException;
 
     /**
@@ -480,7 +577,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if entityType is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException;
 
     /**
@@ -495,7 +594,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if entityType is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic)}
      */
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException;
 
     /**
@@ -508,7 +609,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if entityType is null
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #getStatistic(io.papermc.paper.statistic.Statistic)}
      */
+    @Deprecated(since = "1.21.6")
     public int getStatistic(Statistic statistic, EntityType entityType) throws IllegalArgumentException;
 
     /**
@@ -522,7 +625,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #incrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
+    @Deprecated(since = "1.21.6")
     public void incrementStatistic(Statistic statistic, EntityType entityType, int amount) throws IllegalArgumentException;
 
     /**
@@ -536,7 +641,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if amount is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #decrementStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
+    @Deprecated(since = "1.21.6")
     public void decrementStatistic(Statistic statistic, EntityType entityType, int amount);
 
     /**
@@ -550,7 +657,9 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
      * @throws IllegalArgumentException if newValue is negative
      * @throws IllegalArgumentException if the given parameter is not valid
      *     for the statistic
+     * @deprecated use {@link #setStatistic(io.papermc.paper.statistic.Statistic, int)}
      */
+    @Deprecated(since = "1.21.6")
     public void setStatistic(Statistic statistic, EntityType entityType, int newValue);
 
     /**

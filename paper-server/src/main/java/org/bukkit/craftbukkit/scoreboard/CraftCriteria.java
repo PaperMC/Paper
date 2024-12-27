@@ -1,28 +1,31 @@
 package org.bukkit.craftbukkit.scoreboard;
 
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.statistic.PaperStatistics;
 import java.util.Map;
+import java.util.Objects;
+import net.minecraft.stats.Stat;
 import net.minecraft.world.scores.Objective;
 import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.RenderType;
 
 public final class CraftCriteria implements Criteria {
-    private static final Map<String, CraftCriteria> DEFAULTS;
+    private static final Map<String, Criteria> DEFAULTS;
     private static final CraftCriteria DUMMY;
 
     static {
-        ImmutableMap.Builder<String, CraftCriteria> defaults = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Criteria> defaults = ImmutableMap.builder();
 
         for (Map.Entry<String, ObjectiveCriteria> entry : ObjectiveCriteria.CRITERIA_CACHE.entrySet()) {
             String name = entry.getKey();
             ObjectiveCriteria criteria = entry.getValue();
 
-            defaults.put(name, new CraftCriteria(criteria));
+            defaults.put(name, convertFromNms(criteria));
         }
 
         DEFAULTS = defaults.build();
-        DUMMY = DEFAULTS.get(ObjectiveCriteria.DUMMY.getName());
+        DUMMY = (CraftCriteria) DEFAULTS.get(ObjectiveCriteria.DUMMY.getName());
     }
 
     final ObjectiveCriteria criteria;
@@ -53,21 +56,25 @@ public final class CraftCriteria implements Criteria {
         return RenderType.values()[this.criteria.getDefaultRenderType().ordinal()];
     }
 
-    public static CraftCriteria getFromNMS(ObjectiveCriteria criteria) {
-        return java.util.Objects.requireNonNullElseGet(CraftCriteria.DEFAULTS.get(criteria.getName()), () -> new CraftCriteria(criteria));
+    public static Criteria getFromNMS(ObjectiveCriteria criteria) {
+        return Objects.requireNonNullElseGet(CraftCriteria.DEFAULTS.get(criteria.getName()), () -> convertFromNms(criteria));
     }
 
-    public static CraftCriteria getFromNMS(Objective objective) {
+    static Criteria convertFromNms(ObjectiveCriteria criteria) {
+        return criteria instanceof Stat<?> stat ? PaperStatistics.getPaperStatistic(stat) : new CraftCriteria(criteria);
+    }
+
+    public static Criteria getFromNMS(Objective objective) {
         return getFromNMS(objective.getCriteria());
     }
 
-    public static CraftCriteria getFromBukkit(String name) {
-        CraftCriteria criteria = CraftCriteria.DEFAULTS.get(name);
+    public static Criteria getFromBukkit(String name) {
+        Criteria criteria = CraftCriteria.DEFAULTS.get(name);
         if (criteria != null) {
             return criteria;
         }
 
-        return ObjectiveCriteria.byName(name).map(CraftCriteria::new).orElseGet(() -> new CraftCriteria(name));
+        return ObjectiveCriteria.byName(name).map(CraftCriteria::convertFromNms).orElseGet(() -> new CraftCriteria(name));
     }
 
     @Override
