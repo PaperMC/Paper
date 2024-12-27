@@ -9,7 +9,7 @@ public class PaperUnsafeValuesProvider implements InternalAPIBridge {
     public static final PaperUnsafeValuesProvider INSTANCE = new PaperUnsafeValuesProvider();
 
     @Override
-    public DamageEffect createDamageEffectInstance(final String mojangKey) {
+    public DamageEffect getDamageEffect(final String mojangKey) {
         return CraftDamageEffect.getById(mojangKey);
     }
 }

@@ -40,7 +40,7 @@ public interface DamageEffect {
 
     @NotNull
     private static DamageEffect getDamageEffect(@NotNull String key) {
-        return Preconditions.checkNotNull(InternalAPIBridge.getProvider().getDamageEffect(key), "No DamageEffect found for %s. This is a bug.", key);
+        return Preconditions.checkNotNull(InternalAPIBridge.get().getDamageEffect(key), "No DamageEffect found for %s. This is a bug.", key);
     }
 
     /**
