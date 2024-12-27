@@ -126,10 +126,6 @@ public interface UnsafeValues {
     @Deprecated(since = "1.20.2", forRemoval = true)
     PotionType.InternalPotionData getInternalPotionData(NamespacedKey key);
 
-    @ApiStatus.Internal
-    @Nullable
-    DamageEffect getDamageEffect(@NotNull String key);
-
     /**
      * Create a new {@link DamageSource.Builder}.
      *

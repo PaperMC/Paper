@@ -66,6 +66,7 @@ public interface DamageTypeRegistryEntry {
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface Builder extends DamageTypeRegistryEntry, RegistryBuilder<DamageType> {
+
         /**
          * Sets part of the death message translation key.
          *

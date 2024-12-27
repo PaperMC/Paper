@@ -31,9 +31,9 @@ public interface InternalAPIBridge {
     /**
      * Creates a damage effect instance for the passed key.
      *
-     * @param mojangKey the string key.
+     * @param key the string key.
      * @return the damage effect.
      */
-    DamageEffect getDamageEffect(String mojangKey);
+    DamageEffect getDamageEffect(String key);
 }
 
