@@ -4,11 +4,15 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import io.papermc.paper.adventure.PaperAdventure;
+import java.util.Optional;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.ScoreHolder;
 import net.minecraft.world.scores.Scoreboard;
+import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.craftbukkit.CraftOfflinePlayer;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
@@ -41,12 +45,13 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         Preconditions.checkArgument(name.length() <= Short.MAX_VALUE, "The name '%s' is longer than the limit of 32767 characters (%s)", name, name.length());
         Preconditions.checkArgument(this.getHandle().getObjective(name) == null, "An objective of name '%s' already exists", name);
         // Paper start - lazily track plugin scoreboards
-        if (((CraftCriteria) criteria).criteria != net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY && !this.registeredGlobally) {
+        final Optional<ObjectiveCriteria> nmsCriteria = ObjectiveCriteria.byName(criteria.getName());
+        if (nmsCriteria.isPresent() && nmsCriteria.get() != ObjectiveCriteria.DUMMY && !this.registeredGlobally) {
             net.minecraft.server.MinecraftServer.getServer().server.getScoreboardManager().registerScoreboardForVanilla(this);
             this.registeredGlobally = true;
         }
         // Paper end - lazily track plugin scoreboards
-        net.minecraft.world.scores.Objective objective = this.getHandle().addObjective(name, ((CraftCriteria) criteria).criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType), true, null);
+        final net.minecraft.world.scores.Objective objective = this.getHandle().addObjective(name, nmsCriteria.orElse(ObjectiveCriteria.DUMMY), PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType), true, null); // Paper - stats API
         return new CraftObjective(this, objective);
     }
 
@@ -237,10 +242,10 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
     static ScoreHolder getScoreHolder(OfflinePlayer player) {
         Preconditions.checkArgument(player != null, "OfflinePlayer cannot be null");
 
-        if (player instanceof CraftPlayer craft) {
-            return craft.getHandle();
-        } else {
-            return CraftScoreboard.getScoreHolder(player.getName());
-        }
+        return switch (player) {
+            case CraftPlayer craft -> craft.getHandle();
+            case CraftOfflinePlayer craft -> ScoreHolder.fromGameProfile((craft.getProfile()));
+            default -> throw new UnsupportedOperationException("Cannot convert to a score holder");
+        };
     }
 }
