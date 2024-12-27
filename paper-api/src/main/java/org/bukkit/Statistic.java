@@ -5,7 +5,9 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a countable statistic, which is tracked by the server.
+ * @deprecated use {@link io.papermc.paper.statistic.StatisticType} and {@link io.papermc.paper.statistic.Statistic}
  */
+@Deprecated(since = "1.21.4") // Paper
 public enum Statistic implements Keyed {
     // Start generate - StatisticCustom
     // @GeneratedFrom 1.21.6-rc1
@@ -156,7 +158,9 @@ public enum Statistic implements Keyed {
     /**
      * The type of statistic.
      *
+     * @deprecated use {@link io.papermc.paper.statistic.StatisticType}
      */
+    @Deprecated(since = "1.21") // Paper
     public enum Type {
         /**
          * Statistics of this type do not require a qualifier.
@@ -178,4 +182,67 @@ public enum Statistic implements Keyed {
          */
         ENTITY;
     }
+    // Paper start - add legacy conversion methods
+    @Deprecated(forRemoval = true)
+    @org.jetbrains.annotations.ApiStatus.Internal
+    public static Statistic toLegacy(final io.papermc.paper.statistic.Statistic<?> stat) {
+        if (stat.type() == io.papermc.paper.statistic.StatisticType.CUSTOM && stat.value() instanceof final io.papermc.paper.statistic.CustomStatistic customStatistic) {
+            if (customStatistic == io.papermc.paper.statistic.CustomStatistic.PLAY_TIME) { // special case cause upstream is wrong
+                return org.bukkit.Statistic.PLAY_ONE_MINUTE;
+            } else {
+                return java.util.Objects.requireNonNull(org.bukkit.Registry.STATISTIC.get(customStatistic.getKey()), "Couldn't convert " + stat + " to a legacy stat");
+            }
+        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.BLOCK_MINED) {
+            return Statistic.MINE_BLOCK;
+        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ITEM_BROKEN) {
+            return Statistic.BREAK_ITEM;
+        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ITEM_CRAFTED) {
+            return Statistic.CRAFT_ITEM;
+        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ITEM_DROPPED) {
+            return Statistic.DROP;
+        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ITEM_USED) {
+            return Statistic.USE_ITEM;
+        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ITEM_PICKED_UP) {
+            return Statistic.PICKUP;
+        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ENTITY_KILLED) {
+            return Statistic.KILL_ENTITY;
+        } else if (stat.type() == io.papermc.paper.statistic.StatisticType.ENTITY_KILLED_BY) {
+            return Statistic.ENTITY_KILLED_BY;
+        }
+        throw new IllegalArgumentException("Couldn't convert " + stat + " to a legacy stat");
+    }
+
+    @Deprecated(forRemoval = true)
+    @org.jetbrains.annotations.ApiStatus.Internal
+    public io.papermc.paper.statistic.Statistic<?> toModern(@org.jetbrains.annotations.Nullable org.bukkit.entity.EntityType entityType, @org.jetbrains.annotations.Nullable Material material) {
+        com.google.common.base.Preconditions.checkArgument(entityType == null || material == null, "No stat has an entity type and material value at the same time");
+        com.google.common.base.Preconditions.checkArgument(this.type != Type.UNTYPED || (entityType == null && material == null), "no value needed for untyped stats");
+        com.google.common.base.Preconditions.checkArgument(this.type != Type.ENTITY || entityType != null);
+        com.google.common.base.Preconditions.checkArgument(this.type != Type.BLOCK || material != null && material.isBlock());
+        com.google.common.base.Preconditions.checkArgument(this.type != Type.ITEM || material != null && material.isItem());
+        return switch (this.type) {
+            case UNTYPED -> {
+                if (this == PLAY_ONE_MINUTE) { // special case cause upstream is wrong
+                    yield io.papermc.paper.statistic.CustomStatistic.PLAY_TIME.stat();
+                } else {
+                    yield io.papermc.paper.statistic.StatisticType.CUSTOM.of(java.util.Objects.requireNonNull(Registry.CUSTOM_STAT.get(this.key), "Couldn't convert " + this + " to a modern stat"));
+                }
+            }
+            case BLOCK -> io.papermc.paper.statistic.StatisticType.BLOCK_MINED.of(java.util.Objects.requireNonNull(material.asBlockType()));
+            case ITEM -> switch (this) {
+                case DROP -> io.papermc.paper.statistic.StatisticType.ITEM_DROPPED.of(java.util.Objects.requireNonNull(material.asItemType()));
+                case BREAK_ITEM -> io.papermc.paper.statistic.StatisticType.ITEM_BROKEN.of(java.util.Objects.requireNonNull(material.asItemType()));
+                case CRAFT_ITEM -> io.papermc.paper.statistic.StatisticType.ITEM_CRAFTED.of(java.util.Objects.requireNonNull(material.asItemType()));
+                case USE_ITEM -> io.papermc.paper.statistic.StatisticType.ITEM_USED.of(java.util.Objects.requireNonNull(material.asItemType()));
+                case PICKUP -> io.papermc.paper.statistic.StatisticType.ITEM_PICKED_UP.of(java.util.Objects.requireNonNull(material.asItemType()));
+                default -> throw new IllegalArgumentException("Couldn't convert " + this + ", mat: " + material + " to a modern stat");
+            };
+            case ENTITY -> switch (this) {
+                case KILL_ENTITY -> io.papermc.paper.statistic.StatisticType.ENTITY_KILLED.of(entityType);
+                case ENTITY_KILLED_BY -> io.papermc.paper.statistic.StatisticType.ENTITY_KILLED_BY.of(entityType);
+                default -> throw new IllegalArgumentException("Couldn't convert " + this + ", entity_type: " + entityType + " to a modern stat");
+            };
+        };
+    }
+    // Paper end
 }
