@@ -9,7 +9,7 @@ diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/ne
 index 3aad9ee86d6af392f4a98022cbc88bb53000e7be..27ef385a85b13ceb58e8d149849983107c539b31 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -561,7 +561,7 @@ public class ServerGamePacketListenerImpl
+@@ -553,7 +553,7 @@ public class ServerGamePacketListenerImpl
                      return;
                  }
  
@@ -18,7 +18,7 @@ index 3aad9ee86d6af392f4a98022cbc88bb53000e7be..27ef385a85b13ceb58e8d14984998310
                  d3 = d - this.vehicleLastGoodX; // Paper - diff on change, used for checking large move vectors above
                  d4 = d1 - this.vehicleLastGoodY; // Paper - diff on change, used for checking large move vectors above
                  d5 = d2 - this.vehicleLastGoodZ; // Paper - diff on change, used for checking large move vectors above
-@@ -571,6 +571,7 @@ public class ServerGamePacketListenerImpl
+@@ -563,6 +563,7 @@ public class ServerGamePacketListenerImpl
                  }
  
                  rootVehicle.move(MoverType.PLAYER, new Vec3(d3, d4, d5));
@@ -26,7 +26,7 @@ index 3aad9ee86d6af392f4a98022cbc88bb53000e7be..27ef385a85b13ceb58e8d14984998310
                  double verticalDelta = d4; // Paper - Decompile fix, was named d11 previously, is now gone in the source
                  d3 = d - rootVehicle.getX();
                  d4 = d1 - rootVehicle.getY();
-@@ -582,14 +583,22 @@ public class ServerGamePacketListenerImpl
+@@ -574,15 +575,20 @@ public class ServerGamePacketListenerImpl
                  d7 = d3 * d3 + d4 * d4 + d5 * d5;
                  boolean flag2 = false;
                  if (d7 > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
@@ -36,23 +36,21 @@ index 3aad9ee86d6af392f4a98022cbc88bb53000e7be..27ef385a85b13ceb58e8d14984998310
                  }
  
                  rootVehicle.absMoveTo(d, d1, d2, f, f1);
-                 this.player.absMoveTo(d, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
 -                boolean flag3 = serverLevel.noCollision(rootVehicle, rootVehicle.getBoundingBox().deflate(0.0625));
--                if (flag && (flag2 || !flag3)) {
-+                // Paper start - optimise out extra getCubes
+                 // Paper start
+-                boolean teleportBack = flag && (flag2 || !flag3);
 +                boolean teleportBack = flag2; // violating this is always a fail
-+                if (!teleportBack) {
+                 if (!teleportBack) {
 +                    // note: only call after setLocation, or else getBoundingBox is wrong
 +                    AABB newBox = rootVehicle.getBoundingBox();
 +                    if (didCollide || !oldBox.equals(newBox)) {
 +                        teleportBack = this.hasNewCollision(serverLevel, rootVehicle, oldBox, newBox);
 +                    } // else: no collision at all detected, why do we care?
-+                }
-+                if (teleportBack) { // Paper end - optimise out extra getCubes
-                     rootVehicle.absMoveTo(x, y, z, f, f1);
-                     this.player.absMoveTo(x, y, z, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
-                     this.send(ClientboundMoveVehiclePacket.fromEntity(rootVehicle));
-@@ -667,9 +676,32 @@ public class ServerGamePacketListenerImpl
++
+                     // Move event - emulating from the vehicle
+                     org.bukkit.entity.Entity rootVehicleBukkit = rootVehicle.getBukkitEntity();
+                     Location from = new Location(rootVehicleBukkit.getWorld(), x, y, z, f, f1); // Copy from #absMoveTo on teleportBack
+@@ -636,9 +642,32 @@ public class ServerGamePacketListenerImpl
      }
  
      private boolean noBlocksAround(Entity entity) {
