@@ -20,48 +20,24 @@ import org.jetbrains.annotations.Nullable;
  */
 public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
-    protected final Statistic statistic;
+    private final io.papermc.paper.statistic.Statistic<?> statistic; // Paper
     private final int initialValue;
     private final int newValue;
     private boolean isCancelled = false;
+    @Deprecated(forRemoval = true) // Paper
     private final EntityType entityType;
+    @Deprecated(forRemoval = true) // Paper
     private final Material material;
 
-    public PlayerStatisticIncrementEvent(@NotNull Player player, @NotNull Statistic statistic, int initialValue, int newValue) {
+    // Paper start
+    @org.jetbrains.annotations.ApiStatus.Internal
+    public PlayerStatisticIncrementEvent(@NotNull Player player, @NotNull io.papermc.paper.statistic.Statistic<?> statistic, int initialValue, int newValue) {
         super(player);
         this.statistic = statistic;
         this.initialValue = initialValue;
         this.newValue = newValue;
-        this.entityType = null;
-        this.material = null;
-    }
-
-    public PlayerStatisticIncrementEvent(@NotNull Player player, @NotNull Statistic statistic, int initialValue, int newValue, @NotNull EntityType entityType) {
-        super(player);
-        this.statistic = statistic;
-        this.initialValue = initialValue;
-        this.newValue = newValue;
-        this.entityType = entityType;
-        this.material = null;
-    }
-
-    public PlayerStatisticIncrementEvent(@NotNull Player player, @NotNull Statistic statistic, int initialValue, int newValue, @NotNull Material material) {
-        super(player);
-        this.statistic = statistic;
-        this.initialValue = initialValue;
-        this.newValue = newValue;
-        this.entityType = null;
-        if (material != null && material.isLegacy()) {
-            if (statistic.getType() == Statistic.Type.BLOCK) {
-                material = Bukkit.getUnsafe().fromLegacy(new MaterialData(material), false);
-            } else if (statistic.getType() == Statistic.Type.ITEM) {
-                material = Bukkit.getUnsafe().fromLegacy(new MaterialData(material), true);
-            } else {
-                // Theoretically, this should not happen, can probably print a warning, but for now it should be fine.
-                material = Bukkit.getUnsafe().fromLegacy(new MaterialData(material), false);
-            }
-        }
-        this.material = material;
+        this.entityType = statistic.value() instanceof EntityType entityType ? entityType : null;
+        this.material = statistic.value() instanceof Material material ? material : null;
     }
 
     /**
@@ -69,9 +45,21 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      *
      * @return the incremented statistic
      */
+    public @NotNull io.papermc.paper.statistic.Statistic<?> getStat() {
+        return this.statistic;
+    }
+    // Paper end
+
+    /**
+     * Gets the statistic that is being incremented.
+     *
+     * @return the incremented statistic
+     * @deprecated use {@link #getStat()}
+     */
     @NotNull
+    @Deprecated(since = "1.21.4")
     public Statistic getStatistic() {
-        return statistic;
+        return Statistic.toLegacy(this.statistic); // Paper
     }
 
     /**
@@ -97,8 +85,10 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      * entity statistic otherwise returns null.
      *
      * @return the EntityType of the statistic
+     * @deprecated use {@link #getStat()}
      */
     @Nullable
+    @Deprecated(since = "1.21.4")
     public EntityType getEntityType() {
         return entityType;
     }
@@ -108,8 +98,10 @@ public class PlayerStatisticIncrementEvent extends PlayerEvent implements Cancel
      * or item statistic otherwise returns null.
      *
      * @return the Material of the statistic
+     * @deprecated use {@link #getStat()}
      */
     @Nullable
+    @Deprecated(since = "1.21.4")
     public Material getMaterial() {
         return material;
     }

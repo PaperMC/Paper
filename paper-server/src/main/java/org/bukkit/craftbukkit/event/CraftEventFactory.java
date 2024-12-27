@@ -1718,45 +1718,14 @@ public class CraftEventFactory {
         Player player = ((ServerPlayer) entityHuman).getBukkitEntity();
         Event event;
         if (true) {
-            org.bukkit.Statistic stat = CraftStatistic.getBukkitStatistic(statistic);
-            if (stat == null) {
-                System.err.println("Unhandled statistic: " + statistic);
-                return null;
-            }
-            switch (stat) {
-                case FALL_ONE_CM:
-                case BOAT_ONE_CM:
-                case CLIMB_ONE_CM:
-                case WALK_ON_WATER_ONE_CM:
-                case WALK_UNDER_WATER_ONE_CM:
-                case FLY_ONE_CM:
-                case HORSE_ONE_CM:
-                case MINECART_ONE_CM:
-                case PIG_ONE_CM:
-                case PLAY_ONE_MINUTE:
-                case SWIM_ONE_CM:
-                case WALK_ONE_CM:
-                case SPRINT_ONE_CM:
-                case CROUCH_ONE_CM:
-                case TIME_SINCE_DEATH:
-                case SNEAK_TIME:
-                case TOTAL_WORLD_TIME:
-                case TIME_SINCE_REST:
-                case AVIATE_ONE_CM:
-                case STRIDER_ONE_CM:
+            // Paper start - better stats api
+            io.papermc.paper.statistic.Statistic<?> stat = io.papermc.paper.statistic.PaperStatistics.getPaperStatistic(statistic);
+            if (stat.value() instanceof io.papermc.paper.statistic.CustomStatistic customStatistic && io.papermc.paper.statistic.PaperStatistics.IGNORED_STATS_FOR_EVENT.contains(customStatistic)) {
                     // Do not process event for these - too spammy
                     return null;
-                default:
             }
-            if (stat.getType() == Type.UNTYPED) {
-                event = new PlayerStatisticIncrementEvent(player, stat, current, newValue);
-            } else if (stat.getType() == Type.ENTITY) {
-                EntityType entityType = CraftStatistic.getEntityTypeFromStatistic((net.minecraft.stats.Stat<net.minecraft.world.entity.EntityType<?>>) statistic);
-                event = new PlayerStatisticIncrementEvent(player, stat, current, newValue, entityType);
-            } else {
-                Material material = CraftStatistic.getMaterialFromStatistic(statistic);
-                event = new PlayerStatisticIncrementEvent(player, stat, current, newValue, material);
-            }
+            event = new PlayerStatisticIncrementEvent(player, stat, current, newValue);
+            // Paper end - better stats api
         }
         entityHuman.level().getCraftServer().getPluginManager().callEvent(event);
         return (Cancellable) event;
