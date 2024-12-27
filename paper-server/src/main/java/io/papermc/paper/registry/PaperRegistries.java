@@ -5,6 +5,7 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.registry.data.PaperBannerPatternRegistryEntry;
+import io.papermc.paper.registry.data.PaperDamageTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
 import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
@@ -103,7 +104,7 @@ public final class PaperRegistries {
             start(Registries.STRUCTURE, RegistryKey.STRUCTURE).craft(Structure.class, CraftStructure::new).build().delayed(),
             start(Registries.TRIM_MATERIAL, RegistryKey.TRIM_MATERIAL).craft(TrimMaterial.class, CraftTrimMaterial::new).build().delayed(),
             start(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN).craft(TrimPattern.class, CraftTrimPattern::new).build().delayed(),
-            start(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE).craft(DamageType.class, CraftDamageType::new).build().delayed(),
+            start(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE).craft(DamageType.class, CraftDamageType::new).writable(PaperDamageTypeRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT).craft(Wolf.Variant.class, CraftWolf.CraftVariant::new).build().delayed(),
             start(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT).craft(Enchantment.class, CraftEnchantment::new).serializationUpdater(FieldRename.ENCHANTMENT_RENAME).writable(PaperEnchantmentRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG).craft(JukeboxSong.class, CraftJukeboxSong::new).build().delayed(),
