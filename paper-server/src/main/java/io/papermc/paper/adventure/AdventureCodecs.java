@@ -232,7 +232,7 @@ public final class AdventureCodecs {
             HOVER_EVENT_CODEC.optionalFieldOf("hoverEvent").forGetter(nullableGetter(Style::hoverEvent)),
             Codec.STRING.optionalFieldOf("insertion").forGetter(nullableGetter(Style::insertion)),
             KEY_CODEC.optionalFieldOf("font").forGetter(nullableGetter(Style::font))
-        ).apply(instance, (textColor, shadowColor,bold, italic, underlined, strikethrough, obfuscated, clickEvent, hoverEvent, insertion, font) -> {
+        ).apply(instance, (textColor, shadowColor, bold, italic, underlined, strikethrough, obfuscated, clickEvent, hoverEvent, insertion, font) -> {
             return Style.style(builder -> {
                 textColor.ifPresent(builder::color);
                 shadowColor.ifPresent(builder::shadowColor);
