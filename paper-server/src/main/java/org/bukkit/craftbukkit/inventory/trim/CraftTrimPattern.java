@@ -30,9 +30,6 @@ public class CraftTrimPattern implements TrimPattern, io.papermc.paper.util.Hold
         return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.TRIM_PATTERN); // Paper - switch to Holder
     }
 
-    private final NamespacedKey key;
-    private final net.minecraft.world.item.equipment.trim.TrimPattern handle;
-
     // Paper start - switch to Holder
     private final Holder<net.minecraft.world.item.equipment.trim.TrimPattern> holder; // Paper - switch to Holder
 
@@ -64,8 +61,6 @@ public class CraftTrimPattern implements TrimPattern, io.papermc.paper.util.Hold
     }
 
     public CraftTrimPattern(Holder<net.minecraft.world.item.equipment.trim.TrimPattern> handle) {
-        this.key = handle.unwrapKey().map(io.papermc.paper.util.MCUtil::fromResourceKey).orElse(null);
-        this.handle = handle.value();
         this.holder = handle;
         // Paper end - switch to Holder
     }
@@ -84,14 +79,14 @@ public class CraftTrimPattern implements TrimPattern, io.papermc.paper.util.Hold
     @NotNull
     @Override
     public String getTranslationKey() {
-        if (!(this.handle.description().getContents() instanceof TranslatableContents)) throw new UnsupportedOperationException("Description isn't translatable!"); // Paper
-        return ((TranslatableContents) this.handle.description().getContents()).getKey();
+        if (!(this.getHandle().description().getContents() instanceof TranslatableContents)) throw new UnsupportedOperationException("Description isn't translatable!"); // Paper
+        return ((TranslatableContents) this.getHandle().description().getContents()).getKey();
     }
 
     // Paper start - adventure
     @Override
     public net.kyori.adventure.text.Component description() {
-        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.handle.description());
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.getHandle().description());
     }
     // Paper end - adventure
 }

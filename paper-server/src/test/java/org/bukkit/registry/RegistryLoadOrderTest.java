@@ -25,7 +25,7 @@ public class RegistryLoadOrderTest {
 
     private static boolean initInterface = false;
     private static boolean initAbstract = false;
-    private static org.bukkit.Registry<Keyed> registry; // Paper - remap fix
+    private static Registry<Keyed> registry;
 
     public static Stream<Arguments> data() {
         return Stream.of(
@@ -60,6 +60,7 @@ public class RegistryLoadOrderTest {
 
         RegistryLoadOrderTest.registry = new CraftRegistry<>(keyedClass, minecraftRegistry, minecraftToBukkit, (namespacedKey, apiVersion) -> namespacedKey);
         this.testClassNotLoaded(init.get());
+        ((CraftRegistry<?, ?>) RegistryLoadOrderTest.registry).lockReferenceHolders();
 
         Object testOne = RegistryLoadOrderTest.registry.get(new NamespacedKey("bukkit", "test-one"));
         Object otherTestOne = RegistryLoadOrderTest.registry.get(new NamespacedKey("bukkit", "test-one"));
