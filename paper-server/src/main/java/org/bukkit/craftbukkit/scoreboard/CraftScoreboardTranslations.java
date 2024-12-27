@@ -16,11 +16,11 @@ public final class CraftScoreboardTranslations {
         return net.minecraft.world.scores.DisplaySlot.CODEC.byName(slot.getId()); // Paper
     }
 
-    static RenderType toBukkitRender(ObjectiveCriteria.RenderType display) {
+    public static RenderType toBukkitRender(ObjectiveCriteria.RenderType display) {
         return RenderType.valueOf(display.name());
     }
 
-    static ObjectiveCriteria.RenderType fromBukkitRender(RenderType render) {
+    public static ObjectiveCriteria.RenderType fromBukkitRender(RenderType render) {
         return ObjectiveCriteria.RenderType.valueOf(render.name());
     }
 }
