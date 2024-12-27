@@ -54,12 +54,15 @@ public final class CraftScoreboard implements org.bukkit.scoreboard.Scoreboard {
         Preconditions.checkArgument(name.length() <= Short.MAX_VALUE, "The name '%s' is longer than the limit of 32767 characters (%s)", name, name.length());
         Preconditions.checkArgument(this.board.getObjective(name) == null, "An objective of name '%s' already exists", name);
         // Paper start - lazily track plugin scoreboards
-        if (((CraftCriteria) criteria).criteria != net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY && !this.registeredGlobally) {
+        // Paper start - stats API
+        java.util.Optional<net.minecraft.world.scores.criteria.ObjectiveCriteria> nmsCriteria = net.minecraft.world.scores.criteria.ObjectiveCriteria.byName(criteria.getName());
+        if (nmsCriteria.isPresent() && nmsCriteria.get() != net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY && !this.registeredGlobally) {
+            // Paper end - stats API
             net.minecraft.server.MinecraftServer.getServer().server.getScoreboardManager().registerScoreboardForVanilla(this);
             this.registeredGlobally = true;
         }
         // Paper end - lazily track plugin scoreboards
-        net.minecraft.world.scores.Objective objective = this.board.addObjective(name, ((CraftCriteria) criteria).criteria, io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType), true, null);
+        net.minecraft.world.scores.Objective objective = this.board.addObjective(name, nmsCriteria.orElse(net.minecraft.world.scores.criteria.ObjectiveCriteria.DUMMY), io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName), CraftScoreboardTranslations.fromBukkitRender(renderType), true, null); // Paper - stats API
         return new CraftObjective(this, objective);
     }
     // Paper end - Adventure
