@@ -78,7 +78,7 @@ public class SimplexNoiseGenerator extends PerlinNoiseGenerator {
         offsetW = rand.nextDouble() * 256;
     }
 
-    protected static double dot(int @NotNull[] g, double x, double y) {
+    protected static double dot(int @NotNull [] g, double x, double y) {
         return g[0] * x + g[1] * y;
     }
 

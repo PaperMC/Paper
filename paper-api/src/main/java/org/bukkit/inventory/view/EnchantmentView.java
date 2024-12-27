@@ -37,7 +37,7 @@ public interface EnchantmentView extends InventoryView {
      *
      * @return The enchantment offers that are provided
      */
-    @NotNull EnchantmentOffer @Nullable [] getOffers();
+    @Nullable EnchantmentOffer @NotNull [] getOffers();
 
     /**
      * Sets the offers to provide to the player.
@@ -45,5 +45,5 @@ public interface EnchantmentView extends InventoryView {
      * @param offers The offers to provide
      * @throws IllegalArgumentException if the array length isn't 3
      */
-    void setOffers(@NotNull EnchantmentOffer @Nullable [] offers) throws IllegalArgumentException;
+    void setOffers(@Nullable EnchantmentOffer @NotNull [] offers) throws IllegalArgumentException;
 }

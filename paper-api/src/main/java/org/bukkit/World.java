@@ -346,7 +346,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return Chunk[] containing all loaded chunks
      */
-    public @NotNull Chunk @NotNull[] getLoadedChunks();
+    public @NotNull Chunk @NotNull [] getLoadedChunks();
 
     /**
      * Loads the specified {@link Chunk}.
