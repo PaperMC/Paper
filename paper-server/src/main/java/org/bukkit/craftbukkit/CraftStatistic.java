@@ -21,6 +21,7 @@ import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemType;
 
+@Deprecated(forRemoval = true) // Paper
 public enum CraftStatistic {
     // Start generate - CraftStatisticCustom
     // @GeneratedFrom 1.21.8
