@@ -2308,7 +2308,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     long.
      */
     @Deprecated // Paper - adventure
-    public void setResourcePack(@NotNull String url, @Nullable byte[] hash);
+    public void setResourcePack(@NotNull String url, byte @Nullable [] hash);
 
     /**
      * Request that the player's client download and switch resource packs.
@@ -2353,7 +2353,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     long.
      */
     @Deprecated // Paper - adventure
-    public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt);
+    public void setResourcePack(@NotNull String url, byte @Nullable [] hash, @Nullable String prompt);
 
     // Paper start
     /**
@@ -2447,7 +2447,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
      */
     @Deprecated // Paper - adventure
-    public void setResourcePack(@NotNull String url, @Nullable byte[] hash, boolean force);
+    public void setResourcePack(@NotNull String url, byte @Nullable [] hash, boolean force);
 
     /**
      * Request that the player's client download and switch resource packs.
@@ -2494,7 +2494,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
      */
     @Deprecated // Paper
-    public void setResourcePack(@NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
+    public void setResourcePack(@NotNull String url, byte @Nullable [] hash, @Nullable String prompt, boolean force);
 
     // Paper start
     /**
@@ -2592,7 +2592,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
      */
     @Deprecated // Paper - adventure
-    public void setResourcePack(@NotNull UUID id, @NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
+    public void setResourcePack(@NotNull UUID id, @NotNull String url, byte @Nullable [] hash, @Nullable String prompt, boolean force);
 
     // Paper start
     /**

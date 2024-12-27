@@ -18,8 +18,7 @@ public class MultipleCommandAlias extends Command {
      *
      * @return commands associated with alias
      */
-    @NotNull
-    public Command[] getCommands() {
+    public @NotNull Command @NotNull [] getCommands() {
         return commands;
     }
 

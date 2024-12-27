@@ -1184,7 +1184,7 @@ public final class Bukkit {
      * @return the {@link Recipe} resulting from the given crafting matrix.
      */
     @Nullable
-    public static Recipe getCraftingRecipe(@NotNull ItemStack[] craftingMatrix, @NotNull World world) {
+    public static Recipe getCraftingRecipe(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world) {
         return server.getCraftingRecipe(craftingMatrix, world);
     }
 
@@ -1213,7 +1213,7 @@ public final class Bukkit {
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
      */
     @NotNull
-    public static ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player) {
+    public static ItemCraftResult craftItemResult(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world, @NotNull Player player) {
         return server.craftItemResult(craftingMatrix, world, player);
     }
 
@@ -1235,7 +1235,7 @@ public final class Bukkit {
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
      */
     @NotNull
-    public static ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world) {
+    public static ItemCraftResult craftItemResult(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world) {
         return server.craftItemResult(craftingMatrix, world);
     }
 
@@ -1266,7 +1266,7 @@ public final class Bukkit {
      * an ItemStack of {@link Material#AIR} is returned.
      */
     @NotNull
-    public static ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player) {
+    public static ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world, @NotNull Player player) {
         return server.craftItem(craftingMatrix, world, player);
     }
 
@@ -1289,7 +1289,7 @@ public final class Bukkit {
      * an ItemStack of {@link Material#AIR} is returned.
      */
     @NotNull
-    public static ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world) {
+    public static ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world) {
         return server.craftItem(craftingMatrix, world);
     }
 
@@ -1756,8 +1756,7 @@ public final class Bukkit {
      *
      * @return an array containing all previous players
      */
-    @NotNull
-    public static OfflinePlayer[] getOfflinePlayers() {
+    public static @NotNull OfflinePlayer @NotNull [] getOfflinePlayers() {
         return server.getOfflinePlayers();
     }
 
@@ -2404,8 +2403,7 @@ public final class Bukkit {
      * Gets the current server TPS
      * @return current server TPS (1m, 5m, 15m in Paper-Server)
      */
-    @NotNull
-    public static double[] getTPS() {
+    public static double @NotNull [] getTPS() {
         return server.getTPS();
     }
 
@@ -2414,8 +2412,7 @@ public final class Bukkit {
      *
      * @return A sample of the servers last tick times (in nanos)
      */
-    @NotNull
-    public static long[] getTickTimes() {
+    public static long @NotNull [] getTickTimes() {
         return server.getTickTimes();
     }
 
