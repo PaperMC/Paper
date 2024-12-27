@@ -16,8 +16,17 @@ on:
 
 jobs:
   build:
-    # Run on all label events (won't be duplicated) or all push events or on PR syncs not from the same repo
-    if: (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'build-pr-jar') || github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name
+    # The goal of the build workflow is split into multiple requirements.
+    # 1. Run on pushes to same repo.
+    # 2. Run on PR open/reopen/syncs from repos that are not the same (PRs from the same repo are covered by 1)
+    # 3. Run on labeled PRs that have the build-pr-jar flag.
+    if: >
+      (
+        (github.event_name == 'push')
+        || (github.event_name == 'pull_request' && github.repository != github.event.pull_request.head.repo.full_name && contains(fromJSON('["opened", "reopened", "synchronize"]'), github.event.action))
+        || (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'build-pr-jar')
+      )
+
     runs-on: ubuntu-latest
     strategy:
       matrix:
