@@ -149,45 +149,14 @@
                                  this.hitPlayers.put(player, vec3);
                              }
                          }
-@@ -225,7 +_,61 @@
+@@ -225,7 +_,30 @@
          List<ServerExplosion.StackCollector> list = new ArrayList<>();
          Util.shuffle(blocks, this.level.random);
  
 +        // CraftBukkit start
-+        org.bukkit.World bworld = this.level.getWorld();
-+        Location location = CraftLocation.toBukkit(this.center, bworld);
-+
-+        List<org.bukkit.block.Block> blockList = new ObjectArrayList<>();
-+        for (int i1 = blocks.size() - 1; i1 >= 0; i1--) {
-+            BlockPos cpos = blocks.get(i1);
-+            org.bukkit.block.Block bblock = bworld.getBlockAt(cpos.getX(), cpos.getY(), cpos.getZ());
-+            if (!bblock.getType().isAir()) {
-+                blockList.add(bblock);
-+            }
-+        }
-+
-+        List<org.bukkit.block.Block> bukkitBlocks;
-+
-+        if (this.source != null) {
-+            EntityExplodeEvent event = CraftEventFactory.callEntityExplodeEvent(this.source, blockList, this.yield, this.getBlockInteraction());
-+            this.wasCanceled = event.isCancelled();
-+            bukkitBlocks = event.blockList();
-+            this.yield = event.getYield();
-+        } else {
-+            org.bukkit.block.Block block = location.getBlock();
-+            org.bukkit.block.BlockState blockState = (this.damageSource.getDirectBlockState() != null) ? this.damageSource.getDirectBlockState() : block.getState();
-+            BlockExplodeEvent event = CraftEventFactory.callBlockExplodeEvent(block, blockState, blockList, this.yield, this.getBlockInteraction());
-+            this.wasCanceled = event.isCancelled();
-+            bukkitBlocks = event.blockList();
-+            this.yield = event.getYield();
-+        }
-+
++        List<org.bukkit.block.Block> bukkitBlocks = CraftEventFactory.handleExplodeEvent(this, blocks);
 +        blocks.clear();
-+
-+        for (org.bukkit.block.Block bblock : bukkitBlocks) {
-+            BlockPos coords = new BlockPos(bblock.getX(), bblock.getY(), bblock.getZ());
-+            blocks.add(coords);
-+        }
++        blocks.addAll(bukkitBlocks.stream().map(bblock -> new BlockPos(bblock.getX(), bblock.getY(), bblock.getZ())).toList());
 +
 +        if (this.wasCanceled) {
 +            return;
@@ -234,6 +203,21 @@
          this.level.gameEvent(this.source, GameEvent.EXPLODE, this.center);
          List<BlockPos> list = this.calculateExplodedPositions();
          this.hurtEntities();
+@@ -254,6 +_,14 @@
+             this.interactWithBlocks(list);
+             profilerFiller.pop();
+         }
++        // Paper start - handle not interacts in explosion events
++        else {
++            Util.shuffle(list, this.level.random); // CraftBukkit - Copy from calculateExplodedPositions
++            List<org.bukkit.block.Block> bukkitBlocks = CraftEventFactory.handleExplodeEvent(this, list);
++            list.clear();
++            list.addAll(bukkitBlocks.stream().map(bblock -> new BlockPos(bblock.getX(), bblock.getY(), bblock.getZ())).toList());
++        }
++        // Paper end
+ 
+         if (this.fire) {
+             this.createFire(list);
 @@ -261,6 +_,7 @@
      }
  

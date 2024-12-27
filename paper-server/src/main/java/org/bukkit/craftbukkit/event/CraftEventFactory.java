@@ -5,6 +5,7 @@ import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Either;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.ServerExplosion;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.storage.loot.LootContext;
@@ -93,6 +95,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.entity.AbstractHorse;
@@ -2120,6 +2123,39 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(event);
 
         return !event.isCancelled();
+    }
+
+    public static List<org.bukkit.block.Block> handleExplodeEvent(ServerExplosion serverExplosion, List<BlockPos> blockPositions) {
+        // First convert the blockPositionList related to explosion to Bukkit
+        org.bukkit.World bworld = serverExplosion.level().getWorld();
+
+        List<org.bukkit.block.Block> blockList = new ObjectArrayList<>();
+        for (int i1 = blockPositions.size() - 1; i1 >= 0; i1--) {
+            BlockPos cpos = blockPositions.get(i1);
+            org.bukkit.block.Block bblock = bworld.getBlockAt(cpos.getX(), cpos.getY(), cpos.getZ());
+            if (!bblock.getType().isAir()) {
+                blockList.add(bblock);
+            }
+        }
+
+        // Handle based in explosion if you need call EntityExplodeEvent or BlockExplodeEvent
+        List<org.bukkit.block.Block> blockListPostEvent = new ObjectArrayList<>();
+        if (serverExplosion.getDirectSourceEntity() != null || serverExplosion.getDamageSource().getCustomEventDamager() != null) {
+            EntityExplodeEvent event = CraftEventFactory.callEntityExplodeEvent((serverExplosion.getDirectSourceEntity() != null) ? serverExplosion.getDirectSourceEntity() : serverExplosion.getDamageSource().getCustomEventDamager(), blockList, serverExplosion.yield, serverExplosion.getBlockInteraction());
+            serverExplosion.wasCanceled = event.isCancelled();
+            serverExplosion.yield = event.getYield();
+            blockList.addAll(event.blockList());
+        } else {
+            Location location = CraftLocation.toBukkit(serverExplosion.center(), bworld);
+            org.bukkit.block.Block block = location.getBlock();
+            org.bukkit.block.BlockState blockState = (serverExplosion.getDamageSource().getDirectBlockState() != null) ? serverExplosion.getDamageSource().getDirectBlockState() : block.getState();
+            BlockExplodeEvent event = CraftEventFactory.callBlockExplodeEvent(block, blockState, blockList, serverExplosion.yield, serverExplosion.getBlockInteraction());
+            serverExplosion.wasCanceled = event.isCancelled();
+            serverExplosion.yield = event.getYield();
+            blockList.addAll(event.blockList());
+        }
+
+        return blockListPostEvent;
     }
 
     public static EntityExplodeEvent callEntityExplodeEvent(Entity entity, List<Block> blocks, float yield, Explosion.BlockInteraction effect) {
