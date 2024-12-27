@@ -128,7 +128,7 @@ dependencies {
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
-    implementation("net.kyori:adventure-text-serializer-ansi:4.17.0") // Keep in sync with adventureVersion from Paper-API build file
+    implementation("net.kyori:adventure-text-serializer-ansi:4.18.0") // Keep in sync with adventureVersion from Paper-API build file
 
     /*
       Required to add the missing Log4j2Plugins.dat file from log4j-core
