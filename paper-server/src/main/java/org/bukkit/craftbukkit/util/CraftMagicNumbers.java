@@ -481,12 +481,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public DamageEffect getDamageEffect(String key) {
-        Preconditions.checkArgument(key != null, "key cannot be null");
-        return CraftDamageEffect.getById(key);
-    }
-
-    @Override
     public DamageSource.Builder createDamageSourceBuilder(DamageType damageType) {
         return new CraftDamageSourceBuilder(damageType);
     }
