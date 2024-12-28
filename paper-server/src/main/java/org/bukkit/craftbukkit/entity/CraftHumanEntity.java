@@ -809,56 +809,42 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     @Nullable
     public Item dropItem(final int slot, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
-        if (slot < 0 || slot >= this.inventory.getSize()) {
-            throw new IllegalArgumentException("Slot " + slot + " is not a valid inventory slot.");
-        }
+        Preconditions.checkArgument(slot >= 0 && slot < this.inventory.getSize(), "Slot %s is not a valid inventory slot.", slot);
 
-        return dropItemRaw(this.inventory.getItem(slot), amount, throwRandomly, entityOperation);
+        return internalDropItemFromInventory(this.inventory.getItem(slot), amount, throwRandomly, entityOperation);
     }
 
     @Override
     @Nullable
     public Item dropItem(final @NotNull EquipmentSlot slot, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
-        return dropItemRaw(this.inventory.getItem(slot), amount, throwRandomly, entityOperation);
+        return internalDropItemFromInventory(this.inventory.getItem(slot), amount, throwRandomly, entityOperation);
+    }
+
+    @Nullable
+    private Item internalDropItemFromInventory(final ItemStack originalItemStack, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+        if (originalItemStack == null || originalItemStack.isEmpty() || amount <= 0) return null;
+
+        final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(originalItemStack);
+        final net.minecraft.world.item.ItemStack dropContent = nmsItemStack.split(amount);
+
+        // This will return the itemstack back to its original amount in case events fail
+        final ItemEntity droppedEntity = this.getHandle().drop(dropContent, throwRandomly, true, true, entityOperation);
+        return droppedEntity == null ? null : (Item) droppedEntity.getBukkitEntity();
     }
 
     @Override
     @Nullable
     public Item dropItem(final @Nullable ItemStack itemStack, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
-        return dropAnyItemRaw(itemStack, throwRandomly, entityOperation);
-    }
-
-    @Nullable
-    private Item dropItemRaw(final ItemStack originalItemStack, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
-        if (originalItemStack == null || originalItemStack.isEmpty() || amount <= 0) {
-            return null;
-        }
-
-        final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(originalItemStack);
-        final net.minecraft.world.item.ItemStack dropContent = nmsItemStack.split(amount);
-
-        final ItemEntity droppedEntity = this.getHandle().drop(dropContent, throwRandomly, true, true, entityOperation);
-        if (droppedEntity == null) {
-            return null;
-        }
-
-        return (Item) droppedEntity.getBukkitEntity();
-    }
-
-    @Nullable
-    private Item dropAnyItemRaw(final ItemStack itemStack, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
-        if (itemStack == null || itemStack.isEmpty()) {
-            return null;
-        }
+        // This method implementation differs from the previous dropItem implementations, as it does not source
+        // its itemstack from the players inventory. As such, we cannot reuse #internalDropItemFromInventory.
+        Preconditions.checkArgument(itemStack != null, "Cannot drop a null itemstack");
+        if (itemStack.isEmpty()) return null;
 
         final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
 
-        final ItemEntity droppedEntity = this.getHandle().drop(nmsItemStack, throwRandomly, true, true, entityOperation);
-        if (droppedEntity == null) {
-            return null;
-        }
-
-        return (Item) droppedEntity.getBukkitEntity();
+        // Do *not* call the event here, the item is not in the player inventory, they are not dropping it / do not need recovering logic (which would be a dupe).
+        final ItemEntity droppedEntity = this.getHandle().drop(nmsItemStack, throwRandomly, true, false, entityOperation);
+        return droppedEntity == null ? null : (Item) droppedEntity.getBukkitEntity();
     }
 
     @Override
