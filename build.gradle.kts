@@ -1,3 +1,5 @@
+import io.papermc.paperweight.checkstyle.PaperCheckstyleExt
+import io.papermc.paperweight.checkstyle.PaperCheckstyleTask
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
@@ -12,6 +14,27 @@ subprojects {
     extensions.configure<JavaPluginExtension> {
         toolchain {
             languageVersion = JavaLanguageVersion.of(25)
+        }
+    }
+
+    val tempDisabled = setOf("paper-server", "paper-generator", "test-plugin")
+
+    if (name !in tempDisabled) {
+        apply(plugin = "io.papermc.paperweight.paper-checkstyle")
+        extensions.configure<PaperCheckstyleExt> {
+            val typeUseAnnotationsProvider = providers
+                .fileContents(rootProject.layout.projectDirectory.file(".checkstyle/type-use-annotations.txt"))
+                .asText.map { it.trim().split("\n").toSet() }
+            typeUseAnnotations.set(typeUseAnnotationsProvider)
+        }
+
+        tasks.withType<PaperCheckstyleTask>().configureEach {
+            configDirectory = rootProject.layout.projectDirectory.dir(".checkstyle")
+            configFile = layout.projectDirectory.file(".checkstyle/checkstyle.xml").asFile
+        }
+
+        dependencies {
+            "checkstyle"(project(":paper-checkstyle"))
         }
     }
 }
