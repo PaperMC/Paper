@@ -808,53 +808,28 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     @Nullable
-    public Item dropItem(final int slot, final int amount, final @Nullable Consumer<Item> entityOperation) {
+    public Item dropItem(final int slot, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
         if (slot < 0 || slot >= this.inventory.getSize()) {
             throw new IllegalArgumentException("Slot " + slot + " is not a valid inventory slot.");
         }
 
-        return dropItemRaw(this.inventory.getItem(slot), amount, false, entityOperation);
+        return dropItemRaw(this.inventory.getItem(slot), amount, throwRandomly, entityOperation);
     }
 
     @Override
     @Nullable
-    public Item dropItem(final @NotNull EquipmentSlot slot, final int amount, final @Nullable Consumer<Item> entityOperation) {
-        return dropItemRaw(this.inventory.getItem(slot), amount, false, entityOperation);
+    public Item dropItem(final @NotNull EquipmentSlot slot, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+        return dropItemRaw(this.inventory.getItem(slot), amount, throwRandomly, entityOperation);
     }
 
     @Override
     @Nullable
-    public Item dropItemRandomly(final int slot, final int amount, final @Nullable Consumer<Item> entityOperation) {
-        if (slot < 0 || slot >= this.inventory.getSize()) {
-            throw new IllegalArgumentException("Slot " + slot + " is not a valid inventory slot.");
-        }
-
-        return dropItemRaw(this.inventory.getItem(slot), amount, true, entityOperation);
-    }
-
-    @Override
-    @Nullable
-    public Item dropItemRandomly(final @NotNull EquipmentSlot slot, final int amount, final @Nullable Consumer<Item> entityOperation) {
-        return dropItemRaw(this.inventory.getItem(slot), amount, true, entityOperation);
-    }
-
-    @Override
-    @Nullable
-    public Item dropItem(final @Nullable ItemStack itemStack, final @Nullable Consumer<Item> entityOperation) {
-        return dropAnyItemRaw(itemStack, false, entityOperation);
-    }
-
-    @Override
-    @Nullable
-    public Item dropItemRandomly(final @Nullable ItemStack itemStack, final @Nullable Consumer<Item> entityOperation) {
-        return dropAnyItemRaw(itemStack, true, entityOperation);
+    public Item dropItem(final @Nullable ItemStack itemStack, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+        return dropAnyItemRaw(itemStack, throwRandomly, entityOperation);
     }
 
     @Nullable
-    private Item dropItemRaw(
-        final ItemStack originalItemStack, final int amount, final boolean throwRandomly,
-        final @Nullable Consumer<Item> entityOperation
-    ) {
+    private Item dropItemRaw(final ItemStack originalItemStack, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
         if (originalItemStack == null || originalItemStack.isEmpty() || amount <= 0) {
             return null;
         }
@@ -871,10 +846,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     }
 
     @Nullable
-    private Item dropAnyItemRaw(
-        final ItemStack itemStack, final boolean throwRandomly,
-        final @Nullable Consumer<Item> entityOperation
-    ) {
+    private Item dropAnyItemRaw(final ItemStack itemStack, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
         if (itemStack == null || itemStack.isEmpty()) {
             return null;
         }
