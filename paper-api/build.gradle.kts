@@ -68,9 +68,6 @@ dependencies {
     apiAndDocs("net.kyori:adventure-text-serializer-plain")
     apiAndDocs("net.kyori:adventure-text-logger-slf4j")
 
-    implementation("org.ow2.asm:asm:9.7.1")
-    implementation("org.ow2.asm:asm-commons:9.7.1")
-
     api("org.apache.maven:maven-resolver-provider:3.9.6") // make API dependency for Paper Plugins
     compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
     compileOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
