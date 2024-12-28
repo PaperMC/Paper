@@ -116,7 +116,7 @@ public class PaperDatapackRegistrar implements PaperRegistrar<BootstrapContext>,
                 resourcesSupplier,
                 PackType.SERVER_DATA,
                 new PackSelectionConfig(
-                    configurerImpl.required,
+                    configurerImpl.autoEnableOnServerStart,
                     configurerImpl.position,
                     configurerImpl.fixedPosition
                 ));
@@ -134,7 +134,7 @@ public class PaperDatapackRegistrar implements PaperRegistrar<BootstrapContext>,
     static final class ConfigurerImpl implements Configurer {
 
         private Component title;
-        private boolean required = false;
+        private boolean autoEnableOnServerStart = false;
         private boolean fixedPosition = false;
         private Pack.Position position = Pack.Position.TOP;
 
@@ -150,7 +150,7 @@ public class PaperDatapackRegistrar implements PaperRegistrar<BootstrapContext>,
 
         @Override
         public Configurer autoEnableOnServerStart(final boolean autoEnableOnServerStart) {
-            this.required = autoEnableOnServerStart;
+            this.autoEnableOnServerStart = autoEnableOnServerStart;
             return this;
         }
 

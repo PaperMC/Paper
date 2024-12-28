@@ -22,6 +22,7 @@ public class PaperDiscoveredDatapack implements DiscoveredDatapack {
             .put(PackSource.FEATURE, DatapackSource.FEATURE)
             .put(PackSource.WORLD, DatapackSource.WORLD)
             .put(PackSource.SERVER, DatapackSource.SERVER)
+            .put(PluginPackSource.INSTANCE, DatapackSource.PLUGIN)
             .buildOrThrow();
     }
 
