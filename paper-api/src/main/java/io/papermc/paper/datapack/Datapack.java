@@ -13,7 +13,6 @@ import org.jspecify.annotations.NullMarked;
 @ApiStatus.NonExtendable
 public interface Datapack extends DiscoveredDatapack {
 
-
     /**
      * Gets the enabled state of this pack.
      *

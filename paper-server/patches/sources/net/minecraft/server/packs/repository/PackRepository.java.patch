@@ -20,15 +20,15 @@
      }
  
      public void reload() {
-+        // Paper start - perform a full reload
++        // Paper start - add pendingReload flag to determine required pack loading
 +        this.reload(false);
 +    }
-+    public void reload(boolean addRequiredPacks) {
-+        // Paper end
++    public void reload(final boolean pendingReload) {
++        // Paper end - add pendingReload flag to determine required pack loading
          List<String> list = this.selected.stream().map(Pack::getId).collect(ImmutableList.toImmutableList());
          this.available = this.discoverAvailable();
 -        this.selected = this.rebuildSelected(list);
-+        this.selected = this.rebuildSelected(list, addRequiredPacks); // Paper
++        this.selected = this.rebuildSelected(list, pendingReload); // Paper - add pendingReload flag to determine required pack loading
      }
  
      private Map<String, Pack> discoverAvailable() {
@@ -49,13 +49,14 @@
  
      public boolean isAbleToClearAnyPack() {
 -        List<Pack> list = this.rebuildSelected(List.of());
-+        List<Pack> list = this.rebuildSelected(List.of(), false); // Paper - add willReload boolean
++        List<Pack> list = this.rebuildSelected(List.of(), false); // Paper - add pendingReload flag to determine required pack loading
          return !this.selected.equals(list);
      }
  
-     public void setSelected(Collection<String> ids) {
+-    public void setSelected(Collection<String> ids) {
 -        this.selected = this.rebuildSelected(ids);
-+        this.selected = this.rebuildSelected(ids, false); // Paper - add willReload boolean
++    public void setSelected(Collection<String> ids, final boolean pendingReload) { // Paper - add pendingReload flag to determine required pack loading
++        this.selected = this.rebuildSelected(ids, pendingReload); // Paper - add pendingReload flag to determine required pack loading
      }
  
      public boolean addPack(String id) {
@@ -64,12 +65,12 @@
      }
  
 -    private List<Pack> rebuildSelected(Collection<String> ids) {
-+    private List<Pack> rebuildSelected(Collection<String> ids, boolean addRequiredPacks) { // Paper - add addRequiredPacks boolean
++    private List<Pack> rebuildSelected(Collection<String> ids, boolean pendingReload) { // Paper - add pendingReload flag to determine required pack loading
          List<Pack> list = this.getAvailablePacks(ids).collect(Util.toMutableList());
  
          for (Pack pack : this.available.values()) {
 -            if (pack.isRequired() && !list.contains(pack)) {
-+            if (pack.isRequired() && !list.contains(pack) && addRequiredPacks) { // Paper - add addRequiredPacks boolean
++            if (pack.isRequired() && !list.contains(pack) && pendingReload) { // Paper - add pendingReload flag to determine required pack loading
                  pack.getDefaultPosition().insert(list, pack, Pack::selectionConfig, false);
              }
          }

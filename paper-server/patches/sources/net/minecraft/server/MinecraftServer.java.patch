@@ -1193,15 +1193,18 @@
                      return ReloadableServerResources.loadResources(
                              closeableResourceManager,
                              this.registries,
-@@ -1520,6 +_,7 @@
+@@ -1520,20 +_,39 @@
              )
              .thenAcceptAsync(
                  reloadableResources -> {
 +                    io.papermc.paper.command.brigadier.PaperBrigadier.moveBukkitCommands(this.resources.managers().getCommands(), reloadableResources.managers().commands); // Paper
                      this.resources.close();
                      this.resources = reloadableResources;
-                     this.packRepository.setSelected(selectedIds);
-@@ -1529,11 +_,29 @@
+-                    this.packRepository.setSelected(selectedIds);
++                    this.packRepository.setSelected(selectedIds, false); // Paper - add pendingReload flag to determine required pack loading - false as this is *after* a reload (see above)
+                     WorldDataConfiguration worldDataConfiguration = new WorldDataConfiguration(
+                         getSelectedPacks(this.packRepository, true), this.worldData.enabledFeatures()
+                     );
                      this.worldData.setDataConfiguration(worldDataConfiguration);
                      this.resources.managers.updateStaticRegistryTags();
                      this.resources.managers.getRecipeManager().finalizeRecipeLoading(this.worldData.enabledFeatures());
@@ -1241,6 +1244,24 @@
          if (safeMode) {
              return configureRepositoryWithSelection(packRepository, List.of("vanilla"), featureFlagSet, false);
          } else {
+@@ -1605,7 +_,7 @@
+     private static WorldDataConfiguration configureRepositoryWithSelection(
+         PackRepository packRepository, Collection<String> selectedPacks, FeatureFlagSet enabledFeatures, boolean safeMode
+     ) {
+-        packRepository.setSelected(selectedPacks);
++        packRepository.setSelected(selectedPacks, true); // Paper - add pendingReload flag to determine required pack loading - before the initial server load
+         enableForcedFeaturePacks(packRepository, enabledFeatures);
+         DataPackConfig selectedPacks1 = getSelectedPacks(packRepository, safeMode);
+         FeatureFlagSet featureFlagSet = packRepository.getRequestedFeatureFlags().join(enabledFeatures);
+@@ -1637,7 +_,7 @@
+                 }
+             }
+ 
+-            packRepository.setSelected(set);
++            packRepository.setSelected(set, true); // Paper - add pendingReload flag to determine required pack loading - before the initial server start
+         }
+     }
+ 
 @@ -1652,10 +_,11 @@
          if (this.isEnforceWhitelist()) {
              PlayerList playerList = commandSource.getServer().getPlayerList();

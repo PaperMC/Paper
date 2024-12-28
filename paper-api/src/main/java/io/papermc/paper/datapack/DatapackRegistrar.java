@@ -178,17 +178,14 @@ public interface DatapackRegistrar extends Registrar {
         @NonNull Configurer title(@NonNull Component title);
 
         /**
-         * Sets if this pack is required. Defaults to false.
-         * A required pack cannot be disabled once enabled. Marking
-         * a pack as required <b>does not</b> mean it will immediately be enabled
-         * upon discovery. It may be enabled if this event was fired
-         * due to a pending (re)load.
+         * Sets whether this pack is going to be automatically enabled on server starts even if previously disabled.
+         * Defaults to false.
          *
-         * @param required true to require the pack
+         * @param autoEnableOnServerStart true to ensure the pack is enabled on server starts.
          * @return the configurer for chaining
          */
         @Contract(value = "_ -> this", mutates = "this")
-        @NonNull Configurer required(boolean required);
+        @NonNull Configurer autoEnableOnServerStart(boolean autoEnableOnServerStart);
 
         /**
          * Configures the position in the

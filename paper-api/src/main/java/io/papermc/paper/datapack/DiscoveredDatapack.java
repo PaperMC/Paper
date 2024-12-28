@@ -39,7 +39,9 @@ public interface DiscoveredDatapack {
     Component getDescription();
 
     /**
-     * Gets if this datapack is required to be enabled.
+     * Gets if this datapack is required.
+     * <p>
+     * A "required" datapack will always be enabled on server startup, even if previously disabled.
      *
      * @return true if the pack is required
      */

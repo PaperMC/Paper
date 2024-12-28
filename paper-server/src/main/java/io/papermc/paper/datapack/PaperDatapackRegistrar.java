@@ -149,8 +149,8 @@ public class PaperDatapackRegistrar implements PaperRegistrar<BootstrapContext>,
         }
 
         @Override
-        public Configurer required(final boolean required) {
-            this.required = required;
+        public Configurer autoEnableOnServerStart(final boolean autoEnableOnServerStart) {
+            this.required = autoEnableOnServerStart;
             return this;
         }
 
