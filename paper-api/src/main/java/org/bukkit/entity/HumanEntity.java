@@ -719,7 +719,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     @Nullable
     default Item dropItem(final int slot) {
-        return this.dropItem(slot, Integer.MAX_VALUE, false, null);
+        return this.dropItem(slot, Integer.MAX_VALUE);
     }
 
     /**
@@ -757,7 +757,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     @Nullable
     default Item dropItem(final @NotNull EquipmentSlot slot) {
-        return this.dropItem(slot, Integer.MAX_VALUE, false, null);
+        return this.dropItem(slot, Integer.MAX_VALUE);
     }
 
     /**
