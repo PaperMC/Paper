@@ -75,18 +75,18 @@ public class PaperDatapackRegistrar implements PaperRegistrar<BootstrapContext>,
         for (final Map.Entry<String, Pack> entry : this.discoveredPacks.entrySet()) {
             builder.put(entry.getKey(), new PaperDiscoveredDatapack(entry.getValue()));
         }
-        return builder.build();
+        return builder.buildOrThrow();
     }
 
     @Override
     public @Nullable DiscoveredDatapack discoverPack(final URI uri, final String id, final Consumer<Configurer> configurer) throws IOException {
-        Preconditions.checkState(this.owner != null, "Cannot register a datapack without specifying a PluginMeta yet");
+        Preconditions.checkState(this.owner != null, "Discovering packs is not supported outside of lifecycle events");
         return this.discoverPack(this.owner.getPluginMeta(), uri, id, configurer);
     }
 
     @Override
     public @Nullable DiscoveredDatapack discoverPack(final Path path, final String id, final Consumer<Configurer> configurer) throws IOException {
-        Preconditions.checkState(this.owner != null, "Cannot register a datapack without specifying a PluginMeta yet");
+        Preconditions.checkState(this.owner != null, "Discovering packs is not supported outside of lifecycle events");
         return this.discoverPack(this.owner.getPluginMeta(), path, id, configurer);
     }
 
@@ -97,10 +97,12 @@ public class PaperDatapackRegistrar implements PaperRegistrar<BootstrapContext>,
 
     @Override
     public @Nullable DiscoveredDatapack discoverPack(final PluginMeta pluginMeta, final Path path, final String id, final Consumer<Configurer> configurer) throws IOException {
+        Preconditions.checkState(this.owner != null, "Discovering packs is not supported outside of lifecycle events");
         final List<ForbiddenSymlinkInfo> badLinks = new ArrayList<>();
         final Pack.ResourcesSupplier resourcesSupplier = this.detector.detectPackResources(path, badLinks);
         if (!badLinks.isEmpty()) {
             LOGGER.warn("Ignoring potential pack entry: {}", ContentValidationException.getMessage(path, badLinks));
+            return null;
         } else if (resourcesSupplier != null) {
             final String packId = pluginMeta.getName() + "/" + id;
             final ConfigurerImpl configurerImpl = new ConfigurerImpl(Component.text(packId));
@@ -125,8 +127,8 @@ public class PaperDatapackRegistrar implements PaperRegistrar<BootstrapContext>,
             return null;
         } else {
             LOGGER.info("Found non-pack entry '{}', ignoring", path);
+            return null;
         }
-        return null;
     }
 
     static final class ConfigurerImpl implements Configurer {
