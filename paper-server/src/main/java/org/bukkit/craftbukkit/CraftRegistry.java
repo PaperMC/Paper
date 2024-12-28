@@ -41,7 +41,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return CraftRegistry.registry;
     }
 
-    public static <E> net.minecraft.core.Registry<E> getMinecraftRegistry(ResourceKey<net.minecraft.core.Registry<E>> key) {
+    public static <E> net.minecraft.core.Registry<E> getMinecraftRegistry(ResourceKey<? extends net.minecraft.core.Registry<E>> key) {
         return CraftRegistry.getMinecraftRegistry().lookupOrThrow(key);
     }
 

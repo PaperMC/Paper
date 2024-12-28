@@ -10,6 +10,7 @@ import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
 import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
 import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntry;
+import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.tag.TagKey;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -136,6 +137,18 @@ public final class PaperRegistries {
     @SuppressWarnings("unchecked")
     public static <M, T extends Keyed> @Nullable RegistryEntry<M, T> getEntry(final RegistryKey<? super T> registryKey) {
         return (RegistryEntry<M, T>) BY_REGISTRY_KEY.get(registryKey);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> RegistryEntryMeta.Buildable<M, T, B> getBuildableMeta(final ResourceKey<? extends Registry<M>> resourceKey) {
+        final RegistryEntry<M, T> entry = getEntry(resourceKey);
+        if (entry == null) {
+            throw new IllegalArgumentException("No registry entry for " + resourceKey);
+        }
+        if (!(entry.meta() instanceof final RegistryEntryMeta.Buildable<M, T, ?> buildableMeta)) {
+            throw new IllegalArgumentException("Registry entry for " + resourceKey + " is not buildable");
+        }
+        return (RegistryEntryMeta.Buildable<M, T, B>) buildableMeta;
     }
 
     @SuppressWarnings("unchecked")
