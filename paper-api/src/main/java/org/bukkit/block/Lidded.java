@@ -1,5 +1,7 @@
 package org.bukkit.block;
 
+import io.papermc.paper.block.LidMode;
+
 /**
  * @deprecated Incomplete api. Use {@link io.papermc.paper.block.Lidded} instead.
  */
@@ -9,14 +11,14 @@ public interface Lidded {
     /**
      * Sets the block's animated state to open and prevents it from being closed
      * until {@link #close()} is called.
-     * @deprecated Use {@link io.papermc.paper.block.Lidded#setLidMode(io.papermc.paper.block.LidMode)}
+     * @deprecated Use {@link io.papermc.paper.block.Lidded#setLidMode(LidMode)}
      */
     @Deprecated
     void open();
 
     /**
      * Unsets a corresponding call to {@link #open()}.
-     * @deprecated Misleading name. Use {@link io.papermc.paper.block.Lidded#setLidMode(io.papermc.paper.block.LidMode)}
+     * @deprecated Misleading name. Use {@link io.papermc.paper.block.Lidded#setLidMode(LidMode)}
      */
     @Deprecated
     void close();
