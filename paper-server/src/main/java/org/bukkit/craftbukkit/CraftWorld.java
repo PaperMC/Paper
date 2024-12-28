@@ -2182,7 +2182,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
                 receivers == null ? this.getHandle().players() : receivers.stream().map(player -> ((CraftPlayer) player).getHandle()).collect(java.util.stream.Collectors.toList()), // Paper -  Particle API
                 sender != null ? ((CraftPlayer) sender).getHandle() : null, // Sender // Paper - Particle API
                 CraftParticle.createParticleParam(particle, data), // Particle
-                false, force,
+                force,
+                false,
                 x, y, z, // Position
                 count,  // Count
                 offsetX, offsetY, offsetZ, // Random offset
