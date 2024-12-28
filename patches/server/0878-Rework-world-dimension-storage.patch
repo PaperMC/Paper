@@ -1,0 +1,1056 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Jake Potrebic <jake.m.potrebic@gmail.com>
+Date: Sat, 12 Mar 2022 23:12:40 -0800
+Subject: [PATCH] Rework world/dimension storage
+
+
+diff --git a/src/main/java/io/papermc/paper/registry/PaperRegistry.java b/src/main/java/io/papermc/paper/registry/PaperRegistry.java
+index 51cec316df8bc0c7d36e0b1dfdf8d9fae04e3606..7e001d5726812eb82876c2750f8837c216df6737 100644
+--- a/src/main/java/io/papermc/paper/registry/PaperRegistry.java
++++ b/src/main/java/io/papermc/paper/registry/PaperRegistry.java
+@@ -39,8 +39,12 @@ public abstract class PaperRegistry<API extends Keyed, MINECRAFT> implements org
+     private final Map<NamespacedKey, API> cache = new HashMap<>();
+ 
+     public PaperRegistry(RegistryKey<API, MINECRAFT> registryKey) {
++        this(registryKey, Suppliers.memoize(() -> REGISTRY_ACCESS.get().registryOrThrow(registryKey.resourceKey())));
++    }
++
++    public PaperRegistry(RegistryKey<API, MINECRAFT> registryKey, Supplier<Registry<MINECRAFT>> registrySupplier) {
+         this.registryKey = registryKey;
+-        this.registry = Suppliers.memoize(() -> REGISTRY_ACCESS.get().registryOrThrow(this.registryKey.resourceKey()));
++        this.registry = registrySupplier;
+     }
+ 
+     @Override
+diff --git a/src/main/java/io/papermc/paper/registry/RegistryKey.java b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+index cbff75f19e54b37c762b209b04f6d4799152cf5b..a3016190b831ad71238b17a23366a6752632ffc0 100644
+--- a/src/main/java/io/papermc/paper/registry/RegistryKey.java
++++ b/src/main/java/io/papermc/paper/registry/RegistryKey.java
+@@ -1,13 +1,16 @@
+ package io.papermc.paper.registry;
+ 
++import io.papermc.paper.world.generation.WorldStem;
+ import io.papermc.paper.world.structure.ConfiguredStructure;
+ import net.minecraft.core.Registry;
+ import net.minecraft.resources.ResourceKey;
++import net.minecraft.world.level.dimension.LevelStem;
+ import net.minecraft.world.level.levelgen.feature.ConfiguredStructureFeature;
+ import org.bukkit.Keyed;
+ 
+ public record RegistryKey<API extends Keyed, MINECRAFT>(Class<API> apiClass, ResourceKey<? extends Registry<MINECRAFT>> resourceKey) {
+ 
+     public static final RegistryKey<ConfiguredStructure, ConfiguredStructureFeature<?, ?>> CONFIGURED_STRUCTURE_REGISTRY = new RegistryKey<>(ConfiguredStructure.class, Registry.CONFIGURED_STRUCTURE_FEATURE_REGISTRY);
++    public static final RegistryKey<WorldStem, LevelStem> WORLD_STEM_REGISTRY = new RegistryKey<>(WorldStem.class, Registry.LEVEL_STEM_REGISTRY);
+ 
+ }
+diff --git a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
+index ca4e9acb4b7beb739546954d0aa02461559a28c8..7625bc5e3728d4429e763f79b9e01e3beb303330 100644
+--- a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
++++ b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
+@@ -67,7 +67,7 @@ public class ThreadedWorldUpgrader {
+     }
+ 
+     public void convert() {
+-        final File worldFolder = LevelStorageSource.getStorageFolder(this.worldDir.toPath(), this.dimensionType).toFile();
++        final File worldFolder = this.worldDir;
+         final DimensionDataStorage worldPersistentData = new DimensionDataStorage(new File(worldFolder, "data"), this.dataFixer);
+ 
+         final File regionFolder = new File(worldFolder, "region");
+diff --git a/src/main/java/io/papermc/paper/world/generation/PaperWorldStem.java b/src/main/java/io/papermc/paper/world/generation/PaperWorldStem.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1540c7f56ce21548a37dd941f932761d7f405db4
+--- /dev/null
++++ b/src/main/java/io/papermc/paper/world/generation/PaperWorldStem.java
+@@ -0,0 +1,36 @@
++package io.papermc.paper.world.generation;
++
++import io.papermc.paper.registry.PaperRegistry;
++import io.papermc.paper.registry.Reference;
++import io.papermc.paper.registry.RegistryKey;
++import net.minecraft.core.Registry;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.level.dimension.LevelStem;
++import org.bukkit.NamespacedKey;
++import org.bukkit.World;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++
++@DefaultQualifier(NonNull.class)
++public class PaperWorldStem {
++
++    public static void init() {
++        new WorldStemRegistry().register();
++    }
++
++    static final class WorldStemRegistry extends PaperRegistry<WorldStem, LevelStem> {
++
++        public WorldStemRegistry() {
++            super(RegistryKey.WORLD_STEM_REGISTRY, WorldStemRegistry::fetchRegistry);
++        }
++
++        static Registry<LevelStem> fetchRegistry() {
++            return MinecraftServer.getServer().getWorldData().worldGenSettings().dimensions();
++        }
++
++        @Override
++        public WorldStem convertToApi(NamespacedKey key, LevelStem nms) {
++            return new WorldStem(key);
++        }
++    }
++}
+diff --git a/src/main/java/net/minecraft/resources/RegistryOps.java b/src/main/java/net/minecraft/resources/RegistryOps.java
+index 59013745eaffcc34692e31d6dcf5fdaadf448b37..61ae5de3b28c071063960e219e5dffcaf73c053a 100644
+--- a/src/main/java/net/minecraft/resources/RegistryOps.java
++++ b/src/main/java/net/minecraft/resources/RegistryOps.java
+@@ -13,8 +13,9 @@ import net.minecraft.util.ExtraCodecs;
+ 
+ public class RegistryOps<T> extends DelegatingOps<T> {
+     private final Optional<RegistryLoader.Bound> loader;
+-    private final RegistryAccess registryAccess;
++    public final RegistryAccess registryAccess; // Paper // TODO - AT
+     private final DynamicOps<JsonElement> asJson;
++    private final @javax.annotation.Nullable Registry<net.minecraft.world.level.dimension.LevelStem> levelStemRegistry; // Paper
+ 
+     public static <T> RegistryOps<T> create(DynamicOps<T> delegate, RegistryAccess registryManager) {
+         return new RegistryOps<>(delegate, registryManager, Optional.empty());
+@@ -32,10 +33,16 @@ public class RegistryOps<T> extends DelegatingOps<T> {
+     }
+ 
+     private RegistryOps(DynamicOps<T> delegate, RegistryAccess dynamicRegistryManager, Optional<RegistryLoader.Bound> loaderAccess) {
++        // Paper start
++        this(delegate, dynamicRegistryManager, loaderAccess, null);
++    }
++    public RegistryOps(DynamicOps<T> delegate, RegistryAccess dynamicRegistryManager, Optional<RegistryLoader.Bound> loaderAccess, @javax.annotation.Nullable Registry<net.minecraft.world.level.dimension.LevelStem> levelStemRegistry) {
++        // Paper end
+         super(delegate);
+         this.loader = loaderAccess;
+         this.registryAccess = dynamicRegistryManager;
+-        this.asJson = delegate == JsonOps.INSTANCE ? this : new RegistryOps<>(JsonOps.INSTANCE, dynamicRegistryManager, loaderAccess);
++        this.asJson = delegate == JsonOps.INSTANCE ? (DynamicOps<JsonElement>) this : new RegistryOps<>(JsonOps.INSTANCE, dynamicRegistryManager, loaderAccess); // Paper - decompile fix
++        this.levelStemRegistry = levelStemRegistry; // Paper
+     }
+ 
+     public <E> Optional<? extends Registry<E>> registry(ResourceKey<? extends Registry<? extends E>> key) {
+@@ -55,8 +62,13 @@ public class RegistryOps<T> extends DelegatingOps<T> {
+             if (ops instanceof RegistryOps) {
+                 RegistryOps<?> registryOps = (RegistryOps)ops;
+                 return registryOps.registry(registryRef).map((registry) -> {
+-                    return DataResult.success(registry, registry.elementsLifecycle());
++                    return DataResult.<Registry<E>>success(registry, registry.elementsLifecycle()); // Paper - decompile fix
+                 }).orElseGet(() -> {
++                    // Paper start
++                    if (registryRef.equals(net.minecraft.core.Registry.LEVEL_STEM_REGISTRY) && registryOps.levelStemRegistry != null) {
++                        return DataResult.success((net.minecraft.core.Registry<E>) registryOps.levelStemRegistry, registryOps.levelStemRegistry.elementsLifecycle());
++                    }
++                    // Paper end
+                     return DataResult.error("Unknown registry: " + registryRef);
+                 });
+             } else {
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 1e0d261439255091a6f61485c0747231fbd5b1db..d941cec3ca56e42c93e485692568a1d98b11ad74 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -213,32 +213,29 @@ public class Main {
+                     // CraftBukkit start
+                     config.set(datapackconfiguration);
+                     ops.set(dynamicops);
+-                    return Pair.of(null, iregistrycustom_e.freeze());
+                     // CraftBukkit end
+-                    /*
+-                    SaveData savedata = convertable_conversionsession.getDataTag(dynamicops, datapackconfiguration, iregistrycustom_e.allElementsLifecycle());
++                    net.minecraft.world.level.storage.WorldData savedata = convertable_conversionsession.getDataTag(dynamicops, datapackconfiguration, iregistrycustom_e.allElementsLifecycle());
+ 
+                     if (savedata != null) {
+                         return Pair.of(savedata, iregistrycustom_e.freeze());
+                     } else {
+-                        WorldSettings worldsettings;
+-                        GeneratorSettings generatorsettings;
++                        net.minecraft.world.level.LevelSettings worldsettings;
++                        WorldGenSettings generatorsettings;
+ 
+-                        if (optionset.has(optionspec2)) {
++                        if (optionset.has("demo")) {
+                             worldsettings = MinecraftServer.DEMO_SETTINGS;
+-                            generatorsettings = GeneratorSettings.demoSettings(iregistrycustom_e);
++                            generatorsettings = WorldGenSettings.demoSettings(iregistrycustom_e);
+                         } else {
+                             DedicatedServerProperties dedicatedserverproperties = dedicatedserversettings.getProperties();
+ 
+-                            worldsettings = new WorldSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(), datapackconfiguration);
+-                            generatorsettings = optionset.has(optionspec3) ? dedicatedserverproperties.getWorldGenSettings(iregistrycustom_e).withBonusChest() : dedicatedserverproperties.getWorldGenSettings(iregistrycustom_e);
++                            worldsettings = new net.minecraft.world.level.LevelSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(), datapackconfiguration);
++                            generatorsettings = optionset.has("bonusChest") ? dedicatedserverproperties.getWorldGenSettings(iregistrycustom_e).withBonusChest() : dedicatedserverproperties.getWorldGenSettings(iregistrycustom_e);
+                         }
+ 
+-                        WorldDataServer worlddataserver = new WorldDataServer(worldsettings, generatorsettings, Lifecycle.stable());
++                        net.minecraft.world.level.storage.PrimaryLevelData worlddataserver = new net.minecraft.world.level.storage.PrimaryLevelData(worldsettings, generatorsettings, Lifecycle.stable());
+ 
+                         return Pair.of(worlddataserver, iregistrycustom_e.freeze());
+                     }
+-                     */
+                 }, Util.backgroundExecutor(), Runnable::run).get();
+             } catch (Exception exception) {
+                 Main.LOGGER.warn("Failed to load datapacks, can't proceed with server load. You can either fix your datapacks or reset to vanilla with --safeMode", exception);
+@@ -247,6 +244,7 @@ public class Main {
+             }
+ 
+             worldstem.updateGlobals();
++            io.papermc.paper.world.generation.PaperWorldStem.init(); // Paper
+             /*
+             IRegistryCustom.Dimension iregistrycustom_dimension = worldstem.registryAccess();
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index c8d56947305c981a3268ce4ae3e975db350ceff2..71989fcc155622f58848bba2c9a642b1b29207b1 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -210,6 +210,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private static final long DELAYED_TASKS_TICK_EXTENSION = 50L;
+     public static final GameProfile ANONYMOUS_PLAYER_PROFILE = new GameProfile(Util.NIL_UUID, "Anonymous Player");
+     public LevelStorageSource.LevelStorageAccess storageSource;
++    public LevelStorageSource levelRoot; // Paper
+     public final PlayerDataStorage playerDataStorage;
+     private final List<Runnable> tickables = Lists.newArrayList();
+     private MetricsRecorder metricsRecorder;
+@@ -367,6 +368,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         // this.connection = new ServerConnection(this); // Spigot
+         this.progressListenerFactory = worldloadlistenerfactory;
+         this.storageSource = convertable_conversionsession;
++        this.levelRoot = LevelStorageSource.createDefault(this.storageSource.levelPath); // Paper
+         this.playerDataStorage = convertable_conversionsession.createPlayerStorage();
+         this.fixerUpper = datafixer;
+         this.functionManager = new ServerFunctionManager(this, this.resources.managers.getFunctionLibrary());
+@@ -443,101 +445,68 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+ 
+     }
++    // Paper start
++    private static void migrate(ResourceKey<LevelStem> dimensionKey, LevelStorageSource levelRoot, String levelName) throws IOException {
++        com.google.common.base.Preconditions.checkArgument(dimensionKey != LevelStem.OVERWORLD, "overworld doesn't need migration");
++        final Path oldLocation;
++        if (dimensionKey == LevelStem.NETHER) {
++            oldLocation = levelRoot.baseDir.getParent().resolve(levelName + "_nether");
++        } else if (dimensionKey == LevelStem.END) {
++            oldLocation = levelRoot.baseDir.getParent().resolve(levelName + "_the_end");
++        } else {
++            oldLocation = LevelStorageSource.getStorageFolder(levelRoot.baseDir.resolve(levelName + "_" + dimensionKey.location().getNamespace() + "_" + dimensionKey.location().getPath()), dimensionKey);
++        }
++        if (Files.notExists(oldLocation)) {
++            return;
++        }
++        final Path newLocation = LevelStorageSource.getStorageFolder(levelRoot.baseDir, dimensionKey);
++        if (Files.exists(newLocation)) {
++            throw new IllegalStateException("Cannot migrate to an already existing location: " + newLocation);
++        }
++        Files.move(oldLocation, newLocation);
++        // TODO migrate level.dat (remove WorldGenSettings.dimensions, update level-stems inside primary level.dat)
++        LOGGER.info("Migrated " + dimensionKey + " to new storage location: " + newLocation);
++    }
++    // Paper end
+ 
+-    // CraftBukkit start
+     private void loadWorld0(String s) {
+-        LevelStorageSource.LevelStorageAccess worldSession = this.storageSource;
++        LevelStorageSource.LevelStorageAccess worldSession;
+         RegistryAccess.Frozen iregistrycustom_dimension = this.registryHolder;
+-        PrimaryLevelData overworldData = (PrimaryLevelData) worldSession.getDataTag(registryreadops, datapackconfiguration, iregistrycustom_dimension.allElementsLifecycle());
+-        if (overworldData == null) {
+-            LevelSettings worldsettings;
+-            WorldGenSettings generatorsettings;
+-
+-            if (this.isDemo()) {
+-                worldsettings = MinecraftServer.DEMO_SETTINGS;
+-                generatorsettings = WorldGenSettings.demoSettings(iregistrycustom_dimension);
+-            } else {
+-                DedicatedServerProperties dedicatedserverproperties = ((DedicatedServer) this).getProperties();
+-
+-                worldsettings = new LevelSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(), this.datapackconfiguration);
+-                generatorsettings = this.options.has("bonusChest") ? dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension).withBonusChest() : dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension);
+-            }
+-
+-            overworldData = new PrimaryLevelData(worldsettings, generatorsettings, Lifecycle.stable());
+-        }
+-
++        PrimaryLevelData overworldData = (PrimaryLevelData) this.worldData;
++        final boolean isFirstRun = !overworldData.isInitialized(); // overworld is not initialized on first run
+         WorldGenSettings overworldSettings = overworldData.worldGenSettings();
+         Registry<LevelStem> iregistry = overworldSettings.dimensions();
+         for (LevelStem worldDimension : iregistry) {
+             ResourceKey<LevelStem> dimensionKey = iregistry.getResourceKey(worldDimension).get();
+ 
+             ServerLevel world;
+-            int dimension = 0;
+ 
+-            if (dimensionKey == LevelStem.NETHER) {
+-                if (this.isNetherEnabled()) {
+-                    dimension = -1;
+-                } else {
+-                    continue;
+-                }
+-            } else if (dimensionKey == LevelStem.END) {
+-                if (this.server.getAllowEnd()) {
+-                    dimension = 1;
+-                } else {
+-                    continue;
+-                }
+-            } else if (dimensionKey != LevelStem.OVERWORLD) {
+-                dimension = -999;
++            if (dimensionKey == LevelStem.NETHER && !this.isNetherEnabled()) { // Paper
++                continue;
++            } else if (dimensionKey == LevelStem.END && !this.server.getAllowEnd()) { // Paper
++                continue;
+             }
+-
+-            String worldType = (dimension == -999) ? dimensionKey.location().getNamespace() + "_" + dimensionKey.location().getPath() : org.bukkit.World.Environment.getEnvironment(dimension).toString().toLowerCase();
+-            String name = (dimensionKey == LevelStem.OVERWORLD) ? s : s + "_" + worldType;
+-            if (dimension != 0) {
+-                File newWorld = LevelStorageSource.getStorageFolder(new File(name).toPath(), dimensionKey).toFile();
+-                File oldWorld = LevelStorageSource.getStorageFolder(new File(s).toPath(), dimensionKey).toFile();
+-                File oldLevelDat = new File(new File(s), "level.dat"); // The data folders exist on first run as they are created in the PersistentCollection constructor above, but the level.dat won't
+-
+-                if (!newWorld.isDirectory() && oldWorld.isDirectory() && oldLevelDat.isFile()) {
+-                    MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder required ----");
+-                    MinecraftServer.LOGGER.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Bukkit requires that you move your " + worldType + " folder to a new location in order to operate correctly.");
+-                    MinecraftServer.LOGGER.info("We will move this folder for you, but it will mean that you need to move it back should you wish to stop using Bukkit in the future.");
+-                    MinecraftServer.LOGGER.info("Attempting to move " + oldWorld + " to " + newWorld + "...");
+-
+-                    if (newWorld.exists()) {
+-                        MinecraftServer.LOGGER.warn("A file or folder already exists at " + newWorld + "!");
+-                        MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
+-                    } else if (newWorld.getParentFile().mkdirs()) {
+-                        if (oldWorld.renameTo(newWorld)) {
+-                            MinecraftServer.LOGGER.info("Success! To restore " + worldType + " in the future, simply move " + newWorld + " to " + oldWorld);
+-                            // Migrate world data too.
+-                            try {
+-                                com.google.common.io.Files.copy(oldLevelDat, new File(new File(name), "level.dat"));
+-                                org.apache.commons.io.FileUtils.copyDirectory(new File(new File(s), "data"), new File(new File(name), "data"));
+-                            } catch (IOException exception) {
+-                                MinecraftServer.LOGGER.warn("Unable to migrate world data.");
+-                            }
+-                            MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder complete ----");
+-                        } else {
+-                            MinecraftServer.LOGGER.warn("Could not move folder " + oldWorld + " to " + newWorld + "!");
+-                            MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
+-                        }
++            // Paper start
++            PrimaryLevelData worlddata;
++            if (dimensionKey == LevelStem.OVERWORLD) {
++                worlddata = (PrimaryLevelData) this.worldData;
++                worldSession = this.storageSource;
++            } else {
++                try {
++                    migrate(dimensionKey, this.levelRoot, overworldData.getLevelName());
++                    if (dimensionKey == LevelStem.NETHER) {
++                        worldSession = this.levelRoot.createNetherAccess(overworldData);
++                    } else if (dimensionKey == LevelStem.END) {
++                        worldSession = this.levelRoot.createTheEndAccess(overworldData);
+                     } else {
+-                        MinecraftServer.LOGGER.warn("Could not create path for " + newWorld + "!");
+-                        MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder failed ----");
++                        worldSession = this.levelRoot.createCustomDimensionAccess(overworldData, dimensionKey);
++            // Paper end
+                     }
+-                }
+-
+-                try {
+-                    worldSession = LevelStorageSource.createDefault(this.server.getWorldContainer().toPath()).createAccess(name, dimensionKey);
+                 } catch (IOException ex) {
+                     throw new RuntimeException(ex);
+                 }
+-            }
+-
+-            org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(name);
+-            org.bukkit.generator.BiomeProvider biomeProvider = this.server.getBiomeProvider(name);
+ 
+-            PrimaryLevelData worlddata = (PrimaryLevelData) worldSession.getDataTag((DynamicOps) this.registryreadops, datapackconfiguration, iregistrycustom_dimension.allElementsLifecycle());
++            worlddata = (PrimaryLevelData) worldSession.getDataTag(this.registryreadops, this.datapackconfiguration, iregistrycustom_dimension.allElementsLifecycle()); // Paper
+             if (worlddata == null) {
+                 LevelSettings worldsettings;
+                 WorldGenSettings generatorsettings;
+@@ -549,28 +518,35 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                     DedicatedServerProperties dedicatedserverproperties = ((DedicatedServer) this).getProperties();
+ 
+                     worldsettings = new LevelSettings(dedicatedserverproperties.levelName, dedicatedserverproperties.gamemode, dedicatedserverproperties.hardcore, dedicatedserverproperties.difficulty, false, new GameRules(), this.datapackconfiguration);
+-                    generatorsettings = this.options.has("bonusChest") ? dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension).withBonusChest() : dedicatedserverproperties.getWorldGenSettings(iregistrycustom_dimension);
++                    // Paper start
++                    if (isFirstRun) {
++                        generatorsettings = overworldSettings; // use same world gen settings on first run
++                    } else {
++                        generatorsettings = WorldGenSettings.create(iregistrycustom_dimension, dedicatedserverproperties.worldGenProperties, overworldSettings.dimensions());
++                    }
++                    generatorsettings = options.has("bonusChest") ? generatorsettings.withBonusChest() : generatorsettings;
++                    // Paper end
+                 }
+ 
+-                worlddata = new PrimaryLevelData(worldsettings, generatorsettings, Lifecycle.stable());
++                worlddata = new net.minecraft.world.level.storage.SecondaryLevelData(overworldData, worldsettings, generatorsettings, overworldData.worldGenSettingsLifecycle()); // Paper
+             }
++            }
++            // Paper start
++            final String name = worldSession.getLevelId();
+             worlddata.checkName(name); // CraftBukkit - Migration did not rewrite the level.dat; This forces 1.8 to take the last loaded world as respawn (in this case the end)
+             // Paper - move down
+ 
++            org.bukkit.generator.ChunkGenerator gen = this.server.getGenerator(name);
++            org.bukkit.generator.BiomeProvider biomeProvider = this.server.getBiomeProvider(name);
++            final LevelStem worlddimension = worlddata.worldGenSettings().dimensions().get(dimensionKey);
++            // Paper end
++
+             ServerLevelData iworlddataserver = worlddata;
+             WorldGenSettings generatorsettings = worlddata.worldGenSettings();
+             boolean flag = generatorsettings.isDebug();
+             long i = generatorsettings.seed();
+             long j = BiomeManager.obfuscateSeed(i);
+             List<CustomSpawner> list = ImmutableList.of(new PhantomSpawner(), new PatrolSpawner(), new CatSpawner(), new VillageSiege(), new WanderingTraderSpawner(iworlddataserver));
+-            // Paper start - Use correct LevelStem registry
+-            final LevelStem worlddimension;
+-            if (dimensionKey == LevelStem.END || dimensionKey == LevelStem.NETHER) {
+-                worlddimension = generatorsettings.dimensions().get(dimensionKey);
+-            } else {
+-                worlddimension = iregistry.get(dimensionKey);
+-            }
+-            // Paper end
+             Holder<DimensionType> holder;
+             ChunkGenerator chunkgenerator;
+ 
+@@ -582,7 +558,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 chunkgenerator = worlddimension.generator();
+             }
+ 
+-            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, org.bukkit.World.Environment.getEnvironment(dimension), holder.value(), chunkgenerator, this.registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
++            final var apiRef = io.papermc.paper.registry.Reference.create(org.bukkit.Registry.WORLD_STEM, org.bukkit.craftbukkit.util.CraftNamespacedKey.fromMinecraft(dimensionKey.location())); // Paper
++            org.bukkit.generator.WorldInfo worldInfo = new org.bukkit.craftbukkit.generator.CraftWorldInfo(iworlddataserver, worldSession, apiRef, holder.value(), chunkgenerator, this.registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
+             if (biomeProvider == null && gen != null) {
+                 biomeProvider = gen.getDefaultBiomeProvider(worldInfo);
+             }
+@@ -605,12 +582,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             ResourceKey<Level> worldKey = ResourceKey.create(Registry.DIMENSION_REGISTRY, dimensionKey.location());
+ 
+             if (dimensionKey == LevelStem.OVERWORLD) {
+-                this.worldData = worlddata;
+                 this.worldData.setGameType(((DedicatedServer) this).getProperties().gamemode); // From DedicatedServer.init
+ 
+                 ChunkProgressListener worldloadlistener = this.progressListenerFactory.create(11);
+ 
+-                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, holder, worldloadlistener, chunkgenerator, flag, j, list, true, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
++                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, holder, worldloadlistener, chunkgenerator, flag, j, list, true, apiRef, gen, biomeProvider); // Paper
+                 DimensionDataStorage worldpersistentdata = world.getDataStorage();
+                 this.readScoreboard(worldpersistentdata);
+                 this.server.scoreboardManager = new org.bukkit.craftbukkit.scoreboard.CraftScoreboardManager(this, world.getScoreboard());
+@@ -624,7 +600,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 } else {
+                     spawners = Collections.emptyList();
+                 }
+-                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, holder, worldloadlistener, chunkgenerator, flag, j, spawners, true, org.bukkit.World.Environment.getEnvironment(dimension), gen, biomeProvider);
++                world = new ServerLevel(this, this.executor, worldSession, iworlddataserver, worldKey, holder, worldloadlistener, chunkgenerator, flag, j, spawners, true, apiRef, gen, biomeProvider); // Paper
+                 // Paper end
+             }
+ 
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index e28e09aae1d95d9bed50a137e999e6d457e62478..90bc7bcbfebeb6c2580e347113d0e26e664a280d 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -313,7 +313,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             SkullBlockEntity.setup(this.getProfileCache(), this.getSessionService(), this);
+             GameProfileCache.setUsesAuthentication(this.usesAuthentication());
+             DedicatedServer.LOGGER.info("Preparing level \"{}\"", this.getLevelIdName());
+-            this.loadLevel(storageSource.getLevelId()); // CraftBukkit
++            // this.loadLevel(storageSource.getLevelId()); // CraftBukkit
++            this.loadLevel(storageSource.getLevelId());
+             long j = Util.getNanos() - i;
+             String s = String.format(Locale.ROOT, "%.3fs", (double) j / 1.0E9D);
+ 
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index ebfaa8d5de5b905bd2dd7778728b8c9939d01252..eedcd8e528b31568b0a1c4dece7cf064302d21fa 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -70,7 +70,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+     public final String textFilteringConfig;
+     public final Settings<DedicatedServerProperties>.MutableValue<Integer> playerIdleTimeout;
+     public final Settings<DedicatedServerProperties>.MutableValue<Boolean> whiteList;
+-    private final DedicatedServerProperties.WorldGenProperties worldGenProperties;
++    public final DedicatedServerProperties.WorldGenProperties worldGenProperties;
+     @Nullable
+     private WorldGenSettings worldGenSettings;
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index a08320807dcc49707bc167d196ba7f954dbf6f03..0635c2cc626412ec362b6f3303269cfb35336df7 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -479,7 +479,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     // Paper end - optimise get nearest players for entity AI
+ 
+     // Add env and gen to constructor, WorldData -> WorldDataServer
+-    public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, Holder<DimensionType> holder, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, org.bukkit.World.Environment env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
++    public ServerLevel(MinecraftServer minecraftserver, Executor executor, LevelStorageSource.LevelStorageAccess convertable_conversionsession, ServerLevelData iworlddataserver, ResourceKey<Level> resourcekey, Holder<DimensionType> holder, ChunkProgressListener worldloadlistener, ChunkGenerator chunkgenerator, boolean flag, long i, List<CustomSpawner> list, boolean flag1, io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> env, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider) {
+         // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
+         super(iworlddataserver, resourcekey, holder, minecraftserver::getProfiler, false, flag, i, gen, biomeProvider, env, executor); // Paper - Async-Anti-Xray - Pass executor
+         this.pvpMode = minecraftserver.isPvpAllowed();
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 160c0f37aa3aaf7598f852acf9bd444f79444c97..94de34c37aafde1fa79585541f31e21222a31b7c 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -261,7 +261,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+     public abstract ResourceKey<LevelStem> getTypeKey();
+ 
+-    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.concurrent.Executor executor) { // Paper - Async-Anti-Xray - Pass executor
++    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> env, java.util.concurrent.Executor executor) { // Paper - Async-Anti-Xray - Pass executor
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
+         this.paperConfig = new com.destroystokyo.paper.PaperWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), this.spigotConfig); // Paper
+         this.generator = gen;
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java b/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java
+index f1aee097318f91d582aa143a77662ec12e812c93..23223e661918bd122132db8df062067fb6e56d50 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/WorldGenSettings.java
+@@ -35,11 +35,16 @@ import org.apache.commons.lang3.StringUtils;
+ import org.slf4j.Logger;
+ 
+ public class WorldGenSettings {
+-    public static final Codec<WorldGenSettings> CODEC = RecordCodecBuilder.create((instance) -> {
++    public static final Codec<WorldGenSettings> CODEC = RecordCodecBuilder.<WorldGenSettings>create((instance) -> { // Paper - decompile fix
+         return instance.group(Codec.LONG.fieldOf("seed").stable().forGetter(WorldGenSettings::seed), Codec.BOOL.fieldOf("generate_features").orElse(true).stable().forGetter(WorldGenSettings::generateFeatures), Codec.BOOL.fieldOf("bonus_chest").orElse(false).stable().forGetter(WorldGenSettings::generateBonusChest), RegistryCodecs.dataPackAwareCodec(Registry.LEVEL_STEM_REGISTRY, Lifecycle.stable(), LevelStem.CODEC).xmap(LevelStem::sortMap, Function.identity()).fieldOf("dimensions").forGetter(WorldGenSettings::dimensions), Codec.STRING.optionalFieldOf("legacy_custom_options").stable().forGetter((worldGenSettings) -> {
+             return worldGenSettings.legacyCustomOptions;
+         })).apply(instance, instance.stable(WorldGenSettings::new));
+     }).comapFlatMap(WorldGenSettings::guardExperimental, Function.identity());
++    // Paper start
++    public static final Codec<WorldGenSettings> DIMENSIONLESS_CODEC = RecordCodecBuilder.<WorldGenSettings>create((instance) -> {
++        return instance.group(Codec.LONG.fieldOf("seed").stable().forGetter(WorldGenSettings::seed), Codec.BOOL.fieldOf("generate_features").orElse(true).stable().forGetter(WorldGenSettings::generateFeatures), Codec.BOOL.fieldOf("bonus_chest").orElse(false).stable().forGetter(WorldGenSettings::generateBonusChest), net.minecraft.resources.RegistryOps.retrieveRegistry(Registry.LEVEL_STEM_REGISTRY).forGetter((genSettings) -> genSettings.dimensions), Codec.STRING.optionalFieldOf("legacy_custom_options").stable().forGetter((genSettings) -> genSettings.legacyCustomOptions)).apply(instance, instance.stable(WorldGenSettings::new));
++    }).comapFlatMap(WorldGenSettings::guardExperimental, Function.identity());
++    // Paper end
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final long seed;
+     private final boolean generateFeatures;
+@@ -188,7 +193,17 @@ public class WorldGenSettings {
+     }
+ 
+     public static WorldGenSettings create(RegistryAccess registryManager, DedicatedServerProperties.WorldGenProperties worldGenProperties) {
++        // Paper start
++        return create(registryManager, worldGenProperties, null);
++    }
++    public static WorldGenSettings create(RegistryAccess registryManager, DedicatedServerProperties.WorldGenProperties worldGenProperties, @javax.annotation.Nullable Registry<LevelStem> dimensions) {
++        // Paper end
+         long l = parseSeed(worldGenProperties.levelSeed()).orElse((new Random()).nextLong());
++        // Paper start
++        if (dimensions != null) {
++            return new net.minecraft.world.level.levelgen.WorldGenSettings(l, worldGenProperties.generateStructures(), false, dimensions);
++        }
++        // Paper end
+         Registry<DimensionType> registry = registryManager.registryOrThrow(Registry.DIMENSION_TYPE_REGISTRY);
+         Registry<Biome> registry2 = registryManager.registryOrThrow(Registry.BIOME_REGISTRY);
+         Registry<StructureSet> registry3 = registryManager.registryOrThrow(Registry.STRUCTURE_SET_REGISTRY);
+diff --git a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java b/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
+index 812c3ce2228a51ed4cce0d8dcc1b8aebdf8297e0..8c5a0d45acd3d1881baa4672b55b67700ca84a33 100644
+--- a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
++++ b/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
+@@ -87,6 +87,11 @@ public class LevelStorageSource {
+     }
+ 
+     private static <T> Pair<WorldGenSettings, Lifecycle> readWorldGenSettings(Dynamic<T> levelData, DataFixer dataFixer, int version) {
++        // Paper start
++        return readWorldGenSettings(levelData, dataFixer, version, WorldGenSettings.CODEC);
++    }
++    private static <T> Pair<WorldGenSettings, Lifecycle> readWorldGenSettings(Dynamic<T> levelData, DataFixer dataFixer, int version, com.mojang.serialization.Codec<net.minecraft.world.level.levelgen.WorldGenSettings> worldGenSettingsCodec) {
++        // Paper end
+         Dynamic<T> dynamic1 = levelData.get("WorldGenSettings").orElseEmptyMap();
+         UnmodifiableIterator unmodifiableiterator = LevelStorageSource.OLD_SETTINGS_KEYS.iterator();
+ 
+@@ -100,7 +105,7 @@ public class LevelStorageSource {
+         }
+ 
+         Dynamic<T> dynamic2 = dataFixer.update(References.WORLD_GEN_SETTINGS, dynamic1, version, SharedConstants.getCurrentVersion().getWorldVersion());
+-        DataResult<WorldGenSettings> dataresult = WorldGenSettings.CODEC.parse(dynamic2);
++        DataResult<WorldGenSettings> dataresult = worldGenSettingsCodec.parse(dynamic2); // Paper
+         Logger logger = LevelStorageSource.LOGGER;
+ 
+         Objects.requireNonNull(logger);
+@@ -244,6 +249,41 @@ public class LevelStorageSource {
+         };
+     }
+ 
++    // Paper start
++    static BiFunction<File, DataFixer, SecondaryLevelData> getLevelData(PrimaryLevelData primaryLevelData, DynamicOps<Tag> ops, DataPackConfig dataPackSettings, Lifecycle lifecycle) {
++        return (file, datafixer) -> {
++            try {
++                CompoundTag nbttagcompound = NbtIo.readCompressed(file);
++                CompoundTag nbttagcompound1 = nbttagcompound.getCompound("Data");
++                CompoundTag nbttagcompound2 = nbttagcompound1.contains("Player", 10) ? nbttagcompound1.getCompound("Player") : null;
++
++                nbttagcompound1.remove("Player");
++                int i = nbttagcompound1.contains("DataVersion", 99) ? nbttagcompound1.getInt("DataVersion") : -1;
++                final DynamicOps<Tag> newOps;
++                if (ops instanceof net.minecraft.resources.RegistryOps<Tag> registryOps) {
++                    newOps = new net.minecraft.resources.RegistryOps<>(registryOps, registryOps.registryAccess, Optional.empty(), primaryLevelData.worldGenSettings().dimensions());
++                } else {
++                    throw new IllegalStateException("Not a registry ops");
++                }
++                Dynamic<Tag> dynamic = datafixer.update(DataFixTypes.LEVEL.getType(), new Dynamic(newOps, nbttagcompound1), i, SharedConstants.getCurrentVersion().getWorldVersion());
++                Pair<WorldGenSettings, Lifecycle> pair = LevelStorageSource.readWorldGenSettings(dynamic, datafixer, i, WorldGenSettings.DIMENSIONLESS_CODEC);
++                LevelVersion levelversion = LevelVersion.parse(dynamic);
++                LevelSettings worldsettings = LevelSettings.parse(dynamic, dataPackSettings);
++                Lifecycle lifecycle1 = ((Lifecycle) pair.getSecond()).add(lifecycle);
++
++                // CraftBukkit start - Add PDC to world
++                SecondaryLevelData worldDataServer = SecondaryLevelData.parse(primaryLevelData, dynamic, datafixer, i, nbttagcompound2, worldsettings, levelversion, pair.getFirst(), lifecycle1);
++                worldDataServer.pdc = nbttagcompound1.get("BukkitValues");
++                return worldDataServer;
++                // CraftBukkit end
++            } catch (Exception exception) {
++                LevelStorageSource.LOGGER.error("Exception reading {}", file, exception);
++                return null;
++            }
++        };
++    }
++    // Paper end
++
+     BiFunction<File, DataFixer, LevelSummary> levelSummaryReader(File file, boolean locked) {
+         return (file1, datafixer) -> {
+             try {
+@@ -309,6 +349,46 @@ public class LevelStorageSource {
+         return this.backupDir;
+     }
+ 
++    // Paper start
++    public LevelStorageSource.LevelStorageAccess createNetherAccess(PrimaryLevelData overworldLevelData) throws IOException {
++        return new DelegatingLevelStorageAccess(overworldLevelData, overworldLevelData.getLevelName() + "_nether", LevelStem.NETHER);
++    }
++
++    public LevelStorageSource.LevelStorageAccess createTheEndAccess(PrimaryLevelData overworldLevelData) throws IOException {
++        return new DelegatingLevelStorageAccess(overworldLevelData, overworldLevelData.getLevelName() + "_the_end", LevelStem.END);
++    }
++
++    public LevelStorageSource.LevelStorageAccess createCustomDimensionAccess(PrimaryLevelData overworldLevelData, ResourceKey<LevelStem> levelStemResourceKey) throws IOException {
++        return new DelegatingLevelStorageAccess(overworldLevelData, levelStemResourceKey.location().toString().replace(':', '_'), levelStemResourceKey);
++    }
++
++    public class DelegatingLevelStorageAccess extends LevelStorageAccess {
++
++        private final PrimaryLevelData primaryLevelData;
++
++        private DelegatingLevelStorageAccess(PrimaryLevelData primaryLevelData, String levelName, ResourceKey<LevelStem> levelStemKey) throws IOException {
++            super(levelName, levelStemKey);
++            this.primaryLevelData = primaryLevelData;
++        }
++
++        @Override
++        public PlayerDataStorage createPlayerStorage() {
++            throw new UnsupportedOperationException("Only 1 player data storage can be created");
++        }
++
++        @Override
++        public @Nullable WorldData getDataTag(DynamicOps<Tag> ops, DataPackConfig dataPackSettings, Lifecycle lifecycle) {
++            this.checkLock();
++            return LevelStorageSource.this.readLevelData(this.levelPath.toFile(), LevelStorageSource.getLevelData(this.primaryLevelData, ops, dataPackSettings, lifecycle));
++        }
++
++        @Override
++        public DataPackConfig getDataPacks() {
++            return this.primaryLevelData.getDataPackConfig();
++        }
++    }
++    // Paper end
++
+     // CraftBukkit start
+     public LevelStorageSource.LevelStorageAccess createAccess(String s, ResourceKey<LevelStem> dimensionType) throws IOException {
+         return new LevelStorageSource.LevelStorageAccess(s, dimensionType);
+@@ -340,7 +420,7 @@ public class LevelStorageSource {
+             this.dimensionType = dimensionType;
+             // CraftBukkit end
+             this.levelId = s;
+-            this.levelPath = LevelStorageSource.this.baseDir.resolve(s);
++            this.levelPath = dimensionType == LevelStem.OVERWORLD ? LevelStorageSource.this.baseDir.resolve(s) : LevelStorageSource.getStorageFolder(LevelStorageSource.this.baseDir, dimensionType);
+             this.lock = DirectoryLock.create(this.levelPath);
+         }
+ 
+@@ -355,10 +435,10 @@ public class LevelStorageSource {
+         }
+ 
+         public Path getDimensionPath(ResourceKey<Level> key) {
+-            return LevelStorageSource.getStorageFolder(this.levelPath, this.dimensionType); // CraftBukkit
++            return this.levelPath; // Paper
+         }
+ 
+-        private void checkLock() {
++        protected void checkLock() {
+             if (!this.lock.isValid()) {
+                 throw new IllegalStateException("Lock is no longer valid");
+             }
+diff --git a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+index 95635cc7367b757d149bb2c81326a041f84782f0..c2f9147043bd5ab1a501f5db8c865a0c4dba594b 100644
+--- a/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
++++ b/src/main/java/net/minecraft/world/level/storage/PrimaryLevelData.java
+@@ -67,7 +67,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+     private final int playerDataVersion;
+     private boolean upgradedPlayerTag;
+     @Nullable
+-    private CompoundTag loadedPlayerTag;
++    protected CompoundTag loadedPlayerTag;
+     private final int version;
+     private int clearWeatherTime;
+     private boolean raining;
+@@ -101,7 +101,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+     }
+     // CraftBukkit end
+ 
+-    private PrimaryLevelData(@Nullable DataFixer dataFixer, int dataVersion, @Nullable CompoundTag playerData, boolean modded, int spawnX, int spawnY, int spawnZ, float spawnAngle, long time, long timeOfDay, int version, int clearWeatherTime, int rainTime, boolean raining, int thunderTime, boolean thundering, boolean initialized, boolean difficultyLocked, WorldBorder.Settings worldBorder, int wanderingTraderSpawnDelay, int wanderingTraderSpawnChance, @Nullable UUID wanderingTraderId, Set<String> serverBrands, TimerQueue<MinecraftServer> scheduledEvents, @Nullable CompoundTag customBossEvents, CompoundTag dragonFight, LevelSettings levelInfo, WorldGenSettings generatorOptions, Lifecycle lifecycle) {
++    protected PrimaryLevelData(@Nullable DataFixer dataFixer, int dataVersion, @Nullable CompoundTag playerData, boolean modded, int spawnX, int spawnY, int spawnZ, float spawnAngle, long time, long timeOfDay, int version, int clearWeatherTime, int rainTime, boolean raining, int thunderTime, boolean thundering, boolean initialized, boolean difficultyLocked, WorldBorder.Settings worldBorder, int wanderingTraderSpawnDelay, int wanderingTraderSpawnChance, @Nullable UUID wanderingTraderId, Set<String> serverBrands, TimerQueue<MinecraftServer> scheduledEvents, @Nullable CompoundTag customBossEvents, CompoundTag dragonFight, LevelSettings levelInfo, WorldGenSettings generatorOptions, Lifecycle lifecycle) {
+         this.fixerUpper = dataFixer;
+         this.wasModded = modded;
+         this.xSpawn = spawnX;
+@@ -163,6 +163,12 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+     }
+ 
+     private void setTagData(RegistryAccess registryManager, CompoundTag levelNbt, @Nullable CompoundTag playerNbt) {
++        // Paper start
++        this.setTagData(registryManager, levelNbt, playerNbt, true);
++    }
++    protected void setTagData(RegistryAccess registryManager, CompoundTag levelNbt, @Nullable CompoundTag playerNbt, boolean isFullLevelData) {
++        if (isFullLevelData) {
++        // Paper end
+         ListTag nbttaglist = new ListTag();
+         Stream<StringTag> stream = this.knownServerBrands.stream().map(StringTag::valueOf); // CraftBukkit - decompile error
+ 
+@@ -170,6 +176,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+         stream.forEach(nbttaglist::add);
+         levelNbt.put("ServerBrands", nbttaglist);
+         levelNbt.putBoolean("WasModded", this.wasModded);
++        } // Paper
+         CompoundTag nbttagcompound2 = new CompoundTag();
+ 
+         nbttagcompound2.putString("Name", SharedConstants.getCurrentVersion().getName());
+@@ -178,8 +185,9 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+         nbttagcompound2.putString("Series", SharedConstants.getCurrentVersion().getDataVersion().getSeries());
+         levelNbt.put("Version", nbttagcompound2);
+         levelNbt.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
++        final com.mojang.serialization.Codec<WorldGenSettings> codec = isFullLevelData ? WorldGenSettings.CODEC : WorldGenSettings.DIMENSIONLESS_CODEC; // Paper
+         DynamicOps<Tag> dynamicops = RegistryOps.create(NbtOps.INSTANCE, registryManager);
+-        DataResult<Tag> dataresult = WorldGenSettings.CODEC.encodeStart(dynamicops, this.worldGenSettings); // CraftBukkit - decompile error
++        DataResult<Tag> dataresult = codec.encodeStart(dynamicops, this.worldGenSettings); // CraftBukkit - decompile error // Paper
+         Logger logger = PrimaryLevelData.LOGGER;
+ 
+         Objects.requireNonNull(logger);
+@@ -213,9 +221,11 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+             levelNbt.put("Player", playerNbt);
+         }
+ 
++        if (isFullLevelData) { // Paper
+         DataPackConfig.CODEC.encodeStart(NbtOps.INSTANCE, this.settings.getDataPackConfig()).result().ifPresent((nbtbase) -> {
+             levelNbt.put("DataPacks", nbtbase);
+         });
++        } // Paper
+         if (this.customBossEvents != null) {
+             levelNbt.put("CustomBossEvents", this.customBossEvents);
+         }
+@@ -261,7 +271,7 @@ public class PrimaryLevelData implements ServerLevelData, WorldData {
+         return this.dayTime;
+     }
+ 
+-    private void updatePlayerTag() {
++    protected void updatePlayerTag() {
+         if (!this.upgradedPlayerTag && this.loadedPlayerTag != null) {
+             if (this.playerDataVersion < SharedConstants.getCurrentVersion().getWorldVersion()) {
+                 if (this.fixerUpper == null) {
+diff --git a/src/main/java/net/minecraft/world/level/storage/SecondaryLevelData.java b/src/main/java/net/minecraft/world/level/storage/SecondaryLevelData.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf620b9b7db9918a0170239241f23ae29375cd2a
+--- /dev/null
++++ b/src/main/java/net/minecraft/world/level/storage/SecondaryLevelData.java
+@@ -0,0 +1,110 @@
++package net.minecraft.world.level.storage;
++
++import com.mojang.datafixers.DataFixer;
++import com.mojang.serialization.Dynamic;
++import com.mojang.serialization.Lifecycle;
++import net.minecraft.SharedConstants;
++import net.minecraft.core.RegistryAccess;
++import net.minecraft.core.SerializableUUID;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.nbt.Tag;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.level.DataPackConfig;
++import net.minecraft.world.level.LevelSettings;
++import net.minecraft.world.level.border.WorldBorder;
++import net.minecraft.world.level.levelgen.WorldGenSettings;
++import net.minecraft.world.level.timers.TimerCallbacks;
++import net.minecraft.world.level.timers.TimerQueue;
++
++import javax.annotation.Nullable;
++import java.util.Set;
++import java.util.UUID;
++
++public class SecondaryLevelData extends PrimaryLevelData {
++
++    private final PrimaryLevelData primaryLevelData;
++
++    public SecondaryLevelData(PrimaryLevelData primaryLevelData, LevelSettings levelInfo, WorldGenSettings worldGenSettings, Lifecycle worldGenSettingsLifecycle) {
++        this(primaryLevelData, null, SharedConstants.getCurrentVersion().getWorldVersion(), (CompoundTag) null, 0, 0, 0, 0.0F, 0L, 0L, WorldData.ANVIL_VERSION_ID, 0, 0, false, 0, false, false, false, WorldBorder.DEFAULT_SETTINGS, 0, 0, (UUID) null, new TimerQueue<>(TimerCallbacks.SERVER_CALLBACKS), (CompoundTag) null, new CompoundTag(), levelInfo.copy(), worldGenSettings, worldGenSettingsLifecycle);
++    }
++
++    public SecondaryLevelData(PrimaryLevelData primaryLevelData, @Nullable DataFixer dataFixer, int dataVersion, @Nullable CompoundTag playerData, int spawnX, int spawnY, int spawnZ, float spawnAngle, long time, long timeOfDay, int version, int clearWeatherTime, int rainTime, boolean raining, int thunderTime, boolean thundering, boolean initialized, boolean difficultyLocked, WorldBorder.Settings worldBorder, int wanderingTraderSpawnDelay, int wanderingTraderSpawnChance, @Nullable UUID wanderingTraderId, TimerQueue<MinecraftServer> scheduledEvents, @Nullable CompoundTag customBossEvents, CompoundTag dragonFight, LevelSettings levelInfo, WorldGenSettings worldGenSettings, Lifecycle worldGenSettingsLifecycle) {
++        super(dataFixer, dataVersion, playerData, primaryLevelData.wasModded(), spawnX, spawnY, spawnZ, spawnAngle, time, timeOfDay, version, clearWeatherTime, rainTime, raining, thunderTime, thundering, initialized, difficultyLocked, worldBorder, wanderingTraderSpawnDelay, wanderingTraderSpawnChance, wanderingTraderId, primaryLevelData.getKnownServerBrands(), scheduledEvents, customBossEvents, dragonFight, levelInfo, worldGenSettings, worldGenSettingsLifecycle);
++        this.primaryLevelData = primaryLevelData;
++    }
++
++    // Modeled off of method of same name in PrimaryLevelData
++    public static SecondaryLevelData parse(PrimaryLevelData primaryLevelData, Dynamic<Tag> dynamic, DataFixer dataFixer, int dataVersion, @Nullable CompoundTag playerData, LevelSettings levelInfo, LevelVersion saveVersionInfo, WorldGenSettings worldGenSettings, Lifecycle worldGenSettingsLifecycle) {
++        long j = dynamic.get("Time").asLong(0L);
++        CompoundTag nbttagcompound1 = (CompoundTag) dynamic.get("DragonFight").result().map(Dynamic::getValue).orElseGet(() -> {
++            return (Tag) dynamic.get("DimensionData").get("1").get("DragonFight").orElseEmptyMap().getValue();
++        });
++
++        return new SecondaryLevelData(primaryLevelData,
++            dataFixer,
++            dataVersion,
++            playerData,
++            dynamic.get("SpawnX").asInt(0),
++            dynamic.get("SpawnY").asInt(0),
++            dynamic.get("SpawnZ").asInt(0),
++            dynamic.get("SpawnAngle").asFloat(0.0F),
++            j,
++            dynamic.get("DayTime").asLong(j),
++            saveVersionInfo.levelDataVersion(),
++            dynamic.get("clearWeatherTime").asInt(0),
++            dynamic.get("rainTime").asInt(0),
++            dynamic.get("raining").asBoolean(false),
++            dynamic.get("thunderTime").asInt(0),
++            dynamic.get("thundering").asBoolean(false),
++            dynamic.get("initialized").asBoolean(true),
++            dynamic.get("DifficultyLocked").asBoolean(false),
++            WorldBorder.Settings.read(dynamic, WorldBorder.DEFAULT_SETTINGS),
++            dynamic.get("WanderingTraderSpawnDelay").asInt(0),
++            dynamic.get("WanderingTraderSpawnChance").asInt(0),
++            (UUID) dynamic.get("WanderingTraderId").read(SerializableUUID.CODEC).result().orElse(null),
++            new TimerQueue<>(TimerCallbacks.SERVER_CALLBACKS, dynamic.get("ScheduledEvents").asStream()),
++            (CompoundTag) dynamic.get("CustomBossEvents").orElseEmptyMap().getValue(),
++            nbttagcompound1,
++            levelInfo,
++            worldGenSettings,
++            worldGenSettingsLifecycle);
++    }
++
++    @Override
++    public void setModdedInfo(String brand, boolean modded) {
++        this.primaryLevelData.setModdedInfo(brand, modded);
++    }
++
++    @Override
++    public boolean wasModded() {
++        return this.primaryLevelData.wasModded();
++    }
++
++    @Override
++    public Set<String> getKnownServerBrands() {
++        return this.primaryLevelData.getKnownServerBrands();
++    }
++
++    @Override
++    public DataPackConfig getDataPackConfig() {
++        return this.primaryLevelData.getDataPackConfig();
++    }
++
++    @Override
++    public void setDataPackConfig(DataPackConfig dataPackSettings) {
++        this.primaryLevelData.setDataPackConfig(dataPackSettings);
++    }
++
++    @Override // modeled off method of same name in PrimaryLevelData
++    public CompoundTag createTag(RegistryAccess registryManager, @Nullable CompoundTag playerNbt) {
++        this.updatePlayerTag();
++        if (playerNbt == null) {
++            playerNbt = this.loadedPlayerTag;
++        }
++
++        CompoundTag nbttagcompound1 = new CompoundTag();
++
++        this.setTagData(registryManager, nbttagcompound1, playerNbt, false);
++        return nbttagcompound1;
++    }
++}
+diff --git a/src/main/java/net/minecraft/world/level/storage/WorldData.java b/src/main/java/net/minecraft/world/level/storage/WorldData.java
+index 6b9302f0d8b9ba988f26d3cdfddd20ce3f372b50..39db2a6444ed09ffefbfe1c8d182591d42c4a1df 100644
+--- a/src/main/java/net/minecraft/world/level/storage/WorldData.java
++++ b/src/main/java/net/minecraft/world/level/storage/WorldData.java
+@@ -56,7 +56,13 @@ public interface WorldData {
+ 
+     void setCustomBossEvents(@Nullable CompoundTag customBossEvents);
+ 
++    @Deprecated // Paper
+     ServerLevelData overworldData();
++    // Paper start - with CBs multi-world, this isn't "overworld" since one exists for each dimension
++    default ServerLevelData serverLevelData() {
++        return this.overworldData();
++    }
++    // Paper end
+ 
+     LevelSettings getLevelSettings();
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 55c981f2c8070fc1bd9ecd4f4df140d9d0c68319..61504d01213bafc3476fdfb592d02b8b8972aabb 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1139,7 +1139,11 @@ public final class CraftServer implements Server {
+         String name = creator.name();
+         ChunkGenerator generator = creator.generator();
+         BiomeProvider biomeProvider = creator.biomeProvider();
+-        File folder = new File(this.getWorldContainer(), name);
++        // Paper start
++        final ResourceKey<LevelStem> levelStemKey = ResourceKey.create(Registry.LEVEL_STEM_REGISTRY, CraftNamespacedKey.toMinecraft(creator.worldStem().getKey()));
++        final PrimaryLevelData overworldLevelData = ((PrimaryLevelData) this.getServer().getWorldData());
++        File folder = LevelStorageSource.getStorageFolder(this.getServer().levelRoot.getBaseDir(), levelStemKey).toFile();
++        // Paper end
+         World world = this.getWorld(name);
+ 
+         if (world != null) {
+@@ -1158,24 +1162,11 @@ public final class CraftServer implements Server {
+             biomeProvider = this.getBiomeProvider(name);
+         }
+ 
+-        ResourceKey<LevelStem> actualDimension;
+-        switch (creator.environment()) {
+-            case NORMAL:
+-                actualDimension = LevelStem.OVERWORLD;
+-                break;
+-            case NETHER:
+-                actualDimension = LevelStem.NETHER;
+-                break;
+-            case THE_END:
+-                actualDimension = LevelStem.END;
+-                break;
+-            default:
+-                throw new IllegalArgumentException("Illegal dimension");
+-        }
++        ResourceKey<LevelStem> actualDimension = levelStemKey; // Paper
+ 
+         LevelStorageSource.LevelStorageAccess worldSession;
+         try {
+-            worldSession = LevelStorageSource.createDefault(this.getWorldContainer().toPath()).createAccess(name, actualDimension);
++            worldSession = this.getServer().levelRoot.createCustomDimensionAccess(overworldLevelData, actualDimension);
+         } catch (IOException ex) {
+             throw new RuntimeException(ex);
+         }
+@@ -1189,9 +1180,9 @@ public final class CraftServer implements Server {
+         if (worlddata == null) {
+             DedicatedServerProperties.WorldGenProperties properties = new DedicatedServerProperties.WorldGenProperties(Objects.toString(creator.seed()), GsonHelper.parse((creator.generatorSettings().isEmpty()) ? "{}" : creator.generatorSettings()), creator.generateStructures(), creator.type().name().toLowerCase(Locale.ROOT));
+ 
+-            WorldGenSettings generatorsettings = WorldGenSettings.create(this.console.registryAccess(), properties);
++            WorldGenSettings generatorsettings = WorldGenSettings.create(this.console.registryAccess(), properties, overworldLevelData.worldGenSettings().dimensions()); // Paper
+             worldSettings = new LevelSettings(name, GameType.byId(this.getDefaultGameMode().getValue()), hardcore, Difficulty.EASY, false, new GameRules(), console.datapackconfiguration);
+-            worlddata = new PrimaryLevelData(worldSettings, generatorsettings, Lifecycle.stable());
++            worlddata = new net.minecraft.world.level.storage.SecondaryLevelData(overworldLevelData, worldSettings, generatorsettings, overworldLevelData.worldGenSettingsLifecycle()); // Paper
+         }
+         worlddata.checkName(name);
+         worlddata.setModdedInfo(this.console.getServerModName(), this.console.getModdedStatus().shouldReportAsModified());
+@@ -1209,10 +1200,10 @@ public final class CraftServer implements Server {
+             chunkgenerator = WorldGenSettings.makeDefaultOverworld(console.registryHolder, (new Random()).nextLong());
+         } else {
+             holder = worlddimension.typeHolder();
+-            chunkgenerator = worlddimension.generator();
++            chunkgenerator = worlddimension.generator().withSeed(creator.seed()); // Paper - since there's only one Registry<LevelStem> instance now, you have to re-create the gen with the specified seed
+         }
+ 
+-        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.environment(), holder.value(), chunkgenerator, this.getHandle().getServer().registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
++        WorldInfo worldInfo = new CraftWorldInfo(worlddata, worldSession, creator.worldStem(), holder.value(), chunkgenerator, this.getHandle().getServer().registryAccess().registryOrThrow(net.minecraft.core.Registry.BIOME_REGISTRY)); // Paper
+         if (biomeProvider == null && generator != null) {
+             biomeProvider = generator.getDefaultBiomeProvider(worldInfo);
+         }
+@@ -1243,7 +1234,7 @@ public final class CraftServer implements Server {
+         }
+ 
+         ServerLevel internal = (ServerLevel) new ServerLevel(this.console, console.executor, worldSession, worlddata, worldKey, holder, this.getServer().progressListenerFactory.create(11),
+-                chunkgenerator, worlddata.worldGenSettings().isDebug(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.environment(), generator, biomeProvider);
++                chunkgenerator, worlddata.worldGenSettings().isDebug(), j, creator.environment() == Environment.NORMAL ? list : ImmutableList.of(), true, creator.worldStem(), generator, biomeProvider); // Paper
+ 
+         if (!(this.worlds.containsKey(name.toLowerCase(java.util.Locale.ENGLISH)))) {
+             return null;
+@@ -2000,7 +1991,7 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public File getWorldContainer() {
+-        return this.getServer().storageSource.getDimensionPath(net.minecraft.world.level.Level.OVERWORLD).getParent().toFile();
++        return this.getServer().storageSource.levelPath.getParent().toFile(); // Paper
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index 028663b86970b8a1ae3e5275429516ee00ef0a04..a7c2d1260a1ff08bbdb3e171a014bd18ce267ba0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -136,7 +136,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     private final ServerLevel world;
+     private WorldBorder worldBorder;
+-    private Environment environment;
++    private io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> environment;
+     private final CraftServer server = (CraftServer) Bukkit.getServer();
+     private final ChunkGenerator generator;
+     private final BiomeProvider biomeProvider;
+@@ -241,7 +241,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     private static final Random rand = new Random();
+ 
+-    public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, Environment env) {
++    public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> env) {
+         this.world = world;
+         this.generator = gen;
+         this.biomeProvider = biomeProvider;
+@@ -935,6 +935,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+ 
+     @Override
+     public Environment getEnvironment() {
++        // Paper start
++        return io.papermc.paper.world.generation.WorldStem.convertToLegacy(this.environment);
++    }
++    @Override
++    public io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> worldStem() {
++        // Paper end
+         return this.environment;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java b/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
+index 3918c24dfb6cda4cff18016cca807c2dbc2a9156..1b600532c3153c4f0370f5fabd07977976bccb1e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
++++ b/src/main/java/org/bukkit/craftbukkit/generator/CraftWorldInfo.java
+@@ -13,7 +13,7 @@ public class CraftWorldInfo implements WorldInfo {
+ 
+     private final String name;
+     private final UUID uuid;
+-    private final World.Environment environment;
++    private final io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> environment; // Paper
+     private final long seed;
+     private final int minHeight;
+     private final int maxHeight;
+@@ -21,10 +21,10 @@ public class CraftWorldInfo implements WorldInfo {
+     private final net.minecraft.world.level.chunk.ChunkGenerator vanillaChunkGenerator;
+     private final net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry;
+ 
+-    public CraftWorldInfo(ServerLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager) {
++    public CraftWorldInfo(ServerLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> environment, DimensionType dimensionManager) {
+         this(worldDataServer, session, environment, dimensionManager, null, null);
+     }
+-    public CraftWorldInfo(ServerLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, World.Environment environment, DimensionType dimensionManager, net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator, net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry) {
++    public CraftWorldInfo(ServerLevelData worldDataServer, LevelStorageSource.LevelStorageAccess session, io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> environment, DimensionType dimensionManager, net.minecraft.world.level.chunk.ChunkGenerator chunkGenerator, net.minecraft.core.Registry<net.minecraft.world.level.biome.Biome> biomeRegistry) {
+         this.biomeRegistry = biomeRegistry;
+         this.vanillaChunkGenerator = chunkGenerator;
+         // Paper end
+@@ -36,7 +36,7 @@ public class CraftWorldInfo implements WorldInfo {
+         this.maxHeight = dimensionManager.minY() + dimensionManager.height();
+     }
+ 
+-    public CraftWorldInfo(String name, UUID uuid, World.Environment environment, long seed, int minHeight, int maxHeight) {
++    public CraftWorldInfo(String name, UUID uuid, io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> environment, long seed, int minHeight, int maxHeight) {
+         // Paper start
+         this.vanillaChunkGenerator = null;
+         this.biomeRegistry = null;
+@@ -61,6 +61,13 @@ public class CraftWorldInfo implements WorldInfo {
+ 
+     @Override
+     public World.Environment getEnvironment() {
++        // Paper start
++        return io.papermc.paper.world.generation.WorldStem.convertToLegacy(this.environment);
++    }
++
++    @Override
++    public io.papermc.paper.registry.Reference<io.papermc.paper.world.generation.WorldStem> worldStem() {
++        // Paper end
+         return this.environment;
+     }
+ 
