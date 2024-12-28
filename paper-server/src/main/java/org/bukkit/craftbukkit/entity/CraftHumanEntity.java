@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -19,6 +20,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -48,13 +50,14 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.HumanEntity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Villager;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
@@ -66,6 +69,8 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionAttachment;
 import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     private CraftInventoryPlayer inventory;
@@ -799,6 +804,47 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         optionalSlot.ifPresent(slot -> player.containerSynchronizer.sendSlotChange(player.containerMenu, slot, inv.getSelected()));
         return true;
         // Paper end - Fix HumanEntity#drop not updating the client inv
+    }
+
+    @Override
+    @Nullable
+    public Item dropItem(final int slot, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+        Preconditions.checkArgument(slot >= 0 && slot < this.inventory.getSize(), "Slot %s is not a valid inventory slot.", slot);
+
+        return internalDropItemFromInventory(this.inventory.getItem(slot), amount, throwRandomly, entityOperation);
+    }
+
+    @Override
+    @Nullable
+    public Item dropItem(final @NotNull EquipmentSlot slot, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+        return internalDropItemFromInventory(this.inventory.getItem(slot), amount, throwRandomly, entityOperation);
+    }
+
+    @Nullable
+    private Item internalDropItemFromInventory(final ItemStack originalItemStack, final int amount, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+        if (originalItemStack == null || originalItemStack.isEmpty() || amount <= 0) return null;
+
+        final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.unwrap(originalItemStack);
+        final net.minecraft.world.item.ItemStack dropContent = nmsItemStack.split(amount);
+
+        // This will return the itemstack back to its original amount in case events fail
+        final ItemEntity droppedEntity = this.getHandle().drop(dropContent, throwRandomly, true, true, entityOperation);
+        return droppedEntity == null ? null : (Item) droppedEntity.getBukkitEntity();
+    }
+
+    @Override
+    @Nullable
+    public Item dropItem(final @Nullable ItemStack itemStack, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+        // This method implementation differs from the previous dropItem implementations, as it does not source
+        // its itemstack from the players inventory. As such, we cannot reuse #internalDropItemFromInventory.
+        Preconditions.checkArgument(itemStack != null, "Cannot drop a null itemstack");
+        if (itemStack.isEmpty()) return null;
+
+        final net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
+
+        // Do *not* call the event here, the item is not in the player inventory, they are not dropping it / do not need recovering logic (which would be a dupe).
+        final ItemEntity droppedEntity = this.getHandle().drop(nmsItemStack, throwRandomly, true, false, entityOperation);
+        return droppedEntity == null ? null : (Item) droppedEntity.getBukkitEntity();
     }
 
     @Override

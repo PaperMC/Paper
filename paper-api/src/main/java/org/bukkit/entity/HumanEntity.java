@@ -2,10 +2,12 @@ package org.bukkit.entity;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.function.Consumer;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
@@ -14,6 +16,7 @@ import org.bukkit.inventory.MainHand;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.FireworkMeta;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -703,8 +706,115 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @param dropAll True to drop entire stack, false to drop 1 of the stack
      * @return True if item was dropped successfully
+     * @apiNote You should instead use {@link #dropItem(EquipmentSlot, int)} or {@link #dropItem(EquipmentSlot)} with a {@link EquipmentSlot#HAND} parameter.
      */
-    public boolean dropItem(boolean dropAll);
+    @ApiStatus.Obsolete(since = "1.21.4")
+    boolean dropItem(boolean dropAll);
+
+    /**
+     * Makes the player drop all items from their inventory based on the inventory slot.
+     *
+     * @param slot the equipment slot to drop
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    default Item dropItem(final int slot) {
+        return this.dropItem(slot, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Makes the player drop an item from their inventory based on the inventory slot.
+     *
+     * @param slot   the slot to drop
+     * @param amount the number of items to drop from this slot. Values below one always return null
+     * @return the dropped item entity, or null if the action was unsuccessful
+     * @throws IllegalArgumentException if the slot is negative or bigger than the player's inventory
+     */
+    @Nullable
+    default Item dropItem(final int slot, final int amount) {
+        return this.dropItem(slot, amount, false, null);
+    }
+
+    /**
+     * Makes the player drop an item from their inventory based on the inventory slot.
+     *
+     * @param slot            the slot to drop
+     * @param amount          the number of items to drop from this slot. Values below one always return null
+     * @param throwRandomly   controls the randomness of the dropped items velocity, where {@code true} mimics dropped
+     *                        items during a player's death, while {@code false} acts like a normal item drop.
+     * @param entityOperation the function to be run before adding the entity into the world
+     * @return the dropped item entity, or null if the action was unsuccessful
+     * @throws IllegalArgumentException if the slot is negative or bigger than the player's inventory
+     */
+    @Nullable
+    Item dropItem(int slot, int amount, boolean throwRandomly, @Nullable Consumer<Item> entityOperation);
+
+    /**
+     * Makes the player drop all items from their inventory based on the equipment slot.
+     *
+     * @param slot the equipment slot to drop
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    default Item dropItem(final @NotNull EquipmentSlot slot) {
+        return this.dropItem(slot, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Makes the player drop an item from their inventory based on the equipment slot.
+     *
+     * @param slot   the equipment slot to drop
+     * @param amount the amount of items to drop from this equipment slot. Values below one always return null
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    default Item dropItem(final @NotNull EquipmentSlot slot, final int amount) {
+        return this.dropItem(slot, amount, false, null);
+    }
+
+    /**
+     * Makes the player drop an item from their inventory based on the equipment slot.
+     *
+     * @param slot            the equipment slot to drop
+     * @param amount          The amount of items to drop from this equipment slot. Values below one always return null
+     * @param throwRandomly   controls the randomness of the dropped items velocity, where {@code true} mimics dropped
+     *                        items during a player's death, while {@code false} acts like a normal item drop.
+     * @param entityOperation the function to be run before adding the entity into the world
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    Item dropItem(@NotNull EquipmentSlot slot, int amount, boolean throwRandomly, @Nullable Consumer<Item> entityOperation);
+
+    /**
+     * Makes the player drop any arbitrary {@link ItemStack}, independently of whether the player actually
+     * has that item in their inventory.
+     * <p>
+     * This method modifies neither the item nor the player's inventory.
+     * Item removal has to be handled by the method caller.
+     *
+     * @param itemStack the itemstack to drop
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    default Item dropItem(final @NotNull ItemStack itemStack) {
+        return this.dropItem(itemStack, false, null);
+    }
+
+    /**
+     * Makes the player drop any arbitrary {@link ItemStack}, independently of whether the player actually
+     * has that item in their inventory.
+     * <p>
+     * This method modifies neither the item nor the player's inventory.
+     * Item removal has to be handled by the method caller.
+     *
+     * @param itemStack       the itemstack to drop
+     * @param throwRandomly   controls the randomness of the dropped items velocity, where {@code true} mimics dropped
+     *                        items during a player's death, while {@code false} acts like a normal item drop.
+     * @param entityOperation the function to be run before adding the entity into the world
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    Item dropItem(final @NotNull ItemStack itemStack, boolean throwRandomly, @Nullable Consumer<Item> entityOperation);
 
     /**
      * Gets the players current exhaustion level.
