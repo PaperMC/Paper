@@ -8,11 +8,11 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The registrar for datapacks. The event for this registrar
@@ -43,6 +43,7 @@ import org.jetbrains.annotations.Unmodifiable;
  */
 @ApiStatus.NonExtendable
 @ApiStatus.Experimental
+@NullMarked
 public interface DatapackRegistrar extends Registrar {
 
     /**
@@ -53,7 +54,7 @@ public interface DatapackRegistrar extends Registrar {
      * @see Datapack#getName()
      */
     @Contract(pure = true)
-    boolean hasPackDiscovered(@NonNull String name);
+    boolean hasPackDiscovered(String name);
 
     /**
      * Gets a discovered datapack by its name.
@@ -64,7 +65,7 @@ public interface DatapackRegistrar extends Registrar {
      * @see Datapack#getName()
      */
     @Contract(pure = true)
-    @NonNull DiscoveredDatapack getDiscoveredPack(@NonNull String name);
+    DiscoveredDatapack getDiscoveredPack(String name);
 
     /**
      * Removes a discovered datapack by its name.
@@ -74,7 +75,7 @@ public interface DatapackRegistrar extends Registrar {
      * @see Datapack#getName()
      */
     @Contract(mutates = "this")
-    boolean removeDiscoveredPack(@NonNull String name);
+    boolean removeDiscoveredPack(String name);
 
     /**
      * Gets all discovered datapacks.
@@ -82,7 +83,7 @@ public interface DatapackRegistrar extends Registrar {
      * @return an unmodifiable map of discovered packs
      */
     @Contract(pure = true)
-    @Unmodifiable @NonNull Map<String, DiscoveredDatapack> getDiscoveredPacks();
+    @Unmodifiable Map<String, DiscoveredDatapack> getDiscoveredPacks();
 
     /**
      * Discovers a datapack at the specified {@link URI} with the id.
@@ -93,7 +94,7 @@ public interface DatapackRegistrar extends Registrar {
      * @return the discovered datapack (or null if it failed)
      * @throws IOException if any IO error occurs
      */
-    default @Nullable DiscoveredDatapack discoverPack(final @NonNull URI uri, final @NonNull String id) throws IOException {
+    default @Nullable DiscoveredDatapack discoverPack(final URI uri, final String id) throws IOException {
         return this.discoverPack(uri, id, c -> {});
     }
 
@@ -107,7 +108,7 @@ public interface DatapackRegistrar extends Registrar {
      * @return the discovered datapack (or null if it failed)
      * @throws IOException if any IO error occurs
      */
-    @Nullable DiscoveredDatapack discoverPack(@NonNull URI uri, @NonNull String id, @NonNull Consumer<Configurer> configurer) throws IOException;
+    @Nullable DiscoveredDatapack discoverPack(URI uri, String id, Consumer<Configurer> configurer) throws IOException;
 
     /**
      * Discovers a datapack at the specified {@link Path} with the id.
@@ -118,7 +119,7 @@ public interface DatapackRegistrar extends Registrar {
      * @return the discovered datapack (or null if it failed)
      * @throws IOException if any IO error occurs
      */
-    default @Nullable DiscoveredDatapack discoverPack(final @NonNull Path path, final @NonNull String id) throws IOException {
+    default @Nullable DiscoveredDatapack discoverPack(final Path path, final String id) throws IOException {
         return this.discoverPack(path, id, c -> {});
     }
 
@@ -132,7 +133,7 @@ public interface DatapackRegistrar extends Registrar {
      * @return the discovered datapack (or null if it failed)
      * @throws IOException if any IO error occurs
      */
-    @Nullable DiscoveredDatapack discoverPack(@NonNull Path path, @NonNull String id, @NonNull Consumer<Configurer> configurer) throws IOException;
+    @Nullable DiscoveredDatapack discoverPack(Path path, String id, Consumer<Configurer> configurer) throws IOException;
 
     /**
      * Discovers a datapack at the specified {@link URI} with the id.
@@ -145,7 +146,7 @@ public interface DatapackRegistrar extends Registrar {
      * @return the discovered datapack (or null if it failed)
      * @throws IOException if any IO error occurs
      */
-    @Nullable DiscoveredDatapack discoverPack(@NonNull PluginMeta pluginMeta, @NonNull URI uri, @NonNull String id, @NonNull Consumer<Configurer> configurer) throws IOException;
+    @Nullable DiscoveredDatapack discoverPack(PluginMeta pluginMeta, URI uri, String id, Consumer<Configurer> configurer) throws IOException;
 
     /**
      * Discovers a datapack at the specified {@link Path} with the id.
@@ -158,7 +159,7 @@ public interface DatapackRegistrar extends Registrar {
      * @return the discovered datapack (or null if it failed)
      * @throws IOException if any IO error occurs
      */
-    @Nullable DiscoveredDatapack discoverPack(@NonNull PluginMeta pluginMeta, @NonNull Path path, @NonNull String id, @NonNull Consumer<Configurer> configurer) throws IOException;
+    @Nullable DiscoveredDatapack discoverPack(PluginMeta pluginMeta, Path path, String id, Consumer<Configurer> configurer) throws IOException;
 
     /**
      * Configures additional, optional, details about a datapack.
@@ -175,7 +176,7 @@ public interface DatapackRegistrar extends Registrar {
          * @return the configurer for chaining
          */
         @Contract(value = "_ -> this", mutates = "this")
-        @NonNull Configurer title(@NonNull Component title);
+        Configurer title(Component title);
 
         /**
          * Sets whether this pack is going to be automatically enabled on server starts even if previously disabled.
@@ -185,7 +186,7 @@ public interface DatapackRegistrar extends Registrar {
          * @return the configurer for chaining
          */
         @Contract(value = "_ -> this", mutates = "this")
-        @NonNull Configurer autoEnableOnServerStart(boolean autoEnableOnServerStart);
+        Configurer autoEnableOnServerStart(boolean autoEnableOnServerStart);
 
         /**
          * Configures the position in the
@@ -196,6 +197,6 @@ public interface DatapackRegistrar extends Registrar {
          * @return the configurer for chaining
          */
         @Contract(value = "_, _ -> this", mutates = "this")
-        @NonNull Configurer position(boolean fixed, Datapack.@NonNull Position position);
+        Configurer position(boolean fixed, Datapack.Position position);
     }
 }
