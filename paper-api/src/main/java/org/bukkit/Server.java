@@ -1699,15 +1699,6 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     @NotNull Merchant createMerchant(net.kyori.adventure.text.@Nullable Component title);
     // Paper start
     /**
-     * Gets the amount of consecutive neighbor updates before skipping
-     * additional ones.
-     *
-     * @return the amount of consecutive neighbor updates, if the value is
-     * negative then the limit it's not used
-     */
-    int getMaxChainedNeighborUpdates();
-
-    /**
      * Creates an empty merchant.
      *
      * @param title the title of the corresponding merchant inventory, displayed
@@ -1719,6 +1710,15 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     @NotNull
     @Deprecated // Paper
     Merchant createMerchant(@Nullable String title);
+
+    /**
+     * Gets the amount of consecutive neighbor updates before skipping
+     * additional ones.
+     *
+     * @return the amount of consecutive neighbor updates, if the value is
+     * negative then the limit it's not used
+     */
+    int getMaxChainedNeighborUpdates();
 
     /**
      * Creates an empty merchant.
