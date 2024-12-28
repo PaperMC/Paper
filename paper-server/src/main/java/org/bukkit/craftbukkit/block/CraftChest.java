@@ -1,5 +1,8 @@
 package org.bukkit.craftbukkit.block;
 
+import io.papermc.paper.block.LidMode;
+import io.papermc.paper.block.LidState;
+import io.papermc.paper.block.PaperLidded;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChestBlock;
@@ -15,7 +18,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryDoubleChest;
 import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest, io.papermc.paper.block.PaperLidded  {
+public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest, PaperLidded  {
 
     public CraftChest(World world, ChestBlockEntity tileEntity) {
         super(world, tileEntity);
@@ -118,27 +121,27 @@ public class CraftChest extends CraftLootable<ChestBlockEntity> implements Chest
     }
 
     @Override
-    public io.papermc.paper.block.@NotNull LidState getEffectiveLidState() {
+    public @NotNull LidState getEffectiveLidState() {
         this.requirePlaced();
         return this.getTileEntity().openersCounter.getEffectiveLidState();
     }
 
     @Override
-    public io.papermc.paper.block.@NotNull LidState getTrueLidState() {
+    public @NotNull LidState getTrueLidState() {
         this.requirePlaced();
         return this.getTileEntity().openersCounter.getTrueLidState();
     }
 
     @Override
-    public io.papermc.paper.block.@NotNull LidMode getLidMode() {
+    public @NotNull LidMode getLidMode() {
         this.requirePlaced();
         return this.getTileEntity().openersCounter.getLidMode();
     }
 
     @Override
-    public io.papermc.paper.block.@NotNull LidMode setLidMode(final io.papermc.paper.block.@NotNull LidMode targetLidMode) {
+    public @NotNull LidMode setLidMode(final @NotNull LidMode targetLidMode) {
         this.requirePlaced();
-        io.papermc.paper.block.LidMode newEffectiveMode = io.papermc.paper.block.PaperLidded.super.setLidMode(targetLidMode);
+        LidMode newEffectiveMode = PaperLidded.super.setLidMode(targetLidMode);
         this.getTileEntity().openersCounter.setLidMode(newEffectiveMode);
         return newEffectiveMode;
     }
