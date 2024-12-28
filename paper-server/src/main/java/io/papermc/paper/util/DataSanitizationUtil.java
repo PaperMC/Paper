@@ -5,15 +5,14 @@ import io.papermc.paper.configuration.GlobalConfiguration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.UnaryOperator;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import org.checkerframework.checker.nullness.qual.NonNull;
@@ -26,7 +25,6 @@ public final class DataSanitizationUtil {
     static final ThreadLocal<DataSanitizer> DATA_SANITIZER = ThreadLocal.withInitial(DataSanitizer::new);
 
     // <editor-fold desc="Cache Optimization" defaultstate="collapsed">
-    static Set<DataComponentType<?>> OVERRIDE_TYPES = new HashSet<>();
     static BoundObfuscationConfiguration BOUND_BASE = null;
     static Map<ResourceLocation, BoundObfuscationConfiguration> BOUND_OVERRIDES = new HashMap<>();
     // We need to have a special ignore item to indicate this item should not be obfuscated.
@@ -34,25 +32,36 @@ public final class DataSanitizationUtil {
     static ResourceLocation IGNORE_OBFUSCATION_ITEM = ResourceLocation.tryParse("paper:ignore_obfuscation_item/" + UUID.randomUUID());
 
     public static void compute(GlobalConfiguration.Anticheat.Obfuscation.Items items) {
-
-        OVERRIDE_TYPES.addAll(GlobalConfiguration.Anticheat.Obfuscation.Items.BASE_OVERRIDERS);
-
-        // Add any possible new types obfuscated
-        OVERRIDE_TYPES.addAll(items.allModels.alsoObfuscate());
-        for (GlobalConfiguration.Anticheat.Obfuscation.Items.AssetObfuscationConfiguration configuration : items.modelOverrides.values()) {
-            OVERRIDE_TYPES.addAll(configuration.alsoObfuscate());
-        }
-
         // now bind them all
         BOUND_BASE = bind(items.allModels);
         for (Map.Entry<String, GlobalConfiguration.Anticheat.Obfuscation.Items.AssetObfuscationConfiguration> entry : items.modelOverrides.entrySet()) {
             BOUND_OVERRIDES.put(ResourceLocation.parse(entry.getKey()), bind(entry.getValue()));
         }
-        BOUND_OVERRIDES.put(IGNORE_OBFUSCATION_ITEM, new BoundObfuscationConfiguration(false, Set.of()));
+        BOUND_OVERRIDES.put(IGNORE_OBFUSCATION_ITEM, new BoundObfuscationConfiguration(false, Map.of()));
     }
 
-    public record BoundObfuscationConfiguration(boolean sanitizeCount, Set<DataComponentType<?>> sanitize) {
+    public static boolean shouldDrop(DataComponentType<?> key) {
+        return ItemComponentSanitizer.shouldDrop(key);
+    }
 
+    public static Optional<?> override(DataComponentType<?> key, Optional<?> value) {
+        return ItemComponentSanitizer.override(key, value);
+    }
+
+    public record BoundObfuscationConfiguration(
+        boolean sanitizeCount, Map<DataComponentType<?>, MutationType> patchStrategy
+        ) {
+
+        sealed interface MutationType permits MutationType.Drop, MutationType.Sanitize {
+
+            enum Drop implements MutationType {
+                INSTANCE
+            }
+
+            record Sanitize(UnaryOperator sanitizer) implements MutationType {
+
+            }
+        }
     }
 
     public static BoundObfuscationConfiguration bind(GlobalConfiguration.Anticheat.Obfuscation.Items.AssetObfuscationConfiguration config) {
@@ -60,12 +69,19 @@ public final class DataSanitizationUtil {
         base.addAll(config.alsoObfuscate());
         base.removeAll(config.dontObfuscate());
 
-        return new BoundObfuscationConfiguration(config.sanitizeCount(), base);
-    }
+        Map<DataComponentType<?>, BoundObfuscationConfiguration.MutationType> finalStrategy = new HashMap<>();
+        // Configure what path the data component should go through, should it be dropped, or should it be sanitized?
+        for (DataComponentType<?> type : base) {
+            // We require some special logic, sanitize it rather than dropping it.
+            UnaryOperator<?> sanitizationOverride = ItemComponentSanitizer.SANITIZATION_OVERRIDES.get(type);
+            if (sanitizationOverride != null) {
+                finalStrategy.put(type, new BoundObfuscationConfiguration.MutationType.Sanitize(sanitizationOverride));
+            } else {
+                finalStrategy.put(type, BoundObfuscationConfiguration.MutationType.Drop.INSTANCE);
+            }
+        }
 
-    public static void bindCodecs() {
-        BuiltInRegistries.DATA_COMPONENT_TYPE.stream().forEach(DataComponentType::streamCodec); // populate the consumers
-        OVERRIDE_TYPES.clear(); // We dont need this anymore
+        return new BoundObfuscationConfiguration(config.sanitizeCount(), finalStrategy);
     }
     // </editor-fold>
 
@@ -90,10 +106,6 @@ public final class DataSanitizationUtil {
         ContentScope closable = new ContentScope(sanitizer.scope.get(), itemStack);;
         sanitizer.scope.set(closable);
         return closable;
-    }
-
-    public static <T> StreamCodec<? super RegistryFriendlyByteBuf, T> get(DataComponentType<T> componentType, StreamCodec<? super RegistryFriendlyByteBuf, T> vanillaCodec) {
-        return ItemComponentSanitizer.get(componentType, vanillaCodec);
     }
 
     public static int sanitizeCount(ItemStack itemStack, int count) {
