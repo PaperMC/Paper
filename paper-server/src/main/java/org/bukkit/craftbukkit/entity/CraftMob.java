@@ -83,6 +83,11 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     }
 
     @Override
+    public LootTable getDefaultLootTable() {
+        return CraftLootTable.minecraftToBukkit(super.getHandle().getLootTable().orElse(null));
+    }
+
+    @Override
     public void setSeed(long seed) {
         this.getHandle().lootTableSeed = seed;
     }

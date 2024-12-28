@@ -36,6 +36,19 @@ public interface Lootable {
     LootTable getLootTable();
 
     // Paper start
+
+    /**
+     * Gets the default Loot Table associated with this {@link org.bukkit.block.Container}
+     * or {@link org.bukkit.entity.Mob}.
+     * <p>
+     * The default loot table represents the initial loot configuration that would typically
+     * be applied before any modifications.
+     *
+     * @return the default Loot Table, or null if no default Loot Table is associated.
+     */
+    @Nullable
+    LootTable getDefaultLootTable();
+
     /**
      * Set the loot table and seed for a container or entity at the same time.
      *
@@ -57,6 +70,18 @@ public interface Lootable {
      */
     default void clearLootTable() {
         this.setLootTable(null);
+    }
+
+    /**
+     * Resets the loot table for the container or entity to its default state.
+     * <p>
+     * This method sets the loot table of the {@link org.bukkit.block.Container} or {@link org.bukkit.entity.Mob}
+     * back to its default configuration, as defined by {@link #getDefaultLootTable()}.
+     * <p>
+     * If no default loot table is associated, the entity or container will not have a loot table after this invocation.
+     */
+    default void resetLootTable() {
+        this.setLootTable(this.getDefaultLootTable());
     }
     // Paper end
 

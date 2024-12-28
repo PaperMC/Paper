@@ -44,6 +44,11 @@ public class CraftBrushableBlock extends CraftBlockEntityState<BrushableBlockEnt
     }
 
     @Override
+    public LootTable getDefaultLootTable() {
+        return CraftLootTable.minecraftToBukkit(this.getSnapshot().defaultLootTable);
+    }
+
+    @Override
     public void setLootTable(LootTable table) {
         this.setLootTable(table, this.getSeed());
     }

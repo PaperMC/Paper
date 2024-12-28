@@ -1,0 +1,221 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: david <mrminecraft00@gmail.com>
+Date: Sat, 28 Dec 2024 18:40:09 +0100
+Subject: [PATCH] Add default loot table API support to entities and containers
+
+
+diff --git a/net/minecraft/world/RandomizableContainer.java b/net/minecraft/world/RandomizableContainer.java
+index 9c7d83fb39b555323e4723b9c0f258dabe6564a4..0b6987b98c1573904a4df52a1f408a5090c6dbbd 100644
+--- a/net/minecraft/world/RandomizableContainer.java
++++ b/net/minecraft/world/RandomizableContainer.java
+@@ -26,6 +26,13 @@ public interface RandomizableContainer extends Container {
+     @Nullable
+     ResourceKey<LootTable> getLootTable();
+ 
++    // Paper start - default loot table api
++    @Nullable
++    ResourceKey<LootTable> getDefaultLootTable();
++
++    void setDefaultLootTable(@Nullable ResourceKey<LootTable> lootTable);
++    // Paper end
++
+     void setLootTable(@Nullable ResourceKey<LootTable> lootTable);
+ 
+     default void setLootTable(@Nullable ResourceKey<LootTable> lootTable, long seed) { // Paper - add nullable
+@@ -51,6 +58,7 @@ public interface RandomizableContainer extends Container {
+     default boolean tryLoadLootTable(CompoundTag tag) {
+         if (tag.contains("LootTable", 8)) {
+             this.setLootTable(net.minecraft.Optionull.map(ResourceLocation.tryParse(tag.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl))); // Paper - Validate ResourceLocation
++            this.setDefaultLootTable(this.getLootTable()); // Paper - default loot table api
+             if (this.lootableData() != null && this.getLootTable() != null) this.lootableData().loadNbt(tag); // Paper - LootTable API
+             if (tag.contains("LootTableSeed", 4)) {
+                 this.setLootTableSeed(tag.getLong("LootTableSeed"));
+diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
+index 1ed07fd23985a6bf8cf8300f74c92b7531a79fc6..1bfce821cb44816f21b9a0790efab312323da50b 100644
+--- a/net/minecraft/world/entity/Mob.java
++++ b/net/minecraft/world/entity/Mob.java
+@@ -138,7 +138,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+     private boolean canPickUpLoot;
+     private boolean persistenceRequired;
+     private final Map<PathType, Float> pathfindingMalus = Maps.newEnumMap(PathType.class);
+-    public Optional<ResourceKey<LootTable>> lootTable = Optional.empty();
++    public Optional<ResourceKey<LootTable>> lootTable = super.getLootTable(); // Paper - define loot table by default
+     public long lootTableSeed;
+     @Nullable
+     private Leashable.LeashData leashData;
+@@ -578,7 +578,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+ 
+     @Override
+     public final Optional<ResourceKey<LootTable>> getLootTable() {
+-        return this.lootTable.isPresent() ? this.lootTable : super.getLootTable();
++        return this.lootTable; // Paper - predefined to prioritize api changes
+     }
+ 
+     @Override
+diff --git a/net/minecraft/world/entity/vehicle/AbstractChestBoat.java b/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
+index b230955ae880d84fde40b4feffa5caf3c4449eb7..cde424d7193a9b00adbdaca519041408a65e05ce 100644
+--- a/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
++++ b/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
+@@ -30,6 +30,10 @@ public abstract class AbstractChestBoat extends AbstractBoat implements HasCusto
+     private NonNullList<ItemStack> itemStacks = NonNullList.withSize(27, ItemStack.EMPTY);
+     @Nullable
+     private ResourceKey<LootTable> lootTable;
++    // Paper start - default loot table api
++    @Nullable
++    private ResourceKey<LootTable> defaultLootTable;
++    // Paper end
+     private long lootTableSeed;
+ 
+     public AbstractChestBoat(EntityType<? extends AbstractChestBoat> entityType, Level level, Supplier<Item> dropItem) {
+@@ -176,6 +180,13 @@ public abstract class AbstractChestBoat extends AbstractBoat implements HasCusto
+         return this.lootTable;
+     }
+ 
++    // Paper start - default loot table api
++    @Override
++    public @Nullable ResourceKey<LootTable> getDefaultContainerLootTable() {
++        return this.defaultLootTable;
++    }
++    // Paper end
++
+     @Override
+     public void setContainerLootTable(@Nullable ResourceKey<LootTable> lootTable) {
+         this.lootTable = lootTable;
+diff --git a/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java b/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
+index 516b230769fb9ddaa49adca9b6aa64d4510810da..c0c538df406d39c2569bd03248090221a887df66 100644
+--- a/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
++++ b/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
+@@ -24,6 +24,10 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
+     private NonNullList<ItemStack> itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY); // CraftBukkit - SPIGOT-3513
+     @Nullable
+     public ResourceKey<LootTable> lootTable;
++    // Paper start - default loot table api
++    @Nullable
++    public ResourceKey<LootTable> defaultLootTable;
++    // Paper end
+     public long lootTableSeed;
+     private final com.destroystokyo.paper.loottable.PaperLootableInventoryData lootableData = new com.destroystokyo.paper.loottable.PaperLootableInventoryData(); // Paper - LootTable API
+ 
+@@ -148,6 +152,14 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
+         return this.lootTable;
+     }
+ 
++    // Paper start - default loot table api
++    @Nullable
++    @Override
++    public ResourceKey<LootTable> getDefaultContainerLootTable() {
++        return this.defaultLootTable;
++    }
++    // Paper end
++
+     @Override
+     public void setContainerLootTable(@Nullable ResourceKey<LootTable> lootTable) {
+         this.lootTable = lootTable;
+diff --git a/net/minecraft/world/entity/vehicle/ContainerEntity.java b/net/minecraft/world/entity/vehicle/ContainerEntity.java
+index c18aea2bb5ddddadbc858b253ff4c08d82178a18..5a439e7f899f05d2c3b8bb05ac90078a362241cb 100644
+--- a/net/minecraft/world/entity/vehicle/ContainerEntity.java
++++ b/net/minecraft/world/entity/vehicle/ContainerEntity.java
+@@ -40,6 +40,11 @@ public interface ContainerEntity extends Container, MenuProvider {
+     @Nullable
+     ResourceKey<LootTable> getContainerLootTable();
+ 
++    // Paper start - default loot table api
++    @Nullable
++    ResourceKey<LootTable> getDefaultContainerLootTable();
++    // Paper end
++
+     void setContainerLootTable(@Nullable ResourceKey<LootTable> lootTable);
+ 
+     long getContainerLootTableSeed();
+diff --git a/net/minecraft/world/level/block/entity/BrushableBlockEntity.java b/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
+index f34cec1de914d52381f8a53b173bf48e440757dc..1c3f1c2c22d5ef24cd73c8b9fb2b6dcf1ae8a48c 100644
+--- a/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
+@@ -48,6 +48,10 @@ public class BrushableBlockEntity extends BlockEntity {
+     private Direction hitDirection;
+     @Nullable
+     public ResourceKey<LootTable> lootTable;
++    // Paper start - default loot table api
++    @Nullable
++    public ResourceKey<LootTable> defaultLootTable;
++    // Paper end
+     public long lootTableSeed;
+ 
+     public BrushableBlockEntity(BlockPos pos, BlockState blockState) {
+@@ -171,6 +175,7 @@ public class BrushableBlockEntity extends BlockEntity {
+     private boolean tryLoadLootTable(CompoundTag tag) {
+         if (tag.contains("LootTable", 8)) {
+             this.lootTable = net.minecraft.Optionull.map(ResourceLocation.tryParse(tag.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl)); // Paper - Validate ResourceLocation
++            this.defaultLootTable = this.lootTable; // Paper - default loot table api
+             this.lootTableSeed = tag.getLong("LootTableSeed");
+             return true;
+         } else {
+diff --git a/net/minecraft/world/level/block/entity/DecoratedPotBlockEntity.java b/net/minecraft/world/level/block/entity/DecoratedPotBlockEntity.java
+index 47f0409efa2f588d950c706c13122f744a02606b..fb99bbaf05d45bb89ff18aac0cd1be680182724c 100644
+--- a/net/minecraft/world/level/block/entity/DecoratedPotBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/DecoratedPotBlockEntity.java
+@@ -72,6 +72,10 @@ public class DecoratedPotBlockEntity extends BlockEntity implements Randomizable
+     private ItemStack item = ItemStack.EMPTY;
+     @Nullable
+     protected ResourceKey<LootTable> lootTable;
++    // Paper start - default loot table api
++    @Nullable
++    protected ResourceKey<LootTable> defaultLootTable;
++    // Paper end
+     protected long lootTableSeed;
+ 
+     public DecoratedPotBlockEntity(BlockPos pos, BlockState state) {
+@@ -131,6 +135,18 @@ public class DecoratedPotBlockEntity extends BlockEntity implements Randomizable
+         return this.lootTable;
+     }
+ 
++    // Paper start - default loot table api
++    @Override
++    public @Nullable ResourceKey<LootTable> getDefaultLootTable() {
++        return this.lootTable;
++    }
++
++    @Override
++    public void setDefaultLootTable(@Nullable ResourceKey<LootTable> lootTable) {
++        this.defaultLootTable = lootTable;
++    }
++    // Paper end
++
+     @Override
+     public void setLootTable(@Nullable ResourceKey<LootTable> lootTable) {
+         this.lootTable = lootTable;
+diff --git a/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
+index f9c31da81d84033abfc1179fc643bceffe35da17..8338c5d0882211d9f020b995e6a5b14c70fe0e50 100644
+--- a/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
+@@ -18,6 +18,10 @@ import net.minecraft.world.level.storage.loot.LootTable;
+ public abstract class RandomizableContainerBlockEntity extends BaseContainerBlockEntity implements RandomizableContainer {
+     @Nullable
+     public ResourceKey<LootTable> lootTable;
++    // Paper start - default loot table api
++    @Nullable
++    public ResourceKey<LootTable> defaultLootTable;
++    // Paper end
+     public long lootTableSeed = 0L;
+ 
+     protected RandomizableContainerBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
+@@ -30,6 +34,19 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
+         return this.lootTable;
+     }
+ 
++    // Paper start - default loot table api
++    @Nullable
++    @Override
++    public ResourceKey<LootTable> getDefaultLootTable() {
++        return defaultLootTable;
++    }
++
++    @Override
++    public void setDefaultLootTable(@Nullable ResourceKey<LootTable> lootTable) {
++        this.defaultLootTable = lootTable;
++    }
++    // Paper end
++
+     @Override
+     public void setLootTable(@Nullable ResourceKey<LootTable> lootTable) {
+         this.lootTable = lootTable;
