@@ -834,7 +834,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     @Nullable
-    public Item dropItem(final @Nullable ItemStack itemStack, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
+    public Item dropItem(final ItemStack itemStack, final boolean throwRandomly, final @Nullable Consumer<Item> entityOperation) {
         // This method implementation differs from the previous dropItem implementations, as it does not source
         // its itemstack from the players inventory. As such, we cannot reuse #internalDropItemFromInventory.
         Preconditions.checkArgument(itemStack != null, "Cannot drop a null itemstack");
