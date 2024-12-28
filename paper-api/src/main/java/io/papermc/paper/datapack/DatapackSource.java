@@ -13,6 +13,7 @@ public sealed interface DatapackSource permits DatapackSourceImpl {
     DatapackSource FEATURE = create("feature");
     DatapackSource WORLD = create("world");
     DatapackSource SERVER = create("server");
+    DatapackSource PLUGIN = create("plugin");
 
     private static DatapackSource create(final String name) {
         return new DatapackSourceImpl(name);

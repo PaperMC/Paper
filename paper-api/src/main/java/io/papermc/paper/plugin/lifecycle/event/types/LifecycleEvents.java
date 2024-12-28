@@ -1,10 +1,12 @@
 package io.papermc.paper.plugin.lifecycle.event.types;
 
 import io.papermc.paper.command.brigadier.Commands;
+import io.papermc.paper.datapack.DatapackRegistrar;
 import io.papermc.paper.plugin.bootstrap.BootstrapContext;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEvent;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventOwner;
+import io.papermc.paper.plugin.lifecycle.event.registrar.RegistrarEvent;
 import io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.ApiStatus;
@@ -31,6 +33,14 @@ public final class LifecycleEvents {
      * only in {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap#bootstrap(BootstrapContext)}.
      */
     public static final TagEventTypeProvider TAGS = LifecycleEventTypeProvider.provider().tagProvider();
+
+
+    /**
+     * This event is for informing the server about any available datapacks from other sources such as inside a plugin's jar. You
+     * can register a handler for this event only in {@link io.papermc.paper.plugin.bootstrap.PluginBootstrap#bootstrap(BootstrapContext)}.
+     * @see DatapackRegistrar an example of a datapack being discovered
+     */
+    public static final LifecycleEventType.Prioritizable<BootstrapContext, RegistrarEvent<DatapackRegistrar>> DATAPACK_DISCOVERY = bootstrapPrioritized("datapack_discovery");
 
     //<editor-fold desc="helper methods" defaultstate="collapsed">
     @ApiStatus.Internal
