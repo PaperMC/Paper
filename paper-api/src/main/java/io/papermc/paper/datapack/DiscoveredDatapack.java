@@ -9,8 +9,11 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * This is a snapshot of a discovered datapack on the server. It
- * won't be updated as datapacks are updated.
+ * Represents a snapshot of a datapack that the server has found by
+ * searching available sources. It may or may not be enabled and isn't
+ * guaranteed to be available. This object won't be
+ * updated as datapacks are updated.
+ * @see DatapackRegistrar
  */
 @NullMarked
 @ApiStatus.NonExtendable
