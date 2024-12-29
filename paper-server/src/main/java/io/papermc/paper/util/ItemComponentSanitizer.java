@@ -75,6 +75,11 @@ final class ItemComponentSanitizer {
         if (DataSanitizationUtil.DATA_SANITIZER.get().isNotSanitizing()) {
             return false;
         }
+        // Only drop components on obfuscation
+        GlobalConfiguration.Anticheat.Obfuscation.Items items = GlobalConfiguration.get().anticheat.obfuscation.items;
+        if (!items.enableItemObfuscation) {
+            return false;
+        }
 
         DataSanitizationUtil.ContentScope scope = DataSanitizationUtil.DATA_SANITIZER.get().scope().get();
         ItemStack targetItemstack = scope.itemStack();
@@ -87,6 +92,12 @@ final class ItemComponentSanitizer {
         if (DataSanitizationUtil.DATA_SANITIZER.get().isNotSanitizing()) {
             return value;
         }
+        // Only drop components on obfuscation
+        GlobalConfiguration.Anticheat.Obfuscation.Items items = GlobalConfiguration.get().anticheat.obfuscation.items;
+        if (!items.enableItemObfuscation) {
+            return value;
+        }
+
         // Ignore removed values
         if (value.isEmpty()) {
             return value;
