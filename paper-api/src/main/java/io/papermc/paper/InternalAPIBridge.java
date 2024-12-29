@@ -58,7 +58,7 @@ public interface InternalAPIBridge {
      *
      * @param damageSource damage source
      * @param damage damage amount
-     * @param fallLocationType fall location
+     * @param fallLocationType fall location type
      * @param fallDistance fall distance
      * @return combat entry
      */
