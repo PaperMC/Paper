@@ -11,7 +11,7 @@ import java.util.UUID;
 import net.minecraft.Optionull;
 import io.papermc.paper.world.damagesource.CombatTracker;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
-import io.papermc.paper.world.damagesource.FallLocation;
+import io.papermc.paper.world.damagesource.FallLocationType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -1182,8 +1182,8 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public FallLocation calculateFallLocation() {
+    public FallLocationType calculateFallLocation() {
         net.minecraft.world.damagesource.FallLocation fallLocation = net.minecraft.world.damagesource.FallLocation.getCurrentFallLocation(this.getHandle());
-        return fallLocation == null ? FallLocation.GENERIC : PaperCombatTrackerWrapper.minecraftToPaper(fallLocation);
+        return fallLocation == null ? FallLocationType.GENERIC : PaperCombatTrackerWrapper.minecraftToPaper(fallLocation);
     }
 }

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.world.damagesource.CombatTracker;
-import io.papermc.paper.world.damagesource.FallLocation;
+import io.papermc.paper.world.damagesource.FallLocationType;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -1472,5 +1472,5 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @since 1.21.4
      */
     @ApiStatus.Experimental
-    @NotNull FallLocation calculateFallLocation();
+    @NotNull FallLocationType calculateFallLocation();
 }

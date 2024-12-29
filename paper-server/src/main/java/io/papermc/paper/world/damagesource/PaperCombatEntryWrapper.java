@@ -19,7 +19,7 @@ public record PaperCombatEntryWrapper(net.minecraft.world.damagesource.CombatEnt
     }
 
     @Override
-    public @Nullable FallLocation getFallLocation() {
+    public @Nullable FallLocationType getFallLocation() {
         net.minecraft.world.damagesource.FallLocation fallLocation = this.handle.fallLocation();
         return fallLocation == null ? null : PaperCombatTrackerWrapper.minecraftToPaper(fallLocation);
     }
