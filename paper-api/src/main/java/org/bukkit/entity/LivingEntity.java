@@ -1472,5 +1472,5 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @since 1.21.4
      */
     @ApiStatus.Experimental
-    @NotNull FallLocationType calculateFallLocation();
+    @NotNull FallLocationType calculateFallLocationType();
 }

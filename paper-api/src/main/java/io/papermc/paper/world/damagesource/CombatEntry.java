@@ -66,10 +66,10 @@ public interface CombatEntry {
      *
      * @param damageSource damage source
      * @param damage damage amount
-     * @param fallLocationType fall location
+     * @param fallLocationType fall location type
      * @param fallDistance fall distance
      * @return a new combat entry
-     * @see LivingEntity#calculateFallLocation()
+     * @see LivingEntity#calculateFallLocationType()
      * @see Entity#getFallDistance()
      */
     static CombatEntry combatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance) {
