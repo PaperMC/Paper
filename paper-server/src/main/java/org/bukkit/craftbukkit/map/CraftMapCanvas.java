@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.map;
 import com.google.common.base.Preconditions;
 import java.awt.Color;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import org.bukkit.map.MapCanvas;
 import org.bukkit.map.MapCursorCollection;
@@ -92,25 +93,31 @@ public class CraftMapCanvas implements MapCanvas {
     @Override
     public void drawImage(int x, int y, Image image) {
         // Paper start - Reduce work done by limiting size of image and using System.arraycopy
-        if (x < 0 || y < 0 || x >= 128 || y >= 128)
+        final int imageWidth = image.getWidth(null);
+        final int imageHeight = image.getHeight(null);
+
+        final int sourceX = Math.max(-x, 0);
+        final int sourceY = Math.max(-y, 0);
+        final int destX = Math.max(x, 0);
+        final int destY = Math.max(y, 0);
+
+        final int width = Math.min(imageWidth - sourceX, 128 - destX);
+        final int height = Math.min(imageHeight - sourceY, 128 - destY);
+
+        if (width <= 0 || height <= 0)
             return;
 
-        int width = 128 - x;
-        int height = 128 - y;
-        if (image.getHeight(null) < height)
-            height = image.getHeight(null);
-
         // Create a subimage if the image is larger than the max allowed size
-        java.awt.image.BufferedImage temp;
-        if (image.getWidth(null) >= width && image instanceof java.awt.image.BufferedImage bImage) {
+        BufferedImage temp;
+        if (imageWidth >= width && image instanceof BufferedImage bImage) {
             // If the image is larger than the max allowed size, get a subimage, otherwise use the image as is
-            if (image.getWidth(null) > width || image.getHeight(null) > height) {
+            if (imageWidth > width || imageHeight > height) {
                 temp = bImage.getSubimage(0, 0, width, height);
             } else {
                 temp = bImage;
             }
         } else {
-            temp = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            temp = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
             java.awt.Graphics2D graphics = temp.createGraphics();
             graphics.drawImage(image, 0, 0, null);
             graphics.dispose();
@@ -120,17 +127,20 @@ public class CraftMapCanvas implements MapCanvas {
         
         // Since we now control the size of the image, we can safely use System.arraycopy
         // If x is 0, we can just copy the entire image as width is 128 and height is <=(128-y)
-        if (x == 0) {
-            System.arraycopy(bytes, 0, this.buffer, y * 128, width * height);
+        if (x == 0 && width == 128) { // This only works great if the width is 128, otherwise an empty area appears
+            System.arraycopy(bytes, 0, this.buffer, destY * width, width * height);
         } else {
             for (int y2 = 0; y2 < height; ++y2) {
-                System.arraycopy(bytes, 0, this.buffer, (y + y2) * 128 + x, width);
+                final int src = y2 * width;
+                final int dest = (destY + y2) * 128 + destX;
+
+                System.arraycopy(bytes, src, this.buffer, dest, width);
             }
         }
 
         // Mark all colors within the image as dirty
-        this.mapView.worldMap.setColorsDirty(x, y);
-        this.mapView.worldMap.setColorsDirty(width - 1, height - 1);
+        this.mapView.worldMap.setColorsDirty(destX, destY);
+        this.mapView.worldMap.setColorsDirty(destX + width - 1, destY + height - 1);
         // Paper end
     }
 
