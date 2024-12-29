@@ -245,7 +245,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         // Paper start - Teleport passenger API
         Set<io.papermc.paper.entity.TeleportFlag> flagSet = Set.of(flags);
         boolean dismount = !flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
-        boolean ignorePassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
+        boolean retainPassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
         // Don't allow teleporting between worlds while keeping passengers
         if (flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS) && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
             return false;
@@ -257,7 +257,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
         // Paper end
 
-        if ((!ignorePassengers && this.entity.isVehicle()) || this.entity.isRemoved()) { // Paper - Teleport passenger API
+        if ((!retainPassengers && this.entity.isVehicle()) || this.entity.isRemoved()) { // Paper - Teleport passenger API
             return false;
         }
 
@@ -287,6 +287,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         entity.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
         // SPIGOT-619: Force sync head rotation also
         this.entity.setYHeadRot(location.getYaw());
+
+        // Ensure passengers of entity are teleported
+        if (retainPassengers && this.entity.isVehicle()) this.entity.teleportPassengers();
 
         return true;
     }
