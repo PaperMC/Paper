@@ -92,6 +92,9 @@ public class CraftMapCanvas implements MapCanvas {
     @Override
     public void drawImage(int x, int y, Image image) {
         // Paper start - Reduce work done by limiting size of image and using System.arraycopy
+        if (x < 0 || y < 0 || x >= 128 || y >= 128)
+            return;
+
         int width = 128 - x;
         int height = 128 - y;
         if (image.getHeight(null) < height)
@@ -119,12 +122,15 @@ public class CraftMapCanvas implements MapCanvas {
         // If x is 0, we can just copy the entire image as width is 128 and height is <=(128-y)
         if (x == 0) {
             System.arraycopy(bytes, 0, this.buffer, y * 128, width * height);
-            return;
+        } else {
+            for (int y2 = 0; y2 < height; ++y2) {
+                System.arraycopy(bytes, 0, this.buffer, (y + y2) * 128 + x, width);
+            }
         }
 
-        for (int y2 = 0; y2 < height; ++y2) {
-            System.arraycopy(bytes, 0, this.buffer, (y + y2) * 128 + x, width);
-        }
+        // Mark all colors within the image as dirty
+        this.mapView.worldMap.setColorsDirty(x, y);
+        this.mapView.worldMap.setColorsDirty(width - 1, height - 1);
         // Paper end
     }
 
