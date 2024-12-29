@@ -3,7 +3,7 @@ package io.papermc.paper.world.damagesource;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-record FallLocationImpl(String id) implements FallLocation {
+record FallLocationTypeImpl(String id) implements FallLocationType {
 
     @Override
     public String translationKey() {

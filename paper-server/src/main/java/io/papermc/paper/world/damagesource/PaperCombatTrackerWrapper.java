@@ -67,46 +67,46 @@ public record PaperCombatTrackerWrapper(net.minecraft.world.damagesource.CombatT
         this.handle.resetCombatState();
     }
 
-    public static net.minecraft.world.damagesource.FallLocation paperToMinecraft(FallLocation fallLocation) {
-        return switch (fallLocation) {
-            case FallLocation fl when fl == FallLocation.GENERIC -> net.minecraft.world.damagesource.FallLocation.GENERIC;
-            case FallLocation fl when fl == FallLocation.LADDER -> net.minecraft.world.damagesource.FallLocation.LADDER;
-            case FallLocation fl when fl == FallLocation.VINES -> net.minecraft.world.damagesource.FallLocation.VINES;
-            case FallLocation fl when fl == FallLocation.WEEPING_VINES -> net.minecraft.world.damagesource.FallLocation.WEEPING_VINES;
-            case FallLocation fl when fl == FallLocation.TWISTING_VINES -> net.minecraft.world.damagesource.FallLocation.TWISTING_VINES;
-            case FallLocation fl when fl == FallLocation.SCAFFOLDING -> net.minecraft.world.damagesource.FallLocation.SCAFFOLDING;
-            case FallLocation fl when fl == FallLocation.OTHER_CLIMBABLE -> net.minecraft.world.damagesource.FallLocation.OTHER_CLIMBABLE;
-            case FallLocation fl when fl == FallLocation.WATER -> net.minecraft.world.damagesource.FallLocation.WATER;
-            default -> throw new IllegalArgumentException("Unknown fall location: " + fallLocation.id());
+    public static net.minecraft.world.damagesource.FallLocation paperToMinecraft(FallLocationType fallLocationType) {
+        return switch (fallLocationType) {
+            case FallLocationType fl when fl == FallLocationType.GENERIC -> net.minecraft.world.damagesource.FallLocation.GENERIC;
+            case FallLocationType fl when fl == FallLocationType.LADDER -> net.minecraft.world.damagesource.FallLocation.LADDER;
+            case FallLocationType fl when fl == FallLocationType.VINES -> net.minecraft.world.damagesource.FallLocation.VINES;
+            case FallLocationType fl when fl == FallLocationType.WEEPING_VINES -> net.minecraft.world.damagesource.FallLocation.WEEPING_VINES;
+            case FallLocationType fl when fl == FallLocationType.TWISTING_VINES -> net.minecraft.world.damagesource.FallLocation.TWISTING_VINES;
+            case FallLocationType fl when fl == FallLocationType.SCAFFOLDING -> net.minecraft.world.damagesource.FallLocation.SCAFFOLDING;
+            case FallLocationType fl when fl == FallLocationType.OTHER_CLIMBABLE -> net.minecraft.world.damagesource.FallLocation.OTHER_CLIMBABLE;
+            case FallLocationType fl when fl == FallLocationType.WATER -> net.minecraft.world.damagesource.FallLocation.WATER;
+            default -> throw new IllegalArgumentException("Unknown fall location: " + fallLocationType.id());
         };
     }
 
-    public static FallLocation minecraftToPaper(net.minecraft.world.damagesource.FallLocation fallLocation) {
+    public static FallLocationType minecraftToPaper(net.minecraft.world.damagesource.FallLocation fallLocation) {
         return switch (fallLocation) {
             case
                 net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.GENERIC ->
-                FallLocation.GENERIC;
+                FallLocationType.GENERIC;
             case
                 net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.LADDER ->
-                FallLocation.LADDER;
+                FallLocationType.LADDER;
             case
                 net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.VINES ->
-                FallLocation.VINES;
+                FallLocationType.VINES;
             case
                 net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.WEEPING_VINES ->
-                FallLocation.WEEPING_VINES;
+                FallLocationType.WEEPING_VINES;
             case
                 net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.TWISTING_VINES ->
-                FallLocation.TWISTING_VINES;
+                FallLocationType.TWISTING_VINES;
             case
                 net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.SCAFFOLDING ->
-                FallLocation.SCAFFOLDING;
+                FallLocationType.SCAFFOLDING;
             case
                 net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.OTHER_CLIMBABLE ->
-                FallLocation.OTHER_CLIMBABLE;
+                FallLocationType.OTHER_CLIMBABLE;
             case
                 net.minecraft.world.damagesource.FallLocation fl when fl == net.minecraft.world.damagesource.FallLocation.WATER ->
-                FallLocation.WATER;
+                FallLocationType.WATER;
             default -> throw new IllegalArgumentException("Unknown fall location: " + fallLocation.id());
         };
     }
