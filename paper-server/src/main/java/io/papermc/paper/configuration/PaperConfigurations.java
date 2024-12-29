@@ -456,9 +456,9 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
     }
 
     @VisibleForTesting
-    static ConfigurationNode createForTesting() {
+    static ConfigurationNode createForTesting(RegistryAccess registryAccess) {
         ObjectMapper.Factory factory = defaultGlobalFactoryBuilder(ObjectMapper.factoryBuilder()).build();
-        ConfigurationOptions options = defaultGlobalOptions(null, defaultOptions(ConfigurationOptions.defaults())) // TODO: ???
+        ConfigurationOptions options = defaultGlobalOptions(registryAccess, defaultOptions(ConfigurationOptions.defaults()))
             .serializers(builder -> builder.register(type -> ConfigurationPart.class.isAssignableFrom(erase(type)), factory.asTypeSerializer()));
         return BasicConfigurationNode.root(options);
     }

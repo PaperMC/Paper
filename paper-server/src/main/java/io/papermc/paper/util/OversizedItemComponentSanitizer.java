@@ -74,8 +74,6 @@ public final class OversizedItemComponentSanitizer {
         // Ensure that potentially overstacked bundles are not represented by empty (count=0) itemstacks.
         return new BundleContents(sanitizedRepresentation);
     }
-    // </editor-fold>
-
 
     // Codec used to override encoding if sanitization is enabled
     private record DataSanitizationCodec<B, A>(StreamCodec<B, A> delegate,
