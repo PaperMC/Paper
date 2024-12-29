@@ -2,12 +2,7 @@ package io.papermc.paper.util;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.configuration.GlobalConfiguration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
@@ -18,11 +13,59 @@ import net.minecraft.world.item.ItemStack;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.checkerframework.framework.qual.DefaultQualifier;
+import org.spongepowered.configurate.objectmapping.*;
+import org.spongepowered.configurate.objectmapping.meta.*;
 
 @DefaultQualifier(NonNull.class)
 public final class DataSanitizationUtil {
 
     static final ThreadLocal<DataSanitizer> DATA_SANITIZER = ThreadLocal.withInitial(DataSanitizer::new);
+
+    static Set<DataComponentType<?>> BASE_OVERRIDERS = Set.of(
+        DataComponents.MAX_STACK_SIZE,
+        DataComponents.MAX_DAMAGE,
+        DataComponents.DAMAGE,
+        DataComponents.UNBREAKABLE,
+        DataComponents.CUSTOM_NAME,
+        DataComponents.ITEM_NAME,
+        DataComponents.LORE,
+        DataComponents.RARITY,
+        DataComponents.ENCHANTMENTS,
+        DataComponents.CAN_PLACE_ON,
+        DataComponents.CAN_BREAK,
+        DataComponents.ATTRIBUTE_MODIFIERS,
+        DataComponents.HIDE_ADDITIONAL_TOOLTIP,
+        DataComponents.HIDE_TOOLTIP,
+        DataComponents.REPAIR_COST,
+        DataComponents.USE_REMAINDER,
+        DataComponents.FOOD,
+        DataComponents.DAMAGE_RESISTANT, // Not important on the player
+        DataComponents.TOOL,
+        DataComponents.ENCHANTABLE,
+        DataComponents.REPAIRABLE,
+        DataComponents.GLIDER,
+        DataComponents.TOOLTIP_STYLE,
+        DataComponents.DEATH_PROTECTION,
+        DataComponents.STORED_ENCHANTMENTS,
+        DataComponents.MAP_ID,
+        DataComponents.POTION_CONTENTS,
+        DataComponents.SUSPICIOUS_STEW_EFFECTS,
+        DataComponents.WRITABLE_BOOK_CONTENT,
+        DataComponents.WRITTEN_BOOK_CONTENT,
+        DataComponents.CUSTOM_DATA,
+        DataComponents.ENTITY_DATA,
+        DataComponents.BUCKET_ENTITY_DATA,
+        DataComponents.BLOCK_ENTITY_DATA,
+        DataComponents.INSTRUMENT,
+        DataComponents.OMINOUS_BOTTLE_AMPLIFIER,
+        DataComponents.JUKEBOX_PLAYABLE,
+        DataComponents.LODESTONE_TRACKER,
+        DataComponents.FIREWORKS,
+        DataComponents.NOTE_BLOCK_SOUND,
+        DataComponents.BEES,
+        DataComponents.LOCK,
+        DataComponents.CONTAINER_LOOT
+    );
 
     static BoundObfuscationConfiguration BOUND_BASE = null;
     static Map<ResourceLocation, BoundObfuscationConfiguration> BOUND_OVERRIDES = new HashMap<>();
@@ -33,7 +76,7 @@ public final class DataSanitizationUtil {
     public static void compute(GlobalConfiguration.Anticheat.Obfuscation.Items items) {
         // now bind them all
         BOUND_BASE = bind(items.allModels);
-        for (Map.Entry<String, GlobalConfiguration.Anticheat.Obfuscation.Items.AssetObfuscationConfiguration> entry : items.modelOverrides.entrySet()) {
+        for (Map.Entry<String, AssetObfuscationConfiguration> entry : items.modelOverrides.entrySet()) {
             BOUND_OVERRIDES.put(ResourceLocation.parse(entry.getKey()), bind(entry.getValue()));
         }
         BOUND_OVERRIDES.put(IGNORE_OBFUSCATION_ITEM, new BoundObfuscationConfiguration(false, Map.of()));
@@ -63,8 +106,13 @@ public final class DataSanitizationUtil {
         }
     }
 
-    public static BoundObfuscationConfiguration bind(GlobalConfiguration.Anticheat.Obfuscation.Items.AssetObfuscationConfiguration config) {
-        Set<DataComponentType<?>> base = new HashSet<>(GlobalConfiguration.Anticheat.Obfuscation.Items.BASE_OVERRIDERS);
+    @org.spongepowered.configurate.objectmapping.ConfigSerializable
+    public record AssetObfuscationConfiguration(@Required boolean sanitizeCount, Set<DataComponentType<?>> dontObfuscate, Set<DataComponentType<?>> alsoObfuscate) {
+
+    }
+
+    public static BoundObfuscationConfiguration bind(AssetObfuscationConfiguration config) {
+        Set<DataComponentType<?>> base = new HashSet<>(BASE_OVERRIDERS);
         base.addAll(config.alsoObfuscate());
         base.removeAll(config.dontObfuscate());
 
