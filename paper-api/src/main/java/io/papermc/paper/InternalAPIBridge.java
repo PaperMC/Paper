@@ -1,7 +1,7 @@
 package io.papermc.paper;
 
 import io.papermc.paper.world.damagesource.CombatEntry;
-import io.papermc.paper.world.damagesource.FallLocation;
+import io.papermc.paper.world.damagesource.FallLocationType;
 import net.kyori.adventure.util.Services;
 import org.bukkit.damage.DamageEffect;
 import org.bukkit.damage.DamageSource;
@@ -58,10 +58,10 @@ public interface InternalAPIBridge {
      *
      * @param damageSource damage source
      * @param damage damage amount
-     * @param fallLocation fall location
+     * @param fallLocationType fall location
      * @param fallDistance fall distance
      * @return combat entry
      */
-    CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocation fallLocation, float fallDistance);
+    CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance);
 }
 

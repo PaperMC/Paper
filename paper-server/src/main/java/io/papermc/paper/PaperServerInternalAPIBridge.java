@@ -3,7 +3,7 @@ package io.papermc.paper;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.PaperCombatEntryWrapper;
 import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
-import io.papermc.paper.world.damagesource.FallLocation;
+import io.papermc.paper.world.damagesource.FallLocationType;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
@@ -31,7 +31,7 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
     }
 
     @Override
-    public CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocation fallLocation, float fallDistance) {
-        return new PaperCombatEntryWrapper(new net.minecraft.world.damagesource.CombatEntry(((CraftDamageSource) damageSource).getHandle(), damage, fallLocation == null ? null : PaperCombatTrackerWrapper.paperToMinecraft(fallLocation), fallDistance));
+    public CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance) {
+        return new PaperCombatEntryWrapper(new net.minecraft.world.damagesource.CombatEntry(((CraftDamageSource) damageSource).getHandle(), damage, fallLocationType == null ? null : PaperCombatTrackerWrapper.paperToMinecraft(fallLocationType), fallDistance));
     }
 }

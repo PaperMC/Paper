@@ -11,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @NullMarked
 @ApiStatus.Experimental
-public sealed interface FallLocation extends Translatable permits FallLocationImpl {
+public sealed interface FallLocationType extends Translatable permits FallLocationTypeImpl {
 
     /**
      * Gets the fall location id
@@ -32,34 +32,34 @@ public sealed interface FallLocation extends Translatable permits FallLocationIm
     /**
      * The entity is not within a special fall location
      */
-    FallLocation GENERIC = new FallLocationImpl("generic");
+    FallLocationType GENERIC = new FallLocationTypeImpl("generic");
     /**
      * The entity is within the ladder
      */
-    FallLocation LADDER = new FallLocationImpl("ladder");
+    FallLocationType LADDER = new FallLocationTypeImpl("ladder");
     /**
      * The entity is in vines
      */
-    FallLocation VINES = new FallLocationImpl("vines");
+    FallLocationType VINES = new FallLocationTypeImpl("vines");
     /**
      * The entity is in weeping wines
      */
-    FallLocation WEEPING_VINES = new FallLocationImpl("weeping_vines");
+    FallLocationType WEEPING_VINES = new FallLocationTypeImpl("weeping_vines");
     /**
      * The entity is in twisting vines
      */
-    FallLocation TWISTING_VINES = new FallLocationImpl("twisting_vines");
+    FallLocationType TWISTING_VINES = new FallLocationTypeImpl("twisting_vines");
     /**
      * The entity is in scaffolding
      */
-    FallLocation SCAFFOLDING = new FallLocationImpl("scaffolding");
+    FallLocationType SCAFFOLDING = new FallLocationTypeImpl("scaffolding");
     /**
      * The entity is within some other climable block
      */
-    FallLocation OTHER_CLIMBABLE = new FallLocationImpl("other_climbable");
+    FallLocationType OTHER_CLIMBABLE = new FallLocationTypeImpl("other_climbable");
     /**
      * The entity is in water
      */
-    FallLocation WATER = new FallLocationImpl("water");
+    FallLocationType WATER = new FallLocationTypeImpl("water");
 
 }

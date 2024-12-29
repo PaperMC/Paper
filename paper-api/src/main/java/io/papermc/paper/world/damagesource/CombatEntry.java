@@ -37,7 +37,7 @@ public interface CombatEntry {
      *
      * @return the fall location
      */
-    @Nullable FallLocation getFallLocation();
+    @Nullable FallLocationType getFallLocation();
 
     /**
      * Gets the fall distance at the time of this damage
@@ -55,7 +55,7 @@ public interface CombatEntry {
      * @param damageSource damage source
      * @param damage damage amount
      * @return combat entry
-     * @see #combatEntry(DamageSource, float, FallLocation, float)
+     * @see #combatEntry(DamageSource, float, FallLocationType, float)
      */
     static CombatEntry combatEntry(LivingEntity entity, DamageSource damageSource, float damage) {
         return InternalAPIBridge.get().createCombatEntry(entity, damageSource, damage);
@@ -66,14 +66,14 @@ public interface CombatEntry {
      *
      * @param damageSource damage source
      * @param damage damage amount
-     * @param fallLocation fall location
+     * @param fallLocationType fall location
      * @param fallDistance fall distance
      * @return a new combat entry
      * @see LivingEntity#calculateFallLocation()
      * @see Entity#getFallDistance()
      */
-    static CombatEntry combatEntry(DamageSource damageSource, float damage, @Nullable FallLocation fallLocation, float fallDistance) {
-        return InternalAPIBridge.get().createCombatEntry(damageSource, damage, fallLocation, fallDistance);
+    static CombatEntry combatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance) {
+        return InternalAPIBridge.get().createCombatEntry(damageSource, damage, fallLocationType, fallDistance);
     }
 
 }
