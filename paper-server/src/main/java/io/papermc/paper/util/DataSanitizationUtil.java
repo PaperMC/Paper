@@ -24,7 +24,6 @@ public final class DataSanitizationUtil {
 
     static final ThreadLocal<DataSanitizer> DATA_SANITIZER = ThreadLocal.withInitial(DataSanitizer::new);
 
-    // <editor-fold desc="Cache Optimization" defaultstate="collapsed">
     static BoundObfuscationConfiguration BOUND_BASE = null;
     static Map<ResourceLocation, BoundObfuscationConfiguration> BOUND_OVERRIDES = new HashMap<>();
     // We need to have a special ignore item to indicate this item should not be obfuscated.
@@ -83,7 +82,6 @@ public final class DataSanitizationUtil {
 
         return new BoundObfuscationConfiguration(config.sanitizeCount(), finalStrategy);
     }
-    // </editor-fold>
 
     public static BoundObfuscationConfiguration getAssetObfuscation(ItemStack resourceLocation) {
         return BOUND_OVERRIDES.getOrDefault(resourceLocation.get(DataComponents.ITEM_MODEL), BOUND_BASE);

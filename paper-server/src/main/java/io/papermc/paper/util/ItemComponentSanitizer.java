@@ -39,7 +39,6 @@ final class ItemComponentSanitizer {
         return (unused) -> object;
     }
 
-    // <editor-fold desc="Component Sanitizers" defaultstate="collapsed">
     private static PotionContents sanitizePotionContents(final PotionContents potionContents) {
         // We have a custom color! We can hide everything!
         if (potionContents.customColor().isPresent()) {
