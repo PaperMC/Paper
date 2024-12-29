@@ -59,12 +59,17 @@ final class ItemComponentSanitizer {
     }
 
     public static int sanitizeCount(ItemStack itemStack, int count) {
+        GlobalConfiguration.Anticheat.Obfuscation.Items items = GlobalConfiguration.get().anticheat.obfuscation.items;
+        // Ignore if we are not obfuscating
+        if (!items.enableItemObfuscation) {
+            return count;
+        }
+
         if (DataSanitizationUtil.DATA_SANITIZER.get().isNotSanitizing()) {
             return count;
         }
 
-        GlobalConfiguration.Anticheat.Obfuscation.Items items = GlobalConfiguration.get().anticheat.obfuscation.items;
-        if (items.enableItemObfuscation && DataSanitizationUtil.getAssetObfuscation(itemStack).sanitizeCount()) {
+        if (DataSanitizationUtil.getAssetObfuscation(itemStack).sanitizeCount()) {
             return 1;
         } else {
             return count;
@@ -72,12 +77,12 @@ final class ItemComponentSanitizer {
     }
 
     public static boolean shouldDrop(DataComponentType<?> key) {
-        if (DataSanitizationUtil.DATA_SANITIZER.get().isNotSanitizing()) {
-            return false;
-        }
         // Only drop components on obfuscation
         GlobalConfiguration.Anticheat.Obfuscation.Items items = GlobalConfiguration.get().anticheat.obfuscation.items;
         if (!items.enableItemObfuscation) {
+            return false;
+        }
+        if (DataSanitizationUtil.DATA_SANITIZER.get().isNotSanitizing()) {
             return false;
         }
 
