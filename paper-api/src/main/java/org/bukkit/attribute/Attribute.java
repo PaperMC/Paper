@@ -89,7 +89,7 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      */
     Attribute JUMP_STRENGTH = getAttribute("jump_strength");
     /**
-     * How long an entity remains burning after ingition.
+     * How long an entity remains burning after ignition.
      */
     Attribute BURNING_TIME = getAttribute("burning_time");
     /**
