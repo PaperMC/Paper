@@ -373,74 +373,19 @@ public class GlobalConfiguration extends ConfigurationPart {
             public Items items = new Items();
 
             public class Items extends ConfigurationPart {
-                public static Set<DataComponentType<?>> BASE_OVERRIDERS = Set.of(
-                    DataComponents.MAX_STACK_SIZE,
-                    DataComponents.MAX_DAMAGE,
-                    DataComponents.DAMAGE,
-                    DataComponents.UNBREAKABLE,
-                    DataComponents.CUSTOM_NAME,
-                    DataComponents.ITEM_NAME,
-                    DataComponents.LORE,
-                    DataComponents.RARITY,
-                    DataComponents.ENCHANTMENTS,
-                    DataComponents.CAN_PLACE_ON,
-                    DataComponents.CAN_BREAK,
-                    DataComponents.ATTRIBUTE_MODIFIERS,
-                    DataComponents.HIDE_ADDITIONAL_TOOLTIP,
-                    DataComponents.HIDE_TOOLTIP,
-                    DataComponents.REPAIR_COST,
-                    DataComponents.USE_REMAINDER,
-                    DataComponents.FOOD,
-                    DataComponents.DAMAGE_RESISTANT, // Not important on the player
-                    DataComponents.TOOL,
-                    DataComponents.ENCHANTABLE,
-                    DataComponents.REPAIRABLE,
-                    DataComponents.GLIDER,
-                    DataComponents.TOOLTIP_STYLE,
-                    DataComponents.DEATH_PROTECTION,
-                    DataComponents.STORED_ENCHANTMENTS,
-                    DataComponents.MAP_ID,
-                    DataComponents.POTION_CONTENTS,
-                    DataComponents.SUSPICIOUS_STEW_EFFECTS,
-                    DataComponents.WRITABLE_BOOK_CONTENT,
-                    DataComponents.WRITTEN_BOOK_CONTENT,
-                    DataComponents.CUSTOM_DATA,
-                    DataComponents.ENTITY_DATA,
-                    DataComponents.BUCKET_ENTITY_DATA,
-                    DataComponents.BLOCK_ENTITY_DATA,
-                    DataComponents.INSTRUMENT,
-                    DataComponents.OMINOUS_BOTTLE_AMPLIFIER,
-                    DataComponents.JUKEBOX_PLAYABLE,
-                    DataComponents.LODESTONE_TRACKER,
-                    DataComponents.FIREWORKS,
-                    DataComponents.NOTE_BLOCK_SOUND,
-                    DataComponents.BEES,
-                    DataComponents.LOCK,
-                    DataComponents.CONTAINER_LOOT
-                );
 
                 public boolean enableItemObfuscation = false;
-                public AssetObfuscationConfiguration allModels = new AssetObfuscationConfiguration(true,
+                public DataSanitizationUtil.AssetObfuscationConfiguration allModels = new DataSanitizationUtil.AssetObfuscationConfiguration(true,
                     Set.of(DataComponents.LODESTONE_TRACKER),
                     Set.of()
                 );
 
-                public Map<String, AssetObfuscationConfiguration> modelOverrides = Map.of(
-                    net.minecraft.world.item.Items.ELYTRA.components().get(DataComponents.ITEM_MODEL).toString(), new AssetObfuscationConfiguration(true,
+                public Map<String, DataSanitizationUtil.AssetObfuscationConfiguration> modelOverrides = Map.of(
+                    net.minecraft.world.item.Items.ELYTRA.components().get(DataComponents.ITEM_MODEL).toString(), new DataSanitizationUtil.AssetObfuscationConfiguration(true,
                         Set.of(DataComponents.DAMAGE),
                         Set.of()
                     )
                 );
-
-                @ConfigSerializable
-                public record AssetObfuscationConfiguration(@Required boolean sanitizeCount, Set<DataComponentType<?>> dontObfuscate, Set<DataComponentType<?>> alsoObfuscate) {
-                    public AssetObfuscationConfiguration(final boolean sanitizeCount, final @Nullable Set<DataComponentType<?>> dontObfuscate, final @Nullable Set<DataComponentType<?>> alsoObfuscate) {
-                        this.sanitizeCount = sanitizeCount;
-                        this.dontObfuscate = Objects.requireNonNullElse(dontObfuscate, Set.of());
-                        this.alsoObfuscate = Objects.requireNonNullElse(alsoObfuscate, Set.of());
-                    }
-
-                }
 
                 @PostProcess
                 public void computeOverridenTypes() {
