@@ -4,6 +4,7 @@ import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -48,4 +49,8 @@ public interface CommandSourceStack {
      * @return entity that executes this command
      */
     @Nullable Entity getExecutor();
+    
+    CommandSourceStack withLocation(@NonNull Location location);
+    
+    CommandSourceStack withExecutor(@Nullable Entity executor);
 }

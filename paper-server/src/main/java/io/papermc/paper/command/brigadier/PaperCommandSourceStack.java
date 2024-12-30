@@ -6,9 +6,11 @@ import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
+import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.Entity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBrigadierCommandSource {
 
@@ -38,6 +40,12 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
         }
 
         return nmsEntity.getBukkitEntity();
+    }
+
+    @Override
+    @NonNull
+    default CommandSourceStack withExecutor(@Nullable Entity executor) {
+        return executor == null ? this.getHandle().withEntity(null) : this.getHandle().withEntity(((CraftEntity) executor).getHandle());
     }
 
     // OLD METHODS
