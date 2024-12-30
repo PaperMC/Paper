@@ -25,7 +25,6 @@ public class ExplodeEvent extends Event implements Cancellable {
     private final Location location;
     private final List<Block> blocks;
     private final ExplosionResult result;
-    private @Nullable Block block;
     private @Nullable BlockState blockState;
     private @Nullable Entity entity;
     private float yield;
@@ -47,10 +46,9 @@ public class ExplodeEvent extends Event implements Cancellable {
     }
 
     @ApiStatus.Internal
-    public ExplodeEvent(final Block blockExploded, final BlockState blockState, final Location location, final List<Block> blocks, final float yield, final ExplosionResult result) {
+    public ExplodeEvent(final BlockState blockStateExploded, final Location location, final List<Block> blocks, final float yield, final ExplosionResult result) {
         this(location, blocks, yield, result);
-        this.block = blockExploded;
-        this.blockState = blockState;
+        this.blockState = blockStateExploded;
     }
 
     /**
@@ -85,22 +83,12 @@ public class ExplodeEvent extends Event implements Cancellable {
     }
 
     /**
-     * Returns the block that exploded, if exists.
-     *
-     * @return the block, if is the source of explosion. {@code null} if it has not.
-     */
-    @Nullable
-    public Block getBlock() {
-        return this.block;
-    }
-
-    /**
      * Returns the captured BlockState of the block that exploded.
      *
      * @return the block state, if is the source of explosion. {@code null} if it has not.
      */
     @Nullable
-    public BlockState getExplodedBlockState() {
+    public BlockState getBlockState() {
         return this.blockState;
     }
 

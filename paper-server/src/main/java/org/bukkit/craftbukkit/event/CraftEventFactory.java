@@ -2183,7 +2183,7 @@ public class CraftEventFactory {
         } else {
             org.bukkit.block.Block block = location.getBlock();
             org.bukkit.block.BlockState blockState = (serverExplosion.getDamageSource().getDirectBlockState() != null) ? serverExplosion.getDamageSource().getDirectBlockState() : block.getState();
-            event = new ExplodeEvent(block, blockState, location, blockList, serverExplosion.yield, explosionResult);
+            event = new ExplodeEvent(blockState, location, blockList, serverExplosion.yield, explosionResult);
         }
 
         event.callEvent();
