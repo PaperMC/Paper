@@ -18,7 +18,9 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * The event isn't called if the {@link org.bukkit.GameRule#MOB_GRIEFING}
  * is disabled as no block interaction will occur.
+ * @see io.papermc.paper.event.world.ExplodeEvent
  */
+@ApiStatus.Obsolete
 public class BlockExplodeEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
