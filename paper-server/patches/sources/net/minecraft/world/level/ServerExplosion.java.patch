@@ -145,14 +145,22 @@
                                  this.hitPlayers.put(player, vec3);
                              }
                          }
-@@ -225,7 +_,30 @@
+@@ -225,7 +_,38 @@
          List<ServerExplosion.StackCollector> list = new ArrayList<>();
          Util.shuffle(blocks, this.level.random);
  
 +        // CraftBukkit start
-+        List<org.bukkit.block.Block> bukkitBlocks = CraftEventFactory.handleExplodeEvent(this, blocks);
++        List<BlockPos> bukkitBlocks = CraftEventFactory.handleExplodeEvent(this, blocks);
 +        blocks.clear();
-+        blocks.addAll(bukkitBlocks.stream().map(bblock -> new BlockPos(bblock.getX(), bblock.getY(), bblock.getZ())).toList());
++        blocks.addAll(bukkitBlocks);
++
++        // Paper start - call Explode Event
++        io.papermc.paper.event.world.ExplodeEvent explodeEvent = CraftEventFactory.callExplodeEvent(this, blocks);
++        this.wasCanceled = explodeEvent.isCancelled();
++        this.yield = explodeEvent.getYield();
++        blocks.clear();
++        blocks.addAll(explodeEvent.blockList().stream().map(bblock -> new BlockPos(bblock.getX(), bblock.getY(), bblock.getZ())).toList());
++        // Paper end
 +
 +        if (this.wasCanceled) {
 +            return;
@@ -199,16 +207,18 @@
          this.level.gameEvent(this.source, GameEvent.EXPLODE, this.center);
          List<BlockPos> list = this.calculateExplodedPositions();
          this.hurtEntities();
-@@ -254,6 +_,14 @@
+@@ -254,6 +_,16 @@
              this.interactWithBlocks(list);
              profilerFiller.pop();
          }
 +        // Paper start - handle not interacts in explosion events
 +        else {
-+            Util.shuffle(list, this.level.random); // CraftBukkit - Copy from calculateExplodedPositions
-+            List<org.bukkit.block.Block> bukkitBlocks = CraftEventFactory.handleExplodeEvent(this, list);
++            Util.shuffle(list, this.level.random); // Paper - Copy from calculateExplodedPositions
++            io.papermc.paper.event.world.ExplodeEvent explodeEvent = CraftEventFactory.callExplodeEvent(this, list);
++            this.wasCanceled = explodeEvent.isCancelled();
++            this.yield = explodeEvent.getYield();
 +            list.clear();
-+            list.addAll(bukkitBlocks.stream().map(bblock -> new BlockPos(bblock.getX(), bblock.getY(), bblock.getZ())).toList());
++            list.addAll(explodeEvent.blockList().stream().map(bblock -> new BlockPos(bblock.getX(), bblock.getY(), bblock.getZ())).toList());
 +        }
 +        // Paper end
  
