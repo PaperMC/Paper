@@ -410,6 +410,40 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     // Paper end
 
     /**
+     * Sends a message with the MiniMessage format to the server.
+     * <p>
+     * See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a>
+     * for more information on the format.
+     *
+     * @param message MiniMessage content
+     */
+    default void sendRichMessage(final @NotNull String message) {
+        this.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message));
+    }
+
+    /**
+     * Sends a message with the MiniMessage format to the server.
+     * <p>
+     * See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a> and <a href="https://docs.advntr.dev/minimessage/dynamic-replacements">MiniMessage Placeholders docs</a>
+     * for more information on the format.
+     *
+     * @param message MiniMessage content
+     * @param resolvers resolvers to use
+     */
+    default void sendRichMessage(final @NotNull String message, final net.kyori.adventure.text.minimessage.tag.resolver.@NotNull TagResolver... resolvers) {
+        this.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message, resolvers));
+    }
+
+    /**
+     * Sends a plain message to the server.
+     *
+     * @param message plain message
+     */
+    default void sendPlainMessage(final @NotNull String message) {
+        this.sendMessage(net.kyori.adventure.text.Component.text(message));
+    }
+
+    /**
      * Gets the name of the update folder. The update folder is used to safely
      * update plugins at the right moment on a plugin load.
      * <p>
