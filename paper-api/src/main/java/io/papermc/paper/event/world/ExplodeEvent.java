@@ -93,11 +93,11 @@ public class ExplodeEvent extends Event implements Cancellable {
     }
 
     /**
-     * Returns the list of blocks that would have been caught in the explosion.
+     * Returns a mutable list of blocks that would have been caught in the explosion.
      * <br>
      * <b>Note:</b> the behaviours with these blocks depends on {@link #getExplosionResult()}
      *
-     * @return All blocks caught in the explosion
+     * @return All blocks caught in the explosion.
      */
     public List<Block> blockList() {
         return this.blocks;
