@@ -14,6 +14,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Warning.WarningState;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.data.BlockData;
@@ -418,7 +421,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param message MiniMessage content
      */
     default void sendRichMessage(final @NotNull String message) {
-        this.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message));
+        this.sendMessage(MiniMessage.miniMessage().deserialize(message));
     }
 
     /**
@@ -430,8 +433,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param message MiniMessage content
      * @param resolvers resolvers to use
      */
-    default void sendRichMessage(final @NotNull String message, final net.kyori.adventure.text.minimessage.tag.resolver.@NotNull TagResolver... resolvers) {
-        this.sendMessage(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(message, resolvers));
+    default void sendRichMessage(final @NotNull String message, final @NotNull TagResolver... resolvers) {
+        this.sendMessage(MiniMessage.miniMessage().deserialize(message, resolvers));
     }
 
     /**
@@ -440,7 +443,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param message plain message
      */
     default void sendPlainMessage(final @NotNull String message) {
-        this.sendMessage(net.kyori.adventure.text.Component.text(message));
+        this.sendMessage(Component.text(message));
     }
 
     /**
