@@ -1,6 +1,12 @@
 --- a/net/minecraft/world/entity/ai/behavior/PoiCompetitorScan.java
 +++ b/net/minecraft/world/entity/ai/behavior/PoiCompetitorScan.java
-@@ -22,13 +_,23 @@
+@@ -17,18 +_,33 @@
+             instance -> instance.group(instance.present(MemoryModuleType.JOB_SITE), instance.present(MemoryModuleType.NEAREST_LIVING_ENTITIES))
+                 .apply(
+                     instance,
+-                    (jobSite, nearestLivingEntities) -> (level, villager, gameTime) -> {
++                    (jobSite, nearestLivingEntities) -> (level, villagerA, gameTime) -> {
+                         GlobalPos globalPos = instance.get(jobSite);
                          level.getPoiManager()
                              .getType(globalPos.pos())
                              .ifPresent(
@@ -12,21 +18,26 @@
 -                                    .filter(v -> competesForSameJobsite(globalPos, poi, v))
 -                                    .reduce(villager, PoiCompetitorScan::selectWinner)
 +                                poi -> {
++                                    // Paper start - Improve performance of PoiCompetitorScan by unrolling stream
 +                                    List<LivingEntity> livingEntities = instance.get(nearestLivingEntities);
 +
-+                                    Villager winner = villager;
++                                    Villager winner = villagerA;
 +                                    for (LivingEntity entity : livingEntities) {
-+                                        if (!(entity instanceof Villager && entity != villager)) {
++                                        if (entity == villagerA) {
++                                            continue;
++                                        }
++                                        if (!(entity instanceof net.minecraft.world.entity.npc.Villager villagerB)) {
 +                                            continue;
 +                                        }
 +                                        if (!entity.isAlive()) {
 +                                            continue;
 +                                        }
-+                                        if (!competesForSameJobsite(globalPos, poi, (Villager) entity)) {
++                                        if (!competesForSameJobsite(globalPos, poi, villagerB)) {
 +                                            continue;
 +                                        }
-+                                        winner = selectWinner(winner, (Villager) entity);
++                                        winner = selectWinner(winner, villagerB);
 +                                    }
++                                    // Paper end - Improve performance of PoiCompetitorScan by unrolling stream
 +                                }
                              );
                          return true;
