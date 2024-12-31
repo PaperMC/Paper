@@ -54,7 +54,7 @@ public class ExplodeEvent extends Event implements Cancellable {
     /**
      * Returns the result of the explosion if it is not cancelled.
      *
-     * @return the result of the explosion
+     * @return the result of the explosion.
      */
     public ExplosionResult getExplosionResult() {
         return result;
@@ -62,11 +62,11 @@ public class ExplodeEvent extends Event implements Cancellable {
 
     /**
      * Returns the location where the explosion happened.
-     * <p>
-     * It is not possible to get this value from the Entity as the Entity no
+     * <br>
+     * <b>Note:</b> It is not possible to get this value from the Entity as the Entity no
      * longer exists in the world.
      *
-     * @return The location of the explosion
+     * @return The location of the explosion.
      */
     public Location getLocation() {
         return this.location.clone();
@@ -95,7 +95,7 @@ public class ExplodeEvent extends Event implements Cancellable {
     /**
      * Returns a mutable list of blocks that would have been caught in the explosion.
      * <br>
-     * <b>Note:</b> the behaviours with these blocks depends on {@link #getExplosionResult()}
+     * <b>Note:</b> the behaviours with these blocks depends on {@link #getExplosionResult()}.
      *
      * @return All blocks caught in the explosion.
      */
@@ -106,7 +106,7 @@ public class ExplodeEvent extends Event implements Cancellable {
     /**
      * Returns the percentage of blocks to drop from this explosion.
      * <br>
-     * <b>Note:</b> this behaviour depends on {@link #getExplosionResult()}
+     * <b>Note:</b> this behaviour depends on {@link #getExplosionResult()}.
      *
      * @return The yield.
      */
@@ -115,7 +115,7 @@ public class ExplodeEvent extends Event implements Cancellable {
     }
 
     /**
-     * Sets the percentage of blocks to drop from this explosion
+     * Sets the percentage of blocks to drop from this explosion.
      *
      * @param yield The new yield percentage
      *
