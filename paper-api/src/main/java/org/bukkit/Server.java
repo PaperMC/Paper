@@ -14,6 +14,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Warning.WarningState;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.data.BlockData;
@@ -408,6 +411,40 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
         spigot().broadcast(components);
     }
     // Paper end
+
+    /**
+     * Sends a message with the MiniMessage format to the server.
+     * <p>
+     * See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a>
+     * for more information on the format.
+     *
+     * @param message MiniMessage content
+     */
+    default void sendRichMessage(final @NotNull String message) {
+        this.sendMessage(MiniMessage.miniMessage().deserialize(message));
+    }
+
+    /**
+     * Sends a message with the MiniMessage format to the server.
+     * <p>
+     * See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a> and <a href="https://docs.advntr.dev/minimessage/dynamic-replacements">MiniMessage Placeholders docs</a>
+     * for more information on the format.
+     *
+     * @param message MiniMessage content
+     * @param resolvers resolvers to use
+     */
+    default void sendRichMessage(final @NotNull String message, final @NotNull TagResolver... resolvers) {
+        this.sendMessage(MiniMessage.miniMessage().deserialize(message, resolvers));
+    }
+
+    /**
+     * Sends a plain message to the server.
+     *
+     * @param message plain message
+     */
+    default void sendPlainMessage(final @NotNull String message) {
+        this.sendMessage(Component.text(message));
+    }
 
     /**
      * Gets the name of the update folder. The update folder is used to safely
