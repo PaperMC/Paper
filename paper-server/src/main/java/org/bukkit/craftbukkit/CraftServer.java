@@ -883,7 +883,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean hasWhitelist() {
-        return this.getProperties().whiteList.get();
+        return this.playerList.isUsingWhitelist();
     }
 
     // NOTE: Temporary calls through to server.properies until its replaced
