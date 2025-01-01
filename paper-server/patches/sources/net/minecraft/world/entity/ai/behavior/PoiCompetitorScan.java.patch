@@ -1,10 +1,11 @@
 --- a/net/minecraft/world/entity/ai/behavior/PoiCompetitorScan.java
 +++ b/net/minecraft/world/entity/ai/behavior/PoiCompetitorScan.java
-@@ -17,18 +_,33 @@
+@@ -17,21 +_,36 @@
              instance -> instance.group(instance.present(MemoryModuleType.JOB_SITE), instance.present(MemoryModuleType.NEAREST_LIVING_ENTITIES))
                  .apply(
                      instance,
 -                    (jobSite, nearestLivingEntities) -> (level, villager, gameTime) -> {
++                    // Paper start - Improve performance of PoiCompetitorScan by unrolling stream
 +                    (jobSite, nearestLivingEntities) -> (level, villagerA, gameTime) -> {
                          GlobalPos globalPos = instance.get(jobSite);
                          level.getPoiManager()
@@ -18,7 +19,6 @@
 -                                    .filter(v -> competesForSameJobsite(globalPos, poi, v))
 -                                    .reduce(villager, PoiCompetitorScan::selectWinner)
 +                                poi -> {
-+                                    // Paper start - Improve performance of PoiCompetitorScan by unrolling stream
 +                                    List<LivingEntity> livingEntities = instance.get(nearestLivingEntities);
 +
 +                                    Villager winner = villagerA;
@@ -37,8 +37,11 @@
 +                                        }
 +                                        winner = selectWinner(winner, villagerB);
 +                                    }
-+                                    // Paper end - Improve performance of PoiCompetitorScan by unrolling stream
 +                                }
                              );
                          return true;
                      }
++                    // Paper end - Improve performance of PoiCompetitorScan by unrolling stream
+                 )
+         );
+     }
