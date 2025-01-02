@@ -275,6 +275,7 @@ public interface BlockData extends Cloneable {
      * bound to a location.
      *
      * @return a new {@link BlockState}
+     * @throws IllegalStateException if the block is required to be placed to get a BlockState
      */
     @NotNull
     @ApiStatus.Experimental
