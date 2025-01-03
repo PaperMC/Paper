@@ -48,4 +48,8 @@ public interface CommandSourceStack {
      * @return entity that executes this command
      */
     @Nullable Entity getExecutor();
+    
+    CommandSourceStack withLocation(Location location);
+    
+    CommandSourceStack withExecutor(Entity executor);
 }
