@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Represents a captured state of a chest.
  */
-public interface Chest extends Container, LootableBlockInventory, Lidded { // Paper
+public interface Chest extends Container, LootableBlockInventory, Lidded, io.papermc.paper.block.Lidded { // Paper
 
     /**
      * Gets the inventory of the chest block represented by this block state.
