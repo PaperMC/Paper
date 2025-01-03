@@ -132,6 +132,7 @@ public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwn
         if (redirectTo.getChildren().isEmpty() || hasFlattenRedirectFlag) {
             redirect = Commands.literal(aliasLiteral)
                 .executes(redirectTo.getCommand())
+                .forward(redirectTo.getRedirect(), redirectTo.getRedirectModifier(), redirectTo.isFork())
                 .requires(redirectTo.getRequirement())
                 .build();
 
