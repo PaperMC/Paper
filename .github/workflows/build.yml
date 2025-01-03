@@ -35,10 +35,13 @@ jobs:
     steps:
       - if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - if: ${{ github.event_name == 'pull_request' }}
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
       - name: JDK ${{ matrix.java }}
         uses: actions/setup-java@v4
         with:
@@ -93,6 +96,8 @@ jobs:
 
       - name: Build
         run: ./gradlew build --stacktrace
+        env:
+          GIT_USER: ${{ github.event_name == 'push' && github.actor || github.event.pull_request.user.login }}
 
       - name: Upload Test Results
         if: always()

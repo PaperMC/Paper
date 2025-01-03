@@ -30,6 +30,7 @@ public interface ServerBuildInfo {
             static final Optional<ServerBuildInfo> INSTANCE = Services.service(ServerBuildInfo.class);
         }
         //</editor-fold>
+
         return Holder.INSTANCE.orElseThrow();
     }
 
@@ -47,7 +48,7 @@ public interface ServerBuildInfo {
      * @return {@code true} if the server supports the specified brand
      */
     @ApiStatus.Experimental
-    boolean isBrandCompatible(final Key brandId);
+    boolean isBrandCompatible(Key brandId);
 
     /**
      * Gets the brand name of the server.
@@ -104,7 +105,7 @@ public interface ServerBuildInfo {
      * @param representation the type of representation
      * @return a string
      */
-    String asString(final StringRepresentation representation);
+    String asString(StringRepresentation representation);
 
     /**
      * String representation types.

@@ -2,11 +2,20 @@ plugins {
     `java-library`
     `maven-publish`
     idea
+    id("checkstyle-conventions")
 }
 
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+val customJavadocTags = setOf(
+    JavadocTag("apiNote", "a", "API Note:"),
+)
+
+tasks.withType<CustomCheckstyleTask> {
+    setCustomJavadocTags(customJavadocTags)
 }
 
 val annotationsVersion = "26.0.1"
@@ -190,7 +199,7 @@ tasks.withType<Javadoc> {
         "https://javadoc.io/doc/org.apache.logging.log4j/log4j-api/$log4jVersion/",
         "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3",
     )
-    options.tags("apiNote:a:API Note:")
+    options.tags(customJavadocTags.map { it.toOptionString() })
 
     inputs.files(apiAndDocs).ignoreEmptyDirectories().withPropertyName(apiAndDocs.name + "-configuration")
     val apiAndDocsElements = apiAndDocs.elements
