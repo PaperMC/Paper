@@ -6,7 +6,8 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
- * The item obfuscation session may be started
+ * The item obfuscation session may be started by a thread to indicate that items should be obfuscated when serialized
+ * for network usage.
  */
 @NullMarked
 public class ItemObfuscationSession implements SafeAutoClosable {
@@ -19,6 +20,7 @@ public class ItemObfuscationSession implements SafeAutoClosable {
         }
     };
 
+    // noop session is used in case obfuscation is disabled. Avoids having to perform a thread local lookup.
     public static ItemObfuscationSession noop() {
         return NOOP;
     }
