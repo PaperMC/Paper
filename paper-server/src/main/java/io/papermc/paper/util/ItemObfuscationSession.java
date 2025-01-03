@@ -1,5 +1,6 @@
 package io.papermc.paper.util;
 
+import java.util.function.UnaryOperator;
 import com.google.common.base.Preconditions;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NullMarked;
@@ -8,58 +9,70 @@ import org.jspecify.annotations.Nullable;
 /**
  * The item obfuscation session may be started by a thread to indicate that items should be obfuscated when serialized
  * for network usage.
+ * <p>
+ * A session is persistent throughout an entire thread and will be "activated" by passing an {@link ObfuscationContext}
+ * to start/switch context methods.
  */
 @NullMarked
 public class ItemObfuscationSession implements SafeAutoClosable {
 
     static final ThreadLocal<ItemObfuscationSession> THREAD_LOCAL_SESSION = ThreadLocal.withInitial(ItemObfuscationSession::new);
-    static final ItemObfuscationSession NOOP = new ItemObfuscationSession() {
-        @Override
-        public boolean isNotSanitizing() {
-            return true;
-        }
-    };
 
-    // noop session is used in case obfuscation is disabled. Avoids having to perform a thread local lookup.
-    public static ItemObfuscationSession noop() {
-        return NOOP;
-    }
     public static ItemObfuscationSession currentSession() {
-        return ItemObfuscationBinding.ENABLED ? THREAD_LOCAL_SESSION.get() : NOOP;
+        return THREAD_LOCAL_SESSION.get();
     }
 
-    public static @Nullable ItemObfuscationSession start(final boolean sanitize) {
-        if (!ItemObfuscationBinding.ENABLED) return noop();
+    /**
+     * Obfuscation level on a specific context.
+     */
+    public enum ObfuscationLevel {
+        NONE,
+        OVERSIZED,
+        ALL;
 
-        final ItemObfuscationSession sanitizer = THREAD_LOCAL_SESSION.get();
-        if (sanitize) {
-            sanitizer.start();
-        }
-        return sanitizer;
-    }
-
-    public static @Nullable SafeAutoClosable withContext(final ItemStack itemStack) {
-        if (!ItemObfuscationBinding.ENABLED) return () -> {
-        };
-        final ItemObfuscationSession sanitizer = THREAD_LOCAL_SESSION.get();
-
-        // Don't pass any context if we are not currently sanitizing
-        if (sanitizer.isNotSanitizing()) {
-            return () -> {
+        public boolean obfuscateOversized() {
+            return switch (this) {
+                case OVERSIZED, ALL -> true;
+                default -> false;
             };
         }
 
-        // Store the current context as a parent in the next context for later restoration.
-        final ObfuscationContext newContext = new ObfuscationContext(sanitizer, sanitizer.context(), itemStack);
-        sanitizer.switchContext(newContext);
+        public boolean isObfuscating() {
+            return this != NONE;
+        }
+    }
+
+    public static ItemObfuscationSession start(final ObfuscationLevel level) {
+        final ItemObfuscationSession sanitizer = THREAD_LOCAL_SESSION.get();
+        sanitizer.switchContext(new ObfuscationContext(sanitizer, null, null, level));
+        return sanitizer;
+    }
+
+    /**
+     * Updates the context of the currently running session by requiring the unary operator to emit a new context
+     * based on the current one.
+     * The method expects the caller to use the withers on the context.
+     *
+     * @param contextUpdater the operator to construct the new context.
+     * @return the context callback to close once the context expires.
+     */
+    public static SafeAutoClosable withContext(final UnaryOperator<ObfuscationContext> contextUpdater) {
+        final ItemObfuscationSession session = THREAD_LOCAL_SESSION.get();
+
+        // Don't pass any context if we are not currently sanitizing
+        if (!session.obfuscationLevel().isObfuscating()) return () -> {
+        };
+
+        final ObfuscationContext newContext = contextUpdater.apply(session.context());
+        Preconditions.checkState(newContext != session.context(), "withContext yielded same context instance, this will break the stack on close");
+        session.switchContext(newContext);
         return newContext;
     }
 
-    private boolean isSanitizing;
-    private ObfuscationContext context = null;
+    private final ObfuscationContext root = new ObfuscationContext(this, null, null, ObfuscationLevel.NONE);
+    private ObfuscationContext context = root;
 
     public void switchContext(final ObfuscationContext context) {
-        Preconditions.checkState(this.isSanitizing, "Attempted to switch context while not sanitizing");
         this.context = context;
     }
 
@@ -67,24 +80,29 @@ public class ItemObfuscationSession implements SafeAutoClosable {
         return this.context;
     }
 
-    public void start() {
-        this.isSanitizing = true;
-    }
-
     @Override
     public void close() {
-        this.isSanitizing = false;
+        this.context = root;
     }
 
-    public boolean isNotSanitizing() {
-        return !this.isSanitizing;
+    public ObfuscationLevel obfuscationLevel() {
+        return this.context.level;
     }
 
     public record ObfuscationContext(
         ItemObfuscationSession parent,
         @Nullable ObfuscationContext previousContext,
-        ItemStack itemStack
+        @Nullable ItemStack itemStack,
+        ObfuscationLevel level
     ) implements SafeAutoClosable {
+
+        public ObfuscationContext itemStack(final ItemStack itemStack) {
+            return new ObfuscationContext(this.parent, this, itemStack, this.level);
+        }
+
+        public ObfuscationContext level(final ObfuscationLevel obfuscationLevel) {
+            return new ObfuscationContext(this.parent, this, this.itemStack, obfuscationLevel);
+        }
 
         @Override
         public void close() {

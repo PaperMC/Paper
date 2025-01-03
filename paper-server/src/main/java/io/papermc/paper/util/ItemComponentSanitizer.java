@@ -61,7 +61,7 @@ public final class ItemComponentSanitizer {
     }
 
     public static int sanitizeCount(final ItemObfuscationSession obfuscationSession, final ItemStack itemStack, final int count) {
-        if (!ItemObfuscationBinding.ENABLED || obfuscationSession.isNotSanitizing()) return count; // Ignore if we are not obfuscating - first
+        if (obfuscationSession.obfuscationLevel() != ItemObfuscationSession.ObfuscationLevel.ALL) return count; // Ignore if we are not obfuscating
 
         if (ItemObfuscationBinding.getAssetObfuscation(itemStack).sanitizeCount()) {
             return 1;
@@ -71,7 +71,7 @@ public final class ItemComponentSanitizer {
     }
 
     public static boolean shouldDrop(final ItemObfuscationSession obfuscationSession, final DataComponentType<?> key) {
-        if (!ItemObfuscationBinding.ENABLED || obfuscationSession.isNotSanitizing()) return false; // Ignore if we are not obfuscating
+        if (obfuscationSession.obfuscationLevel() != ItemObfuscationSession.ObfuscationLevel.ALL) return false; // Ignore if we are not obfuscating
 
         final ItemStack targetItemstack = obfuscationSession.context().itemStack();
 
@@ -79,15 +79,15 @@ public final class ItemComponentSanitizer {
         return ItemObfuscationBinding.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE;
     }
 
-    public static Optional<?> override(final ItemObfuscationSession itemObfuscationSession, final DataComponentType<?> key, final Optional<?> value) {
-        if (!ItemObfuscationBinding.ENABLED || itemObfuscationSession.isNotSanitizing()) return value;  // Ignore if we are not obfuscating
+    public static Optional<?> override(final ItemObfuscationSession obfuscationSession, final DataComponentType<?> key, final Optional<?> value) {
+        if (obfuscationSession.obfuscationLevel() != ItemObfuscationSession.ObfuscationLevel.ALL) return value; // Ignore if we are not obfuscating
 
         // Ignore removed values
         if (value.isEmpty()) {
             return value;
         }
 
-        final ItemStack targetItemstack = itemObfuscationSession.context().itemStack();
+        final ItemStack targetItemstack = obfuscationSession.context().itemStack();
 
         return switch (ItemObfuscationBinding.getAssetObfuscation(targetItemstack).patchStrategy().get(key)) {
             case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop ignored -> Optional.empty();
