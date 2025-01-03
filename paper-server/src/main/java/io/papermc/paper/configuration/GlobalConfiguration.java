@@ -5,8 +5,10 @@ import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
+import io.papermc.paper.util.ItemObfuscationBinding;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 import org.jspecify.annotations.Nullable;
@@ -20,6 +22,7 @@ import org.spongepowered.configurate.objectmapping.meta.Setting;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.Set;
 
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
 public class GlobalConfiguration extends ConfigurationPart {
@@ -353,5 +356,43 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean disableTripwireUpdates = false;
         public boolean disableChorusPlantUpdates = false;
         public boolean disableMushroomBlockUpdates = false;
+    }
+
+    public Anticheat anticheat;
+
+    public class Anticheat extends ConfigurationPart {
+
+        public Obfuscation obfuscation;
+
+        public class Obfuscation extends ConfigurationPart {
+            public Items items = new Items();
+
+            public class Items extends ConfigurationPart {
+
+                public boolean enableItemObfuscation = false;
+                public ItemObfuscationBinding.AssetObfuscationConfiguration allModels = new ItemObfuscationBinding.AssetObfuscationConfiguration(
+                    true,
+                    Set.of(DataComponents.LODESTONE_TRACKER),
+                    Set.of()
+                );
+
+                public Map<String, ItemObfuscationBinding.AssetObfuscationConfiguration> modelOverrides = Map.of(
+                    net.minecraft.world.item.Items.ELYTRA.components().get(DataComponents.ITEM_MODEL).toString(),
+                    new ItemObfuscationBinding.AssetObfuscationConfiguration(
+                        true,
+                        Set.of(DataComponents.DAMAGE),
+                        Set.of()
+                    )
+                );
+
+                @PostProcess
+                public void bindDataSanatizer() {
+                    ItemObfuscationBinding.bind(this);
+                }
+
+            }
+
+        }
+
     }
 }
