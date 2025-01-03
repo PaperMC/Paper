@@ -25,6 +25,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemCooldowns;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
@@ -50,6 +51,8 @@ import org.bukkit.craftbukkit.inventory.CraftInventoryView;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
+import org.bukkit.craftbukkit.inventory.util.CraftMenus;
+import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.HumanEntity;
@@ -385,7 +388,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
         if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
         player.containerMenu = container;
-        player.initMenu(container);
     }
 
     @Override
@@ -467,6 +469,11 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         // Now open the window
         MenuType<?> windowType = CraftContainer.getNotchInventoryType(inventory.getTopInventory());
+        // we can open these now, delegate for now
+        if (windowType == MenuType.MERCHANT) {
+            CraftMenus.openMerchantMenu(player, (MerchantMenu) container);
+            return;
+        }
 
         //String title = inventory.getTitle(); // Paper - comment
         net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
@@ -475,7 +482,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
         if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
         player.containerMenu = container;
-        player.initMenu(container);
     }
 
     @Override
