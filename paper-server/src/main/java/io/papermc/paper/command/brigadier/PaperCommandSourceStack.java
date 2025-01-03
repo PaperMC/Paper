@@ -1,6 +1,7 @@
 package io.papermc.paper.command.brigadier;
 
 import com.destroystokyo.paper.brigadier.BukkitBrigadierCommandSource;
+import com.google.common.base.Preconditions;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
@@ -8,16 +9,15 @@ import org.bukkit.Location;
 import org.bukkit.command.CommandSender;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.entity.Entity;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBrigadierCommandSource {
 
     net.minecraft.commands.CommandSourceStack getHandle();
 
     @Override
-    default @NotNull Location getLocation() {
+    default @NonNull Location getLocation() {
         Vec2 rot = this.getHandle().getRotation();
         Vec3 pos = this.getHandle().getPosition();
         Level level = this.getHandle().getLevel();
@@ -26,7 +26,7 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
     }
 
     @Override
-    @NotNull
+    @NonNull
     default CommandSender getSender() {
         return this.getHandle().getBukkitSender();
     }
@@ -43,9 +43,9 @@ public interface PaperCommandSourceStack extends CommandSourceStack, BukkitBriga
     }
 
     @Override
-    @NonNull
-    default CommandSourceStack withExecutor(@Nullable Entity executor) {
-        return executor == null ? this.getHandle().withEntity(null) : this.getHandle().withEntity(((CraftEntity) executor).getHandle());
+    default CommandSourceStack withExecutor(@NonNull Entity executor) {
+        Preconditions.checkNotNull(executor, "Executor cannot be null.");
+        return this.getHandle().withEntity(((CraftEntity) executor).getHandle());
     }
 
     // OLD METHODS
