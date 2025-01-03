@@ -16,8 +16,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.LodestoneTracker;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
+import org.jspecify.annotations.NullMarked;
 
-final class ItemComponentSanitizer {
+@NullMarked
+public final class ItemComponentSanitizer {
 
     /*
      * This returns for types, that when configured to be serialized, should instead return these objects.
@@ -31,11 +33,12 @@ final class ItemComponentSanitizer {
         }
     ).build();
 
-    private static <T> void put(ImmutableMap.Builder map, DataComponentType<T> type, UnaryOperator<T> object) {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static <T> void put(final ImmutableMap.Builder map, final DataComponentType<T> type, final UnaryOperator<T> object) {
         map.put(type, object);
     }
 
-    private static <T> UnaryOperator<T> empty(T object) {
+    private static <T> UnaryOperator<T> empty(final T object) {
         return (unused) -> object;
     }
 
@@ -52,67 +55,43 @@ final class ItemComponentSanitizer {
 
     // We cant use the empty map from enchantments because we want to keep the glow
     private static ItemEnchantments dummyEnchantments() {
-        ItemEnchantments.Mutable obj = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
+        final ItemEnchantments.Mutable obj = new ItemEnchantments.Mutable(ItemEnchantments.EMPTY);
         obj.set(MinecraftServer.getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getRandom(RandomSource.create()).orElseThrow(), 1);
         return obj.toImmutable();
     }
 
-    public static int sanitizeCount(ItemStack itemStack, int count) {
-        GlobalConfiguration.Anticheat.Obfuscation.Items items = GlobalConfiguration.get().anticheat.obfuscation.items;
-        // Ignore if we are not obfuscating
-        if (!items.enableItemObfuscation) {
-            return count;
-        }
+    public static int sanitizeCount(final ItemObfuscationSession obfuscationSession, final ItemStack itemStack, final int count) {
+        if (!ItemObfuscationBinding.ENABLED || obfuscationSession.isNotSanitizing()) return count; // Ignore if we are not obfuscating - first
 
-        if (DataSanitizationUtil.DATA_SANITIZER.get().isNotSanitizing()) {
-            return count;
-        }
-
-        if (DataSanitizationUtil.getAssetObfuscation(itemStack).sanitizeCount()) {
+        if (ItemObfuscationBinding.getAssetObfuscation(itemStack).sanitizeCount()) {
             return 1;
         } else {
             return count;
         }
     }
 
-    public static boolean shouldDrop(DataComponentType<?> key) {
-        // Only drop components on obfuscation
-        GlobalConfiguration.Anticheat.Obfuscation.Items items = GlobalConfiguration.get().anticheat.obfuscation.items;
-        if (!items.enableItemObfuscation) {
-            return false;
-        }
-        if (DataSanitizationUtil.DATA_SANITIZER.get().isNotSanitizing()) {
-            return false;
-        }
+    public static boolean shouldDrop(final ItemObfuscationSession obfuscationSession, final DataComponentType<?> key) {
+        if (!ItemObfuscationBinding.ENABLED || obfuscationSession.isNotSanitizing()) return false; // Ignore if we are not obfuscating
 
-        DataSanitizationUtil.ContentScope scope = DataSanitizationUtil.DATA_SANITIZER.get().scope().get();
-        ItemStack targetItemstack = scope.itemStack();
+        final ItemStack targetItemstack = obfuscationSession.context().itemStack();
 
         // Only drop if configured to do so.
-        return DataSanitizationUtil.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == DataSanitizationUtil.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE;
+        return ItemObfuscationBinding.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE;
     }
 
-    public static Optional<?> override(DataComponentType<?> key, Optional<?> value) {
-        if (DataSanitizationUtil.DATA_SANITIZER.get().isNotSanitizing()) {
-            return value;
-        }
-        // Only drop components on obfuscation
-        GlobalConfiguration.Anticheat.Obfuscation.Items items = GlobalConfiguration.get().anticheat.obfuscation.items;
-        if (!items.enableItemObfuscation) {
-            return value;
-        }
+    public static Optional<?> override(final ItemObfuscationSession itemObfuscationSession, final DataComponentType<?> key, final Optional<?> value) {
+        if (!ItemObfuscationBinding.ENABLED || itemObfuscationSession.isNotSanitizing()) return value;  // Ignore if we are not obfuscating
 
         // Ignore removed values
         if (value.isEmpty()) {
             return value;
         }
 
-        DataSanitizationUtil.ContentScope scope = DataSanitizationUtil.DATA_SANITIZER.get().scope().get();
-        ItemStack targetItemstack = scope.itemStack();
+        final ItemStack targetItemstack = itemObfuscationSession.context().itemStack();
 
-        return switch (DataSanitizationUtil.getAssetObfuscation(targetItemstack).patchStrategy().get(key)) {
-            case DataSanitizationUtil.BoundObfuscationConfiguration.MutationType.Drop unused -> Optional.empty();
-            case DataSanitizationUtil.BoundObfuscationConfiguration.MutationType.Sanitize sanitize -> Optional.of(sanitize.sanitizer().apply(value.get()));
+        return switch (ItemObfuscationBinding.getAssetObfuscation(targetItemstack).patchStrategy().get(key)) {
+            case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop ignored -> Optional.empty();
+            case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Sanitize sanitize -> Optional.of(sanitize.sanitizer().apply(value.get()));
             case null -> value;
         };
     }

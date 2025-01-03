@@ -5,15 +5,12 @@ import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.constraint.Constraints;
 import io.papermc.paper.configuration.type.number.DoubleOr;
 import io.papermc.paper.configuration.type.number.IntOr;
-import io.papermc.paper.util.DataSanitizationUtil;
+import io.papermc.paper.util.ItemObfuscationBinding;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -22,8 +19,6 @@ import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 import org.spongepowered.configurate.objectmapping.meta.Required;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -375,21 +370,24 @@ public class GlobalConfiguration extends ConfigurationPart {
             public class Items extends ConfigurationPart {
 
                 public boolean enableItemObfuscation = false;
-                public DataSanitizationUtil.AssetObfuscationConfiguration allModels = new DataSanitizationUtil.AssetObfuscationConfiguration(true,
+                public ItemObfuscationBinding.AssetObfuscationConfiguration allModels = new ItemObfuscationBinding.AssetObfuscationConfiguration(
+                    true,
                     Set.of(DataComponents.LODESTONE_TRACKER),
                     Set.of()
                 );
 
-                public Map<String, DataSanitizationUtil.AssetObfuscationConfiguration> modelOverrides = Map.of(
-                    net.minecraft.world.item.Items.ELYTRA.components().get(DataComponents.ITEM_MODEL).toString(), new DataSanitizationUtil.AssetObfuscationConfiguration(true,
+                public Map<String, ItemObfuscationBinding.AssetObfuscationConfiguration> modelOverrides = Map.of(
+                    net.minecraft.world.item.Items.ELYTRA.components().get(DataComponents.ITEM_MODEL).toString(),
+                    new ItemObfuscationBinding.AssetObfuscationConfiguration(
+                        true,
                         Set.of(DataComponents.DAMAGE),
                         Set.of()
                     )
                 );
 
                 @PostProcess
-                public void computeOverridenTypes() {
-                    DataSanitizationUtil.compute(this);
+                public void bindDataSanatizer() {
+                    ItemObfuscationBinding.bind(this);
                 }
 
             }
