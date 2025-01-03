@@ -45,7 +45,7 @@ public final class OversizedItemComponentSanitizer {
     private static final Supplier<ItemStack> BUNDLE_ITEM_FILLER = Suppliers.memoize(() -> {
         return Util.make(new ItemStack(Items.PAPER, 1), (itemStack) -> {
             if (GlobalConfiguration.get().anticheat.obfuscation.items.enableItemObfuscation) {
-                itemStack.set(DataComponents.ITEM_MODEL, DataSanitizationUtil.IGNORE_OBFUSCATION_ITEM); // Prevent this item from being obfuscated
+                itemStack.set(DataComponents.ITEM_MODEL, ItemObfuscationBinding.IGNORE_OBFUSCATION_ITEM); // Prevent this item from being obfuscated
             }
         });
     });
@@ -84,9 +84,10 @@ public final class OversizedItemComponentSanitizer {
             return this.delegate.decode(buf);
         }
 
+        @SuppressWarnings("resource")
         @Override
         public void encode(final @NonNull B buf, final @NonNull A value) {
-            if (DataSanitizationUtil.DATA_SANITIZER.get().isNotSanitizing()) {
+            if (ItemObfuscationSession.currentSession().isNotSanitizing()) {
                 this.delegate.encode(buf, value);
             } else {
                 this.delegate.encode(buf, this.sanitizer.apply(value));

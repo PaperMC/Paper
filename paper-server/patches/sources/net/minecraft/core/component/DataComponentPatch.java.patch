@@ -1,11 +1,24 @@
 --- a/net/minecraft/core/component/DataComponentPatch.java
 +++ b/net/minecraft/core/component/DataComponentPatch.java
+@@ -86,6 +_,12 @@
+                 buffer.writeVarInt(0);
+                 buffer.writeVarInt(0);
+             } else {
++                // Paper start - data sanitization for items
++                final io.papermc.paper.util.ItemObfuscationSession itemObfuscationSession = value.map.isEmpty()
++                    // always pick noop if map is empty, saves us a potential thread local lookup in currentSession.
++                    ? io.papermc.paper.util.ItemObfuscationSession.noop()
++                    : io.papermc.paper.util.ItemObfuscationSession.currentSession();
++                // Paper end - data sanitization for items
+                 int i = 0;
+                 int i1 = 0;
+ 
 @@ -93,7 +_,7 @@
                      value.map
                  )) {
                      if (entry.getValue().isPresent()) {
 -                        i++;
-+                        if (!io.papermc.paper.util.DataSanitizationUtil.shouldDrop(entry.getKey())) i++; // Paper
++                        if (!io.papermc.paper.util.ItemComponentSanitizer.shouldDrop(itemObfuscationSession, entry.getKey())) i++; // Paper - data sanitization for items
                      } else {
                          i1++;
                      }
@@ -13,7 +26,7 @@
                      value.map
                  )) {
                      Optional<?> optional = entryx.getValue();
-+                    optional = io.papermc.paper.util.DataSanitizationUtil.override(entryx.getKey(), entryx.getValue()); // Paper
++                    optional = io.papermc.paper.util.ItemComponentSanitizer.override(itemObfuscationSession, entryx.getKey(), entryx.getValue()); // Paper - data sanitization for items
                      if (optional.isPresent()) {
                          DataComponentType<?> dataComponentType = entryx.getKey();
                          DataComponentType.STREAM_CODEC.encode(buffer, dataComponentType);
