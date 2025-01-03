@@ -25,19 +25,15 @@ public final class ItemObfuscationBinding {
 
     static BoundObfuscationConfiguration BOUND_BASE = null;
     static Map<ResourceLocation, BoundObfuscationConfiguration> BOUND_OVERRIDES = new HashMap<>();
-    // We need to have a special ignore item to indicate this item should not be obfuscated (see bundle contents)
-    // Randomize the namespace to ensure servers dont try to utilize this.
-    static ResourceLocation IGNORE_OBFUSCATION_ITEM = ResourceLocation.tryParse("paper:ignore_obfuscation_item/" + UUID.randomUUID());
-    static boolean ENABLED;
+    public static ItemObfuscationSession.ObfuscationLevel LEVEL = ItemObfuscationSession.ObfuscationLevel.OVERSIZED;
 
     public static void bind(final GlobalConfiguration.Anticheat.Obfuscation.Items items) {
         // now bind them all
-        ENABLED = items.enableItemObfuscation;
+        LEVEL = items.enableItemObfuscation ? ItemObfuscationSession.ObfuscationLevel.ALL : ItemObfuscationSession.ObfuscationLevel.OVERSIZED;
         BOUND_BASE = bind(items.allModels);
         for (final Map.Entry<String, AssetObfuscationConfiguration> entry : items.modelOverrides.entrySet()) {
             BOUND_OVERRIDES.put(ResourceLocation.parse(entry.getKey()), bind(entry.getValue()));
         }
-        BOUND_OVERRIDES.put(IGNORE_OBFUSCATION_ITEM, new BoundObfuscationConfiguration(false, Map.of()));
     }
 
     public record BoundObfuscationConfiguration(boolean sanitizeCount,
@@ -81,8 +77,8 @@ public final class ItemObfuscationBinding {
         return new BoundObfuscationConfiguration(config.sanitizeCount(), finalStrategy);
     }
 
-    public static BoundObfuscationConfiguration getAssetObfuscation(final ItemStack resourceLocation) {
-        return BOUND_OVERRIDES.getOrDefault(resourceLocation.get(DataComponents.ITEM_MODEL), BOUND_BASE);
+    public static BoundObfuscationConfiguration getAssetObfuscation(final ItemStack itemStack) {
+        return BOUND_OVERRIDES.getOrDefault(itemStack.get(DataComponents.ITEM_MODEL), BOUND_BASE);
     }
 
     static Set<DataComponentType<?>> BASE_OVERRIDERS = Set.of(
