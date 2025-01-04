@@ -29,7 +29,7 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
 
 
     @Override
-    public @Nullable Location start() {
+    public @NotNull Location start() {
         return this.start;
     }
 
@@ -40,7 +40,7 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     }
 
     @Override
-    public @Nullable Vector direction() {
+    public @NotNull Vector direction() {
         return this.direction;
     }
 
@@ -117,18 +117,24 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     }
 
     @Override
-    public void target(final @NotNull Targets first, final @NotNull Targets... others) {
+    public @Nullable List<Targets> targets() {
+        return this.targets;
+    }
+
+    @Override
+    public @NotNull PositionedRayTraceConfigurationBuilder targets(final @NotNull Targets first, final @NotNull Targets... others) {
         java.util.List<PositionedRayTraceConfigurationBuilder.Targets> targets = new java.util.ArrayList<>(java.util.List.of(others));
         targets.add(first);
         this.targets = targets;
+        return this;
     }
 
     public RayTraceResult cast() {
         if (targets.contains(Targets.ENTITIES)) {
             if(targets.contains(Targets.BLOCKS))
-                return world.rayTrace(this.start, this.direction, this.maxDistance(), this.fluidCollisionMode(), this.ignorePassableBlocks(), this.raySize(), this.entityFilter(), this.blockFilter());
-            return world.rayTraceEntities(this.start, this.direction, this.maxDistance(), this.raySize(), this.entityFilter());
+                return world.rayTrace(this.start(), this.direction(), this.maxDistance(), this.fluidCollisionMode(), this.ignorePassableBlocks(), this.raySize(), this.entityFilter(), this.blockFilter());
+            return world.rayTraceEntities(this.start(), this.direction(), this.maxDistance(), this.raySize(), this.entityFilter());
         }
-        return world.rayTraceBlocks(this.start, this.direction, this.maxDistance(), this.fluidCollisionMode(), this.ignorePassableBlocks(), this.blockFilter());
+        return world.rayTraceBlocks(this.start(), this.direction(), this.maxDistance(), this.fluidCollisionMode(), this.ignorePassableBlocks(), this.blockFilter());
     }
 }

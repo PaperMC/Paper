@@ -8,6 +8,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import java.util.List;
 import java.util.function.Predicate;
 
 /**
@@ -157,12 +158,21 @@ public interface PositionedRayTraceConfigurationBuilder {
     PositionedRayTraceConfigurationBuilder blockFilter(@Nullable Predicate<? super Block> blockFilter);
 
     /**
-     * Builds a configuration based on the provided targets.
+     * Gets the current set targets.
      *
-     * @return the configuration
+     * @return the targets
+     */
+    @Nullable
+    List<Targets> targets();
+
+    /**
+     * Sets the targets for the rayTrace.
+     *
+     * @return a reference to this object
      */
     @NotNull
-    void target(@NotNull Targets first, @NotNull Targets... others);
+    @Contract("_, _ -> this")
+    PositionedRayTraceConfigurationBuilder targets(@NotNull Targets first, @NotNull Targets... others);
 
     /**
      * List of Targets the builder can target.
