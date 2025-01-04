@@ -26,8 +26,7 @@ public final class ItemObfuscationBinding {
     private final BoundObfuscationConfiguration base;
     private final Map<ResourceLocation, BoundObfuscationConfiguration> overrides;
 
-    public ItemObfuscationBinding(final GlobalConfiguration config) {
-        final GlobalConfiguration.Anticheat.Obfuscation.Items items = config.anticheat.obfuscation.items;
+    public ItemObfuscationBinding(final GlobalConfiguration.Anticheat.Obfuscation.Items items) {
         this.level = items.enableItemObfuscation ? ItemObfuscationSession.ObfuscationLevel.ALL : ItemObfuscationSession.ObfuscationLevel.OVERSIZED;
         this.base = bind(items.allModels);
         final Map<ResourceLocation, BoundObfuscationConfiguration> overrides = new HashMap<>();
@@ -79,6 +78,9 @@ public final class ItemObfuscationBinding {
     }
 
     public BoundObfuscationConfiguration getAssetObfuscation(final ItemStack itemStack) {
+        if (this.overrides.isEmpty()) {
+            return this.base;
+        }
         return this.overrides.getOrDefault(itemStack.get(DataComponents.ITEM_MODEL), this.base);
     }
 

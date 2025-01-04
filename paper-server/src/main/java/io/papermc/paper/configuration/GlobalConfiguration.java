@@ -391,7 +391,7 @@ public class GlobalConfiguration extends ConfigurationPart {
 
                 @PostProcess
                 public void bindDataSanitizer() {
-                    this.binding = new ItemObfuscationBinding(GlobalConfiguration.this);
+                    this.binding = new ItemObfuscationBinding(this);
                 }
             }
         }
