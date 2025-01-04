@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import java.io.File;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import org.bukkit.generator.ChunkGenerator;
 
 import java.util.ArrayList;
@@ -1955,13 +1956,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * This may cause loading of chunks! Some implementations may impose
      * artificial restrictions on the maximum distance.
      *
-     * @param start the start position
-     * @param direction the ray direction
-     * @param config the configuration
+     * @param builderConsumer consumer for the builder
      * @return the closest ray trace hit result with either a block or an
      *     entity, or <code>null</code> if there is no hit
      */
-    @Nullable RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, @NotNull io.papermc.paper.raytracing.RayTraceConfiguration config);
+    @Nullable RayTraceResult rayTrace(@NotNull Consumer<PositionedRayTraceConfigurationBuilder> builderConsumer);
 
     /**
      * Gets the default spawn {@link Location} of this world
