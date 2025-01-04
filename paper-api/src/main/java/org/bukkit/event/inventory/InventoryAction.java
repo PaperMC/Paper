@@ -93,5 +93,37 @@ public enum InventoryAction {
      * An unrecognized ClickType.
      */
     UNKNOWN,
+    /**
+     * The first stack of items in the clicked bundle is moved to the cursor.
+     */
+    PICKUP_FROM_BUNDLE,
+    /**
+     * All of the items on the clicked slot are moved into the bundle on the cursor.
+     */
+    PICKUP_ALL_INTO_BUNDLE,
+    /**
+     * Some of the items on the clicked slot are moved into the bundle on the cursor.
+     */
+    PICKUP_SOME_INTO_BUNDLE,
+    /**
+     * One of the items on the clicked slot is moved into the bundle on the cursor.
+     */
+    PICKUP_ONE_INTO_BUNDLE,
+    /**
+     * The first stack of items is moved to the clicked slot.
+     */
+    PLACE_FROM_BUNDLE,
+    /**
+     * All of the items on the cursor are moved into the bundle in the clicked slot.
+     */
+    PLACE_ALL_INTO_BUNDLE,
+    /**
+     * Some of the items on the cursor are moved into the bundle in the clicked slot.
+     */
+    PLACE_SOME_INTO_BUNDLE,
+    /**
+     * One of the items on the cursor is moved into the bundle in the clicked slot.
+     */
+    PLACE_ONE_INTO_BUNDLE,
     ;
 }
