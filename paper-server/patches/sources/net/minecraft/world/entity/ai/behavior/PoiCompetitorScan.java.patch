@@ -1,0 +1,42 @@
+--- a/net/minecraft/world/entity/ai/behavior/PoiCompetitorScan.java
++++ b/net/minecraft/world/entity/ai/behavior/PoiCompetitorScan.java
+@@ -22,13 +_,32 @@
+                         level.getPoiManager()
+                             .getType(globalPos.pos())
+                             .ifPresent(
+-                                poi -> instance.<List<LivingEntity>>get(nearestLivingEntities)
+-                                    .stream()
+-                                    .filter(entity -> entity instanceof Villager && entity != villager)
+-                                    .map(entity -> (Villager)entity)
+-                                    .filter(LivingEntity::isAlive)
+-                                    .filter(v -> competesForSameJobsite(globalPos, poi, v))
+-                                    .reduce(villager, PoiCompetitorScan::selectWinner)
++                                // Paper start - Improve performance of PoiCompetitorScan by unrolling stream
++                                // The previous logic used Stream#reduce to simulate a form of single-iteration bubble sort
++                                // in which the "winning" villager would maintain MemoryModuleType.JOB_SITE while all others
++                                // would lose said memory module type by passing each "current winner" and incoming next
++                                // villager to #selectWinner.
++                                poi -> {
++                                    final List<LivingEntity> livingEntities = instance.get(nearestLivingEntities);
++
++                                    Villager winner = villager;
++                                    for (final LivingEntity other : livingEntities) {
++                                        if (other == villager) {
++                                            continue;
++                                        }
++                                        if (!(other instanceof final net.minecraft.world.entity.npc.Villager otherVillager)) {
++                                            continue;
++                                        }
++                                        if (!other.isAlive()) {
++                                            continue;
++                                        }
++                                        if (!competesForSameJobsite(globalPos, poi, otherVillager)) {
++                                            continue;
++                                        }
++                                        winner = selectWinner(winner, otherVillager);
++                                    }
++                                }
++                                // Paper end - Improve performance of PoiCompetitorScan by unrolling stream
+                             );
+                         return true;
+                     }
