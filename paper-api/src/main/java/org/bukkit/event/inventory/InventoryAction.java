@@ -106,10 +106,6 @@ public enum InventoryAction {
      */
     PICKUP_SOME_INTO_BUNDLE,
     /**
-     * One of the items on the clicked slot is moved into the bundle on the cursor.
-     */
-    PICKUP_ONE_INTO_BUNDLE,
-    /**
      * The first stack of items is moved to the clicked slot.
      */
     PLACE_FROM_BUNDLE,
@@ -121,9 +117,5 @@ public enum InventoryAction {
      * Some of the items on the cursor are moved into the bundle in the clicked slot.
      */
     PLACE_SOME_INTO_BUNDLE,
-    /**
-     * One of the items on the cursor is moved into the bundle in the clicked slot.
-     */
-    PLACE_ONE_INTO_BUNDLE,
     ;
 }
