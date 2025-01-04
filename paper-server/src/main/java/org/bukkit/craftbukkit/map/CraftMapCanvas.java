@@ -96,28 +96,30 @@ public class CraftMapCanvas implements MapCanvas {
         final int imageWidth = image.getWidth(null);
         final int imageHeight = image.getHeight(null);
 
+        // The source x value *may* be negative, meaning we'd need to "offset" the source image before drawing it.
         final int sourceX = Math.max(-x, 0);
         final int sourceY = Math.max(-y, 0);
         final int destX = Math.max(x, 0);
         final int destY = Math.max(y, 0);
 
-        final int width = Math.min(imageWidth - sourceX, 128 - destX);
-        final int height = Math.min(imageHeight - sourceY, 128 - destY);
+        // The effective width/height to draw on the canvas.
+        final int effectiveWidth = Math.min(imageWidth - sourceX, 128 - destX);
+        final int effectiveHeight = Math.min(imageHeight - sourceY, 128 - destY);
 
-        if (width <= 0 || height <= 0)
+        if (effectiveWidth <= 0 || effectiveHeight <= 0)
             return;
 
         // Create a subimage if the image is larger than the max allowed size
         BufferedImage temp;
-        if (imageWidth >= width && image instanceof BufferedImage bImage) {
+        if (imageWidth >= effectiveWidth && image instanceof BufferedImage bImage) {
             // If the image is larger than the max allowed size, get a subimage, otherwise use the image as is
-            if (imageWidth > width || imageHeight > height) {
-                temp = bImage.getSubimage(0, 0, width, height);
+            if (imageWidth > effectiveWidth || imageHeight > effectiveHeight) {
+                temp = bImage.getSubimage(sourceX, sourceY, effectiveWidth, effectiveHeight);
             } else {
                 temp = bImage;
             }
         } else {
-            temp = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            temp = new BufferedImage(effectiveWidth, effectiveHeight, BufferedImage.TYPE_INT_ARGB);
             java.awt.Graphics2D graphics = temp.createGraphics();
             graphics.drawImage(image, 0, 0, null);
             graphics.dispose();
@@ -127,20 +129,20 @@ public class CraftMapCanvas implements MapCanvas {
         
         // Since we now control the size of the image, we can safely use System.arraycopy
         // If x is 0, we can just copy the entire image as width is 128 and height is <=(128-y)
-        if (x == 0 && width == 128) { // This only works great if the width is 128, otherwise an empty area appears
-            System.arraycopy(bytes, 0, this.buffer, destY * width, width * height);
+        if (x == 0 && effectiveWidth == 128) { // This only works great if the width is 128, otherwise an empty area appears
+            System.arraycopy(bytes, 0, this.buffer, destY * effectiveWidth, effectiveWidth * effectiveHeight);
         } else {
-            for (int y2 = 0; y2 < height; ++y2) {
-                final int src = y2 * width;
-                final int dest = (destY + y2) * 128 + destX;
+            for (int yToCopy = 0; yToCopy < effectiveHeight; ++yToCopy) {
+                final int src = yToCopy * effectiveWidth;
+                final int dest = (destY + yToCopy) * 128 + destX;
 
-                System.arraycopy(bytes, src, this.buffer, dest, width);
+                System.arraycopy(bytes, src, this.buffer, dest, effectiveWidth);
             }
         }
 
         // Mark all colors within the image as dirty
         this.mapView.worldMap.setColorsDirty(destX, destY);
-        this.mapView.worldMap.setColorsDirty(destX + width - 1, destY + height - 1);
+        this.mapView.worldMap.setColorsDirty(destX + effectiveWidth - 1, destY + effectiveHeight - 1);
         // Paper end
     }
 
