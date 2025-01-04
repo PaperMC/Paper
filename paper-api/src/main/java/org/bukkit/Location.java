@@ -15,6 +15,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -395,15 +396,16 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     }
 
     /**
-     * Adds the orientation by another. Not world-aware.
+     * Adds rotation in the form of yaw and patch to this location. Not world-aware.
      *
-     * @param yaw yaw, measured in degrees.
+     * @param yaw   yaw, measured in degrees.
      * @param pitch pitch, measured in degrees.
      * @return the same location
      * @see Vector
      */
     @NotNull
-    public Location addRotation(float yaw, float pitch) {
+    @Contract(value = "_,_ -> this", mutates = "this")
+    public Location addRotation(final float yaw, final float pitch) {
         this.yaw += yaw;
         this.pitch += pitch;
         return this;
@@ -463,16 +465,16 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     }
 
     /**
-     * Subtracts the orientation by another. Not world-aware and
-     * location independent.
+     * Subtracts rotation in the form of yaw and patch from this location.
      *
-     * @param yaw yaw, measured in degrees.
+     * @param yaw   yaw, measured in degrees.
      * @param pitch pitch, measured in degrees.
      * @return the same location
      * @see Vector
      */
     @NotNull
-    public Location subtractRotation(float yaw, float pitch) {
+    @Contract(value = "_,_ -> this", mutates = "this")
+    public Location subtractRotation(final float yaw, final float pitch) {
         this.yaw -= yaw;
         this.pitch -= pitch;
         return this;
@@ -604,16 +606,17 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     }
 
     /**
-     * Sets the orientation of this Location and returns itself
+     * Sets the rotation of this location and returns itself.
      * <p>
      * This mutates this object, clone first.
      *
-     * @param yaw yaw, measured in degrees.
+     * @param yaw   yaw, measured in degrees.
      * @param pitch pitch, measured in degrees.
      * @return self (not cloned)
      */
     @NotNull
-    public Location setRotation(float yaw, float pitch) {
+    @Contract(value = "_,_ -> this", mutates = "this")
+    public Location setRotation(final float yaw, final float pitch) {
         this.yaw = yaw;
         this.pitch = pitch;
         return this;
