@@ -1,0 +1,34 @@
+--- a/net/minecraft/world/level/block/RedStoneWireBlock.java
++++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
+@@ -365,12 +_,30 @@
+                 if (state.canSurvive(level, pos)) {
+                     this.updatePowerStrength(level, pos, state, orientation, false);
+                 } else {
+-                    dropResources(state, level, pos);
++                    // Paper start - BlockDestroyEvent
++                    com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), level.getFluidState(pos).createLegacyBlock().createCraftBlockData(), state.createCraftBlockData(), 0, true);
++                    event.setPlayEffect(false);
++                    if (!event.callEvent())
++                        return;
++                    level.expToDrop = event.getExpToDrop();
++                    if (event.playEffect())
++                        level.levelEvent(2001, pos, Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getEffectBlock()).getState()));
++                    if (event.willDrop())
++                        dropResources(state, level, pos);
++                    level.expToDrop = 0;
++                    // Paper end - BlockDestroyEvent
+                     level.removeBlock(pos, false);
+                 }
+             }
+         }
+     }
++
++    // Paper start - BlockDestroyEvent
++    @Override
++    public int getExpDrop(final BlockState iblockdata, final net.minecraft.server.level.ServerLevel worldserver, final BlockPos blockposition, final net.minecraft.world.item.ItemStack itemstack, final boolean flag) {
++        return worldserver.expToDrop;
++    }
++    // Paper end - BlockDestroyEvent
+ 
+     private static boolean useExperimentalEvaluator(Level level) {
+         return level.enabledFeatures().contains(FeatureFlags.REDSTONE_EXPERIMENTS);
