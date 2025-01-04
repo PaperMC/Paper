@@ -3,24 +3,21 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
-import com.google.common.base.Preconditions; // Paper
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Predicate;
+import io.papermc.paper.math.FinePosition;
 import org.bukkit.block.Block;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
-import org.bukkit.entity.Entity; // Paper
-import org.bukkit.util.NumberConversions;
-import org.bukkit.util.Vector;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-// Paper start
-import java.util.Collection;
-import java.util.function.Predicate;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
-// Paper end
+import org.bukkit.util.NumberConversions;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a 3-dimensional position in a world.
@@ -30,7 +27,7 @@ import org.bukkit.entity.Player;
  * magnitude than 360 are valid, but may be normalized to any other equivalent
  * representation by the implementation.
  */
-public class Location implements Cloneable, ConfigurationSerializable, io.papermc.paper.math.FinePosition { // Paper
+public class Location implements Cloneable, ConfigurationSerializable, io.papermc.paper.math.FinePosition {
     private Reference<World> world;
     private double x;
     private double y;
@@ -46,7 +43,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param y The y-coordinate of this new location
      * @param z The z-coordinate of this new location
      */
-    public Location(@UndefinedNullability final World world, final double x, final double y, final double z) { // Paper
+    public Location(@UndefinedNullability final World world, final double x, final double y, final double z) {
         this(world, x, y, z, 0, 0);
     }
 
@@ -60,7 +57,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @param yaw The absolute rotation on the x-plane, in degrees
      * @param pitch The absolute rotation on the y-plane, in degrees
      */
-    public Location(@UndefinedNullability final World world, final double x, final double y, final double z, final float yaw, final float pitch) { // Paper
+    public Location(@UndefinedNullability final World world, final double x, final double y, final double z, final float yaw, final float pitch) {
         if (world != null) {
             this.world = new WeakReference<>(world);
         }
@@ -102,7 +99,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @throws IllegalArgumentException when world is unloaded
      * @see #isWorldLoaded()
      */
-    @UndefinedNullability // Paper
+    @UndefinedNullability
     public World getWorld() {
         if (this.world == null) {
             return null;
@@ -399,6 +396,22 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     }
 
     /**
+     * Adds rotation in the form of yaw and patch to this location. Not world-aware.
+     *
+     * @param yaw   yaw, measured in degrees.
+     * @param pitch pitch, measured in degrees.
+     * @return the same location
+     * @see Vector
+     */
+    @NotNull
+    @Contract(value = "_,_ -> this", mutates = "this")
+    public Location addRotation(final float yaw, final float pitch) {
+        this.yaw += yaw;
+        this.pitch += pitch;
+        return this;
+    }
+
+    /**
      * Subtracts the location by another.
      *
      * @param vec The other location
@@ -448,6 +461,22 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         this.x -= x;
         this.y -= y;
         this.z -= z;
+        return this;
+    }
+
+    /**
+     * Subtracts rotation in the form of yaw and patch from this location.
+     *
+     * @param yaw   yaw, measured in degrees.
+     * @param pitch pitch, measured in degrees.
+     * @return the same location
+     * @see Vector
+     */
+    @NotNull
+    @Contract(value = "_,_ -> this", mutates = "this")
+    public Location subtractRotation(final float yaw, final float pitch) {
+        this.yaw -= yaw;
+        this.pitch -= pitch;
         return this;
     }
 
@@ -543,9 +572,10 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         return this;
     }
 
-    public boolean isChunkLoaded() { return this.getWorld().isChunkLoaded(locToBlock(x) >> 4, locToBlock(z) >> 4); } // Paper
+    public boolean isChunkLoaded() {
+        return this.getWorld().isChunkLoaded(locToBlock(x) >> 4, locToBlock(z) >> 4);
+    }
 
-    // Paper start - isGenerated API
     /**
      * Checks if a {@link Chunk} has been generated at this location.
      *
@@ -556,9 +586,6 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         Preconditions.checkNotNull(world, "Location has no world!");
         return world.isChunkGenerated(locToBlock(x) >> 4, locToBlock(z) >> 4);
     }
-    // Paper end - isGenerated API
-
-    // Paper start - expand location manipulation API
 
     /**
      * Sets the position of this Location and returns itself
@@ -575,6 +602,23 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         this.x = x;
         this.y = y;
         this.z = z;
+        return this;
+    }
+
+    /**
+     * Sets the rotation of this location and returns itself.
+     * <p>
+     * This mutates this object, clone first.
+     *
+     * @param yaw   yaw, measured in degrees.
+     * @param pitch pitch, measured in degrees.
+     * @return self (not cloned)
+     */
+    @NotNull
+    @Contract(value = "_,_ -> this", mutates = "this")
+    public Location setRotation(final float yaw, final float pitch) {
+        this.yaw = yaw;
+        this.pitch = pitch;
         return this;
     }
 
@@ -609,9 +653,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     public Location subtract(@NotNull Location base, double x, double y, double z) {
         return this.set(base.x - x, base.y - y, base.z - z);
     }
-    // Paper end - expand location manipulation API
 
-    // Paper start - expand Location API
     /**
      * @return A new location where X/Y/Z are on the Block location (integer value of X/Y/Z)
      */
@@ -624,7 +666,6 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         return blockLoc;
     }
 
-    // Paper start
     /**
      * @return The block key for this location's block location.
      * @see Block#getBlockKey(int, int, int)
@@ -634,7 +675,6 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     public long toBlockKey() {
         return Block.getBlockKey(getBlockX(), getBlockY(), getBlockZ());
     }
-    // Paper end
 
     /**
      * @return A new location where X/Y/Z are the center of the block
@@ -647,9 +687,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         centerLoc.setZ(getBlockZ() + 0.5);
         return centerLoc;
     }
-    // Paper end - expand Location API
 
-    // Paper start - Add heightmap api
     /**
      * Returns a copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
      * @return A copy of this location except with y = getWorld().getHighestBlockYAt(this.getBlockX(), this.getBlockZ())
@@ -671,9 +709,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         ret.setY(this.getWorld().getHighestBlockYAt(this, heightMap));
         return ret;
     }
-    // Paper end - Add heightmap api
 
-    // Paper start - Expand Explosions API
     /**
      * Creates explosion at this location with given power
      * <p>
@@ -754,9 +790,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     public boolean createExplosion(@Nullable Entity source, float power, boolean setFire, boolean breakBlocks) {
         return this.getWorld().createExplosion(source, this, power, setFire, breakBlocks);
     }
-    // Paper end - Expand Explosions API
 
-    // Paper start - additional getNearbyEntities API
     /**
      * Returns a list of entities within a bounding box centered around a Location.
      * <p>
@@ -979,7 +1013,6 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         }
         return world.getNearbyEntitiesByType(clazz, this, xRadius, yRadius, zRadius, predicate);
     }
-    // Paper end - additional getNearbyEntities API
 
     @Override
     public boolean equals(Object obj) {
@@ -1155,7 +1188,6 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
         return pitch;
     }
 
-    // Paper - add Position
     @Override
     public double x() {
         return this.getX();
@@ -1173,12 +1205,11 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
 
     @Override
     public boolean isFinite() {
-        return io.papermc.paper.math.FinePosition.super.isFinite() && Float.isFinite(this.getYaw()) && Float.isFinite(this.getPitch());
+        return FinePosition.super.isFinite() && Float.isFinite(this.getYaw()) && Float.isFinite(this.getPitch());
     }
 
     @Override
     public @NotNull Location toLocation(@NotNull World world) {
         return new Location(world, this.x(), this.y(), this.z(), this.getYaw(), this.getPitch());
     }
-    // Paper end
 }
