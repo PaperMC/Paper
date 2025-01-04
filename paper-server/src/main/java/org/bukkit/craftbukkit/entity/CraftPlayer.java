@@ -8,6 +8,8 @@ import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.math.BlockPosition;
+import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 import java.io.ByteArrayOutputStream;
@@ -66,6 +68,7 @@ import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
 import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
 import net.minecraft.network.protocol.game.ClientboundMapItemDataPacket;
+import net.minecraft.network.protocol.game.ClientboundOpenSignEditorPacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoRemovePacket;
 import net.minecraft.network.protocol.game.ClientboundPlayerInfoUpdatePacket;
 import net.minecraft.network.protocol.game.ClientboundRemoveMobEffectPacket;
@@ -3059,6 +3062,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void openSign(@NotNull Sign sign, @NotNull Side side) {
         CraftSign.openSign(sign, this, side);
+    }
+
+    @Override
+    public void openLocalSign(@NotNull BlockPosition block, @NotNull Side side) {
+        getHandle().connection.send(new ClientboundOpenSignEditorPacket(MCUtil.toBlockPos(block), side == Side.FRONT));
     }
 
     @Override
