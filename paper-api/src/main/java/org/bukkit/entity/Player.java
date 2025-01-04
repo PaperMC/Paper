@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.math.BlockPosition;
 import org.bukkit.BanEntry;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
@@ -3476,6 +3477,18 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param side The side to edit
      */
     public void openSign(@NotNull Sign sign, @NotNull Side side);
+
+    /**
+     * Open a sign for editing by the player.
+     * <p>
+     * The sign must only be placed locally for the player, which can be done with {@link #sendBlockChange(Location, BlockData)} and {@link #sendBlockUpdate(Location, TileState)}.
+     * A side-effect of this is that no events will be called for this action.
+     * </p>
+     *
+     * @param block The block where the client has a sign placed
+     * @param side The side to edit
+     */
+    void openLocalSign(@NotNull BlockPosition block, @NotNull Side side);
 
     /**
      * Shows the demo screen to the player, this screen is normally only seen in
