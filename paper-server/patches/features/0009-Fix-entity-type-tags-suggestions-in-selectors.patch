@@ -60,7 +60,7 @@ index fa8c5ba4e0efd0c36613aaa8eaafba0cb70ceb87..19ccf3abf14c67f72a1ca065e4a304f5
                  }
  
 diff --git a/net/minecraft/commands/arguments/EntityArgument.java b/net/minecraft/commands/arguments/EntityArgument.java
-index 0a01df6ebd14afe79bc76364cb1df5e0c5c08074..7a06ad9940d25e163178370bfa9ccc3bbd3d1189 100644
+index 0a01df6ebd14afe79bc76364cb1df5e0c5c08074..77a68052c7653aee54c60f4bded9fa5337e3e4db 100644
 --- a/net/minecraft/commands/arguments/EntityArgument.java
 +++ b/net/minecraft/commands/arguments/EntityArgument.java
 @@ -138,7 +138,7 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
@@ -72,27 +72,6 @@ index 0a01df6ebd14afe79bc76364cb1df5e0c5c08074..7a06ad9940d25e163178370bfa9ccc3b
              // Paper end - Fix EntityArgument permissions
  
              try {
-@@ -149,7 +149,19 @@ public class EntityArgument implements ArgumentType<EntitySelector> {
-             return entitySelectorParser.fillSuggestions(
-                 builder,
-                 offsetBuilder -> {
--                    Collection<String> onlinePlayerNames = sharedSuggestionProvider.getOnlinePlayerNames();
-+                    // Paper start - tell clients to ask server for suggestions for EntityArguments
-+                    final Collection<String> onlinePlayerNames;
-+                    if (sharedSuggestionProvider instanceof CommandSourceStack commandSourceStack && commandSourceStack.getEntity() instanceof ServerPlayer sourcePlayer) {
-+                        onlinePlayerNames = new java.util.ArrayList<>();
-+                        for (final ServerPlayer player : commandSourceStack.getServer().getPlayerList().getPlayers()) {
-+                            if (sourcePlayer.getBukkitEntity().canSee(player.getBukkitEntity())) {
-+                                onlinePlayerNames.add(player.getGameProfile().getName());
-+                            }
-+                        }
-+                    } else {
-+                        onlinePlayerNames = sharedSuggestionProvider.getOnlinePlayerNames();
-+                    }
-+                    // Paper end - tell clients to ask server for suggestions for EntityArguments
-                     Iterable<String> iterable = (Iterable<String>)(this.playersOnly
-                         ? onlinePlayerNames
-                         : Iterables.concat(onlinePlayerNames, sharedSuggestionProvider.getSelectedEntities()));
 diff --git a/net/minecraft/commands/arguments/selector/EntitySelectorParser.java b/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
 index a6f232747df631f6afe440606bea94c588f1a0dd..fb42630741674c6cbd20b7d45d78dea1dc73a78f 100644
 --- a/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
