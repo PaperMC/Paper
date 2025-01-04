@@ -10,6 +10,7 @@ import io.papermc.paper.configuration.serializer.ComponentSerializer;
 import io.papermc.paper.configuration.serializer.EnumValueSerializer;
 import io.papermc.paper.configuration.serializer.NbtPathSerializer;
 import io.papermc.paper.configuration.serializer.PacketClassSerializer;
+import io.papermc.paper.configuration.serializer.ResourceLocationSerializer;
 import io.papermc.paper.configuration.serializer.StringRepresentableSerializer;
 import io.papermc.paper.configuration.serializer.collections.FastutilMapSerializer;
 import io.papermc.paper.configuration.serializer.collections.MapSerializer;
@@ -181,6 +182,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
             .register(Duration.SERIALIZER)
             .register(DurationOrDisabled.SERIALIZER)
             .register(NbtPathSerializer.SERIALIZER)
+            .register(ResourceLocationSerializer.INSTANCE)
         );
     }
 

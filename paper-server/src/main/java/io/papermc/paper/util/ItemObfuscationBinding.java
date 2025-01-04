@@ -1,12 +1,11 @@
 package io.papermc.paper.util;
 
 import io.papermc.paper.configuration.GlobalConfiguration;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.function.UnaryOperator;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
@@ -17,23 +16,25 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 import org.spongepowered.configurate.objectmapping.meta.Required;
 
 /**
- * The item obfuscation binding is a collection of static state bound by the configured item obfuscation.
- * It only hosts the statically bound and computed data from the global configuration.
+ * The item obfuscation binding is a state bound by the configured item obfuscation.
+ * It only hosts the bound and computed data from the global configuration.
  */
 @NullMarked
 public final class ItemObfuscationBinding {
 
-    static BoundObfuscationConfiguration BOUND_BASE = null;
-    static Map<ResourceLocation, BoundObfuscationConfiguration> BOUND_OVERRIDES = new HashMap<>();
-    public static ItemObfuscationSession.ObfuscationLevel LEVEL = ItemObfuscationSession.ObfuscationLevel.OVERSIZED;
+    public final ItemObfuscationSession.ObfuscationLevel level;
+    private final BoundObfuscationConfiguration base;
+    private final Map<ResourceLocation, BoundObfuscationConfiguration> overrides;
 
-    public static void bind(final GlobalConfiguration.Anticheat.Obfuscation.Items items) {
-        // now bind them all
-        LEVEL = items.enableItemObfuscation ? ItemObfuscationSession.ObfuscationLevel.ALL : ItemObfuscationSession.ObfuscationLevel.OVERSIZED;
-        BOUND_BASE = bind(items.allModels);
-        for (final Map.Entry<String, AssetObfuscationConfiguration> entry : items.modelOverrides.entrySet()) {
-            BOUND_OVERRIDES.put(ResourceLocation.parse(entry.getKey()), bind(entry.getValue()));
+    public ItemObfuscationBinding(final GlobalConfiguration config) {
+        final GlobalConfiguration.Anticheat.Obfuscation.Items items = config.anticheat.obfuscation.items;
+        this.level = items.enableItemObfuscation ? ItemObfuscationSession.ObfuscationLevel.ALL : ItemObfuscationSession.ObfuscationLevel.OVERSIZED;
+        this.base = bind(items.allModels);
+        final Map<ResourceLocation, BoundObfuscationConfiguration> overrides = new HashMap<>();
+        for (final Map.Entry<ResourceLocation, AssetObfuscationConfiguration> entry : items.modelOverrides.entrySet()) {
+            overrides.put(entry.getKey(), bind(entry.getValue()));
         }
+        this.overrides = Collections.unmodifiableMap(overrides);
     }
 
     public record BoundObfuscationConfiguration(boolean sanitizeCount,
@@ -57,7 +58,7 @@ public final class ItemObfuscationBinding {
 
     }
 
-    public static BoundObfuscationConfiguration bind(final AssetObfuscationConfiguration config) {
+    private static BoundObfuscationConfiguration bind(final AssetObfuscationConfiguration config) {
         final Set<DataComponentType<?>> base = new HashSet<>(BASE_OVERRIDERS);
         base.addAll(config.alsoObfuscate());
         base.removeAll(config.dontObfuscate());
@@ -77,11 +78,11 @@ public final class ItemObfuscationBinding {
         return new BoundObfuscationConfiguration(config.sanitizeCount(), finalStrategy);
     }
 
-    public static BoundObfuscationConfiguration getAssetObfuscation(final ItemStack itemStack) {
-        return BOUND_OVERRIDES.getOrDefault(itemStack.get(DataComponents.ITEM_MODEL), BOUND_BASE);
+    public BoundObfuscationConfiguration getAssetObfuscation(final ItemStack itemStack) {
+        return this.overrides.getOrDefault(itemStack.get(DataComponents.ITEM_MODEL), this.base);
     }
 
-    static Set<DataComponentType<?>> BASE_OVERRIDERS = Set.of(
+    static final Set<DataComponentType<?>> BASE_OVERRIDERS = Set.of(
         DataComponents.MAX_STACK_SIZE,
         DataComponents.MAX_DAMAGE,
         DataComponents.DAMAGE,
@@ -127,7 +128,4 @@ public final class ItemObfuscationBinding {
         DataComponents.LOCK,
         DataComponents.CONTAINER_LOOT
     );
-
-    private ItemObfuscationBinding() {
-    }
 }

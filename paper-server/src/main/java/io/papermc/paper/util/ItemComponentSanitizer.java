@@ -63,7 +63,7 @@ public final class ItemComponentSanitizer {
     public static int sanitizeCount(final ItemObfuscationSession obfuscationSession, final ItemStack itemStack, final int count) {
         if (obfuscationSession.obfuscationLevel() != ItemObfuscationSession.ObfuscationLevel.ALL) return count; // Ignore if we are not obfuscating
 
-        if (ItemObfuscationBinding.getAssetObfuscation(itemStack).sanitizeCount()) {
+        if (GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(itemStack).sanitizeCount()) {
             return 1;
         } else {
             return count;
@@ -76,7 +76,7 @@ public final class ItemComponentSanitizer {
         final ItemStack targetItemstack = obfuscationSession.context().itemStack();
 
         // Only drop if configured to do so.
-        return ItemObfuscationBinding.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE;
+        return GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE;
     }
 
     public static Optional<?> override(final ItemObfuscationSession obfuscationSession, final DataComponentType<?> key, final Optional<?> value) {
@@ -89,7 +89,7 @@ public final class ItemComponentSanitizer {
 
         final ItemStack targetItemstack = obfuscationSession.context().itemStack();
 
-        return switch (ItemObfuscationBinding.getAssetObfuscation(targetItemstack).patchStrategy().get(key)) {
+        return switch (GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key)) {
             case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop ignored -> Optional.empty();
             case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Sanitize sanitize -> Optional.of(sanitize.sanitizer().apply(value.get()));
             case null -> value;
