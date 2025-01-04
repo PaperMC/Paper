@@ -403,7 +403,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @see Vector
      */
     @NotNull
-    public Location add(float yaw, float pitch) {
+    public Location addRotation(float yaw, float pitch) {
         this.yaw += yaw;
         this.pitch += pitch;
         return this;
@@ -472,7 +472,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @see Vector
      */
     @NotNull
-    public Location subtract(float yaw, float pitch) {
+    public Location subtractRotation(float yaw, float pitch) {
         this.yaw -= yaw;
         this.pitch -= pitch;
         return this;
@@ -613,7 +613,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * @return self (not cloned)
      */
     @NotNull
-    public Location set(float yaw, float pitch) {
+    public Location setRotation(float yaw, float pitch) {
         this.yaw = yaw;
         this.pitch = pitch;
         return this;
