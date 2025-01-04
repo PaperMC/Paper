@@ -1250,14 +1250,12 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public @org.jetbrains.annotations.Nullable RayTraceResult rayTrace(Location start, Vector direction, io.papermc.paper.raytracing.RayTraceConfiguration config) {
-        List<io.papermc.paper.raytracing.RayTraceConfiguration.Targets> targets = config.targets();
-        if (targets.contains(io.papermc.paper.raytracing.RayTraceConfiguration.Targets.ENTITIES)) {
-            if(targets.contains(io.papermc.paper.raytracing.RayTraceConfiguration.Targets.BLOCKS))
-                return this.rayTrace(start, direction, config.maxDistance(), config.fluidCollisionMode(), config.ignorePassableBlocks(), config.raySize(), config.entityFilter(), config.blockFilter());
-            return this.rayTraceEntities(start, direction, config.maxDistance(), config.raySize(), config.entityFilter());
-        }
-        return this.rayTraceBlocks(start, direction, config.maxDistance(), config.fluidCollisionMode(), config.ignorePassableBlocks(), config.blockFilter());
+    public @org.jetbrains.annotations.Nullable RayTraceResult rayTrace(Consumer<io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder> builderConsumer) {
+        io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl builder = new io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl(this);
+
+        builderConsumer.accept(builder);
+
+        return builder.cast();
     }
 
     @Override
