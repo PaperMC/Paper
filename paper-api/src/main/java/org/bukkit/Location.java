@@ -608,8 +608,8 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      * <p>
      * This mutates this object, clone first.
      *
-     * @param yaw X coordinate
-     * @param pitch Y coordinate
+     * @param yaw yaw, measured in degrees.
+     * @param pitch pitch, measured in degrees.
      * @return self (not cloned)
      */
     @NotNull
