@@ -8,6 +8,7 @@ import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.raytracing.RayTraceConfiguration;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
@@ -1246,6 +1247,17 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         return blockHit;
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable RayTraceResult rayTrace(Location start, Vector direction, io.papermc.paper.raytracing.RayTraceConfiguration config) {
+        List<io.papermc.paper.raytracing.RayTraceConfiguration.Targets> targets = config.targets();
+        if (targets.contains(io.papermc.paper.raytracing.RayTraceConfiguration.Targets.ENTITIES)) {
+            if(targets.contains(io.papermc.paper.raytracing.RayTraceConfiguration.Targets.BLOCKS))
+                return this.rayTrace(start, direction, config.maxDistance(), config.fluidCollisionMode(), config.ignorePassableBlocks(), config.raySize(), config.entityFilter(), config.blockFilter());
+            return this.rayTraceEntities(start, direction, config.maxDistance(), config.raySize(), config.entityFilter());
+        }
+        return this.rayTraceBlocks(start, direction, config.maxDistance(), config.fluidCollisionMode(), config.ignorePassableBlocks(), config.blockFilter());
     }
 
     @Override
