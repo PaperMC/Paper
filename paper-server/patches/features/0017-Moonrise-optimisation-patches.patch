@@ -23552,7 +23552,7 @@ index 2b46ca9a2a046063cad422bec00d76107537b091..9aa664537cc37e44db46d5a2a64ae311
                  thread1 -> {
                      DedicatedServer dedicatedServer1 = new DedicatedServer(
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index b92a3da5c325e69f5601416d4205fb33429742b3..d967d605c2e4227ae980c30f1c8b86edbc680d6d 100644
+index 5ef7a016a0c7bc09d5cd24f14124b15b99d5e18d..2769b3cb17b8101dd90fb95d3853d6083fd0c3e2 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -173,7 +173,7 @@ import net.minecraft.world.phys.Vec2;
@@ -27496,7 +27496,7 @@ index 192977dd661ee795ada13db895db770293e9b402..95a4e37a3c93f9b3c56c7a7376ed521c
      }
  
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 097ec55166b9e9269142be58992c29687122fe28..aeabb79512aabd7a9e8af1be72e1745f0e7eefe4 100644
+index 472693a7d10dc67b116db02e3e4472adbc5a4d62..422db52e8a0a08350542670bfc9ba94ad9481d0c 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -178,7 +178,7 @@ import net.minecraft.world.scores.Team;
@@ -29379,7 +29379,7 @@ index 9f34fc4278860dd7bcfa1fd79b15e588b0cc3973..a7ebd624652cb6f0edc735bf6b9760e7
  
      public ClipContext(Vec3 from, Vec3 to, ClipContext.Block block, ClipContext.Fluid fluid, Entity entity) {
 diff --git a/net/minecraft/world/level/EntityGetter.java b/net/minecraft/world/level/EntityGetter.java
-index 300f3ed58109219d97846082941b860585f66fed..e81195df621159da67136f020fa7a6d39d1ee5ed 100644
+index 10f2f5f68a1accb4f6b6e490f378bb1e9617e7c5..e81195df621159da67136f020fa7a6d39d1ee5ed 100644
 --- a/net/minecraft/world/level/EntityGetter.java
 +++ b/net/minecraft/world/level/EntityGetter.java
 @@ -15,7 +15,7 @@ import net.minecraft.world.phys.shapes.BooleanOp;
@@ -29470,7 +29470,7 @@ index 300f3ed58109219d97846082941b860585f66fed..e81195df621159da67136f020fa7a6d3
 +            entities = this.getEntities(entity, collisionBox, null);
          } else {
 -            Predicate<Entity> predicate = entity == null ? EntitySelector.CAN_BE_COLLIDED_WITH : EntitySelector.NO_SPECTATORS.and(entity::canCollideWith);
--            List<Entity> entities = this.getEntities(entity, collisionBox.inflate(1.0E-7), predicate);
+-            List<Entity> entities = this.getEntities(entity, collisionBox.inflate(1.0E-7), predicate); // Paper - Call HangingBreakByEntityEvent for collision with boats; diff on change
 -            if (entities.isEmpty()) {
 -                return List.of();
 -            } else {
@@ -29503,7 +29503,7 @@ index 300f3ed58109219d97846082941b860585f66fed..e81195df621159da67136f020fa7a6d3
  
      // Paper start - Affects Spawning API
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 771d6ed6a7c889c09efd4ff6e20298c851eaa79f..8331b49185500ab3b4307e9ae05126b4f83a318a 100644
+index 5f526e3f97c3ff121eafec9065b7d57461c2b05f..c343b2e087f345b17e97c6d78c3c08e81480e10b 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -79,6 +79,7 @@ import net.minecraft.world.level.storage.LevelData;
@@ -30223,23 +30223,34 @@ index 771d6ed6a7c889c09efd4ff6e20298c851eaa79f..8331b49185500ab3b4307e9ae05126b4
      }
  
      // Paper start - Option to prevent armor stands from doing entity lookups
-@@ -872,7 +1513,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -872,11 +1513,23 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public boolean noCollision(@Nullable Entity entity, AABB box) {
          if (entity instanceof net.minecraft.world.entity.decoration.ArmorStand && !entity.level().paperConfig().entities.armorStands.doCollisionEntityLookups)
              return false;
--        return LevelAccessor.super.noCollision(entity, box);
 +        // Paper start - optimise collisions
 +        final int flags = entity == null ? (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_BORDER | ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_ONLY) : ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_FLAG_CHECK_ONLY;
 +        if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getCollisionsForBlocksOrWorldBorder((Level)(Object)this, entity, box, null, null, flags, null)) {
 +            return false;
 +        }
 +
-+        return !ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getEntityHardCollisions((Level)(Object)this, entity, box, null, flags, null);
+         // Paper start - Call HangingBreakByEntityEvent for collision with boats
+-        if (entity instanceof net.minecraft.world.entity.decoration.HangingEntity hangingEntity)
+-            hangingEntity.collidingEntities = this.getEntities(entity, box.inflate(1.0E-7), net.minecraft.world.entity.EntitySelector.NO_SPECTATORS.and(entity::canCollideWith));
++        boolean isColliding;
++        if (entity instanceof net.minecraft.world.entity.decoration.HangingEntity hangingEntity) {
++            hangingEntity.collidingEntities = this.moonrise$getHardCollidingEntities(entity, box, null);
++            isColliding = !hangingEntity.collidingEntities.isEmpty();
++        } else {
++            isColliding = ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.getEntityHardCollisions(this, entity, box, null, flags, null);
++        }
++        return !isColliding;
+         // Paper end - Call HangingBreakByEntityEvent for collision with boats
+-        return LevelAccessor.super.noCollision(entity, box);
 +        // Paper end - optimise collisions
      }
      // Paper end - Option to prevent armor stands from doing entity lookups
  
-@@ -1010,7 +1658,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1014,7 +1667,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          if (this.isOutsideBuildHeight(pos)) {
              return null;
          } else {
@@ -30248,7 +30259,7 @@ index 771d6ed6a7c889c09efd4ff6e20298c851eaa79f..8331b49185500ab3b4307e9ae05126b4
                  ? null
                  : this.getChunkAt(pos).getBlockEntity(pos, LevelChunk.EntityCreationType.IMMEDIATE);
          }
-@@ -1103,22 +1751,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1107,22 +1760,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public List<Entity> getEntities(@Nullable Entity entity, AABB boundingBox, Predicate<? super Entity> predicate) {
          Profiler.get().incrementCounter("getEntities");
          List<Entity> list = Lists.newArrayList();
@@ -30279,7 +30290,7 @@ index 771d6ed6a7c889c09efd4ff6e20298c851eaa79f..8331b49185500ab3b4307e9ae05126b4
      }
  
      @Override
-@@ -1132,33 +1774,94 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1136,33 +1783,94 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.getEntities(entityTypeTest, bounds, predicate, output, Integer.MAX_VALUE);
      }
  
