@@ -29,13 +29,13 @@ public final class OversizedItemComponentSanitizer {
         @Override
         public void encode(final RegistryFriendlyByteBuf buffer, final BundleContents value) {
             if (!ItemObfuscationSession.currentSession().obfuscationLevel().obfuscateOversized()) {
-                BUNDLE_CONTENTS.encode(buffer, value);
+                BundleContents.STREAM_CODEC.encode(buffer, value);
                 return;
             }
 
             // Disable further obfuscation to skip e.g. count.
             try (final SafeAutoClosable ignored = ItemObfuscationSession.withContext(c -> c.level(ItemObfuscationSession.ObfuscationLevel.OVERSIZED))){
-                BUNDLE_CONTENTS.encode(buffer, sanitizeBundleContents(value));
+                BundleContents.STREAM_CODEC.encode(buffer, sanitizeBundleContents(value));
             }
         }
     };
