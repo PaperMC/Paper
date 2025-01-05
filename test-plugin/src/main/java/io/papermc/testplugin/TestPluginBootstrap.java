@@ -25,7 +25,7 @@ public class TestPluginBootstrap implements PluginBootstrap {
                 b.comparatorOutput(2)
                     .description(Component.text("EPIC CUSTOM SOUND SONG"))
                     .lengthInSeconds(2)
-                    .soundEvent(sb -> sb.location(SoundEventKeys.BLOCK_STONE_BUTTON_CLICK_ON));
+                    .soundEvent(sb -> sb.copyFrom(SoundEventKeys.AMBIENT_BASALT_DELTAS_ADDITIONS).location(SoundEventKeys.BLOCK_STONE_BUTTON_CLICK_ON));
             });
         });
     }

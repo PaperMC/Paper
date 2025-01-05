@@ -2,6 +2,7 @@ package io.papermc.paper.registry.data;
 
 
 import io.papermc.paper.registry.RegistryBuilder;
+import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.util.Either;
 import java.util.function.Consumer;
@@ -90,7 +91,7 @@ public interface JukeboxSongRegistryEntry {
          * @see #soundEvent(TypedKey)
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder soundEvent(Consumer<? super SoundEventRegistryEntry.Builder> soundEvent);
+        Builder soundEvent(Consumer<RegistryBuilderFactory<Sound, ? extends SoundEventRegistryEntry.Builder>> soundEvent);
 
         /**
          * Sets the description for this song.

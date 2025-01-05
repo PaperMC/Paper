@@ -1,0 +1,36 @@
+--- a/net/minecraft/core/HolderLookup.java
++++ b/net/minecraft/core/HolderLookup.java
+@@ -68,6 +_,9 @@
+     }
+ 
+     public interface RegistryLookup<T> extends HolderLookup<T>, HolderOwner<T> {
++
++        Optional<T> getValueForCopying(ResourceKey<T> resourceKey); // Paper - add method to get the value for pre-filling builders in the reg mod API
++
+         ResourceKey<? extends Registry<? extends T>> key();
+ 
+         Lifecycle registryLifecycle();
+@@ -81,6 +_,11 @@
+         default HolderLookup.RegistryLookup<T> filterElements(final Predicate<T> predicate) {
+             return new HolderLookup.RegistryLookup.Delegate<T>() {
+                 @Override
++                public Optional<T> getValueForCopying(final ResourceKey<T> resourceKey) {
++                    return this.parent().getValueForCopying(resourceKey).filter(predicate);
++                }
++
++                @Override
+                 public HolderLookup.RegistryLookup<T> parent() {
+                     return RegistryLookup.this;
+                 }
+@@ -99,6 +_,11 @@
+ 
+         public interface Delegate<T> extends HolderLookup.RegistryLookup<T> {
+             HolderLookup.RegistryLookup<T> parent();
++
++            @Override
++            default Optional<T> getValueForCopying(ResourceKey<T> resourceKey) {
++                return this.parent().getValueForCopying(resourceKey);
++            }
+ 
+             @Override
+             default ResourceKey<? extends Registry<? extends T>> key() {

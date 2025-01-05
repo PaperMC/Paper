@@ -2,12 +2,14 @@ package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.PaperRegistryBuilder;
+import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.util.Either;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.JukeboxSong;
@@ -78,10 +80,8 @@ public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
         }
 
         @Override
-        public JukeboxSongRegistryEntry.Builder soundEvent(final Consumer<? super SoundEventRegistryEntry.Builder> soundEvent) {
-            final PaperSoundEventRegistryEntry.Builder builder = new PaperSoundEventRegistryEntry.Builder(this.conversions, null);
-            asArgument(soundEvent, "soundEvent").accept(builder);
-            this.soundEvent = Holder.direct(builder.build());
+        public JukeboxSongRegistryEntry.Builder soundEvent(final Consumer<RegistryBuilderFactory<Sound, ? extends SoundEventRegistryEntry.Builder>> soundEvent) {
+            this.soundEvent = this.conversions.createHolderFromBuilder(Registries.SOUND_EVENT, asArgument(soundEvent, "soundEvent"));
             return this;
         }
 
