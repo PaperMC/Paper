@@ -7,6 +7,7 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -21,7 +22,7 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     private double raySize = 0.0D;
     private java.util.function.Predicate<? super org.bukkit.entity.Entity> entityFilter;
     private java.util.function.Predicate<? super org.bukkit.block.Block> blockFilter;
-    private List<Targets> targets;
+    private List<RayTraceTargets> targets;
 
     public PositionedRayTraceConfigurationBuilderImpl(World world) {
         this.world = world;
@@ -34,7 +35,7 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     }
 
     @Override
-    public @NotNull PositionedRayTraceConfigurationBuilder start(final @NotNull Location start) {
+    public PositionedRayTraceConfigurationBuilder start(final @NotNull Location start) {
         this.start = start;
         return this;
     }
@@ -117,21 +118,21 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     }
 
     @Override
-    public @Nullable List<Targets> targets() {
+    public @Nullable List<RayTraceTargets> targets() {
         return this.targets;
     }
 
     @Override
-    public @NotNull PositionedRayTraceConfigurationBuilder targets(final @NotNull Targets first, final @NotNull Targets... others) {
-        java.util.List<PositionedRayTraceConfigurationBuilder.Targets> targets = new java.util.ArrayList<>(java.util.List.of(others));
+    public @NotNull PositionedRayTraceConfigurationBuilder targets(final @NotNull RayTraceTargets first, final @NotNull RayTraceTargets... others) {
+        List<RayTraceTargets> targets = new ArrayList<>(List.of(others));
         targets.add(first);
         this.targets = targets;
         return this;
     }
 
     public RayTraceResult cast() {
-        if (targets.contains(Targets.ENTITIES)) {
-            if(targets.contains(Targets.BLOCKS))
+        if (targets.contains(RayTraceTargets.ENTITIES)) {
+            if(targets.contains(RayTraceTargets.BLOCKS))
                 return world.rayTrace(this.start(), this.direction(), this.maxDistance(), this.fluidCollisionMode(), this.ignorePassableBlocks(), this.raySize(), this.entityFilter(), this.blockFilter());
             return world.rayTraceEntities(this.start(), this.direction(), this.maxDistance(), this.raySize(), this.entityFilter());
         }
