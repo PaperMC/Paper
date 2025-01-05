@@ -40,31 +40,27 @@ public abstract class JavaPlugin extends PluginBase {
     private Server server = null;
     private File file = null;
     private PluginDescriptionFile description = null;
-    private io.papermc.paper.plugin.configuration.PluginMeta pluginMeta = null; // Paper
+    private io.papermc.paper.plugin.configuration.PluginMeta pluginMeta = null;
     private File dataFolder = null;
     private ClassLoader classLoader = null;
     private boolean naggable = true;
     private FileConfiguration newConfig = null;
     private File configFile = null;
-    private Logger logger = null; // Paper - PluginLogger -> Logger
-    // Paper start - lifecycle events
+    private Logger logger = null;
     @SuppressWarnings("deprecation")
     private final io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> lifecycleEventManager = org.bukkit.Bukkit.getUnsafe().createPluginLifecycleEventManager(this, () -> this.allowsLifecycleRegistration);
     private boolean allowsLifecycleRegistration = true;
-    // Paper end
     private boolean isBeingEnabled = false;
 
     public JavaPlugin() {
-        // Paper start
         if (this.getClass().getClassLoader() instanceof io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader configuredPluginClassLoader) {
             configuredPluginClassLoader.init(this);
         } else {
             throw new IllegalStateException("JavaPlugin requires to be created by a valid classloader.");
         }
-        // Paper end
     }
 
-    @Deprecated(forRemoval = true) // Paper
+    @Deprecated(forRemoval = true)
     protected JavaPlugin(@NotNull final JavaPluginLoader loader, @NotNull final PluginDescriptionFile description, @NotNull final File dataFolder, @NotNull final File file) {
         final ClassLoader classLoader = this.getClass().getClassLoader();
         if (classLoader instanceof PluginClassLoader) {
@@ -94,7 +90,7 @@ public abstract class JavaPlugin extends PluginBase {
      */
     @NotNull
     @Override
-    @Deprecated(forRemoval = true) // Paper
+    @Deprecated(forRemoval = true)
     public final PluginLoader getPluginLoader() {
         return loader;
     }
@@ -277,8 +273,8 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @param enabled true if enabled, otherwise false
      */
-    @org.jetbrains.annotations.ApiStatus.Internal // Paper
-    public final void setEnabled(final boolean enabled) { // Paper
+    @org.jetbrains.annotations.ApiStatus.Internal
+    public final void setEnabled(final boolean enabled) {
         if (isEnabled != enabled) {
             isEnabled = enabled;
 
@@ -296,7 +292,6 @@ public abstract class JavaPlugin extends PluginBase {
         }
     }
 
-    // Paper start
     private static class DummyPluginLoaderImplHolder {
         private static final PluginLoader INSTANCE =  net.kyori.adventure.util.Services.service(PluginLoader.class)
             .orElseThrow();
@@ -306,16 +301,15 @@ public abstract class JavaPlugin extends PluginBase {
         this.pluginMeta = description;
     }
     public final void init(@NotNull Server server, @NotNull PluginDescriptionFile description, @NotNull File dataFolder, @NotNull File file, @NotNull ClassLoader classLoader, @Nullable io.papermc.paper.plugin.configuration.PluginMeta configuration, @NotNull Logger logger) {
-    // Paper end
-        this.loader = DummyPluginLoaderImplHolder.INSTANCE; // Paper
+        this.loader = DummyPluginLoaderImplHolder.INSTANCE;
         this.server = server;
         this.file = file;
         this.description = description;
         this.dataFolder = dataFolder;
         this.classLoader = classLoader;
         this.configFile = new File(dataFolder, "config.yml");
-        this.pluginMeta = configuration; // Paper
-        this.logger = logger; // Paper
+        this.pluginMeta = configuration;
+        this.logger = logger;
     }
 
     /**
@@ -441,10 +435,10 @@ public abstract class JavaPlugin extends PluginBase {
             throw new IllegalArgumentException(clazz + " does not extend " + JavaPlugin.class);
         }
         final ClassLoader cl = clazz.getClassLoader();
-        if (!(cl instanceof io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader configuredPluginClassLoader)) { // Paper
-            throw new IllegalArgumentException(clazz + " is not initialized by a " + io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader.class); // Paper
+        if (!(cl instanceof io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader configuredPluginClassLoader)) {
+            throw new IllegalArgumentException(clazz + " is not initialized by a " + io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader.class);
         }
-        JavaPlugin plugin = configuredPluginClassLoader.getPlugin(); // Paper
+        JavaPlugin plugin = configuredPluginClassLoader.getPlugin();
         if (plugin == null) {
             throw new IllegalStateException("Cannot get plugin for " + clazz + " from a static initializer");
         }
@@ -467,20 +461,18 @@ public abstract class JavaPlugin extends PluginBase {
     public static JavaPlugin getProvidingPlugin(@NotNull Class<?> clazz) {
         Preconditions.checkArgument(clazz != null, "Null class cannot have a plugin");
         final ClassLoader cl = clazz.getClassLoader();
-        if (!(cl instanceof io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader configuredPluginClassLoader)) { // Paper
-            throw new IllegalArgumentException(clazz + " is not provided by a " + io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader.class); // Paper
+        if (!(cl instanceof io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader configuredPluginClassLoader)) {
+            throw new IllegalArgumentException(clazz + " is not provided by a " + io.papermc.paper.plugin.provider.classloader.ConfiguredPluginClassLoader.class);
         }
-        JavaPlugin plugin = configuredPluginClassLoader.getPlugin(); // Paper
+        JavaPlugin plugin = configuredPluginClassLoader.getPlugin();
         if (plugin == null) {
             throw new IllegalStateException("Cannot get plugin for " + clazz + " from a static initializer");
         }
         return plugin;
     }
 
-    // Paper start - lifecycle events
     @Override
     public final io.papermc.paper.plugin.lifecycle.event.@NotNull LifecycleEventManager<org.bukkit.plugin.Plugin> getLifecycleManager() {
         return this.lifecycleEventManager;
     }
-    // Paper end - lifecycle events
 }
