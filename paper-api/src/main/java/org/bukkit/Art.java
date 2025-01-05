@@ -2,7 +2,9 @@ package org.bukkit;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import java.util.Locale;
@@ -87,7 +89,7 @@ public interface Art extends OldEnum<Art>, Keyed {
 
     @NotNull
     private static Art getArt(@NotNull String key) {
-        return Registry.ART.getOrThrow(NamespacedKey.minecraft(key));
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.PAINTING_VARIANT).getOrThrow(NamespacedKey.minecraft(key));
     }
 
     /**

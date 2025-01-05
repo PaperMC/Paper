@@ -5,7 +5,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffect;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.potion.PotionEffect;
@@ -20,7 +19,7 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
     }
 
     public static PotionEffectType minecraftToBukkit(MobEffect minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.MOB_EFFECT, Registry.EFFECT);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.MOB_EFFECT);
     }
 
     public static MobEffect bukkitToMinecraft(PotionEffectType bukkit) {

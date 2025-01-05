@@ -51,7 +51,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
     }
 
     public static ItemType minecraftToBukkitNew(Item minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ITEM, Registry.ITEM);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ITEM);
     }
 
     public static Item bukkitToMinecraftNew(ItemType bukkit) {

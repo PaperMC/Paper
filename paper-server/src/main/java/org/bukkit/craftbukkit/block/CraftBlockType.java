@@ -49,7 +49,7 @@ public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, 
     }
 
     public static BlockType minecraftToBukkitNew(Block minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.BLOCK, Registry.BLOCK);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.BLOCK);
     }
 
     public static Block bukkitToMinecraftNew(BlockType bukkit) {

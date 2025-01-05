@@ -8,18 +8,17 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftTrimPattern implements TrimPattern, io.papermc.paper.util.Holderable<net.minecraft.world.item.equipment.trim.TrimPattern> { // Paper - switch to Holder
 
     public static TrimPattern minecraftToBukkit(net.minecraft.world.item.equipment.trim.TrimPattern minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.TRIM_PATTERN, Registry.TRIM_PATTERN);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.TRIM_PATTERN);
     }
 
     public static TrimPattern minecraftHolderToBukkit(Holder<net.minecraft.world.item.equipment.trim.TrimPattern> minecraft) {
-        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registry.TRIM_PATTERN); // Paper - switch to Holder
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.TRIM_PATTERN); // Paper - switch to Holder
     }
 
     public static net.minecraft.world.item.equipment.trim.TrimPattern bukkitToMinecraft(TrimPattern bukkit) {

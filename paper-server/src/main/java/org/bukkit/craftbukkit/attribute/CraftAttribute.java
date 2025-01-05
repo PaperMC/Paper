@@ -18,7 +18,7 @@ public class CraftAttribute implements Attribute, Handleable<net.minecraft.world
     private static int count = 0;
 
     public static Attribute minecraftToBukkit(net.minecraft.world.entity.ai.attributes.Attribute minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ATTRIBUTE, Registry.ATTRIBUTE);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ATTRIBUTE);
     }
 
     public static Attribute minecraftHolderToBukkit(Holder<net.minecraft.world.entity.ai.attributes.Attribute> minecraft) {
