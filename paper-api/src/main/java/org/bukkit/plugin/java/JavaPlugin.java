@@ -26,7 +26,6 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginBase;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
-import org.bukkit.plugin.PluginLogger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,6 +52,7 @@ public abstract class JavaPlugin extends PluginBase {
     private final io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> lifecycleEventManager = org.bukkit.Bukkit.getUnsafe().createPluginLifecycleEventManager(this, () -> this.allowsLifecycleRegistration);
     private boolean allowsLifecycleRegistration = true;
     // Paper end
+    private boolean isBeingEnabled = false;
 
     public JavaPlugin() {
         // Paper start
@@ -111,8 +111,7 @@ public abstract class JavaPlugin extends PluginBase {
     }
 
     /**
-     * Returns a value indicating whether or not this plugin is currently
-     * enabled
+     * Returns a value indicating whether this plugin is currently enabled
      *
      * @return true if this plugin is enabled, otherwise false
      */
@@ -284,9 +283,13 @@ public abstract class JavaPlugin extends PluginBase {
             isEnabled = enabled;
 
             if (isEnabled) {
-                try { // Paper - lifecycle events
-                onEnable();
-                } finally { this.allowsLifecycleRegistration = false; } // Paper - lifecycle events
+                this.isBeingEnabled = true;
+                try {
+                    onEnable();
+                } finally {
+                    this.allowsLifecycleRegistration = false;
+                    this.isBeingEnabled = false;
+                }
             } else {
                 onDisable();
             }
@@ -339,9 +342,18 @@ public abstract class JavaPlugin extends PluginBase {
      *
      * @param name name or alias of the command
      * @return the plugin command if found, otherwise null
+     * @throws UnsupportedOperationException if this plugin is a paper plugin and the method is called in {@link #onEnable()}
      */
     @Nullable
     public PluginCommand getCommand(@NotNull String name) {
+        if (this.isBeingEnabled && !(pluginMeta instanceof PluginDescriptionFile)) {
+            throw new UnsupportedOperationException(
+                "You are trying to call JavaPlugin#getCommand on a Paper plugin during startup" +
+                    " - you are probably trying to get a command you tried to define in paper-plugin.yml." +
+                    " Paper plugins do not support YAML-based command declarations!\n" +
+                    "Please check the documentation for more information on how to define commands in Paper plugins: https://docs.papermc.io/paper/dev/getting-started/paper-plugins#commands"
+            );
+        }
         String alias = name.toLowerCase(Locale.ROOT);
         PluginCommand command = getServer().getPluginCommand(alias);
 
