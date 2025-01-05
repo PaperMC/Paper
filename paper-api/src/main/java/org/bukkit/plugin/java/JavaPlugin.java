@@ -341,12 +341,12 @@ public abstract class JavaPlugin extends PluginBase {
     @Nullable
     public PluginCommand getCommand(@NotNull String name) {
         if (this.isBeingEnabled && !(pluginMeta instanceof PluginDescriptionFile)) {
-            throw new UnsupportedOperationException(
-                "You are trying to call JavaPlugin#getCommand on a Paper plugin during startup" +
-                    " - you are probably trying to get a command you tried to define in paper-plugin.yml." +
-                    " Paper plugins do not support YAML-based command declarations!\n" +
-                    "Please check the documentation for more information on how to define commands in Paper plugins: https://docs.papermc.io/paper/dev/getting-started/paper-plugins#commands"
-            );
+            throw new UnsupportedOperationException("""
+                You are trying to call JavaPlugin#getCommand on a Paper plugin during startup:
+                you are probably trying to get a command you tried to define in paper-plugin.yml.
+                Paper plugins do not support YAML-based command declarations!
+                Please check the documentation for more information on how to define commands in Paper plugins: https://docs.papermc.io/paper/dev/getting-started/paper-plugins#commands
+                """);
         }
         String alias = name.toLowerCase(Locale.ROOT);
         PluginCommand command = getServer().getPluginCommand(alias);
