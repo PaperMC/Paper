@@ -134,7 +134,7 @@ public class CraftChunk implements Chunk {
     @Override
     public BlockState[] getTileEntities() {
         // Paper start
-        return getTileEntities(true);
+        return getTileEntities(false);
     }
 
     @Override

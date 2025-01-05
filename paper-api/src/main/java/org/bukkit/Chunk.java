@@ -143,7 +143,7 @@ public interface Chunk extends PersistentDataHolder {
     @NotNull
     // Paper start
     default BlockState @NotNull [] getTileEntities() {
-        return getTileEntities(true);
+        return getTileEntities(false);
     }
 
     /**

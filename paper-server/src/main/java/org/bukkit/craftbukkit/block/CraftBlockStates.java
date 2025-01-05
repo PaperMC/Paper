@@ -238,7 +238,7 @@ public final class CraftBlockStates {
 
     public static BlockState getBlockState(Block block) {
         // Paper start
-        return CraftBlockStates.getBlockState(block, true);
+        return CraftBlockStates.getBlockState(block, false);
     }
     public static BlockState getBlockState(Block block, boolean useSnapshot) {
         // Paper end
