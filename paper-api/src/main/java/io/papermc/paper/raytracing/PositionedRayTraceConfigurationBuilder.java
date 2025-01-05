@@ -6,14 +6,15 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import java.util.List;
 import java.util.function.Predicate;
 
 /**
  * Holds information about how to cast a raytrace.
  */
+@NullMarked
 public interface PositionedRayTraceConfigurationBuilder {
 
     /**
@@ -30,9 +31,8 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @param start the new starting location
      * @return a reference to this object
      */
-    @NotNull
     @Contract("_ -> this")
-    PositionedRayTraceConfigurationBuilder start(@NotNull Location start);
+    PositionedRayTraceConfigurationBuilder start(Location start);
 
     /**
      * Gets the direction.
@@ -48,9 +48,8 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @param direction the new direction
      * @return a reference to this object
      */
-    @NotNull
     @Contract("_ -> this")
-    PositionedRayTraceConfigurationBuilder direction(@NotNull Vector direction);
+    PositionedRayTraceConfigurationBuilder direction(Vector direction);
 
     /**
      * Gets the maximum distance.
@@ -65,7 +64,6 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @param maxDistance the new maxDistance
      * @return a reference to this object
      */
-    @NotNull
     @Contract("_ -> this")
     PositionedRayTraceConfigurationBuilder maxDistance(double maxDistance);
 
@@ -74,7 +72,6 @@ public interface PositionedRayTraceConfigurationBuilder {
      *
      * @return the FluidCollisionMode
      */
-    @NotNull
     FluidCollisionMode fluidCollisionMode();
 
     /**
@@ -83,9 +80,8 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @param fluidCollisionMode the new FluidCollisionMode
      * @return a reference to this object
      */
-    @NotNull
     @Contract("_ -> this")
-    PositionedRayTraceConfigurationBuilder fluidCollisionMode(@NotNull FluidCollisionMode fluidCollisionMode);
+    PositionedRayTraceConfigurationBuilder fluidCollisionMode(FluidCollisionMode fluidCollisionMode);
 
     /**
      * Gets if the raytrace will ignore passable blocks when looking for block collisions.
@@ -100,7 +96,6 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @param ignorePassableBlocks if the raytrace should ignore passable blocks
      * @return a reference to this object
      */
-    @NotNull
     @Contract("_ -> this")
     PositionedRayTraceConfigurationBuilder ignorePassableBlocks(boolean ignorePassableBlocks);
 
@@ -117,7 +112,6 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @param raySize the new raytrace size
      * @return a reference to this object
      */
-    @NotNull
     @Contract("_ -> this")
     PositionedRayTraceConfigurationBuilder raySize(double raySize);
 
@@ -135,7 +129,6 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @param entityFilter predicate for entities the ray can potentially collide with, or null to consider all entities
      * @return a reference to this object
      */
-    @NotNull
     @Contract("_ -> this")
     PositionedRayTraceConfigurationBuilder entityFilter(@Nullable Predicate<? super Entity> entityFilter);
 
@@ -153,7 +146,6 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @param blockFilter predicate for blocks the ray can potentially collide with, or null to consider all blocks
      * @return a reference to this object
      */
-    @NotNull
     @Contract("_ -> this")
     PositionedRayTraceConfigurationBuilder blockFilter(@Nullable Predicate<? super Block> blockFilter);
 
@@ -163,22 +155,13 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @return the targets
      */
     @Nullable
-    List<Targets> targets();
+    List<RayTraceTargets> targets();
 
     /**
      * Sets the targets for the rayTrace.
      *
      * @return a reference to this object
      */
-    @NotNull
     @Contract("_, _ -> this")
-    PositionedRayTraceConfigurationBuilder targets(@NotNull Targets first, @NotNull Targets... others);
-
-    /**
-     * List of Targets the builder can target.
-     */
-    enum Targets {
-        ENTITIES,
-        BLOCKS
-    }
+    PositionedRayTraceConfigurationBuilder targets(RayTraceTargets first, RayTraceTargets... others);
 }
