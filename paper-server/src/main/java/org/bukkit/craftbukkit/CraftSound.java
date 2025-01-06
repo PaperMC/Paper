@@ -15,6 +15,10 @@ public class CraftSound extends OldEnumHolderable<Sound, SoundEvent> implements 
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.SOUND_EVENT, Registry.SOUNDS);
     }
 
+    public static Sound minecraftHolderToBukkit(Holder<SoundEvent> minecraft) {
+        return minecraftToBukkit(minecraft.value());
+    }
+
     public static SoundEvent bukkitToMinecraft(Sound bukkit) {
         return CraftRegistry.bukkitToMinecraft(bukkit);
     }
@@ -27,9 +31,7 @@ public class CraftSound extends OldEnumHolderable<Sound, SoundEvent> implements 
         super(soundEffect, count++);
     }
 
-    // Paper start
     public static String getSound(Sound sound) {
         return sound.getKey().getKey();
     }
-    // Paper end
 }

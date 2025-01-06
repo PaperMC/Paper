@@ -3,10 +3,12 @@ package org.bukkit;
 import com.google.common.collect.Lists;
 import java.util.Collection;
 import java.util.Collections;
+import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import net.kyori.adventure.translation.Translatable;
 
-public abstract class MusicInstrument implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - translation keys
+public abstract class MusicInstrument implements Keyed, Translatable {
 
     public static final MusicInstrument PONDER_GOAT_HORN = getInstrument("ponder_goat_horn");
     public static final MusicInstrument SING_GOAT_HORN = getInstrument("sing_goat_horn");
@@ -47,7 +49,14 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
         return Registry.INSTRUMENT.getOrThrow(NamespacedKey.minecraft(key));
     }
 
-    // Paper start - deprecate getKey
+    public abstract float getDuration();
+
+    public abstract float getRange();
+
+    public abstract Component getDescription();
+
+    public abstract Sound getSoundEvent();
+
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#INSTRUMENT}. MusicInstruments can exist without a key.
@@ -66,9 +75,6 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
         return Keyed.super.key();
     }
 
-    // Paper end - deprecate getKey
-
-    // Paper start - mark translation key as deprecated
     /**
      * @deprecated this method assumes that the instrument description
      * always be a translatable component which is not guaranteed.
@@ -76,5 +82,4 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     @Override
     @Deprecated(forRemoval = true)
     public abstract @NotNull String translationKey();
-    // Paper end - mark translation key as deprecated
 }
