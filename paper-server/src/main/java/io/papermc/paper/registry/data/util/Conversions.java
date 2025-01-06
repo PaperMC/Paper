@@ -7,13 +7,10 @@ import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.PaperRegistryBuilderFactory;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
-import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import net.kyori.adventure.text.Component;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.RegistryOps;
@@ -87,14 +84,8 @@ public class Conversions {
         final ResourceKey<? extends Registry<M>> registryKey,
         final RegistryEntryMeta.Buildable<M, A, B> buildableMeta
     ) {
-        final RegistryOps.RegistryInfo<M> info = this.lookup.lookup(registryKey).orElseThrow();
-        final Function<ResourceKey<M>, Optional<M>> existingValueGetter;
-        if (info.getter() instanceof final HolderLookup.RegistryLookup<M> registryLookup) {
-            existingValueGetter = registryLookup::getValueForCopying;
-        } else {
-            existingValueGetter = ((MappedRegistry<M>) info.owner())::getValueForCopying;
-        }
-        return new PaperRegistryBuilderFactory<>(registryKey, this, buildableMeta.builderFiller(), existingValueGetter);
+        final HolderLookup.RegistryLookup<M> lookupForBuilders = this.lookup.lookupForValueCopyViaBuilders().lookupOrThrow(registryKey);
+        return new PaperRegistryBuilderFactory<>(registryKey, this, buildableMeta.builderFiller(), lookupForBuilders::getValueForCopying);
     }
 
 }
