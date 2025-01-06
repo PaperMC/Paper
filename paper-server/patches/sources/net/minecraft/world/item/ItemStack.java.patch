@@ -218,6 +218,7 @@
  
 -    public void hurtAndBreak(int damage, ServerLevel level, @Nullable ServerPlayer player, Consumer<Item> onBreak) {
 -        int i = this.processDurabilityChange(damage, level, player);
+-        if (i != 0) {
 +    public void hurtAndBreak(int damage, ServerLevel level, @Nullable LivingEntity player, Consumer<Item> onBreak) { // Paper - Add EntityDamageItemEvent
 +        // Paper start - add force boolean overload
 +        this.hurtAndBreak(damage, level, player, onBreak, false);
@@ -227,7 +228,7 @@
 +        final int originalDamage = damage; // Paper - Expand PlayerItemDamageEvent
 +        int i = this.processDurabilityChange(damage, level, player, force); // Paper
 +        // CraftBukkit start
-+        if (player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent
++        if (i > 0 && player instanceof final ServerPlayer serverPlayer) { // Paper - Add EntityDamageItemEvent - limit to positive damage and run for player
 +            org.bukkit.event.player.PlayerItemDamageEvent event = new org.bukkit.event.player.PlayerItemDamageEvent(serverPlayer.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this), i, originalDamage); // Paper - Add EntityDamageItemEvent
 +            event.getPlayer().getServer().getPluginManager().callEvent(event);
 +
@@ -240,7 +241,7 @@
 +
 +            i = event.getDamage();
 +            // Paper start - Add EntityDamageItemEvent
-+        } else if (player != null) {
++        } else if (i > 0 && player != null) {
 +            io.papermc.paper.event.entity.EntityDamageItemEvent event = new io.papermc.paper.event.entity.EntityDamageItemEvent(player.getBukkitLivingEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this), i);
 +            if (!event.callEvent()) {
 +                return;
@@ -249,7 +250,7 @@
 +            // Paper end - Add EntityDamageItemEvent
 +        }
 +        // CraftBukkit end
-         if (i != 0) {
++        if (i != 0) { // Paper - Add EntityDamageItemEvent - diff on change for above event ifs.
              this.applyDamage(this.getDamageValue() + i, player, onBreak);
          }
      }
