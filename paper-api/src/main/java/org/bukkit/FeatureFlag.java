@@ -14,19 +14,19 @@ import org.jetbrains.annotations.ApiStatus;
  */
 public interface FeatureFlag extends Keyed {
 
-    // Paper start - overhaul FeatureFlag API
-    /**
-     * The {@code vanilla} feature flag.
-     */
-    FeatureFlag VANILLA = create("vanilla");
+    // Start generate - FeatureFlag
+    // @GeneratedFrom 1.21.4
+    @ApiStatus.Experimental
+    FeatureFlag MINECART_IMPROVEMENTS = create("minecart_improvements");
 
-    /**
-     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19.3 - 1.21.1
-     *
-     * @deprecated not available since 1.21.2
-     */
-    @Deprecated(since = "1.21.2")
-    FeatureFlag BUNDLE = deprecated("bundle");
+    @ApiStatus.Experimental
+    FeatureFlag REDSTONE_EXPERIMENTS = create("redstone_experiments");
+
+    @ApiStatus.Experimental
+    FeatureFlag TRADE_REBALANCE = create("trade_rebalance");
+
+    FeatureFlag VANILLA = create("vanilla");
+    // End generate - FeatureFlag
 
     /**
      * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19 - 1.19.4
@@ -37,9 +37,6 @@ public interface FeatureFlag extends Keyed {
     @Deprecated(since = "1.20")
     FeatureFlag UPDATE_1_20 = deprecated("update_1_20");
 
-    @ApiStatus.Experimental // Paper - add missing annotation
-    FeatureFlag TRADE_REBALANCE = create("trade_rebalance");
-
     /**
      * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.20.5 - 1.20.6
      *
@@ -49,18 +46,20 @@ public interface FeatureFlag extends Keyed {
     FeatureFlag UPDATE_121 = deprecated("update_1_21");
 
     /**
+     * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.19.3 - 1.21.1
+     *
+     * @deprecated not available since 1.21.2
+     */
+    @Deprecated(since = "1.21.2")
+    FeatureFlag BUNDLE = deprecated("bundle");
+
+    /**
      * <strong>AVAILABLE BETWEEN VERSIONS:</strong> 1.21.2 - 1.21.3
      *
      * @deprecated not available since 1.21.4
      */
     @Deprecated(since = "1.21.4")
     FeatureFlag WINTER_DROP = deprecated("winter_drop");
-
-    @ApiStatus.Experimental // Paper - add missing annotation
-    FeatureFlag REDSTONE_EXPERIMENTS = create("redstone_experiments");
-
-    @ApiStatus.Experimental // Paper - add missing annotation
-    FeatureFlag MINECART_IMPROVEMENTS = create("minecart_improvements");
 
     /**
      * An index of all feature flags.

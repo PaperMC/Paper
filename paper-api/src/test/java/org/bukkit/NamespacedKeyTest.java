@@ -29,12 +29,6 @@ public class NamespacedKeyTest {
         assertNull(NamespacedKey.fromString("foo:bar:bazz"));
     }
 
-    @org.junit.jupiter.api.Disabled // Paper - Fixup NamespacedKey handling
-    @Test
-    public void testFromStringEmptyInput() {
-        assertThrows(IllegalArgumentException.class, () -> NamespacedKey.fromString(""));
-    }
-
     @Test
     public void testFromStringNullInput() {
         assertThrows(IllegalArgumentException.class, () -> NamespacedKey.fromString(null));
@@ -74,13 +68,5 @@ public class NamespacedKeyTest {
     public void testBelowLength() {
         new NamespacedKey("loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas",
                 "loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas").toString();
-    }
-
-    @org.junit.jupiter.api.Disabled // Paper - Fixup NamespacedKey handling
-    @Test
-    public void testAboveLength() {
-        assertThrows(IllegalArgumentException.class, () -> new NamespacedKey("loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas",
-                "loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas/"
-                + "loremipsumdolorsitametconsecteturadipiscingelitduisvolutpatvelitsitametmaximusscelerisquemorbiullamcorperexacconsequategestas").toString());
     }
 }

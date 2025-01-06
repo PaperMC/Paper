@@ -34,14 +34,17 @@ if (!file(".git").exists()) {
 rootProject.name = "paper"
 
 for (name in listOf("paper-api", "paper-server")) {
-    val projName = name.lowercase(Locale.ENGLISH)
-    include(projName)
+    include(name)
     file(name).mkdirs()
-    findProject(":$projName")!!.projectDir = file(name)
 }
 
 optionalInclude("test-plugin")
-optionalInclude("paper-api-generator")
+
+if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
+    include("paper-generator")
+} else {
+    optionalInclude("paper-generator")
+}
 
 fun optionalInclude(name: String, op: (ProjectDescriptor.() -> Unit)? = null) {
     val settingsFile = file("$name.settings.gradle.kts")

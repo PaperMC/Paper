@@ -133,53 +133,54 @@ public final class CraftBlockStates {
     // Paper end
 
     static {
-        // Paper start - simplify
-        register(BlockEntityType.SIGN, CraftSign.class, CraftSign::new);
-        register(BlockEntityType.HANGING_SIGN, CraftHangingSign.class, CraftHangingSign::new);
-        register(BlockEntityType.SKULL, CraftSkull.class, CraftSkull::new);
-        register(BlockEntityType.COMMAND_BLOCK, CraftCommandBlock.class, CraftCommandBlock::new);
+        // Start generate - CraftBlockEntityStates
+        // @GeneratedFrom 1.21.4
         register(BlockEntityType.BANNER, CraftBanner.class, CraftBanner::new);
-        register(BlockEntityType.SHULKER_BOX, CraftShulkerBox.class, CraftShulkerBox::new);
-        register(BlockEntityType.BED, CraftBed.class, CraftBed::new);
-        register(BlockEntityType.BEEHIVE, CraftBeehive.class, CraftBeehive::new);
-        register(BlockEntityType.CAMPFIRE, CraftCampfire.class, CraftCampfire::new);
         register(BlockEntityType.BARREL, CraftBarrel.class, CraftBarrel::new);
         register(BlockEntityType.BEACON, CraftBeacon.class, CraftBeacon::new);
+        register(BlockEntityType.BED, CraftBed.class, CraftBed::new);
+        register(BlockEntityType.BEEHIVE, CraftBeehive.class, CraftBeehive::new);
         register(BlockEntityType.BELL, CraftBell.class, CraftBell::new);
         register(BlockEntityType.BLAST_FURNACE, CraftBlastFurnace.class, CraftBlastFurnace::new);
         register(BlockEntityType.BREWING_STAND, CraftBrewingStand.class, CraftBrewingStand::new);
+        register(BlockEntityType.BRUSHABLE_BLOCK, CraftBrushableBlock.class, CraftBrushableBlock::new);
+        register(BlockEntityType.CALIBRATED_SCULK_SENSOR, CraftCalibratedSculkSensor.class, CraftCalibratedSculkSensor::new);
+        register(BlockEntityType.CAMPFIRE, CraftCampfire.class, CraftCampfire::new);
         register(BlockEntityType.CHEST, CraftChest.class, CraftChest::new);
         register(BlockEntityType.CHISELED_BOOKSHELF, CraftChiseledBookshelf.class, CraftChiseledBookshelf::new);
+        register(BlockEntityType.COMMAND_BLOCK, CraftCommandBlock.class, CraftCommandBlock::new);
         register(BlockEntityType.COMPARATOR, CraftComparator.class, CraftComparator::new);
         register(BlockEntityType.CONDUIT, CraftConduit.class, CraftConduit::new);
+        register(BlockEntityType.CRAFTER, CraftCrafter.class, CraftCrafter::new);
         register(BlockEntityType.CREAKING_HEART, CraftCreakingHeart.class, CraftCreakingHeart::new);
         register(BlockEntityType.DAYLIGHT_DETECTOR, CraftDaylightDetector.class, CraftDaylightDetector::new);
         register(BlockEntityType.DECORATED_POT, CraftDecoratedPot.class, CraftDecoratedPot::new);
         register(BlockEntityType.DISPENSER, CraftDispenser.class, CraftDispenser::new);
         register(BlockEntityType.DROPPER, CraftDropper.class, CraftDropper::new);
         register(BlockEntityType.ENCHANTING_TABLE, CraftEnchantingTable.class, CraftEnchantingTable::new);
-        register(BlockEntityType.ENDER_CHEST, CraftEnderChest.class, CraftEnderChest::new);
         register(BlockEntityType.END_GATEWAY, CraftEndGateway.class, CraftEndGateway::new);
         register(BlockEntityType.END_PORTAL, CraftEndPortal.class, CraftEndPortal::new);
+        register(BlockEntityType.ENDER_CHEST, CraftEnderChest.class, CraftEnderChest::new);
         register(BlockEntityType.FURNACE, CraftFurnaceFurnace.class, CraftFurnaceFurnace::new);
+        register(BlockEntityType.HANGING_SIGN, CraftHangingSign.class, CraftHangingSign::new);
         register(BlockEntityType.HOPPER, CraftHopper.class, CraftHopper::new);
         register(BlockEntityType.JIGSAW, CraftJigsaw.class, CraftJigsaw::new);
         register(BlockEntityType.JUKEBOX, CraftJukebox.class, CraftJukebox::new);
         register(BlockEntityType.LECTERN, CraftLectern.class, CraftLectern::new);
+        register(BlockEntityType.MOB_SPAWNER, CraftCreatureSpawner.class, CraftCreatureSpawner::new);
         register(BlockEntityType.PISTON, CraftMovingPiston.class, CraftMovingPiston::new);
         register(BlockEntityType.SCULK_CATALYST, CraftSculkCatalyst.class, CraftSculkCatalyst::new);
         register(BlockEntityType.SCULK_SENSOR, CraftSculkSensor.class, CraftSculkSensor::new);
         register(BlockEntityType.SCULK_SHRIEKER, CraftSculkShrieker.class, CraftSculkShrieker::new);
-        register(BlockEntityType.CALIBRATED_SCULK_SENSOR, CraftCalibratedSculkSensor.class, CraftCalibratedSculkSensor::new);
+        register(BlockEntityType.SHULKER_BOX, CraftShulkerBox.class, CraftShulkerBox::new);
+        register(BlockEntityType.SIGN, CraftSign.class, CraftSign::new);
+        register(BlockEntityType.SKULL, CraftSkull.class, CraftSkull::new);
         register(BlockEntityType.SMOKER, CraftSmoker.class, CraftSmoker::new);
-        register(BlockEntityType.MOB_SPAWNER, CraftCreatureSpawner.class, CraftCreatureSpawner::new);
         register(BlockEntityType.STRUCTURE_BLOCK, CraftStructureBlock.class, CraftStructureBlock::new);
-        register(BlockEntityType.BRUSHABLE_BLOCK, CraftBrushableBlock.class, CraftBrushableBlock::new); // note: spigot still uses CraftSuspiciousSand impl for that block type
         register(BlockEntityType.TRAPPED_CHEST, CraftChest.class, CraftChest::new);
-        register(BlockEntityType.CRAFTER, CraftCrafter.class, CraftCrafter::new);
         register(BlockEntityType.TRIAL_SPAWNER, CraftTrialSpawner.class, CraftTrialSpawner::new);
         register(BlockEntityType.VAULT, CraftVault.class, CraftVault::new);
-        // Paper end
+        // End generate - CraftBlockEntityStates
     }
 
     private static void register(Material blockType, BlockStateFactory<?> factory) {
