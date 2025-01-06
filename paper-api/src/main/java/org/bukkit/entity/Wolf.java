@@ -110,15 +110,26 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      */
     interface Variant extends Keyed {
 
-        Variant PALE = getVariant("pale");
-        Variant SPOTTED = getVariant("spotted");
-        Variant SNOWY = getVariant("snowy");
-        Variant BLACK = getVariant("black");
+        // Start generate - WolfVariant
+        // @GeneratedFrom 1.21.5
         Variant ASHEN = getVariant("ashen");
-        Variant RUSTY = getVariant("rusty");
-        Variant WOODS = getVariant("woods");
+
+        Variant BLACK = getVariant("black");
+
         Variant CHESTNUT = getVariant("chestnut");
+
+        Variant PALE = getVariant("pale");
+
+        Variant RUSTY = getVariant("rusty");
+
+        Variant SNOWY = getVariant("snowy");
+
+        Variant SPOTTED = getVariant("spotted");
+
         Variant STRIPED = getVariant("striped");
+
+        Variant WOODS = getVariant("woods");
+        // End generate - WolfVariant
 
         @NotNull
         private static Variant getVariant(@NotNull String key) {
@@ -131,7 +142,22 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      */
     interface SoundVariant extends Keyed {
 
-        // todo generators
+        // Start generate - WolfSoundVariant
+        // @GeneratedFrom 1.21.5
+        SoundVariant ANGRY = getSoundVariant("angry");
+
+        SoundVariant BIG = getSoundVariant("big");
+
+        SoundVariant CLASSIC = getSoundVariant("classic");
+
+        SoundVariant CUTE = getSoundVariant("cute");
+
+        SoundVariant GRUMPY = getSoundVariant("grumpy");
+
+        SoundVariant PUGLIN = getSoundVariant("puglin");
+
+        SoundVariant SAD = getSoundVariant("sad");
+        // End generate - WolfSoundVariant
 
         @NotNull
         private static SoundVariant getSoundVariant(@NotNull String key) {

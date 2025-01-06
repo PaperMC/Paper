@@ -22,8 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedFrom("1.21.5")
 public final class BannerPatternKeys {
     /**
      * {@code minecraft:base}
@@ -330,7 +330,7 @@ public final class BannerPatternKeys {
     }
 
     /**
-     * Creates a key for {@link PatternType} in the registry {@code minecraft:banner_pattern}.
+     * Creates a typed key for {@link PatternType} in the registry {@code minecraft:banner_pattern}.
      *
      * @param key the value's key in the registry
      * @return a new typed key

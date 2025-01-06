@@ -124,7 +124,7 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<Sound> SOUND_EVENT = create("sound_event");
     /**
      * Built-in registry for data component types.
-     * <!-- @see io.papermc.paper.registry.keys.DataComponentTypeKeys -->
+     * @see io.papermc.paper.registry.keys.DataComponentTypeKeys
      */
     RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
 
@@ -164,8 +164,8 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<Wolf.Variant> WOLF_VARIANT = create("wolf_variant");
     /**
-     * Data-driven registry for wolf variants.
-     * <!-- @see io.papermc.paper.registry.keys.WolfSoundVariantKeys -->
+     * Data-driven registry for wolf sound variants.
+     * @see io.papermc.paper.registry.keys.WolfSoundVariantKeys
      */
     RegistryKey<Wolf.SoundVariant> WOLF_SOUND_VARIANT = create("wolf_sound_variant");
     /**
@@ -205,17 +205,17 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<Frog.Variant> FROG_VARIANT = create("frog_variant");
     /**
      * Data-driven registry for chicken variants.
-     * <!-- @see io.papermc.paper.registry.keys.ChickenVariantKeys -->
+     * @see io.papermc.paper.registry.keys.ChickenVariantKeys
      */
     RegistryKey<Chicken.Variant> CHICKEN_VARIANT = create("chicken_variant");
     /**
      * Data-driven registry for cow variants.
-     * <!-- @see io.papermc.paper.registry.keys.CowVariantKeys -->
+     * @see io.papermc.paper.registry.keys.CowVariantKeys
      */
     RegistryKey<Cow.Variant> COW_VARIANT = create("cow_variant");
     /**
      * Data-driven registry for pig variants.
-     * <!-- @see io.papermc.paper.registry.keys.PigVariantKeys -->
+     * @see io.papermc.paper.registry.keys.PigVariantKeys
      */
     RegistryKey<Pig.Variant> PIG_VARIANT = create("pig_variant");
 

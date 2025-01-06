@@ -31,7 +31,14 @@ public interface Pig extends Steerable, Vehicle {
      */
     interface Variant extends Keyed {
 
-        // todo generators
+        // Start generate - PigVariant
+        // @GeneratedFrom 1.21.5
+        Variant COLD = getVariant("cold");
+
+        Variant TEMPERATE = getVariant("temperate");
+
+        Variant WARM = getVariant("warm");
+        // End generate - PigVariant
 
         private static Variant getVariant(String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.PIG_VARIANT).getOrThrow(NamespacedKey.minecraft(key));

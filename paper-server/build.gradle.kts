@@ -1,10 +1,14 @@
 import io.papermc.paperweight.attribute.DevBundleOutput
 import io.papermc.paperweight.util.*
+import io.papermc.paperweight.util.data.FileEntry
+import paper.libs.com.google.gson.annotations.SerializedName
 import java.time.Instant
+import kotlin.io.path.readText
 
 plugins {
     `java-library`
     `maven-publish`
+    idea
     id("io.papermc.paperweight.core")
 }
 
@@ -110,6 +114,10 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
 }
 val alsoShade: Configuration by configurations.creating
 
+val runtimeConfiguration by configurations.consumable("runtimeConfiguration") {
+    attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+}
+
 // Configure mockito agent that is needed in newer java versions
 val mockitoAgent = configurations.register("mockitoAgent")
 abstract class MockitoAgentProvider : CommandLineArgumentProvider {
@@ -128,6 +136,7 @@ dependencies {
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
     implementation("net.kyori:adventure-text-serializer-ansi:4.18.0") // Keep in sync with adventureVersion from Paper-API build file
+    runtimeConfiguration(sourceSets.main.map { it.runtimeClasspath })
 
     /*
       Required to add the missing Log4j2Plugins.dat file from log4j-core
@@ -216,13 +225,13 @@ tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
 }
 
-val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
     jarToScan.set(tasks.jar.flatMap { it.archiveFile })
     classpath.from(configurations.compileClasspath)
 }
 tasks.check {
-    dependsOn(scanJar)
+    dependsOn(scanJarForBadCalls)
 }
 
 // Use TCA for console improvements
@@ -251,6 +260,32 @@ tasks.test {
     val provider = objects.newInstance<MockitoAgentProvider>()
     provider.fileCollection.from(mockitoAgent)
     jvmArgumentProviders.add(provider)
+}
+
+val generatedDir: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
+idea {
+    module {
+        generatedSourceDirs.add(generatedDir.toFile())
+    }
+}
+sourceSets {
+    main {
+        java {
+            srcDir(generatedDir)
+        }
+    }
+}
+
+if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
+    val scanJarForOldGeneratedCode by tasks.registering(io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
+        mcVersion.set(providers.gradleProperty("mcVersion"))
+        annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
+        jarToScan.set(tasks.jar.flatMap { it.archiveFile })
+        classpath.from(configurations.compileClasspath)
+    }
+    tasks.check {
+        dependsOn(scanJarForOldGeneratedCode)
+    }
 }
 
 fun TaskContainer.registerRunTask(

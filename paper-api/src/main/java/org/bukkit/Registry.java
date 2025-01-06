@@ -293,10 +293,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see MemoryKey
      */
-    Registry<MemoryKey> MEMORY_MODULE_TYPE = new NotARegistry<>() {
+    Registry<MemoryKey<?>> MEMORY_MODULE_TYPE = new NotARegistry<>() {
 
         @Override
-        public Iterator iterator() {
+        public Iterator<MemoryKey<?>> iterator() {
             return MemoryKey.values().iterator();
         }
 
@@ -306,7 +306,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
 
         @Override
-        public @Nullable MemoryKey get(final NamespacedKey key) {
+        public @Nullable MemoryKey<?> get(final NamespacedKey key) {
             return MemoryKey.getByKey(key);
         }
     };

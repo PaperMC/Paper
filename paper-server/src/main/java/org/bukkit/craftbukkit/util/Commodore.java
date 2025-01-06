@@ -79,7 +79,10 @@ public class Commodore {
     private static final Map<String, String> RENAMES = Map.of(
             "org/bukkit/entity/TextDisplay$TextAligment", "org/bukkit/entity/TextDisplay$TextAlignment", // SPIGOT-7335
             "org/spigotmc/event/entity/EntityMountEvent", "org/bukkit/event/entity/EntityMountEvent",
-            "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent"
+            "org/spigotmc/event/entity/EntityDismountEvent", "org/bukkit/event/entity/EntityDismountEvent",
+            "org/bukkit/block/data/type/Crafter$Orientation", "org/bukkit/block/Orientation",
+            "org/bukkit/block/data/type/Jigsaw$Orientation", "org/bukkit/block/Orientation",
+            "org/bukkit/block/data/type/MossyCarpet$Height", "org/bukkit/block/data/type/Wall$Height"
     );
 
     private static final Map<String, String> CLASS_TO_INTERFACE = Map.ofEntries(

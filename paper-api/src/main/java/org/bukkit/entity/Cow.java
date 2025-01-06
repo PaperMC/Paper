@@ -31,7 +31,14 @@ public interface Cow extends AbstractCow {
      */
     interface Variant extends Keyed {
 
-        // todo generators
+        // Start generate - CowVariant
+        // @GeneratedFrom 1.21.5
+        Variant COLD = getVariant("cold");
+
+        Variant TEMPERATE = getVariant("temperate");
+
+        Variant WARM = getVariant("warm");
+        // End generate - CowVariant
 
         private static Variant getVariant(String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.COW_VARIANT).getOrThrow(NamespacedKey.minecraft(key));

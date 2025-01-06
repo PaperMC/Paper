@@ -59,7 +59,14 @@ public interface Chicken extends Animals {
      */
     interface Variant extends Keyed {
 
-        // todo generators
+        // Start generate - ChickenVariant
+        // @GeneratedFrom 1.21.5
+        Variant COLD = getVariant("cold");
+
+        Variant TEMPERATE = getVariant("temperate");
+
+        Variant WARM = getVariant("warm");
+        // End generate - ChickenVariant
 
         private static Variant getVariant(String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.CHICKEN_VARIANT).getOrThrow(NamespacedKey.minecraft(key));

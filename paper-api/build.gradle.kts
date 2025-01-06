@@ -93,16 +93,16 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
-val generatedApiPath: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
+val generatedDir: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
 idea {
     module {
-        generatedSourceDirs.add(generatedApiPath.toFile())
+        generatedSourceDirs.add(generatedDir.toFile())
     }
 }
 sourceSets {
     main {
         java {
-            srcDir(generatedApiPath)
+            srcDir(generatedDir)
         }
     }
 }
@@ -228,21 +228,23 @@ tasks.compileTestJava {
     options.compilerArgs.add("-parameters")
 }
 
-val scanJar = tasks.register("scanJarForBadCalls", io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
     badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
     jarToScan.set(tasks.jar.flatMap { it.archiveFile })
     classpath.from(configurations.compileClasspath)
 }
 tasks.check {
-    dependsOn(scanJar)
+    dependsOn(scanJarForBadCalls)
 }
 
-val scanJarForOldGeneratedCode = tasks.register("scanJarForOldGeneratedCode", io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
-    mcVersion.set(providers.gradleProperty("mcVersion"))
-    annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
-    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
-    classpath.from(configurations.compileClasspath)
-}
-tasks.check {
-    dependsOn(scanJarForOldGeneratedCode)
+if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
+    val scanJarForOldGeneratedCode by tasks.registering(io.papermc.paperweight.tasks.ScanJarForOldGeneratedCode::class) {
+        mcVersion.set(providers.gradleProperty("mcVersion"))
+        annotation.set("Lio/papermc/paper/generated/GeneratedFrom;")
+        jarToScan.set(tasks.jar.flatMap { it.archiveFile })
+        classpath.from(configurations.compileClasspath)
+    }
+    tasks.check {
+        dependsOn(scanJarForOldGeneratedCode)
+    }
 }
