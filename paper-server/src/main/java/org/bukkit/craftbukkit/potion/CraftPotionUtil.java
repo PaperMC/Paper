@@ -14,30 +14,36 @@ import org.bukkit.potion.PotionType;
 public class CraftPotionUtil {
 
     private static final BiMap<PotionType, PotionType> upgradeable = ImmutableBiMap.<PotionType, PotionType>builder()
-            .put(PotionType.LEAPING, PotionType.STRONG_LEAPING)
-            .put(PotionType.SWIFTNESS, PotionType.STRONG_SWIFTNESS)
-            .put(PotionType.HEALING, PotionType.STRONG_HEALING)
+            // Start generate - CraftPotionUtil#upgradeable
+            // @GeneratedFrom 1.21.4
             .put(PotionType.HARMING, PotionType.STRONG_HARMING)
+            .put(PotionType.HEALING, PotionType.STRONG_HEALING)
+            .put(PotionType.LEAPING, PotionType.STRONG_LEAPING)
             .put(PotionType.POISON, PotionType.STRONG_POISON)
             .put(PotionType.REGENERATION, PotionType.STRONG_REGENERATION)
-            .put(PotionType.STRENGTH, PotionType.STRONG_STRENGTH)
             .put(PotionType.SLOWNESS, PotionType.STRONG_SLOWNESS)
+            .put(PotionType.STRENGTH, PotionType.STRONG_STRENGTH)
+            .put(PotionType.SWIFTNESS, PotionType.STRONG_SWIFTNESS)
             .put(PotionType.TURTLE_MASTER, PotionType.STRONG_TURTLE_MASTER)
+            // End generate - CraftPotionUtil#upgradeable
             .build();
     private static final BiMap<PotionType, PotionType> extendable = ImmutableBiMap.<PotionType, PotionType>builder()
-            .put(PotionType.NIGHT_VISION, PotionType.LONG_NIGHT_VISION)
+            // Start generate - CraftPotionUtil#extendable
+            // @GeneratedFrom 1.21.4
+            .put(PotionType.FIRE_RESISTANCE, PotionType.LONG_FIRE_RESISTANCE)
             .put(PotionType.INVISIBILITY, PotionType.LONG_INVISIBILITY)
             .put(PotionType.LEAPING, PotionType.LONG_LEAPING)
-            .put(PotionType.FIRE_RESISTANCE, PotionType.LONG_FIRE_RESISTANCE)
-            .put(PotionType.SWIFTNESS, PotionType.LONG_SWIFTNESS)
-            .put(PotionType.SLOWNESS, PotionType.LONG_SLOWNESS)
-            .put(PotionType.WATER_BREATHING, PotionType.LONG_WATER_BREATHING)
+            .put(PotionType.NIGHT_VISION, PotionType.LONG_NIGHT_VISION)
             .put(PotionType.POISON, PotionType.LONG_POISON)
             .put(PotionType.REGENERATION, PotionType.LONG_REGENERATION)
-            .put(PotionType.STRENGTH, PotionType.LONG_STRENGTH)
-            .put(PotionType.WEAKNESS, PotionType.LONG_WEAKNESS)
-            .put(PotionType.TURTLE_MASTER, PotionType.LONG_TURTLE_MASTER)
             .put(PotionType.SLOW_FALLING, PotionType.LONG_SLOW_FALLING)
+            .put(PotionType.SLOWNESS, PotionType.LONG_SLOWNESS)
+            .put(PotionType.STRENGTH, PotionType.LONG_STRENGTH)
+            .put(PotionType.SWIFTNESS, PotionType.LONG_SWIFTNESS)
+            .put(PotionType.TURTLE_MASTER, PotionType.LONG_TURTLE_MASTER)
+            .put(PotionType.WATER_BREATHING, PotionType.LONG_WATER_BREATHING)
+            .put(PotionType.WEAKNESS, PotionType.LONG_WEAKNESS)
+            // End generate - CraftPotionUtil#extendable
             .build();
 
     public static PotionType fromBukkit(PotionData data) {

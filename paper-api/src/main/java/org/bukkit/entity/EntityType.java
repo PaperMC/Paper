@@ -45,299 +45,158 @@ import org.jetbrains.annotations.Nullable;
 
 public enum EntityType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - translatable
 
-    // These strings MUST match the strings in nms.EntityTypes and are case sensitive.
-    /**
-     * An item resting on the ground.
-     * <p>
-     * Spawn with {@link World#dropItem(Location, ItemStack)} or {@link
-     * World#dropItemNaturally(Location, ItemStack)}
-     */
-    ITEM("item", Item.class, 1),
-    /**
-     * An experience orb.
-     */
-    EXPERIENCE_ORB("experience_orb", ExperienceOrb.class, 2),
-    /**
-     * @see AreaEffectCloud
-     */
+    // Start generate - EntityType
+    // @GeneratedFrom 1.21.4
+    ACACIA_BOAT("acacia_boat", AcaciaBoat.class, -1),
+    ACACIA_CHEST_BOAT("acacia_chest_boat", AcaciaChestBoat.class, -1),
+    ALLAY("allay", Allay.class, -1),
     AREA_EFFECT_CLOUD("area_effect_cloud", AreaEffectCloud.class, 3),
-    /**
-     * @see ElderGuardian
-     */
-    ELDER_GUARDIAN("elder_guardian", ElderGuardian.class, 4),
-    /**
-     * @see WitherSkeleton
-     */
-    WITHER_SKELETON("wither_skeleton", WitherSkeleton.class, 5),
-    /**
-     * @see Stray
-     */
-    STRAY("stray", Stray.class, 6),
-    /**
-     * A flying chicken egg.
-     */
-    EGG("egg", Egg.class, 7),
-    /**
-     * A leash attached to a fencepost.
-     */
-    LEASH_KNOT("leash_knot", LeashHitch.class, 8),
-    /**
-     * A painting on a wall.
-     */
-    PAINTING("painting", Painting.class, 9),
-    /**
-     * An arrow projectile; may get stuck in the ground.
-     */
-    ARROW("arrow", Arrow.class, 10),
-    /**
-     * A flying snowball.
-     */
-    SNOWBALL("snowball", Snowball.class, 11),
-    /**
-     * A flying large fireball, as thrown by a Ghast for example.
-     */
-    FIREBALL("fireball", LargeFireball.class, 12),
-    /**
-     * A flying small fireball, such as thrown by a Blaze or player.
-     */
-    SMALL_FIREBALL("small_fireball", SmallFireball.class, 13),
-    /**
-     * A flying ender pearl.
-     */
-    ENDER_PEARL("ender_pearl", EnderPearl.class, 14),
-    /**
-     * An ender eye signal.
-     */
-    EYE_OF_ENDER("eye_of_ender", EnderSignal.class, 15),
-    /**
-     * A flying splash potion.
-     */
-    POTION("potion", ThrownPotion.class, 16),
-    /**
-     * A flying experience bottle.
-     */
-    EXPERIENCE_BOTTLE("experience_bottle", ThrownExpBottle.class, 17),
-    /**
-     * An item frame on a wall.
-     */
-    ITEM_FRAME("item_frame", ItemFrame.class, 18),
-    /**
-     * A flying wither skull projectile.
-     */
-    WITHER_SKULL("wither_skull", WitherSkull.class, 19),
-    /**
-     * Primed TNT that is about to explode.
-     */
-    TNT("tnt", TNTPrimed.class, 20),
-    /**
-     * A block that is going to or is about to fall.
-     */
-    FALLING_BLOCK("falling_block", FallingBlock.class, 21),
-    /**
-     * Internal representation of a Firework once it has been launched.
-     */
-    FIREWORK_ROCKET("firework_rocket", Firework.class, 22),
-    /**
-     * @see Husk
-     */
-    HUSK("husk", Husk.class, 23),
-    /**
-     * Like {@link #ARROW} but causes the {@link PotionEffectType#GLOWING} effect on all team members.
-     */
-    SPECTRAL_ARROW("spectral_arrow", SpectralArrow.class, 24),
-    /**
-     * Bullet fired by {@link #SHULKER}.
-     */
-    SHULKER_BULLET("shulker_bullet", ShulkerBullet.class, 25),
-    /**
-     * Like {@link #FIREBALL} but with added effects.
-     */
-    DRAGON_FIREBALL("dragon_fireball", DragonFireball.class, 26),
-    /**
-     * @see ZombieVillager
-     */
-    ZOMBIE_VILLAGER("zombie_villager", ZombieVillager.class, 27),
-    /**
-     * @see SkeletonHorse
-     */
-    SKELETON_HORSE("skeleton_horse", SkeletonHorse.class, 28),
-    /**
-     * @see ZombieHorse
-     */
-    ZOMBIE_HORSE("zombie_horse", ZombieHorse.class, 29),
-    /**
-     * Mechanical entity with an inventory for placing weapons / armor into.
-     */
+    ARMADILLO("armadillo", Armadillo.class, -1),
     ARMOR_STAND("armor_stand", ArmorStand.class, 30),
-    /**
-     * @see Donkey
-     */
-    DONKEY("donkey", Donkey.class, 31),
-    /**
-     * @see Mule
-     */
-    MULE("mule", Mule.class, 32),
-    /**
-     * @see EvokerFangs
-     */
-    EVOKER_FANGS("evoker_fangs", EvokerFangs.class, 33),
-    /**
-     * @see Evoker
-     */
-    EVOKER("evoker", Evoker.class, 34),
-    /**
-     * @see Vex
-     */
-    VEX("vex", Vex.class, 35),
-    /**
-     * @see Vindicator
-     */
-    VINDICATOR("vindicator", Vindicator.class, 36),
-    /**
-     * @see Illusioner
-     */
-    ILLUSIONER("illusioner", Illusioner.class, 37),
-    /**
-     * @see CommandMinecart
-     */
-    COMMAND_BLOCK_MINECART("command_block_minecart", CommandMinecart.class, 40),
-    /**
-     * @see RideableMinecart
-     */
-    MINECART("minecart", RideableMinecart.class, 42),
-    /**
-     * @see StorageMinecart
-     */
-    CHEST_MINECART("chest_minecart", StorageMinecart.class, 43),
-    /**
-     * @see PoweredMinecart
-     */
-    FURNACE_MINECART("furnace_minecart", PoweredMinecart.class, 44),
-    /**
-     * @see ExplosiveMinecart
-     */
-    TNT_MINECART("tnt_minecart", ExplosiveMinecart.class, 45),
-    /**
-     * @see HopperMinecart
-     */
-    HOPPER_MINECART("hopper_minecart", HopperMinecart.class, 46),
-    /**
-     * @see SpawnerMinecart
-     */
-    SPAWNER_MINECART("spawner_minecart", SpawnerMinecart.class, 47),
-    CREEPER("creeper", Creeper.class, 50),
-    SKELETON("skeleton", Skeleton.class, 51),
-    SPIDER("spider", Spider.class, 52),
-    GIANT("giant", Giant.class, 53),
-    ZOMBIE("zombie", Zombie.class, 54),
-    SLIME("slime", Slime.class, 55),
-    GHAST("ghast", Ghast.class, 56),
-    ZOMBIFIED_PIGLIN("zombified_piglin", PigZombie.class, 57),
-    ENDERMAN("enderman", Enderman.class, 58),
-    CAVE_SPIDER("cave_spider", CaveSpider.class, 59),
-    SILVERFISH("silverfish", Silverfish.class, 60),
-    BLAZE("blaze", Blaze.class, 61),
-    MAGMA_CUBE("magma_cube", MagmaCube.class, 62),
-    ENDER_DRAGON("ender_dragon", EnderDragon.class, 63),
-    WITHER("wither", Wither.class, 64),
-    BAT("bat", Bat.class, 65),
-    WITCH("witch", Witch.class, 66),
-    ENDERMITE("endermite", Endermite.class, 67),
-    GUARDIAN("guardian", Guardian.class, 68),
-    SHULKER("shulker", Shulker.class, 69),
-    PIG("pig", Pig.class, 90),
-    SHEEP("sheep", Sheep.class, 91),
-    COW("cow", Cow.class, 92),
-    CHICKEN("chicken", Chicken.class, 93),
-    SQUID("squid", Squid.class, 94),
-    WOLF("wolf", Wolf.class, 95),
-    MOOSHROOM("mooshroom", MushroomCow.class, 96),
-    SNOW_GOLEM("snow_golem", Snowman.class, 97),
-    OCELOT("ocelot", Ocelot.class, 98),
-    IRON_GOLEM("iron_golem", IronGolem.class, 99),
-    HORSE("horse", Horse.class, 100),
-    RABBIT("rabbit", Rabbit.class, 101),
-    POLAR_BEAR("polar_bear", PolarBear.class, 102),
-    LLAMA("llama", Llama.class, 103),
-    LLAMA_SPIT("llama_spit", LlamaSpit.class, 104),
-    PARROT("parrot", Parrot.class, 105),
-    VILLAGER("villager", Villager.class, 120),
-    END_CRYSTAL("end_crystal", EnderCrystal.class, 200),
-    TURTLE("turtle", Turtle.class, -1),
-    PHANTOM("phantom", Phantom.class, -1),
-    TRIDENT("trident", Trident.class, -1),
-    COD("cod", Cod.class, -1),
-    SALMON("salmon", Salmon.class, -1),
-    PUFFERFISH("pufferfish", PufferFish.class, -1),
-    TROPICAL_FISH("tropical_fish", TropicalFish.class, -1),
-    DROWNED("drowned", Drowned.class, -1),
-    DOLPHIN("dolphin", Dolphin.class, -1),
-    CAT("cat", Cat.class, -1),
-    PANDA("panda", Panda.class, -1),
-    PILLAGER("pillager", Pillager.class, -1),
-    RAVAGER("ravager", Ravager.class, -1),
-    TRADER_LLAMA("trader_llama", TraderLlama.class, -1),
-    WANDERING_TRADER("wandering_trader", WanderingTrader.class, -1),
-    FOX("fox", Fox.class, -1),
-    BEE("bee", Bee.class, -1),
-    HOGLIN("hoglin", Hoglin.class, -1),
-    PIGLIN("piglin", Piglin.class, -1),
-    STRIDER("strider", Strider.class, -1),
-    ZOGLIN("zoglin", Zoglin.class, -1),
-    PIGLIN_BRUTE("piglin_brute", PiglinBrute.class, -1),
+    ARROW("arrow", Arrow.class, 10),
     AXOLOTL("axolotl", Axolotl.class, -1),
+    BAMBOO_CHEST_RAFT("bamboo_chest_raft", BambooChestRaft.class, -1),
+    BAMBOO_RAFT("bamboo_raft", BambooRaft.class, -1),
+    BAT("bat", Bat.class, 65),
+    BEE("bee", Bee.class, -1),
+    BIRCH_BOAT("birch_boat", BirchBoat.class, -1),
+    BIRCH_CHEST_BOAT("birch_chest_boat", BirchChestBoat.class, -1),
+    BLAZE("blaze", Blaze.class, 61),
+    BLOCK_DISPLAY("block_display", BlockDisplay.class, -1),
+    BOGGED("bogged", Bogged.class, -1),
+    BREEZE("breeze", Breeze.class, -1),
+    BREEZE_WIND_CHARGE("breeze_wind_charge", BreezeWindCharge.class, -1),
+    CAMEL("camel", Camel.class, -1),
+    CAT("cat", Cat.class, -1),
+    CAVE_SPIDER("cave_spider", CaveSpider.class, 59),
+    CHERRY_BOAT("cherry_boat", CherryBoat.class, -1),
+    CHERRY_CHEST_BOAT("cherry_chest_boat", CherryChestBoat.class, -1),
+    CHEST_MINECART("chest_minecart", StorageMinecart.class, 43),
+    CHICKEN("chicken", Chicken.class, 93),
+    COD("cod", Cod.class, -1),
+    COMMAND_BLOCK_MINECART("command_block_minecart", CommandMinecart.class, 40),
+    COW("cow", Cow.class, 92),
+    CREAKING("creaking", Creaking.class, -1),
+    CREEPER("creeper", Creeper.class, 50),
+    DARK_OAK_BOAT("dark_oak_boat", DarkOakBoat.class, -1),
+    DARK_OAK_CHEST_BOAT("dark_oak_chest_boat", DarkOakChestBoat.class, -1),
+    DOLPHIN("dolphin", Dolphin.class, -1),
+    DONKEY("donkey", Donkey.class, 31),
+    DRAGON_FIREBALL("dragon_fireball", DragonFireball.class, 26),
+    DROWNED("drowned", Drowned.class, -1),
+    EGG("egg", Egg.class, 7),
+    ELDER_GUARDIAN("elder_guardian", ElderGuardian.class, 4),
+    END_CRYSTAL("end_crystal", EnderCrystal.class, 200),
+    ENDER_DRAGON("ender_dragon", EnderDragon.class, 63),
+    ENDER_PEARL("ender_pearl", EnderPearl.class, 14),
+    ENDERMAN("enderman", Enderman.class, 58),
+    ENDERMITE("endermite", Endermite.class, 67),
+    EVOKER("evoker", Evoker.class, 34),
+    EVOKER_FANGS("evoker_fangs", EvokerFangs.class, 33),
+    EXPERIENCE_BOTTLE("experience_bottle", ThrownExpBottle.class, 17),
+    EXPERIENCE_ORB("experience_orb", ExperienceOrb.class, 2),
+    EYE_OF_ENDER("eye_of_ender", EnderSignal.class, 15),
+    FALLING_BLOCK("falling_block", FallingBlock.class, 21),
+    FIREBALL("fireball", Fireball.class, 12),
+    FIREWORK_ROCKET("firework_rocket", Firework.class, 22),
+    FISHING_BOBBER("fishing_bobber", FishHook.class, -1, false),
+    FOX("fox", Fox.class, -1),
+    FROG("frog", Frog.class, -1),
+    FURNACE_MINECART("furnace_minecart", PoweredMinecart.class, 44),
+    GHAST("ghast", Ghast.class, 56),
+    GIANT("giant", Giant.class, 53),
     GLOW_ITEM_FRAME("glow_item_frame", GlowItemFrame.class, -1),
     GLOW_SQUID("glow_squid", GlowSquid.class, -1),
     GOAT("goat", Goat.class, -1),
-    MARKER("marker", Marker.class, -1),
-    ALLAY("allay", Allay.class, -1),
-    FROG("frog", Frog.class, -1),
-    TADPOLE("tadpole", Tadpole.class, -1),
-    WARDEN("warden", Warden.class, -1),
-    CAMEL("camel", Camel.class, -1),
-    BLOCK_DISPLAY("block_display", BlockDisplay.class, -1),
+    GUARDIAN("guardian", Guardian.class, 68),
+    HOGLIN("hoglin", Hoglin.class, -1),
+    HOPPER_MINECART("hopper_minecart", HopperMinecart.class, 46),
+    HORSE("horse", Horse.class, 100),
+    HUSK("husk", Husk.class, 23),
+    ILLUSIONER("illusioner", Illusioner.class, 37),
     INTERACTION("interaction", Interaction.class, -1),
+    IRON_GOLEM("iron_golem", IronGolem.class, 99),
+    ITEM("item", Item.class, 1),
     ITEM_DISPLAY("item_display", ItemDisplay.class, -1),
-    SNIFFER("sniffer", Sniffer.class, -1),
-    TEXT_DISPLAY("text_display", TextDisplay.class, -1),
-    BREEZE("breeze", Breeze.class, -1),
-    WIND_CHARGE("wind_charge", WindCharge.class, -1),
-    BREEZE_WIND_CHARGE("breeze_wind_charge", BreezeWindCharge.class, -1),
-    ARMADILLO("armadillo", Armadillo.class, -1),
-    BOGGED("bogged", Bogged.class, -1),
-    OMINOUS_ITEM_SPAWNER("ominous_item_spawner", OminousItemSpawner.class, -1),
-    ACACIA_BOAT("acacia_boat", AcaciaBoat.class, -1),
-    ACACIA_CHEST_BOAT("acacia_chest_boat", AcaciaChestBoat.class, -1),
-    BAMBOO_RAFT("bamboo_raft", BambooRaft.class, -1),
-    BAMBOO_CHEST_RAFT("bamboo_chest_raft", BambooChestRaft.class, -1),
-    BIRCH_BOAT("birch_boat", BirchBoat.class, -1),
-    BIRCH_CHEST_BOAT("birch_chest_boat", BirchChestBoat.class, -1),
-    CHERRY_BOAT("cherry_boat", CherryBoat.class, -1),
-    CHERRY_CHEST_BOAT("cherry_chest_boat", CherryChestBoat.class, -1),
-    DARK_OAK_BOAT("dark_oak_boat", DarkOakBoat.class, -1),
-    DARK_OAK_CHEST_BOAT("dark_oak_chest_boat", DarkOakChestBoat.class, -1),
+    ITEM_FRAME("item_frame", ItemFrame.class, 18),
     JUNGLE_BOAT("jungle_boat", JungleBoat.class, -1),
     JUNGLE_CHEST_BOAT("jungle_chest_boat", JungleChestBoat.class, -1),
+    LEASH_KNOT("leash_knot", LeashHitch.class, 8),
+    LIGHTNING_BOLT("lightning_bolt", LightningStrike.class, -1),
+    LLAMA("llama", Llama.class, 103),
+    LLAMA_SPIT("llama_spit", LlamaSpit.class, 104),
+    MAGMA_CUBE("magma_cube", MagmaCube.class, 62),
     MANGROVE_BOAT("mangrove_boat", MangroveBoat.class, -1),
     MANGROVE_CHEST_BOAT("mangrove_chest_boat", MangroveChestBoat.class, -1),
+    MARKER("marker", Marker.class, -1),
+    MINECART("minecart", Minecart.class, 42),
+    MOOSHROOM("mooshroom", MushroomCow.class, 96),
+    MULE("mule", Mule.class, 32),
     OAK_BOAT("oak_boat", OakBoat.class, -1),
     OAK_CHEST_BOAT("oak_chest_boat", OakChestBoat.class, -1),
+    OCELOT("ocelot", Ocelot.class, 98),
+    OMINOUS_ITEM_SPAWNER("ominous_item_spawner", OminousItemSpawner.class, -1),
+    PAINTING("painting", Painting.class, 9),
     PALE_OAK_BOAT("pale_oak_boat", PaleOakBoat.class, -1),
     PALE_OAK_CHEST_BOAT("pale_oak_chest_boat", PaleOakChestBoat.class, -1),
+    PANDA("panda", Panda.class, -1),
+    PARROT("parrot", Parrot.class, 105),
+    PHANTOM("phantom", Phantom.class, -1),
+    PIG("pig", Pig.class, 90),
+    PIGLIN("piglin", Piglin.class, -1),
+    PIGLIN_BRUTE("piglin_brute", PiglinBrute.class, -1),
+    PILLAGER("pillager", Pillager.class, -1),
+    PLAYER("player", Player.class, -1, false),
+    POLAR_BEAR("polar_bear", PolarBear.class, 102),
+    POTION("potion", ThrownPotion.class, 16),
+    PUFFERFISH("pufferfish", PufferFish.class, -1),
+    RABBIT("rabbit", Rabbit.class, 101),
+    RAVAGER("ravager", Ravager.class, -1),
+    SALMON("salmon", Salmon.class, -1),
+    SHEEP("sheep", Sheep.class, 91),
+    SHULKER("shulker", Shulker.class, 69),
+    SHULKER_BULLET("shulker_bullet", ShulkerBullet.class, 25),
+    SILVERFISH("silverfish", Silverfish.class, 60),
+    SKELETON("skeleton", Skeleton.class, 51),
+    SKELETON_HORSE("skeleton_horse", SkeletonHorse.class, 28),
+    SLIME("slime", Slime.class, 55),
+    SMALL_FIREBALL("small_fireball", SmallFireball.class, 13),
+    SNIFFER("sniffer", Sniffer.class, -1),
+    SNOW_GOLEM("snow_golem", Snowman.class, 97),
+    SNOWBALL("snowball", Snowball.class, 11),
+    SPAWNER_MINECART("spawner_minecart", SpawnerMinecart.class, 47),
+    SPECTRAL_ARROW("spectral_arrow", SpectralArrow.class, 24),
+    SPIDER("spider", Spider.class, 52),
     SPRUCE_BOAT("spruce_boat", SpruceBoat.class, -1),
     SPRUCE_CHEST_BOAT("spruce_chest_boat", SpruceChestBoat.class, -1),
-    CREAKING("creaking", Creaking.class, -1),
-    /**
-     * A fishing line and bobber.
-     */
-    FISHING_BOBBER("fishing_bobber", FishHook.class, -1, false),
-    /**
-     * A bolt of lightning.
-     * <p>
-     * Spawn with {@link World#strikeLightning(Location)}.
-     */
-    LIGHTNING_BOLT("lightning_bolt", LightningStrike.class, -1),
-    PLAYER("player", Player.class, -1, false),
+    SQUID("squid", Squid.class, 94),
+    STRAY("stray", Stray.class, 6),
+    STRIDER("strider", Strider.class, -1),
+    TADPOLE("tadpole", Tadpole.class, -1),
+    TEXT_DISPLAY("text_display", TextDisplay.class, -1),
+    TNT("tnt", TNTPrimed.class, 20),
+    TNT_MINECART("tnt_minecart", ExplosiveMinecart.class, 45),
+    TRADER_LLAMA("trader_llama", TraderLlama.class, -1),
+    TRIDENT("trident", Trident.class, -1),
+    TROPICAL_FISH("tropical_fish", TropicalFish.class, -1),
+    TURTLE("turtle", Turtle.class, -1),
+    VEX("vex", Vex.class, 35),
+    VILLAGER("villager", Villager.class, 120),
+    VINDICATOR("vindicator", Vindicator.class, 36),
+    WANDERING_TRADER("wandering_trader", WanderingTrader.class, -1),
+    WARDEN("warden", Warden.class, -1),
+    WIND_CHARGE("wind_charge", WindCharge.class, -1),
+    WITCH("witch", Witch.class, 66),
+    WITHER("wither", Wither.class, 64),
+    WITHER_SKELETON("wither_skeleton", WitherSkeleton.class, 5),
+    WITHER_SKULL("wither_skull", WitherSkull.class, 19),
+    WOLF("wolf", Wolf.class, 95),
+    ZOGLIN("zoglin", Zoglin.class, -1),
+    ZOMBIE("zombie", Zombie.class, 54),
+    ZOMBIE_HORSE("zombie_horse", ZombieHorse.class, 29),
+    ZOMBIE_VILLAGER("zombie_villager", ZombieVillager.class, 27),
+    ZOMBIFIED_PIGLIN("zombified_piglin", PigZombie.class, 57),
+    // End generate - EntityType
     /**
      * An unknown entity without an Entity Class
      */

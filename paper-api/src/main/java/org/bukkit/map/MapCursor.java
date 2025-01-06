@@ -7,6 +7,7 @@ import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.util.OldEnum;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -287,55 +288,78 @@ public final class MapCursor {
      */
     public interface Type extends OldEnum<Type>, Keyed {
 
-        Type PLAYER = getType("player");
-        Type FRAME = getType("frame");
-        Type RED_MARKER = getType("red_marker");
-        Type BLUE_MARKER = getType("blue_marker");
-        Type TARGET_X = getType("target_x");
-        Type TARGET_POINT = getType("target_point");
-        Type PLAYER_OFF_MAP = getType("player_off_map");
-        Type PLAYER_OFF_LIMITS = getType("player_off_limits");
-        Type MANSION = getType("mansion");
-        Type MONUMENT = getType("monument");
-        Type BANNER_WHITE = getType("banner_white");
-        Type BANNER_ORANGE = getType("banner_orange");
-        Type BANNER_MAGENTA = getType("banner_magenta");
-        Type BANNER_LIGHT_BLUE = getType("banner_light_blue");
-        Type BANNER_YELLOW = getType("banner_yellow");
-        Type BANNER_LIME = getType("banner_lime");
-        Type BANNER_PINK = getType("banner_pink");
-        Type BANNER_GRAY = getType("banner_gray");
-        Type BANNER_LIGHT_GRAY = getType("banner_light_gray");
-        Type BANNER_CYAN = getType("banner_cyan");
-        Type BANNER_PURPLE = getType("banner_purple");
-        Type BANNER_BLUE = getType("banner_blue");
-        Type BANNER_BROWN = getType("banner_brown");
-        Type BANNER_GREEN = getType("banner_green");
-        Type BANNER_RED = getType("banner_red");
+        // Start generate - MapCursorType
+        // @GeneratedFrom 1.21.4
         Type BANNER_BLACK = getType("banner_black");
-        Type RED_X = getType("red_x");
-        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
-        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
-        Type VILLAGE_DESERT = getType("village_desert");
-        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
-        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
-        Type VILLAGE_PLAINS = getType("village_plains");
-        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
-        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
-        Type VILLAGE_SAVANNA = getType("village_savanna");
-        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
-        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
-        Type VILLAGE_SNOWY = getType("village_snowy");
-        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
-        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
-        Type VILLAGE_TAIGA = getType("village_taiga");
-        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
-        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
+
+        Type BANNER_BLUE = getType("banner_blue");
+
+        Type BANNER_BROWN = getType("banner_brown");
+
+        Type BANNER_CYAN = getType("banner_cyan");
+
+        Type BANNER_GRAY = getType("banner_gray");
+
+        Type BANNER_GREEN = getType("banner_green");
+
+        Type BANNER_LIGHT_BLUE = getType("banner_light_blue");
+
+        Type BANNER_LIGHT_GRAY = getType("banner_light_gray");
+
+        Type BANNER_LIME = getType("banner_lime");
+
+        Type BANNER_MAGENTA = getType("banner_magenta");
+
+        Type BANNER_ORANGE = getType("banner_orange");
+
+        Type BANNER_PINK = getType("banner_pink");
+
+        Type BANNER_PURPLE = getType("banner_purple");
+
+        Type BANNER_RED = getType("banner_red");
+
+        Type BANNER_WHITE = getType("banner_white");
+
+        Type BANNER_YELLOW = getType("banner_yellow");
+
+        Type BLUE_MARKER = getType("blue_marker");
+
+        Type FRAME = getType("frame");
+
         Type JUNGLE_TEMPLE = getType("jungle_temple");
-        @org.bukkit.MinecraftExperimental(org.bukkit.MinecraftExperimental.Requires.TRADE_REBALANCE) // Paper - add missing annotation
-        @org.jetbrains.annotations.ApiStatus.Experimental // Paper - add missing annotation
+
+        Type MANSION = getType("mansion");
+
+        Type MONUMENT = getType("monument");
+
+        Type PLAYER = getType("player");
+
+        Type PLAYER_OFF_LIMITS = getType("player_off_limits");
+
+        Type PLAYER_OFF_MAP = getType("player_off_map");
+
+        Type RED_MARKER = getType("red_marker");
+
+        Type RED_X = getType("red_x");
+
         Type SWAMP_HUT = getType("swamp_hut");
+
+        Type TARGET_POINT = getType("target_point");
+
+        Type TARGET_X = getType("target_x");
+
         Type TRIAL_CHAMBERS = getType("trial_chambers");
+
+        Type VILLAGE_DESERT = getType("village_desert");
+
+        Type VILLAGE_PLAINS = getType("village_plains");
+
+        Type VILLAGE_SAVANNA = getType("village_savanna");
+
+        Type VILLAGE_SNOWY = getType("village_snowy");
+
+        Type VILLAGE_TAIGA = getType("village_taiga");
+        // End generate - MapCursorType
 
         @NotNull
         private static Type getType(@NotNull String key) {
@@ -348,7 +372,7 @@ public final class MapCursor {
          * @return the value
          * @apiNote Internal Use Only
          */
-        @org.jetbrains.annotations.ApiStatus.Internal // Paper
+        @ApiStatus.Internal // Paper
         byte getValue();
 
         /**
@@ -358,7 +382,7 @@ public final class MapCursor {
          * @return the matching type
          * @apiNote Internal Use Only
          */
-        @org.jetbrains.annotations.ApiStatus.Internal // Paper
+        @ApiStatus.Internal // Paper
         @Nullable
         static Type byValue(byte value) {
             for (Type t : values()) {
@@ -373,7 +397,7 @@ public final class MapCursor {
          * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
          */
         @NotNull
-        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+        @Deprecated(since = "1.21", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
             Type type = Registry.MAP_DECORATION_TYPE.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
             Preconditions.checkArgument(type != null, "No Type found with the name %s", name);
@@ -385,7 +409,7 @@ public final class MapCursor {
          * @deprecated use {@link Registry#iterator()}.
          */
         @NotNull
-        @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+        @Deprecated(since = "1.21", forRemoval = true) @ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type[] values() {
             return Lists.newArrayList(Registry.MAP_DECORATION_TYPE).toArray(new Type[0]);
         }

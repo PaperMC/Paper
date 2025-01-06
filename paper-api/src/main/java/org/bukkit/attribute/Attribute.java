@@ -17,134 +17,72 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
-    /**
-     * Maximum health of an Entity.
-     */
-    Attribute MAX_HEALTH = getAttribute("max_health");
-    /**
-     * Range at which an Entity will follow others.
-     */
-    Attribute FOLLOW_RANGE = getAttribute("follow_range");
-    /**
-     * Resistance of an Entity to knockback.
-     */
-    Attribute KNOCKBACK_RESISTANCE = getAttribute("knockback_resistance");
-    /**
-     * Movement speed of an Entity.
-     */
-    Attribute MOVEMENT_SPEED = getAttribute("movement_speed");
-    /**
-     * Flying speed of an Entity.
-     */
-    Attribute FLYING_SPEED = getAttribute("flying_speed");
-    /**
-     * Attack damage of an Entity.
-     */
-    Attribute ATTACK_DAMAGE = getAttribute("attack_damage");
-    /**
-     * Attack knockback of an Entity.
-     */
-    Attribute ATTACK_KNOCKBACK = getAttribute("attack_knockback");
-    /**
-     * Attack speed of an Entity.
-     */
-    Attribute ATTACK_SPEED = getAttribute("attack_speed");
-    /**
-     * Armor bonus of an Entity.
-     */
+    // Start generate - Attribute
+    // @GeneratedFrom 1.21.4
     Attribute ARMOR = getAttribute("armor");
-    /**
-     * Armor durability bonus of an Entity.
-     */
+
     Attribute ARMOR_TOUGHNESS = getAttribute("armor_toughness");
-    /**
-     * The fall damage multiplier of an Entity.
-     */
-    Attribute FALL_DAMAGE_MULTIPLIER = getAttribute("fall_damage_multiplier");
-    /**
-     * Luck bonus of an Entity.
-     */
-    Attribute LUCK = getAttribute("luck");
-    /**
-     * Maximum absorption of an Entity.
-     */
-    Attribute MAX_ABSORPTION = getAttribute("max_absorption");
-    /**
-     * The distance which an Entity can fall without damage.
-     */
-    Attribute SAFE_FALL_DISTANCE = getAttribute("safe_fall_distance");
-    /**
-     * The relative scale of an Entity.
-     */
-    Attribute SCALE = getAttribute("scale");
-    /**
-     * The height which an Entity can walk over.
-     */
-    Attribute STEP_HEIGHT = getAttribute("step_height");
-    /**
-     * The gravity applied to an Entity.
-     */
-    Attribute GRAVITY = getAttribute("gravity");
-    /**
-     * Strength with which an Entity will jump.
-     */
-    Attribute JUMP_STRENGTH = getAttribute("jump_strength");
-    /**
-     * How long an entity remains burning after ignition.
-     */
-    Attribute BURNING_TIME = getAttribute("burning_time");
-    /**
-     * Resistance to knockback from explosions.
-     */
-    Attribute EXPLOSION_KNOCKBACK_RESISTANCE = getAttribute("explosion_knockback_resistance");
-    /**
-     * Movement speed through difficult terrain.
-     */
-    Attribute MOVEMENT_EFFICIENCY = getAttribute("movement_efficiency");
-    /**
-     * Oxygen use underwater.
-     */
-    Attribute OXYGEN_BONUS = getAttribute("oxygen_bonus");
-    /**
-     * Movement speed through water.
-     */
-    Attribute WATER_MOVEMENT_EFFICIENCY = getAttribute("water_movement_efficiency");
-    /**
-     * Range at which mobs will be tempted by items.
-     */
-    Attribute TEMPT_RANGE = getAttribute("tempt_range");
-    /**
-     * The block reach distance of a Player.
-     */
-    Attribute BLOCK_INTERACTION_RANGE = getAttribute("block_interaction_range");
-    /**
-     * The entity reach distance of a Player.
-     */
-    Attribute ENTITY_INTERACTION_RANGE = getAttribute("entity_interaction_range");
-    /**
-     * Block break speed of a Player.
-     */
+
+    Attribute ATTACK_DAMAGE = getAttribute("attack_damage");
+
+    Attribute ATTACK_KNOCKBACK = getAttribute("attack_knockback");
+
+    Attribute ATTACK_SPEED = getAttribute("attack_speed");
+
     Attribute BLOCK_BREAK_SPEED = getAttribute("block_break_speed");
-    /**
-     * Mining speed for correct tools.
-     */
+
+    Attribute BLOCK_INTERACTION_RANGE = getAttribute("block_interaction_range");
+
+    Attribute BURNING_TIME = getAttribute("burning_time");
+
+    Attribute ENTITY_INTERACTION_RANGE = getAttribute("entity_interaction_range");
+
+    Attribute EXPLOSION_KNOCKBACK_RESISTANCE = getAttribute("explosion_knockback_resistance");
+
+    Attribute FALL_DAMAGE_MULTIPLIER = getAttribute("fall_damage_multiplier");
+
+    Attribute FLYING_SPEED = getAttribute("flying_speed");
+
+    Attribute FOLLOW_RANGE = getAttribute("follow_range");
+
+    Attribute GRAVITY = getAttribute("gravity");
+
+    Attribute JUMP_STRENGTH = getAttribute("jump_strength");
+
+    Attribute KNOCKBACK_RESISTANCE = getAttribute("knockback_resistance");
+
+    Attribute LUCK = getAttribute("luck");
+
+    Attribute MAX_ABSORPTION = getAttribute("max_absorption");
+
+    Attribute MAX_HEALTH = getAttribute("max_health");
+
     Attribute MINING_EFFICIENCY = getAttribute("mining_efficiency");
-    /**
-     * Sneaking speed.
-     */
+
+    Attribute MOVEMENT_EFFICIENCY = getAttribute("movement_efficiency");
+
+    Attribute MOVEMENT_SPEED = getAttribute("movement_speed");
+
+    Attribute OXYGEN_BONUS = getAttribute("oxygen_bonus");
+
+    Attribute SAFE_FALL_DISTANCE = getAttribute("safe_fall_distance");
+
+    Attribute SCALE = getAttribute("scale");
+
     Attribute SNEAKING_SPEED = getAttribute("sneaking_speed");
-    /**
-     * Underwater mining speed.
-     */
-    Attribute SUBMERGED_MINING_SPEED = getAttribute("submerged_mining_speed");
-    /**
-     * Sweeping damage.
-     */
-    Attribute SWEEPING_DAMAGE_RATIO = getAttribute("sweeping_damage_ratio");
-    /**
-     * Chance of a zombie to spawn reinforcements.
-     */
+
     Attribute SPAWN_REINFORCEMENTS = getAttribute("spawn_reinforcements");
+
+    Attribute STEP_HEIGHT = getAttribute("step_height");
+
+    Attribute SUBMERGED_MINING_SPEED = getAttribute("submerged_mining_speed");
+
+    Attribute SWEEPING_DAMAGE_RATIO = getAttribute("sweeping_damage_ratio");
+
+    Attribute TEMPT_RANGE = getAttribute("tempt_range");
+
+    Attribute WATER_MOVEMENT_EFFICIENCY = getAttribute("water_movement_efficiency");
+    // End generate - Attribute
 
     @NotNull
     private static Attribute getAttribute(@NotNull String key) {

@@ -9,6 +9,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Equippable;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
@@ -138,3682 +140,1549 @@ import org.jetbrains.annotations.Nullable;
 @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"}) // Paper
 public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
     //<editor-fold desc="Materials" defaultstate="collapsed">
-    AIR(9648, 64), // Paper - air stacks to 64
-    STONE(22948),
-    GRANITE(21091),
-    POLISHED_GRANITE(5477),
-    DIORITE(24688),
-    POLISHED_DIORITE(31615),
-    ANDESITE(25975),
-    POLISHED_ANDESITE(8335),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    DEEPSLATE(26842, Orientable.class),
-    COBBLED_DEEPSLATE(8021),
-    POLISHED_DEEPSLATE(31772),
-    CALCITE(20311),
-    TUFF(24364),
-    /**
-     * BlockData: {@link Slab}
-     */
-    TUFF_SLAB(19305, Slab.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    TUFF_STAIRS(11268, Stairs.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    TUFF_WALL(24395, Wall.class),
-    CHISELED_TUFF(15831),
-    POLISHED_TUFF(17801),
-    /**
-     * BlockData: {@link Slab}
-     */
-    POLISHED_TUFF_SLAB(31096, Slab.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    POLISHED_TUFF_STAIRS(7964, Stairs.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    POLISHED_TUFF_WALL(28886, Wall.class),
-    TUFF_BRICKS(26276),
-    /**
-     * BlockData: {@link Slab}
-     */
-    TUFF_BRICK_SLAB(11843, Slab.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    TUFF_BRICK_STAIRS(30753, Stairs.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    TUFF_BRICK_WALL(11761, Wall.class),
-    CHISELED_TUFF_BRICKS(8601),
-    DRIPSTONE_BLOCK(26227),
-    /**
-     * BlockData: {@link Snowable}
-     */
-    GRASS_BLOCK(28346, Snowable.class),
-    DIRT(10580),
-    COARSE_DIRT(15411),
-    /**
-     * BlockData: {@link Snowable}
-     */
-    PODZOL(24068, Snowable.class),
-    ROOTED_DIRT(11410),
-    MUD(32418),
-    CRIMSON_NYLIUM(18139),
-    WARPED_NYLIUM(26396),
-    COBBLESTONE(32147),
-    OAK_PLANKS(14905),
-    SPRUCE_PLANKS(14593),
-    BIRCH_PLANKS(29322),
-    JUNGLE_PLANKS(26445),
-    ACACIA_PLANKS(31312),
-    CHERRY_PLANKS(8354),
-    DARK_OAK_PLANKS(20869),
-    PALE_OAK_PLANKS(21660),
-    MANGROVE_PLANKS(7078),
-    BAMBOO_PLANKS(8520),
-    CRIMSON_PLANKS(18812),
-    WARPED_PLANKS(16045),
-    BAMBOO_MOSAIC(10715),
-    /**
-     * BlockData: {@link Sapling}
-     */
-    OAK_SAPLING(9636, Sapling.class),
-    /**
-     * BlockData: {@link Sapling}
-     */
-    SPRUCE_SAPLING(19874, Sapling.class),
-    /**
-     * BlockData: {@link Sapling}
-     */
-    BIRCH_SAPLING(31533, Sapling.class),
-    /**
-     * BlockData: {@link Sapling}
-     */
-    JUNGLE_SAPLING(17951, Sapling.class),
-    /**
-     * BlockData: {@link Sapling}
-     */
-    ACACIA_SAPLING(20806, Sapling.class),
-    /**
-     * BlockData: {@link Sapling}
-     */
-    CHERRY_SAPLING(25204, Sapling.class),
-    /**
-     * BlockData: {@link Sapling}
-     */
-    DARK_OAK_SAPLING(14933, Sapling.class),
-    /**
-     * BlockData: {@link Sapling}
-     */
-    PALE_OAK_SAPLING(15508, Sapling.class),
-    /**
-     * BlockData: {@link MangrovePropagule}
-     */
-    MANGROVE_PROPAGULE(18688, MangrovePropagule.class),
-    BEDROCK(23130),
-    SAND(11542),
-    /**
-     * BlockData: {@link Brushable}
-     */
-    SUSPICIOUS_SAND(18410, Brushable.class),
-    /**
-     * BlockData: {@link Brushable}
-     */
-    SUSPICIOUS_GRAVEL(7353, Brushable.class),
-    RED_SAND(16279),
-    GRAVEL(7804),
-    COAL_ORE(30965),
-    DEEPSLATE_COAL_ORE(16823),
-    IRON_ORE(19834),
-    DEEPSLATE_IRON_ORE(26021),
-    COPPER_ORE(32666),
-    DEEPSLATE_COPPER_ORE(6588),
-    GOLD_ORE(32625),
-    DEEPSLATE_GOLD_ORE(13582),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    REDSTONE_ORE(10887, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    DEEPSLATE_REDSTONE_ORE(6331, Lightable.class),
-    EMERALD_ORE(16630),
-    DEEPSLATE_EMERALD_ORE(5299),
-    LAPIS_ORE(22934),
-    DEEPSLATE_LAPIS_ORE(13598),
-    DIAMOND_ORE(9292),
-    DEEPSLATE_DIAMOND_ORE(17792),
-    NETHER_GOLD_ORE(4185),
-    NETHER_QUARTZ_ORE(4807),
-    ANCIENT_DEBRIS(18198),
-    COAL_BLOCK(27968),
-    RAW_IRON_BLOCK(32210),
-    RAW_COPPER_BLOCK(17504),
-    RAW_GOLD_BLOCK(23246),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    HEAVY_CORE(15788, Waterlogged.class),
-    AMETHYST_BLOCK(18919),
-    BUDDING_AMETHYST(13963),
-    IRON_BLOCK(24754),
-    COPPER_BLOCK(12880),
-    GOLD_BLOCK(27392),
-    DIAMOND_BLOCK(5944),
-    NETHERITE_BLOCK(6527),
-    EXPOSED_COPPER(28488),
-    WEATHERED_COPPER(19699),
-    OXIDIZED_COPPER(19490),
-    CHISELED_COPPER(12143),
-    EXPOSED_CHISELED_COPPER(4570),
-    WEATHERED_CHISELED_COPPER(30876),
-    OXIDIZED_CHISELED_COPPER(27719),
-    CUT_COPPER(32519),
-    EXPOSED_CUT_COPPER(18000),
-    WEATHERED_CUT_COPPER(21158),
-    OXIDIZED_CUT_COPPER(5382),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    CUT_COPPER_STAIRS(25925, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    EXPOSED_CUT_COPPER_STAIRS(31621, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    WEATHERED_CUT_COPPER_STAIRS(5851, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    OXIDIZED_CUT_COPPER_STAIRS(25379, Stairs.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    CUT_COPPER_SLAB(28988, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    EXPOSED_CUT_COPPER_SLAB(26694, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    WEATHERED_CUT_COPPER_SLAB(4602, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    OXIDIZED_CUT_COPPER_SLAB(29642, Slab.class),
-    WAXED_COPPER_BLOCK(14638),
-    WAXED_EXPOSED_COPPER(27989),
-    WAXED_WEATHERED_COPPER(5960),
-    WAXED_OXIDIZED_COPPER(25626),
-    WAXED_CHISELED_COPPER(7500),
-    WAXED_EXPOSED_CHISELED_COPPER(30658),
-    WAXED_WEATHERED_CHISELED_COPPER(5970),
-    WAXED_OXIDIZED_CHISELED_COPPER(7735),
-    WAXED_CUT_COPPER(11030),
-    WAXED_EXPOSED_CUT_COPPER(30043),
-    WAXED_WEATHERED_CUT_COPPER(13823),
-    WAXED_OXIDIZED_CUT_COPPER(22582),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    WAXED_CUT_COPPER_STAIRS(23125, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    WAXED_EXPOSED_CUT_COPPER_STAIRS(15532, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    WAXED_WEATHERED_CUT_COPPER_STAIRS(29701, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    WAXED_OXIDIZED_CUT_COPPER_STAIRS(9842, Stairs.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    WAXED_CUT_COPPER_SLAB(6271, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    WAXED_EXPOSED_CUT_COPPER_SLAB(22091, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    WAXED_WEATHERED_CUT_COPPER_SLAB(20035, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    WAXED_OXIDIZED_CUT_COPPER_SLAB(11202, Slab.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    OAK_LOG(26723, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    SPRUCE_LOG(9726, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    BIRCH_LOG(26727, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    JUNGLE_LOG(20721, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    ACACIA_LOG(8385, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    CHERRY_LOG(20847, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    PALE_OAK_LOG(13346, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    DARK_OAK_LOG(14831, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    MANGROVE_LOG(23890, Orientable.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    MANGROVE_ROOTS(22124, Waterlogged.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    MUDDY_MANGROVE_ROOTS(23244, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    CRIMSON_STEM(27920, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    WARPED_STEM(28920, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    BAMBOO_BLOCK(20770, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_OAK_LOG(20523, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_SPRUCE_LOG(6140, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_BIRCH_LOG(8838, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_JUNGLE_LOG(15476, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_ACACIA_LOG(18167, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_CHERRY_LOG(18061, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_DARK_OAK_LOG(6492, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_PALE_OAK_LOG(25375, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_MANGROVE_LOG(15197, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_CRIMSON_STEM(16882, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_WARPED_STEM(15627, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_OAK_WOOD(31455, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_SPRUCE_WOOD(6467, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_BIRCH_WOOD(22350, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_JUNGLE_WOOD(30315, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_ACACIA_WOOD(27193, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_CHERRY_WOOD(19647, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_DARK_OAK_WOOD(16000, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_PALE_OAK_WOOD(20330, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_MANGROVE_WOOD(4828, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_CRIMSON_HYPHAE(27488, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_WARPED_HYPHAE(7422, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    STRIPPED_BAMBOO_BLOCK(14799, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    OAK_WOOD(7378, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    SPRUCE_WOOD(32328, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    BIRCH_WOOD(20913, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    JUNGLE_WOOD(10341, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    ACACIA_WOOD(9541, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    CHERRY_WOOD(9826, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    PALE_OAK_WOOD(29429, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    DARK_OAK_WOOD(16995, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    MANGROVE_WOOD(25484, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    CRIMSON_HYPHAE(6550, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    WARPED_HYPHAE(18439, Orientable.class),
-    /**
-     * BlockData: {@link Leaves}
-     */
-    OAK_LEAVES(4385, Leaves.class),
-    /**
-     * BlockData: {@link Leaves}
-     */
-    SPRUCE_LEAVES(20039, Leaves.class),
-    /**
-     * BlockData: {@link Leaves}
-     */
-    BIRCH_LEAVES(12601, Leaves.class),
-    /**
-     * BlockData: {@link Leaves}
-     */
-    JUNGLE_LEAVES(5133, Leaves.class),
-    /**
-     * BlockData: {@link Leaves}
-     */
-    ACACIA_LEAVES(16606, Leaves.class),
-    /**
-     * BlockData: {@link Leaves}
-     */
-    CHERRY_LEAVES(20856, Leaves.class),
-    /**
-     * BlockData: {@link Leaves}
-     */
-    DARK_OAK_LEAVES(22254, Leaves.class),
-    /**
-     * BlockData: {@link Leaves}
-     */
-    PALE_OAK_LEAVES(6408, Leaves.class),
-    /**
-     * BlockData: {@link Leaves}
-     */
-    MANGROVE_LEAVES(15310, Leaves.class),
-    /**
-     * BlockData: {@link Leaves}
-     */
-    AZALEA_LEAVES(23001, Leaves.class),
-    /**
-     * BlockData: {@link Leaves}
-     */
-    FLOWERING_AZALEA_LEAVES(7139, Leaves.class),
-    SPONGE(15860),
-    WET_SPONGE(9043),
-    GLASS(6195),
-    TINTED_GLASS(19154),
-    LAPIS_BLOCK(14485),
-    SANDSTONE(13141),
-    CHISELED_SANDSTONE(31763),
-    CUT_SANDSTONE(6118),
-    COBWEB(9469),
-    SHORT_GRASS(16335),
-    FERN(15794),
-    AZALEA(29386),
-    FLOWERING_AZALEA(28270),
-    DEAD_BUSH(22888),
-    SEAGRASS(23942),
-    /**
-     * BlockData: {@link SeaPickle}
-     */
-    SEA_PICKLE(19562, SeaPickle.class),
-    WHITE_WOOL(8624),
-    ORANGE_WOOL(23957),
-    MAGENTA_WOOL(11853),
-    LIGHT_BLUE_WOOL(21073),
-    YELLOW_WOOL(29507),
-    LIME_WOOL(10443),
-    PINK_WOOL(7611),
-    GRAY_WOOL(27209),
-    LIGHT_GRAY_WOOL(22936),
-    CYAN_WOOL(12221),
-    PURPLE_WOOL(11922),
-    BLUE_WOOL(15738),
-    BROWN_WOOL(32638),
-    GREEN_WOOL(25085),
-    RED_WOOL(11621),
-    BLACK_WOOL(16693),
-    DANDELION(30558),
-    OPEN_EYEBLOSSOM(31238),
-    CLOSED_EYEBLOSSOM(29262),
-    POPPY(12851),
-    BLUE_ORCHID(13432),
-    ALLIUM(6871),
-    AZURE_BLUET(17608),
-    RED_TULIP(16781),
-    ORANGE_TULIP(26038),
-    WHITE_TULIP(31495),
-    PINK_TULIP(27319),
-    OXEYE_DAISY(11709),
-    CORNFLOWER(15405),
-    LILY_OF_THE_VALLEY(7185),
-    WITHER_ROSE(8619),
-    TORCHFLOWER(4501),
-    /**
-     * BlockData: {@link Bisected}
-     */
-    PITCHER_PLANT(28172, Bisected.class),
-    SPORE_BLOSSOM(20627),
-    BROWN_MUSHROOM(9665),
-    RED_MUSHROOM(19728),
-    CRIMSON_FUNGUS(26268),
-    WARPED_FUNGUS(19799),
-    CRIMSON_ROOTS(14064),
-    WARPED_ROOTS(13932),
-    NETHER_SPROUTS(10431),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    WEEPING_VINES(29267, Ageable.class),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    TWISTING_VINES(27283, Ageable.class),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    SUGAR_CANE(7726, Ageable.class),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    KELP(21916, Ageable.class),
-    /**
-     * BlockData: {@link PinkPetals}
-     */
-    PINK_PETALS(10420, PinkPetals.class),
-    MOSS_CARPET(8221),
-    MOSS_BLOCK(9175),
-    /**
-     * BlockData: {@link MossyCarpet}
-     */
-    PALE_MOSS_CARPET(24824, MossyCarpet.class),
-    /**
-     * BlockData: {@link HangingMoss}
-     */
-    PALE_HANGING_MOSS(13108, HangingMoss.class),
-    PALE_MOSS_BLOCK(5318),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    HANGING_ROOTS(15498, Waterlogged.class),
-    /**
-     * BlockData: {@link BigDripleaf}
-     */
-    BIG_DRIPLEAF(26173, BigDripleaf.class),
-    /**
-     * BlockData: {@link SmallDripleaf}
-     */
-    SMALL_DRIPLEAF(17540, SmallDripleaf.class),
-    /**
-     * BlockData: {@link Bamboo}
-     */
-    BAMBOO(18728, Bamboo.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    OAK_SLAB(12002, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    SPRUCE_SLAB(28798, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    BIRCH_SLAB(13807, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    JUNGLE_SLAB(19117, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    ACACIA_SLAB(23730, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    CHERRY_SLAB(16673, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    DARK_OAK_SLAB(28852, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    PALE_OAK_SLAB(22048, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    MANGROVE_SLAB(13704, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    BAMBOO_SLAB(17798, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    BAMBOO_MOSAIC_SLAB(22118, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    CRIMSON_SLAB(4691, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    WARPED_SLAB(27150, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    STONE_SLAB(19838, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    SMOOTH_STONE_SLAB(24129, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    SANDSTONE_SLAB(29830, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    CUT_SANDSTONE_SLAB(30944, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    PETRIFIED_OAK_SLAB(18658, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    COBBLESTONE_SLAB(6340, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    BRICK_SLAB(26333, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    STONE_BRICK_SLAB(19676, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    MUD_BRICK_SLAB(10611, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    NETHER_BRICK_SLAB(26586, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    QUARTZ_SLAB(4423, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    RED_SANDSTONE_SLAB(17550, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    CUT_RED_SANDSTONE_SLAB(7220, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    PURPUR_SLAB(11487, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    PRISMARINE_SLAB(31323, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    PRISMARINE_BRICK_SLAB(25624, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    DARK_PRISMARINE_SLAB(7577, Slab.class),
-    SMOOTH_QUARTZ(14415),
-    SMOOTH_RED_SANDSTONE(25180),
-    SMOOTH_SANDSTONE(30039),
-    SMOOTH_STONE(21910),
-    BRICKS(14165),
-    BOOKSHELF(10069),
-    /**
-     * BlockData: {@link ChiseledBookshelf}
-     */
-    CHISELED_BOOKSHELF(8099, ChiseledBookshelf.class),
-    /**
-     * BlockData: {@link DecoratedPot}
-     */
-    DECORATED_POT(8720, DecoratedPot.class),
-    MOSSY_COBBLESTONE(21900),
-    OBSIDIAN(32723),
-    TORCH(6063),
-    /**
-     * BlockData: {@link Directional}
-     */
-    END_ROD(24832, Directional.class),
-    /**
-     * BlockData: {@link MultipleFacing}
-     */
-    CHORUS_PLANT(28243, MultipleFacing.class),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    CHORUS_FLOWER(28542, Ageable.class),
-    PURPUR_BLOCK(7538),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    PURPUR_PILLAR(26718, Orientable.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    PURPUR_STAIRS(8921, Stairs.class),
-    SPAWNER(7018),
-    /**
-     * BlockData: {@link CreakingHeart}
-     */
-    CREAKING_HEART(11442, CreakingHeart.class),
-    /**
-     * BlockData: {@link Chest}
-     */
-    CHEST(22969, Chest.class),
-    CRAFTING_TABLE(20706),
-    /**
-     * BlockData: {@link Farmland}
-     */
-    FARMLAND(31166, Farmland.class),
-    /**
-     * BlockData: {@link Furnace}
-     */
-    FURNACE(8133, Furnace.class),
-    /**
-     * BlockData: {@link Ladder}
-     */
-    LADDER(23599, Ladder.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    COBBLESTONE_STAIRS(24715, Stairs.class),
-    /**
-     * BlockData: {@link Snow}
-     */
-    SNOW(14146, Snow.class),
-    ICE(30428),
-    SNOW_BLOCK(19913),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    CACTUS(12191, Ageable.class),
-    CLAY(27880),
-    /**
-     * BlockData: {@link Jukebox}
-     */
-    JUKEBOX(19264, Jukebox.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    OAK_FENCE(6442, Fence.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    SPRUCE_FENCE(25416, Fence.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    BIRCH_FENCE(17347, Fence.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    JUNGLE_FENCE(14358, Fence.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    ACACIA_FENCE(4569, Fence.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    CHERRY_FENCE(32047, Fence.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    DARK_OAK_FENCE(21767, Fence.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    PALE_OAK_FENCE(10547, Fence.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    MANGROVE_FENCE(15021, Fence.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    BAMBOO_FENCE(17207, Fence.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    CRIMSON_FENCE(21075, Fence.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    WARPED_FENCE(18438, Fence.class),
-    PUMPKIN(19170),
-    /**
-     * BlockData: {@link Directional}
-     */
-    CARVED_PUMPKIN(25833, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    JACK_O_LANTERN(13758, Directional.class),
-    NETHERRACK(23425),
-    SOUL_SAND(16841),
-    SOUL_SOIL(31140),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    BASALT(28478, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    POLISHED_BASALT(11659, Orientable.class),
-    SMOOTH_BASALT(13617),
-    SOUL_TORCH(14292),
-    GLOWSTONE(32713),
-    INFESTED_STONE(18440),
-    INFESTED_COBBLESTONE(4348),
-    INFESTED_STONE_BRICKS(19749),
-    INFESTED_MOSSY_STONE_BRICKS(9850),
-    INFESTED_CRACKED_STONE_BRICKS(7476),
-    INFESTED_CHISELED_STONE_BRICKS(4728),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    INFESTED_DEEPSLATE(9472, Orientable.class),
-    STONE_BRICKS(6962),
-    MOSSY_STONE_BRICKS(16415),
-    CRACKED_STONE_BRICKS(27869),
-    CHISELED_STONE_BRICKS(9087),
-    PACKED_MUD(7472),
-    MUD_BRICKS(29168),
-    DEEPSLATE_BRICKS(13193),
-    CRACKED_DEEPSLATE_BRICKS(17105),
-    DEEPSLATE_TILES(11250),
-    CRACKED_DEEPSLATE_TILES(26249),
-    CHISELED_DEEPSLATE(23825),
-    REINFORCED_DEEPSLATE(10949),
-    /**
-     * BlockData: {@link MultipleFacing}
-     */
-    BROWN_MUSHROOM_BLOCK(6291, MultipleFacing.class),
-    /**
-     * BlockData: {@link MultipleFacing}
-     */
-    RED_MUSHROOM_BLOCK(20766, MultipleFacing.class),
-    /**
-     * BlockData: {@link MultipleFacing}
-     */
-    MUSHROOM_STEM(16543, MultipleFacing.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    IRON_BARS(9378, Fence.class),
-    /**
-     * BlockData: {@link Chain}
-     */
-    CHAIN(28265, Chain.class),
-    /**
-     * BlockData: {@link Fence}
-     */
-    GLASS_PANE(5709, Fence.class),
-    MELON(25172),
-    /**
-     * BlockData: {@link MultipleFacing}
-     */
-    VINE(14564, MultipleFacing.class),
-    /**
-     * BlockData: {@link GlowLichen}
-     */
-    GLOW_LICHEN(19165, GlowLichen.class),
-    /**
-     * BlockData: {@link ResinClump}
-     */
-    RESIN_CLUMP(28662, ResinClump.class),
-    RESIN_BLOCK(26344),
-    RESIN_BRICKS(8331),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    RESIN_BRICK_STAIRS(31170, Stairs.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    RESIN_BRICK_SLAB(25553, Slab.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    RESIN_BRICK_WALL(8538, Wall.class),
-    CHISELED_RESIN_BRICKS(5529),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    BRICK_STAIRS(21534, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    STONE_BRICK_STAIRS(27032, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    MUD_BRICK_STAIRS(13620, Stairs.class),
-    /**
-     * BlockData: {@link Snowable}
-     */
-    MYCELIUM(9913, Snowable.class),
-    LILY_PAD(19271),
-    NETHER_BRICKS(27802),
-    CRACKED_NETHER_BRICKS(10888),
-    CHISELED_NETHER_BRICKS(21613),
-    /**
-     * BlockData: {@link Fence}
-     */
-    NETHER_BRICK_FENCE(5286, Fence.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    NETHER_BRICK_STAIRS(12085, Stairs.class),
-    SCULK(17870),
-    /**
-     * BlockData: {@link SculkVein}
-     */
-    SCULK_VEIN(11615, SculkVein.class),
-    /**
-     * BlockData: {@link SculkCatalyst}
-     */
-    SCULK_CATALYST(12017, SculkCatalyst.class),
-    /**
-     * BlockData: {@link SculkShrieker}
-     */
-    SCULK_SHRIEKER(20985, SculkShrieker.class),
-    ENCHANTING_TABLE(16255),
-    /**
-     * BlockData: {@link EndPortalFrame}
-     */
-    END_PORTAL_FRAME(15480, EndPortalFrame.class),
-    END_STONE(29686),
-    END_STONE_BRICKS(20314),
-    DRAGON_EGG(29946),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    SANDSTONE_STAIRS(18474, Stairs.class),
-    /**
-     * BlockData: {@link EnderChest}
-     */
-    ENDER_CHEST(32349, EnderChest.class),
-    EMERALD_BLOCK(9914),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    OAK_STAIRS(5449, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    SPRUCE_STAIRS(11192, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    BIRCH_STAIRS(7657, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    JUNGLE_STAIRS(20636, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    ACACIA_STAIRS(17453, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    CHERRY_STAIRS(18380, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    DARK_OAK_STAIRS(22921, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    PALE_OAK_STAIRS(20755, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    MANGROVE_STAIRS(27641, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    BAMBOO_STAIRS(25674, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    BAMBOO_MOSAIC_STAIRS(20977, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    CRIMSON_STAIRS(32442, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    WARPED_STAIRS(17721, Stairs.class),
-    /**
-     * BlockData: {@link CommandBlock}
-     */
-    COMMAND_BLOCK(4355, CommandBlock.class),
-    BEACON(6608),
-    /**
-     * BlockData: {@link Wall}
-     */
-    COBBLESTONE_WALL(12616, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    MOSSY_COBBLESTONE_WALL(11536, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    BRICK_WALL(18995, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    PRISMARINE_WALL(18184, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    RED_SANDSTONE_WALL(4753, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    MOSSY_STONE_BRICK_WALL(18259, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    GRANITE_WALL(23279, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    STONE_BRICK_WALL(29073, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    MUD_BRICK_WALL(18292, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    NETHER_BRICK_WALL(10398, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    ANDESITE_WALL(14938, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    RED_NETHER_BRICK_WALL(4580, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    SANDSTONE_WALL(18470, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    END_STONE_BRICK_WALL(27225, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    DIORITE_WALL(17412, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    BLACKSTONE_WALL(17327, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    POLISHED_BLACKSTONE_WALL(15119, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    POLISHED_BLACKSTONE_BRICK_WALL(9540, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    COBBLED_DEEPSLATE_WALL(21893, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    POLISHED_DEEPSLATE_WALL(6574, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    DEEPSLATE_BRICK_WALL(13304, Wall.class),
-    /**
-     * BlockData: {@link Wall}
-     */
-    DEEPSLATE_TILE_WALL(17077, Wall.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    ANVIL(18718, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    CHIPPED_ANVIL(10623, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    DAMAGED_ANVIL(10274, Directional.class),
-    CHISELED_QUARTZ_BLOCK(30964),
-    QUARTZ_BLOCK(11987),
-    QUARTZ_BRICKS(23358),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    QUARTZ_PILLAR(16452, Orientable.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    QUARTZ_STAIRS(24079, Stairs.class),
-    WHITE_TERRACOTTA(20975),
-    ORANGE_TERRACOTTA(18684),
-    MAGENTA_TERRACOTTA(25900),
-    LIGHT_BLUE_TERRACOTTA(31779),
-    YELLOW_TERRACOTTA(32129),
-    LIME_TERRACOTTA(24013),
-    PINK_TERRACOTTA(23727),
-    GRAY_TERRACOTTA(18004),
-    LIGHT_GRAY_TERRACOTTA(26388),
-    CYAN_TERRACOTTA(25940),
-    PURPLE_TERRACOTTA(10387),
-    BLUE_TERRACOTTA(5236),
-    BROWN_TERRACOTTA(23664),
-    GREEN_TERRACOTTA(4105),
-    RED_TERRACOTTA(5086),
-    BLACK_TERRACOTTA(26691),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    BARRIER(26453, Waterlogged.class),
-    /**
-     * BlockData: {@link Light}
-     */
-    LIGHT(17829, Light.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    HAY_BLOCK(17461, Orientable.class),
-    WHITE_CARPET(15117),
-    ORANGE_CARPET(24752),
-    MAGENTA_CARPET(6180),
-    LIGHT_BLUE_CARPET(21194),
-    YELLOW_CARPET(18149),
-    LIME_CARPET(15443),
-    PINK_CARPET(27381),
-    GRAY_CARPET(26991),
-    LIGHT_GRAY_CARPET(11317),
-    CYAN_CARPET(9742),
-    PURPLE_CARPET(5574),
-    BLUE_CARPET(13292),
-    BROWN_CARPET(23352),
-    GREEN_CARPET(7780),
-    RED_CARPET(5424),
-    BLACK_CARPET(6056),
-    TERRACOTTA(16544),
-    PACKED_ICE(28993),
-    DIRT_PATH(10846),
-    /**
-     * BlockData: {@link Bisected}
-     */
-    SUNFLOWER(7408, Bisected.class),
-    /**
-     * BlockData: {@link Bisected}
-     */
-    LILAC(22837, Bisected.class),
-    /**
-     * BlockData: {@link Bisected}
-     */
-    ROSE_BUSH(6080, Bisected.class),
-    /**
-     * BlockData: {@link Bisected}
-     */
-    PEONY(21155, Bisected.class),
-    /**
-     * BlockData: {@link Bisected}
-     */
-    TALL_GRASS(21559, Bisected.class),
-    /**
-     * BlockData: {@link Bisected}
-     */
-    LARGE_FERN(30177, Bisected.class),
-    WHITE_STAINED_GLASS(31190),
-    ORANGE_STAINED_GLASS(25142),
-    MAGENTA_STAINED_GLASS(26814),
-    LIGHT_BLUE_STAINED_GLASS(17162),
-    YELLOW_STAINED_GLASS(12182),
-    LIME_STAINED_GLASS(24266),
-    PINK_STAINED_GLASS(16164),
-    GRAY_STAINED_GLASS(29979),
-    LIGHT_GRAY_STAINED_GLASS(5843),
-    CYAN_STAINED_GLASS(30604),
-    PURPLE_STAINED_GLASS(21845),
-    BLUE_STAINED_GLASS(7107),
-    BROWN_STAINED_GLASS(20945),
-    GREEN_STAINED_GLASS(22503),
-    RED_STAINED_GLASS(9717),
-    BLACK_STAINED_GLASS(13941),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    WHITE_STAINED_GLASS_PANE(10557, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    ORANGE_STAINED_GLASS_PANE(21089, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    MAGENTA_STAINED_GLASS_PANE(14082, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    LIGHT_BLUE_STAINED_GLASS_PANE(18721, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    YELLOW_STAINED_GLASS_PANE(20298, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    LIME_STAINED_GLASS_PANE(10610, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    PINK_STAINED_GLASS_PANE(24637, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    GRAY_STAINED_GLASS_PANE(25272, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    LIGHT_GRAY_STAINED_GLASS_PANE(19008, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    CYAN_STAINED_GLASS_PANE(11784, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    PURPLE_STAINED_GLASS_PANE(10948, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    BLUE_STAINED_GLASS_PANE(28484, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    BROWN_STAINED_GLASS_PANE(17557, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    GREEN_STAINED_GLASS_PANE(4767, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    RED_STAINED_GLASS_PANE(8630, GlassPane.class),
-    /**
-     * BlockData: {@link GlassPane}
-     */
-    BLACK_STAINED_GLASS_PANE(13201, GlassPane.class),
-    PRISMARINE(7539),
-    PRISMARINE_BRICKS(29118),
-    DARK_PRISMARINE(19940),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    PRISMARINE_STAIRS(19217, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    PRISMARINE_BRICK_STAIRS(15445, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    DARK_PRISMARINE_STAIRS(26511, Stairs.class),
-    SEA_LANTERN(20780),
-    RED_SANDSTONE(9092),
-    CHISELED_RED_SANDSTONE(15529),
-    CUT_RED_SANDSTONE(29108),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    RED_SANDSTONE_STAIRS(25466, Stairs.class),
-    /**
-     * BlockData: {@link CommandBlock}
-     */
-    REPEATING_COMMAND_BLOCK(12405, CommandBlock.class),
-    /**
-     * BlockData: {@link CommandBlock}
-     */
-    CHAIN_COMMAND_BLOCK(26798, CommandBlock.class),
-    MAGMA_BLOCK(25927),
-    NETHER_WART_BLOCK(15486),
-    WARPED_WART_BLOCK(15463),
-    RED_NETHER_BRICKS(18056),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    BONE_BLOCK(17312, Orientable.class),
-    STRUCTURE_VOID(30806),
-    /**
-     * BlockData: {@link Directional}
-     */
-    SHULKER_BOX(7776, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    WHITE_SHULKER_BOX(31750, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    ORANGE_SHULKER_BOX(21673, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    MAGENTA_SHULKER_BOX(21566, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    LIGHT_BLUE_SHULKER_BOX(18226, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    YELLOW_SHULKER_BOX(28700, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    LIME_SHULKER_BOX(28360, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    PINK_SHULKER_BOX(24968, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    GRAY_SHULKER_BOX(12754, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    LIGHT_GRAY_SHULKER_BOX(21345, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    CYAN_SHULKER_BOX(28123, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    PURPLE_SHULKER_BOX(10373, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    BLUE_SHULKER_BOX(11476, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    BROWN_SHULKER_BOX(24230, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    GREEN_SHULKER_BOX(9377, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    RED_SHULKER_BOX(32448, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    BLACK_SHULKER_BOX(24076, 1, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    WHITE_GLAZED_TERRACOTTA(11326, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    ORANGE_GLAZED_TERRACOTTA(27451, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    MAGENTA_GLAZED_TERRACOTTA(8067, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    LIGHT_BLUE_GLAZED_TERRACOTTA(4336, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    YELLOW_GLAZED_TERRACOTTA(10914, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    LIME_GLAZED_TERRACOTTA(13861, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    PINK_GLAZED_TERRACOTTA(10260, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    GRAY_GLAZED_TERRACOTTA(6256, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    LIGHT_GRAY_GLAZED_TERRACOTTA(10707, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    CYAN_GLAZED_TERRACOTTA(9550, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    PURPLE_GLAZED_TERRACOTTA(4818, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    BLUE_GLAZED_TERRACOTTA(23823, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    BROWN_GLAZED_TERRACOTTA(5655, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    GREEN_GLAZED_TERRACOTTA(6958, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    RED_GLAZED_TERRACOTTA(24989, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    BLACK_GLAZED_TERRACOTTA(29678, Directional.class),
-    WHITE_CONCRETE(6281),
-    ORANGE_CONCRETE(19914),
-    MAGENTA_CONCRETE(20591),
-    LIGHT_BLUE_CONCRETE(29481),
-    YELLOW_CONCRETE(15722),
-    LIME_CONCRETE(5863),
-    PINK_CONCRETE(5227),
-    GRAY_CONCRETE(13959),
-    LIGHT_GRAY_CONCRETE(14453),
-    CYAN_CONCRETE(26522),
-    PURPLE_CONCRETE(20623),
-    BLUE_CONCRETE(18756),
-    BROWN_CONCRETE(19006),
-    GREEN_CONCRETE(17949),
-    RED_CONCRETE(8032),
-    BLACK_CONCRETE(13338),
-    WHITE_CONCRETE_POWDER(10363),
-    ORANGE_CONCRETE_POWDER(30159),
-    MAGENTA_CONCRETE_POWDER(8272),
-    LIGHT_BLUE_CONCRETE_POWDER(31206),
-    YELLOW_CONCRETE_POWDER(10655),
-    LIME_CONCRETE_POWDER(28859),
-    PINK_CONCRETE_POWDER(6421),
-    GRAY_CONCRETE_POWDER(13031),
-    LIGHT_GRAY_CONCRETE_POWDER(21589),
-    CYAN_CONCRETE_POWDER(15734),
-    PURPLE_CONCRETE_POWDER(26808),
-    BLUE_CONCRETE_POWDER(17773),
-    BROWN_CONCRETE_POWDER(21485),
-    GREEN_CONCRETE_POWDER(6904),
-    RED_CONCRETE_POWDER(13286),
-    BLACK_CONCRETE_POWDER(16150),
-    /**
-     * BlockData: {@link TurtleEgg}
-     */
-    TURTLE_EGG(32101, TurtleEgg.class),
-    /**
-     * BlockData: {@link Hatchable}
-     */
-    SNIFFER_EGG(12980, Hatchable.class),
-    DEAD_TUBE_CORAL_BLOCK(28350),
-    DEAD_BRAIN_CORAL_BLOCK(12979),
-    DEAD_BUBBLE_CORAL_BLOCK(28220),
-    DEAD_FIRE_CORAL_BLOCK(5307),
-    DEAD_HORN_CORAL_BLOCK(15103),
-    TUBE_CORAL_BLOCK(23723),
-    BRAIN_CORAL_BLOCK(30618),
-    BUBBLE_CORAL_BLOCK(15437),
-    FIRE_CORAL_BLOCK(12119),
-    HORN_CORAL_BLOCK(19958),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    TUBE_CORAL(23048, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    BRAIN_CORAL(31316, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    BUBBLE_CORAL(12464, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    FIRE_CORAL(29151, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    HORN_CORAL(19511, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    DEAD_BRAIN_CORAL(9116, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    DEAD_BUBBLE_CORAL(30583, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    DEAD_FIRE_CORAL(8365, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    DEAD_HORN_CORAL(5755, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    DEAD_TUBE_CORAL(18028, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    TUBE_CORAL_FAN(19929, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    BRAIN_CORAL_FAN(13849, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    BUBBLE_CORAL_FAN(10795, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    FIRE_CORAL_FAN(11112, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    HORN_CORAL_FAN(13610, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    DEAD_TUBE_CORAL_FAN(17628, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    DEAD_BRAIN_CORAL_FAN(26150, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    DEAD_BUBBLE_CORAL_FAN(17322, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    DEAD_FIRE_CORAL_FAN(27073, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    DEAD_HORN_CORAL_FAN(11387, Waterlogged.class),
-    BLUE_ICE(22449),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    CONDUIT(5148, Waterlogged.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    POLISHED_GRANITE_STAIRS(29588, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    SMOOTH_RED_SANDSTONE_STAIRS(17561, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    MOSSY_STONE_BRICK_STAIRS(27578, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    POLISHED_DIORITE_STAIRS(4625, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    MOSSY_COBBLESTONE_STAIRS(29210, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    END_STONE_BRICK_STAIRS(28831, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    STONE_STAIRS(23784, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    SMOOTH_SANDSTONE_STAIRS(21183, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    SMOOTH_QUARTZ_STAIRS(19560, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    GRANITE_STAIRS(21840, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    ANDESITE_STAIRS(17747, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    RED_NETHER_BRICK_STAIRS(26374, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    POLISHED_ANDESITE_STAIRS(7573, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    DIORITE_STAIRS(13134, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    COBBLED_DEEPSLATE_STAIRS(20699, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    POLISHED_DEEPSLATE_STAIRS(19513, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    DEEPSLATE_BRICK_STAIRS(29624, Stairs.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    DEEPSLATE_TILE_STAIRS(6361, Stairs.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    POLISHED_GRANITE_SLAB(4521, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    SMOOTH_RED_SANDSTONE_SLAB(16304, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    MOSSY_STONE_BRICK_SLAB(14002, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    POLISHED_DIORITE_SLAB(18303, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    MOSSY_COBBLESTONE_SLAB(12139, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    END_STONE_BRICK_SLAB(23239, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    SMOOTH_SANDSTONE_SLAB(9030, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    SMOOTH_QUARTZ_SLAB(26543, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    GRANITE_SLAB(10901, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    ANDESITE_SLAB(32124, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    RED_NETHER_BRICK_SLAB(12462, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    POLISHED_ANDESITE_SLAB(24573, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    DIORITE_SLAB(25526, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    COBBLED_DEEPSLATE_SLAB(17388, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    POLISHED_DEEPSLATE_SLAB(32201, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    DEEPSLATE_BRICK_SLAB(23910, Slab.class),
-    /**
-     * BlockData: {@link Slab}
-     */
-    DEEPSLATE_TILE_SLAB(13315, Slab.class),
-    /**
-     * BlockData: {@link Scaffolding}
-     */
-    SCAFFOLDING(15757, Scaffolding.class),
-    REDSTONE(11233),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    REDSTONE_TORCH(22547, Lightable.class),
-    REDSTONE_BLOCK(19496),
-    /**
-     * BlockData: {@link Repeater}
-     */
-    REPEATER(28823, Repeater.class),
-    /**
-     * BlockData: {@link Comparator}
-     */
-    COMPARATOR(18911, Comparator.class),
-    /**
-     * BlockData: {@link Piston}
-     */
-    PISTON(21130, Piston.class),
-    /**
-     * BlockData: {@link Piston}
-     */
-    STICKY_PISTON(18127, Piston.class),
-    SLIME_BLOCK(31892),
-    HONEY_BLOCK(30615),
-    /**
-     * BlockData: {@link Observer}
-     */
-    OBSERVER(10726, Observer.class),
-    /**
-     * BlockData: {@link Hopper}
-     */
-    HOPPER(31974, Hopper.class),
-    /**
-     * BlockData: {@link Dispenser}
-     */
-    DISPENSER(20871, Dispenser.class),
-    /**
-     * BlockData: {@link Dispenser}
-     */
-    DROPPER(31273, Dispenser.class),
-    /**
-     * BlockData: {@link Lectern}
-     */
-    LECTERN(23490, Lectern.class),
-    /**
-     * BlockData: {@link AnaloguePowerable}
-     */
-    TARGET(22637, AnaloguePowerable.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    LEVER(15319, Switch.class),
-    /**
-     * BlockData: {@link LightningRod}
-     */
-    LIGHTNING_ROD(30770, LightningRod.class),
-    /**
-     * BlockData: {@link DaylightDetector}
-     */
-    DAYLIGHT_DETECTOR(8864, DaylightDetector.class),
-    /**
-     * BlockData: {@link SculkSensor}
-     */
-    SCULK_SENSOR(5598, SculkSensor.class),
-    /**
-     * BlockData: {@link CalibratedSculkSensor}
-     */
-    CALIBRATED_SCULK_SENSOR(21034, CalibratedSculkSensor.class),
-    /**
-     * BlockData: {@link TripwireHook}
-     */
-    TRIPWIRE_HOOK(8130, TripwireHook.class),
-    /**
-     * BlockData: {@link Chest}
-     */
-    TRAPPED_CHEST(18970, Chest.class),
-    /**
-     * BlockData: {@link TNT}
-     */
-    TNT(7896, TNT.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    REDSTONE_LAMP(8217, Lightable.class),
-    /**
-     * BlockData: {@link NoteBlock}
-     */
-    NOTE_BLOCK(20979, NoteBlock.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    STONE_BUTTON(12279, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    POLISHED_BLACKSTONE_BUTTON(20760, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    OAK_BUTTON(13510, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    SPRUCE_BUTTON(23281, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    BIRCH_BUTTON(26934, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    JUNGLE_BUTTON(25317, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    ACACIA_BUTTON(13993, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    CHERRY_BUTTON(9058, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    DARK_OAK_BUTTON(6214, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    PALE_OAK_BUTTON(5238, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    MANGROVE_BUTTON(9838, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    BAMBOO_BUTTON(21810, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    CRIMSON_BUTTON(26799, Switch.class),
-    /**
-     * BlockData: {@link Switch}
-     */
-    WARPED_BUTTON(25264, Switch.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    STONE_PRESSURE_PLATE(22591, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    POLISHED_BLACKSTONE_PRESSURE_PLATE(32340, Powerable.class),
-    /**
-     * BlockData: {@link AnaloguePowerable}
-     */
-    LIGHT_WEIGHTED_PRESSURE_PLATE(14875, AnaloguePowerable.class),
-    /**
-     * BlockData: {@link AnaloguePowerable}
-     */
-    HEAVY_WEIGHTED_PRESSURE_PLATE(16970, AnaloguePowerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    OAK_PRESSURE_PLATE(20108, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    SPRUCE_PRESSURE_PLATE(15932, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    BIRCH_PRESSURE_PLATE(9664, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    JUNGLE_PRESSURE_PLATE(11376, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    ACACIA_PRESSURE_PLATE(17586, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    CHERRY_PRESSURE_PLATE(8651, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    DARK_OAK_PRESSURE_PLATE(31375, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    PALE_OAK_PRESSURE_PLATE(30527, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    MANGROVE_PRESSURE_PLATE(9748, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    BAMBOO_PRESSURE_PLATE(26740, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    CRIMSON_PRESSURE_PLATE(18316, Powerable.class),
-    /**
-     * BlockData: {@link Powerable}
-     */
-    WARPED_PRESSURE_PLATE(29516, Powerable.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    IRON_DOOR(4788, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    OAK_DOOR(20341, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    SPRUCE_DOOR(10642, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    BIRCH_DOOR(14759, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    JUNGLE_DOOR(28163, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    ACACIA_DOOR(23797, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    CHERRY_DOOR(12684, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    DARK_OAK_DOOR(10669, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    PALE_OAK_DOOR(23817, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    MANGROVE_DOOR(18964, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    BAMBOO_DOOR(19971, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    CRIMSON_DOOR(19544, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    WARPED_DOOR(15062, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    COPPER_DOOR(26809, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    EXPOSED_COPPER_DOOR(13236, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    WEATHERED_COPPER_DOOR(10208, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    OXIDIZED_COPPER_DOOR(5348, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    WAXED_COPPER_DOOR(9954, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    WAXED_EXPOSED_COPPER_DOOR(20748, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    WAXED_WEATHERED_COPPER_DOOR(25073, Door.class),
-    /**
-     * BlockData: {@link Door}
-     */
-    WAXED_OXIDIZED_COPPER_DOOR(23888, Door.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    IRON_TRAPDOOR(17095, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    OAK_TRAPDOOR(16927, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    SPRUCE_TRAPDOOR(10289, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    BIRCH_TRAPDOOR(32585, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    JUNGLE_TRAPDOOR(8626, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    ACACIA_TRAPDOOR(18343, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    CHERRY_TRAPDOOR(6293, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    DARK_OAK_TRAPDOOR(10355, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    PALE_OAK_TRAPDOOR(20647, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    MANGROVE_TRAPDOOR(17066, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    BAMBOO_TRAPDOOR(9174, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    CRIMSON_TRAPDOOR(25056, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    WARPED_TRAPDOOR(7708, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    COPPER_TRAPDOOR(12110, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    EXPOSED_COPPER_TRAPDOOR(19219, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    WEATHERED_COPPER_TRAPDOOR(28254, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    OXIDIZED_COPPER_TRAPDOOR(26518, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    WAXED_COPPER_TRAPDOOR(12626, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    WAXED_EXPOSED_COPPER_TRAPDOOR(11010, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    WAXED_WEATHERED_COPPER_TRAPDOOR(30709, TrapDoor.class),
-    /**
-     * BlockData: {@link TrapDoor}
-     */
-    WAXED_OXIDIZED_COPPER_TRAPDOOR(21450, TrapDoor.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    OAK_FENCE_GATE(16689, Gate.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    SPRUCE_FENCE_GATE(26423, Gate.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    BIRCH_FENCE_GATE(6322, Gate.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    JUNGLE_FENCE_GATE(21360, Gate.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    ACACIA_FENCE_GATE(14145, Gate.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    CHERRY_FENCE_GATE(28222, Gate.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    DARK_OAK_FENCE_GATE(10679, Gate.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    PALE_OAK_FENCE_GATE(21221, Gate.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    MANGROVE_FENCE_GATE(28476, Gate.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    BAMBOO_FENCE_GATE(14290, Gate.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    CRIMSON_FENCE_GATE(15602, Gate.class),
-    /**
-     * BlockData: {@link Gate}
-     */
-    WARPED_FENCE_GATE(11115, Gate.class),
-    /**
-     * BlockData: {@link RedstoneRail}
-     */
-    POWERED_RAIL(11064, RedstoneRail.class),
-    /**
-     * BlockData: {@link RedstoneRail}
-     */
-    DETECTOR_RAIL(13475, RedstoneRail.class),
-    /**
-     * BlockData: {@link Rail}
-     */
-    RAIL(13285, Rail.class),
-    /**
-     * BlockData: {@link RedstoneRail}
-     */
-    ACTIVATOR_RAIL(5834, RedstoneRail.class),
-    SADDLE(30206, 1),
-    MINECART(14352, 1),
-    CHEST_MINECART(4497, 1),
-    FURNACE_MINECART(14196, 1),
-    TNT_MINECART(4277, 1),
-    HOPPER_MINECART(19024, 1),
-    CARROT_ON_A_STICK(27809, 1, 25),
-    WARPED_FUNGUS_ON_A_STICK(11706, 1, 100),
-    PHANTOM_MEMBRANE(18398),
-    ELYTRA(23829, 1, 432),
-    OAK_BOAT(17570, 1),
-    OAK_CHEST_BOAT(7765, 1),
-    SPRUCE_BOAT(31427, 1),
-    SPRUCE_CHEST_BOAT(30841, 1),
-    BIRCH_BOAT(28104, 1),
-    BIRCH_CHEST_BOAT(18546, 1),
-    JUNGLE_BOAT(4495, 1),
-    JUNGLE_CHEST_BOAT(20133, 1),
-    ACACIA_BOAT(27326, 1),
-    ACACIA_CHEST_BOAT(28455, 1),
-    CHERRY_BOAT(13628, 1),
-    CHERRY_CHEST_BOAT(7165, 1),
-    DARK_OAK_BOAT(28618, 1),
-    DARK_OAK_CHEST_BOAT(8733, 1),
-    PALE_OAK_BOAT(18534, 1),
-    PALE_OAK_CHEST_BOAT(26297, 1),
-    MANGROVE_BOAT(20792, 1),
-    MANGROVE_CHEST_BOAT(18572, 1),
-    BAMBOO_RAFT(25901, 1),
-    BAMBOO_CHEST_RAFT(20056, 1),
-    /**
-     * BlockData: {@link StructureBlock}
-     */
-    STRUCTURE_BLOCK(26831, StructureBlock.class),
-    /**
-     * BlockData: {@link Jigsaw}
-     */
-    JIGSAW(17398, Jigsaw.class),
-    TURTLE_HELMET(30120, 1, 275),
-    TURTLE_SCUTE(6766),
-    ARMADILLO_SCUTE(11497),
-    WOLF_ARMOR(17138, 1, 64),
-    FLINT_AND_STEEL(28620, 1, 64),
-    BOWL(32661),
-    APPLE(7720),
-    BOW(8745, 1, 384),
-    ARROW(31091),
-    COAL(29067),
-    CHARCOAL(5390),
-    DIAMOND(20865),
-    EMERALD(5654),
-    LAPIS_LAZULI(11075),
-    QUARTZ(23608),
-    AMETHYST_SHARD(7613),
-    RAW_IRON(5329),
-    IRON_INGOT(24895),
-    RAW_COPPER(6162),
-    COPPER_INGOT(12611),
-    RAW_GOLD(19564),
-    GOLD_INGOT(28927),
-    NETHERITE_INGOT(32457),
-    NETHERITE_SCRAP(29331),
-    WOODEN_SWORD(7175, 1, 59),
-    WOODEN_SHOVEL(28432, 1, 59),
-    WOODEN_PICKAXE(12792, 1, 59),
-    WOODEN_AXE(6292, 1, 59),
-    WOODEN_HOE(16043, 1, 59),
-    STONE_SWORD(25084, 1, 131),
-    STONE_SHOVEL(9520, 1, 131),
-    STONE_PICKAXE(14611, 1, 131),
-    STONE_AXE(6338, 1, 131),
-    STONE_HOE(22855, 1, 131),
-    GOLDEN_SWORD(10505, 1, 32),
-    GOLDEN_SHOVEL(15597, 1, 32),
-    GOLDEN_PICKAXE(25898, 1, 32),
-    GOLDEN_AXE(4878, 1, 32),
-    GOLDEN_HOE(19337, 1, 32),
-    IRON_SWORD(10904, 1, 250),
-    IRON_SHOVEL(30045, 1, 250),
-    IRON_PICKAXE(8842, 1, 250),
-    IRON_AXE(15894, 1, 250),
-    IRON_HOE(11339, 1, 250),
-    DIAMOND_SWORD(27707, 1, 1561),
-    DIAMOND_SHOVEL(25415, 1, 1561),
-    DIAMOND_PICKAXE(24291, 1, 1561),
-    DIAMOND_AXE(27277, 1, 1561),
-    DIAMOND_HOE(24050, 1, 1561),
-    NETHERITE_SWORD(23871, 1, 2031),
-    NETHERITE_SHOVEL(29728, 1, 2031),
-    NETHERITE_PICKAXE(9930, 1, 2031),
-    NETHERITE_AXE(29533, 1, 2031),
-    NETHERITE_HOE(27385, 1, 2031),
-    STICK(9773),
-    MUSHROOM_STEW(16336, 1),
-    STRING(12806),
-    FEATHER(30548),
-    GUNPOWDER(29974),
-    WHEAT_SEEDS(28742),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    WHEAT(27709, Ageable.class),
-    BREAD(32049),
-    LEATHER_HELMET(11624, 1, 55),
-    LEATHER_CHESTPLATE(29275, 1, 80),
-    LEATHER_LEGGINGS(28210, 1, 75),
-    LEATHER_BOOTS(15282, 1, 65),
-    CHAINMAIL_HELMET(26114, 1, 165),
-    CHAINMAIL_CHESTPLATE(23602, 1, 240),
-    CHAINMAIL_LEGGINGS(19087, 1, 225),
-    CHAINMAIL_BOOTS(17953, 1, 195),
-    IRON_HELMET(12025, 1, 165),
-    IRON_CHESTPLATE(28112, 1, 240),
-    IRON_LEGGINGS(18951, 1, 225),
-    IRON_BOOTS(8531, 1, 195),
-    DIAMOND_HELMET(10755, 1, 363),
-    DIAMOND_CHESTPLATE(32099, 1, 528),
-    DIAMOND_LEGGINGS(26500, 1, 495),
-    DIAMOND_BOOTS(16522, 1, 429),
-    GOLDEN_HELMET(7945, 1, 77),
-    GOLDEN_CHESTPLATE(4507, 1, 112),
-    GOLDEN_LEGGINGS(21002, 1, 105),
-    GOLDEN_BOOTS(7859, 1, 91),
-    NETHERITE_HELMET(15907, 1, 407),
-    NETHERITE_CHESTPLATE(6106, 1, 592),
-    NETHERITE_LEGGINGS(25605, 1, 555),
-    NETHERITE_BOOTS(8923, 1, 481),
-    FLINT(23596),
-    PORKCHOP(30896),
-    COOKED_PORKCHOP(27231),
-    PAINTING(23945),
-    GOLDEN_APPLE(27732),
-    ENCHANTED_GOLDEN_APPLE(8280),
-    /**
-     * BlockData: {@link Sign}
-     */
-    OAK_SIGN(8192, 16, Sign.class),
-    /**
-     * BlockData: {@link Sign}
-     */
-    SPRUCE_SIGN(21502, 16, Sign.class),
-    /**
-     * BlockData: {@link Sign}
-     */
-    BIRCH_SIGN(11351, 16, Sign.class),
-    /**
-     * BlockData: {@link Sign}
-     */
-    JUNGLE_SIGN(24717, 16, Sign.class),
-    /**
-     * BlockData: {@link Sign}
-     */
-    ACACIA_SIGN(29808, 16, Sign.class),
-    /**
-     * BlockData: {@link Sign}
-     */
-    CHERRY_SIGN(16520, 16, Sign.class),
-    /**
-     * BlockData: {@link Sign}
-     */
-    DARK_OAK_SIGN(15127, 16, Sign.class),
-    /**
-     * BlockData: {@link Sign}
-     */
-    PALE_OAK_SIGN(12116, 16, Sign.class),
-    /**
-     * BlockData: {@link Sign}
-     */
-    MANGROVE_SIGN(21975, 16, Sign.class),
-    /**
-     * BlockData: {@link Sign}
-     */
-    BAMBOO_SIGN(26139, 16, Sign.class),
-    /**
-     * BlockData: {@link Sign}
-     */
-    CRIMSON_SIGN(12162, 16, Sign.class),
-    /**
-     * BlockData: {@link Sign}
-     */
-    WARPED_SIGN(10407, 16, Sign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    OAK_HANGING_SIGN(20116, 16, HangingSign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    SPRUCE_HANGING_SIGN(24371, 16, HangingSign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    BIRCH_HANGING_SIGN(17938, 16, HangingSign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    JUNGLE_HANGING_SIGN(27671, 16, HangingSign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    ACACIA_HANGING_SIGN(30257, 16, HangingSign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    CHERRY_HANGING_SIGN(5088, 16, HangingSign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    DARK_OAK_HANGING_SIGN(23360, 16, HangingSign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    PALE_OAK_HANGING_SIGN(7097, 16, HangingSign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    MANGROVE_HANGING_SIGN(25106, 16, HangingSign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    BAMBOO_HANGING_SIGN(4726, 16, HangingSign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    CRIMSON_HANGING_SIGN(20696, 16, HangingSign.class),
-    /**
-     * BlockData: {@link HangingSign}
-     */
-    WARPED_HANGING_SIGN(8195, 16, HangingSign.class),
-    BUCKET(15215, 16),
-    WATER_BUCKET(8802, 1),
-    LAVA_BUCKET(9228, 1),
-    POWDER_SNOW_BUCKET(31101, 1),
-    SNOWBALL(19487, 16),
-    LEATHER(16414),
-    MILK_BUCKET(9680, 1),
-    PUFFERFISH_BUCKET(8861, 1),
-    SALMON_BUCKET(9606, 1),
-    COD_BUCKET(28601, 1),
-    TROPICAL_FISH_BUCKET(29995, 1),
-    AXOLOTL_BUCKET(20669, 1),
-    TADPOLE_BUCKET(9731, 1),
-    BRICK(6820),
-    CLAY_BALL(24603),
-    DRIED_KELP_BLOCK(12966),
-    PAPER(9923),
-    BOOK(23097),
-    SLIME_BALL(5242),
-    EGG(21603, 16),
-    COMPASS(24139),
-    RECOVERY_COMPASS(12710),
-    BUNDLE(16835, 1),
-    WHITE_BUNDLE(12072, 1),
-    ORANGE_BUNDLE(18288, 1),
-    MAGENTA_BUNDLE(15328, 1),
-    LIGHT_BLUE_BUNDLE(18639, 1),
-    YELLOW_BUNDLE(27749, 1),
-    LIME_BUNDLE(30093, 1),
-    PINK_BUNDLE(21400, 1),
-    GRAY_BUNDLE(21262, 1),
-    LIGHT_GRAY_BUNDLE(26338, 1),
-    CYAN_BUNDLE(8942, 1),
-    PURPLE_BUNDLE(10319, 1),
-    BLUE_BUNDLE(31501, 1),
-    BROWN_BUNDLE(15464, 1),
-    GREEN_BUNDLE(4597, 1),
-    RED_BUNDLE(19986, 1),
-    BLACK_BUNDLE(22519, 1),
-    FISHING_ROD(4167, 1, 64),
-    CLOCK(14980),
-    SPYGLASS(27490, 1),
-    GLOWSTONE_DUST(6665),
-    COD(24691),
-    SALMON(18516),
-    TROPICAL_FISH(24879),
-    PUFFERFISH(8115),
-    COOKED_COD(9681),
-    COOKED_SALMON(5615),
-    INK_SAC(7184),
-    GLOW_INK_SAC(9686),
-    COCOA_BEANS(30186),
-    WHITE_DYE(10758),
-    ORANGE_DYE(13866),
-    MAGENTA_DYE(11788),
-    LIGHT_BLUE_DYE(28738),
-    YELLOW_DYE(5952),
-    LIME_DYE(6147),
-    PINK_DYE(31151),
-    GRAY_DYE(9184),
-    LIGHT_GRAY_DYE(27643),
-    CYAN_DYE(8043),
-    PURPLE_DYE(6347),
-    BLUE_DYE(11588),
-    BROWN_DYE(7648),
-    GREEN_DYE(23215),
-    RED_DYE(5728),
-    BLACK_DYE(6202),
-    BONE_MEAL(32458),
-    BONE(5686),
-    SUGAR(30638),
-    /**
-     * BlockData: {@link Cake}
-     */
-    CAKE(27048, 1, Cake.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    WHITE_BED(8185, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    ORANGE_BED(11194, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    MAGENTA_BED(20061, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    LIGHT_BLUE_BED(20957, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    YELLOW_BED(30410, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    LIME_BED(27860, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    PINK_BED(13795, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    GRAY_BED(15745, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    LIGHT_GRAY_BED(5090, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    CYAN_BED(16746, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    PURPLE_BED(29755, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    BLUE_BED(12714, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    BROWN_BED(26672, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    GREEN_BED(13797, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    RED_BED(30910, 1, Bed.class),
-    /**
-     * BlockData: {@link Bed}
-     */
-    BLACK_BED(20490, 1, Bed.class),
-    COOKIE(27431),
-    /**
-     * BlockData: {@link Crafter}
-     */
-    CRAFTER(25243, Crafter.class),
-    FILLED_MAP(23504),
-    SHEARS(27971, 1, 238),
-    MELON_SLICE(5347),
-    DRIED_KELP(21042),
-    PUMPKIN_SEEDS(28985),
-    MELON_SEEDS(18340),
-    BEEF(4803),
-    COOKED_BEEF(21595),
-    CHICKEN(17281),
-    COOKED_CHICKEN(16984),
-    ROTTEN_FLESH(21591),
-    ENDER_PEARL(5259, 16),
-    BLAZE_ROD(8289),
-    GHAST_TEAR(18222),
-    GOLD_NUGGET(28814),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    NETHER_WART(29227, Ageable.class),
-    GLASS_BOTTLE(6116),
-    POTION(24020, 1),
-    SPIDER_EYE(9318),
-    FERMENTED_SPIDER_EYE(19386),
-    BLAZE_POWDER(18941),
-    MAGMA_CREAM(25097),
-    /**
-     * BlockData: {@link BrewingStand}
-     */
-    BREWING_STAND(14539, BrewingStand.class),
-    CAULDRON(26531),
-    ENDER_EYE(24860),
-    GLISTERING_MELON_SLICE(20158),
-    ARMADILLO_SPAWN_EGG(22098),
-    ALLAY_SPAWN_EGG(7909),
-    AXOLOTL_SPAWN_EGG(30381),
-    BAT_SPAWN_EGG(14607),
-    BEE_SPAWN_EGG(22924),
-    BLAZE_SPAWN_EGG(4759),
-    BOGGED_SPAWN_EGG(12042),
-    BREEZE_SPAWN_EGG(7580),
-    CAT_SPAWN_EGG(29583),
-    CAMEL_SPAWN_EGG(14760),
-    CAVE_SPIDER_SPAWN_EGG(23341),
-    CHICKEN_SPAWN_EGG(5462),
-    COD_SPAWN_EGG(27248),
-    COW_SPAWN_EGG(14761),
-    CREEPER_SPAWN_EGG(9653),
-    DOLPHIN_SPAWN_EGG(20787),
-    DONKEY_SPAWN_EGG(14513),
-    DROWNED_SPAWN_EGG(19368),
-    ELDER_GUARDIAN_SPAWN_EGG(11418),
-    ENDER_DRAGON_SPAWN_EGG(28092),
-    ENDERMAN_SPAWN_EGG(29488),
-    ENDERMITE_SPAWN_EGG(16617),
-    EVOKER_SPAWN_EGG(21271),
-    FOX_SPAWN_EGG(22376),
-    FROG_SPAWN_EGG(26682),
-    GHAST_SPAWN_EGG(9970),
-    GLOW_SQUID_SPAWN_EGG(31578),
-    GOAT_SPAWN_EGG(30639),
-    GUARDIAN_SPAWN_EGG(20113),
-    HOGLIN_SPAWN_EGG(14088),
-    HORSE_SPAWN_EGG(25981),
-    HUSK_SPAWN_EGG(20178),
-    IRON_GOLEM_SPAWN_EGG(12781),
-    LLAMA_SPAWN_EGG(23640),
-    MAGMA_CUBE_SPAWN_EGG(26638),
-    MOOSHROOM_SPAWN_EGG(22125),
-    MULE_SPAWN_EGG(11229),
-    OCELOT_SPAWN_EGG(30080),
-    PANDA_SPAWN_EGG(23759),
-    PARROT_SPAWN_EGG(23614),
-    PHANTOM_SPAWN_EGG(24648),
-    PIG_SPAWN_EGG(22584),
-    PIGLIN_SPAWN_EGG(16193),
-    PIGLIN_BRUTE_SPAWN_EGG(30230),
-    PILLAGER_SPAWN_EGG(28659),
-    POLAR_BEAR_SPAWN_EGG(17015),
-    PUFFERFISH_SPAWN_EGG(24570),
-    RABBIT_SPAWN_EGG(26496),
-    RAVAGER_SPAWN_EGG(8726),
-    SALMON_SPAWN_EGG(18739),
-    SHEEP_SPAWN_EGG(24488),
-    SHULKER_SPAWN_EGG(31848),
-    SILVERFISH_SPAWN_EGG(14537),
-    SKELETON_SPAWN_EGG(15261),
-    SKELETON_HORSE_SPAWN_EGG(21356),
-    SLIME_SPAWN_EGG(17196),
-    SNIFFER_SPAWN_EGG(27473),
-    SNOW_GOLEM_SPAWN_EGG(24732),
-    SPIDER_SPAWN_EGG(14984),
-    SQUID_SPAWN_EGG(10682),
-    STRAY_SPAWN_EGG(30153),
-    STRIDER_SPAWN_EGG(6203),
-    TADPOLE_SPAWN_EGG(32467),
-    TRADER_LLAMA_SPAWN_EGG(8439),
-    TROPICAL_FISH_SPAWN_EGG(19713),
-    TURTLE_SPAWN_EGG(17324),
-    VEX_SPAWN_EGG(27751),
-    VILLAGER_SPAWN_EGG(30348),
-    VINDICATOR_SPAWN_EGG(25324),
-    WANDERING_TRADER_SPAWN_EGG(17904),
-    WARDEN_SPAWN_EGG(27553),
-    WITCH_SPAWN_EGG(11837),
-    WITHER_SPAWN_EGG(8024),
-    WITHER_SKELETON_SPAWN_EGG(10073),
-    WOLF_SPAWN_EGG(21692),
-    ZOGLIN_SPAWN_EGG(7442),
-    CREAKING_SPAWN_EGG(9598),
-    ZOMBIE_SPAWN_EGG(5814),
-    ZOMBIE_HORSE_SPAWN_EGG(4275),
-    ZOMBIE_VILLAGER_SPAWN_EGG(10311),
-    ZOMBIFIED_PIGLIN_SPAWN_EGG(6626),
-    EXPERIENCE_BOTTLE(12858),
-    FIRE_CHARGE(4842),
-    WIND_CHARGE(23928),
-    WRITABLE_BOOK(13393, 1),
-    WRITTEN_BOOK(24164, 16),
-    BREEZE_ROD(14281),
-    MACE(4771, 1, 500),
-    ITEM_FRAME(27318),
-    GLOW_ITEM_FRAME(26473),
-    FLOWER_POT(30567),
-    CARROT(22824),
-    POTATO(21088),
-    BAKED_POTATO(14624),
-    POISONOUS_POTATO(32640),
-    MAP(21655),
-    GOLDEN_CARROT(5300),
-    /**
-     * BlockData: {@link Skull}
-     */
-    SKELETON_SKULL(13270, Skull.class),
-    /**
-     * BlockData: {@link Skull}
-     */
-    WITHER_SKELETON_SKULL(31487, Skull.class),
-    /**
-     * BlockData: {@link Skull}
-     */
-    PLAYER_HEAD(21174, Skull.class),
-    /**
-     * BlockData: {@link Skull}
-     */
-    ZOMBIE_HEAD(9304, Skull.class),
-    /**
-     * BlockData: {@link Skull}
-     */
-    CREEPER_HEAD(29146, Skull.class),
-    /**
-     * BlockData: {@link Skull}
-     */
-    DRAGON_HEAD(20084, Skull.class),
-    /**
-     * BlockData: {@link Skull}
-     */
-    PIGLIN_HEAD(5512, Skull.class),
-    NETHER_STAR(12469),
-    PUMPKIN_PIE(28725),
-    FIREWORK_ROCKET(23841),
-    FIREWORK_STAR(12190),
-    ENCHANTED_BOOK(11741, 1),
-    NETHER_BRICK(19996),
-    RESIN_BRICK(19050),
-    PRISMARINE_SHARD(10993),
-    PRISMARINE_CRYSTALS(31546),
-    RABBIT(23068),
-    COOKED_RABBIT(4454),
-    RABBIT_STEW(25318, 1),
-    RABBIT_FOOT(13864),
-    RABBIT_HIDE(12467),
-    ARMOR_STAND(12852, 16),
-    IRON_HORSE_ARMOR(30108, 1),
-    GOLDEN_HORSE_ARMOR(7996, 1),
-    DIAMOND_HORSE_ARMOR(10321, 1),
-    LEATHER_HORSE_ARMOR(30667, 1),
-    LEAD(29539),
-    NAME_TAG(30731),
-    COMMAND_BLOCK_MINECART(7992, 1),
-    MUTTON(4792),
-    COOKED_MUTTON(31447),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    WHITE_BANNER(17562, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    ORANGE_BANNER(4839, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    MAGENTA_BANNER(15591, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    LIGHT_BLUE_BANNER(18060, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    YELLOW_BANNER(30382, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    LIME_BANNER(18887, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    PINK_BANNER(19439, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    GRAY_BANNER(12053, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    LIGHT_GRAY_BANNER(11417, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    CYAN_BANNER(9839, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    PURPLE_BANNER(29027, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    BLUE_BANNER(18481, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    BROWN_BANNER(11481, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    GREEN_BANNER(10698, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    RED_BANNER(26961, 16, Rotatable.class),
-    /**
-     * BlockData: {@link Rotatable}
-     */
-    BLACK_BANNER(9365, 16, Rotatable.class),
-    END_CRYSTAL(19090),
-    CHORUS_FRUIT(7652),
-    POPPED_CHORUS_FRUIT(27844),
-    TORCHFLOWER_SEEDS(18153),
-    PITCHER_POD(7977),
-    BEETROOT(23305),
-    BEETROOT_SEEDS(21282),
-    BEETROOT_SOUP(16036, 1),
-    DRAGON_BREATH(20154),
-    SPLASH_POTION(30248, 1),
-    SPECTRAL_ARROW(4568),
-    TIPPED_ARROW(25164),
-    LINGERING_POTION(25857, 1),
-    SHIELD(29943, 1, 336),
-    TOTEM_OF_UNDYING(10139, 1),
-    SHULKER_SHELL(27848),
-    IRON_NUGGET(13715),
-    KNOWLEDGE_BOOK(12646, 1),
-    DEBUG_STICK(24562, 1),
-    MUSIC_DISC_13(16359, 1),
-    MUSIC_DISC_CAT(16246, 1),
-    MUSIC_DISC_BLOCKS(26667, 1),
-    MUSIC_DISC_CHIRP(19436, 1),
-    MUSIC_DISC_CREATOR(20345, 1),
-    MUSIC_DISC_CREATOR_MUSIC_BOX(7202, 1),
-    MUSIC_DISC_FAR(31742, 1),
-    MUSIC_DISC_MALL(11517, 1),
-    MUSIC_DISC_MELLOHI(26117, 1),
-    MUSIC_DISC_STAL(14989, 1),
-    MUSIC_DISC_STRAD(16785, 1),
-    MUSIC_DISC_WARD(24026, 1),
-    MUSIC_DISC_11(27426, 1),
-    MUSIC_DISC_WAIT(26499, 1),
-    MUSIC_DISC_OTHERSIDE(12974, 1),
-    MUSIC_DISC_RELIC(8200, 1),
-    MUSIC_DISC_5(9212, 1),
-    MUSIC_DISC_PIGSTEP(21323, 1),
-    MUSIC_DISC_PRECIPICE(28677, 1),
-    DISC_FRAGMENT_5(29729),
-    TRIDENT(7534, 1, 250),
-    NAUTILUS_SHELL(19989),
-    HEART_OF_THE_SEA(11807),
-    CROSSBOW(4340, 1, 465),
-    SUSPICIOUS_STEW(8173, 1),
-    /**
-     * BlockData: {@link Directional}
-     */
-    LOOM(14276, Directional.class),
-    FLOWER_BANNER_PATTERN(5762, 1),
-    CREEPER_BANNER_PATTERN(15774, 1),
-    SKULL_BANNER_PATTERN(7680, 1),
-    MOJANG_BANNER_PATTERN(11903, 1),
-    GLOBE_BANNER_PATTERN(27753, 1),
-    PIGLIN_BANNER_PATTERN(22028, 1),
-    FLOW_BANNER_PATTERN(32683, 1),
-    GUSTER_BANNER_PATTERN(27267, 1),
-    FIELD_MASONED_BANNER_PATTERN(19157, 1),
-    BORDURE_INDENTED_BANNER_PATTERN(25850, 1),
-    GOAT_HORN(28237, 1),
-    /**
-     * BlockData: {@link Levelled}
-     */
-    COMPOSTER(31247, Levelled.class),
-    /**
-     * BlockData: {@link Barrel}
-     */
-    BARREL(22396, Barrel.class),
-    /**
-     * BlockData: {@link Furnace}
-     */
-    SMOKER(24781, Furnace.class),
-    /**
-     * BlockData: {@link Furnace}
-     */
-    BLAST_FURNACE(31157, Furnace.class),
-    CARTOGRAPHY_TABLE(28529),
-    FLETCHING_TABLE(30838),
-    /**
-     * BlockData: {@link Grindstone}
-     */
-    GRINDSTONE(26260, Grindstone.class),
-    SMITHING_TABLE(9082),
-    /**
-     * BlockData: {@link Directional}
-     */
-    STONECUTTER(25170, Directional.class),
-    /**
-     * BlockData: {@link Bell}
-     */
-    BELL(20000, Bell.class),
-    /**
-     * BlockData: {@link Lantern}
-     */
-    LANTERN(5992, Lantern.class),
-    /**
-     * BlockData: {@link Lantern}
-     */
-    SOUL_LANTERN(27778, Lantern.class),
-    SWEET_BERRIES(19747),
-    GLOW_BERRIES(11584),
-    /**
-     * BlockData: {@link Campfire}
-     */
-    CAMPFIRE(8488, Campfire.class),
-    /**
-     * BlockData: {@link Campfire}
-     */
-    SOUL_CAMPFIRE(4238, Campfire.class),
-    SHROOMLIGHT(20424),
-    HONEYCOMB(9482),
-    /**
-     * BlockData: {@link Beehive}
-     */
-    BEE_NEST(8825, Beehive.class),
-    /**
-     * BlockData: {@link Beehive}
-     */
-    BEEHIVE(11830, Beehive.class),
-    HONEY_BOTTLE(22927, 16),
-    HONEYCOMB_BLOCK(28780),
-    LODESTONE(23127),
-    CRYING_OBSIDIAN(31545),
-    BLACKSTONE(7354),
-    /**
-     * BlockData: {@link Slab}
-     */
-    BLACKSTONE_SLAB(11948, Slab.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    BLACKSTONE_STAIRS(14646, Stairs.class),
-    GILDED_BLACKSTONE(8498),
-    POLISHED_BLACKSTONE(18144),
-    /**
-     * BlockData: {@link Slab}
-     */
-    POLISHED_BLACKSTONE_SLAB(23430, Slab.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    POLISHED_BLACKSTONE_STAIRS(8653, Stairs.class),
-    CHISELED_POLISHED_BLACKSTONE(21942),
-    POLISHED_BLACKSTONE_BRICKS(19844),
-    /**
-     * BlockData: {@link Slab}
-     */
-    POLISHED_BLACKSTONE_BRICK_SLAB(12219, Slab.class),
-    /**
-     * BlockData: {@link Stairs}
-     */
-    POLISHED_BLACKSTONE_BRICK_STAIRS(17983, Stairs.class),
-    CRACKED_POLISHED_BLACKSTONE_BRICKS(16846),
-    /**
-     * BlockData: {@link RespawnAnchor}
-     */
-    RESPAWN_ANCHOR(4099, RespawnAnchor.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    CANDLE(16122, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    WHITE_CANDLE(26410, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    ORANGE_CANDLE(22668, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    MAGENTA_CANDLE(25467, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    LIGHT_BLUE_CANDLE(28681, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    YELLOW_CANDLE(14351, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    LIME_CANDLE(21778, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    PINK_CANDLE(28259, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    GRAY_CANDLE(10721, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    LIGHT_GRAY_CANDLE(10031, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    CYAN_CANDLE(24765, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    PURPLE_CANDLE(19606, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    BLUE_CANDLE(29047, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    BROWN_CANDLE(26145, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    GREEN_CANDLE(29756, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    RED_CANDLE(4214, Candle.class),
-    /**
-     * BlockData: {@link Candle}
-     */
-    BLACK_CANDLE(12617, Candle.class),
-    /**
-     * BlockData: {@link AmethystCluster}
-     */
-    SMALL_AMETHYST_BUD(14958, AmethystCluster.class),
-    /**
-     * BlockData: {@link AmethystCluster}
-     */
-    MEDIUM_AMETHYST_BUD(8429, AmethystCluster.class),
-    /**
-     * BlockData: {@link AmethystCluster}
-     */
-    LARGE_AMETHYST_BUD(7279, AmethystCluster.class),
-    /**
-     * BlockData: {@link AmethystCluster}
-     */
-    AMETHYST_CLUSTER(13142, AmethystCluster.class),
-    /**
-     * BlockData: {@link PointedDripstone}
-     */
-    POINTED_DRIPSTONE(18755, PointedDripstone.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    OCHRE_FROGLIGHT(25330, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    VERDANT_FROGLIGHT(22793, Orientable.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    PEARLESCENT_FROGLIGHT(21441, Orientable.class),
-    FROGSPAWN(8350),
-    ECHO_SHARD(12529),
-    BRUSH(30569, 1, 64),
-    NETHERITE_UPGRADE_SMITHING_TEMPLATE(7615),
-    SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE(16124),
-    DUNE_ARMOR_TRIM_SMITHING_TEMPLATE(30925),
-    COAST_ARMOR_TRIM_SMITHING_TEMPLATE(25501),
-    WILD_ARMOR_TRIM_SMITHING_TEMPLATE(5870),
-    WARD_ARMOR_TRIM_SMITHING_TEMPLATE(24534),
-    EYE_ARMOR_TRIM_SMITHING_TEMPLATE(14663),
-    VEX_ARMOR_TRIM_SMITHING_TEMPLATE(25818),
-    TIDE_ARMOR_TRIM_SMITHING_TEMPLATE(20420),
-    SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE(14386),
-    RIB_ARMOR_TRIM_SMITHING_TEMPLATE(6010),
-    SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE(29143),
-    WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE(4957),
-    SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE(20537),
-    SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE(7070),
-    RAISER_ARMOR_TRIM_SMITHING_TEMPLATE(29116),
-    HOST_ARMOR_TRIM_SMITHING_TEMPLATE(12165),
-    FLOW_ARMOR_TRIM_SMITHING_TEMPLATE(29175),
-    BOLT_ARMOR_TRIM_SMITHING_TEMPLATE(9698),
-    ANGLER_POTTERY_SHERD(9952),
-    ARCHER_POTTERY_SHERD(21629),
-    ARMS_UP_POTTERY_SHERD(5484),
-    BLADE_POTTERY_SHERD(25079),
-    BREWER_POTTERY_SHERD(23429),
-    BURN_POTTERY_SHERD(21259),
-    DANGER_POTTERY_SHERD(30506),
-    EXPLORER_POTTERY_SHERD(5124),
-    FLOW_POTTERY_SHERD(4896),
-    FRIEND_POTTERY_SHERD(18221),
-    GUSTER_POTTERY_SHERD(28193),
-    HEART_POTTERY_SHERD(17607),
-    HEARTBREAK_POTTERY_SHERD(21108),
-    HOWL_POTTERY_SHERD(24900),
-    MINER_POTTERY_SHERD(30602),
-    MOURNER_POTTERY_SHERD(23993),
-    PLENTY_POTTERY_SHERD(28236),
-    PRIZE_POTTERY_SHERD(4341),
-    SCRAPE_POTTERY_SHERD(30034),
-    SHEAF_POTTERY_SHERD(23652),
-    SHELTER_POTTERY_SHERD(28390),
-    SKULL_POTTERY_SHERD(16980),
-    SNORT_POTTERY_SHERD(15921),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    COPPER_GRATE(16221, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    EXPOSED_COPPER_GRATE(7783, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    WEATHERED_COPPER_GRATE(24954, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    OXIDIZED_COPPER_GRATE(14122, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    WAXED_COPPER_GRATE(11230, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    WAXED_EXPOSED_COPPER_GRATE(20520, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    WAXED_WEATHERED_COPPER_GRATE(16533, Waterlogged.class),
-    /**
-     * BlockData: {@link Waterlogged}
-     */
-    WAXED_OXIDIZED_COPPER_GRATE(32010, Waterlogged.class),
-    /**
-     * BlockData: {@link CopperBulb}
-     */
-    COPPER_BULB(21370, CopperBulb.class),
-    /**
-     * BlockData: {@link CopperBulb}
-     */
-    EXPOSED_COPPER_BULB(11944, CopperBulb.class),
-    /**
-     * BlockData: {@link CopperBulb}
-     */
-    WEATHERED_COPPER_BULB(10800, CopperBulb.class),
-    /**
-     * BlockData: {@link CopperBulb}
-     */
-    OXIDIZED_COPPER_BULB(22421, CopperBulb.class),
-    /**
-     * BlockData: {@link CopperBulb}
-     */
-    WAXED_COPPER_BULB(23756, CopperBulb.class),
-    /**
-     * BlockData: {@link CopperBulb}
-     */
-    WAXED_EXPOSED_COPPER_BULB(5530, CopperBulb.class),
-    /**
-     * BlockData: {@link CopperBulb}
-     */
-    WAXED_WEATHERED_COPPER_BULB(13239, CopperBulb.class),
-    /**
-     * BlockData: {@link CopperBulb}
-     */
-    WAXED_OXIDIZED_COPPER_BULB(26892, CopperBulb.class),
-    /**
-     * BlockData: {@link TrialSpawner}
-     */
-    TRIAL_SPAWNER(19902, TrialSpawner.class),
-    TRIAL_KEY(12725),
-    OMINOUS_TRIAL_KEY(4986),
-    /**
-     * BlockData: {@link Vault}
-     */
-    VAULT(6288, Vault.class),
-    OMINOUS_BOTTLE(26321),
-    /**
-     * BlockData: {@link Levelled}
-     */
-    WATER(24998, Levelled.class),
-    /**
-     * BlockData: {@link Levelled}
-     */
-    LAVA(8415, Levelled.class),
-    /**
-     * BlockData: {@link Bisected}
-     */
-    TALL_SEAGRASS(27189, Bisected.class),
-    /**
-     * BlockData: {@link PistonHead}
-     */
-    PISTON_HEAD(30226, PistonHead.class),
-    /**
-     * BlockData: {@link TechnicalPiston}
-     */
-    MOVING_PISTON(13831, TechnicalPiston.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    WALL_TORCH(25890, Directional.class),
-    /**
-     * BlockData: {@link Fire}
-     */
-    FIRE(16396, Fire.class),
-    SOUL_FIRE(30163),
-    /**
-     * BlockData: {@link RedstoneWire}
-     */
-    REDSTONE_WIRE(25984, RedstoneWire.class),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    OAK_WALL_SIGN(12984, 16, WallSign.class),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    SPRUCE_WALL_SIGN(7352, 16, WallSign.class),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    BIRCH_WALL_SIGN(9887, 16, WallSign.class),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    ACACIA_WALL_SIGN(20316, 16, WallSign.class),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    CHERRY_WALL_SIGN(20188, 16, WallSign.class),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    JUNGLE_WALL_SIGN(29629, 16, WallSign.class),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    DARK_OAK_WALL_SIGN(9508, 16, WallSign.class),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    PALE_OAK_WALL_SIGN(23103, 16, WallSign.class),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    MANGROVE_WALL_SIGN(27203, 16, WallSign.class),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    BAMBOO_WALL_SIGN(18857, 16, WallSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    OAK_WALL_HANGING_SIGN(15637, WallHangingSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    SPRUCE_WALL_HANGING_SIGN(18833, WallHangingSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    BIRCH_WALL_HANGING_SIGN(15937, WallHangingSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    ACACIA_WALL_HANGING_SIGN(22477, WallHangingSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    CHERRY_WALL_HANGING_SIGN(10953, WallHangingSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    JUNGLE_WALL_HANGING_SIGN(16691, WallHangingSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    DARK_OAK_WALL_HANGING_SIGN(14296, WallHangingSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    PALE_OAK_WALL_HANGING_SIGN(23484, WallHangingSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    MANGROVE_WALL_HANGING_SIGN(16974, WallHangingSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    CRIMSON_WALL_HANGING_SIGN(28982, WallHangingSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    WARPED_WALL_HANGING_SIGN(20605, WallHangingSign.class),
-    /**
-     * BlockData: {@link WallHangingSign}
-     */
-    BAMBOO_WALL_HANGING_SIGN(6669, WallHangingSign.class),
-    /**
-     * BlockData: {@link RedstoneWallTorch}
-     */
-    REDSTONE_WALL_TORCH(7595, RedstoneWallTorch.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    SOUL_WALL_TORCH(27500, Directional.class),
-    /**
-     * BlockData: {@link Orientable}
-     */
-    NETHER_PORTAL(19469, Orientable.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    ATTACHED_PUMPKIN_STEM(12724, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    ATTACHED_MELON_STEM(30882, Directional.class),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    PUMPKIN_STEM(19021, Ageable.class),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    MELON_STEM(8247, Ageable.class),
-    /**
-     * BlockData: {@link Levelled}
-     */
-    WATER_CAULDRON(32008, Levelled.class),
-    LAVA_CAULDRON(4514),
-    /**
-     * BlockData: {@link Levelled}
-     */
-    POWDER_SNOW_CAULDRON(31571, Levelled.class),
-    END_PORTAL(16782),
-    /**
-     * BlockData: {@link Cocoa}
-     */
-    COCOA(29709, Cocoa.class),
-    /**
-     * BlockData: {@link Tripwire}
-     */
-    TRIPWIRE(8810, Tripwire.class),
-    POTTED_TORCHFLOWER(21278),
-    POTTED_OAK_SAPLING(11905),
-    POTTED_SPRUCE_SAPLING(29498),
-    POTTED_BIRCH_SAPLING(32484),
-    POTTED_JUNGLE_SAPLING(7525),
-    POTTED_ACACIA_SAPLING(14096),
-    POTTED_CHERRY_SAPLING(30785),
-    POTTED_DARK_OAK_SAPLING(6486),
-    POTTED_PALE_OAK_SAPLING(15538),
-    POTTED_MANGROVE_PROPAGULE(22003),
-    POTTED_FERN(23315),
-    POTTED_DANDELION(9727),
-    POTTED_POPPY(7457),
-    POTTED_BLUE_ORCHID(6599),
-    POTTED_ALLIUM(13184),
-    POTTED_AZURE_BLUET(8754),
-    POTTED_RED_TULIP(28594),
-    POTTED_ORANGE_TULIP(28807),
-    POTTED_WHITE_TULIP(24330),
-    POTTED_PINK_TULIP(10089),
-    POTTED_OXEYE_DAISY(19707),
-    POTTED_CORNFLOWER(28917),
-    POTTED_LILY_OF_THE_VALLEY(9364),
-    POTTED_WITHER_ROSE(26876),
-    POTTED_RED_MUSHROOM(22881),
-    POTTED_BROWN_MUSHROOM(14481),
-    POTTED_DEAD_BUSH(13020),
-    POTTED_CACTUS(8777),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    CARROTS(17258, Ageable.class),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    POTATOES(10879, Ageable.class),
-    /**
-     * BlockData: {@link WallSkull}
-     */
-    SKELETON_WALL_SKULL(31650, WallSkull.class),
-    /**
-     * BlockData: {@link WallSkull}
-     */
-    WITHER_SKELETON_WALL_SKULL(9326, WallSkull.class),
-    /**
-     * BlockData: {@link WallSkull}
-     */
-    ZOMBIE_WALL_HEAD(16296, WallSkull.class),
-    /**
-     * BlockData: {@link WallSkull}
-     */
-    PLAYER_WALL_HEAD(13164, WallSkull.class),
-    /**
-     * BlockData: {@link WallSkull}
-     */
-    CREEPER_WALL_HEAD(30123, WallSkull.class),
-    /**
-     * BlockData: {@link WallSkull}
-     */
-    DRAGON_WALL_HEAD(19818, WallSkull.class),
-    /**
-     * BlockData: {@link WallSkull}
-     */
-    PIGLIN_WALL_HEAD(4446, WallSkull.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    WHITE_WALL_BANNER(15967, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    ORANGE_WALL_BANNER(9936, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    MAGENTA_WALL_BANNER(23291, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    LIGHT_BLUE_WALL_BANNER(12011, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    YELLOW_WALL_BANNER(32004, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    LIME_WALL_BANNER(21422, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    PINK_WALL_BANNER(9421, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    GRAY_WALL_BANNER(24275, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    LIGHT_GRAY_WALL_BANNER(31088, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    CYAN_WALL_BANNER(10889, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    PURPLE_WALL_BANNER(14298, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    BLUE_WALL_BANNER(17757, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    BROWN_WALL_BANNER(14731, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    GREEN_WALL_BANNER(15046, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    RED_WALL_BANNER(4378, Directional.class),
-    /**
-     * BlockData: {@link Directional}
-     */
-    BLACK_WALL_BANNER(4919, Directional.class),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    TORCHFLOWER_CROP(28460, Ageable.class),
-    /**
-     * BlockData: {@link PitcherCrop}
-     */
-    PITCHER_CROP(15420, PitcherCrop.class),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    BEETROOTS(22075, Ageable.class),
-    END_GATEWAY(26605),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    FROSTED_ICE(21814, Ageable.class),
-    KELP_PLANT(29697),
-    /**
-     * BlockData: {@link CoralWallFan}
-     */
-    DEAD_TUBE_CORAL_WALL_FAN(5128, CoralWallFan.class),
-    /**
-     * BlockData: {@link CoralWallFan}
-     */
-    DEAD_BRAIN_CORAL_WALL_FAN(23718, CoralWallFan.class),
-    /**
-     * BlockData: {@link CoralWallFan}
-     */
-    DEAD_BUBBLE_CORAL_WALL_FAN(18453, CoralWallFan.class),
-    /**
-     * BlockData: {@link CoralWallFan}
-     */
-    DEAD_FIRE_CORAL_WALL_FAN(23375, CoralWallFan.class),
-    /**
-     * BlockData: {@link CoralWallFan}
-     */
-    DEAD_HORN_CORAL_WALL_FAN(27550, CoralWallFan.class),
-    /**
-     * BlockData: {@link CoralWallFan}
-     */
-    TUBE_CORAL_WALL_FAN(25282, CoralWallFan.class),
-    /**
-     * BlockData: {@link CoralWallFan}
-     */
-    BRAIN_CORAL_WALL_FAN(22685, CoralWallFan.class),
-    /**
-     * BlockData: {@link CoralWallFan}
-     */
-    BUBBLE_CORAL_WALL_FAN(20382, CoralWallFan.class),
-    /**
-     * BlockData: {@link CoralWallFan}
-     */
-    FIRE_CORAL_WALL_FAN(20100, CoralWallFan.class),
-    /**
-     * BlockData: {@link CoralWallFan}
-     */
-    HORN_CORAL_WALL_FAN(28883, CoralWallFan.class),
-    BAMBOO_SAPLING(8478),
-    POTTED_BAMBOO(22542),
-    VOID_AIR(13668),
-    CAVE_AIR(17422),
-    /**
-     * BlockData: {@link BubbleColumn}
-     */
-    BUBBLE_COLUMN(31612, BubbleColumn.class),
-    /**
-     * BlockData: {@link Ageable}
-     */
-    SWEET_BERRY_BUSH(11958, Ageable.class),
-    WEEPING_VINES_PLANT(19437),
-    TWISTING_VINES_PLANT(25338),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    CRIMSON_WALL_SIGN(19242, 16, WallSign.class),
-    /**
-     * BlockData: {@link WallSign}
-     */
-    WARPED_WALL_SIGN(13534, 16, WallSign.class),
-    POTTED_CRIMSON_FUNGUS(5548),
-    POTTED_WARPED_FUNGUS(30800),
-    POTTED_CRIMSON_ROOTS(13852),
-    POTTED_WARPED_ROOTS(6403),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    CANDLE_CAKE(25423, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    WHITE_CANDLE_CAKE(12674, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    ORANGE_CANDLE_CAKE(24982, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    MAGENTA_CANDLE_CAKE(11022, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    LIGHT_BLUE_CANDLE_CAKE(7787, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    YELLOW_CANDLE_CAKE(17157, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    LIME_CANDLE_CAKE(14309, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    PINK_CANDLE_CAKE(20405, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    GRAY_CANDLE_CAKE(6777, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    LIGHT_GRAY_CANDLE_CAKE(11318, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    CYAN_CANDLE_CAKE(21202, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    PURPLE_CANDLE_CAKE(22663, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    BLUE_CANDLE_CAKE(26425, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    BROWN_CANDLE_CAKE(26024, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    GREEN_CANDLE_CAKE(16334, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    RED_CANDLE_CAKE(24151, Lightable.class),
-    /**
-     * BlockData: {@link Lightable}
-     */
-    BLACK_CANDLE_CAKE(15191, Lightable.class),
-    POWDER_SNOW(24077),
-    /**
-     * BlockData: {@link CaveVines}
-     */
-    CAVE_VINES(7339, CaveVines.class),
-    /**
-     * BlockData: {@link CaveVinesPlant}
-     */
-    CAVE_VINES_PLANT(30645, CaveVinesPlant.class),
-    /**
-     * BlockData: {@link Dripleaf}
-     */
-    BIG_DRIPLEAF_STEM(13167, Dripleaf.class),
-    POTTED_AZALEA_BUSH(20430),
-    POTTED_FLOWERING_AZALEA_BUSH(10609),
-    POTTED_OPEN_EYEBLOSSOM(24999),
-    POTTED_CLOSED_EYEBLOSSOM(16694),
+    // Start generate - Items
+    // @GeneratedFrom 1.21.4
+    ACACIA_BOAT(-1, 1),
+    ACACIA_CHEST_BOAT(-1, 1),
+    AIR(-1),
+    ALLAY_SPAWN_EGG(-1),
+    AMETHYST_SHARD(-1),
+    ANGLER_POTTERY_SHERD(-1),
+    APPLE(-1),
+    ARCHER_POTTERY_SHERD(-1),
+    ARMADILLO_SCUTE(-1),
+    ARMADILLO_SPAWN_EGG(-1),
+    ARMOR_STAND(-1, 16),
+    ARMS_UP_POTTERY_SHERD(-1),
+    ARROW(-1),
+    AXOLOTL_BUCKET(-1, 1),
+    AXOLOTL_SPAWN_EGG(-1),
+    BAKED_POTATO(-1),
+    BAMBOO_CHEST_RAFT(-1, 1),
+    BAMBOO_RAFT(-1, 1),
+    BAT_SPAWN_EGG(-1),
+    BEE_SPAWN_EGG(-1),
+    BEEF(-1),
+    BEETROOT(-1),
+    BEETROOT_SEEDS(-1),
+    BEETROOT_SOUP(-1, 1),
+    BIRCH_BOAT(-1, 1),
+    BIRCH_CHEST_BOAT(-1, 1),
+    BLACK_BUNDLE(-1, 1),
+    BLACK_DYE(-1),
+    BLADE_POTTERY_SHERD(-1),
+    BLAZE_POWDER(-1),
+    BLAZE_ROD(-1),
+    BLAZE_SPAWN_EGG(-1),
+    BLUE_BUNDLE(-1, 1),
+    BLUE_DYE(-1),
+    BOGGED_SPAWN_EGG(-1),
+    BOLT_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    BONE(-1),
+    BONE_MEAL(-1),
+    BOOK(-1),
+    BORDURE_INDENTED_BANNER_PATTERN(-1, 1),
+    BOW(-1, 1, 384),
+    BOWL(-1),
+    BREAD(-1),
+    BREEZE_ROD(-1),
+    BREEZE_SPAWN_EGG(-1),
+    BREWER_POTTERY_SHERD(-1),
+    BRICK(-1),
+    BROWN_BUNDLE(-1, 1),
+    BROWN_DYE(-1),
+    BRUSH(-1, 1, 64),
+    BUCKET(-1, 16),
+    BUNDLE(-1, 1),
+    BURN_POTTERY_SHERD(-1),
+    CAMEL_SPAWN_EGG(-1),
+    CARROT(-1),
+    CARROT_ON_A_STICK(-1, 1, 25),
+    CAT_SPAWN_EGG(-1),
+    CAVE_SPIDER_SPAWN_EGG(-1),
+    CHAINMAIL_BOOTS(-1, 1, 195),
+    CHAINMAIL_CHESTPLATE(-1, 1, 240),
+    CHAINMAIL_HELMET(-1, 1, 165),
+    CHAINMAIL_LEGGINGS(-1, 1, 225),
+    CHARCOAL(-1),
+    CHERRY_BOAT(-1, 1),
+    CHERRY_CHEST_BOAT(-1, 1),
+    CHEST_MINECART(-1, 1),
+    CHICKEN(-1),
+    CHICKEN_SPAWN_EGG(-1),
+    CHORUS_FRUIT(-1),
+    CLAY_BALL(-1),
+    CLOCK(-1),
+    COAL(-1),
+    COAST_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    COCOA_BEANS(-1),
+    COD(-1),
+    COD_BUCKET(-1, 1),
+    COD_SPAWN_EGG(-1),
+    COMMAND_BLOCK_MINECART(-1, 1),
+    COMPASS(-1),
+    COOKED_BEEF(-1),
+    COOKED_CHICKEN(-1),
+    COOKED_COD(-1),
+    COOKED_MUTTON(-1),
+    COOKED_PORKCHOP(-1),
+    COOKED_RABBIT(-1),
+    COOKED_SALMON(-1),
+    COOKIE(-1),
+    COPPER_INGOT(-1),
+    COW_SPAWN_EGG(-1),
+    CREAKING_SPAWN_EGG(-1),
+    CREEPER_BANNER_PATTERN(-1, 1),
+    CREEPER_SPAWN_EGG(-1),
+    CROSSBOW(-1, 1, 465),
+    CYAN_BUNDLE(-1, 1),
+    CYAN_DYE(-1),
+    DANGER_POTTERY_SHERD(-1),
+    DARK_OAK_BOAT(-1, 1),
+    DARK_OAK_CHEST_BOAT(-1, 1),
+    DEBUG_STICK(-1, 1),
+    DIAMOND(-1),
+    DIAMOND_AXE(-1, 1, 1561),
+    DIAMOND_BOOTS(-1, 1, 429),
+    DIAMOND_CHESTPLATE(-1, 1, 528),
+    DIAMOND_HELMET(-1, 1, 363),
+    DIAMOND_HOE(-1, 1, 1561),
+    DIAMOND_HORSE_ARMOR(-1, 1),
+    DIAMOND_LEGGINGS(-1, 1, 495),
+    DIAMOND_PICKAXE(-1, 1, 1561),
+    DIAMOND_SHOVEL(-1, 1, 1561),
+    DIAMOND_SWORD(-1, 1, 1561),
+    DRAGON_BREATH(-1),
+    END_CRYSTAL(-1),
+    FIELD_MASONED_BANNER_PATTERN(-1, 1),
+    FLOW_BANNER_PATTERN(-1, 1),
+    GLOBE_BANNER_PATTERN(-1, 1),
+    GOAT_HORN(-1, 1),
+    IRON_NUGGET(-1),
+    KNOWLEDGE_BOOK(-1, 1),
+    LINGERING_POTION(-1, 1),
+    MUSIC_DISC_5(-1, 1),
+    DISC_FRAGMENT_5(-1),
+    DOLPHIN_SPAWN_EGG(-1),
+    DONKEY_SPAWN_EGG(-1),
+    DRIED_KELP(-1),
+    DROWNED_SPAWN_EGG(-1),
+    DUNE_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    ECHO_SHARD(-1),
+    EGG(-1, 16),
+    ELDER_GUARDIAN_SPAWN_EGG(-1),
+    ELYTRA(-1, 1, 432),
+    EMERALD(-1),
+    ENCHANTED_BOOK(-1, 1),
+    ENCHANTED_GOLDEN_APPLE(-1),
+    ENDER_DRAGON_SPAWN_EGG(-1),
+    ENDER_EYE(-1),
+    ENDER_PEARL(-1, 16),
+    ENDERMAN_SPAWN_EGG(-1),
+    ENDERMITE_SPAWN_EGG(-1),
+    EVOKER_SPAWN_EGG(-1),
+    EXPERIENCE_BOTTLE(-1),
+    EXPLORER_POTTERY_SHERD(-1),
+    EYE_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    FEATHER(-1),
+    FERMENTED_SPIDER_EYE(-1),
+    FILLED_MAP(-1),
+    FIRE_CHARGE(-1),
+    FIREWORK_ROCKET(-1),
+    FIREWORK_STAR(-1),
+    FISHING_ROD(-1, 1, 64),
+    FLINT(-1),
+    FLINT_AND_STEEL(-1, 1, 64),
+    FLOW_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    FLOW_POTTERY_SHERD(-1),
+    FLOWER_BANNER_PATTERN(-1, 1),
+    FOX_SPAWN_EGG(-1),
+    FRIEND_POTTERY_SHERD(-1),
+    FROG_SPAWN_EGG(-1),
+    FURNACE_MINECART(-1, 1),
+    GHAST_SPAWN_EGG(-1),
+    GHAST_TEAR(-1),
+    GLASS_BOTTLE(-1),
+    GLISTERING_MELON_SLICE(-1),
+    GLOW_BERRIES(-1),
+    GLOW_INK_SAC(-1),
+    GLOW_ITEM_FRAME(-1),
+    GLOW_SQUID_SPAWN_EGG(-1),
+    GLOWSTONE_DUST(-1),
+    GOAT_SPAWN_EGG(-1),
+    GOLD_INGOT(-1),
+    GOLD_NUGGET(-1),
+    GOLDEN_APPLE(-1),
+    GOLDEN_AXE(-1, 1, 32),
+    GOLDEN_BOOTS(-1, 1, 91),
+    GOLDEN_CARROT(-1),
+    GOLDEN_CHESTPLATE(-1, 1, 112),
+    GOLDEN_HELMET(-1, 1, 77),
+    GOLDEN_HOE(-1, 1, 32),
+    GOLDEN_HORSE_ARMOR(-1, 1),
+    GOLDEN_LEGGINGS(-1, 1, 105),
+    GOLDEN_PICKAXE(-1, 1, 32),
+    GOLDEN_SHOVEL(-1, 1, 32),
+    GOLDEN_SWORD(-1, 1, 32),
+    GRAY_BUNDLE(-1, 1),
+    GRAY_DYE(-1),
+    GREEN_BUNDLE(-1, 1),
+    GREEN_DYE(-1),
+    GUARDIAN_SPAWN_EGG(-1),
+    GUNPOWDER(-1),
+    GUSTER_BANNER_PATTERN(-1, 1),
+    GUSTER_POTTERY_SHERD(-1),
+    HEART_OF_THE_SEA(-1),
+    HEART_POTTERY_SHERD(-1),
+    HEARTBREAK_POTTERY_SHERD(-1),
+    HOGLIN_SPAWN_EGG(-1),
+    HONEY_BOTTLE(-1, 16),
+    HONEYCOMB(-1),
+    HOPPER_MINECART(-1, 1),
+    HORSE_SPAWN_EGG(-1),
+    HOST_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    HOWL_POTTERY_SHERD(-1),
+    HUSK_SPAWN_EGG(-1),
+    INK_SAC(-1),
+    IRON_AXE(-1, 1, 250),
+    IRON_BOOTS(-1, 1, 195),
+    IRON_CHESTPLATE(-1, 1, 240),
+    IRON_GOLEM_SPAWN_EGG(-1),
+    IRON_HELMET(-1, 1, 165),
+    IRON_HOE(-1, 1, 250),
+    IRON_HORSE_ARMOR(-1, 1),
+    IRON_INGOT(-1),
+    IRON_LEGGINGS(-1, 1, 225),
+    IRON_PICKAXE(-1, 1, 250),
+    IRON_SHOVEL(-1, 1, 250),
+    IRON_SWORD(-1, 1, 250),
+    ITEM_FRAME(-1),
+    JUNGLE_BOAT(-1, 1),
+    JUNGLE_CHEST_BOAT(-1, 1),
+    LAPIS_LAZULI(-1),
+    LAVA_BUCKET(-1, 1),
+    LEAD(-1),
+    LEATHER(-1),
+    LEATHER_BOOTS(-1, 1, 65),
+    LEATHER_CHESTPLATE(-1, 1, 80),
+    LEATHER_HELMET(-1, 1, 55),
+    LEATHER_HORSE_ARMOR(-1, 1),
+    LEATHER_LEGGINGS(-1, 1, 75),
+    LIGHT_BLUE_BUNDLE(-1, 1),
+    LIGHT_BLUE_DYE(-1),
+    LIGHT_GRAY_BUNDLE(-1, 1),
+    LIGHT_GRAY_DYE(-1),
+    LIME_BUNDLE(-1, 1),
+    LIME_DYE(-1),
+    LLAMA_SPAWN_EGG(-1),
+    MACE(-1, 1, 500),
+    MAGENTA_BUNDLE(-1, 1),
+    MAGENTA_DYE(-1),
+    MAGMA_CREAM(-1),
+    MAGMA_CUBE_SPAWN_EGG(-1),
+    MANGROVE_BOAT(-1, 1),
+    MANGROVE_CHEST_BOAT(-1, 1),
+    MAP(-1),
+    MELON_SEEDS(-1),
+    MELON_SLICE(-1),
+    MILK_BUCKET(-1, 1),
+    MINECART(-1, 1),
+    MINER_POTTERY_SHERD(-1),
+    MOJANG_BANNER_PATTERN(-1, 1),
+    MOOSHROOM_SPAWN_EGG(-1),
+    MOURNER_POTTERY_SHERD(-1),
+    MULE_SPAWN_EGG(-1),
+    MUSHROOM_STEW(-1, 1),
+    MUSIC_DISC_11(-1, 1),
+    MUSIC_DISC_13(-1, 1),
+    MUSIC_DISC_BLOCKS(-1, 1),
+    MUSIC_DISC_CAT(-1, 1),
+    MUSIC_DISC_CHIRP(-1, 1),
+    MUSIC_DISC_CREATOR(-1, 1),
+    MUSIC_DISC_CREATOR_MUSIC_BOX(-1, 1),
+    MUSIC_DISC_FAR(-1, 1),
+    MUSIC_DISC_MALL(-1, 1),
+    MUSIC_DISC_MELLOHI(-1, 1),
+    MUSIC_DISC_OTHERSIDE(-1, 1),
+    MUSIC_DISC_PIGSTEP(-1, 1),
+    MUSIC_DISC_PRECIPICE(-1, 1),
+    MUSIC_DISC_RELIC(-1, 1),
+    MUSIC_DISC_STAL(-1, 1),
+    MUSIC_DISC_STRAD(-1, 1),
+    MUSIC_DISC_WAIT(-1, 1),
+    MUSIC_DISC_WARD(-1, 1),
+    MUTTON(-1),
+    NAME_TAG(-1),
+    NAUTILUS_SHELL(-1),
+    NETHER_BRICK(-1),
+    NETHER_STAR(-1),
+    NETHERITE_AXE(-1, 1, 2031),
+    NETHERITE_BOOTS(-1, 1, 481),
+    NETHERITE_CHESTPLATE(-1, 1, 592),
+    NETHERITE_HELMET(-1, 1, 407),
+    NETHERITE_HOE(-1, 1, 2031),
+    NETHERITE_INGOT(-1),
+    NETHERITE_LEGGINGS(-1, 1, 555),
+    NETHERITE_PICKAXE(-1, 1, 2031),
+    NETHERITE_SCRAP(-1),
+    NETHERITE_SHOVEL(-1, 1, 2031),
+    NETHERITE_SWORD(-1, 1, 2031),
+    NETHERITE_UPGRADE_SMITHING_TEMPLATE(-1),
+    OAK_BOAT(-1, 1),
+    OAK_CHEST_BOAT(-1, 1),
+    OCELOT_SPAWN_EGG(-1),
+    OMINOUS_BOTTLE(-1),
+    OMINOUS_TRIAL_KEY(-1),
+    ORANGE_BUNDLE(-1, 1),
+    ORANGE_DYE(-1),
+    PAINTING(-1),
+    PALE_OAK_BOAT(-1, 1),
+    PALE_OAK_CHEST_BOAT(-1, 1),
+    PANDA_SPAWN_EGG(-1),
+    PAPER(-1),
+    PARROT_SPAWN_EGG(-1),
+    PHANTOM_MEMBRANE(-1),
+    PHANTOM_SPAWN_EGG(-1),
+    PIG_SPAWN_EGG(-1),
+    PIGLIN_BANNER_PATTERN(-1, 1),
+    PIGLIN_BRUTE_SPAWN_EGG(-1),
+    PIGLIN_SPAWN_EGG(-1),
+    PILLAGER_SPAWN_EGG(-1),
+    PINK_BUNDLE(-1, 1),
+    PINK_DYE(-1),
+    PITCHER_POD(-1),
+    PLENTY_POTTERY_SHERD(-1),
+    POISONOUS_POTATO(-1),
+    POLAR_BEAR_SPAWN_EGG(-1),
+    POPPED_CHORUS_FRUIT(-1),
+    PORKCHOP(-1),
+    POTATO(-1),
+    POTION(-1, 1),
+    POWDER_SNOW_BUCKET(-1, 1),
+    PRISMARINE_CRYSTALS(-1),
+    PRISMARINE_SHARD(-1),
+    PRIZE_POTTERY_SHERD(-1),
+    PUFFERFISH(-1),
+    PUFFERFISH_BUCKET(-1, 1),
+    PUFFERFISH_SPAWN_EGG(-1),
+    PUMPKIN_PIE(-1),
+    PUMPKIN_SEEDS(-1),
+    PURPLE_BUNDLE(-1, 1),
+    PURPLE_DYE(-1),
+    QUARTZ(-1),
+    RABBIT(-1),
+    RABBIT_FOOT(-1),
+    RABBIT_HIDE(-1),
+    RABBIT_SPAWN_EGG(-1),
+    RABBIT_STEW(-1, 1),
+    RAISER_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    RAVAGER_SPAWN_EGG(-1),
+    RAW_COPPER(-1),
+    RAW_GOLD(-1),
+    RAW_IRON(-1),
+    RECOVERY_COMPASS(-1),
+    RED_BUNDLE(-1, 1),
+    RED_DYE(-1),
+    REDSTONE(-1),
+    RESIN_BRICK(-1),
+    RIB_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    ROTTEN_FLESH(-1),
+    SADDLE(-1, 1),
+    SALMON(-1),
+    SALMON_BUCKET(-1, 1),
+    SALMON_SPAWN_EGG(-1),
+    SCRAPE_POTTERY_SHERD(-1),
+    SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    SHEAF_POTTERY_SHERD(-1),
+    SHEARS(-1, 1, 238),
+    SHEEP_SPAWN_EGG(-1),
+    SHELTER_POTTERY_SHERD(-1),
+    SHIELD(-1, 1, 336),
+    SHULKER_SHELL(-1),
+    SHULKER_SPAWN_EGG(-1),
+    SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    SILVERFISH_SPAWN_EGG(-1),
+    SKELETON_HORSE_SPAWN_EGG(-1),
+    SKELETON_SPAWN_EGG(-1),
+    SKULL_BANNER_PATTERN(-1, 1),
+    SKULL_POTTERY_SHERD(-1),
+    SLIME_BALL(-1),
+    SLIME_SPAWN_EGG(-1),
+    SNIFFER_SPAWN_EGG(-1),
+    SNORT_POTTERY_SHERD(-1),
+    SNOUT_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    SNOW_GOLEM_SPAWN_EGG(-1),
+    SNOWBALL(-1, 16),
+    SPECTRAL_ARROW(-1),
+    SPIDER_EYE(-1),
+    SPIDER_SPAWN_EGG(-1),
+    SPIRE_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    SPLASH_POTION(-1, 1),
+    SPRUCE_BOAT(-1, 1),
+    SPRUCE_CHEST_BOAT(-1, 1),
+    SPYGLASS(-1, 1),
+    SQUID_SPAWN_EGG(-1),
+    STICK(-1),
+    STONE_AXE(-1, 1, 131),
+    STONE_HOE(-1, 1, 131),
+    STONE_PICKAXE(-1, 1, 131),
+    STONE_SHOVEL(-1, 1, 131),
+    STONE_SWORD(-1, 1, 131),
+    STRAY_SPAWN_EGG(-1),
+    STRIDER_SPAWN_EGG(-1),
+    STRING(-1),
+    SUGAR(-1),
+    SUSPICIOUS_STEW(-1, 1),
+    SWEET_BERRIES(-1),
+    TADPOLE_BUCKET(-1, 1),
+    TADPOLE_SPAWN_EGG(-1),
+    TIDE_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    TIPPED_ARROW(-1),
+    TNT_MINECART(-1, 1),
+    TORCHFLOWER_SEEDS(-1),
+    TOTEM_OF_UNDYING(-1, 1),
+    TRADER_LLAMA_SPAWN_EGG(-1),
+    TRIAL_KEY(-1),
+    TRIDENT(-1, 1, 250),
+    TROPICAL_FISH(-1),
+    TROPICAL_FISH_BUCKET(-1, 1),
+    TROPICAL_FISH_SPAWN_EGG(-1),
+    TURTLE_HELMET(-1, 1, 275),
+    TURTLE_SCUTE(-1),
+    TURTLE_SPAWN_EGG(-1),
+    VEX_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    VEX_SPAWN_EGG(-1),
+    VILLAGER_SPAWN_EGG(-1),
+    VINDICATOR_SPAWN_EGG(-1),
+    WANDERING_TRADER_SPAWN_EGG(-1),
+    WARD_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    WARDEN_SPAWN_EGG(-1),
+    WARPED_FUNGUS_ON_A_STICK(-1, 1, 100),
+    WATER_BUCKET(-1, 1),
+    WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    WHEAT_SEEDS(-1),
+    WHITE_BUNDLE(-1, 1),
+    WHITE_DYE(-1),
+    WILD_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
+    WIND_CHARGE(-1),
+    WITCH_SPAWN_EGG(-1),
+    WITHER_SKELETON_SPAWN_EGG(-1),
+    WITHER_SPAWN_EGG(-1),
+    WOLF_ARMOR(-1, 1, 64),
+    WOLF_SPAWN_EGG(-1),
+    WOODEN_AXE(-1, 1, 59),
+    WOODEN_HOE(-1, 1, 59),
+    WOODEN_PICKAXE(-1, 1, 59),
+    WOODEN_SHOVEL(-1, 1, 59),
+    WOODEN_SWORD(-1, 1, 59),
+    WRITABLE_BOOK(-1, 1),
+    WRITTEN_BOOK(-1, 16),
+    YELLOW_BUNDLE(-1, 1),
+    YELLOW_DYE(-1),
+    ZOGLIN_SPAWN_EGG(-1),
+    ZOMBIE_HORSE_SPAWN_EGG(-1),
+    ZOMBIE_SPAWN_EGG(-1),
+    ZOMBIE_VILLAGER_SPAWN_EGG(-1),
+    ZOMBIFIED_PIGLIN_SPAWN_EGG(-1),
+    // End generate - Items
+    // Start generate - Blocks
+    // @GeneratedFrom 1.21.4
+    ACACIA_BUTTON(-1, Switch.class),
+    ACACIA_DOOR(-1, Door.class),
+    ACACIA_FENCE(-1, Fence.class),
+    ACACIA_FENCE_GATE(-1, Gate.class),
+    ACACIA_HANGING_SIGN(-1, 16, HangingSign.class),
+    ACACIA_LEAVES(-1, Leaves.class),
+    ACACIA_LOG(-1, Orientable.class),
+    ACACIA_PLANKS(-1),
+    ACACIA_PRESSURE_PLATE(-1, Powerable.class),
+    ACACIA_SAPLING(-1, Sapling.class),
+    ACACIA_SIGN(-1, 16, Sign.class),
+    ACACIA_SLAB(-1, Slab.class),
+    ACACIA_STAIRS(-1, Stairs.class),
+    ACACIA_TRAPDOOR(-1, TrapDoor.class),
+    ACACIA_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    ACACIA_WALL_SIGN(-1, 16, WallSign.class),
+    ACACIA_WOOD(-1, Orientable.class),
+    ACTIVATOR_RAIL(-1, RedstoneRail.class),
+    ALLIUM(-1),
+    AMETHYST_BLOCK(-1),
+    AMETHYST_CLUSTER(-1, AmethystCluster.class),
+    ANCIENT_DEBRIS(-1),
+    ANDESITE(-1),
+    ANDESITE_SLAB(-1, Slab.class),
+    ANDESITE_STAIRS(-1, Stairs.class),
+    ANDESITE_WALL(-1, Wall.class),
+    ANVIL(-1, Directional.class),
+    ATTACHED_MELON_STEM(-1, Directional.class),
+    ATTACHED_PUMPKIN_STEM(-1, Directional.class),
+    AZALEA(-1),
+    AZALEA_LEAVES(-1, Leaves.class),
+    AZURE_BLUET(-1),
+    BAMBOO(-1, Bamboo.class),
+    BAMBOO_BLOCK(-1, Orientable.class),
+    BAMBOO_BUTTON(-1, Switch.class),
+    BAMBOO_DOOR(-1, Door.class),
+    BAMBOO_FENCE(-1, Fence.class),
+    BAMBOO_FENCE_GATE(-1, Gate.class),
+    BAMBOO_HANGING_SIGN(-1, 16, HangingSign.class),
+    BAMBOO_MOSAIC(-1),
+    BAMBOO_MOSAIC_SLAB(-1, Slab.class),
+    BAMBOO_MOSAIC_STAIRS(-1, Stairs.class),
+    BAMBOO_PLANKS(-1),
+    BAMBOO_PRESSURE_PLATE(-1, Powerable.class),
+    BAMBOO_SAPLING(-1),
+    BAMBOO_SIGN(-1, 16, Sign.class),
+    BAMBOO_SLAB(-1, Slab.class),
+    BAMBOO_STAIRS(-1, Stairs.class),
+    BAMBOO_TRAPDOOR(-1, TrapDoor.class),
+    BAMBOO_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    BAMBOO_WALL_SIGN(-1, 16, WallSign.class),
+    BARREL(-1, Barrel.class),
+    BARRIER(-1, Waterlogged.class),
+    BASALT(-1, Orientable.class),
+    BEACON(-1),
+    BEDROCK(-1),
+    BEE_NEST(-1, Beehive.class),
+    BEEHIVE(-1, Beehive.class),
+    BEETROOTS(-1, Ageable.class),
+    BELL(-1, Bell.class),
+    BIG_DRIPLEAF(-1, BigDripleaf.class),
+    BIG_DRIPLEAF_STEM(-1, Dripleaf.class),
+    BIRCH_BUTTON(-1, Switch.class),
+    BIRCH_DOOR(-1, Door.class),
+    BIRCH_FENCE(-1, Fence.class),
+    BIRCH_FENCE_GATE(-1, Gate.class),
+    BIRCH_HANGING_SIGN(-1, 16, HangingSign.class),
+    BIRCH_LEAVES(-1, Leaves.class),
+    BIRCH_LOG(-1, Orientable.class),
+    BIRCH_PLANKS(-1),
+    BIRCH_PRESSURE_PLATE(-1, Powerable.class),
+    BIRCH_SAPLING(-1, Sapling.class),
+    BIRCH_SIGN(-1, 16, Sign.class),
+    BIRCH_SLAB(-1, Slab.class),
+    BIRCH_STAIRS(-1, Stairs.class),
+    BIRCH_TRAPDOOR(-1, TrapDoor.class),
+    BIRCH_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    BIRCH_WALL_SIGN(-1, 16, WallSign.class),
+    BIRCH_WOOD(-1, Orientable.class),
+    BLACK_BANNER(-1, 16, Rotatable.class),
+    BLACK_BED(-1, 1, Bed.class),
+    BLACK_CANDLE(-1, Candle.class),
+    BLACK_CANDLE_CAKE(-1, Lightable.class),
+    BLACK_CARPET(-1),
+    BLACK_CONCRETE(-1),
+    BLACK_CONCRETE_POWDER(-1),
+    BLACK_GLAZED_TERRACOTTA(-1, Directional.class),
+    BLACK_SHULKER_BOX(-1, 1, Directional.class),
+    BLACK_STAINED_GLASS(-1),
+    BLACK_STAINED_GLASS_PANE(-1, GlassPane.class),
+    BLACK_TERRACOTTA(-1),
+    BLACK_WALL_BANNER(-1, Directional.class),
+    BLACK_WOOL(-1),
+    BLACKSTONE(-1),
+    BLACKSTONE_SLAB(-1, Slab.class),
+    BLACKSTONE_STAIRS(-1, Stairs.class),
+    BLACKSTONE_WALL(-1, Wall.class),
+    BLAST_FURNACE(-1, Furnace.class),
+    BLUE_BANNER(-1, 16, Rotatable.class),
+    BLUE_BED(-1, 1, Bed.class),
+    BLUE_CANDLE(-1, Candle.class),
+    BLUE_CANDLE_CAKE(-1, Lightable.class),
+    BLUE_CARPET(-1),
+    BLUE_CONCRETE(-1),
+    BLUE_CONCRETE_POWDER(-1),
+    BLUE_GLAZED_TERRACOTTA(-1, Directional.class),
+    BLUE_ICE(-1),
+    BLUE_ORCHID(-1),
+    BLUE_SHULKER_BOX(-1, 1, Directional.class),
+    BLUE_STAINED_GLASS(-1),
+    BLUE_STAINED_GLASS_PANE(-1, GlassPane.class),
+    BLUE_TERRACOTTA(-1),
+    BLUE_WALL_BANNER(-1, Directional.class),
+    BLUE_WOOL(-1),
+    BONE_BLOCK(-1, Orientable.class),
+    BOOKSHELF(-1),
+    BRAIN_CORAL(-1, Waterlogged.class),
+    BRAIN_CORAL_BLOCK(-1),
+    BRAIN_CORAL_FAN(-1, Waterlogged.class),
+    BRAIN_CORAL_WALL_FAN(-1, CoralWallFan.class),
+    BREWING_STAND(-1, BrewingStand.class),
+    BRICK_SLAB(-1, Slab.class),
+    BRICK_STAIRS(-1, Stairs.class),
+    BRICK_WALL(-1, Wall.class),
+    BRICKS(-1),
+    BROWN_BANNER(-1, 16, Rotatable.class),
+    BROWN_BED(-1, 1, Bed.class),
+    BROWN_CANDLE(-1, Candle.class),
+    BROWN_CANDLE_CAKE(-1, Lightable.class),
+    BROWN_CARPET(-1),
+    BROWN_CONCRETE(-1),
+    BROWN_CONCRETE_POWDER(-1),
+    BROWN_GLAZED_TERRACOTTA(-1, Directional.class),
+    BROWN_MUSHROOM(-1),
+    BROWN_MUSHROOM_BLOCK(-1, MultipleFacing.class),
+    BROWN_SHULKER_BOX(-1, 1, Directional.class),
+    BROWN_STAINED_GLASS(-1),
+    BROWN_STAINED_GLASS_PANE(-1, GlassPane.class),
+    BROWN_TERRACOTTA(-1),
+    BROWN_WALL_BANNER(-1, Directional.class),
+    BROWN_WOOL(-1),
+    BUBBLE_COLUMN(-1, BubbleColumn.class),
+    BUBBLE_CORAL(-1, Waterlogged.class),
+    BUBBLE_CORAL_BLOCK(-1),
+    BUBBLE_CORAL_FAN(-1, Waterlogged.class),
+    BUBBLE_CORAL_WALL_FAN(-1, CoralWallFan.class),
+    BUDDING_AMETHYST(-1),
+    CACTUS(-1, Ageable.class),
+    CAKE(-1, 1, Cake.class),
+    CALCITE(-1),
+    CALIBRATED_SCULK_SENSOR(-1, CalibratedSculkSensor.class),
+    CAMPFIRE(-1, Campfire.class),
+    CANDLE(-1, Candle.class),
+    CANDLE_CAKE(-1, Lightable.class),
+    CARROTS(-1, Ageable.class),
+    CARTOGRAPHY_TABLE(-1),
+    CARVED_PUMPKIN(-1, Directional.class),
+    CAULDRON(-1),
+    CAVE_AIR(-1),
+    CAVE_VINES(-1, CaveVines.class),
+    CAVE_VINES_PLANT(-1, CaveVinesPlant.class),
+    CHAIN(-1, Chain.class),
+    CHAIN_COMMAND_BLOCK(-1, CommandBlock.class),
+    CHERRY_BUTTON(-1, Switch.class),
+    CHERRY_DOOR(-1, Door.class),
+    CHERRY_FENCE(-1, Fence.class),
+    CHERRY_FENCE_GATE(-1, Gate.class),
+    CHERRY_HANGING_SIGN(-1, 16, HangingSign.class),
+    CHERRY_LEAVES(-1, Leaves.class),
+    CHERRY_LOG(-1, Orientable.class),
+    CHERRY_PLANKS(-1),
+    CHERRY_PRESSURE_PLATE(-1, Powerable.class),
+    CHERRY_SAPLING(-1, Sapling.class),
+    CHERRY_SIGN(-1, 16, Sign.class),
+    CHERRY_SLAB(-1, Slab.class),
+    CHERRY_STAIRS(-1, Stairs.class),
+    CHERRY_TRAPDOOR(-1, TrapDoor.class),
+    CHERRY_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    CHERRY_WALL_SIGN(-1, 16, WallSign.class),
+    CHERRY_WOOD(-1, Orientable.class),
+    CHEST(-1, Chest.class),
+    CHIPPED_ANVIL(-1, Directional.class),
+    CHISELED_BOOKSHELF(-1, ChiseledBookshelf.class),
+    CHISELED_COPPER(-1),
+    CHISELED_DEEPSLATE(-1),
+    CHISELED_NETHER_BRICKS(-1),
+    CHISELED_POLISHED_BLACKSTONE(-1),
+    CHISELED_QUARTZ_BLOCK(-1),
+    CHISELED_RED_SANDSTONE(-1),
+    CHISELED_RESIN_BRICKS(-1),
+    CHISELED_SANDSTONE(-1),
+    CHISELED_STONE_BRICKS(-1),
+    CHISELED_TUFF(-1),
+    CHISELED_TUFF_BRICKS(-1),
+    CHORUS_FLOWER(-1, Ageable.class),
+    CHORUS_PLANT(-1, MultipleFacing.class),
+    CLAY(-1),
+    CLOSED_EYEBLOSSOM(-1),
+    COAL_BLOCK(-1),
+    COAL_ORE(-1),
+    COARSE_DIRT(-1),
+    COBBLED_DEEPSLATE(-1),
+    COBBLED_DEEPSLATE_SLAB(-1, Slab.class),
+    COBBLED_DEEPSLATE_STAIRS(-1, Stairs.class),
+    COBBLED_DEEPSLATE_WALL(-1, Wall.class),
+    COBBLESTONE(-1),
+    COBBLESTONE_SLAB(-1, Slab.class),
+    COBBLESTONE_STAIRS(-1, Stairs.class),
+    COBBLESTONE_WALL(-1, Wall.class),
+    COBWEB(-1),
+    COCOA(-1, Cocoa.class),
+    COMMAND_BLOCK(-1, CommandBlock.class),
+    COMPARATOR(-1, Comparator.class),
+    COMPOSTER(-1, Levelled.class),
+    CONDUIT(-1, Waterlogged.class),
+    COPPER_BLOCK(-1),
+    COPPER_BULB(-1, CopperBulb.class),
+    COPPER_DOOR(-1, Door.class),
+    COPPER_GRATE(-1, Waterlogged.class),
+    COPPER_ORE(-1),
+    COPPER_TRAPDOOR(-1, TrapDoor.class),
+    CORNFLOWER(-1),
+    CRACKED_DEEPSLATE_BRICKS(-1),
+    CRACKED_DEEPSLATE_TILES(-1),
+    CRACKED_NETHER_BRICKS(-1),
+    CRACKED_POLISHED_BLACKSTONE_BRICKS(-1),
+    CRACKED_STONE_BRICKS(-1),
+    CRAFTER(-1, Crafter.class),
+    CRAFTING_TABLE(-1),
+    CREAKING_HEART(-1, CreakingHeart.class),
+    CREEPER_HEAD(-1, Skull.class),
+    CREEPER_WALL_HEAD(-1, WallSkull.class),
+    CRIMSON_BUTTON(-1, Switch.class),
+    CRIMSON_DOOR(-1, Door.class),
+    CRIMSON_FENCE(-1, Fence.class),
+    CRIMSON_FENCE_GATE(-1, Gate.class),
+    CRIMSON_FUNGUS(-1),
+    CRIMSON_HANGING_SIGN(-1, 16, HangingSign.class),
+    CRIMSON_HYPHAE(-1, Orientable.class),
+    CRIMSON_NYLIUM(-1),
+    CRIMSON_PLANKS(-1),
+    CRIMSON_PRESSURE_PLATE(-1, Powerable.class),
+    CRIMSON_ROOTS(-1),
+    CRIMSON_SIGN(-1, 16, Sign.class),
+    CRIMSON_SLAB(-1, Slab.class),
+    CRIMSON_STAIRS(-1, Stairs.class),
+    CRIMSON_STEM(-1, Orientable.class),
+    CRIMSON_TRAPDOOR(-1, TrapDoor.class),
+    CRIMSON_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    CRIMSON_WALL_SIGN(-1, 16, WallSign.class),
+    CRYING_OBSIDIAN(-1),
+    CUT_COPPER(-1),
+    CUT_COPPER_SLAB(-1, Slab.class),
+    CUT_COPPER_STAIRS(-1, Stairs.class),
+    CUT_RED_SANDSTONE(-1),
+    CUT_RED_SANDSTONE_SLAB(-1, Slab.class),
+    CUT_SANDSTONE(-1),
+    CUT_SANDSTONE_SLAB(-1, Slab.class),
+    CYAN_BANNER(-1, 16, Rotatable.class),
+    CYAN_BED(-1, 1, Bed.class),
+    CYAN_CANDLE(-1, Candle.class),
+    CYAN_CANDLE_CAKE(-1, Lightable.class),
+    CYAN_CARPET(-1),
+    CYAN_CONCRETE(-1),
+    CYAN_CONCRETE_POWDER(-1),
+    CYAN_GLAZED_TERRACOTTA(-1, Directional.class),
+    CYAN_SHULKER_BOX(-1, 1, Directional.class),
+    CYAN_STAINED_GLASS(-1),
+    CYAN_STAINED_GLASS_PANE(-1, GlassPane.class),
+    CYAN_TERRACOTTA(-1),
+    CYAN_WALL_BANNER(-1, Directional.class),
+    CYAN_WOOL(-1),
+    DAMAGED_ANVIL(-1, Directional.class),
+    DANDELION(-1),
+    DARK_OAK_BUTTON(-1, Switch.class),
+    DARK_OAK_DOOR(-1, Door.class),
+    DARK_OAK_FENCE(-1, Fence.class),
+    DARK_OAK_FENCE_GATE(-1, Gate.class),
+    DARK_OAK_HANGING_SIGN(-1, 16, HangingSign.class),
+    DARK_OAK_LEAVES(-1, Leaves.class),
+    DARK_OAK_LOG(-1, Orientable.class),
+    DARK_OAK_PLANKS(-1),
+    DARK_OAK_PRESSURE_PLATE(-1, Powerable.class),
+    DARK_OAK_SAPLING(-1, Sapling.class),
+    DARK_OAK_SIGN(-1, 16, Sign.class),
+    DARK_OAK_SLAB(-1, Slab.class),
+    DARK_OAK_STAIRS(-1, Stairs.class),
+    DARK_OAK_TRAPDOOR(-1, TrapDoor.class),
+    DARK_OAK_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    DARK_OAK_WALL_SIGN(-1, 16, WallSign.class),
+    DARK_OAK_WOOD(-1, Orientable.class),
+    DARK_PRISMARINE(-1),
+    DARK_PRISMARINE_SLAB(-1, Slab.class),
+    DARK_PRISMARINE_STAIRS(-1, Stairs.class),
+    DAYLIGHT_DETECTOR(-1, DaylightDetector.class),
+    DEAD_BRAIN_CORAL(-1, Waterlogged.class),
+    DEAD_BRAIN_CORAL_BLOCK(-1),
+    DEAD_BRAIN_CORAL_FAN(-1, Waterlogged.class),
+    DEAD_BRAIN_CORAL_WALL_FAN(-1, CoralWallFan.class),
+    DEAD_BUBBLE_CORAL(-1, Waterlogged.class),
+    DEAD_BUBBLE_CORAL_BLOCK(-1),
+    DEAD_BUBBLE_CORAL_FAN(-1, Waterlogged.class),
+    DEAD_BUBBLE_CORAL_WALL_FAN(-1, CoralWallFan.class),
+    DEAD_BUSH(-1),
+    DEAD_FIRE_CORAL(-1, Waterlogged.class),
+    DEAD_FIRE_CORAL_BLOCK(-1),
+    DEAD_FIRE_CORAL_FAN(-1, Waterlogged.class),
+    DEAD_FIRE_CORAL_WALL_FAN(-1, CoralWallFan.class),
+    DEAD_HORN_CORAL(-1, Waterlogged.class),
+    DEAD_HORN_CORAL_BLOCK(-1),
+    DEAD_HORN_CORAL_FAN(-1, Waterlogged.class),
+    DEAD_HORN_CORAL_WALL_FAN(-1, CoralWallFan.class),
+    DEAD_TUBE_CORAL(-1, Waterlogged.class),
+    DEAD_TUBE_CORAL_BLOCK(-1),
+    DEAD_TUBE_CORAL_FAN(-1, Waterlogged.class),
+    DEAD_TUBE_CORAL_WALL_FAN(-1, CoralWallFan.class),
+    DECORATED_POT(-1, DecoratedPot.class),
+    DEEPSLATE(-1, Orientable.class),
+    DEEPSLATE_BRICK_SLAB(-1, Slab.class),
+    DEEPSLATE_BRICK_STAIRS(-1, Stairs.class),
+    DEEPSLATE_BRICK_WALL(-1, Wall.class),
+    DEEPSLATE_BRICKS(-1),
+    DEEPSLATE_COAL_ORE(-1),
+    DEEPSLATE_COPPER_ORE(-1),
+    DEEPSLATE_DIAMOND_ORE(-1),
+    DEEPSLATE_EMERALD_ORE(-1),
+    DEEPSLATE_GOLD_ORE(-1),
+    DEEPSLATE_IRON_ORE(-1),
+    DEEPSLATE_LAPIS_ORE(-1),
+    DEEPSLATE_REDSTONE_ORE(-1, Lightable.class),
+    DEEPSLATE_TILE_SLAB(-1, Slab.class),
+    DEEPSLATE_TILE_STAIRS(-1, Stairs.class),
+    DEEPSLATE_TILE_WALL(-1, Wall.class),
+    DEEPSLATE_TILES(-1),
+    DETECTOR_RAIL(-1, RedstoneRail.class),
+    DIAMOND_BLOCK(-1),
+    DIAMOND_ORE(-1),
+    DIORITE(-1),
+    DIORITE_SLAB(-1, Slab.class),
+    DIORITE_STAIRS(-1, Stairs.class),
+    DIORITE_WALL(-1, Wall.class),
+    DIRT(-1),
+    DIRT_PATH(-1),
+    DISPENSER(-1, Dispenser.class),
+    DRAGON_EGG(-1),
+    DRAGON_HEAD(-1, Skull.class),
+    DRAGON_WALL_HEAD(-1, WallSkull.class),
+    DRIED_KELP_BLOCK(-1),
+    DRIPSTONE_BLOCK(-1),
+    DROPPER(-1, Dispenser.class),
+    EMERALD_BLOCK(-1),
+    EMERALD_ORE(-1),
+    ENCHANTING_TABLE(-1),
+    END_GATEWAY(-1),
+    END_PORTAL(-1),
+    END_PORTAL_FRAME(-1, EndPortalFrame.class),
+    END_ROD(-1, Directional.class),
+    END_STONE(-1),
+    END_STONE_BRICK_SLAB(-1, Slab.class),
+    END_STONE_BRICK_STAIRS(-1, Stairs.class),
+    END_STONE_BRICK_WALL(-1, Wall.class),
+    END_STONE_BRICKS(-1),
+    ENDER_CHEST(-1, EnderChest.class),
+    EXPOSED_CHISELED_COPPER(-1),
+    EXPOSED_COPPER(-1),
+    EXPOSED_COPPER_BULB(-1, CopperBulb.class),
+    EXPOSED_COPPER_DOOR(-1, Door.class),
+    EXPOSED_COPPER_GRATE(-1, Waterlogged.class),
+    EXPOSED_COPPER_TRAPDOOR(-1, TrapDoor.class),
+    EXPOSED_CUT_COPPER(-1),
+    EXPOSED_CUT_COPPER_SLAB(-1, Slab.class),
+    EXPOSED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    FARMLAND(-1, Farmland.class),
+    FERN(-1),
+    FIRE(-1, Fire.class),
+    FIRE_CORAL(-1, Waterlogged.class),
+    FIRE_CORAL_BLOCK(-1),
+    FIRE_CORAL_FAN(-1, Waterlogged.class),
+    FIRE_CORAL_WALL_FAN(-1, CoralWallFan.class),
+    FLETCHING_TABLE(-1),
+    FLOWER_POT(-1),
+    FLOWERING_AZALEA(-1),
+    FLOWERING_AZALEA_LEAVES(-1, Leaves.class),
+    FROGSPAWN(-1),
+    FROSTED_ICE(-1, Ageable.class),
+    FURNACE(-1, Furnace.class),
+    GILDED_BLACKSTONE(-1),
+    GLASS(-1),
+    GLASS_PANE(-1, Fence.class),
+    GLOW_LICHEN(-1, GlowLichen.class),
+    GLOWSTONE(-1),
+    GOLD_BLOCK(-1),
+    GOLD_ORE(-1),
+    GRANITE(-1),
+    GRANITE_SLAB(-1, Slab.class),
+    GRANITE_STAIRS(-1, Stairs.class),
+    GRANITE_WALL(-1, Wall.class),
+    GRASS_BLOCK(-1, Snowable.class),
+    GRAVEL(-1),
+    GRAY_BANNER(-1, 16, Rotatable.class),
+    GRAY_BED(-1, 1, Bed.class),
+    GRAY_CANDLE(-1, Candle.class),
+    GRAY_CANDLE_CAKE(-1, Lightable.class),
+    GRAY_CARPET(-1),
+    GRAY_CONCRETE(-1),
+    GRAY_CONCRETE_POWDER(-1),
+    GRAY_GLAZED_TERRACOTTA(-1, Directional.class),
+    GRAY_SHULKER_BOX(-1, 1, Directional.class),
+    GRAY_STAINED_GLASS(-1),
+    GRAY_STAINED_GLASS_PANE(-1, GlassPane.class),
+    GRAY_TERRACOTTA(-1),
+    GRAY_WALL_BANNER(-1, Directional.class),
+    GRAY_WOOL(-1),
+    GREEN_BANNER(-1, 16, Rotatable.class),
+    GREEN_BED(-1, 1, Bed.class),
+    GREEN_CANDLE(-1, Candle.class),
+    GREEN_CANDLE_CAKE(-1, Lightable.class),
+    GREEN_CARPET(-1),
+    GREEN_CONCRETE(-1),
+    GREEN_CONCRETE_POWDER(-1),
+    GREEN_GLAZED_TERRACOTTA(-1, Directional.class),
+    GREEN_SHULKER_BOX(-1, 1, Directional.class),
+    GREEN_STAINED_GLASS(-1),
+    GREEN_STAINED_GLASS_PANE(-1, GlassPane.class),
+    GREEN_TERRACOTTA(-1),
+    GREEN_WALL_BANNER(-1, Directional.class),
+    GREEN_WOOL(-1),
+    GRINDSTONE(-1, Grindstone.class),
+    HANGING_ROOTS(-1, Waterlogged.class),
+    HAY_BLOCK(-1, Orientable.class),
+    HEAVY_CORE(-1, Waterlogged.class),
+    HEAVY_WEIGHTED_PRESSURE_PLATE(-1, AnaloguePowerable.class),
+    HONEY_BLOCK(-1),
+    HONEYCOMB_BLOCK(-1),
+    HOPPER(-1, Hopper.class),
+    HORN_CORAL(-1, Waterlogged.class),
+    HORN_CORAL_BLOCK(-1),
+    HORN_CORAL_FAN(-1, Waterlogged.class),
+    HORN_CORAL_WALL_FAN(-1, CoralWallFan.class),
+    ICE(-1),
+    INFESTED_CHISELED_STONE_BRICKS(-1),
+    INFESTED_COBBLESTONE(-1),
+    INFESTED_CRACKED_STONE_BRICKS(-1),
+    INFESTED_DEEPSLATE(-1, Orientable.class),
+    INFESTED_MOSSY_STONE_BRICKS(-1),
+    INFESTED_STONE(-1),
+    INFESTED_STONE_BRICKS(-1),
+    IRON_BARS(-1, Fence.class),
+    IRON_BLOCK(-1),
+    IRON_DOOR(-1, Door.class),
+    IRON_ORE(-1),
+    IRON_TRAPDOOR(-1, TrapDoor.class),
+    JACK_O_LANTERN(-1, Directional.class),
+    JIGSAW(-1, Jigsaw.class),
+    JUKEBOX(-1, Jukebox.class),
+    JUNGLE_BUTTON(-1, Switch.class),
+    JUNGLE_DOOR(-1, Door.class),
+    JUNGLE_FENCE(-1, Fence.class),
+    JUNGLE_FENCE_GATE(-1, Gate.class),
+    JUNGLE_HANGING_SIGN(-1, 16, HangingSign.class),
+    JUNGLE_LEAVES(-1, Leaves.class),
+    JUNGLE_LOG(-1, Orientable.class),
+    JUNGLE_PLANKS(-1),
+    JUNGLE_PRESSURE_PLATE(-1, Powerable.class),
+    JUNGLE_SAPLING(-1, Sapling.class),
+    JUNGLE_SIGN(-1, 16, Sign.class),
+    JUNGLE_SLAB(-1, Slab.class),
+    JUNGLE_STAIRS(-1, Stairs.class),
+    JUNGLE_TRAPDOOR(-1, TrapDoor.class),
+    JUNGLE_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    JUNGLE_WALL_SIGN(-1, 16, WallSign.class),
+    JUNGLE_WOOD(-1, Orientable.class),
+    KELP(-1, Ageable.class),
+    KELP_PLANT(-1),
+    LADDER(-1, Ladder.class),
+    LANTERN(-1, Lantern.class),
+    LAPIS_BLOCK(-1),
+    LAPIS_ORE(-1),
+    LARGE_AMETHYST_BUD(-1, AmethystCluster.class),
+    LARGE_FERN(-1, Bisected.class),
+    LAVA(-1, Levelled.class),
+    LAVA_CAULDRON(-1),
+    LECTERN(-1, Lectern.class),
+    LEVER(-1, Switch.class),
+    LIGHT(-1, Light.class),
+    LIGHT_BLUE_BANNER(-1, 16, Rotatable.class),
+    LIGHT_BLUE_BED(-1, 1, Bed.class),
+    LIGHT_BLUE_CANDLE(-1, Candle.class),
+    LIGHT_BLUE_CANDLE_CAKE(-1, Lightable.class),
+    LIGHT_BLUE_CARPET(-1),
+    LIGHT_BLUE_CONCRETE(-1),
+    LIGHT_BLUE_CONCRETE_POWDER(-1),
+    LIGHT_BLUE_GLAZED_TERRACOTTA(-1, Directional.class),
+    LIGHT_BLUE_SHULKER_BOX(-1, 1, Directional.class),
+    LIGHT_BLUE_STAINED_GLASS(-1),
+    LIGHT_BLUE_STAINED_GLASS_PANE(-1, GlassPane.class),
+    LIGHT_BLUE_TERRACOTTA(-1),
+    LIGHT_BLUE_WALL_BANNER(-1, Directional.class),
+    LIGHT_BLUE_WOOL(-1),
+    LIGHT_GRAY_BANNER(-1, 16, Rotatable.class),
+    LIGHT_GRAY_BED(-1, 1, Bed.class),
+    LIGHT_GRAY_CANDLE(-1, Candle.class),
+    LIGHT_GRAY_CANDLE_CAKE(-1, Lightable.class),
+    LIGHT_GRAY_CARPET(-1),
+    LIGHT_GRAY_CONCRETE(-1),
+    LIGHT_GRAY_CONCRETE_POWDER(-1),
+    LIGHT_GRAY_GLAZED_TERRACOTTA(-1, Directional.class),
+    LIGHT_GRAY_SHULKER_BOX(-1, 1, Directional.class),
+    LIGHT_GRAY_STAINED_GLASS(-1),
+    LIGHT_GRAY_STAINED_GLASS_PANE(-1, GlassPane.class),
+    LIGHT_GRAY_TERRACOTTA(-1),
+    LIGHT_GRAY_WALL_BANNER(-1, Directional.class),
+    LIGHT_GRAY_WOOL(-1),
+    LIGHT_WEIGHTED_PRESSURE_PLATE(-1, AnaloguePowerable.class),
+    LIGHTNING_ROD(-1, LightningRod.class),
+    LILAC(-1, Bisected.class),
+    LILY_OF_THE_VALLEY(-1),
+    LILY_PAD(-1),
+    LIME_BANNER(-1, 16, Rotatable.class),
+    LIME_BED(-1, 1, Bed.class),
+    LIME_CANDLE(-1, Candle.class),
+    LIME_CANDLE_CAKE(-1, Lightable.class),
+    LIME_CARPET(-1),
+    LIME_CONCRETE(-1),
+    LIME_CONCRETE_POWDER(-1),
+    LIME_GLAZED_TERRACOTTA(-1, Directional.class),
+    LIME_SHULKER_BOX(-1, 1, Directional.class),
+    LIME_STAINED_GLASS(-1),
+    LIME_STAINED_GLASS_PANE(-1, GlassPane.class),
+    LIME_TERRACOTTA(-1),
+    LIME_WALL_BANNER(-1, Directional.class),
+    LIME_WOOL(-1),
+    LODESTONE(-1),
+    LOOM(-1, Directional.class),
+    MAGENTA_BANNER(-1, 16, Rotatable.class),
+    MAGENTA_BED(-1, 1, Bed.class),
+    MAGENTA_CANDLE(-1, Candle.class),
+    MAGENTA_CANDLE_CAKE(-1, Lightable.class),
+    MAGENTA_CARPET(-1),
+    MAGENTA_CONCRETE(-1),
+    MAGENTA_CONCRETE_POWDER(-1),
+    MAGENTA_GLAZED_TERRACOTTA(-1, Directional.class),
+    MAGENTA_SHULKER_BOX(-1, 1, Directional.class),
+    MAGENTA_STAINED_GLASS(-1),
+    MAGENTA_STAINED_GLASS_PANE(-1, GlassPane.class),
+    MAGENTA_TERRACOTTA(-1),
+    MAGENTA_WALL_BANNER(-1, Directional.class),
+    MAGENTA_WOOL(-1),
+    MAGMA_BLOCK(-1),
+    MANGROVE_BUTTON(-1, Switch.class),
+    MANGROVE_DOOR(-1, Door.class),
+    MANGROVE_FENCE(-1, Fence.class),
+    MANGROVE_FENCE_GATE(-1, Gate.class),
+    MANGROVE_HANGING_SIGN(-1, 16, HangingSign.class),
+    MANGROVE_LEAVES(-1, Leaves.class),
+    MANGROVE_LOG(-1, Orientable.class),
+    MANGROVE_PLANKS(-1),
+    MANGROVE_PRESSURE_PLATE(-1, Powerable.class),
+    MANGROVE_PROPAGULE(-1, MangrovePropagule.class),
+    MANGROVE_ROOTS(-1, Waterlogged.class),
+    MANGROVE_SIGN(-1, 16, Sign.class),
+    MANGROVE_SLAB(-1, Slab.class),
+    MANGROVE_STAIRS(-1, Stairs.class),
+    MANGROVE_TRAPDOOR(-1, TrapDoor.class),
+    MANGROVE_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    MANGROVE_WALL_SIGN(-1, 16, WallSign.class),
+    MANGROVE_WOOD(-1, Orientable.class),
+    MEDIUM_AMETHYST_BUD(-1, AmethystCluster.class),
+    MELON(-1),
+    MELON_STEM(-1, Ageable.class),
+    MOSS_BLOCK(-1),
+    MOSS_CARPET(-1),
+    MOSSY_COBBLESTONE(-1),
+    MOSSY_COBBLESTONE_SLAB(-1, Slab.class),
+    MOSSY_COBBLESTONE_STAIRS(-1, Stairs.class),
+    MOSSY_COBBLESTONE_WALL(-1, Wall.class),
+    MOSSY_STONE_BRICK_SLAB(-1, Slab.class),
+    MOSSY_STONE_BRICK_STAIRS(-1, Stairs.class),
+    MOSSY_STONE_BRICK_WALL(-1, Wall.class),
+    MOSSY_STONE_BRICKS(-1),
+    MOVING_PISTON(-1, TechnicalPiston.class),
+    MUD(-1),
+    MUD_BRICK_SLAB(-1, Slab.class),
+    MUD_BRICK_STAIRS(-1, Stairs.class),
+    MUD_BRICK_WALL(-1, Wall.class),
+    MUD_BRICKS(-1),
+    MUDDY_MANGROVE_ROOTS(-1, Orientable.class),
+    MUSHROOM_STEM(-1, MultipleFacing.class),
+    MYCELIUM(-1, Snowable.class),
+    NETHER_BRICK_FENCE(-1, Fence.class),
+    NETHER_BRICK_SLAB(-1, Slab.class),
+    NETHER_BRICK_STAIRS(-1, Stairs.class),
+    NETHER_BRICK_WALL(-1, Wall.class),
+    NETHER_BRICKS(-1),
+    NETHER_GOLD_ORE(-1),
+    NETHER_PORTAL(-1, Orientable.class),
+    NETHER_QUARTZ_ORE(-1),
+    NETHER_SPROUTS(-1),
+    NETHER_WART(-1, Ageable.class),
+    NETHER_WART_BLOCK(-1),
+    NETHERITE_BLOCK(-1),
+    NETHERRACK(-1),
+    NOTE_BLOCK(-1, NoteBlock.class),
+    OAK_BUTTON(-1, Switch.class),
+    OAK_DOOR(-1, Door.class),
+    OAK_FENCE(-1, Fence.class),
+    OAK_FENCE_GATE(-1, Gate.class),
+    OAK_HANGING_SIGN(-1, 16, HangingSign.class),
+    OAK_LEAVES(-1, Leaves.class),
+    OAK_LOG(-1, Orientable.class),
+    OAK_PLANKS(-1),
+    OAK_PRESSURE_PLATE(-1, Powerable.class),
+    OAK_SAPLING(-1, Sapling.class),
+    OAK_SIGN(-1, 16, Sign.class),
+    OAK_SLAB(-1, Slab.class),
+    OAK_STAIRS(-1, Stairs.class),
+    OAK_TRAPDOOR(-1, TrapDoor.class),
+    OAK_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    OAK_WALL_SIGN(-1, 16, WallSign.class),
+    OAK_WOOD(-1, Orientable.class),
+    OBSERVER(-1, Observer.class),
+    OBSIDIAN(-1),
+    OCHRE_FROGLIGHT(-1, Orientable.class),
+    OPEN_EYEBLOSSOM(-1),
+    ORANGE_BANNER(-1, 16, Rotatable.class),
+    ORANGE_BED(-1, 1, Bed.class),
+    ORANGE_CANDLE(-1, Candle.class),
+    ORANGE_CANDLE_CAKE(-1, Lightable.class),
+    ORANGE_CARPET(-1),
+    ORANGE_CONCRETE(-1),
+    ORANGE_CONCRETE_POWDER(-1),
+    ORANGE_GLAZED_TERRACOTTA(-1, Directional.class),
+    ORANGE_SHULKER_BOX(-1, 1, Directional.class),
+    ORANGE_STAINED_GLASS(-1),
+    ORANGE_STAINED_GLASS_PANE(-1, GlassPane.class),
+    ORANGE_TERRACOTTA(-1),
+    ORANGE_TULIP(-1),
+    ORANGE_WALL_BANNER(-1, Directional.class),
+    ORANGE_WOOL(-1),
+    OXEYE_DAISY(-1),
+    OXIDIZED_CHISELED_COPPER(-1),
+    OXIDIZED_COPPER(-1),
+    OXIDIZED_COPPER_BULB(-1, CopperBulb.class),
+    OXIDIZED_COPPER_DOOR(-1, Door.class),
+    OXIDIZED_COPPER_GRATE(-1, Waterlogged.class),
+    OXIDIZED_COPPER_TRAPDOOR(-1, TrapDoor.class),
+    OXIDIZED_CUT_COPPER(-1),
+    OXIDIZED_CUT_COPPER_SLAB(-1, Slab.class),
+    OXIDIZED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    PACKED_ICE(-1),
+    PACKED_MUD(-1),
+    PALE_HANGING_MOSS(-1, HangingMoss.class),
+    PALE_MOSS_BLOCK(-1),
+    PALE_MOSS_CARPET(-1, MossyCarpet.class),
+    PALE_OAK_BUTTON(-1, Switch.class),
+    PALE_OAK_DOOR(-1, Door.class),
+    PALE_OAK_FENCE(-1, Fence.class),
+    PALE_OAK_FENCE_GATE(-1, Gate.class),
+    PALE_OAK_HANGING_SIGN(-1, 16, HangingSign.class),
+    PALE_OAK_LEAVES(-1, Leaves.class),
+    PALE_OAK_LOG(-1, Orientable.class),
+    PALE_OAK_PLANKS(-1),
+    PALE_OAK_PRESSURE_PLATE(-1, Powerable.class),
+    PALE_OAK_SAPLING(-1, Sapling.class),
+    PALE_OAK_SIGN(-1, 16, Sign.class),
+    PALE_OAK_SLAB(-1, Slab.class),
+    PALE_OAK_STAIRS(-1, Stairs.class),
+    PALE_OAK_TRAPDOOR(-1, TrapDoor.class),
+    PALE_OAK_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    PALE_OAK_WALL_SIGN(-1, 16, WallSign.class),
+    PALE_OAK_WOOD(-1, Orientable.class),
+    PEARLESCENT_FROGLIGHT(-1, Orientable.class),
+    PEONY(-1, Bisected.class),
+    PETRIFIED_OAK_SLAB(-1, Slab.class),
+    PIGLIN_HEAD(-1, Skull.class),
+    PIGLIN_WALL_HEAD(-1, WallSkull.class),
+    PINK_BANNER(-1, 16, Rotatable.class),
+    PINK_BED(-1, 1, Bed.class),
+    PINK_CANDLE(-1, Candle.class),
+    PINK_CANDLE_CAKE(-1, Lightable.class),
+    PINK_CARPET(-1),
+    PINK_CONCRETE(-1),
+    PINK_CONCRETE_POWDER(-1),
+    PINK_GLAZED_TERRACOTTA(-1, Directional.class),
+    PINK_PETALS(-1, PinkPetals.class),
+    PINK_SHULKER_BOX(-1, 1, Directional.class),
+    PINK_STAINED_GLASS(-1),
+    PINK_STAINED_GLASS_PANE(-1, GlassPane.class),
+    PINK_TERRACOTTA(-1),
+    PINK_TULIP(-1),
+    PINK_WALL_BANNER(-1, Directional.class),
+    PINK_WOOL(-1),
+    PISTON(-1, Piston.class),
+    PISTON_HEAD(-1, PistonHead.class),
+    PITCHER_CROP(-1, PitcherCrop.class),
+    PITCHER_PLANT(-1, Bisected.class),
+    PLAYER_HEAD(-1, Skull.class),
+    PLAYER_WALL_HEAD(-1, WallSkull.class),
+    PODZOL(-1, Snowable.class),
+    POINTED_DRIPSTONE(-1, PointedDripstone.class),
+    POLISHED_ANDESITE(-1),
+    POLISHED_ANDESITE_SLAB(-1, Slab.class),
+    POLISHED_ANDESITE_STAIRS(-1, Stairs.class),
+    POLISHED_BASALT(-1, Orientable.class),
+    POLISHED_BLACKSTONE(-1),
+    POLISHED_BLACKSTONE_BRICK_SLAB(-1, Slab.class),
+    POLISHED_BLACKSTONE_BRICK_STAIRS(-1, Stairs.class),
+    POLISHED_BLACKSTONE_BRICK_WALL(-1, Wall.class),
+    POLISHED_BLACKSTONE_BRICKS(-1),
+    POLISHED_BLACKSTONE_BUTTON(-1, Switch.class),
+    POLISHED_BLACKSTONE_PRESSURE_PLATE(-1, Powerable.class),
+    POLISHED_BLACKSTONE_SLAB(-1, Slab.class),
+    POLISHED_BLACKSTONE_STAIRS(-1, Stairs.class),
+    POLISHED_BLACKSTONE_WALL(-1, Wall.class),
+    POLISHED_DEEPSLATE(-1),
+    POLISHED_DEEPSLATE_SLAB(-1, Slab.class),
+    POLISHED_DEEPSLATE_STAIRS(-1, Stairs.class),
+    POLISHED_DEEPSLATE_WALL(-1, Wall.class),
+    POLISHED_DIORITE(-1),
+    POLISHED_DIORITE_SLAB(-1, Slab.class),
+    POLISHED_DIORITE_STAIRS(-1, Stairs.class),
+    POLISHED_GRANITE(-1),
+    POLISHED_GRANITE_SLAB(-1, Slab.class),
+    POLISHED_GRANITE_STAIRS(-1, Stairs.class),
+    POLISHED_TUFF(-1),
+    POLISHED_TUFF_SLAB(-1, Slab.class),
+    POLISHED_TUFF_STAIRS(-1, Stairs.class),
+    POLISHED_TUFF_WALL(-1, Wall.class),
+    POPPY(-1),
+    POTATOES(-1, Ageable.class),
+    POTTED_ACACIA_SAPLING(-1),
+    POTTED_ALLIUM(-1),
+    POTTED_AZALEA_BUSH(-1),
+    POTTED_AZURE_BLUET(-1),
+    POTTED_BAMBOO(-1),
+    POTTED_BIRCH_SAPLING(-1),
+    POTTED_BLUE_ORCHID(-1),
+    POTTED_BROWN_MUSHROOM(-1),
+    POTTED_CACTUS(-1),
+    POTTED_CHERRY_SAPLING(-1),
+    POTTED_CLOSED_EYEBLOSSOM(-1),
+    POTTED_CORNFLOWER(-1),
+    POTTED_CRIMSON_FUNGUS(-1),
+    POTTED_CRIMSON_ROOTS(-1),
+    POTTED_DANDELION(-1),
+    POTTED_DARK_OAK_SAPLING(-1),
+    POTTED_DEAD_BUSH(-1),
+    POTTED_FERN(-1),
+    POTTED_FLOWERING_AZALEA_BUSH(-1),
+    POTTED_JUNGLE_SAPLING(-1),
+    POTTED_LILY_OF_THE_VALLEY(-1),
+    POTTED_MANGROVE_PROPAGULE(-1),
+    POTTED_OAK_SAPLING(-1),
+    POTTED_OPEN_EYEBLOSSOM(-1),
+    POTTED_ORANGE_TULIP(-1),
+    POTTED_OXEYE_DAISY(-1),
+    POTTED_PALE_OAK_SAPLING(-1),
+    POTTED_PINK_TULIP(-1),
+    POTTED_POPPY(-1),
+    POTTED_RED_MUSHROOM(-1),
+    POTTED_RED_TULIP(-1),
+    POTTED_SPRUCE_SAPLING(-1),
+    POTTED_TORCHFLOWER(-1),
+    POTTED_WARPED_FUNGUS(-1),
+    POTTED_WARPED_ROOTS(-1),
+    POTTED_WHITE_TULIP(-1),
+    POTTED_WITHER_ROSE(-1),
+    POWDER_SNOW(-1),
+    POWDER_SNOW_CAULDRON(-1, Levelled.class),
+    POWERED_RAIL(-1, RedstoneRail.class),
+    PRISMARINE(-1),
+    PRISMARINE_BRICK_SLAB(-1, Slab.class),
+    PRISMARINE_BRICK_STAIRS(-1, Stairs.class),
+    PRISMARINE_BRICKS(-1),
+    PRISMARINE_SLAB(-1, Slab.class),
+    PRISMARINE_STAIRS(-1, Stairs.class),
+    PRISMARINE_WALL(-1, Wall.class),
+    PUMPKIN(-1),
+    PUMPKIN_STEM(-1, Ageable.class),
+    PURPLE_BANNER(-1, 16, Rotatable.class),
+    PURPLE_BED(-1, 1, Bed.class),
+    PURPLE_CANDLE(-1, Candle.class),
+    PURPLE_CANDLE_CAKE(-1, Lightable.class),
+    PURPLE_CARPET(-1),
+    PURPLE_CONCRETE(-1),
+    PURPLE_CONCRETE_POWDER(-1),
+    PURPLE_GLAZED_TERRACOTTA(-1, Directional.class),
+    PURPLE_SHULKER_BOX(-1, 1, Directional.class),
+    PURPLE_STAINED_GLASS(-1),
+    PURPLE_STAINED_GLASS_PANE(-1, GlassPane.class),
+    PURPLE_TERRACOTTA(-1),
+    PURPLE_WALL_BANNER(-1, Directional.class),
+    PURPLE_WOOL(-1),
+    PURPUR_BLOCK(-1),
+    PURPUR_PILLAR(-1, Orientable.class),
+    PURPUR_SLAB(-1, Slab.class),
+    PURPUR_STAIRS(-1, Stairs.class),
+    QUARTZ_BLOCK(-1),
+    QUARTZ_BRICKS(-1),
+    QUARTZ_PILLAR(-1, Orientable.class),
+    QUARTZ_SLAB(-1, Slab.class),
+    QUARTZ_STAIRS(-1, Stairs.class),
+    RAIL(-1, Rail.class),
+    RAW_COPPER_BLOCK(-1),
+    RAW_GOLD_BLOCK(-1),
+    RAW_IRON_BLOCK(-1),
+    RED_BANNER(-1, 16, Rotatable.class),
+    RED_BED(-1, 1, Bed.class),
+    RED_CANDLE(-1, Candle.class),
+    RED_CANDLE_CAKE(-1, Lightable.class),
+    RED_CARPET(-1),
+    RED_CONCRETE(-1),
+    RED_CONCRETE_POWDER(-1),
+    RED_GLAZED_TERRACOTTA(-1, Directional.class),
+    RED_MUSHROOM(-1),
+    RED_MUSHROOM_BLOCK(-1, MultipleFacing.class),
+    RED_NETHER_BRICK_SLAB(-1, Slab.class),
+    RED_NETHER_BRICK_STAIRS(-1, Stairs.class),
+    RED_NETHER_BRICK_WALL(-1, Wall.class),
+    RED_NETHER_BRICKS(-1),
+    RED_SAND(-1),
+    RED_SANDSTONE(-1),
+    RED_SANDSTONE_SLAB(-1, Slab.class),
+    RED_SANDSTONE_STAIRS(-1, Stairs.class),
+    RED_SANDSTONE_WALL(-1, Wall.class),
+    RED_SHULKER_BOX(-1, 1, Directional.class),
+    RED_STAINED_GLASS(-1),
+    RED_STAINED_GLASS_PANE(-1, GlassPane.class),
+    RED_TERRACOTTA(-1),
+    RED_TULIP(-1),
+    RED_WALL_BANNER(-1, Directional.class),
+    RED_WOOL(-1),
+    REDSTONE_BLOCK(-1),
+    REDSTONE_LAMP(-1, Lightable.class),
+    REDSTONE_ORE(-1, Lightable.class),
+    REDSTONE_TORCH(-1, Lightable.class),
+    REDSTONE_WALL_TORCH(-1, RedstoneWallTorch.class),
+    REDSTONE_WIRE(-1, RedstoneWire.class),
+    REINFORCED_DEEPSLATE(-1),
+    REPEATER(-1, Repeater.class),
+    REPEATING_COMMAND_BLOCK(-1, CommandBlock.class),
+    RESIN_BLOCK(-1),
+    RESIN_BRICK_SLAB(-1, Slab.class),
+    RESIN_BRICK_STAIRS(-1, Stairs.class),
+    RESIN_BRICK_WALL(-1, Wall.class),
+    RESIN_BRICKS(-1),
+    RESIN_CLUMP(-1, ResinClump.class),
+    RESPAWN_ANCHOR(-1, RespawnAnchor.class),
+    ROOTED_DIRT(-1),
+    ROSE_BUSH(-1, Bisected.class),
+    SAND(-1),
+    SANDSTONE(-1),
+    SANDSTONE_SLAB(-1, Slab.class),
+    SANDSTONE_STAIRS(-1, Stairs.class),
+    SANDSTONE_WALL(-1, Wall.class),
+    SCAFFOLDING(-1, Scaffolding.class),
+    SCULK(-1),
+    SCULK_CATALYST(-1, SculkCatalyst.class),
+    SCULK_SENSOR(-1, SculkSensor.class),
+    SCULK_SHRIEKER(-1, SculkShrieker.class),
+    SCULK_VEIN(-1, SculkVein.class),
+    SEA_LANTERN(-1),
+    SEA_PICKLE(-1, SeaPickle.class),
+    SEAGRASS(-1),
+    SHORT_GRASS(-1),
+    SHROOMLIGHT(-1),
+    SHULKER_BOX(-1, 1, Directional.class),
+    SKELETON_SKULL(-1, Skull.class),
+    SKELETON_WALL_SKULL(-1, WallSkull.class),
+    SLIME_BLOCK(-1),
+    SMALL_AMETHYST_BUD(-1, AmethystCluster.class),
+    SMALL_DRIPLEAF(-1, SmallDripleaf.class),
+    SMITHING_TABLE(-1),
+    SMOKER(-1, Furnace.class),
+    SMOOTH_BASALT(-1),
+    SMOOTH_QUARTZ(-1),
+    SMOOTH_QUARTZ_SLAB(-1, Slab.class),
+    SMOOTH_QUARTZ_STAIRS(-1, Stairs.class),
+    SMOOTH_RED_SANDSTONE(-1),
+    SMOOTH_RED_SANDSTONE_SLAB(-1, Slab.class),
+    SMOOTH_RED_SANDSTONE_STAIRS(-1, Stairs.class),
+    SMOOTH_SANDSTONE(-1),
+    SMOOTH_SANDSTONE_SLAB(-1, Slab.class),
+    SMOOTH_SANDSTONE_STAIRS(-1, Stairs.class),
+    SMOOTH_STONE(-1),
+    SMOOTH_STONE_SLAB(-1, Slab.class),
+    SNIFFER_EGG(-1, Hatchable.class),
+    SNOW(-1, Snow.class),
+    SNOW_BLOCK(-1),
+    SOUL_CAMPFIRE(-1, Campfire.class),
+    SOUL_FIRE(-1),
+    SOUL_LANTERN(-1, Lantern.class),
+    SOUL_SAND(-1),
+    SOUL_SOIL(-1),
+    SOUL_TORCH(-1),
+    SOUL_WALL_TORCH(-1, Directional.class),
+    SPAWNER(-1),
+    SPONGE(-1),
+    SPORE_BLOSSOM(-1),
+    SPRUCE_BUTTON(-1, Switch.class),
+    SPRUCE_DOOR(-1, Door.class),
+    SPRUCE_FENCE(-1, Fence.class),
+    SPRUCE_FENCE_GATE(-1, Gate.class),
+    SPRUCE_HANGING_SIGN(-1, 16, HangingSign.class),
+    SPRUCE_LEAVES(-1, Leaves.class),
+    SPRUCE_LOG(-1, Orientable.class),
+    SPRUCE_PLANKS(-1),
+    SPRUCE_PRESSURE_PLATE(-1, Powerable.class),
+    SPRUCE_SAPLING(-1, Sapling.class),
+    SPRUCE_SIGN(-1, 16, Sign.class),
+    SPRUCE_SLAB(-1, Slab.class),
+    SPRUCE_STAIRS(-1, Stairs.class),
+    SPRUCE_TRAPDOOR(-1, TrapDoor.class),
+    SPRUCE_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    SPRUCE_WALL_SIGN(-1, 16, WallSign.class),
+    SPRUCE_WOOD(-1, Orientable.class),
+    STICKY_PISTON(-1, Piston.class),
+    STONE(-1),
+    STONE_BRICK_SLAB(-1, Slab.class),
+    STONE_BRICK_STAIRS(-1, Stairs.class),
+    STONE_BRICK_WALL(-1, Wall.class),
+    STONE_BRICKS(-1),
+    STONE_BUTTON(-1, Switch.class),
+    STONE_PRESSURE_PLATE(-1, Powerable.class),
+    STONE_SLAB(-1, Slab.class),
+    STONE_STAIRS(-1, Stairs.class),
+    STONECUTTER(-1, Directional.class),
+    STRIPPED_ACACIA_LOG(-1, Orientable.class),
+    STRIPPED_ACACIA_WOOD(-1, Orientable.class),
+    STRIPPED_BAMBOO_BLOCK(-1, Orientable.class),
+    STRIPPED_BIRCH_LOG(-1, Orientable.class),
+    STRIPPED_BIRCH_WOOD(-1, Orientable.class),
+    STRIPPED_CHERRY_LOG(-1, Orientable.class),
+    STRIPPED_CHERRY_WOOD(-1, Orientable.class),
+    STRIPPED_CRIMSON_HYPHAE(-1, Orientable.class),
+    STRIPPED_CRIMSON_STEM(-1, Orientable.class),
+    STRIPPED_DARK_OAK_LOG(-1, Orientable.class),
+    STRIPPED_DARK_OAK_WOOD(-1, Orientable.class),
+    STRIPPED_JUNGLE_LOG(-1, Orientable.class),
+    STRIPPED_JUNGLE_WOOD(-1, Orientable.class),
+    STRIPPED_MANGROVE_LOG(-1, Orientable.class),
+    STRIPPED_MANGROVE_WOOD(-1, Orientable.class),
+    STRIPPED_OAK_LOG(-1, Orientable.class),
+    STRIPPED_OAK_WOOD(-1, Orientable.class),
+    STRIPPED_PALE_OAK_LOG(-1, Orientable.class),
+    STRIPPED_PALE_OAK_WOOD(-1, Orientable.class),
+    STRIPPED_SPRUCE_LOG(-1, Orientable.class),
+    STRIPPED_SPRUCE_WOOD(-1, Orientable.class),
+    STRIPPED_WARPED_HYPHAE(-1, Orientable.class),
+    STRIPPED_WARPED_STEM(-1, Orientable.class),
+    STRUCTURE_BLOCK(-1, StructureBlock.class),
+    STRUCTURE_VOID(-1),
+    SUGAR_CANE(-1, Ageable.class),
+    SUNFLOWER(-1, Bisected.class),
+    SUSPICIOUS_GRAVEL(-1, Brushable.class),
+    SUSPICIOUS_SAND(-1, Brushable.class),
+    SWEET_BERRY_BUSH(-1, Ageable.class),
+    TALL_GRASS(-1, Bisected.class),
+    TALL_SEAGRASS(-1, Bisected.class),
+    TARGET(-1, AnaloguePowerable.class),
+    TERRACOTTA(-1),
+    TINTED_GLASS(-1),
+    TNT(-1, TNT.class),
+    TORCH(-1),
+    TORCHFLOWER(-1),
+    TORCHFLOWER_CROP(-1, Ageable.class),
+    TRAPPED_CHEST(-1, Chest.class),
+    TRIAL_SPAWNER(-1, TrialSpawner.class),
+    TRIPWIRE(-1, Tripwire.class),
+    TRIPWIRE_HOOK(-1, TripwireHook.class),
+    TUBE_CORAL(-1, Waterlogged.class),
+    TUBE_CORAL_BLOCK(-1),
+    TUBE_CORAL_FAN(-1, Waterlogged.class),
+    TUBE_CORAL_WALL_FAN(-1, CoralWallFan.class),
+    TUFF(-1),
+    TUFF_BRICK_SLAB(-1, Slab.class),
+    TUFF_BRICK_STAIRS(-1, Stairs.class),
+    TUFF_BRICK_WALL(-1, Wall.class),
+    TUFF_BRICKS(-1),
+    TUFF_SLAB(-1, Slab.class),
+    TUFF_STAIRS(-1, Stairs.class),
+    TUFF_WALL(-1, Wall.class),
+    TURTLE_EGG(-1, TurtleEgg.class),
+    TWISTING_VINES(-1, Ageable.class),
+    TWISTING_VINES_PLANT(-1),
+    VAULT(-1, Vault.class),
+    VERDANT_FROGLIGHT(-1, Orientable.class),
+    VINE(-1, MultipleFacing.class),
+    VOID_AIR(-1),
+    WALL_TORCH(-1, Directional.class),
+    WARPED_BUTTON(-1, Switch.class),
+    WARPED_DOOR(-1, Door.class),
+    WARPED_FENCE(-1, Fence.class),
+    WARPED_FENCE_GATE(-1, Gate.class),
+    WARPED_FUNGUS(-1),
+    WARPED_HANGING_SIGN(-1, 16, HangingSign.class),
+    WARPED_HYPHAE(-1, Orientable.class),
+    WARPED_NYLIUM(-1),
+    WARPED_PLANKS(-1),
+    WARPED_PRESSURE_PLATE(-1, Powerable.class),
+    WARPED_ROOTS(-1),
+    WARPED_SIGN(-1, 16, Sign.class),
+    WARPED_SLAB(-1, Slab.class),
+    WARPED_STAIRS(-1, Stairs.class),
+    WARPED_STEM(-1, Orientable.class),
+    WARPED_TRAPDOOR(-1, TrapDoor.class),
+    WARPED_WALL_HANGING_SIGN(-1, WallHangingSign.class),
+    WARPED_WALL_SIGN(-1, 16, WallSign.class),
+    WARPED_WART_BLOCK(-1),
+    WATER(-1, Levelled.class),
+    WATER_CAULDRON(-1, Levelled.class),
+    WAXED_CHISELED_COPPER(-1),
+    WAXED_COPPER_BLOCK(-1),
+    WAXED_COPPER_BULB(-1, CopperBulb.class),
+    WAXED_COPPER_DOOR(-1, Door.class),
+    WAXED_COPPER_GRATE(-1, Waterlogged.class),
+    WAXED_COPPER_TRAPDOOR(-1, TrapDoor.class),
+    WAXED_CUT_COPPER(-1),
+    WAXED_CUT_COPPER_SLAB(-1, Slab.class),
+    WAXED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    WAXED_EXPOSED_CHISELED_COPPER(-1),
+    WAXED_EXPOSED_COPPER(-1),
+    WAXED_EXPOSED_COPPER_BULB(-1, CopperBulb.class),
+    WAXED_EXPOSED_COPPER_DOOR(-1, Door.class),
+    WAXED_EXPOSED_COPPER_GRATE(-1, Waterlogged.class),
+    WAXED_EXPOSED_COPPER_TRAPDOOR(-1, TrapDoor.class),
+    WAXED_EXPOSED_CUT_COPPER(-1),
+    WAXED_EXPOSED_CUT_COPPER_SLAB(-1, Slab.class),
+    WAXED_EXPOSED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    WAXED_OXIDIZED_CHISELED_COPPER(-1),
+    WAXED_OXIDIZED_COPPER(-1),
+    WAXED_OXIDIZED_COPPER_BULB(-1, CopperBulb.class),
+    WAXED_OXIDIZED_COPPER_DOOR(-1, Door.class),
+    WAXED_OXIDIZED_COPPER_GRATE(-1, Waterlogged.class),
+    WAXED_OXIDIZED_COPPER_TRAPDOOR(-1, TrapDoor.class),
+    WAXED_OXIDIZED_CUT_COPPER(-1),
+    WAXED_OXIDIZED_CUT_COPPER_SLAB(-1, Slab.class),
+    WAXED_OXIDIZED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    WAXED_WEATHERED_CHISELED_COPPER(-1),
+    WAXED_WEATHERED_COPPER(-1),
+    WAXED_WEATHERED_COPPER_BULB(-1, CopperBulb.class),
+    WAXED_WEATHERED_COPPER_DOOR(-1, Door.class),
+    WAXED_WEATHERED_COPPER_GRATE(-1, Waterlogged.class),
+    WAXED_WEATHERED_COPPER_TRAPDOOR(-1, TrapDoor.class),
+    WAXED_WEATHERED_CUT_COPPER(-1),
+    WAXED_WEATHERED_CUT_COPPER_SLAB(-1, Slab.class),
+    WAXED_WEATHERED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    WEATHERED_CHISELED_COPPER(-1),
+    WEATHERED_COPPER(-1),
+    WEATHERED_COPPER_BULB(-1, CopperBulb.class),
+    WEATHERED_COPPER_DOOR(-1, Door.class),
+    WEATHERED_COPPER_GRATE(-1, Waterlogged.class),
+    WEATHERED_COPPER_TRAPDOOR(-1, TrapDoor.class),
+    WEATHERED_CUT_COPPER(-1),
+    WEATHERED_CUT_COPPER_SLAB(-1, Slab.class),
+    WEATHERED_CUT_COPPER_STAIRS(-1, Stairs.class),
+    WEEPING_VINES(-1, Ageable.class),
+    WEEPING_VINES_PLANT(-1),
+    WET_SPONGE(-1),
+    WHEAT(-1, Ageable.class),
+    WHITE_BANNER(-1, 16, Rotatable.class),
+    WHITE_BED(-1, 1, Bed.class),
+    WHITE_CANDLE(-1, Candle.class),
+    WHITE_CANDLE_CAKE(-1, Lightable.class),
+    WHITE_CARPET(-1),
+    WHITE_CONCRETE(-1),
+    WHITE_CONCRETE_POWDER(-1),
+    WHITE_GLAZED_TERRACOTTA(-1, Directional.class),
+    WHITE_SHULKER_BOX(-1, 1, Directional.class),
+    WHITE_STAINED_GLASS(-1),
+    WHITE_STAINED_GLASS_PANE(-1, GlassPane.class),
+    WHITE_TERRACOTTA(-1),
+    WHITE_TULIP(-1),
+    WHITE_WALL_BANNER(-1, Directional.class),
+    WHITE_WOOL(-1),
+    WITHER_ROSE(-1),
+    WITHER_SKELETON_SKULL(-1, Skull.class),
+    WITHER_SKELETON_WALL_SKULL(-1, WallSkull.class),
+    YELLOW_BANNER(-1, 16, Rotatable.class),
+    YELLOW_BED(-1, 1, Bed.class),
+    YELLOW_CANDLE(-1, Candle.class),
+    YELLOW_CANDLE_CAKE(-1, Lightable.class),
+    YELLOW_CARPET(-1),
+    YELLOW_CONCRETE(-1),
+    YELLOW_CONCRETE_POWDER(-1),
+    YELLOW_GLAZED_TERRACOTTA(-1, Directional.class),
+    YELLOW_SHULKER_BOX(-1, 1, Directional.class),
+    YELLOW_STAINED_GLASS(-1),
+    YELLOW_STAINED_GLASS_PANE(-1, GlassPane.class),
+    YELLOW_TERRACOTTA(-1),
+    YELLOW_WALL_BANNER(-1, Directional.class),
+    YELLOW_WOOL(-1),
+    ZOMBIE_HEAD(-1, Skull.class),
+    ZOMBIE_WALL_HEAD(-1, WallSkull.class),
+    // End generate - Blocks
     // ----- Legacy Separator -----
     @Deprecated(since = "1.13")
     LEGACY_AIR(0, 0),
@@ -5174,6 +3043,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         }
         switch (this) {
             //<editor-fold defaultstate="collapsed" desc="isTransparent">
+            // Start generate - Material#isTransparent
             case ACACIA_BUTTON:
             case ACACIA_SAPLING:
             case ACTIVATOR_RAIL:
@@ -5301,6 +3171,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
             case YELLOW_CARPET:
             case ZOMBIE_HEAD:
             case ZOMBIE_WALL_HEAD:
+            // End generate - Material#isTransparent
             // ----- Legacy Separator -----
             case LEGACY_AIR:
             case LEGACY_SAPLING:
@@ -5528,75 +3399,10 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      */
     @NotNull
     public EquipmentSlot getEquipmentSlot() {
-        Preconditions.checkArgument(isItem(), "The Material is not an item!");
-        switch (this) {
-            // <editor-fold defaultstate="collapsed" desc="getEquipmentSlot">
-            case CARVED_PUMPKIN:
-            case CHAINMAIL_HELMET:
-            case CREEPER_HEAD:
-            case DIAMOND_HELMET:
-            case DRAGON_HEAD:
-            case GOLDEN_HELMET:
-            case IRON_HELMET:
-            case LEATHER_HELMET:
-            case NETHERITE_HELMET:
-            case PLAYER_HEAD:
-            case PIGLIN_HEAD:
-            case SKELETON_SKULL:
-            case TURTLE_HELMET:
-            case WITHER_SKELETON_SKULL:
-            case ZOMBIE_HEAD:
-                return EquipmentSlot.HEAD;
-            case CHAINMAIL_CHESTPLATE:
-            case DIAMOND_CHESTPLATE:
-            case ELYTRA:
-            case GOLDEN_CHESTPLATE:
-            case IRON_CHESTPLATE:
-            case LEATHER_CHESTPLATE:
-            case NETHERITE_CHESTPLATE:
-                return EquipmentSlot.CHEST;
-            case CHAINMAIL_LEGGINGS:
-            case DIAMOND_LEGGINGS:
-            case GOLDEN_LEGGINGS:
-            case IRON_LEGGINGS:
-            case LEATHER_LEGGINGS:
-            case NETHERITE_LEGGINGS:
-                return EquipmentSlot.LEGS;
-            case CHAINMAIL_BOOTS:
-            case DIAMOND_BOOTS:
-            case GOLDEN_BOOTS:
-            case IRON_BOOTS:
-            case LEATHER_BOOTS:
-            case NETHERITE_BOOTS:
-                return EquipmentSlot.FEET;
-            case SHIELD:
-                return EquipmentSlot.OFF_HAND;
-            case BLACK_CARPET:
-            case BLUE_CARPET:
-            case BROWN_CARPET:
-            case CYAN_CARPET:
-            case DIAMOND_HORSE_ARMOR:
-            case GOLDEN_HORSE_ARMOR:
-            case GRAY_CARPET:
-            case GREEN_CARPET:
-            case IRON_HORSE_ARMOR:
-            case LEATHER_HORSE_ARMOR:
-            case LIGHT_BLUE_CARPET:
-            case LIGHT_GRAY_CARPET:
-            case LIME_CARPET:
-            case MAGENTA_CARPET:
-            case ORANGE_CARPET:
-            case PINK_CARPET:
-            case PURPLE_CARPET:
-            case RED_CARPET:
-            case WHITE_CARPET:
-            case WOLF_ARMOR:
-            case YELLOW_CARPET:
-                return EquipmentSlot.BODY;
-            default:
-                return EquipmentSlot.HAND;
-            // </editor-fold>
-        }
+        ItemType type = asItemType();
+        Preconditions.checkArgument(type != null, "The Material is not an item!");
+        Equippable equippable = type.getDefaultData(DataComponentTypes.EQUIPPABLE);
+        return equippable == null ? EquipmentSlot.HAND : equippable.slot();
     }
 
     // Paper start - improve default item attribute API
