@@ -5,7 +5,7 @@ import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import org.bukkit.MusicInstrument;
-import org.checkerframework.checker.index.qual.NonNegative;
+import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
@@ -17,12 +17,10 @@ import org.jetbrains.annotations.Contract;
 public interface InstrumentRegistryEntry {
 
     @Contract(pure = true)
-    @NonNegative
-    float duration();
+    @Positive float duration();
 
     @Contract(pure = true)
-    @NonNegative
-    float range();
+    @Positive float range();
 
     Component description();
 
@@ -53,7 +51,7 @@ public interface InstrumentRegistryEntry {
          * @see MusicInstrument#getDuration()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder duration(@NonNegative float duration);
+        Builder duration(@Positive float duration);
 
         /**
          * @param range
@@ -62,7 +60,7 @@ public interface InstrumentRegistryEntry {
          * @see MusicInstrument#getRange() ()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder range(@NonNegative float range);
+        Builder range(@Positive float range);
 
         /**
          * @param description
