@@ -367,7 +367,7 @@ public class GlobalConfiguration extends ConfigurationPart {
         public Obfuscation obfuscation;
 
         public class Obfuscation extends ConfigurationPart {
-            public Items items = new Items();
+            public Items items;
 
             public class Items extends ConfigurationPart {
 
