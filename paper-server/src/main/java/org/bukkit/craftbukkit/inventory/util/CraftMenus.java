@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.world.level.block.entity.FurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.block.entity.LecternBlockEntity;
+import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.world.level.block.entity.SmokerBlockEntity;
 import org.bukkit.craftbukkit.inventory.CraftMenuType;
 import org.bukkit.craftbukkit.inventory.CraftMerchant;
@@ -133,7 +134,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(MerchantView.class, () -> new CraftMerchantInventoryViewBuilder<>(handle)));
         }
         if (menuType == MenuType.SHULKER_BOX) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.SHULKER_BOX, null)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.SHULKER_BOX, ShulkerBoxBlockEntity::new)));
         }
         if (menuType == MenuType.SMITHING) {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, SmithingMenu::new)));
