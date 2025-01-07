@@ -155,7 +155,7 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @return the targets
      */
     @Nullable
-    List<RayTraceTargets> targets();
+    List<RayTraceTarget> targets();
 
     /**
      * Sets the targets for the rayTrace.
@@ -163,5 +163,5 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @return a reference to this object
      */
     @Contract("_, _ -> this")
-    PositionedRayTraceConfigurationBuilder targets(RayTraceTargets first, RayTraceTargets... others);
+    PositionedRayTraceConfigurationBuilder targets(RayTraceTarget first, RayTraceTarget... others);
 }
