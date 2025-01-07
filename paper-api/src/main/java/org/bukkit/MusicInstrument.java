@@ -3,7 +3,12 @@ package org.bukkit;
 import com.google.common.collect.Lists;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.function.Consumer;
+import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
+import io.papermc.paper.registry.data.InstrumentRegistryEntry;
 import net.kyori.adventure.text.Component;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import net.kyori.adventure.translation.Translatable;
@@ -18,6 +23,17 @@ public abstract class MusicInstrument implements Keyed, Translatable {
     public static final MusicInstrument CALL_GOAT_HORN = getInstrument("call_goat_horn");
     public static final MusicInstrument YEARN_GOAT_HORN = getInstrument("yearn_goat_horn");
     public static final MusicInstrument DREAM_GOAT_HORN = getInstrument("dream_goat_horn");
+
+    /**
+     * Create an inlined music instrument.
+     *
+     * @param value a consumer for the builder factory
+     * @return the created instrument
+     */
+    @ApiStatus.Experimental
+    static @NotNull MusicInstrument create(final @NotNull Consumer<RegistryBuilderFactory<MusicInstrument, ? extends InstrumentRegistryEntry.Builder>> value) {
+        return InlinedRegistryBuilderProvider.instance().createInstrument(value);
+    }
 
     /**
      * Returns a {@link MusicInstrument} by a {@link NamespacedKey}.
