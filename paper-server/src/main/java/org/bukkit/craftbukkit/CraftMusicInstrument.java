@@ -71,7 +71,7 @@ public class CraftMusicInstrument extends MusicInstrument implements Holderable<
 
     @NotNull
     @Override
-    public Component getDescription() {
+    public Component description() {
         return PaperAdventure.asAdventure(this.getHandle().description());
     }
 

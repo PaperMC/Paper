@@ -53,7 +53,7 @@ public abstract class MusicInstrument implements Keyed, Translatable {
 
     public abstract float getRange();
 
-    public abstract Component getDescription();
+    public abstract Component description();
 
     public abstract Sound getSoundEvent();
 
