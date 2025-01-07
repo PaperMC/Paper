@@ -1,6 +1,7 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
+import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import org.bukkit.MusicInstrument;
@@ -25,7 +26,8 @@ public interface InstrumentRegistryEntry {
 
     Component description();
 
-    Sound sound();
+    @Contract(pure = true)
+    Either<TypedKey<Sound>, SoundEventRegistryEntry> soundEvent();
 
     /**
      * A mutable builder for the {@link InstrumentRegistryEntry} plugins may change in applicable registry events.
@@ -35,7 +37,9 @@ public interface InstrumentRegistryEntry {
      *     <li>{@link #duration(float)}</li>
      *     <li>{@link #range(float)}</li>
      *     <li>{@link #description(Component)}</li>
-     *     <li>{@link #sound(Sound)}</li>
+     *     <li>
+     *         {@link #soundEvent(TypedKey)} or {@link #soundEvent(Consumer)}
+     *     </li>
      * </ul>
      */
     @ApiStatus.Experimental
@@ -43,8 +47,6 @@ public interface InstrumentRegistryEntry {
     interface Builder extends InstrumentRegistryEntry, RegistryBuilder<MusicInstrument> {
 
         /**
-         *
-         *
          * @param duration
          * @return this builder instance.
          * @see InstrumentRegistryEntry#duration()
@@ -54,8 +56,6 @@ public interface InstrumentRegistryEntry {
         Builder duration(@NonNegative float duration);
 
         /**
-         *
-         *
          * @param range
          * @return this builder instance.
          * @see InstrumentRegistryEntry#range()
@@ -65,8 +65,6 @@ public interface InstrumentRegistryEntry {
         Builder range(@NonNegative float range);
 
         /**
-         *
-         *
          * @param description
          * @return this builder instance.
          * @see InstrumentRegistryEntry#description()
@@ -76,15 +74,16 @@ public interface InstrumentRegistryEntry {
         Builder description(Component description);
 
         /**
-         *
-         *
-         * @param sound
+         * @param soundEvent
          * @return this builder instance.
-         * @see InstrumentRegistryEntry#sound()
+         * @see InstrumentRegistryEntry#soundEvent()
          * @see MusicInstrument#getSoundEvent()
          */
         @Contract(value = "_ -> this", mutates = "this")
-        Builder sound(Sound sound);
+        Builder soundEvent(TypedKey<Sound> soundEvent);
+
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder soundEvent(Consumer<RegistryBuilderFactory<Sound, ? extends SoundEventRegistryEntry.Builder>> soundEvent);
     }
 
 }
