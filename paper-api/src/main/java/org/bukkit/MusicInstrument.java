@@ -65,13 +65,33 @@ public abstract class MusicInstrument implements Keyed, Translatable {
         return Registry.INSTRUMENT.getOrThrow(NamespacedKey.minecraft(key));
     }
 
+    /**
+     * Gets for how long the use duration is for the instrument.
+     *
+     * @return the duration.
+     */
     public abstract float getDuration();
 
+    /**
+     * Gets the range of the sound.
+     *
+     * @return the range of the sound.
+     */
     public abstract float getRange();
 
-    public abstract Component description();
+    /**
+     * Provides the description of this instrument as displayed to the client.
+     *
+     * @return the description component.
+     */
+    public abstract @NotNull Component description();
 
-    public abstract Sound getSoundEvent();
+    /**
+     * Gets the sound/sound-event for this instrument.
+     *
+     * @return a sound
+     */
+    public abstract @NotNull Sound getSoundEvent();
 
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
