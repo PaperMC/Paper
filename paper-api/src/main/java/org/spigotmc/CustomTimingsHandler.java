@@ -48,7 +48,7 @@ public final class CustomTimingsHandler {
     public CustomTimingsHandler(@NotNull String name) {
         Timing timing;
 
-        new AuthorNagException("Deprecated use of CustomTimingsHandler. Timings will be removed in future.").printStackTrace();
+        new AuthorNagException("Deprecated use of CustomTimingsHandler. Timings has been removed.").printStackTrace();
         try {
             final Method ofSafe = TimingsManager.class.getDeclaredMethod("getHandler", String.class, String.class, Timing.class);
             ofSafe.setAccessible(true);
