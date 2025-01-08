@@ -68,6 +68,7 @@ public final class CraftMenus {
 
         player.connection.send(new ClientboundOpenScreenPacket(merchant.containerId, net.minecraft.world.inventory.MenuType.MERCHANT, merchant.getTitle()));
         player.containerMenu = merchant;
+        player.initMenu(merchant);
         // Copy IMerchant#openTradingScreen
         MerchantOffers merchantrecipelist = minecraftMerchant.getOffers();
 
