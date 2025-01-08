@@ -1,0 +1,67 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Shane Freeder <theboyetronic@gmail.com>
+Date: Wed, 28 Sep 2022 05:09:11 +0100
+Subject: [PATCH] Add WorldUnloadResult
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 111f8276f26350a5c62a7b8577b4598978b5355d..8843c966eeeb8cc009df43cf04aae713466dbda0 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -1269,30 +1269,41 @@ public final class CraftServer implements Server {
+ 
+     @Override
+     public boolean unloadWorld(World world, boolean save) {
++        // Paper start
++        return unloadWorld_(world, save).isSuccess();
++    }
++
++    public io.papermc.paper.world.WorldUnloadResult unloadWorld_(World world, boolean save) {
++        // paper end
+         //Preconditions.checkState(!this.console.isIteratingOverLevels, "Cannot unload a world while worlds are being ticked"); // Paper - Cat - Temp disable. We'll see how this goes.
+         if (world == null) {
+-            return false;
++            return io.papermc.paper.world.WorldUnloadResult.NULL; // Just, why... // paper
+         }
+ 
+         ServerLevel handle = ((CraftWorld) world).getHandle();
+ 
+         if (this.console.getLevel(handle.dimension()) == null) {
+-            return false;
++            return io.papermc.paper.world.WorldUnloadResult.NOT_LOADED; // paper
+         }
+ 
+         if (handle.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+-            return false;
++            return io.papermc.paper.world.WorldUnloadResult.UNSUPPORTED; // Paper
+         }
+ 
+-        if (handle.players().size() > 0 || handle.pendingLogin.size() > 0) { // Paper
+-            return false;
++        // Paper start - replace return, and differentiante
++        if (handle.players().size() > 0) {
++            return io.papermc.paper.world.WorldUnloadResult.NOT_EMPTY;
++        }
++        if (handle.pendingLogin.size() > 0) {
++            return io.papermc.paper.world.WorldUnloadResult.PENDING_LOGIN;
+         }
++        // Paper end
+ 
+         WorldUnloadEvent e = new WorldUnloadEvent(handle.getWorld());
+         this.pluginManager.callEvent(e);
+ 
+         if (e.isCancelled()) {
+-            return false;
++            return io.papermc.paper.world.WorldUnloadResult.PLUGIN;
+         }
+ 
+         try {
+@@ -1309,7 +1320,7 @@ public final class CraftServer implements Server {
+ 
+         this.worlds.remove(world.getName().toLowerCase(java.util.Locale.ENGLISH));
+         this.console.removeLevel(handle);
+-        return true;
++        return io.papermc.paper.world.WorldUnloadResult.SUCCESS;
+     }
+ 
+     public DedicatedServer getServer() {
