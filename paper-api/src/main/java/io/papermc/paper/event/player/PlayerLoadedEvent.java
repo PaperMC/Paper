@@ -19,7 +19,7 @@ public class PlayerLoadedEvent extends PlayerEvent {
     private final Cause cause;
 
     @ApiStatus.Internal
-    public PlayerLoadedEvent(final @NotNull Player who, final Cause cause) {
+    public PlayerLoadedEvent(final Player who, final Cause cause) {
         super(who);
         this.cause = cause;
     }
