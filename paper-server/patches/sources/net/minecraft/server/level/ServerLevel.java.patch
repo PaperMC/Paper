@@ -1,5 +1,48 @@
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
+@@ -54,7 +_,6 @@
+ import net.minecraft.network.protocol.game.ClientboundDamageEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundExplodePacket;
+-import net.minecraft.network.protocol.game.ClientboundGameEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundLevelEventPacket;
+ import net.minecraft.network.protocol.game.ClientboundLevelParticlesPacket;
+ import net.minecraft.network.protocol.game.ClientboundSetDefaultSpawnPositionPacket;
+@@ -76,7 +_,6 @@
+ import net.minecraft.util.ProgressListener;
+ import net.minecraft.util.RandomSource;
+ import net.minecraft.util.Unit;
+-import net.minecraft.util.datafix.DataFixTypes;
+ import net.minecraft.util.profiling.Profiler;
+ import net.minecraft.util.profiling.ProfilerFiller;
+ import net.minecraft.util.valueproviders.IntProvider;
+@@ -130,18 +_,14 @@
+ import net.minecraft.world.level.chunk.ChunkGenerator;
+ import net.minecraft.world.level.chunk.LevelChunk;
+ import net.minecraft.world.level.chunk.LevelChunkSection;
+-import net.minecraft.world.level.chunk.storage.EntityStorage;
+ import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
+-import net.minecraft.world.level.chunk.storage.SimpleRegionStorage;
+ import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
+ import net.minecraft.world.level.dimension.LevelStem;
+ import net.minecraft.world.level.dimension.end.EndDragonFight;
+-import net.minecraft.world.level.entity.EntityPersistentStorage;
+ import net.minecraft.world.level.entity.EntityTickList;
+ import net.minecraft.world.level.entity.EntityTypeTest;
+ import net.minecraft.world.level.entity.LevelCallback;
+ import net.minecraft.world.level.entity.LevelEntityGetter;
+-import net.minecraft.world.level.entity.PersistentEntitySectionManager;
+ import net.minecraft.world.level.gameevent.DynamicGameEventListener;
+ import net.minecraft.world.level.gameevent.GameEvent;
+ import net.minecraft.world.level.gameevent.GameEventDispatcher;
+@@ -161,7 +_,6 @@
+ import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
+ import net.minecraft.world.level.storage.DimensionDataStorage;
+ import net.minecraft.world.level.storage.LevelStorageSource;
+-import net.minecraft.world.level.storage.ServerLevelData;
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.Vec3;
+ import net.minecraft.world.phys.shapes.BooleanOp;
 @@ -182,7 +_,7 @@
      final List<ServerPlayer> players = Lists.newArrayList();
      public final ServerChunkCache chunkSource;
@@ -9,7 +52,7 @@
      private int lastSpawnChunkRadius;
      final EntityTickList entityTickList = new EntityTickList();
      public final PersistentEntitySectionManager<Entity> entityManager;
-@@ -209,11 +_,132 @@
+@@ -209,11 +_,134 @@
      private final boolean tickTime;
      private final RandomSequences randomSequences;
  
@@ -18,6 +61,8 @@
 +    public final UUID uuid;
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
++
++    private final io.papermc.paper.entity.goal.TemptGoalLookup temptGoalLookup = new io.papermc.paper.entity.goal.TemptGoalLookup(); // Paper - Optimise TemptGoal
 +
 +    public LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
@@ -291,6 +336,14 @@
          if (flag) {
              this.resetEmptyTime();
          }
+@@ -385,6 +_,7 @@
+                 profilerFiller.pop();
+             }
+ 
++            this.temptGoalLookup.reset(); // Paper - optimise tempt goal
+             this.entityTickList
+                 .forEach(
+                     entity -> {
 @@ -461,12 +_,12 @@
          int minBlockZ = pos.getMinBlockZ();
          ProfilerFiller profilerFiller = Profiler.get();
@@ -1175,7 +1228,7 @@
          }
  
          @Override
-@@ -1792,4 +_,24 @@
+@@ -1792,4 +_,30 @@
              entity.updateDynamicGameEventListener(DynamicGameEventListener::move);
          }
      }
@@ -1199,4 +1252,10 @@
 +        this.lagCompensationTick = (System.nanoTime() - MinecraftServer.SERVER_INIT) / (java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(50L));
 +    }
 +    // Paper end - lag compensation
++
++    // Paper start - optimise tempt goal
++    public io.papermc.paper.entity.goal.TemptGoalLookup getTemptGoalLookup() {
++        return temptGoalLookup;
++    }
++    // Paper end - optimise tempt goal
  }
