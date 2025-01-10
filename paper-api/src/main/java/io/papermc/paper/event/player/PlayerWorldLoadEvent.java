@@ -12,30 +12,16 @@ import org.jspecify.annotations.NullMarked;
  * has not sent the packet for 60 ticks after joining the server or respawning.
  */
 @NullMarked
-public class PlayerLoadedEvent extends PlayerEvent {
+public class PlayerWorldLoadEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private final Cause cause;
+    private final boolean timeout;
 
     @ApiStatus.Internal
-    public PlayerLoadedEvent(final Player who, final Cause cause) {
+    public PlayerWorldLoadEvent(final Player who, final boolean timeout) {
         super(who);
-        this.cause = cause;
-    }
-
-    /**
-     * The cause of the player load.
-     *
-     * @return the cause
-     */
-    public Cause getCause() {
-        return this.cause;
-    }
-
-    @Override
-    public @NotNull HandlerList getHandlers() {
-        return HANDLER_LIST;
+        this.timeout = timeout;
     }
 
     public static HandlerList getHandlerList() {
@@ -43,20 +29,17 @@ public class PlayerLoadedEvent extends PlayerEvent {
     }
 
     /**
-     * The cause of the {@link PlayerLoadedEvent}.
+     * True if the event was triggered because the server has not received the player loaded packet for 60 ticks after the player joined the server or respawned.
+     *
+     * @return true if the event was triggered because of a timeout
      */
-    public enum Cause {
+    public boolean isTimeout() {
+        return timeout;
+    }
 
-        /**
-         * The event was triggered by the player sending the player loaded packet.
-         */
-        PACKET,
-
-        /**
-         * The event was triggered because the server has not received the player loaded packet for 60 ticks after the player joined the server or respawned.
-         */
-        TIMEOUT
-
+    @Override
+    public @NotNull HandlerList getHandlers() {
+        return HANDLER_LIST;
     }
 
 }
