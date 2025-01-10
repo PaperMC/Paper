@@ -3,7 +3,6 @@ package io.papermc.paper;
 import net.kyori.adventure.util.Services;
 import org.bukkit.damage.DamageEffect;
 import org.jetbrains.annotations.ApiStatus;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Static bridge to the server internals.
@@ -12,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  * cause issues when called under unexpected circumstances.
  */
 @ApiStatus.Internal
-@NullMarked
 public interface InternalAPIBridge {
 
     /**
@@ -36,4 +34,3 @@ public interface InternalAPIBridge {
      */
     DamageEffect getDamageEffect(String key);
 }
-
