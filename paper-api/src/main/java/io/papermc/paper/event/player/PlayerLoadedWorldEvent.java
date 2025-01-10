@@ -12,14 +12,14 @@ import org.jspecify.annotations.NullMarked;
  * has not sent the packet for 60 ticks after joining the server or respawning.
  */
 @NullMarked
-public class PlayerWorldLoadEvent extends PlayerEvent {
+public class PlayerLoadedWorldEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final boolean timeout;
 
     @ApiStatus.Internal
-    public PlayerWorldLoadEvent(final Player who, final boolean timeout) {
+    public PlayerLoadedWorldEvent(final Player who, final boolean timeout) {
         super(who);
         this.timeout = timeout;
     }
