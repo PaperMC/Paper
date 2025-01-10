@@ -94,7 +94,7 @@ public final class OversizedItemComponentSanitizer {
         @SuppressWarnings("resource")
         @Override
         public void encode(final @NonNull B buf, final @NonNull A value) {
-            if (ItemObfuscationSession.currentSession().obfuscationLevel().obfuscateOversized()) {
+            if (!ItemObfuscationSession.currentSession().obfuscationLevel().obfuscateOversized()) {
                 this.delegate.encode(buf, value);
             } else {
                 this.delegate.encode(buf, this.sanitizer.apply(value));
