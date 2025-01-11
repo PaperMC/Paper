@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import io.papermc.paper.entity.LookAnchor;
-import io.papermc.paper.math.BlockPosition;
+import io.papermc.paper.math.Position;
 import org.bukkit.BanEntry;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
@@ -51,7 +51,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -3487,8 +3486,9 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param block The block where the client has a sign placed
      * @param side The side to edit
+     * @see io.papermc.paper.event.packet.UncheckedSignChangeEvent
      */
-    void openLocalSign(@NotNull BlockPosition block, @NotNull Side side);
+    void openVirtualSign(@NotNull Position block, @NotNull Side side);
 
     /**
      * Shows the demo screen to the player, this screen is normally only seen in
