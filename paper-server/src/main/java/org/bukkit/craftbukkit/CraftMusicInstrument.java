@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.Holderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -37,7 +38,7 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
     public static MusicInstrument stringToBukkit(Object string) { // Paper - switch to Holder
         Preconditions.checkArgument(string != null);
 
-        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(string, Instrument.CODEC, Registry.INSTRUMENT); // Paper - switch to Holder
+        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(string, Instrument.CODEC, RegistryKey.INSTRUMENT); // Paper - switch to Holder
     }
 
     // Paper start - switch to Holder

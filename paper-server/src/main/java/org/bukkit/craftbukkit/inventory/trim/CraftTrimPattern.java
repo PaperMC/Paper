@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory.trim;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.Holderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -41,7 +42,7 @@ public class CraftTrimPattern implements TrimPattern, io.papermc.paper.util.Hold
     public static TrimPattern objectToBukkit(Object object) {
         Preconditions.checkArgument(object != null);
 
-        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(object, net.minecraft.world.item.equipment.trim.TrimPattern.CODEC, Registry.TRIM_PATTERN); // Paper - switch to Holder
+        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(object, net.minecraft.world.item.equipment.trim.TrimPattern.CODEC, RegistryKey.TRIM_PATTERN); // Paper - switch to Holder
     }
 
     @Override

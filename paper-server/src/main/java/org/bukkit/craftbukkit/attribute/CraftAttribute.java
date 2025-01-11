@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.attribute;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -36,7 +37,7 @@ public class CraftAttribute implements Attribute, Handleable<net.minecraft.world
         if (key == null) return null; // Paper - Fixup NamespacedKey handling
 
         // Now also convert from when keys where saved
-        return CraftRegistry.get(Registry.ATTRIBUTE, key, ApiVersion.CURRENT);
+        return CraftRegistry.get(RegistryKey.ATTRIBUTE, key, ApiVersion.CURRENT);
     }
 
     public static net.minecraft.world.entity.ai.attributes.Attribute bukkitToMinecraft(Attribute bukkit) {

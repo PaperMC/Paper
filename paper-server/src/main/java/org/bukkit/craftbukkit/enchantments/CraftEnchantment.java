@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.enchantments;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.Holderable;
 import java.util.Locale;
 import net.minecraft.Util;
@@ -52,7 +53,7 @@ public class CraftEnchantment extends Enchantment implements Holderable<net.mine
         NamespacedKey key = NamespacedKey.fromString(string);
 
         // Now also convert from when keys where saved
-        return CraftRegistry.get(Registry.ENCHANTMENT, key, ApiVersion.CURRENT);
+        return CraftRegistry.get(RegistryKey.ENCHANTMENT, key, ApiVersion.CURRENT);
     }
 
     private final Holder<net.minecraft.world.item.enchantment.Enchantment> handle;

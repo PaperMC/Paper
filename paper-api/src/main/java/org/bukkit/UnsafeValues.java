@@ -2,6 +2,7 @@ package org.bukkit;
 
 import com.google.common.collect.Multimap;
 import io.papermc.paper.entity.EntitySerializationFlag;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
@@ -140,7 +141,7 @@ public interface UnsafeValues {
     String get(Class<?> aClass, String value);
 
     @ApiStatus.Internal
-    <B extends Keyed> B get(Registry<B> registry, NamespacedKey key);
+    <B extends Keyed> B get(RegistryKey<B> registry, NamespacedKey key);
 
     @ApiStatus.Internal
     Biome getCustomBiome();

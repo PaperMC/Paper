@@ -2,13 +2,14 @@ package org.bukkit.block;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import org.bukkit.Bukkit;
 import org.bukkit.FeatureFlag;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.packs.DataPack;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
 
@@ -17,8 +18,8 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * The Biomes listed in this interface are present in the default server
  * or can be enabled via a {@link FeatureFlag}.
- * There may be additional biomes present in the server, for example from a {@link DataPack}
- * which can be accessed via {@link Registry#BIOME}.
+ * There may be additional biomes present in the server, for example from a {@link io.papermc.paper.datapack.Datapack}
+ * which can be accessed via {@link io.papermc.paper.registry.RegistryAccess#getRegistry(RegistryKey)} and {@link RegistryKey#BIOME}.
  */
 public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
@@ -98,7 +99,7 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
 
     @NotNull
     private static Biome getBiome(@NotNull String key) {
-        return Registry.BIOME.getOrThrow(NamespacedKey.minecraft(key));
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.BIOME).getOrThrow(NamespacedKey.minecraft(key));
     }
 
     /**
@@ -113,7 +114,7 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
             return Biome.CUSTOM;
         }
 
-        Biome biome = Bukkit.getUnsafe().get(Registry.BIOME, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        Biome biome = Bukkit.getUnsafe().get(RegistryKey.BIOME, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
         Preconditions.checkArgument(biome != null, "No biome found with the name %s", name);
         return biome;
     }

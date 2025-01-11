@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
 import io.papermc.paper.registry.tag.Tag;
@@ -138,7 +139,8 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     // Paper - move to PaperRegistries
 
     // Paper - NOTE: As long as all uses of the method below relate to *serialization* via ConfigurationSerializable, it's fine
-    public static <B extends Keyed> B get(Registry<B> bukkit, NamespacedKey namespacedKey, ApiVersion apiVersion) {
+    public static <B extends Keyed> B get(RegistryKey<B> bukkitKey, NamespacedKey namespacedKey, ApiVersion apiVersion) {
+        final Registry<B> bukkit = RegistryAccess.registryAccess().getRegistry(bukkitKey);
         if (bukkit instanceof CraftRegistry<B, ?> craft) {
             return craft.get(craft.serializationUpdater.apply(namespacedKey, apiVersion)); // Paper
         }

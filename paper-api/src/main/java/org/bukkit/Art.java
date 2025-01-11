@@ -9,7 +9,6 @@ import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
 import io.papermc.paper.registry.data.PaintingVariantRegistryEntry;
 import java.util.Locale;
 import java.util.function.Consumer;
-import org.bukkit.packs.DataPack;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
@@ -20,8 +19,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>
  * The arts listed in this interface are present in the default server
  * or can be enabled via a {@link FeatureFlag}.
- * There may be additional arts present in the server, for example from a {@link DataPack}
- * which can be accessed via {@link Registry#ART}.
+ * There may be additional arts present in the server, for example from a {@link io.papermc.paper.datapack.Datapack}
+ * which can be accessed via {@link RegistryAccess#registryAccess()} and {@link RegistryKey#PAINTING_VARIANT}.
  */
 public interface Art extends OldEnum<Art>, Keyed {
 
@@ -191,7 +190,7 @@ public interface Art extends OldEnum<Art>, Keyed {
     static Art getByName(@NotNull String name) {
         Preconditions.checkArgument(name != null, "Name cannot be null");
 
-        return Bukkit.getUnsafe().get(Registry.ART, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        return Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
     }
 
     /**
@@ -202,7 +201,7 @@ public interface Art extends OldEnum<Art>, Keyed {
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Art valueOf(@NotNull String name) {
-        Art art = Bukkit.getUnsafe().get(Registry.ART, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        Art art = Bukkit.getUnsafe().get(RegistryKey.PAINTING_VARIANT, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
         Preconditions.checkArgument(art != null, "No art found with the name %s", name);
         return art;
     }
