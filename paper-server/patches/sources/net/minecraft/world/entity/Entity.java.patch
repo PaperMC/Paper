@@ -1359,7 +1359,7 @@
          CompoundTag compoundTag = entity.saveWithoutId(new CompoundTag());
          compoundTag.remove("Dimension");
          this.load(compoundTag);
-@@ -2688,7 +_,56 @@
+@@ -2688,7 +_,64 @@
  
      @Nullable
      public Entity teleport(TeleportTransition teleportTransition) {
@@ -1394,17 +1394,25 @@
 +            }
 +            if (this.portalProcess != null) { // if in a portal
 +                org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity = this.getBukkitEntity();
++                org.bukkit.util.Vector after = org.bukkit.craftbukkit.util.CraftVector.toBukkit(velocity);
 +                org.bukkit.event.entity.EntityPortalExitEvent event = new org.bukkit.event.entity.EntityPortalExitEvent(
 +                    bukkitEntity,
 +                    bukkitEntity.getLocation(), to.clone(),
-+                    bukkitEntity.getVelocity(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(velocity)
++                    bukkitEntity.getVelocity(), after
 +                );
 +                event.callEvent();
 +
 +                // Only change the target if actually needed, since we reset relative flags
-+                if (!event.isCancelled() && event.getTo() != null && (!event.getTo().equals(event.getFrom()) || !event.getAfter().equals(event.getBefore()))) {
-+                    to = event.getTo().clone();
-+                    velocity = org.bukkit.craftbukkit.util.CraftVector.toNMS(event.getAfter());
++                if (event.isCancelled() || (!to.equals(event.getTo()) || !after.equals(event.getAfter()))) {
++                    if (!event.isCancelled()) {
++                        if (event.getTo() != null) {
++                            to = event.getTo().clone();
++                        }
++                        velocity = org.bukkit.craftbukkit.util.CraftVector.toNMS(event.getAfter());
++                    } else {
++                        to = event.getFrom().clone();
++                        velocity = Vec3.ZERO;
++                    }
 +                    teleportTransition = new TeleportTransition(((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3D(to), velocity, to.getYaw(), to.getPitch(), teleportTransition.missingRespawnBlock(), teleportTransition.asPassenger(), Set.of(), teleportTransition.postTeleportTransition(), teleportTransition.cause());
 +                }
 +            }
