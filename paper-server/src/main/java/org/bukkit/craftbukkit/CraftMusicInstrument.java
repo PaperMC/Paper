@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.Holderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -8,17 +9,16 @@ import net.minecraft.world.item.Instrument;
 import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftMusicInstrument extends MusicInstrument implements io.papermc.paper.util.Holderable<Instrument> {
 
     public static MusicInstrument minecraftToBukkit(Instrument minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.INSTRUMENT, Registry.INSTRUMENT);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.INSTRUMENT);
     }
 
     public static MusicInstrument minecraftHolderToBukkit(Holder<Instrument> minecraft) {
-        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registry.INSTRUMENT); // Paper - switch to Holder
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.INSTRUMENT); // Paper - switch to Holder
     }
 
     public static Instrument bukkitToMinecraft(MusicInstrument bukkit) {
@@ -38,7 +38,7 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
     public static MusicInstrument stringToBukkit(Object string) { // Paper - switch to Holder
         Preconditions.checkArgument(string != null);
 
-        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(string, Instrument.CODEC, Registry.INSTRUMENT); // Paper - switch to Holder
+        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(string, Instrument.CODEC, RegistryKey.INSTRUMENT); // Paper - switch to Holder
     }
 
     // Paper start - switch to Holder

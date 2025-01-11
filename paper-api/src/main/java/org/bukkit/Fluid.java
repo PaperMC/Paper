@@ -2,6 +2,7 @@ package org.bukkit;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import org.bukkit.util.OldEnum;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +46,7 @@ public interface Fluid extends OldEnum<Fluid>, Keyed {
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Fluid valueOf(@NotNull String name) {
-        Fluid fluid = Bukkit.getUnsafe().get(Registry.FLUID, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        Fluid fluid = Bukkit.getUnsafe().get(RegistryKey.FLUID, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
         Preconditions.checkArgument(fluid != null, "No fluid found with the name %s", name);
         return fluid;
     }

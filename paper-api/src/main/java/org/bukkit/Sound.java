@@ -2,6 +2,7 @@ package org.bukkit;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import org.bukkit.packs.DataPack;
 import org.bukkit.util.OldEnum;
@@ -1687,7 +1688,7 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     @NotNull
     @Deprecated(since = "1.21.3")
     static Sound valueOf(@NotNull String name) {
-        Sound sound = Bukkit.getUnsafe().get(Registry.SOUNDS, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        Sound sound = Bukkit.getUnsafe().get(RegistryKey.SOUND_EVENT, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
         if (sound != null) {
             return sound;
         }

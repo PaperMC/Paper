@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.inventory.trim;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.util.Holderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -8,18 +9,17 @@ import net.minecraft.network.chat.contents.TranslatableContents;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.meta.trim.TrimPattern;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftTrimPattern implements TrimPattern, io.papermc.paper.util.Holderable<net.minecraft.world.item.equipment.trim.TrimPattern> { // Paper - switch to Holder
 
     public static TrimPattern minecraftToBukkit(net.minecraft.world.item.equipment.trim.TrimPattern minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.TRIM_PATTERN, Registry.TRIM_PATTERN);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.TRIM_PATTERN);
     }
 
     public static TrimPattern minecraftHolderToBukkit(Holder<net.minecraft.world.item.equipment.trim.TrimPattern> minecraft) {
-        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registry.TRIM_PATTERN); // Paper - switch to Holder
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.TRIM_PATTERN); // Paper - switch to Holder
     }
 
     public static net.minecraft.world.item.equipment.trim.TrimPattern bukkitToMinecraft(TrimPattern bukkit) {
@@ -42,7 +42,7 @@ public class CraftTrimPattern implements TrimPattern, io.papermc.paper.util.Hold
     public static TrimPattern objectToBukkit(Object object) {
         Preconditions.checkArgument(object != null);
 
-        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(object, net.minecraft.world.item.equipment.trim.TrimPattern.CODEC, Registry.TRIM_PATTERN); // Paper - switch to Holder
+        return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(object, net.minecraft.world.item.equipment.trim.TrimPattern.CODEC, RegistryKey.TRIM_PATTERN); // Paper - switch to Holder
     }
 
     @Override

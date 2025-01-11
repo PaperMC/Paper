@@ -8,11 +8,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.craftbukkit.inventory.util.CraftMenus;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
@@ -85,7 +83,7 @@ public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>
     }
 
     public static MenuType minecraftToBukkit(net.minecraft.world.inventory.MenuType<?> minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.MENU, Registry.MENU);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.MENU);
     }
 
     public static MenuType minecraftHolderToBukkit(Holder<net.minecraft.world.inventory.MenuType<?>> minecraft) {

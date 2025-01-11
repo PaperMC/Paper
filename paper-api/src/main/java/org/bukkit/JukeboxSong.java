@@ -1,5 +1,7 @@
 package org.bukkit;
 
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,7 +33,7 @@ public interface JukeboxSong extends Keyed, Translatable {
 
     @NotNull
     private static JukeboxSong get(@NotNull String key) {
-        return Registry.JUKEBOX_SONG.getOrThrow(NamespacedKey.minecraft(key));
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.JUKEBOX_SONG).getOrThrow(NamespacedKey.minecraft(key));
     }
 
     // Paper start - adventure

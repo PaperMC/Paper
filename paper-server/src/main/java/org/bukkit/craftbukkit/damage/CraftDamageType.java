@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.damage.DamageEffect;
@@ -120,6 +119,6 @@ public class CraftDamageType implements DamageType, Handleable<net.minecraft.wor
     }
 
     public static DamageType minecraftToBukkit(net.minecraft.world.damagesource.DamageType minecraftDamageType) {
-        return CraftRegistry.minecraftToBukkit(minecraftDamageType, Registries.DAMAGE_TYPE, Registry.DAMAGE_TYPE);
+        return CraftRegistry.minecraftToBukkit(minecraftDamageType, Registries.DAMAGE_TYPE);
     }
 }

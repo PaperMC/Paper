@@ -7,7 +7,6 @@ import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jspecify.annotations.Nullable;
@@ -23,7 +22,7 @@ public abstract class PaperDataComponentType<T, NMS> implements DataComponentTyp
     }
 
     public static DataComponentType minecraftToBukkit(final net.minecraft.core.component.DataComponentType<?> type) {
-        return CraftRegistry.minecraftToBukkit(type, Registries.DATA_COMPONENT_TYPE, Registry.DATA_COMPONENT_TYPE);
+        return CraftRegistry.minecraftToBukkit(type, Registries.DATA_COMPONENT_TYPE);
     }
 
     public static Set<DataComponentType> minecraftToBukkit(final Set<net.minecraft.core.component.DataComponentType<?>> nmsTypes) {
