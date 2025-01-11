@@ -34,11 +34,11 @@ public class PerRegistryTest {
             try {
                 Object object = registryField.get(null);
                 // Ignore Bukkit's default SimpleRegistry. It cannot be tested correctly
-                if (!(object instanceof CraftRegistry<?, ?> registry)) {
+                if (object instanceof Registry.NotARegistry) {
                     continue;
                 }
 
-                data.add(Arguments.of(registry));
+                data.add(Arguments.of(object));
             } catch (ReflectiveOperationException e) {
                 e.printStackTrace();
             }

@@ -124,13 +124,10 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     }
 
     // Paper start - fixup upstream being dum
-    public static <T extends org.bukkit.Keyed, M> java.util.Optional<T> unwrapAndConvertHolder(final io.papermc.paper.registry.RegistryKey<T> registryKey, final Holder<M> value) {
-        return unwrapAndConvertHolder(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(registryKey), value);
-    }
-
-    public static <T extends org.bukkit.Keyed, M> java.util.Optional<T> unwrapAndConvertHolder(final Registry<T> registry, final Holder<M> value) {
+    public static <T extends Keyed, M> Optional<T> unwrapAndConvertHolder(final RegistryKey<T> registryKey, final Holder<M> value) {
+        final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
         if (registry instanceof CraftRegistry<?,?> craftRegistry && craftRegistry.supportsDirectHolders() && value.kind() == Holder.Kind.DIRECT) {
-            return java.util.Optional.of(((CraftRegistry<T, M>) registry).convertDirectHolder(value));
+            return Optional.of(((CraftRegistry<T, M>) registry).convertDirectHolder(value));
         }
         return value.unwrapKey().map(key -> registry.get(CraftNamespacedKey.fromMinecraft(key.location())));
     }
