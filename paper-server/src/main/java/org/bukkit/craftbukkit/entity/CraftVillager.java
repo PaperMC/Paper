@@ -11,7 +11,6 @@ import net.minecraft.world.level.block.BedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -23,7 +22,6 @@ import org.bukkit.event.entity.EntityTransformEvent;
 
 // Paper start
 import com.destroystokyo.paper.entity.villager.Reputation;
-import com.google.common.collect.Maps;
 import java.util.Map;
 import java.util.UUID;
 // Paper end
@@ -177,7 +175,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         private static int count = 0;
 
         public static Type minecraftToBukkit(VillagerType minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_TYPE, Registry.VILLAGER_TYPE);
+            return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_TYPE);
         }
 
         public static VillagerType bukkitToMinecraft(Type bukkit) {
@@ -258,7 +256,7 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         private static int count = 0;
 
         public static Profession minecraftToBukkit(VillagerProfession minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_PROFESSION, Registry.VILLAGER_PROFESSION);
+            return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_PROFESSION);
         }
 
         public static VillagerProfession bukkitToMinecraft(Profession bukkit) {

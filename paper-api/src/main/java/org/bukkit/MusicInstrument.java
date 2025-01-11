@@ -1,6 +1,8 @@
 package org.bukkit;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.function.Consumer;
@@ -62,7 +64,7 @@ public abstract class MusicInstrument implements Keyed, Translatable {
 
     @NotNull
     private static MusicInstrument getInstrument(@NotNull String key) {
-        return Registry.INSTRUMENT.getOrThrow(NamespacedKey.minecraft(key));
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.INSTRUMENT).getOrThrow(NamespacedKey.minecraft(key));
     }
 
     /**

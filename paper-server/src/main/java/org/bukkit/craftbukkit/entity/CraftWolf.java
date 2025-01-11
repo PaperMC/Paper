@@ -6,7 +6,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.animal.WolfVariant;
 import org.bukkit.DyeColor;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.Handleable;
@@ -81,7 +80,7 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
     public static class CraftVariant implements Variant, Handleable<WolfVariant> {
 
         public static Variant minecraftToBukkit(WolfVariant minecraft) {
-            return CraftRegistry.minecraftToBukkit(minecraft, Registries.WOLF_VARIANT, Registry.WOLF_VARIANT);
+            return CraftRegistry.minecraftToBukkit(minecraft, Registries.WOLF_VARIANT);
         }
 
         public static Variant minecraftHolderToBukkit(Holder<WolfVariant> minecraft) {

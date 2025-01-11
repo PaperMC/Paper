@@ -1,6 +1,8 @@
 package org.bukkit.enchantments;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -229,7 +231,7 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
 
     @NotNull
     private static Enchantment getEnchantment(@NotNull String key) {
-        return Registry.ENCHANTMENT.getOrThrow(NamespacedKey.minecraft(key));
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).getOrThrow(NamespacedKey.minecraft(key));
     }
 
     /**

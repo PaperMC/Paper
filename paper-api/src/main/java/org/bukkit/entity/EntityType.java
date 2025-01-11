@@ -503,8 +503,9 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
      *
      * @param world the world to check
      * @return true if this EntityType can be used to spawn an Entity for this World.
+     * @deprecated use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
      */
-    @Deprecated(forRemoval = true, since = "1.20") // Paper
+    @Deprecated(forRemoval = true, since = "1.20")
     public boolean isEnabledByFeature(@NotNull World world) {
         return Bukkit.getDataPackManager().isEnabledByFeature(this, world);
     }

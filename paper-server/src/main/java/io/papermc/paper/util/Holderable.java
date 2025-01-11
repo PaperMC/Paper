@@ -4,6 +4,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.RegistryOps;
@@ -25,7 +27,8 @@ public interface Holderable<M> extends Handleable<M> {
         return this.getHolder().value();
     }
 
-    static <T extends org.bukkit.Keyed, M> @Nullable T fromBukkitSerializationObject(final Object deserialized, final Codec<? extends Holder<M>> codec, final Registry<T> registry) { // TODO remove Keyed
+    static <T extends org.bukkit.Keyed, M> @Nullable T fromBukkitSerializationObject(final Object deserialized, final Codec<? extends Holder<M>> codec, final RegistryKey<T> registryKey) { // TODO remove Keyed
+        final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
         return switch (deserialized) {
             case @Subst("key:value") final String string -> {
                 if (!(Key.parseable(string))) {

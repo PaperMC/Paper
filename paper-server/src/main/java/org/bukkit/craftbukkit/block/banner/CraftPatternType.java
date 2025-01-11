@@ -4,7 +4,6 @@ import io.papermc.paper.util.OldEnumHolderable;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BannerPattern;
-import org.bukkit.Registry;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.craftbukkit.CraftRegistry;
 
@@ -13,11 +12,11 @@ public class CraftPatternType extends OldEnumHolderable<PatternType, BannerPatte
     private static int count = 0;
 
     public static PatternType minecraftToBukkit(BannerPattern minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.BANNER_PATTERN, Registry.BANNER_PATTERN);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.BANNER_PATTERN);
     }
 
     public static PatternType minecraftHolderToBukkit(Holder<BannerPattern> minecraft) {
-        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registry.BANNER_PATTERN);
+        return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.BANNER_PATTERN);
     }
 
     public static BannerPattern bukkitToMinecraft(PatternType bukkit) {

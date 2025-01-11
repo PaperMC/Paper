@@ -2,6 +2,7 @@ package org.bukkit.block.banner;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import org.bukkit.Bukkit;
@@ -45,7 +46,7 @@ public class Pattern implements ConfigurationSerializable {
         PatternType patternType = PatternType.getByIdentifier(value);
 
         if (patternType == null) {
-            patternType = Bukkit.getUnsafe().get(Registry.BANNER_PATTERN, NamespacedKey.fromString(value));
+            patternType = Bukkit.getUnsafe().get(RegistryKey.BANNER_PATTERN, NamespacedKey.fromString(value));
         }
 
         Preconditions.checkNotNull(patternType, "Pattern type for key %s cannot be null", value);
