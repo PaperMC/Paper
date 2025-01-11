@@ -15,12 +15,14 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.MenuType;
+import org.bukkit.inventory.view.builder.InventoryViewBuilder;
+import org.jetbrains.annotations.NotNull;
 
-public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>, Handleable<net.minecraft.world.inventory.MenuType<?>>, io.papermc.paper.world.flag.PaperFeatureDependent { // Paper - make FeatureDependant
+public class CraftMenuType<V extends InventoryView, B extends InventoryViewBuilder<V>> implements MenuType.Typed<V, B>, Handleable<net.minecraft.world.inventory.MenuType<?>>, io.papermc.paper.world.flag.PaperFeatureDependent { // Paper - make FeatureDependant
 
     private final NamespacedKey key;
     private final net.minecraft.world.inventory.MenuType<?> handle;
-    private final Supplier<CraftMenus.MenuTypeData<V>> typeData;
+    private final Supplier<CraftMenus.MenuTypeData<V, B>> typeData;
 
     public CraftMenuType(NamespacedKey key, net.minecraft.world.inventory.MenuType<?> handle) {
         this.key = key;
@@ -36,33 +38,28 @@ public class CraftMenuType<V extends InventoryView> implements MenuType.Typed<V>
     @Override
     public V create(final HumanEntity player, final String title) {
     // Paper start - adventure
-        return create(player, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title));
+        return builder().title(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title)).build(player);
     }
     @Override
     public V create(final HumanEntity player, final net.kyori.adventure.text.Component title) {
     // Paper end - adventure
-        Preconditions.checkArgument(player != null, "The given player must not be null");
-        Preconditions.checkArgument(title != null, "The given title must not be null");
-        Preconditions.checkArgument(player instanceof CraftHumanEntity, "The given player must be a CraftHumanEntity");
-        final CraftHumanEntity craftHuman = (CraftHumanEntity) player;
-        Preconditions.checkArgument(craftHuman.getHandle() instanceof ServerPlayer, "The given player must be an EntityPlayer");
-        final ServerPlayer serverPlayer = (ServerPlayer) craftHuman.getHandle();
-
-        final AbstractContainerMenu container = this.typeData.get().menuBuilder().build(serverPlayer, this.handle);
-        container.setTitle(io.papermc.paper.adventure.PaperAdventure.asVanilla(title)); // Paper - adventure
-        container.checkReachable = false;
-        return (V) container.getBukkitView();
+        return builder().title(title).build(player);
     }
 
     @Override
-    public Typed<InventoryView> typed() {
+    public B builder() {
+        return typeData.get().viewBuilder().get();
+    }
+
+    @Override
+    public Typed<InventoryView, InventoryViewBuilder<InventoryView>> typed() {
         return this.typed(InventoryView.class);
     }
 
     @Override
-    public <V extends InventoryView> Typed<V> typed(Class<V> clazz) {
+    public <V extends InventoryView, B extends InventoryViewBuilder<V>> Typed<V, B> typed(Class<V> clazz) {
         if (clazz.isAssignableFrom(this.typeData.get().viewClass())) {
-            return (Typed<V>) this;
+            return (Typed<V, B>) this;
         }
 
         throw new IllegalArgumentException("Cannot type InventoryView " + this.key.toString() + " to InventoryView type " + clazz.getSimpleName());
