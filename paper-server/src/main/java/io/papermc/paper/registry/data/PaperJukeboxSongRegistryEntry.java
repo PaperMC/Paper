@@ -13,6 +13,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.JukeboxSong;
+import net.minecraft.world.level.redstone.Redstone;
 import org.bukkit.Sound;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.Range;
@@ -99,7 +100,7 @@ public class PaperJukeboxSongRegistryEntry implements JukeboxSongRegistryEntry {
 
         @Override
         public JukeboxSongRegistryEntry.Builder comparatorOutput(final @Range(from = 0, to = 15) int comparatorOutput) {
-            this.comparatorOutput = OptionalInt.of(asArgumentRange(comparatorOutput, "comparatorOutput", 0, 15));
+            this.comparatorOutput = OptionalInt.of(asArgumentRange(comparatorOutput, "comparatorOutput", Redstone.SIGNAL_MIN, Redstone.SIGNAL_MAX));
             return this;
         }
 

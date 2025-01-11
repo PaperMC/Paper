@@ -1,6 +1,5 @@
 package io.papermc.paper.registry.data;
 
-
 import io.papermc.paper.registry.RegistryBuilder;
 import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.TypedKey;
