@@ -1,6 +1,7 @@
 package io.papermc.paper.registry.data;
 
 import io.papermc.paper.registry.RegistryBuilder;
+import io.papermc.paper.registry.RegistryBuilderFactory;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
@@ -8,6 +9,7 @@ import org.bukkit.MusicInstrument;
 import org.checkerframework.checker.index.qual.Positive;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import java.util.function.Consumer;
 
 /**
  * A data-centric version-specific registry entry for the {@link org.bukkit.MusicInstrument} type.
