@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
@@ -1244,6 +1246,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         return blockHit;
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable RayTraceResult rayTrace(Consumer<PositionedRayTraceConfigurationBuilder> builderConsumer) {
+        PositionedRayTraceConfigurationBuilderImpl builder = new PositionedRayTraceConfigurationBuilderImpl(this);
+
+        builderConsumer.accept(builder);
+
+        return builder.cast();
     }
 
     @Override
