@@ -5,5 +5,5 @@ import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 @ApiStatus.Internal
-public record EitherRight<L, R>(R value) implements Either.Right<L, R> {
+record EitherRight<L, R>(R value) implements Either.Right<L, R> {
 }
