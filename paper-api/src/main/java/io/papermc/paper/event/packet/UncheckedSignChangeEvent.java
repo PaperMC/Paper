@@ -24,14 +24,14 @@ public class UncheckedSignChangeEvent extends PlayerEvent implements Cancellable
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
     private boolean cancel = false;
-    private final BlockPosition block;
+    private final BlockPosition editedBlockPosition;
     private final Side side;
     private final List<Component> lines;
 
     @ApiStatus.Internal
-    public UncheckedSignChangeEvent(final Player editor, final BlockPosition block, final Side side, final List<Component> lines) {
+    public UncheckedSignChangeEvent(final Player editor, final BlockPosition editedBlockPosition, final Side side, final List<Component> lines) {
         super(editor);
-        this.block = block;
+        this.editedBlockPosition = editedBlockPosition;
         this.side = side;
         this.lines = lines;
     }
@@ -41,8 +41,8 @@ public class UncheckedSignChangeEvent extends PlayerEvent implements Cancellable
      *
      * @return location where the change happened
      */
-    public BlockPosition getBlock() {
-        return block;
+    public BlockPosition getEditedBlockPosition() {
+        return editedBlockPosition;
     }
 
     /**
@@ -59,7 +59,7 @@ public class UncheckedSignChangeEvent extends PlayerEvent implements Cancellable
      *
      * @return the lines
      */
-    public @Unmodifiable List<Component> getLines() {
+    public @Unmodifiable List<Component> lines() {
         return lines;
     }
 
