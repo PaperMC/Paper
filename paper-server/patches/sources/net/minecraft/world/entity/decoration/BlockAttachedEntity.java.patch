@@ -1,15 +1,17 @@
 --- a/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
 +++ b/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
-@@ -20,7 +_,7 @@
+@@ -20,8 +_,9 @@
  
  public abstract class BlockAttachedEntity extends Entity {
      private static final Logger LOGGER = LogUtils.getLogger();
 -    private int checkInterval;
 +    private int checkInterval; { this.checkInterval = this.getId() % this.level().spigotConfig.hangingTickFrequency; } // Paper - Perf: offset item frame ticking
      protected BlockPos pos;
++    public java.util.List<Entity> collidingEntities; // Paper - Call HangingBreakByEntityEvent for collision with boats
  
      protected BlockAttachedEntity(EntityType<? extends BlockAttachedEntity> entityType, Level level) {
-@@ -38,10 +_,26 @@
+         super(entityType, level);
+@@ -38,10 +_,35 @@
      public void tick() {
          if (this.level() instanceof ServerLevel serverLevel) {
              this.checkBelowWorld();
@@ -18,6 +20,14 @@
                  this.checkInterval = 0;
                  if (!this.isRemoved() && !this.survives()) {
 -                    this.discard();
++                    // Paper start - Call HangingBreakByEntityEvent for collision with boats
++                    org.bukkit.event.hanging.HangingBreakEvent event;
++                    if (this.collidingEntities != null && !this.collidingEntities.isEmpty()) {
++                        event = new org.bukkit.event.hanging.HangingBreakByEntityEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), collidingEntities.getFirst().getBukkitEntity());
++                        this.collidingEntities = null;
++                    } else {
++                    // Paper end - Call HangingBreakByEntityEvent for collision with boats
++
 +                    // CraftBukkit start - fire break events
 +                    final org.bukkit.event.hanging.HangingBreakEvent.RemoveCause cause;
 +                    if (!this.level().getBlockState(this.blockPosition()).isAir()) {
@@ -26,8 +36,9 @@
 +                    } else {
 +                        cause = org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.PHYSICS;
 +                    }
++                    event = new org.bukkit.event.hanging.HangingBreakEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), cause); // Paper - Call HangingBreakByEntityEvent for collision with boats
++                    }
 +
-+                    org.bukkit.event.hanging.HangingBreakEvent event = new org.bukkit.event.hanging.HangingBreakEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), cause);
 +                    this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                    if (this.isRemoved() || event.isCancelled()) {
