@@ -6,21 +6,20 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
 import org.bukkit.inventory.InventoryView;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
 
 public class CraftAccessLocationInventoryViewBuilder<V extends InventoryView> extends CraftAbstractLocationInventoryViewBuilder<V> {
 
     private final CraftAccessContainerObjectBuilder containerBuilder;
 
-    public CraftAccessLocationInventoryViewBuilder(final MenuType<?> handle, CraftAccessContainerObjectBuilder containerBuilder) {
+    public CraftAccessLocationInventoryViewBuilder(final MenuType<?> handle, final CraftAccessContainerObjectBuilder containerBuilder) {
         super(handle);
         this.containerBuilder = containerBuilder;
     }
 
     @Override
     protected AbstractContainerMenu buildContainer(final ServerPlayer player) {
-        ContainerLevelAccess access;
+        final ContainerLevelAccess access;
         if (super.position == null) {
             access = ContainerLevelAccess.create(player.level(), player.blockPosition());
         } else {
@@ -32,7 +31,7 @@ public class CraftAccessLocationInventoryViewBuilder<V extends InventoryView> ex
 
     @Override
     public LocationInventoryViewBuilder<V> copy() {
-        CraftAccessLocationInventoryViewBuilder<V> copy = new CraftAccessLocationInventoryViewBuilder<>(this.handle, this.containerBuilder);
+        final CraftAccessLocationInventoryViewBuilder<V> copy = new CraftAccessLocationInventoryViewBuilder<>(this.handle, this.containerBuilder);
         copy.world = super.world;
         copy.position = super.position;
         copy.checkReachable = super.checkReachable;

@@ -11,13 +11,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
+import org.jspecify.annotations.Nullable;
 
 public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> extends CraftAbstractLocationInventoryViewBuilder<V> {
 
     private final Block block;
-    private final CraftTileInventoryBuilder builder;
+    private final @Nullable CraftTileInventoryBuilder builder;
 
-    public CraftBlockEntityInventoryViewBuilder(final MenuType<?> handle, final Block block, final CraftTileInventoryBuilder builder) {
+    public CraftBlockEntityInventoryViewBuilder(final MenuType<?> handle, final Block block, final @Nullable CraftTileInventoryBuilder builder) {
         super(handle);
         this.block = block;
         this.builder = builder;
@@ -34,7 +35,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         }
 
         final BlockEntity entity = this.world.getBlockEntity(position);
-        if (!(entity instanceof MenuConstructor container)) {
+        if (!(entity instanceof final MenuConstructor container)) {
             return buildFakeTile(player);
         }
 
@@ -46,12 +47,12 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         return atBlock;
     }
 
-    private AbstractContainerMenu buildFakeTile(ServerPlayer player) {
+    private AbstractContainerMenu buildFakeTile(final ServerPlayer player) {
         if (this.builder == null) {
             return handle.create(player.nextContainerCounter(), player.getInventory());
         }
         final MenuProvider inventory = this.builder.build(this.position, this.block.defaultBlockState());
-        if (inventory instanceof BlockEntity tile) {
+        if (inventory instanceof final BlockEntity tile) {
             tile.setLevel(this.world);
         }
         return inventory.createMenu(player.nextContainerCounter(), player.getInventory(), player);

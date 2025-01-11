@@ -3,34 +3,33 @@ package org.bukkit.craftbukkit.inventory.view.builder;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.InventoryViewBuilder;
-import org.jetbrains.annotations.NotNull;
+import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 public abstract class CraftAbstractInventoryViewBuilder<V extends InventoryView> implements InventoryViewBuilder<V> {
 
     protected final MenuType<?> handle;
 
     protected boolean checkReachable = false;
-    protected Component title = null;
+    protected @MonotonicNonNull Component title = null;
 
-    public CraftAbstractInventoryViewBuilder(MenuType<?> handle) {
+    public CraftAbstractInventoryViewBuilder(final MenuType<?> handle) {
         this.handle = handle;
     }
 
     @Override
-    public @NotNull InventoryViewBuilder<V> title(final @NotNull Component title) {
+    public InventoryViewBuilder<V> title(final Component title) {
         this.title = title;
         return this;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public V build(final HumanEntity player) {
         Preconditions.checkArgument(player != null, "The given player must not be null");

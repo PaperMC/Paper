@@ -14,10 +14,11 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.view.builder.MerchantInventoryViewBuilder;
+import org.jspecify.annotations.Nullable;
 
 public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends CraftAbstractInventoryViewBuilder<V> implements MerchantInventoryViewBuilder<V> {
 
-    private net.minecraft.world.item.trading.Merchant merchant;
+    private net.minecraft.world.item.trading.@Nullable Merchant merchant;
 
     public CraftMerchantInventoryViewBuilder(final MenuType<?> handle) {
         super(handle);
@@ -68,7 +69,7 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
 
     @Override
     public MerchantInventoryViewBuilder<V> copy() {
-        CraftMerchantInventoryViewBuilder<V> copy = new CraftMerchantInventoryViewBuilder<>(super.handle);
+        final CraftMerchantInventoryViewBuilder<V> copy = new CraftMerchantInventoryViewBuilder<>(super.handle);
         copy.checkReachable = super.checkReachable;
         copy.merchant = this.merchant;
         copy.title = title;

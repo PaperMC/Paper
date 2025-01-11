@@ -44,19 +44,21 @@ import org.bukkit.inventory.view.LoomView;
 import org.bukkit.inventory.view.MerchantView;
 import org.bukkit.inventory.view.StonecutterView;
 import org.bukkit.inventory.view.builder.InventoryViewBuilder;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.function.Supplier;
 
+@NullMarked
 public final class CraftMenus {
 
     public record MenuTypeData<V extends InventoryView, B extends InventoryViewBuilder<V>>(Class<V> viewClass, Supplier<B> viewBuilder) {
     }
 
     // This is a temporary measure that will likely be removed with the rewrite of HumanEntity#open[] methods
-    public static void openMerchantMenu(ServerPlayer player, MerchantMenu merchant) {
+    public static void openMerchantMenu(final ServerPlayer player, final MerchantMenu merchant) {
         final Merchant minecraftMerchant = ((CraftMerchant) merchant.getBukkitView().getMerchant()).getMerchant();
         int level = 1;
-        if (minecraftMerchant instanceof Villager villager) {
+        if (minecraftMerchant instanceof final Villager villager) {
             level = villager.getVillagerData().getLevel();
         }
 
@@ -78,7 +80,7 @@ public final class CraftMenus {
         // End Copy IMerchant#openTradingScreen
     }
 
-    public static <V extends InventoryView, B extends InventoryViewBuilder<V>> MenuTypeData<V, B> getMenuTypeData(CraftMenuType<?, ?> menuType) {
+    public static <V extends InventoryView, B extends InventoryViewBuilder<V>> MenuTypeData<V, B> getMenuTypeData(final CraftMenuType<?, ?> menuType) {
         final net.minecraft.world.inventory.MenuType<?> handle = menuType.getHandle();
         // this sucks horribly but it should work for now
         if (menuType == MenuType.GENERIC_9X6) {
@@ -153,7 +155,8 @@ public final class CraftMenus {
         return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftStandardInventoryViewBuilder<>(handle)));
     }
 
-    private static <V extends InventoryView, B extends InventoryViewBuilder<V>> MenuTypeData<V, B> asType(MenuTypeData<?, ?> data) {
+    @SuppressWarnings("unchecked")
+    private static <V extends InventoryView, B extends InventoryViewBuilder<V>> MenuTypeData<V, B> asType(final MenuTypeData<?, ?> data) {
         return (MenuTypeData<V, B>) data;
     }
 }

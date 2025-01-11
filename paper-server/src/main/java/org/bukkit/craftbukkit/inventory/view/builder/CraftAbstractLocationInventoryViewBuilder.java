@@ -10,19 +10,19 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 public abstract class CraftAbstractLocationInventoryViewBuilder<V extends InventoryView> extends CraftAbstractInventoryViewBuilder<V> implements LocationInventoryViewBuilder<V> {
 
-    protected Level world;
-    protected BlockPos position;
+    protected @Nullable Level world;
+    protected @Nullable BlockPos position;
 
     public CraftAbstractLocationInventoryViewBuilder(final MenuType<?> handle) {
         super(handle);
     }
 
     @Override
-    public LocationInventoryViewBuilder<V> title(final @NotNull Component title) {
+    public LocationInventoryViewBuilder<V> title(final Component title) {
         return (LocationInventoryViewBuilder<V>) super.title(title);
     }
 
