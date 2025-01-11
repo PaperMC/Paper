@@ -2017,7 +2017,7 @@
                  this.player.containerMenu.sendAllDataToRemote();
              } else if (!this.player.containerMenu.stillValid(this.player)) {
                  LOGGER.debug("Player {} interacted with invalid menu {}", this.player, this.player.containerMenu);
-@@ -1713,7 +_,313 @@
+@@ -1713,7 +_,341 @@
                  } else {
                      boolean flag = packet.getStateId() != this.player.containerMenu.getStateId();
                      this.player.containerMenu.suppressRemoteUpdates();
@@ -2056,11 +2056,19 @@
 +                                        ItemStack cursor = this.player.containerMenu.getCarried();
 +                                        if (clickedItem.isEmpty()) {
 +                                            if (!cursor.isEmpty()) {
-+                                                action = packet.getButtonNum() == 0 ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_ONE;
++                                                if (cursor.getItem() instanceof net.minecraft.world.item.BundleItem && packet.getButtonNum() != 0) {
++                                                    action = cursor.get(DataComponents.BUNDLE_CONTENTS).isEmpty() ? InventoryAction.NOTHING : InventoryAction.PLACE_FROM_BUNDLE;
++                                                } else {
++                                                    action = packet.getButtonNum() == 0 ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_ONE;
++                                                }
 +                                            }
 +                                        } else if (slot.mayPickup(this.player)) {
 +                                            if (cursor.isEmpty()) {
-+                                                action = packet.getButtonNum() == 0 ? InventoryAction.PICKUP_ALL : InventoryAction.PICKUP_HALF;
++                                                if (slot.getItem().getItem() instanceof net.minecraft.world.item.BundleItem && packet.getButtonNum() != 0) {
++                                                    action = slot.getItem().get(DataComponents.BUNDLE_CONTENTS).isEmpty() ? InventoryAction.NOTHING : InventoryAction.PICKUP_FROM_BUNDLE;
++                                                } else {
++                                                    action = packet.getButtonNum() == 0 ? InventoryAction.PICKUP_ALL : InventoryAction.PICKUP_HALF;
++                                                }
 +                                            } else if (slot.mayPlace(cursor)) {
 +                                                if (ItemStack.isSameItemSameComponents(clickedItem, cursor)) {
 +                                                    int toPlace = packet.getButtonNum() == 0 ? cursor.getCount() : 1;
@@ -2076,7 +2084,27 @@
 +                                                        action = InventoryAction.PLACE_SOME;
 +                                                    }
 +                                                } else if (cursor.getCount() <= slot.getMaxStackSize()) {
-+                                                    action = InventoryAction.SWAP_WITH_CURSOR;
++                                                    if (cursor.getItem() instanceof net.minecraft.world.item.BundleItem && packet.getButtonNum() == 0) {
++                                                        int toPickup = cursor.get(DataComponents.BUNDLE_CONTENTS).getMaxAmountToAdd(slot.getItem());
++                                                        if (toPickup >= slot.getItem().getCount()) {
++                                                            action = InventoryAction.PICKUP_ALL_INTO_BUNDLE;
++                                                        } else if (toPickup == 0) {
++                                                            action = InventoryAction.NOTHING;
++                                                        } else {
++                                                            action = InventoryAction.PICKUP_SOME_INTO_BUNDLE;
++                                                        }
++                                                    } else if (slot.getItem().getItem() instanceof net.minecraft.world.item.BundleItem && packet.getButtonNum() == 0) {
++                                                        int toPickup = slot.getItem().get(DataComponents.BUNDLE_CONTENTS).getMaxAmountToAdd(cursor);
++                                                        if (toPickup >= cursor.getCount()) {
++                                                            action = InventoryAction.PLACE_ALL_INTO_BUNDLE;
++                                                        } else if (toPickup == 0) {
++                                                            action = InventoryAction.NOTHING;
++                                                        } else {
++                                                            action = InventoryAction.PLACE_SOME_INTO_BUNDLE;
++                                                        }
++                                                    } else {
++                                                        action = InventoryAction.SWAP_WITH_CURSOR;
++                                                    }
 +                                                }
 +                                            } else if (ItemStack.isSameItemSameComponents(cursor, clickedItem)) {
 +                                                if (clickedItem.getCount() >= 0) {
