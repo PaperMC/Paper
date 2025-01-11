@@ -19,3 +19,38 @@
                  level.setBlock(pos, state.setValue(POWERED, Boolean.valueOf(true)), 2);
                  if (!shouldTurnOn) {
                      level.scheduleTick(pos, this, this.getDelay(state), TickPriority.VERY_HIGH);
+@@ -86,7 +_,19 @@
+             this.checkTickOnNeighbor(level, pos, state);
+         } else {
+             BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
+-            dropResources(state, level, pos, blockEntity);
++
++            // Paper start - BlockDestroyEvent
++            com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), level.getFluidState(pos).createLegacyBlock().createCraftBlockData(), state.createCraftBlockData(), 0, true);
++            event.setPlayEffect(false);
++            if (!event.callEvent())
++                return;
++            level.expToDrop = event.getExpToDrop();
++            if (event.playEffect())
++                level.levelEvent(2001, pos, Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getEffectBlock()).getState()));
++            if (event.willDrop())
++                dropResources(state, level, pos, blockEntity);;
++            level.expToDrop = 0;
++            // Paper end - BlockDestroyEvent
+             level.removeBlock(pos, false);
+ 
+             for (Direction direction : Direction.values()) {
+@@ -94,6 +_,13 @@
+             }
+         }
+     }
++
++    // Paper start - BlockDestroyEvent
++    @Override
++    public int getExpDrop(final BlockState iblockdata, final ServerLevel worldserver, final BlockPos blockposition, final ItemStack itemstack, final boolean flag) {
++        return worldserver.expToDrop;
++    }
++    // Paper end - BlockDestroyEvent
+ 
+     protected void checkTickOnNeighbor(Level level, BlockPos pos, BlockState state) {
+         if (!this.isLocked(level, pos, state)) {
