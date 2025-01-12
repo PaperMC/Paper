@@ -430,7 +430,9 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     @Nullable
     @Deprecated(since = "1.21.4")
-    public Location getPotentialBedLocation();
+    default Location getPotentialBedLocation() {
+        return this.getPotentialRespawnLocation();
+    }
 
     /**
      * Gets the Location where the player will spawn at, null if they
