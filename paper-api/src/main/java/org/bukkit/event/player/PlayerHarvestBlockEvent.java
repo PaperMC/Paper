@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.entity.EntityHarvestBlockEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
@@ -12,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * This event is called whenever a player harvests a block.
+ * <br>
+ * For the entity case please use {@link org.bukkit.event.entity.EntityHarvestBlockEvent}
  * <br>
  * A 'harvest' is when a block drops an item (usually some sort of crop) and
  * changes state, but is not broken in order to drop the item.
