@@ -1,6 +1,5 @@
 package io.papermc.paper.world.biome;
 
-import io.papermc.paper.math.Position;
 import io.papermc.paper.world.biome.effects.AdditionSound;
 import io.papermc.paper.world.biome.effects.MoodSound;
 import io.papermc.paper.world.biome.effects.MusicEntry;
@@ -9,6 +8,7 @@ import io.papermc.paper.world.biome.effects.PaperMoodSound;
 import io.papermc.paper.world.biome.effects.PaperMusicEntry;
 import net.minecraft.world.level.biome.Biome;
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftSound;
 
@@ -120,7 +120,7 @@ public class PaperBiomeSpecialEffects implements BiomeSpecialEffects {
      * {@inheritDoc}
      */
     @Override
-    public Color modifyGrassColor(final Color original, final Position position) {
-        return Color.fromRGB(effects.getGrassColorModifier().modifyColor(position.x(), position.z(), original.asRGB()));
+    public Color modifyGrassColor(final Color original, final Location location) {
+        return Color.fromRGB(effects.getGrassColorModifier().modifyColor(location.x(), location.z(), original.asRGB()));
     }
 }

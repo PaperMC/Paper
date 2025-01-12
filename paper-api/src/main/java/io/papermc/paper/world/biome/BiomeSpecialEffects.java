@@ -1,10 +1,10 @@
 package io.papermc.paper.world.biome;
 
-import io.papermc.paper.math.Position;
 import io.papermc.paper.world.biome.effects.AdditionSound;
 import io.papermc.paper.world.biome.effects.MoodSound;
 import io.papermc.paper.world.biome.effects.MusicEntry;
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import java.util.List;
 import java.util.Optional;
@@ -99,8 +99,8 @@ public interface BiomeSpecialEffects {
      * depending on the coordinates of the block.
      *
      * @param original the initial grass color.
-     * @param position the position of the block.
+     * @param location the location of the block.
      * @return the modified grass color.
      */
-    Color modifyGrassColor(Color original, Position position);
+    Color modifyGrassColor(Color original, Location location);
 }
