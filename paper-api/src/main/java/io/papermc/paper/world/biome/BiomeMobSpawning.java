@@ -20,7 +20,7 @@ public interface BiomeMobSpawning {
     /**
      * New mob's cost. Only mobs listed here use the spawn cost mechanism.
      *
-     * @see <a href="https://minecraft.wiki/w/Mob_spawning">Mob spawning#Spawn costs</a>
+     * @see <a href="https://minecraft.wiki/w/Mob_spawning#Spawn_costs">Mob spawning#Spawn costs</a>
      * @return The map of entity type to cost
      */
     Map<EntityType, SpawnCost> entityCost();
@@ -64,7 +64,7 @@ public interface BiomeMobSpawning {
     /**
      * The spawn cost for a mob.
      *
-     * @see <a href="https://minecraft.wiki/w/Mob_spawning">Mob spawning#Spawn costs</a>
+     * @see <a href="https://minecraft.wiki/w/Mob_spawning#Spawn_costs">Mob spawning#Spawn costs</a>
      */
     interface SpawnCost {
 
