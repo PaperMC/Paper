@@ -5,6 +5,7 @@ import java.util.Objects;
 import io.papermc.paper.world.biome.BiomeClimate;
 import io.papermc.paper.world.biome.BiomeSpecialEffects;
 import io.papermc.paper.world.biome.PaperBiomeClimate;
+import io.papermc.paper.world.biome.PaperBiomeMobSpawning;
 import io.papermc.paper.world.biome.PaperBiomeSpecialEffects;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
@@ -57,6 +58,7 @@ public class CraftBiome implements Biome, Handleable<net.minecraft.world.level.b
     private final NamespacedKey key;
     private final PaperBiomeClimate climate;
     private final PaperBiomeSpecialEffects specialEffects;
+    private final PaperBiomeMobSpawning mobSpawning;
     private final net.minecraft.world.level.biome.Biome biomeBase;
     private final String name;
     private final int ordinal;
@@ -67,6 +69,7 @@ public class CraftBiome implements Biome, Handleable<net.minecraft.world.level.b
         // Biome base is null on deprecated for removal custom craft biome
         this.climate = new PaperBiomeClimate(Objects.requireNonNullElseGet(biomeBase, CraftBiome::getDefaultBiome));
         this.specialEffects = new PaperBiomeSpecialEffects(Objects.requireNonNullElseGet(biomeBase, CraftBiome::getDefaultBiome));
+        this.mobSpawning = new PaperBiomeMobSpawning(Objects.requireNonNullElseGet(biomeBase, CraftBiome::getDefaultBiome));
         // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
         // in case plugins use for example the name as key in a config file to receive biome specific values.
         // Custom biomes will return the key with namespace. For a plugin this should look than like a new biome
@@ -133,6 +136,11 @@ public class CraftBiome implements Biome, Handleable<net.minecraft.world.level.b
     @Override
     public @NotNull BiomeClimate climate() {
         return this.climate;
+    }
+
+    @Override
+    public @NotNull PaperBiomeMobSpawning mobSpawning() {
+        return this.mobSpawning;
     }
 
     @Override

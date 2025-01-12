@@ -6,14 +6,12 @@ import io.papermc.paper.world.biome.effects.MoodSound;
 import io.papermc.paper.world.biome.effects.MusicEntry;
 import org.bukkit.Color;
 import org.bukkit.Sound;
-import org.jspecify.annotations.NullMarked;
 import java.util.List;
 import java.util.Optional;
 
 /**
  * Ambient effects in this biome.
  */
-@NullMarked
 public interface BiomeSpecialEffects {
     /**
      * The fog color.
