@@ -26,7 +26,7 @@ public interface BiomeClimate {
     float downfall();
 
     /**
-     * Modifies temperature before calculating the height adjusted temperature.
+     * Calculates the temperature based on climate and height.
      *
      * @param location the position to adjust the temperature for.
      * @return the adjusted temperature.
