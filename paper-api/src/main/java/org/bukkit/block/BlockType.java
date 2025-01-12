@@ -1,6 +1,6 @@
 package org.bukkit.block;
 
-import java.util.Set;
+import java.util.Collection;
 import java.util.function.Consumer;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
@@ -178,7 +178,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
          */
         @NotNull
         @Override
-        Set<B> createBlockDataStates();
+        Collection<B> createBlockDataStates();
 
         /**
          * Creates a new {@link BlockData} instance for this block type, with all
@@ -3498,7 +3498,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      * @return new block data set
      */
     @NotNull
-    Set<? extends BlockData> createBlockDataStates();
+    Collection<? extends BlockData> createBlockDataStates();
 
     /**
      * Creates a new {@link BlockData} instance for this block type, with all

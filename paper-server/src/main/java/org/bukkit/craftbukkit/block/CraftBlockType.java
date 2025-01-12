@@ -3,9 +3,9 @@ package org.bukkit.craftbukkit.block;
 import com.google.common.base.Preconditions;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Set;
+import java.util.Collection;
 import java.util.function.Consumer;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.InteractionHand;
@@ -150,13 +150,13 @@ public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, 
     }
 
     @Override
-    public @NotNull Set<B> createBlockDataStates() {
+    public @NotNull Collection<B> createBlockDataStates() {
         return this.block.getStateDefinition()
             .getPossibleStates()
             .stream()
             .map(BlockState::createCraftBlockData)
             .map(this.blockDataClass::cast)
-            .collect(ImmutableSet.toImmutableSet());
+            .collect(ImmutableList.toImmutableList());
     }
 
     @Override
