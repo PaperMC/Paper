@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * This event is called whenever a player harvests a block.
  * <br>
- * For the entity case please use {@link org.bukkit.event.entity.EntityHarvestBlockEvent}
+ * For cases involving entities, please use {@link EntityHarvestBlockEvent}.
  * <br>
  * A 'harvest' is when a block drops an item (usually some sort of crop) and
  * changes state, but is not broken in order to drop the item.
