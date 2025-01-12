@@ -1,9 +1,10 @@
-package org.bukkit.event.entity;
+package io.papermc.paper.event.entity;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.List;
  */
 public class EntityHarvestBlockEvent extends EntityEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
     private boolean cancel = false;
     private final Block harvestedBlock;
     private final List<ItemStack> itemsHarvested;
@@ -66,11 +67,11 @@ public class EntityHarvestBlockEvent extends EntityEvent implements Cancellable 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }
