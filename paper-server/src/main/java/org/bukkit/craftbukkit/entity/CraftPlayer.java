@@ -1541,13 +1541,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public Location getRespawnLocation() {
+    public Location getRespawnLocation(boolean load) {
         final ServerPlayer.RespawnConfig respawnConfig = this.getHandle().getRespawnConfig();
         if (respawnConfig == null) return null;
 
         ServerLevel world = this.getHandle().server.getLevel(respawnConfig.dimension());
         if (world != null) {
-            Optional<ServerPlayer.RespawnPosAngle> spawnLoc = ServerPlayer.findRespawnAndUseSpawnBlock(world, respawnConfig, true);
+            if (!load) {
+                return CraftLocation.toBukkit(respawnConfig.pos(), world.getWorld(), respawnConfig.angle(), 0);
+            }
+
+            Optional<ServerPlayer.RespawnPosAngle> spawnLoc = ServerPlayer.findRespawnAndUseSpawnBlock(world, respawnConfig, false);
             if (spawnLoc.isPresent()) {
                 ServerPlayer.RespawnPosAngle vec = spawnLoc.get();
                 return CraftLocation.toBukkit(vec.position(), world.getWorld(), vec.yaw(), 0);

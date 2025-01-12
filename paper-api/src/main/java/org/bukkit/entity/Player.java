@@ -545,6 +545,12 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     public boolean isSleepingIgnored();
 
+    @Nullable
+    @Override
+    default Location getRespawnLocation() {
+        return this.getRespawnLocation(true);
+    }
+
     /**
      * Sets the Location where the player will spawn at their bed.
      *

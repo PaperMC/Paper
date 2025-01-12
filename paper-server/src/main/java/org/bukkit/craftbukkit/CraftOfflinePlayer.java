@@ -6,7 +6,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.GlobalPos;
@@ -33,8 +32,6 @@ import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.metadata.MetadataValue;
-import org.bukkit.plugin.Plugin;
 
 @SerializableAs("Player")
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
@@ -362,7 +359,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     @Override
-    public Location getRespawnLocation() {
+    public Location getRespawnLocation(boolean load) {
         CompoundTag data = this.getData();
         if (data == null) return null;
 
@@ -370,7 +367,13 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         if (respawnConfig != null) {
             final ServerLevel level = this.server.console.getLevel(respawnConfig.dimension());
             if (level != null) {
-                return CraftLocation.toBukkit(respawnConfig.pos(), level.getWorld(), respawnConfig.angle(), 0);
+                if (!load) {
+                    return CraftLocation.toBukkit(respawnConfig.pos(), level.getWorld(), respawnConfig.angle(), 0);
+                }
+
+                return ServerPlayer.findRespawnAndUseSpawnBlock(level, respawnConfig, false)
+                    .map(resolvedPos -> CraftLocation.toBukkit(resolvedPos.position(), level.getWorld(), resolvedPos.yaw(), 0))
+                    .orElse(null);
             }
         }
         return null;
