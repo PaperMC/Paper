@@ -42,5 +42,4 @@ public class PlayerLoadedWorldEvent extends PlayerEvent {
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
-
 }
