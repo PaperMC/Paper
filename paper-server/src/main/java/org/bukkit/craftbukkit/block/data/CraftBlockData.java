@@ -48,7 +48,7 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public class CraftBlockData implements BlockData {
+public class CraftBlockData implements BlockData, io.papermc.paper.block.property.PaperBlockPropertyHolder.PaperMutable<Block, net.minecraft.world.level.block.state.BlockState> { // Paper
 
     private net.minecraft.world.level.block.state.BlockState state;
     private Map<Property<?>, Comparable<?>> parsedStates;
@@ -78,7 +78,7 @@ public class CraftBlockData implements BlockData {
      * @param <B> the type
      * @return the matching Bukkit type
      */
-    protected <B extends Enum<B>> B get(EnumProperty<?> nms, Class<B> bukkit) {
+    public <B extends Enum<B>> B get(EnumProperty<?> nms, Class<B> bukkit) {
         return CraftBlockData.toBukkit(this.state.getValue(nms), bukkit);
     }
 
@@ -110,7 +110,7 @@ public class CraftBlockData implements BlockData {
      * @param <B> the Bukkit type
      * @param <N> the NMS type
      */
-    protected <B extends Enum<B>, N extends Enum<N> & StringRepresentable> void set(EnumProperty<N> nms, Enum<B> bukkit) {
+    public <B extends Enum<B>, N extends Enum<N> & StringRepresentable> void set(EnumProperty<N> nms, Enum<B> bukkit) {
         this.parsedStates = null;
         this.state = this.state.setValue(nms, CraftBlockData.toNMS(bukkit, nms.getValueClass()));
     }
@@ -165,7 +165,7 @@ public class CraftBlockData implements BlockData {
      * @throws IllegalStateException if the Enum could not be converted
      */
     @SuppressWarnings("unchecked")
-    private static <B extends Enum<B>> B toBukkit(Enum<?> nms, Class<B> bukkit) {
+    public static <B extends Enum<B>> B toBukkit(Enum<?> nms, Class<B> bukkit) {
         if (nms instanceof Direction) {
             return (B) CraftBlock.notchToBlockFace((Direction) nms);
         }
@@ -195,7 +195,7 @@ public class CraftBlockData implements BlockData {
      * @param <T> the type
      * @return the current value of the given state
      */
-    protected <T extends Comparable<T>> T get(Property<T> ibs) {
+    public <T extends Comparable<T>> T get(Property<T> ibs) {
         // Straight integer or boolean getter
         return this.state.getValue(ibs);
     }
@@ -362,6 +362,7 @@ public class CraftBlockData implements BlockData {
 
     //
     private static final Map<Class<? extends Block>, Function<net.minecraft.world.level.block.state.BlockState, CraftBlockData>> MAP = new HashMap<>();
+    public static final com.google.common.collect.BiMap<Property<?>, io.papermc.paper.block.property.BlockProperty<?>> DATA_PROPERTY_CACHE_MAP = com.google.common.collect.HashBiMap.create(); // Paper
 
     static {
         //<editor-fold desc="CraftBlockData Registration" defaultstate="collapsed">
@@ -542,7 +543,15 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.world.level.block.piston.PistonHeadBlock.class, org.bukkit.craftbukkit.block.impl.CraftPistonExtension::new);
         register(net.minecraft.world.level.block.piston.MovingPistonBlock.class, org.bukkit.craftbukkit.block.impl.CraftPistonMoving::new);
         //</editor-fold>
+        io.papermc.paper.block.property.PaperBlockProperties.setup(); // Paper
     }
+
+    // Paper start - block property API
+    @Override
+    public net.minecraft.world.level.block.state.StateDefinition<Block, net.minecraft.world.level.block.state.BlockState> getStateDefinition() {
+        return this.getState().getBlock().getStateDefinition();
+    }
+    // Paper end - block property API
 
     private static void register(Class<? extends Block> nms, Function<net.minecraft.world.level.block.state.BlockState, CraftBlockData> bukkit) {
         Preconditions.checkState(CraftBlockData.MAP.put(nms, bukkit) == null, "Duplicate mapping %s->%s", nms, bukkit);
