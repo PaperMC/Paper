@@ -1,5 +1,6 @@
 package io.papermc.paper.block.fluid;
 
+import io.papermc.paper.block.property.BlockPropertyHolder;
 import org.bukkit.Fluid;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
@@ -11,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
  * This type is not linked to a specific location and hence mostly resembles a {@link org.bukkit.block.data.BlockData}.
  */
 @NullMarked
-public interface FluidData extends Cloneable {
+public interface FluidData extends Cloneable, BlockPropertyHolder {
 
     /**
      * Gets the fluid type of this fluid data.
