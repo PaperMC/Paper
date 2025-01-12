@@ -152,6 +152,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     // Paper start - Potential bed api
     @Override
     public Location getPotentialBedLocation() {
+        return this.getPotentialRespawnLocation();
+    }
+    @Override
+    public Location getPotentialRespawnLocation() {
         ServerPlayer handle = (ServerPlayer) getHandle();
         BlockPos bed = handle.getRespawnPosition();
         if (bed == null) {

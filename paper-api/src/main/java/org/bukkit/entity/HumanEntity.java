@@ -424,9 +424,23 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * is still valid.
      *
      * @return Bed Location if has slept in one, otherwise null.
+     * @see #getPotentialRespawnLocation()
+     * @deprecated Misleading name. This method also returns the location of
+     * respawn anchors.
      */
     @Nullable
+    @Deprecated(since = "1.21.4")
     public Location getPotentialBedLocation();
+
+    /**
+     * Gets the Location where the player will spawn at, null if they
+     * don't have a valid respawn point. This method will not attempt
+     * to validate if the current respawn location is still valid.
+     *
+     * @return respawn location if exists, otherwise null.
+     */
+    @Nullable
+    Location getPotentialRespawnLocation();
     // Paper end
     // Paper start
     /**
