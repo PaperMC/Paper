@@ -1,5 +1,6 @@
 package io.papermc.paper;
 
+import io.papermc.paper.block.property.EnumBlockProperty;
 import io.papermc.paper.world.damagesource.CombatEntry;
 import io.papermc.paper.world.damagesource.FallLocationType;
 import net.kyori.adventure.util.Services;
@@ -50,7 +51,7 @@ public interface InternalAPIBridge {
     @Deprecated(forRemoval = true, since = "1.21.5")
     @ApiStatus.ScheduledForRemoval(inVersion = "1.22")
     Biome constructLegacyCustomBiome();
-     
+
     /**
      * Creates a new combat entry.
      * <p>
@@ -73,5 +74,15 @@ public interface InternalAPIBridge {
      * @return combat entry
      */
     CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance);
+
+    /**
+     * Gets the string representation for this bukkit enum.
+     *
+     * @param enumProperty the enum data property
+     * @param bukkitEnum the enum to get the string representation of
+     * @param <B> the bukkit enum type
+     * @return the string representation of the supplied enum
+     */
+    <B extends Enum<B>> String getPropertyEnumName(EnumBlockProperty<B> enumProperty, B bukkitEnum);
 }
 
