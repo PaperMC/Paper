@@ -13,33 +13,22 @@ public class PaperBiomeClimate implements BiomeClimate {
         this.climateSettings = biome.climateSettings;
         this.biome = biome;
     }
-    /**
-     * {@inheritDoc}
-     */
+
     @Override
     public boolean hasPrecipitation() {
         return climateSettings.hasPrecipitation();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public float temperature() {
         return climateSettings.temperature();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public float downfall() {
         return climateSettings.downfall();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public float adjustedTemperature(final Location location) {
         Preconditions.checkNotNull(location.getWorld(), "Cannot get biome climate for a location with a null world");

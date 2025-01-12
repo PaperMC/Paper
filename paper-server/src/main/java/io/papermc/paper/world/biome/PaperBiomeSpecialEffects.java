@@ -15,90 +15,58 @@ import org.bukkit.craftbukkit.CraftSound;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * {@inheritDoc}
- */
 public class PaperBiomeSpecialEffects implements BiomeSpecialEffects {
     private final net.minecraft.world.level.biome.BiomeSpecialEffects effects;
 
     public PaperBiomeSpecialEffects(Biome biome) {
         this.effects = biome.getSpecialEffects();
     }
-    /**
-     * {@inheritDoc}
-     */
+
     @Override
     public Color fogColor() {
         return Color.fromRGB(effects.getFogColor());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Color waterColor() {
         return Color.fromRGB(effects.getWaterColor());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Color waterFogColor() {
         return Color.fromRGB(effects.getWaterFogColor());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Color skyColor() {
         return Color.fromRGB(effects.getSkyColor());
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Color> foliageColor() {
         return effects.getFoliageColorOverride().map(Color::fromRGB);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Color> grassColor() {
         return effects.getGrassColorOverride().map(Color::fromRGB);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<Sound> ambientSound() {
         return effects.getAmbientLoopSoundEvent().map(holder -> CraftSound.minecraftToBukkit(holder.value()));
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<MoodSound> moodSound() {
         return effects.getAmbientMoodSettings().map(PaperMoodSound::new);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Optional<AdditionSound> additionSound() {
         return effects.getAmbientAdditionsSettings().map(PaperAdditionSound::new);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public List<MusicEntry> music() {
         return effects.getBackgroundMusic()
@@ -108,17 +76,11 @@ public class PaperBiomeSpecialEffects implements BiomeSpecialEffects {
             .toList();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public float musicVolume() {
         return effects.getBackgroundMusicVolume();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Color modifyGrassColor(final Color original, final Location location) {
         return Color.fromRGB(effects.getGrassColorModifier().modifyColor(location.x(), location.z(), original.asRGB()));
