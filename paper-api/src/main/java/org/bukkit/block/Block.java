@@ -1,6 +1,7 @@
 package org.bukkit.block;
 
 import java.util.Collection;
+import io.papermc.paper.world.biome.BiomeClimate;
 import org.bukkit.Chunk;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
@@ -514,7 +515,11 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * required then please use {@link World#getTemperature(int, int, int)}.
      *
      * @return Temperature of this block
+     * @see Biome#climate()
+     * @see BiomeClimate#adjustedTemperature(Location)
+     * @deprecated Get the temperature from the biome instead
      */
+    @Deprecated(since = "1.21.4")
     double getTemperature();
 
     /**

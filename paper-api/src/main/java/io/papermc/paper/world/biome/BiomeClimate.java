@@ -1,6 +1,6 @@
 package io.papermc.paper.world.biome;
 
-import io.papermc.paper.math.Position;
+import org.bukkit.Location;
 
 public interface BiomeClimate {
     /**
@@ -28,8 +28,8 @@ public interface BiomeClimate {
     /**
      * Modifies temperature before calculating the height adjusted temperature.
      *
-     * @param position the position to adjust the temperature for.
+     * @param location the position to adjust the temperature for.
      * @return the adjusted temperature.
      */
-    float adjustedTemperature(Position position);
+    float adjustedTemperature(Location location);
 }
