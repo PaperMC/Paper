@@ -36,6 +36,12 @@ public final class TestPlugin extends JavaPlugin implements Listener {
                         })
                 ).build()
             );
+
+            event.registrar().register(
+                Commands.literal("root-execute")
+                    .redirect(event.registrar().getDispatcher().getRoot())
+                    .build()
+            );
         });
     }
 }
