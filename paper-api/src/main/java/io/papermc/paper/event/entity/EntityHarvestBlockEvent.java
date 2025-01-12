@@ -6,7 +6,8 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.ApiStatus;
+import org.jspecify.annotations.NullMarked;
 import java.util.List;
 
 /**
@@ -21,14 +22,17 @@ import java.util.List;
  * for {@link org.bukkit.event.block.BlockBreakEvent} and
  * {@link org.bukkit.event.block.BlockDropItemEvent}.
  */
+@NullMarked
 public class EntityHarvestBlockEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private boolean cancel = false;
     private final Block harvestedBlock;
     private final List<ItemStack> itemsHarvested;
 
-    public EntityHarvestBlockEvent(@NotNull Entity entity, @NotNull Block harvestedBlock, @NotNull List<ItemStack> itemsHarvested) {
+    @ApiStatus.Internal
+    public EntityHarvestBlockEvent(final Entity entity, final Block harvestedBlock, final List<ItemStack> itemsHarvested) {
         super(entity);
         this.harvestedBlock = harvestedBlock;
         this.itemsHarvested = itemsHarvested;
@@ -39,7 +43,6 @@ public class EntityHarvestBlockEvent extends EntityEvent implements Cancellable 
      *
      * @return The block that is being harvested
      */
-    @NotNull
     public Block getHarvestedBlock() {
         return harvestedBlock;
     }
@@ -49,7 +52,6 @@ public class EntityHarvestBlockEvent extends EntityEvent implements Cancellable 
      *
      * @return A list of items that are being harvested from this block
      */
-    @NotNull
     public List<ItemStack> getItemsHarvested() {
         return itemsHarvested;
     }
@@ -64,13 +66,11 @@ public class EntityHarvestBlockEvent extends EntityEvent implements Cancellable 
         this.cancel = cancel;
     }
 
-    @NotNull
     @Override
     public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 
-    @NotNull
     public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
