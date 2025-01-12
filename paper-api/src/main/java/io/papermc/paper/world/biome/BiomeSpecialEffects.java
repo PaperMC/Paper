@@ -1,5 +1,6 @@
 package io.papermc.paper.world.biome;
 
+import io.papermc.paper.math.Position;
 import io.papermc.paper.util.RGBColor;
 import io.papermc.paper.world.biome.effects.AdditionSound;
 import io.papermc.paper.world.biome.effects.MoodSound;
@@ -100,10 +101,8 @@ public interface BiomeSpecialEffects {
      * depending on the coordinates of the block.
      *
      * @param original the initial grass color.
-     * @param x the x coordinate.
-     * @param y the y coordinate.
-     * @param z the z coordinate.
+     * @param position the position of the block.
      * @return the modified grass color.
      */
-    RGBColor modifyGrassColor(RGBColor original, double x, double y, double z);
+    RGBColor modifyGrassColor(RGBColor original, Position position);
 }

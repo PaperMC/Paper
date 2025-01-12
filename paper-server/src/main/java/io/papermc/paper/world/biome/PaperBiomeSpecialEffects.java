@@ -1,5 +1,6 @@
 package io.papermc.paper.world.biome;
 
+import io.papermc.paper.math.Position;
 import io.papermc.paper.util.RGBColor;
 import io.papermc.paper.world.biome.effects.AdditionSound;
 import io.papermc.paper.world.biome.effects.MoodSound;
@@ -121,7 +122,7 @@ public class PaperBiomeSpecialEffects implements BiomeSpecialEffects {
      * {@inheritDoc}
      */
     @Override
-    public RGBColor modifyGrassColor(final RGBColor original, final double x, final double y, final double z) {
-        return RGBColor.fromRGB(effects.getGrassColorModifier().modifyColor(x, z, original.asRGB()));
+    public RGBColor modifyGrassColor(final RGBColor original, final Position position) {
+        return RGBColor.fromRGB(effects.getGrassColorModifier().modifyColor(position.x(), position.z(), original.asRGB()));
     }
 }
