@@ -104,6 +104,15 @@ public enum BlockFace {
         }
     }
 
+    // Paper start
+    public boolean isCardinal() {
+        return switch (this) {
+            case NORTH, SOUTH, EAST, WEST -> true;
+            default -> false;
+        };
+    }
+    // Paper end
+
     @NotNull
     public BlockFace getOppositeFace() {
         switch (this) {
