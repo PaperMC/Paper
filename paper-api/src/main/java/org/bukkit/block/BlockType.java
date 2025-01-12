@@ -171,10 +171,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
         B createBlockData();
 
         /**
-         * Creates a set of {@link BlockData} instances for this block type, with all
+         * Creates a collection of {@link BlockData} instances for this block type, with all
          * possible combinations of properties values.
          *
-         * @return new block data set
+         * @return new block data collection
          */
         @NotNull
         @Override
@@ -3492,10 +3492,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockData createBlockData();
 
     /**
-     * Creates a set of {@link BlockData} instances for this block type, with all
+     * Creates a collection of {@link BlockData} instances for this block type, with all
      * possible combinations of properties values.
      *
-     * @return new block data set
+     * @return new block data collection
      */
     @NotNull
     Collection<? extends BlockData> createBlockDataStates();
