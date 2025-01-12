@@ -11,7 +11,6 @@ import net.minecraft.world.level.biome.Biome;
 import org.bukkit.Color;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftSound;
-import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +18,6 @@ import java.util.Optional;
 /**
  * {@inheritDoc}
  */
-@NullMarked
 public class PaperBiomeSpecialEffects implements BiomeSpecialEffects {
     private final net.minecraft.world.level.biome.BiomeSpecialEffects effects;
 
