@@ -1,6 +1,6 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -251,6 +_,30 @@
+@@ -251,6 +_,24 @@
              PublishCommand.register(this.dispatcher);
          }
  
@@ -14,17 +14,11 @@
 +        // Paper start - Brigadier Command API
 +        // Create legacy minecraft namespace commands
 +        for (final CommandNode<CommandSourceStack> node : new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren())) {
-+            // The brigadier dispatcher is not able to resolve nested redirects.
-+            // E.g. registering the alias minecraft:tp cannot redirect to tp, as tp itself redirects to teleport.
-+            // Instead, target the first none redirecting node.
-+            CommandNode<CommandSourceStack> flattenedAliasTarget = node;
-+            while (flattenedAliasTarget.getRedirect() != null) flattenedAliasTarget = flattenedAliasTarget.getRedirect();
-+
-+            this.dispatcher.register(
-+                com.mojang.brigadier.builder.LiteralArgumentBuilder.<CommandSourceStack>literal("minecraft:" + node.getName())
-+                    .executes(flattenedAliasTarget.getCommand())
-+                    .requires(flattenedAliasTarget.getRequirement())
-+                    .redirect(flattenedAliasTarget)
++            this.dispatcher.getRoot().addChild(
++                io.papermc.paper.command.brigadier.PaperBrigadier.copyLiteral(
++                    "minecraft:" + node.getName(),
++                    (com.mojang.brigadier.tree.LiteralCommandNode<CommandSourceStack>) node
++                )
 +            );
 +        }
 +        // Paper end - Brigadier Command API
@@ -150,11 +144,10 @@
              }
  
              return null;
-@@ -360,25 +_,130 @@
+@@ -360,26 +_,85 @@
      }
  
      public void sendCommands(ServerPlayer player) {
--        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newHashMap();
 +        // Paper start - Send empty commands if tab completion is disabled
 +        if (org.spigotmc.SpigotConfig.tabComplete < 0) {
 +            player.connection.send(new ClientboundCommandsPacket(new RootCommandNode<>()));
@@ -182,7 +175,7 @@
 +
 +    private void sendAsync(ServerPlayer player, java.util.Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
 +        // Paper end - Perf: Async command map building
-+        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
+         Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newHashMap();
          RootCommandNode<SharedSuggestionProvider> rootCommandNode = new RootCommandNode<>();
          map.put(this.dispatcher.getRoot(), rootCommandNode);
 -        this.fillUsableCommands(this.dispatcher.getRoot(), rootCommandNode, player.createCommandSourceStack(), map);
@@ -224,7 +217,6 @@
          Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> commandNodeToSuggestionNode
      ) {
 -        for (CommandNode<CommandSourceStack> commandNode : rootCommandSource.getChildren()) {
-+        commandNodeToSuggestionNode.keySet().removeIf((node) -> !org.spigotmc.SpigotConfig.sendNamespaced && node.getName().contains(":")); // Paper - Remove namedspaced from result nodes to prevent redirect trimming ~ see comment below
 +        for (CommandNode<CommandSourceStack> commandNode : children) { // Paper - Perf: Async command map building; pass copy of children
 +            // Paper start - Brigadier API
 +            if (commandNode.clientNode != null) {
@@ -234,58 +226,16 @@
 +            if (!org.spigotmc.SpigotConfig.sendNamespaced && commandNode.getName().contains(":")) continue; // Spigot
              if (commandNode.canUse(source)) {
                  ArgumentBuilder<SharedSuggestionProvider, ?> argumentBuilder = (ArgumentBuilder) commandNode.createBuilder();
-+                // Paper start
-+                /*
-+                Because of how commands can be yeeted right left and center due to bad bukkit practices
-+                we need to be able to ensure that ALL commands are registered (even redirects).
-+
-+                What this will do is IF the redirect seems to be "dead" it will create a builder and essentially populate (flatten)
-+                all the children from the dead redirect to the node.
-+
-+                So, if minecraft:msg redirects to msg but the original msg node has been overriden minecraft:msg will now act as msg and will explicilty inherit its children.
-+
-+                The only way to fix this is to either:
-+                - Send EVERYTHING flattened, don't use redirects
-+                - Don't allow command nodes to be deleted
-+                - Do this :)
-+                 */
-+
-+                // Is there an invalid command redirect?
-+                if (argumentBuilder.getRedirect() != null && commandNodeToSuggestionNode.get(argumentBuilder.getRedirect()) == null) {
-+                    // Create the argument builder with the same values as the specified node, but with a different literal and populated children
-+
-+                    CommandNode<SharedSuggestionProvider> redirect = argumentBuilder.getRedirect();
-+                    // Diff copied from LiteralCommand#createBuilder
-+                    final com.mojang.brigadier.builder.LiteralArgumentBuilder<SharedSuggestionProvider> builder = com.mojang.brigadier.builder.LiteralArgumentBuilder.literal(commandNode.getName());
-+                    builder.requires(redirect.getRequirement());
-+                    // builder.forward(redirect.getRedirect(), redirect.getRedirectModifier(), redirect.isFork()); We don't want to migrate the forward, since it's invalid.
-+                    if (redirect.getCommand() != null) {
-+                        builder.executes(redirect.getCommand());
-+                    }
-+                    // Diff copied from LiteralCommand#createBuilder
-+                    for (CommandNode<SharedSuggestionProvider> child : redirect.getChildren()) {
-+                        builder.then(child);
-+                    }
-+
-+                    argumentBuilder = builder;
-+                }
-+                // Paper end
                  argumentBuilder.requires(suggestions -> true);
-                 if (argumentBuilder.getCommand() != null) {
+-                if (argumentBuilder.getCommand() != null) {
 -                    argumentBuilder.executes(commandContext -> 0);
-+                    // Paper start - fix suggestions due to falsely equal nodes
-+                    // Always create a new instance
-+                    //noinspection Convert2Lambda
-+                    argumentBuilder.executes(new com.mojang.brigadier.Command<>() {
-+                        @Override
-+                        public int run(com.mojang.brigadier.context.CommandContext<SharedSuggestionProvider> commandContext) {
-+                            return 0;
-+                        }
-+                    });
-+                    // Paper end - fix suggestions due to falsely equal nodes
-                 }
+-                }
++                // Paper - don't replace Command instance on suggestion node
++                // we want the exact command instance to be used for equality checks
++                // when assigning serialization ids to each command node
  
                  if (argumentBuilder instanceof RequiredArgumentBuilder) {
+                     RequiredArgumentBuilder<SharedSuggestionProvider, ?> requiredArgumentBuilder = (RequiredArgumentBuilder<SharedSuggestionProvider, ?>)argumentBuilder;
 @@ -396,7 +_,7 @@
                  commandNodeToSuggestionNode.put(commandNode, commandNode1);
                  rootSuggestion.addChild(commandNode1);
