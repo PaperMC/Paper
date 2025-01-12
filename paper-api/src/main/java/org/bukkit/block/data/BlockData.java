@@ -17,7 +17,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface BlockData extends Cloneable {
+public interface BlockData extends Cloneable, io.papermc.paper.block.property.BlockPropertyHolder.Mutable { // Paper - property API
 
     /**
      * Get the Material represented by this block data.

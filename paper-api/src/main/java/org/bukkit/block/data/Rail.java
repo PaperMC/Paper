@@ -83,5 +83,10 @@ public interface Rail extends Waterlogged {
          * block.
          */
         NORTH_EAST;
+        // Paper start
+        public boolean isStraight() {
+            return this != SOUTH_EAST && this != SOUTH_WEST && this != NORTH_WEST && this != NORTH_EAST;
+        }
+        // Paper end
     }
 }

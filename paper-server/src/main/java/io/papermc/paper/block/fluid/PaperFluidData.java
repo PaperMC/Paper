@@ -3,10 +3,14 @@ package io.papermc.paper.block.fluid;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.block.fluid.type.PaperFallingFluidData;
 import io.papermc.paper.block.fluid.type.PaperFlowingFluidData;
+import io.papermc.paper.block.property.PaperBlockPropertyHolder;
 import io.papermc.paper.util.MCUtil;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.LavaFluid;
 import net.minecraft.world.level.material.WaterFluid;
@@ -14,11 +18,12 @@ import org.bukkit.Fluid;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftFluid;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftVector;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
-public class PaperFluidData implements FluidData {
+public class PaperFluidData implements FluidData, PaperBlockPropertyHolder<net.minecraft.world.level.material.Fluid, FluidState> {
 
     private final FluidState state;
 
@@ -97,6 +102,21 @@ public class PaperFluidData implements FluidData {
         register(LavaFluid.Flowing.class, PaperFlowingFluidData::new);
         register(WaterFluid.Flowing.class, PaperFlowingFluidData::new);
         //</editor-fold>
+    }
+
+    @Override
+    public StateDefinition<net.minecraft.world.level.material.Fluid, FluidState> getStateDefinition() {
+        return this.state.getType().getStateDefinition();
+    }
+
+    @Override
+    public <T extends Comparable<T>> T get(final Property<T> ibs) {
+        return this.state.getValue(ibs);
+    }
+
+    @Override
+    public <B extends Enum<B>> B get(final EnumProperty<?> nms, final Class<B> bukkit) {
+        return CraftBlockData.toBukkit(this.state.getValue(nms), bukkit);
     }
 
     static void register(final Class<? extends net.minecraft.world.level.material.Fluid> fluid, final Function<FluidState, PaperFluidData> creator) {
