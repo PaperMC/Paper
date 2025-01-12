@@ -3,7 +3,9 @@ package org.bukkit.craftbukkit.block;
 import com.google.common.base.Preconditions;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.function.Consumer;
+import com.google.common.collect.ImmutableList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.InteractionHand;
@@ -145,6 +147,16 @@ public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, 
     @Override
     public B createBlockData() {
         return this.createBlockData((String) null);
+    }
+
+    @Override
+    public @NotNull Collection<B> createBlockDataStates() {
+        final ImmutableList<BlockState> possibleStates = this.block.getStateDefinition().getPossibleStates();
+        final ImmutableList.Builder<B> builder = ImmutableList.builderWithExpectedSize(possibleStates.size());
+        for (final BlockState possibleState : possibleStates) {
+            builder.add(this.blockDataClass.cast(possibleState.createCraftBlockData()));
+        }
+        return builder.build();
     }
 
     @Override
