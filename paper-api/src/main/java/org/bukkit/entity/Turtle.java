@@ -50,7 +50,7 @@ public interface Turtle extends Animals {
      * @return True if digging
      * @deprecated in favor of {@link #isLayingEgg()}
      */
-    @Deprecated
+    @Deprecated(since = "1.21.4")
     default boolean isDigging() {
         return this.isLayingEgg();
     }
