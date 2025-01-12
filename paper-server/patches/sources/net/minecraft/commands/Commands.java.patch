@@ -144,11 +144,10 @@
              }
  
              return null;
-@@ -360,25 +_,93 @@
+@@ -360,26 +_,85 @@
      }
  
      public void sendCommands(ServerPlayer player) {
--        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newHashMap();
 +        // Paper start - Send empty commands if tab completion is disabled
 +        if (org.spigotmc.SpigotConfig.tabComplete < 0) {
 +            player.connection.send(new ClientboundCommandsPacket(new RootCommandNode<>()));
@@ -176,7 +175,7 @@
 +
 +    private void sendAsync(ServerPlayer player, java.util.Collection<CommandNode<CommandSourceStack>> dispatcherRootChildren) {
 +        // Paper end - Perf: Async command map building
-+        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newIdentityHashMap(); // Use identity to prevent aliasing issues
+         Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> map = Maps.newHashMap();
          RootCommandNode<SharedSuggestionProvider> rootCommandNode = new RootCommandNode<>();
          map.put(this.dispatcher.getRoot(), rootCommandNode);
 -        this.fillUsableCommands(this.dispatcher.getRoot(), rootCommandNode, player.createCommandSourceStack(), map);
@@ -228,21 +227,15 @@
              if (commandNode.canUse(source)) {
                  ArgumentBuilder<SharedSuggestionProvider, ?> argumentBuilder = (ArgumentBuilder) commandNode.createBuilder();
                  argumentBuilder.requires(suggestions -> true);
-                 if (argumentBuilder.getCommand() != null) {
+-                if (argumentBuilder.getCommand() != null) {
 -                    argumentBuilder.executes(commandContext -> 0);
-+                    // Paper start - fix suggestions due to falsely equal nodes
-+                    // Always create a new instance
-+                    //noinspection Convert2Lambda
-+                    argumentBuilder.executes(new com.mojang.brigadier.Command<>() {
-+                        @Override
-+                        public int run(com.mojang.brigadier.context.CommandContext<SharedSuggestionProvider> commandContext) {
-+                            return 0;
-+                        }
-+                    });
-+                    // Paper end - fix suggestions due to falsely equal nodes
-                 }
+-                }
++                // Paper - don't replace Command instance on suggestion node
++                // we want the exact command instance to be used for equality checks
++                // when assigning serialization ids to each command node
  
                  if (argumentBuilder instanceof RequiredArgumentBuilder) {
+                     RequiredArgumentBuilder<SharedSuggestionProvider, ?> requiredArgumentBuilder = (RequiredArgumentBuilder<SharedSuggestionProvider, ?>)argumentBuilder;
 @@ -396,7 +_,7 @@
                  commandNodeToSuggestionNode.put(commandNode, commandNode1);
                  rootSuggestion.addChild(commandNode1);
