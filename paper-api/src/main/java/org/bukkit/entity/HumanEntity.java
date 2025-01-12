@@ -469,9 +469,11 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * to validate if the current respawn location is still valid.
      *
      * @return respawn location if exists, otherwise null.
+     * @deprecated this method doesn't take in account the respawn angle, use
+     * {@link Player#getRespawnLocation(boolean)} with load = false instead
      */
-    @Nullable
-    Location getPotentialRespawnLocation();
+    @Deprecated
+    @Nullable Location getPotentialRespawnLocation();
     // Paper end
     // Paper start
     /**
