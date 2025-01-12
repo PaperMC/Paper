@@ -292,7 +292,33 @@
              this.shrink(1);
              onBreak.accept(item);
          }
-@@ -512,9 +_,14 @@
+@@ -506,15 +_,39 @@
+                 return;
+             }
+ 
+-            int min = Math.min(this.getDamageValue() + i, this.getMaxDamage() - 1);
++            int min = Math.min(this.getDamageValue() + i, this.getMaxDamage() - 1); // Paper - Expand PlayerItemDamageEvent - diff on change as min computation is copied post event.
++
++            // Paper start - Expand PlayerItemDamageEvent
++            if (min - this.getDamageValue() > 0) {
++                org.bukkit.event.player.PlayerItemDamageEvent event = new org.bukkit.event.player.PlayerItemDamageEvent(
++                    serverPlayer.getBukkitEntity(),
++                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this),
++                    min - this.getDamageValue(),
++                    damage
++                );
++                if (!event.callEvent() || event.getDamage() == 0) {
++                    return;
++                }
++
++                // Prevent breaking the item in this code path as callers may expect the item to survive
++                // (given the method name)
++                min = Math.min(this.getDamageValue() + event.getDamage(), this.getMaxDamage() - 1);
++            }
++            // Paper end - Expand PlayerItemDamageEvent
++
+             this.applyDamage(min, serverPlayer, item -> {});
+         }
      }
  
      public void hurtAndBreak(int amount, LivingEntity entity, EquipmentSlot slot) {
