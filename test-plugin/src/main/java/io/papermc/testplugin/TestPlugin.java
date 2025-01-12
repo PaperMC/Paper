@@ -9,6 +9,8 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import static io.papermc.paper.command.brigadier.Commands.literal;
+
 public final class TestPlugin extends JavaPlugin implements Listener {
 
     @Override
@@ -16,6 +18,28 @@ public final class TestPlugin extends JavaPlugin implements Listener {
         this.getServer().getPluginManager().registerEvents(this, this);
 
         // io.papermc.testplugin.brigtests.Registration.registerViaOnEnable(this);
+
+        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            event.registrar().register(
+                literal("hide")
+                    .executes(ctx -> {
+                        ctx.getSource().getSender().sendMessage("hide");
+                        return Command.SINGLE_SUCCESS;
+                    })
+                    .then(literal("something-else")
+                              .executes(ctx -> {
+                                    ctx.getSource().getSender().sendMessage("hide something-else");
+                                    return Command.SINGLE_SUCCESS;
+                              })).build());
+
+            event.registrar().register(
+                literal("chat")
+                    .then(literal("hide")
+                              .executes(ctx -> {
+                                    ctx.getSource().getSender().sendMessage("chat hide");
+                                    return Command.SINGLE_SUCCESS;
+                              })).build());
+        });
 
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->  {
             final Commands registrar = event.registrar();
