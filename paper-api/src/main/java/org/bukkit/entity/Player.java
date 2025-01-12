@@ -3481,13 +3481,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Open a sign for editing by the player.
      * <p>
      * The sign must only be placed locally for the player, which can be done with {@link #sendBlockChange(Location, BlockData)} and {@link #sendBlockUpdate(Location, TileState)}.
-     * A side-effect of this is that no events will be called for this action.
+     * A side-effect of this is that normal events, like {@link org.bukkit.event.block.SignChangeEvent} will not be called (unless there is an actual sign in the world).
      * </p>
      *
      * @param block The block where the client has a sign placed
      * @param side The side to edit
      * @see io.papermc.paper.event.packet.UncheckedSignChangeEvent
      */
+    @ApiStatus.Experimental
     void openVirtualSign(@NotNull Position block, @NotNull Side side);
 
     /**

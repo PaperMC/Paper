@@ -1,6 +1,7 @@
 package io.papermc.paper.event.packet;
 
 import io.papermc.paper.math.BlockPosition;
+import io.papermc.paper.math.Position;
 import net.kyori.adventure.text.Component;
 import org.bukkit.block.sign.Side;
 import org.bukkit.entity.Player;
@@ -13,13 +14,16 @@ import org.jspecify.annotations.NullMarked;
 import java.util.List;
 
 /**
- * Called when a sign edit packet has been received, but the location at which the sign should be edited
+ * Called when a client attempts to modify a sign, but the location at which the sign should be edited
  * has not yet been checked for the existence of a real sign.
  * <p>
  * Cancelling this event will prevent further processing of the sign change, but needs further handling
- * by the plugin because the local world might be in an inconsistent state.
+ * by the plugin as the client's local world might be in an inconsistent state.
+ *
+ * @see Player#openVirtualSign(Position, Side)
  */
 @NullMarked
+@ApiStatus.Experimental
 public class UncheckedSignChangeEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
