@@ -121,6 +121,7 @@ import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * While this API is in a public interface, it is not intended for use by
@@ -176,9 +177,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
          *
          * @return new block data collection
          */
-        @NotNull
         @Override
-        Collection<B> createBlockDataStates();
+        @Unmodifiable @NotNull Collection<B> createBlockDataStates();
 
         /**
          * Creates a new {@link BlockData} instance for this block type, with all
@@ -3497,8 +3497,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      *
      * @return new block data collection
      */
-    @NotNull
-    Collection<? extends BlockData> createBlockDataStates();
+    @Unmodifiable @NotNull Collection<? extends BlockData> createBlockDataStates();
 
     /**
      * Creates a new {@link BlockData} instance for this block type, with all
