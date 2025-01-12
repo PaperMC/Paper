@@ -2,9 +2,11 @@ package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -542,7 +544,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
                     stringKey = Bukkit.getUnsafe().get(Enchantment.class, stringKey);
                     NamespacedKey key = NamespacedKey.fromString(stringKey.toLowerCase(Locale.ROOT));
 
-                    Enchantment enchantment = Bukkit.getUnsafe().get(Registry.ENCHANTMENT, key);
+                    Enchantment enchantment = Bukkit.getUnsafe().get(RegistryKey.ENCHANTMENT, key);
 
                     if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
                         result.addUnsafeEnchantment(enchantment, (Integer) entry.getValue());
@@ -711,6 +713,17 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
+     * Gets the effective name of this item stack shown to player in inventory.
+     * It takes into account the display name (with italics) from the item meta,
+     * the potion effect, translatable name, rarity etc.
+     *
+     * @return the effective name of this item stack
+     */
+    public @NotNull Component effectiveName() {
+        return this.craftDelegate.effectiveName();
+    }
+
+    /**
      * Minecraft updates are converting simple item stacks into more complex NBT oriented Item Stacks.
      *
      * Use this method to ensure any desired data conversions are processed.
@@ -732,8 +745,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param bytes bytes representing an item in NBT
      * @return ItemStack migrated to this version of Minecraft if needed.
      */
-    @NotNull
-    public static ItemStack deserializeBytes(@NotNull byte[] bytes) {
+    public static @NotNull ItemStack deserializeBytes(final byte @NotNull [] bytes) {
         return org.bukkit.Bukkit.getUnsafe().deserializeItem(bytes);
     }
 
@@ -742,8 +754,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * use the built in data converter instead of bukkits dangerous serialization system.
      * @return bytes representing this item in NBT.
      */
-    @NotNull
-    public byte[] serializeAsBytes() {
+    public byte @NotNull [] serializeAsBytes() {
         return org.bukkit.Bukkit.getUnsafe().serializeItem(this);
     }
 

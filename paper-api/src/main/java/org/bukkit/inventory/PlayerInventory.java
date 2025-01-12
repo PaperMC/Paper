@@ -118,7 +118,7 @@ public interface PlayerInventory extends Inventory {
      *
      * @param items The ItemStacks to use as armour
      */
-    public void setArmorContents(@Nullable ItemStack[] items);
+    public void setArmorContents(@Nullable ItemStack @NotNull [] items);
 
     /**
      * Put the given ItemStacks into the extra slots
@@ -127,7 +127,7 @@ public interface PlayerInventory extends Inventory {
      *
      * @param items The ItemStacks to use as extra
      */
-    public void setExtraContents(@Nullable ItemStack[] items);
+    public void setExtraContents(@Nullable ItemStack @NotNull [] items);
 
     /**
      * Put the given ItemStack into the helmet slot. This does not check if

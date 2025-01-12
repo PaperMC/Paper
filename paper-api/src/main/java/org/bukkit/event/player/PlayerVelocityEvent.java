@@ -45,7 +45,7 @@ public class PlayerVelocityEvent extends PlayerEvent implements Cancellable {
      * @param velocity The velocity vector that will be sent to the player
      */
     public void setVelocity(@NotNull Vector velocity) {
-        this.velocity = velocity;
+        this.velocity = velocity.clone();
     }
 
     @NotNull

@@ -264,7 +264,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
             return ichunkaccess1;
         };
 
-        return future == null ? CompletableFuture.supplyAsync(() -> function.apply(chunk), net.minecraft.Util.backgroundExecutor()) : future.thenApply(function);
+        return future == null ? CompletableFuture.supplyAsync(() -> function.apply(chunk), io.papermc.paper.FeatureHooks.getWorldgenExecutor()) : future.thenApply(function); // Paper - chunk system
     }
 
     @Override
@@ -291,13 +291,13 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
     }
 
     @Override
-    public void applyBiomeDecoration(WorldGenLevel world, ChunkAccess chunk, StructureManager structureAccessor) {
+    public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager) {
         WorldgenRandom random = CustomChunkGenerator.getSeededRandom();
         int x = chunk.getPos().x;
         int z = chunk.getPos().z;
 
-        random.setSeed(Mth.getSeed(x, "should-decoration".hashCode(), z) ^ world.getSeed());
-        super.applyBiomeDecoration(world, chunk, structureAccessor, this.generator.shouldGenerateDecorations(this.world.getWorld(), new RandomSourceWrapper.RandomWrapper(random), x, z));
+        random.setSeed(Mth.getSeed(x, "should-decoration".hashCode(), z) ^ level.getSeed());
+        super.applyBiomeDecoration(level, chunk, structureManager, this.generator.shouldGenerateDecorations(this.world.getWorld(), new RandomSourceWrapper.RandomWrapper(random), x, z));
     }
 
     @Override

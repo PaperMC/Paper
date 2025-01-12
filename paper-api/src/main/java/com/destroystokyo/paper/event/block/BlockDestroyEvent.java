@@ -55,7 +55,7 @@ public class BlockDestroyEvent extends BlockExpEvent implements Cancellable {
      * @param effectBlock block effect
      */
     public void setEffectBlock(final BlockData effectBlock) {
-        this.effectBlock = effectBlock;
+        this.effectBlock = effectBlock.clone();
     }
 
     /**

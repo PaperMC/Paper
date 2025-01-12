@@ -52,7 +52,7 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
      * @param from New location this entity moved from
      */
     public void setFrom(@NotNull Location from) {
-        this.from = from;
+        this.from = from.clone();
     }
 
     /**
@@ -71,7 +71,7 @@ public class EntityTeleportEvent extends EntityEvent implements Cancellable {
      * @param to New Location this entity moved to
      */
     public void setTo(@Nullable Location to) {
-        this.to = to;
+        this.to = to != null ? to.clone() : null;
     }
 
     @NotNull

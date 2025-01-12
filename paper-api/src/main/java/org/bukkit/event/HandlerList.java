@@ -203,8 +203,7 @@ public class HandlerList {
      *
      * @return the array of registered listeners
      */
-    @NotNull
-    public RegisteredListener[] getRegisteredListeners() {
+    public @NotNull RegisteredListener @NotNull [] getRegisteredListeners() {
         RegisteredListener[] handlers;
         while ((handlers = this.handlers) == null) bake(); // This prevents fringe cases of returning null
         return handlers;

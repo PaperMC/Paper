@@ -1,11 +1,12 @@
 package org.bukkit.craftbukkit.enchantments;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.util.Holderable;
 import java.util.Locale;
 import net.minecraft.Util;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.tags.EnchantmentTags;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -13,16 +14,15 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.legacy.FieldRename;
 import org.bukkit.craftbukkit.util.ApiVersion;
-import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.enchantments.EnchantmentTarget;
 import org.bukkit.enchantments.EnchantmentWrapper;
 import org.bukkit.inventory.ItemStack;
 
-public class CraftEnchantment extends Enchantment implements Handleable<net.minecraft.world.item.enchantment.Enchantment> {
+public class CraftEnchantment extends Enchantment implements Holderable<net.minecraft.world.item.enchantment.Enchantment> {
 
     public static Enchantment minecraftToBukkit(net.minecraft.world.item.enchantment.Enchantment minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ENCHANTMENT, Registry.ENCHANTMENT);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.ENCHANTMENT);
     }
 
     public static Enchantment minecraftHolderToBukkit(Holder<net.minecraft.world.item.enchantment.Enchantment> minecraft) {
@@ -53,25 +53,23 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
         NamespacedKey key = NamespacedKey.fromString(string);
 
         // Now also convert from when keys where saved
-        return CraftRegistry.get(Registry.ENCHANTMENT, key, ApiVersion.CURRENT);
+        return CraftRegistry.get(RegistryKey.ENCHANTMENT, key, ApiVersion.CURRENT);
     }
 
-    private final NamespacedKey key;
     private final Holder<net.minecraft.world.item.enchantment.Enchantment> handle;
 
-    public CraftEnchantment(NamespacedKey key, net.minecraft.world.item.enchantment.Enchantment handle) {
-        this.key = key;
-        this.handle = CraftRegistry.getMinecraftRegistry(Registries.ENCHANTMENT).wrapAsHolder(handle);
+    public CraftEnchantment(Holder<net.minecraft.world.item.enchantment.Enchantment> holder) {
+        this.handle = holder;
     }
 
     @Override
-    public net.minecraft.world.item.enchantment.Enchantment getHandle() {
-        return this.handle.value();
+    public Holder<net.minecraft.world.item.enchantment.Enchantment> getHolder() {
+        return this.handle;
     }
 
     @Override
     public NamespacedKey getKey() {
-        return this.key;
+        return Holderable.super.getKey();
     }
 
     @Override
@@ -251,24 +249,16 @@ public class CraftEnchantment extends Enchantment implements Handleable<net.mine
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-
-        if (!(other instanceof CraftEnchantment)) {
-            return false;
-        }
-
-        return this.getKey().equals(((Enchantment) other).getKey());
+        return Holderable.super.implEquals(other);
     }
 
     @Override
     public int hashCode() {
-        return this.getKey().hashCode();
+        return Holderable.super.implHashCode();
     }
 
     @Override
     public String toString() {
-        return "CraftEnchantment[" + this.getKey() + "]";
+        return Holderable.super.implToString();
     }
 }

@@ -40,6 +40,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemCraftResult;
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -1184,7 +1185,7 @@ public final class Bukkit {
      * @return the {@link Recipe} resulting from the given crafting matrix.
      */
     @Nullable
-    public static Recipe getCraftingRecipe(@NotNull ItemStack[] craftingMatrix, @NotNull World world) {
+    public static Recipe getCraftingRecipe(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world) {
         return server.getCraftingRecipe(craftingMatrix, world);
     }
 
@@ -1213,7 +1214,7 @@ public final class Bukkit {
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
      */
     @NotNull
-    public static ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player) {
+    public static ItemCraftResult craftItemResult(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world, @NotNull Player player) {
         return server.craftItemResult(craftingMatrix, world, player);
     }
 
@@ -1235,7 +1236,7 @@ public final class Bukkit {
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
      */
     @NotNull
-    public static ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world) {
+    public static ItemCraftResult craftItemResult(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world) {
         return server.craftItemResult(craftingMatrix, world);
     }
 
@@ -1266,7 +1267,7 @@ public final class Bukkit {
      * an ItemStack of {@link Material#AIR} is returned.
      */
     @NotNull
-    public static ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player) {
+    public static ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world, @NotNull Player player) {
         return server.craftItem(craftingMatrix, world, player);
     }
 
@@ -1289,7 +1290,7 @@ public final class Bukkit {
      * an ItemStack of {@link Material#AIR} is returned.
      */
     @NotNull
-    public static ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world) {
+    public static ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world) {
         return server.craftItem(craftingMatrix, world);
     }
 
@@ -1756,8 +1757,7 @@ public final class Bukkit {
      *
      * @return an array containing all previous players
      */
-    @NotNull
-    public static OfflinePlayer[] getOfflinePlayers() {
+    public static @NotNull OfflinePlayer @NotNull [] getOfflinePlayers() {
         return server.getOfflinePlayers();
     }
 
@@ -1926,7 +1926,10 @@ public final class Bukkit {
      * @param title the title of the corresponding merchant inventory, displayed
      * when the merchant inventory is viewed
      * @return a new merchant
+     * @deprecated The title parameter is no-longer needed when used with
+     * {@link MenuType#MERCHANT} and {@link MenuType.Typed#builder()}.
      */
+    @Deprecated(since = "1.21.4")
     public static @NotNull Merchant createMerchant(net.kyori.adventure.text.@Nullable Component title) {
         return server.createMerchant(title);
     }
@@ -1937,12 +1940,23 @@ public final class Bukkit {
      * @param title the title of the corresponding merchant inventory, displayed
      * when the merchant inventory is viewed
      * @return a new merchant
-     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
+     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}. The title parameter is
+     * no-longer needed when used with {@link MenuType#MERCHANT} and {@link MenuType.Typed#builder()}
      */
     @NotNull
     @Deprecated // Paper
     public static Merchant createMerchant(@Nullable String title) {
         return server.createMerchant(title);
+    }
+
+    /**
+     * Creates an empty merchant.
+     *
+     * @return a new merchant
+     */
+    @NotNull
+    public static Merchant createMerchant() {
+        return server.createMerchant();
     }
 
     /**
@@ -2404,8 +2418,7 @@ public final class Bukkit {
      * Gets the current server TPS
      * @return current server TPS (1m, 5m, 15m in Paper-Server)
      */
-    @NotNull
-    public static double[] getTPS() {
+    public static double @NotNull [] getTPS() {
         return server.getTPS();
     }
 
@@ -2414,8 +2427,7 @@ public final class Bukkit {
      *
      * @return A sample of the servers last tick times (in nanos)
      */
-    @NotNull
-    public static long[] getTickTimes() {
+    public static long @NotNull [] getTickTimes() {
         return server.getTickTimes();
     }
 

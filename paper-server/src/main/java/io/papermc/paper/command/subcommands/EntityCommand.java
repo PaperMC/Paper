@@ -48,7 +48,7 @@ public final class EntityCommand implements PaperSubcommand {
         if (args.length == 1) {
             return CommandUtil.getListMatchingLast(sender, args, "help", "list");
         } else if (args.length == 2) {
-            return CommandUtil.getListMatchingLast(sender, args, BuiltInRegistries.ENTITY_TYPE.keySet().stream().map(ResourceLocation::toString).sorted().toArray(String[]::new));
+            return CommandUtil.getListMatchingLast(sender, args, BuiltInRegistries.ENTITY_TYPE.keySet());
         }
         return Collections.emptyList();
     }

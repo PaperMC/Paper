@@ -1,0 +1,39 @@
+--- a/net/minecraft/world/item/crafting/RecipeMap.java
++++ b/net/minecraft/world/item/crafting/RecipeMap.java
+@@ -30,8 +_,34 @@
+             builder1.put(recipeHolder.id(), recipeHolder);
+         }
+ 
+-        return new RecipeMap(builder.build(), builder1.build());
+-    }
++        // CraftBukkit start - mutable
++        return new RecipeMap(com.google.common.collect.LinkedHashMultimap.create(builder.build()), com.google.common.collect.Maps.newLinkedHashMap(builder1.build()));
++    }
++
++    public void addRecipe(RecipeHolder<?> holder) {
++        Collection<RecipeHolder<?>> recipes = this.byType.get(holder.value().getType());
++
++        if (this.byKey.containsKey(holder.id())) {
++            throw new IllegalStateException("Duplicate recipe ignored with ID " + holder.id());
++        } else {
++            recipes.add(holder);
++            this.byKey.put(holder.id(), holder);
++        }
++    }
++    // CraftBukkit end
++
++    // Paper start - replace removeRecipe implementation
++    public <T extends RecipeInput> boolean removeRecipe(ResourceKey<Recipe<T>> mcKey) {
++        //noinspection unchecked
++        final RecipeHolder<Recipe<T>> remove = (RecipeHolder<Recipe<T>>) this.byKey.remove(mcKey);
++        if (remove == null) {
++            return false;
++        }
++        final Collection<? extends RecipeHolder<? extends Recipe<T>>> recipes = this.byType(remove.value().getType());
++        return recipes.remove(remove);
++        // Paper end - why are you using a loop???
++    }
++    // Paper end - replace removeRecipe implementation
+ 
+     public <I extends RecipeInput, T extends Recipe<I>> Collection<RecipeHolder<T>> byType(RecipeType<T> type) {
+         return (Collection)this.byType.get(type);

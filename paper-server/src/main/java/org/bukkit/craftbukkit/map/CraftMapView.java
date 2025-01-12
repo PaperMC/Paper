@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.logging.Level;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
@@ -19,9 +20,9 @@ import org.bukkit.map.MapView;
 
 public final class CraftMapView implements MapView {
 
-    private final Map<CraftPlayer, RenderData> renderCache = new HashMap<CraftPlayer, RenderData>();
-    private final List<MapRenderer> renderers = new ArrayList<MapRenderer>();
-    private final Map<MapRenderer, Map<CraftPlayer, CraftMapCanvas>> canvases = new HashMap<MapRenderer, Map<CraftPlayer, CraftMapCanvas>>();
+    private final Map<CraftPlayer, RenderData> renderCache = new WeakHashMap<>();
+    private final List<MapRenderer> renderers = new ArrayList<>();
+    private final Map<MapRenderer, Map<CraftPlayer, CraftMapCanvas>> canvases = new HashMap<>();
     protected final MapItemSavedData worldMap;
 
     public CraftMapView(MapItemSavedData worldMap) {
@@ -99,7 +100,7 @@ public final class CraftMapView implements MapView {
     public void addRenderer(MapRenderer renderer) {
         if (!this.renderers.contains(renderer)) {
             this.renderers.add(renderer);
-            this.canvases.put(renderer, new HashMap<CraftPlayer, CraftMapCanvas>());
+            this.canvases.put(renderer, new WeakHashMap<>());
             renderer.initialize(this);
         }
     }

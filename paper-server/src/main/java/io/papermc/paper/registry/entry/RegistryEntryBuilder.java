@@ -1,6 +1,5 @@
 package io.papermc.paper.registry.entry;
 
-import com.mojang.datafixers.util.Either;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.function.BiFunction;
@@ -11,6 +10,11 @@ import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
+import org.bukkit.craftbukkit.util.ApiVersion;
+
+import static io.papermc.paper.registry.entry.RegistryEntryMeta.RegistryModificationApiSupport.ADDABLE;
+import static io.papermc.paper.registry.entry.RegistryEntryMeta.RegistryModificationApiSupport.MODIFIABLE;
+import static io.papermc.paper.registry.entry.RegistryEntryMeta.RegistryModificationApiSupport.WRITABLE;
 
 public class RegistryEntryBuilder<M, A extends Keyed> { // TODO remove Keyed
 
@@ -30,7 +34,7 @@ public class RegistryEntryBuilder<M, A extends Keyed> { // TODO remove Keyed
     }
 
     public RegistryEntry<M, A> apiOnly(final Supplier<org.bukkit.Registry<A>> apiRegistrySupplier) {
-        return new ApiRegistryEntry<>(this.mcKey, this.apiKey, apiRegistrySupplier);
+        return new RegistryEntryImpl<>(new RegistryEntryMeta.ApiOnly<>(this.mcKey, this.apiKey, apiRegistrySupplier));
     }
 
     public CraftStage<M, A> craft(final Class<?> classToPreload, final BiFunction<? super NamespacedKey, M, ? extends A> minecraftToBukkit) {
@@ -43,8 +47,11 @@ public class RegistryEntryBuilder<M, A extends Keyed> { // TODO remove Keyed
 
     public static final class CraftStage<M, A extends Keyed> extends RegistryEntryBuilder<M, A> { // TODO remove Keyed
 
+        private static final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> EMPTY = (namespacedKey, apiVersion) -> namespacedKey;
+
         private final Class<?> classToPreload;
         private final RegistryTypeMapper<M, A> minecraftToBukkit;
+        private BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater = EMPTY;
 
         private CraftStage(
             final ResourceKey<? extends Registry<M>> mcKey,
@@ -57,20 +64,29 @@ public class RegistryEntryBuilder<M, A extends Keyed> { // TODO remove Keyed
             this.minecraftToBukkit = minecraftToBukkit;
         }
 
+        public CraftStage<M, A> serializationUpdater(final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater) {
+            this.serializationUpdater = serializationUpdater;
+            return this;
+        }
+
         public RegistryEntry<M, A> build() {
-            return new CraftRegistryEntry<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit);
+            return new RegistryEntryImpl<>(new RegistryEntryMeta.Craft<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, this.serializationUpdater));
         }
 
         public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> modifiable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
-            return new ModifiableRegistryEntry<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, filler);
+            return this.create(filler, MODIFIABLE);
         }
 
         public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> addable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
-            return new AddableRegistryEntry<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, filler);
+            return this.create(filler, ADDABLE);
         }
 
         public <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> writable(final PaperRegistryBuilder.Filler<M, A, B> filler) {
-            return new WritableRegistryEntry<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, filler);
+            return this.create(filler, WRITABLE);
+        }
+
+        private <B extends PaperRegistryBuilder<M, A>> RegistryEntry<M, A> create(final PaperRegistryBuilder.Filler<M, A, B> filler, final RegistryEntryMeta.RegistryModificationApiSupport support) {
+            return new RegistryEntryImpl<>(new RegistryEntryMeta.Buildable<>(this.mcKey, this.apiKey, this.classToPreload, this.minecraftToBukkit, this.serializationUpdater, filler, support));
         }
     }
 }

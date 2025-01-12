@@ -27,9 +27,9 @@ public class Transformation {
         Preconditions.checkArgument(scale != null, "scale cannot be null");
         Preconditions.checkArgument(rightRotation != null, "rightRotation cannot be null");
 
-        this.translation = translation;
+        this.translation = new Vector3f(translation);
         this.leftRotation = new Quaternionf(leftRotation);
-        this.scale = scale;
+        this.scale = new Vector3f(scale);
         this.rightRotation = new Quaternionf(rightRotation);
     }
 
@@ -39,10 +39,10 @@ public class Transformation {
         Preconditions.checkArgument(scale != null, "scale cannot be null");
         Preconditions.checkArgument(rightRotation != null, "rightRotation cannot be null");
 
-        this.translation = translation;
-        this.leftRotation = leftRotation;
-        this.scale = scale;
-        this.rightRotation = rightRotation;
+        this.translation = new Vector3f(translation);
+        this.leftRotation = new Quaternionf(leftRotation);
+        this.scale = new Vector3f(scale);
+        this.rightRotation = new Quaternionf(rightRotation);
     }
 
     /**

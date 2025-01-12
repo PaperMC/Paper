@@ -135,7 +135,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
         @Nullable
         @Override
         public Location getNextPoint() {
-            if (!path.hasNext()) {
+            if (path.isDone()) {
                 return null;
             }
             return toLoc(path.nodes.get(path.getNextNodeIndex()));

@@ -1,0 +1,154 @@
+--- a/net/minecraft/server/network/ServerConnectionListener.java
++++ b/net/minecraft/server/network/ServerConnectionListener.java
+@@ -49,10 +_,10 @@
+ public class ServerConnectionListener {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     public static final Supplier<NioEventLoopGroup> SERVER_EVENT_GROUP = Suppliers.memoize(
+-        () -> new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Server IO #%d").setDaemon(true).build())
++        () -> new NioEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()) // Paper
+     );
+     public static final Supplier<EpollEventLoopGroup> SERVER_EPOLL_EVENT_GROUP = Suppliers.memoize(
+-        () -> new EpollEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).build())
++        () -> new EpollEventLoopGroup(0, new ThreadFactoryBuilder().setNameFormat("Netty Epoll Server IO #%d").setDaemon(true).setUncaughtExceptionHandler(new net.minecraft.DefaultUncaughtExceptionHandlerWithName(LOGGER)).build()) // Paper
+     );
+     final MinecraftServer server;
+     public volatile boolean running;
+@@ -64,12 +_,35 @@
+         this.running = true;
+     }
+ 
++    // Paper start - prevent blocking on adding a new connection while the server is ticking
++    private final java.util.Queue<Connection> pending = new java.util.concurrent.ConcurrentLinkedQueue<>();
++
++    private final void addPending() {
++        Connection connection;
++        while ((connection = this.pending.poll()) != null) {
++            this.connections.add(connection);
++        }
++    }
++    // Paper end - prevent blocking on adding a new connection while the server is ticking
++
+     public void startTcpServerListener(@Nullable InetAddress address, int port) throws IOException {
++        // Paper start - Unix domain socket support
++        this.startTcpServerListener(new java.net.InetSocketAddress(address, port));
++    }
++
++    public void startTcpServerListener(SocketAddress address) throws IOException {
++        // Paper end - Unix domain socket support
+         synchronized (this.channels) {
+-            Class<? extends ServerSocketChannel> clazz;
++            Class<? extends io.netty.channel.ServerChannel> clazz; // Paper - Unix domain socket support
+             EventLoopGroup eventLoopGroup;
+             if (Epoll.isAvailable() && this.server.isEpollEnabled()) {
++                // Paper start - Unix domain socket support
++                if (address instanceof io.netty.channel.unix.DomainSocketAddress) {
++                    clazz = io.netty.channel.epoll.EpollServerDomainSocketChannel.class;
++                } else {
+                 clazz = EpollServerSocketChannel.class;
++                }
++                // Paper end - Unix domain socket support
+                 eventLoopGroup = SERVER_EPOLL_EVENT_GROUP.get();
+                 LOGGER.info("Using epoll channel type");
+             } else {
+@@ -78,6 +_,12 @@
+                 LOGGER.info("Using default channel type");
+             }
+ 
++            // Paper start - Warn people with console access that HAProxy is in use.
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
++                LOGGER.warn("Using HAProxy, please ensure the server port is adequately firewalled.");
++            }
++            // Paper end - Warn people with console access that HAProxy is in use.
++
+             this.channels
+                 .add(
+                     new ServerBootstrap()
+@@ -101,22 +_,64 @@
+                                     Connection connection = (Connection)(rateLimitPacketsPerSecond > 0
+                                         ? new RateKickingConnection(rateLimitPacketsPerSecond)
+                                         : new Connection(PacketFlow.SERVERBOUND));
+-                                    ServerConnectionListener.this.connections.add(connection);
++                                    // Paper start - Add support for Proxy Protocol
++                                    if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.proxyProtocol) {
++                                        channel.pipeline().addAfter("timeout", "haproxy-decoder", new io.netty.handler.codec.haproxy.HAProxyMessageDecoder());
++                                        channel.pipeline().addAfter("haproxy-decoder", "haproxy-handler", new ChannelInboundHandlerAdapter() {
++                                            @Override
++                                            public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
++                                                if (msg instanceof io.netty.handler.codec.haproxy.HAProxyMessage message) {
++                                                    if (message.command() == io.netty.handler.codec.haproxy.HAProxyCommand.PROXY) {
++                                                        String realaddress = message.sourceAddress();
++                                                        int realport = message.sourcePort();
++
++                                                        SocketAddress socketaddr = new java.net.InetSocketAddress(realaddress, realport);
++
++                                                        Connection connection = (Connection) channel.pipeline().get("packet_handler");
++                                                        connection.address = socketaddr;
++                                                        // Paper start - Add API to get player's proxy address
++                                                        final String proxyAddress = message.destinationAddress();
++                                                        final int proxyPort = message.destinationPort();
++
++                                                        connection.haProxyAddress = new java.net.InetSocketAddress(proxyAddress, proxyPort);
++                                                        // Paper end - Add API to get player's proxy address
++                                                    }
++                                                } else {
++                                                    super.channelRead(ctx, msg);
++                                                }
++                                            }
++                                        });
++                                    }
++                                    // Paper end - Add support for proxy protocol
++                                    // ServerConnectionListener.this.connections.add(connection); // Paper - prevent blocking on adding a new connection while the server is ticking
++                                    ServerConnectionListener.this.pending.add(connection); // Paper - prevent blocking on adding a new connection while the server is ticking
+                                     connection.configurePacketHandler(channelPipeline);
+                                     connection.setListenerForServerboundHandshake(
+                                         new ServerHandshakePacketListenerImpl(ServerConnectionListener.this.server, connection)
+                                     );
++                                    io.papermc.paper.network.ChannelInitializeListenerHolder.callListeners(channel); // Paper - Add Channel initialization listeners
+                                 }
+                             }
+                         )
+                         .group(eventLoopGroup)
+-                        .localAddress(address, port)
++                        .localAddress(address) // Paper - Unix domain socket support
++                        .option(ChannelOption.AUTO_READ, false) // CraftBukkit
+                         .bind()
+                         .syncUninterruptibly()
+                 );
+         }
+     }
+ 
++    // CraftBukkit start
++    public void acceptConnections() {
++        synchronized (this.channels) {
++            for (ChannelFuture future : this.channels) {
++                future.channel().config().setAutoRead(true);
++            }
++        }
++    }
++    // CraftBukkit end
++
+     public SocketAddress startMemoryChannel() {
+         ChannelFuture channelFuture;
+         synchronized (this.channels) {
+@@ -161,6 +_,13 @@
+ 
+     public void tick() {
+         synchronized (this.connections) {
++            // Spigot start
++            this.addPending(); // Paper - prevent blocking on adding a new connection while the server is ticking
++            // This prevents players from 'gaming' the server, and strategically relogging to increase their position in the tick order
++            if (org.spigotmc.SpigotConfig.playerShuffle > 0 && MinecraftServer.currentTick % org.spigotmc.SpigotConfig.playerShuffle == 0) {
++                Collections.shuffle(this.connections);
++            }
++            // Spigot end
+             Iterator<Connection> iterator = this.connections.iterator();
+ 
+             while (iterator.hasNext()) {
+@@ -180,6 +_,7 @@
+                             connection.setReadOnly();
+                         }
+                     } else {
++                        if (connection.preparing) continue; // Spigot - Fix a race condition where a NetworkManager could be unregistered just before connection
+                         iterator.remove();
+                         connection.handleDisconnection();
+                     }

@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import io.papermc.paper.entity.LookAnchor;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -45,6 +46,7 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Pose;
 import org.bukkit.entity.SpawnCategory;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
@@ -193,8 +195,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isOnGround() {
-        if (this.entity instanceof AbstractArrow) {
-            return ((AbstractArrow) this.entity).isInGround();
+        if (this.entity instanceof AbstractArrow abstractArrow) {
+            return abstractArrow.isInGround();
         }
         return this.entity.onGround();
     }
@@ -243,7 +245,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         // Paper start - Teleport passenger API
         Set<io.papermc.paper.entity.TeleportFlag> flagSet = Set.of(flags);
         boolean dismount = !flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_VEHICLE);
-        boolean ignorePassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
+        boolean retainPassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
         // Don't allow teleporting between worlds while keeping passengers
         if (flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS) && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
             return false;
@@ -255,7 +257,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
         // Paper end
 
-        if ((!ignorePassengers && this.entity.isVehicle()) || this.entity.isRemoved()) { // Paper - Teleport passenger API
+        if ((!retainPassengers && this.entity.isVehicle()) || this.entity.isRemoved()) { // Paper - Teleport passenger API
             return false;
         }
 
@@ -286,6 +288,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         // SPIGOT-619: Force sync head rotation also
         this.entity.setYHeadRot(location.getYaw());
 
+        // Ensure passengers of entity are teleported
+        if (retainPassengers && this.entity.isVehicle()) this.entity.teleportPassengers();
+
         return true;
     }
 
@@ -297,6 +302,25 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public boolean teleport(org.bukkit.entity.Entity destination, TeleportCause cause) {
         return this.teleport(destination.getLocation(), cause);
+    }
+
+    @Override
+    public void lookAt(double x, double y, double z, LookAnchor entityAnchor) {
+        this.getHandle().lookAt(toNmsAnchor(entityAnchor), new net.minecraft.world.phys.Vec3(x, y, z));
+    }
+
+    public static net.minecraft.commands.arguments.EntityAnchorArgument.Anchor toNmsAnchor(LookAnchor nmsAnchor) {
+        return switch (nmsAnchor) {
+            case EYES -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES;
+            case FEET -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.FEET;
+        };
+    }
+
+    public static LookAnchor toApiAnchor(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor playerAnchor) {
+        return switch (playerAnchor) {
+            case EYES -> LookAnchor.EYES;
+            case FEET -> LookAnchor.FEET;
+        };
     }
 
     @Override
@@ -417,7 +441,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public org.bukkit.entity.Entity getPassenger() {
-        return this.isEmpty() ? null : this.getHandle().passengers.get(0).getBukkitEntity();
+        return this.isEmpty() ? null : this.getHandle().getPassengers().getFirst().getBukkitEntity();
     }
 
     @Override
@@ -433,7 +457,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public List<org.bukkit.entity.Entity> getPassengers() {
-        return Lists.newArrayList(Lists.transform(this.getHandle().passengers, (Function<Entity, org.bukkit.entity.Entity>) input -> input.getBukkitEntity()));
+        return Lists.newArrayList(Lists.transform(this.getHandle().getPassengers(), (Function<Entity, org.bukkit.entity.Entity>) Entity::getBukkitEntity));
     }
 
     @Override
@@ -852,12 +876,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public int getPortalCooldown() {
-        return this.getHandle().portalCooldown;
+        return this.getHandle().getPortalCooldown();
     }
 
     @Override
     public void setPortalCooldown(int cooldown) {
-        this.getHandle().portalCooldown = cooldown;
+        this.getHandle().setPortalCooldown(cooldown);
     }
 
     @Override
@@ -935,7 +959,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     public String getAsString() {
         CompoundTag tag = new CompoundTag();
-        if (!this.getHandle().saveAsPassenger(tag, false)) {
+        if (!this.getHandle().saveAsPassenger(tag, false, false, false)) {
             return null;
         }
 
@@ -968,7 +992,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     private Entity copy(net.minecraft.world.level.Level level) {
         CompoundTag compoundTag = new CompoundTag();
-        this.getHandle().saveAsPassenger(compoundTag, false);
+        this.getHandle().saveAsPassenger(compoundTag, false, true, true);
 
         return net.minecraft.world.entity.EntityType.loadEntityRecursive(compoundTag, level, EntitySpawnReason.LOAD, java.util.function.Function.identity());
     }
@@ -1204,17 +1228,19 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
     // Paper end - tracked players API
 
-    // Paper start - raw entity serialization API
     @Override
-    public boolean spawnAt(Location location, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
+    public boolean spawnAt(Location location, CreatureSpawnEvent.SpawnReason reason) {
         Preconditions.checkNotNull(location, "location cannot be null");
         Preconditions.checkNotNull(reason, "reason cannot be null");
         this.entity.setLevel(((CraftWorld) location.getWorld()).getHandle());
         this.entity.setPos(location.getX(), location.getY(), location.getZ());
         this.entity.setRot(location.getYaw(), location.getPitch());
-        return !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
+        final boolean spawned = !this.entity.valid && this.entity.level().addFreshEntity(this.entity, reason);
+        if (!spawned) return false; // Do not attempt to spawn rest if root was not spawned in
+        // Like net.minecraft.world.level.ServerLevelAccessor.addFreshEntityWithPassengers(net.minecraft.world.entity.Entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason)
+        this.entity.getIndirectPassengers().forEach(e -> e.level().addFreshEntity(e, reason));
+        return true;
     }
-    // Paper end - raw entity serialization API
 
     // Paper start - entity powdered snow API
     @Override
@@ -1252,12 +1278,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     // Paper start - missing entity api
     @Override
-    public boolean isInvisible() {  // Paper - moved up from LivingEntity
+    public boolean isInvisible() { // Paper - moved up from LivingEntity
         return this.getHandle().isInvisible();
     }
 
     @Override
-    public void setInvisible(boolean invisible) {  // Paper - moved up from LivingEntity
+    public void setInvisible(boolean invisible) { // Paper - moved up from LivingEntity
         this.getHandle().persistentInvisibility = invisible;
         this.getHandle().setSharedFlag(Entity.FLAG_INVISIBLE, invisible);
     }

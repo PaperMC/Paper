@@ -1,0 +1,71 @@
+--- a/net/minecraft/world/inventory/TransientCraftingContainer.java
++++ b/net/minecraft/world/inventory/TransientCraftingContainer.java
+@@ -13,6 +_,68 @@
+     private final int height;
+     private final AbstractContainerMenu menu;
+ 
++    // CraftBukkit start - add fields
++    public List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
++    private net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> currentRecipe;
++    public net.minecraft.world.Container resultInventory;
++    private Player owner;
++    private int maxStack = MAX_STACK;
++
++    public List<ItemStack> getContents() {
++        return this.items;
++    }
++
++    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++        this.transaction.add(player);
++    }
++
++    public org.bukkit.event.inventory.InventoryType getInvType() {
++        return this.items.size() == 4 ? org.bukkit.event.inventory.InventoryType.CRAFTING : org.bukkit.event.inventory.InventoryType.WORKBENCH;
++    }
++
++    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++        this.transaction.remove(player);
++    }
++
++    public List<org.bukkit.entity.HumanEntity> getViewers() {
++        return this.transaction;
++    }
++
++    public org.bukkit.inventory.InventoryHolder getOwner() {
++        return (this.owner == null) ? null : this.owner.getBukkitEntity();
++    }
++
++    @Override
++    public int getMaxStackSize() {
++        return this.maxStack;
++    }
++
++    public void setMaxStackSize(int size) {
++        this.maxStack = size;
++        this.resultInventory.setMaxStackSize(size);
++    }
++
++    @Override
++    public org.bukkit.Location getLocation() {
++        return this.menu instanceof CraftingMenu ? ((CraftingMenu) this.menu).access.getLocation() : this.owner.getBukkitEntity().getLocation();
++    }
++
++    @Override
++    public net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> getCurrentRecipe() {
++        return this.currentRecipe;
++    }
++
++    @Override
++    public void setCurrentRecipe(net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe> currentRecipe) {
++        this.currentRecipe = currentRecipe;
++    }
++
++    public TransientCraftingContainer(AbstractContainerMenu menu, int width, int height, Player player) {
++        this(menu, width, height);
++        this.owner = player;
++    }
++    // CraftBukkit end
++
+     public TransientCraftingContainer(AbstractContainerMenu menu, int width, int height) {
+         this(menu, width, height, NonNullList.withSize(width * height, ItemStack.EMPTY));
+     }

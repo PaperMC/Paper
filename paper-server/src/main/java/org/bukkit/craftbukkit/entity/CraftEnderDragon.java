@@ -23,7 +23,7 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
     public Set<ComplexEntityPart> getParts() {
         Builder<ComplexEntityPart> builder = ImmutableSet.builder();
 
-        for (EnderDragonPart part : this.getHandle().subEntities) {
+        for (EnderDragonPart part : this.getHandle().getSubEntities()) {
             builder.add((ComplexEntityPart) part.getBukkitEntity());
         }
 

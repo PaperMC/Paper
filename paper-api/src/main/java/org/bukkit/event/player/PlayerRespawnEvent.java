@@ -69,7 +69,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
         Preconditions.checkArgument(respawnLocation != null, "Respawn location can not be null");
         Preconditions.checkArgument(respawnLocation.getWorld() != null, "Respawn world can not be null");
 
-        this.respawnLocation = respawnLocation;
+        this.respawnLocation = respawnLocation.clone();
     }
 
     /**

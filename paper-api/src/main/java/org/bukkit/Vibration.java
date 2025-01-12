@@ -79,7 +79,7 @@ public class Vibration {
             private final Location block;
 
             public BlockDestination(@NotNull Location block) {
-                this.block = block;
+                this.block = block.clone();
             }
 
             public BlockDestination(@NotNull Block block) {
@@ -88,7 +88,7 @@ public class Vibration {
 
             @NotNull
             public Location getLocation() {
-                return block;
+                return block.clone();
             }
 
             @NotNull

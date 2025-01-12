@@ -1,0 +1,48 @@
+--- a/net/minecraft/world/effect/MobEffectUtil.java
++++ b/net/minecraft/world/effect/MobEffectUtil.java
+@@ -47,18 +_,38 @@
+     public static List<ServerPlayer> addEffectToPlayersAround(
+         ServerLevel level, @Nullable Entity source, Vec3 pos, double radius, MobEffectInstance effect, int duration
+     ) {
++        // CraftBukkit start
++        return MobEffectUtil.addEffectToPlayersAround(level, source, pos, radius, effect, duration, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
++    }
++
++    public static List<ServerPlayer> addEffectToPlayersAround(ServerLevel level, @Nullable Entity source, Vec3 pos, double radius, MobEffectInstance effect, int duration, org.bukkit.event.entity.EntityPotionEffectEvent.Cause cause) {
++        // Paper start - Add ElderGuardianAppearanceEvent
++        return addEffectToPlayersAround(level, source, pos, radius, effect, duration, cause, null);
++    }
++
++    public static List<ServerPlayer> addEffectToPlayersAround(ServerLevel level, @Nullable Entity source, Vec3 pos, double radius, MobEffectInstance effect, int duration, org.bukkit.event.entity.EntityPotionEffectEvent.Cause cause, @Nullable java.util.function.Predicate<ServerPlayer> playerPredicate) {
++        // Paper end - Add ElderGuardianAppearanceEvent
++        // CraftBukkit end
+         Holder<MobEffect> effect1 = effect.getEffect();
+         List<ServerPlayer> players = level.getPlayers(
+-            serverPlayer -> serverPlayer.gameMode.isSurvival()
++            // Paper start - Add ElderGuardianAppearanceEvent
++            serverPlayer -> {
++            final boolean condition = serverPlayer.gameMode.isSurvival()
+                 && (source == null || !source.isAlliedTo(serverPlayer))
+                 && pos.closerThan(serverPlayer.position(), radius)
+                 && (
+-                    !serverPlayer.hasEffect(effect1)
+-                        || serverPlayer.getEffect(effect1).getAmplifier() < effect.getAmplifier()
+-                        || serverPlayer.getEffect(effect1).endsWithin(duration - 1)
+-                )
+-        );
+-        players.forEach(serverPlayer -> serverPlayer.addEffect(new MobEffectInstance(effect), source));
++                !serverPlayer.hasEffect(effect1)
++                    || serverPlayer.getEffect(effect1).getAmplifier() < effect.getAmplifier()
++                    || serverPlayer.getEffect(effect1).endsWithin(duration - 1)
++            );
++            if (condition) {
++                return playerPredicate == null || playerPredicate.test(serverPlayer); // Only test the player AFTER it is true
++            } else {
++                return false;
++            }
++        });
++        // Paper end - Add ElderGuardianAppearanceEvent
++        players.forEach(serverPlayer -> serverPlayer.addEffect(new MobEffectInstance(effect), source, cause)); // CraftBukkit
+         return players;
+     }
+ }

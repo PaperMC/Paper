@@ -1,0 +1,298 @@
+--- a/net/minecraft/world/level/GameRules.java
++++ b/net/minecraft/world/level/GameRules.java
+@@ -32,6 +_,14 @@
+ import org.slf4j.Logger;
+ 
+ public class GameRules {
++    // Paper start - allow disabling gamerule limits
++    private static final boolean DISABLE_LIMITS = Boolean.getBoolean("paper.disableGameRuleLimits");
++
++    private static int limit(final int limit, final int unlimited) {
++        return DISABLE_LIMITS ? unlimited : limit;
++    }
++    // Paper end - allow disabling gamerule limits
++
+     public static final int DEFAULT_RANDOM_TICK_SPEED = 3;
+     static final Logger LOGGER = LogUtils.getLogger();
+     private static final Map<GameRules.Key<?>, GameRules.Type<?>> GAME_RULE_TYPES = Maps.newTreeMap(Comparator.comparing(entry -> entry.id));
+@@ -81,10 +_,10 @@
+         "sendCommandFeedback", GameRules.Category.CHAT, GameRules.BooleanValue.create(true)
+     );
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_REDUCEDDEBUGINFO = register(
+-        "reducedDebugInfo", GameRules.Category.MISC, GameRules.BooleanValue.create(false, (server, value) -> {
++        "reducedDebugInfo", GameRules.Category.MISC, GameRules.BooleanValue.create(false, (level, value) -> { // Paper - rename param to match changes
+             byte b = (byte)(value.get() ? 22 : 23);
+ 
+-            for (ServerPlayer serverPlayer : server.getPlayerList().getPlayers()) {
++            for (ServerPlayer serverPlayer : level.players()) {
+                 serverPlayer.connection.send(new ClientboundEntityEventPacket(serverPlayer, b));
+             }
+         })
+@@ -108,8 +_,8 @@
+         "doWeatherCycle", GameRules.Category.UPDATES, GameRules.BooleanValue.create(true)
+     );
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_LIMITED_CRAFTING = register(
+-        "doLimitedCrafting", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (server, value) -> {
+-            for (ServerPlayer serverPlayer : server.getPlayerList().getPlayers()) {
++        "doLimitedCrafting", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (level, value) -> { // Paper - rename param to match changes
++            for (ServerPlayer serverPlayer : level.players()) {
+                 serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LIMITED_CRAFTING, value.get() ? 1.0F : 0.0F));
+             }
+         })
+@@ -133,8 +_,8 @@
+         "doInsomnia", GameRules.Category.SPAWNING, GameRules.BooleanValue.create(true)
+     );
+     public static final GameRules.Key<GameRules.BooleanValue> RULE_DO_IMMEDIATE_RESPAWN = register(
+-        "doImmediateRespawn", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (server, value) -> {
+-            for (ServerPlayer serverPlayer : server.getPlayerList().getPlayers()) {
++        "doImmediateRespawn", GameRules.Category.PLAYER, GameRules.BooleanValue.create(false, (level, value) -> { // Paper - rename param to match changes
++            for (ServerPlayer serverPlayer : level.players()) {
+                 serverPlayer.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.IMMEDIATE_RESPAWN, value.get() ? 1.0F : 0.0F));
+             }
+         })
+@@ -205,16 +_,17 @@
+     public static final GameRules.Key<GameRules.IntegerValue> RULE_MINECART_MAX_SPEED = register(
+         "minecartMaxSpeed",
+         GameRules.Category.MISC,
+-        GameRules.IntegerValue.create(8, 1, 1000, FeatureFlagSet.of(FeatureFlags.MINECART_IMPROVEMENTS), (server, value) -> {})
++        GameRules.IntegerValue.create(8, 1, limit(1000, Integer.MAX_VALUE), FeatureFlagSet.of(FeatureFlags.MINECART_IMPROVEMENTS), (server, value) -> {}) // Paper - allow disabling gamerule limits
+     );
+     public static final GameRules.Key<GameRules.IntegerValue> RULE_SPAWN_CHUNK_RADIUS = register(
+-        "spawnChunkRadius", GameRules.Category.MISC, GameRules.IntegerValue.create(2, 0, 32, FeatureFlagSet.of(), (server, value) -> {
+-            ServerLevel serverLevel = server.overworld();
++        "spawnChunkRadius", GameRules.Category.MISC, GameRules.IntegerValue.create(2, 0, limit(32, Integer.MAX_VALUE), FeatureFlagSet.of(), (level, value) -> { // Paper - allow disabling gamerule limits - also, rename param
++            ServerLevel serverLevel = level; // CraftBukkit - per-world
+             serverLevel.setDefaultSpawnPos(serverLevel.getSharedSpawnPos(), serverLevel.getSharedSpawnAngle());
+         })
+     );
+     private final Map<GameRules.Key<?>, GameRules.Value<?>> rules;
+     private final FeatureFlagSet enabledFeatures;
++    private final GameRules.Value<?>[] gameruleArray; // Paper - Perf: Use array for gamerule storage
+ 
+     private static <T extends GameRules.Value<T>> GameRules.Key<T> register(String name, GameRules.Category category, GameRules.Type<T> type) {
+         GameRules.Key<T> key = new GameRules.Key<>(name, category);
+@@ -242,10 +_,21 @@
+     private GameRules(Map<GameRules.Key<?>, GameRules.Value<?>> rules, FeatureFlagSet enabledFeatures) {
+         this.rules = rules;
+         this.enabledFeatures = enabledFeatures;
++
++        // Paper start - Perf: Use array for gamerule storage
++        int arraySize = GameRules.Key.lastGameRuleIndex + 1;
++        GameRules.Value<?>[] values = new GameRules.Value[arraySize];
++
++        for (Entry<GameRules.Key<?>, GameRules.Value<?>> entry : rules.entrySet()) {
++            values[entry.getKey().gameRuleIndex] = entry.getValue();
++        }
++
++        this.gameruleArray = values;
++        // Paper end - Perf: Use array for gamerule storage
+     }
+ 
+     public <T extends GameRules.Value<T>> T getRule(GameRules.Key<T> key) {
+-        T value = (T)this.rules.get(key);
++        T value = key == null ? null : (T) this.gameruleArray[key.gameRuleIndex]; // Paper - Perf: Use array for gamerule storage
+         if (value == null) {
+             throw new IllegalArgumentException("Tried to access invalid game rule");
+         } else {
+@@ -286,13 +_,13 @@
+         }
+     }
+ 
+-    public void assignFrom(GameRules rules, @Nullable MinecraftServer server) {
+-        rules.rules.keySet().forEach(key -> this.assignCap((GameRules.Key<?>)key, rules, server));
++    public void assignFrom(GameRules rules, @Nullable ServerLevel level) { // CraftBukkit - per-world
++        rules.rules.keySet().forEach(key -> this.assignCap((GameRules.Key<?>)key, rules, level)); // CraftBukkit - per-world
+     }
+ 
+-    private <T extends GameRules.Value<T>> void assignCap(GameRules.Key<T> key, GameRules rules, @Nullable MinecraftServer server) {
++    private <T extends GameRules.Value<T>> void assignCap(GameRules.Key<T> key, GameRules rules, @Nullable ServerLevel level) { // CraftBukkit - per-world
+         T rule = rules.getRule(key);
+-        this.<T>getRule(key).setFrom(rule, server);
++        this.<T>getRule(key).setFrom(rule, level); // CraftBukkit - per-world
+     }
+ 
+     public boolean getBoolean(GameRules.Key<GameRules.BooleanValue> key) {
+@@ -306,7 +_,7 @@
+     public static class BooleanValue extends GameRules.Value<GameRules.BooleanValue> {
+         private boolean value;
+ 
+-        static GameRules.Type<GameRules.BooleanValue> create(boolean defaultValue, BiConsumer<MinecraftServer, GameRules.BooleanValue> changeListener) {
++        static GameRules.Type<GameRules.BooleanValue> create(boolean defaultValue, BiConsumer<ServerLevel, GameRules.BooleanValue> changeListener) { // CraftBukkit - per-world
+             return new GameRules.Type<>(
+                 BoolArgumentType::bool,
+                 type -> new GameRules.BooleanValue(type, defaultValue),
+@@ -326,17 +_,21 @@
+         }
+ 
+         @Override
+-        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String paramName) {
+-            this.value = BoolArgumentType.getBool(context, paramName);
++        // Paper start - Add WorldGameRuleChangeEvent
++        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String paramName, GameRules.Key<BooleanValue> gameRuleKey) {
++                io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(context.getSource().getBukkitWorld(), context.getSource().getBukkitSender(), (org.bukkit.GameRule<Boolean>) org.bukkit.GameRule.getByName(gameRuleKey.toString()), String.valueOf(BoolArgumentType.getBool(context, paramName)));
++                if (!event.callEvent()) return;
++                this.value = Boolean.parseBoolean(event.getValue());
++        // Paper end - Add WorldGameRuleChangeEvent
+         }
+ 
+         public boolean get() {
+             return this.value;
+         }
+ 
+-        public void set(boolean value, @Nullable MinecraftServer server) {
++        public void set(boolean value, @Nullable ServerLevel level) { // CraftBukkit - per-world
+             this.value = value;
+-            this.onChanged(server);
++            this.onChanged(level); // CraftBukkit - per-world
+         }
+ 
+         @Override
+@@ -345,7 +_,7 @@
+         }
+ 
+         @Override
+-        protected void deserialize(String value) {
++        public void deserialize(String value) { // PAIL - protected->public
+             this.value = Boolean.parseBoolean(value);
+         }
+ 
+@@ -365,9 +_,9 @@
+         }
+ 
+         @Override
+-        public void setFrom(GameRules.BooleanValue value, @Nullable MinecraftServer server) {
++        public void setFrom(GameRules.BooleanValue value, @Nullable ServerLevel level) { // CraftBukkit - per-world
+             this.value = value.value;
+-            this.onChanged(server);
++            this.onChanged(level); // CraftBukkit - per-world
+         }
+     }
+ 
+@@ -405,7 +_,7 @@
+     public static class IntegerValue extends GameRules.Value<GameRules.IntegerValue> {
+         private int value;
+ 
+-        private static GameRules.Type<GameRules.IntegerValue> create(int defaultValue, BiConsumer<MinecraftServer, GameRules.IntegerValue> changeListener) {
++        private static GameRules.Type<GameRules.IntegerValue> create(int defaultValue, BiConsumer<ServerLevel, GameRules.IntegerValue> changeListener) { // CraftBukkit - per-world
+             return new GameRules.Type<>(
+                 IntegerArgumentType::integer,
+                 type -> new GameRules.IntegerValue(type, defaultValue),
+@@ -416,7 +_,7 @@
+         }
+ 
+         static GameRules.Type<GameRules.IntegerValue> create(
+-            int defaultValue, int min, int max, FeatureFlagSet requiredFeatures, BiConsumer<MinecraftServer, GameRules.IntegerValue> changeListener
++            int defaultValue, int min, int max, FeatureFlagSet requiredFeatures, BiConsumer<ServerLevel, GameRules.IntegerValue> changeListener // CraftBukkit - per-world
+         ) {
+             return new GameRules.Type<>(
+                 () -> IntegerArgumentType.integer(min, max),
+@@ -437,17 +_,21 @@
+         }
+ 
+         @Override
+-        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String paramName) {
+-            this.value = IntegerArgumentType.getInteger(context, paramName);
++        // Paper start - Add WorldGameRuleChangeEvent
++        protected void updateFromArgument(CommandContext<CommandSourceStack> context, String paramName, GameRules.Key<IntegerValue> gameRuleKey) {
++            io.papermc.paper.event.world.WorldGameRuleChangeEvent event = new io.papermc.paper.event.world.WorldGameRuleChangeEvent(context.getSource().getBukkitWorld(), context.getSource().getBukkitSender(), (org.bukkit.GameRule<Integer>) org.bukkit.GameRule.getByName(gameRuleKey.toString()), String.valueOf(IntegerArgumentType.getInteger(context, paramName)));
++            if (!event.callEvent()) return;
++            this.value = Integer.parseInt(event.getValue());
++            // Paper end - Add WorldGameRuleChangeEvent
+         }
+ 
+         public int get() {
+             return this.value;
+         }
+ 
+-        public void set(int value, @Nullable MinecraftServer server) {
++        public void set(int value, @Nullable ServerLevel level) { // CraftBukkit - per-world
+             this.value = value;
+-            this.onChanged(server);
++            this.onChanged(level); // CraftBukkit - per-world
+         }
+ 
+         @Override
+@@ -456,7 +_,7 @@
+         }
+ 
+         @Override
+-        protected void deserialize(String value) {
++        public void deserialize(String value) { // PAIL - protected->public
+             this.value = safeParse(value);
+         }
+ 
+@@ -498,13 +_,17 @@
+         }
+ 
+         @Override
+-        public void setFrom(GameRules.IntegerValue value, @Nullable MinecraftServer server) {
++        public void setFrom(GameRules.IntegerValue value, @Nullable ServerLevel level) { // CraftBukkit - per-world
+             this.value = value.value;
+-            this.onChanged(server);
++            this.onChanged(level); // CraftBukkit - per-world
+         }
+     }
+ 
+     public static final class Key<T extends GameRules.Value<T>> {
++        // Paper start - Perf: Use array for gamerule storage
++        public static int lastGameRuleIndex = 0;
++        public final int gameRuleIndex = lastGameRuleIndex++;
++        // Paper end - Perf: Use array for gamerule storage
+         final String id;
+         private final GameRules.Category category;
+ 
+@@ -544,14 +_,14 @@
+     public static class Type<T extends GameRules.Value<T>> {
+         final Supplier<ArgumentType<?>> argument;
+         private final Function<GameRules.Type<T>, T> constructor;
+-        final BiConsumer<MinecraftServer, T> callback;
++        final BiConsumer<ServerLevel, T> callback; // CraftBukkit - per-world
+         private final GameRules.VisitorCaller<T> visitorCaller;
+         final FeatureFlagSet requiredFeatures;
+ 
+         Type(
+             Supplier<ArgumentType<?>> argument,
+             Function<GameRules.Type<T>, T> constructor,
+-            BiConsumer<MinecraftServer, T> callback,
++            BiConsumer<ServerLevel, T> callback, // CraftBukkit - per-world
+             GameRules.VisitorCaller<T> visitorCaller,
+             FeatureFlagSet requiredFeature
+         ) {
+@@ -586,20 +_,20 @@
+             this.type = type;
+         }
+ 
+-        protected abstract void updateFromArgument(CommandContext<CommandSourceStack> context, String paramName);
++        protected abstract void updateFromArgument(CommandContext<CommandSourceStack> context, String paramName, GameRules.Key<T> gameRuleKey); // Paper - Add WorldGameRuleChangeEvent
+ 
+-        public void setFromArgument(CommandContext<CommandSourceStack> context, String paramName) {
+-            this.updateFromArgument(context, paramName);
+-            this.onChanged(context.getSource().getServer());
++        public void setFromArgument(CommandContext<CommandSourceStack> context, String paramName, GameRules.Key<T> gameRuleKey) { // Paper - Add WorldGameRuleChangeEvent
++            this.updateFromArgument(context, paramName, gameRuleKey); // Paper - Add WorldGameRuleChangeEvent
++            this.onChanged(context.getSource().getLevel()); // CraftBukkit - per-world
+         }
+ 
+-        public void onChanged(@Nullable MinecraftServer server) {
+-            if (server != null) {
+-                this.type.callback.accept(server, this.getSelf());
++        public void onChanged(@Nullable ServerLevel level) { // CraftBukkit - per-world
++            if (level != null) { // CraftBukkit - per-world
++                this.type.callback.accept(level, this.getSelf()); // CraftBukkit - per-world
+             }
+         }
+ 
+-        protected abstract void deserialize(String value);
++        public abstract void deserialize(String value); // PAIL - private->public
+ 
+         public abstract String serialize();
+ 
+@@ -614,7 +_,7 @@
+ 
+         protected abstract T copy();
+ 
+-        public abstract void setFrom(T value, @Nullable MinecraftServer server);
++        public abstract void setFrom(T value, @Nullable ServerLevel level); // CraftBukkit - per-world
+     }
+ 
+     interface VisitorCaller<T extends GameRules.Value<T>> {

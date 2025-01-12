@@ -6,14 +6,13 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import org.bukkit.JukeboxSong;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.NotNull;
 
 public class CraftJukeboxSong implements JukeboxSong, Handleable<net.minecraft.world.item.JukeboxSong> {
 
     public static JukeboxSong minecraftToBukkit(net.minecraft.world.item.JukeboxSong minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.JUKEBOX_SONG, Registry.JUKEBOX_SONG);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.JUKEBOX_SONG);
     }
 
     public static JukeboxSong minecraftHolderToBukkit(Holder<net.minecraft.world.item.JukeboxSong> minecraft) {

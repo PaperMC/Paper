@@ -1,0 +1,228 @@
+--- a/net/minecraft/world/entity/projectile/Projectile.java
++++ b/net/minecraft/world/entity/projectile/Projectile.java
+@@ -43,6 +_,7 @@
+     public boolean hasBeenShot;
+     @Nullable
+     private Entity lastDeflectedBy;
++    protected boolean hitCancelled = false; // CraftBukkit
+ 
+     Projectile(EntityType<? extends Projectile> entityType, Level level) {
+         super(entityType, level);
+@@ -53,15 +_,36 @@
+             this.ownerUUID = owner.getUUID();
+             this.cachedOwner = owner;
+         }
+-    }
++        // Paper start - Refresh ProjectileSource for projectiles
++        else {
++            this.ownerUUID = null;
++            this.cachedOwner = null;
++            this.projectileSource = null;
++        }
++        // Paper end - Refresh ProjectileSource for projectiles
++        this.refreshProjectileSource(false); // Paper
++    }
++
++    // Paper start - Refresh ProjectileSource for projectiles
++    public void refreshProjectileSource(boolean fillCache) {
++        if (fillCache) {
++            this.getOwner();
++        }
++        if (this.cachedOwner != null && !this.cachedOwner.isRemoved() && this.projectileSource == null && this.cachedOwner.getBukkitEntity() instanceof org.bukkit.projectiles.ProjectileSource projSource) {
++            this.projectileSource = projSource;
++        }
++    }
++    // Paper end - Refresh ProjectileSource for projectiles
+ 
+     @Nullable
+     @Override
+     public Entity getOwner() {
+         if (this.cachedOwner != null && !this.cachedOwner.isRemoved()) {
++            this.refreshProjectileSource(false); // Paper - Refresh ProjectileSource for projectiles
+             return this.cachedOwner;
+         } else if (this.ownerUUID != null) {
+             this.cachedOwner = this.findOwner(this.ownerUUID);
++            this.refreshProjectileSource(false); // Paper - Refresh ProjectileSource for projectiles
+             return this.cachedOwner;
+         } else {
+             return null;
+@@ -98,6 +_,7 @@
+     protected void readAdditionalSaveData(CompoundTag compound) {
+         if (compound.hasUUID("Owner")) {
+             this.setOwnerThroughUUID(compound.getUUID("Owner"));
++            if (this instanceof ThrownEnderpearl && this.level().paperConfig().fixes.disableUnloadedChunkEnderpearlExploit && this.level().paperConfig().misc.legacyEnderPearlBehavior) { this.ownerUUID = null; } // Paper - Reset pearls when they stop being ticked; Don't store shooter name for pearls to block enderpearl travel exploit
+         }
+ 
+         this.leftOwner = compound.getBoolean("LeftOwner");
+@@ -175,13 +_,22 @@
+         float f2 = Mth.cos(y * (float) (Math.PI / 180.0)) * Mth.cos(x * (float) (Math.PI / 180.0));
+         this.shoot(f, f1, f2, velocity, inaccuracy);
+         Vec3 knownMovement = shooter.getKnownMovement();
++        // Paper start - allow disabling relative velocity
++        if (!shooter.level().paperConfig().misc.disableRelativeProjectileVelocity) {
+         this.setDeltaMovement(this.getDeltaMovement().add(knownMovement.x, shooter.onGround() ? 0.0 : knownMovement.y, knownMovement.z));
++        }
++        // Paper end - allow disabling relative velocity
+     }
+ 
+     public static <T extends Projectile> T spawnProjectileFromRotation(
+         Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float innaccuracy
+     ) {
+-        return spawnProjectile(
++        // Paper start - PlayerLaunchProjectileEvent
++        return spawnProjectileFromRotationDelayed(factory, level, spawnedFrom, owner, z, velocity, innaccuracy).spawn();
++    }
++    public static <T extends Projectile> Delayed<T> spawnProjectileFromRotationDelayed(Projectile.ProjectileFactory<T> factory, ServerLevel level, ItemStack spawnedFrom, LivingEntity owner, float z, float velocity, float innaccuracy) {
++        return spawnProjectileDelayed(
++        // Paper end - PlayerLaunchProjectileEvent
+             factory.create(level, owner, spawnedFrom),
+             level,
+             spawnedFrom,
+@@ -206,7 +_,12 @@
+     public static <T extends Projectile> T spawnProjectileUsingShoot(
+         T projectile, ServerLevel level, ItemStack spawnedFrom, double x, double y, double z, float velocity, float inaccuracy
+     ) {
+-        return spawnProjectile(projectile, level, spawnedFrom, projectile1 -> projectile.shoot(x, y, z, velocity, inaccuracy));
++    // Paper start - fixes and addition to spawn reason API
++        return spawnProjectileUsingShootDelayed(projectile, level, spawnedFrom, x, y, z, velocity, inaccuracy).spawn();
++    }
++    public static <T extends Projectile> Delayed<T> spawnProjectileUsingShootDelayed(T projectile, ServerLevel level, ItemStack spawnedFrom, double x, double y, double z, float velocity, float inaccuracy) {
++        return spawnProjectileDelayed(projectile, level, spawnedFrom, projectile1 -> projectile.shoot(x, y, z, velocity, inaccuracy));
++    // Paper end - fixes and addition to spawn reason API
+     }
+ 
+     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel level, ItemStack spawnedFrom) {
+@@ -214,11 +_,45 @@
+     }
+ 
+     public static <T extends Projectile> T spawnProjectile(T projectile, ServerLevel level, ItemStack stack, Consumer<T> adapter) {
++        // Paper start - delayed projectile spawning
++        return spawnProjectileDelayed(projectile, level, stack, adapter).spawn();
++    }
++    public static <T extends Projectile> Delayed<T> spawnProjectileDelayed(T projectile, ServerLevel level, ItemStack stack, Consumer<T> adapter) {
++        // Paper end - delayed projectile spawning
+         adapter.accept(projectile);
+-        level.addFreshEntity(projectile);
+-        projectile.applyOnProjectileSpawned(level, stack);
+-        return projectile;
+-    }
++        return new Delayed<>(projectile, level, stack); // Paper - delayed projectile spawning
++    }
++
++    // Paper start - delayed projectile spawning
++    public record Delayed<T extends Projectile>(
++        T projectile,
++        ServerLevel world,
++        ItemStack projectileStack
++    ) {
++        // Taken from net.minecraft.world.entity.projectile.Projectile.spawnProjectile(T, net.minecraft.server.level.ServerLevel, net.minecraft.world.item.ItemStack, java.util.function.Consumer<T>)
++        public boolean attemptSpawn() {
++            if (!this.world.addFreshEntity(this.projectile)) return false;
++            this.projectile.applyOnProjectileSpawned(this.world, this.projectileStack);
++            return true;
++        }
++
++        public T spawn() {
++            this.attemptSpawn();
++            return this.projectile();
++        }
++
++        public boolean attemptSpawn(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++            if (!this.world.addFreshEntity(this.projectile, reason)) return false;
++            this.projectile.applyOnProjectileSpawned(this.world, this.projectileStack);
++            return true;
++        }
++
++        public T spawn(final org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++            this.attemptSpawn(reason);
++            return this.projectile();
++        }
++    }
++    // Paper end - delayed projectile spawning
+ 
+     public void applyOnProjectileSpawned(ServerLevel level, ItemStack spawnedFrom) {
+         EnchantmentHelper.onProjectileSpawned(level, spawnedFrom, this, item -> {});
+@@ -230,6 +_,17 @@
+         }
+     }
+ 
++    // CraftBukkit start - call projectile hit event
++    public ProjectileDeflection preHitTargetOrDeflectSelf(HitResult hitResult) { // Paper - protected -> public
++        org.bukkit.event.entity.ProjectileHitEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callProjectileHitEvent(this, hitResult);
++        this.hitCancelled = event != null && event.isCancelled();
++        if (hitResult.getType() == HitResult.Type.BLOCK || !this.hitCancelled) {
++            return this.hitTargetOrDeflectSelf(hitResult);
++        }
++        return ProjectileDeflection.NONE;
++    }
++    // CraftBukkit end
++
+     protected ProjectileDeflection hitTargetOrDeflectSelf(HitResult hitResult) {
+         if (hitResult.getType() == HitResult.Type.ENTITY) {
+             EntityHitResult entityHitResult = (EntityHitResult)hitResult;
+@@ -261,7 +_,13 @@
+     public boolean deflect(ProjectileDeflection deflection, @Nullable Entity entity, @Nullable Entity owner, boolean deflectedByPlayer) {
+         deflection.deflect(this, entity, this.random);
+         if (!this.level().isClientSide) {
+-            this.setOwner(owner);
++            // Paper start - Fix PickupStatus getting reset
++            if (this instanceof AbstractArrow arrow) {
++                arrow.setOwner(owner, false);
++            } else {
++                this.setOwner(owner);
++            }
++            // Paper end - Fix PickupStatus getting reset
+             this.onDeflection(entity, deflectedByPlayer);
+         }
+ 
+@@ -297,15 +_,35 @@
+     }
+ 
+     protected void onHitBlock(BlockHitResult result) {
++        // CraftBukkit start - cancellable hit event
++        if (this.hitCancelled) {
++            return;
++        }
++        // CraftBukkit end
+         BlockState blockState = this.level().getBlockState(result.getBlockPos());
+         blockState.onProjectileHit(this.level(), blockState, result, this);
+     }
+ 
++    // Paper start
++    public boolean canHitEntityPublic(final Entity target) {
++        return this.canHitEntity(target);
++    }
++    // Paper end
++
+     protected boolean canHitEntity(Entity target) {
+         if (!target.canBeHitByProjectile()) {
+             return false;
+         } else {
+             Entity owner = this.getOwner();
++            // Paper start - Cancel hit for vanished players
++            if (owner instanceof net.minecraft.server.level.ServerPlayer && target instanceof net.minecraft.server.level.ServerPlayer) {
++                org.bukkit.entity.Player collided = (org.bukkit.entity.Player) target.getBukkitEntity();
++                org.bukkit.entity.Player shooter = (org.bukkit.entity.Player) owner.getBukkitEntity();
++                if (!shooter.canSee(collided)) {
++                    return false;
++                }
++            }
++            // Paper end - Cancel hit for vanished players
+             return owner == null || this.leftOwner || !owner.isPassengerOfSameVehicle(target);
+         }
+     }
+@@ -318,13 +_,7 @@
+     }
+ 
+     protected static float lerpRotation(float currentRotation, float targetRotation) {
+-        while (targetRotation - currentRotation < -180.0F) {
+-            currentRotation -= 360.0F;
+-        }
+-
+-        while (targetRotation - currentRotation >= 180.0F) {
+-            currentRotation += 360.0F;
+-        }
++        currentRotation += Math.round((targetRotation - currentRotation) / 360.0F) * 360.0F; // Paper - stop large look changes from crashing the server
+ 
+         return Mth.lerp(0.2F, currentRotation, targetRotation);
+     }

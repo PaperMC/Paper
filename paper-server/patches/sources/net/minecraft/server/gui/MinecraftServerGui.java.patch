@@ -1,0 +1,88 @@
+--- a/net/minecraft/server/gui/MinecraftServerGui.java
++++ b/net/minecraft/server/gui/MinecraftServerGui.java
+@@ -53,6 +_,13 @@
+         jFrame.pack();
+         jFrame.setLocationRelativeTo(null);
+         jFrame.setVisible(true);
++        // Paper start - Improve ServerGUI
++        jFrame.setName("Minecraft server");
++        try {
++            jFrame.setIconImage(javax.imageio.ImageIO.read(java.util.Objects.requireNonNull(MinecraftServerGui.class.getClassLoader().getResourceAsStream("logo.png"))));
++        } catch (java.io.IOException ignore) {
++        }
++        // Paper end - Improve ServerGUI
+         jFrame.addWindowListener(new WindowAdapter() {
+             @Override
+             public void windowClosing(WindowEvent event) {
+@@ -74,6 +_,7 @@
+         this.setLayout(new BorderLayout());
+ 
+         try {
++            this.add(this.buildOnboardingPanel(), "North"); // Paper - Add onboarding message for initial server start
+             this.add(this.buildChatPanel(), "Center");
+             this.add(this.buildInfoPanel(), "West");
+         } catch (Exception var3) {
+@@ -87,7 +_,7 @@
+ 
+     private JComponent buildInfoPanel() {
+         JPanel jPanel = new JPanel(new BorderLayout());
+-        StatsComponent statsComponent = new StatsComponent(this.server);
++        com.destroystokyo.paper.gui.GuiStatsComponent statsComponent = new com.destroystokyo.paper.gui.GuiStatsComponent(this.server); // Paper - Make GUI graph fancier
+         this.finalizers.add(statsComponent::close);
+         jPanel.add(statsComponent, "North");
+         jPanel.add(this.buildPlayerPanel(), "Center");
+@@ -150,6 +_,7 @@
+         this.finalizers.forEach(Runnable::run);
+     }
+ 
++    private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\\e\\[[\\d;]*[^\\d;]"); // CraftBukkit // Paper
+     public void print(JTextArea textArea, JScrollPane scrollPane, String line) {
+         if (!SwingUtilities.isEventDispatchThread()) {
+             SwingUtilities.invokeLater(() -> this.print(textArea, scrollPane, line));
+@@ -162,7 +_,7 @@
+             }
+ 
+             try {
+-                document.insertString(document.getLength(), line, null);
++                document.insertString(document.getLength(), MinecraftServerGui.ANSI.matcher(line).replaceAll(""), null); // CraftBukkit
+             } catch (BadLocationException var8) {
+             }
+ 
+@@ -171,4 +_,37 @@
+             }
+         }
+     }
++
++    // Paper start - Add onboarding message for initial server start
++    private JComponent buildOnboardingPanel() {
++        String onboardingLink = "https://docs.papermc.io/paper/next-steps";
++        JPanel jPanel = new JPanel();
++
++        javax.swing.JLabel jLabel = new javax.swing.JLabel("If you need help setting up your server you can visit:");
++        jLabel.setFont(MinecraftServerGui.MONOSPACED);
++
++        javax.swing.JLabel link = new javax.swing.JLabel("<html><u> " + onboardingLink + "</u></html>");
++        link.setFont(MinecraftServerGui.MONOSPACED);
++        link.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
++        link.addMouseListener(new java.awt.event.MouseAdapter() {
++            @Override
++            public void mouseClicked(final java.awt.event.MouseEvent e) {
++                try {
++                    java.awt.Desktop.getDesktop().browse(java.net.URI.create(onboardingLink));
++                } catch (java.io.IOException exception) {
++                    LOGGER.error("Unable to find a default browser. Please manually visit the website: " + onboardingLink, exception);
++                } catch (UnsupportedOperationException exception) {
++                    LOGGER.error("This platform does not support the BROWSE action. Please manually visit the website: " + onboardingLink, exception);
++                } catch (SecurityException exception) {
++                    LOGGER.error("This action has been denied by the security manager. Please manually visit the website: " + onboardingLink, exception);
++                }
++            }
++        });
++
++        jPanel.add(jLabel);
++        jPanel.add(link);
++
++        return jPanel;
++    }
++    // Paper end - Add onboarding message for initial server start
+ }

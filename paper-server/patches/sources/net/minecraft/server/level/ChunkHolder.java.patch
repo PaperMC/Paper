@@ -1,0 +1,199 @@
+--- a/net/minecraft/server/level/ChunkHolder.java
++++ b/net/minecraft/server/level/ChunkHolder.java
+@@ -33,9 +_,9 @@
+     public static final ChunkResult<LevelChunk> UNLOADED_LEVEL_CHUNK = ChunkResult.error("Unloaded level chunk");
+     private static final CompletableFuture<ChunkResult<LevelChunk>> UNLOADED_LEVEL_CHUNK_FUTURE = CompletableFuture.completedFuture(UNLOADED_LEVEL_CHUNK);
+     private final LevelHeightAccessor levelHeightAccessor;
+-    private volatile CompletableFuture<ChunkResult<LevelChunk>> fullChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+-    private volatile CompletableFuture<ChunkResult<LevelChunk>> tickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+-    private volatile CompletableFuture<ChunkResult<LevelChunk>> entityTickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
++    private volatile CompletableFuture<ChunkResult<LevelChunk>> fullChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE; private int fullChunkCreateCount; private volatile boolean isFullChunkReady; // Paper - cache chunk ticking stage
++    private volatile CompletableFuture<ChunkResult<LevelChunk>> tickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE; private volatile boolean isTickingReady; // Paper - cache chunk ticking stage
++    private volatile CompletableFuture<ChunkResult<LevelChunk>> entityTickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE; private volatile boolean isEntityTickingReady; // Paper - cache chunk ticking stage
+     public int oldTicketLevel;
+     private int ticketLevel;
+     private int queueLevel;
+@@ -71,6 +_,18 @@
+         this.changedBlocksPerSection = new ShortSet[levelHeightAccessor.getSectionsCount()];
+     }
+ 
++    // CraftBukkit start
++    public LevelChunk getFullChunkNow() {
++        // Note: We use the oldTicketLevel for isLoaded checks.
++        if (!ChunkLevel.fullStatus(this.oldTicketLevel).isOrAfter(FullChunkStatus.FULL)) return null;
++        return this.getFullChunkNowUnchecked();
++    }
++
++    public LevelChunk getFullChunkNowUnchecked() {
++        return (LevelChunk) this.getChunkIfPresentUnchecked(ChunkStatus.FULL);
++    }
++    // CraftBukkit end
++
+     public CompletableFuture<ChunkResult<LevelChunk>> getTickingChunkFuture() {
+         return this.tickingChunkFuture;
+     }
+@@ -84,7 +_,7 @@
+     }
+ 
+     @Nullable
+-    public LevelChunk getTickingChunk() {
++    public final LevelChunk getTickingChunk() { // Paper - final for inline
+         return this.getTickingChunkFuture().getNow(UNLOADED_LEVEL_CHUNK).orElse(null);
+     }
+ 
+@@ -129,6 +_,7 @@
+         } else {
+             boolean flag = this.hasChangedSections;
+             int sectionIndex = this.levelHeightAccessor.getSectionIndex(pos.getY());
++            if (sectionIndex < 0 || sectionIndex >= this.changedBlocksPerSection.length) return false; // CraftBukkit - SPIGOT-6086, SPIGOT-6296
+             if (this.changedBlocksPerSection[sectionIndex] == null) {
+                 this.hasChangedSections = true;
+                 this.changedBlocksPerSection[sectionIndex] = new ShortOpenHashSet();
+@@ -274,6 +_,38 @@
+         chunkMap.onFullChunkStatusChange(this.pos, fullChunkStatus);
+     }
+ 
++    // CraftBukkit start
++    // ChunkUnloadEvent: Called before the chunk is unloaded: isChunkLoaded is still true and chunk can still be modified by plugins.
++    // SPIGOT-7780: Moved out of updateFutures to call all chunk unload events before calling updateHighestAllowedStatus for all chunks
++    protected void callEventIfUnloading(ChunkMap chunkMap) {
++        FullChunkStatus oldFullChunkStatus = ChunkLevel.fullStatus(this.oldTicketLevel);
++        FullChunkStatus newFullChunkStatus = ChunkLevel.fullStatus(this.ticketLevel);
++        boolean oldIsFull = oldFullChunkStatus.isOrAfter(FullChunkStatus.FULL);
++        boolean newIsFull = newFullChunkStatus.isOrAfter(FullChunkStatus.FULL);
++        if (oldIsFull && !newIsFull) {
++            this.getFullChunkFuture().thenAccept((either) -> {
++                LevelChunk chunk = either.orElse(null);
++                if (chunk != null) {
++                    chunkMap.callbackExecutor.execute(() -> {
++                        // Minecraft will apply the chunks tick lists to the world once the chunk got loaded, and then store the tick
++                        // lists again inside the chunk once the chunk becomes inaccessible and set the chunk's needsSaving flag.
++                        // These actions may however happen deferred, so we manually set the needsSaving flag already here.
++                        chunk.markUnsaved();
++                        chunk.unloadCallback();
++                    });
++                }
++            }).exceptionally((throwable) -> {
++                // ensure exceptions are printed, by default this is not the case
++                net.minecraft.server.MinecraftServer.LOGGER.error("Failed to schedule unload callback for chunk " + ChunkHolder.this.pos, throwable);
++                return null;
++            });
++
++            // Run callback right away if the future was already done
++            chunkMap.callbackExecutor.run();
++        }
++    }
++    // CraftBukkit end
++
+     protected void updateFutures(ChunkMap chunkMap, Executor executor) {
+         FullChunkStatus fullChunkStatus = ChunkLevel.fullStatus(this.oldTicketLevel);
+         FullChunkStatus fullChunkStatus1 = ChunkLevel.fullStatus(this.ticketLevel);
+@@ -281,12 +_,28 @@
+         boolean isOrAfter1 = fullChunkStatus1.isOrAfter(FullChunkStatus.FULL);
+         this.wasAccessibleSinceLastSave |= isOrAfter1;
+         if (!isOrAfter && isOrAfter1) {
++            int expectCreateCount = ++this.fullChunkCreateCount; // Paper
+             this.fullChunkFuture = chunkMap.prepareAccessibleChunk(this);
+             this.scheduleFullChunkPromotion(chunkMap, this.fullChunkFuture, executor, FullChunkStatus.FULL);
++            // Paper start - cache ticking ready status
++            this.fullChunkFuture.thenAccept(chunkResult -> {
++                chunkResult.ifSuccess(chunk -> {
++                    if (ChunkHolder.this.fullChunkCreateCount == expectCreateCount) {
++                        ChunkHolder.this.isFullChunkReady = true;
++                        ca.spottedleaf.moonrise.common.PlatformHooks.get().onChunkBorder(chunk, this);
++                    }
++                });
++            });
++            // Paper end - cache ticking ready status
+             this.addSaveDependency(this.fullChunkFuture);
+         }
+ 
+         if (isOrAfter && !isOrAfter1) {
++            // Paper start
++            if (this.isFullChunkReady) {
++                ca.spottedleaf.moonrise.common.PlatformHooks.get().onChunkNotBorder(this.fullChunkFuture.join().orElseThrow(IllegalStateException::new), this); // Paper
++            }
++            // Paper end
+             this.fullChunkFuture.complete(UNLOADED_LEVEL_CHUNK);
+             this.fullChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+         }
+@@ -296,11 +_,25 @@
+         if (!isOrAfter2 && isOrAfter3) {
+             this.tickingChunkFuture = chunkMap.prepareTickingChunk(this);
+             this.scheduleFullChunkPromotion(chunkMap, this.tickingChunkFuture, executor, FullChunkStatus.BLOCK_TICKING);
++            // Paper start - cache ticking ready status
++            this.tickingChunkFuture.thenAccept(chunkResult -> {
++                chunkResult.ifSuccess(chunk -> {
++                    // note: Here is a very good place to add callbacks to logic waiting on this.
++                    ChunkHolder.this.isTickingReady = true;
++                    ca.spottedleaf.moonrise.common.PlatformHooks.get().onChunkTicking(chunk, this);
++                });
++            });
++            // Paper end
+             this.addSaveDependency(this.tickingChunkFuture);
+         }
+ 
+         if (isOrAfter2 && !isOrAfter3) {
+-            this.tickingChunkFuture.complete(UNLOADED_LEVEL_CHUNK);
++            // Paper start
++            if (this.isTickingReady) {
++                ca.spottedleaf.moonrise.common.PlatformHooks.get().onChunkNotTicking(this.tickingChunkFuture.join().orElseThrow(IllegalStateException::new), this); // Paper
++            }
++            // Paper end
++            this.tickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isTickingReady = false; // Paper - cache chunk ticking stage
+             this.tickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+         }
+ 
+@@ -313,11 +_,24 @@
+ 
+             this.entityTickingChunkFuture = chunkMap.prepareEntityTickingChunk(this);
+             this.scheduleFullChunkPromotion(chunkMap, this.entityTickingChunkFuture, executor, FullChunkStatus.ENTITY_TICKING);
++            // Paper start - cache ticking ready status
++            this.entityTickingChunkFuture.thenAccept(chunkResult -> {
++                chunkResult.ifSuccess(chunk -> {
++                    ChunkHolder.this.isEntityTickingReady = true;
++                    ca.spottedleaf.moonrise.common.PlatformHooks.get().onChunkEntityTicking(chunk, this);
++                });
++            });
++            // Paper end
+             this.addSaveDependency(this.entityTickingChunkFuture);
+         }
+ 
+         if (isOrAfter4 && !isOrAfter5) {
+-            this.entityTickingChunkFuture.complete(UNLOADED_LEVEL_CHUNK);
++            // Paper start
++            if (this.isEntityTickingReady) {
++                ca.spottedleaf.moonrise.common.PlatformHooks.get().onChunkNotEntityTicking(this.entityTickingChunkFuture.join().orElseThrow(IllegalStateException::new), this);
++            }
++            // Paper end
++            this.entityTickingChunkFuture.complete(ChunkHolder.UNLOADED_LEVEL_CHUNK); this.isEntityTickingReady = false; // Paper - cache chunk ticking stage
+             this.entityTickingChunkFuture = UNLOADED_LEVEL_CHUNK_FUTURE;
+         }
+ 
+@@ -327,6 +_,26 @@
+ 
+         this.onLevelChange.onLevelChange(this.pos, this::getQueueLevel, this.ticketLevel, this::setQueueLevel);
+         this.oldTicketLevel = this.ticketLevel;
++        // CraftBukkit start
++        // ChunkLoadEvent: Called after the chunk is loaded: isChunkLoaded returns true and chunk is ready to be modified by plugins.
++        if (!fullChunkStatus.isOrAfter(FullChunkStatus.FULL) && fullChunkStatus1.isOrAfter(FullChunkStatus.FULL)) {
++            this.getFullChunkFuture().thenAccept((either) -> {
++                LevelChunk chunk = (LevelChunk) either.orElse(null);
++                if (chunk != null) {
++                    chunkMap.callbackExecutor.execute(() -> {
++                        chunk.loadCallback();
++                    });
++                }
++            }).exceptionally((throwable) -> {
++                // ensure exceptions are printed, by default this is not the case
++                net.minecraft.server.MinecraftServer.LOGGER.error("Failed to schedule load callback for chunk " + ChunkHolder.this.pos, throwable);
++                return null;
++            });
++
++            // Run callback right away if the future was already done
++            chunkMap.callbackExecutor.run();
++        }
++        // CraftBukkit end
+     }
+ 
+     public boolean wasAccessibleSinceLastSave() {

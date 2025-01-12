@@ -133,8 +133,7 @@ public interface Chunk extends PersistentDataHolder {
      *
      * @return The entities.
      */
-    @NotNull
-    Entity[] getEntities();
+    @NotNull Entity @NotNull [] getEntities();
 
     /**
      * Get a list of all tile entities in the chunk.
@@ -143,7 +142,7 @@ public interface Chunk extends PersistentDataHolder {
      */
     @NotNull
     // Paper start
-    default BlockState[] getTileEntities() {
+    default BlockState @NotNull [] getTileEntities() {
         return getTileEntities(true);
     }
 
@@ -154,7 +153,7 @@ public interface Chunk extends PersistentDataHolder {
      * @return The tile entities.
      */
     @NotNull
-    BlockState[] getTileEntities(boolean useSnapshot);
+    BlockState @NotNull [] getTileEntities(boolean useSnapshot);
 
     /**
      * Get a list of all tile entities that match a given predicate in the chunk.

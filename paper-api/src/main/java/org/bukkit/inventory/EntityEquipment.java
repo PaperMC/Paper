@@ -329,7 +329,7 @@ public interface EntityEquipment {
      *
      * @param items The items to set the armor as. Individual items may be null.
      */
-    void setArmorContents(@NotNull ItemStack[] items);
+    void setArmorContents(@NotNull ItemStack @NotNull [] items);
 
     /**
      * Clears the entity of all armor and held items

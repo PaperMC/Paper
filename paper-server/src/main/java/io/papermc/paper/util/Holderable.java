@@ -4,10 +4,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.key.Key;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.RegistryOps;
-import org.bukkit.Keyed;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
@@ -25,7 +27,8 @@ public interface Holderable<M> extends Handleable<M> {
         return this.getHolder().value();
     }
 
-    static <T extends Keyed, M> @Nullable T fromBukkitSerializationObject(final Object deserialized, final Codec<? extends Holder<M>> codec, final Registry<T> registry) { // TODO remove Keyed
+    static <T extends org.bukkit.Keyed, M> @Nullable T fromBukkitSerializationObject(final Object deserialized, final Codec<? extends Holder<M>> codec, final RegistryKey<T> registryKey) { // TODO remove Keyed
+        final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
         return switch (deserialized) {
             case @Subst("key:value") final String string -> {
                 if (!(Key.parseable(string))) {
@@ -74,5 +77,13 @@ public interface Holderable<M> extends Handleable<M> {
 
     default String implToString() {
         return "%s{holder=%s}".formatted(this.getClass().getSimpleName(), this.getHolder().toString());
+    }
+
+    default @Nullable NamespacedKey getKeyOrNull() {
+        return this.getHolder().unwrapKey().map(MCUtil::fromResourceKey).orElse(null);
+    }
+
+    default NamespacedKey getKey() {
+        return MCUtil.fromResourceKey(this.getHolder().unwrapKey().orElseThrow(() -> new IllegalStateException("Cannot get key for this registry item, because it is not registered.")));
     }
 }

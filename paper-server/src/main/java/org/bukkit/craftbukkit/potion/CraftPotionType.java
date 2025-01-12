@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.potion;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
@@ -72,7 +73,7 @@ public class CraftPotionType implements PotionType.InternalPotionData {
         if (key == null) return null; // Paper - Fixup NamespacedKey handling
 
         // Now also convert from when keys where saved
-        return CraftRegistry.get(Registry.POTION, key, ApiVersion.CURRENT);
+        return CraftRegistry.get(RegistryKey.POTION, key, ApiVersion.CURRENT);
     }
 
     private final NamespacedKey key;

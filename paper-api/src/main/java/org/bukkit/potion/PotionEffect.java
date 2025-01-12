@@ -2,6 +2,7 @@ package org.bukkit.potion;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import org.bukkit.Bukkit;
@@ -175,7 +176,7 @@ public class PotionEffect implements ConfigurationSerializable {
     private static PotionEffectType getEffectType(@NotNull Map<?, ?> map) {
         PotionEffectType effect;
         if (map.get(TYPE) instanceof String value) {
-            effect = Bukkit.getUnsafe().get(Registry.EFFECT, NamespacedKey.fromString(value));
+            effect = Bukkit.getUnsafe().get(RegistryKey.MOB_EFFECT, NamespacedKey.fromString(value));
         } else {
             int type = getInt(map, TYPE);
             effect = PotionEffectType.getById(type);

@@ -9,7 +9,6 @@ import io.papermc.paper.plugin.provider.type.PluginFileType;
 import org.bukkit.plugin.InvalidPluginException;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -99,7 +98,7 @@ public class FileProviderSource implements ProviderSource<Path, Path> {
     /**
      * Replaces a plugin with a plugin of the same plugin name in the update folder.
      *
-     * @param file
+     * @param file The plugin jar file to look for updates for.
      */
     private Path checkUpdate(Path file) throws InvalidPluginException {
         PluginInitializerManager pluginSystem = PluginInitializerManager.instance();
@@ -121,11 +120,22 @@ public class FileProviderSource implements ProviderSource<Path, Path> {
                     throw new RuntimeException("Could not copy '" + updateLocation + "' to '" + file + "' in update plugin process", exception);
                 }
 
-                // Idk what this is about, TODO
-                File newName = new File(file.toFile().getParentFile(), updateLocation.toFile().getName());
-                file.toFile().renameTo(newName);
-                updateLocation.toFile().delete();
-                return newName.toPath();
+                // Rename the plugin file to the update file's name.
+                final Path renamedFile = file.resolveSibling(updateLocation.getFileName());
+                try {
+                    Files.move(file, renamedFile, StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException exception) {
+                    throw new RuntimeException("Could not rename '" + file + "' to '" + renamedFile + "' in update plugin process", exception);
+                }
+
+                // Delete the file from the update folder now that it's copied over successfully
+                try {
+                    Files.delete(updateLocation);
+                } catch (IOException exception) {
+                    throw new RuntimeException("Could not delete '" + updateLocation + "' from update folder in update plugin process", exception);
+                }
+
+                return renamedFile;
             }
         } catch (Exception e) {
             throw new InvalidPluginException(e);

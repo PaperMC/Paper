@@ -5706,8 +5706,9 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      *
      * @param world the world to check
      * @return true if this material can be used in this World.
+     * @deprecated use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
      */
-    @Deprecated(forRemoval = true, since = "1.20") // Paper
+    @Deprecated(forRemoval = true, since = "1.20")
     public boolean isEnabledByFeature(@NotNull World world) {
         if (isItem()) {
             return Bukkit.getDataPackManager().isEnabledByFeature(asItemType(), world);

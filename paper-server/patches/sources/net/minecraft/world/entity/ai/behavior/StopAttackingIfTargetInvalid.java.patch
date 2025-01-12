@@ -1,0 +1,33 @@
+--- a/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
++++ b/net/minecraft/world/entity/ai/behavior/StopAttackingIfTargetInvalid.java
+@@ -40,6 +_,30 @@
+                             && !canStopAttacking.test(level, livingEntity)) {
+                             return true;
+                         } else {
++                        // Paper start - better track target change reason
++                        final org.bukkit.event.entity.EntityTargetEvent.TargetReason reason;
++                        if (!entity.canAttack(livingEntity)) {
++                            reason = org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID;
++                        } else if (canGrowTiredOfTryingToReachTarget && StopAttackingIfTargetInvalid.isTiredOfTryingToReachTarget(entity, instance.tryGet(memoryAccessor1))) {
++                            reason = org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET;
++                        } else if (!livingEntity.isAlive()) {
++                            reason = org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_DIED;
++                        } else if (livingEntity.level() != entity.level()) {
++                            reason = org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_OTHER_LEVEL;
++                        } else {
++                            reason = org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_INVALID;
++                        }
++                        // Paper end
++                        // CraftBukkit start
++                        org.bukkit.event.entity.EntityTargetEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(entity, null, reason); // Paper
++                        if (event.isCancelled()) {
++                            return false;
++                        }
++                        if (event.getTarget() != null) {
++                            entity.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, ((org.bukkit.craftbukkit.entity.CraftLivingEntity) event.getTarget()).getHandle());
++                            return true;
++                        }
++                        // CraftBukkit end
+                             onStopAttacking.accept(level, entity, livingEntity);
+                             memoryAccessor.erase();
+                             return true;

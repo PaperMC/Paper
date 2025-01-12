@@ -70,7 +70,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      */
     public void setFrom(@NotNull Location from) {
         validateLocation(from);
-        this.from = from;
+        this.from = from.clone();
     }
 
     /**
@@ -90,7 +90,7 @@ public class PlayerMoveEvent extends PlayerEvent implements Cancellable {
      */
     public void setTo(@NotNull Location to) {
         validateLocation(to);
-        this.to = to;
+        this.to = to.clone();
     }
 
     // Paper start - PlayerMoveEvent improvements

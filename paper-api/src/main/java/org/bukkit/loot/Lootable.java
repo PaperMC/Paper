@@ -16,7 +16,7 @@ public interface Lootable {
     /**
      * Set the loot table for a container or entity.
      * <br>
-     * To remove a loot table use null.
+     * If the provided loot table is null, the loot table will be reset to its default behavior.
      *
      * @param table the Loot Table this {@link org.bukkit.block.Container} or
      * {@link org.bukkit.entity.Mob} will have.
@@ -38,6 +38,8 @@ public interface Lootable {
     // Paper start
     /**
      * Set the loot table and seed for a container or entity at the same time.
+     * <br>
+     * If the provided loot table is null, the loot table will be reset to its default behavior.
      *
      * @param table the Loot Table this {@link org.bukkit.block.Container} or {@link org.bukkit.entity.Mob} will have.
      * @param seed the seed to used to generate loot. Default is 0.
@@ -53,7 +55,8 @@ public interface Lootable {
     }
 
     /**
-     * Clears the associated Loot Table to this object
+     * Clears the associated Loot Table to this object, essentially resetting it to default
+     * @see #setLootTable(LootTable)
      */
     default void clearLootTable() {
         this.setLootTable(null);

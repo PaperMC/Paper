@@ -1,0 +1,26 @@
+--- a/net/minecraft/server/network/PlayerChunkSender.java
++++ b/net/minecraft/server/network/PlayerChunkSender.java
+@@ -44,6 +_,11 @@
+     public void dropChunk(ServerPlayer player, ChunkPos chunkPos) {
+         if (!this.pendingChunks.remove(chunkPos.toLong()) && player.isAlive()) {
+             player.connection.send(new ClientboundForgetLevelChunkPacket(chunkPos));
++            // Paper start - PlayerChunkUnloadEvent
++            if (io.papermc.paper.event.packet.PlayerChunkUnloadEvent.getHandlerList().getRegisteredListeners().length > 0) {
++                new io.papermc.paper.event.packet.PlayerChunkUnloadEvent(player.getBukkitEntity().getWorld().getChunkAt(chunkPos.longKey), player.getBukkitEntity()).callEvent();
++            }
++            // Paper end - PlayerChunkUnloadEvent
+         }
+     }
+ 
+@@ -75,6 +_,11 @@
+ 
+     private static void sendChunk(ServerGamePacketListenerImpl packetListener, ServerLevel level, LevelChunk chunk) {
+         packetListener.send(new ClientboundLevelChunkWithLightPacket(chunk, level.getLightEngine(), null, null));
++        // Paper start - PlayerChunkLoadEvent
++        if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
++            new io.papermc.paper.event.packet.PlayerChunkLoadEvent(new org.bukkit.craftbukkit.CraftChunk(chunk), packetListener.getPlayer().getBukkitEntity()).callEvent();
++        }
++        // Paper end - PlayerChunkLoadEvent
+         ChunkPos pos = chunk.getPos();
+         DebugPackets.sendPoiPacketsForChunk(level, pos);
+     }

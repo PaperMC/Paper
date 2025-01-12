@@ -229,5 +229,5 @@ public interface Messenger {
      * @param channel Channel that the message was sent by.
      * @param message Raw payload of the message.
      */
-    public void dispatchIncomingMessage(@NotNull Player source, @NotNull String channel, @NotNull byte[] message);
+    public void dispatchIncomingMessage(@NotNull Player source, @NotNull String channel, byte @NotNull [] message);
 }

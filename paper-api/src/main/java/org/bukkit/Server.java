@@ -14,6 +14,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Warning.WarningState;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.data.BlockData;
@@ -40,6 +43,7 @@ import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemCraftResult;
 import org.bukkit.inventory.ItemFactory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.Recipe;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -408,6 +412,40 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
         spigot().broadcast(components);
     }
     // Paper end
+
+    /**
+     * Sends a message with the MiniMessage format to the server.
+     * <p>
+     * See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a>
+     * for more information on the format.
+     *
+     * @param message MiniMessage content
+     */
+    default void sendRichMessage(final @NotNull String message) {
+        this.sendMessage(MiniMessage.miniMessage().deserialize(message));
+    }
+
+    /**
+     * Sends a message with the MiniMessage format to the server.
+     * <p>
+     * See <a href="https://docs.advntr.dev/minimessage/">MiniMessage docs</a> and <a href="https://docs.advntr.dev/minimessage/dynamic-replacements">MiniMessage Placeholders docs</a>
+     * for more information on the format.
+     *
+     * @param message MiniMessage content
+     * @param resolvers resolvers to use
+     */
+    default void sendRichMessage(final @NotNull String message, final @NotNull TagResolver... resolvers) {
+        this.sendMessage(MiniMessage.miniMessage().deserialize(message, resolvers));
+    }
+
+    /**
+     * Sends a plain message to the server.
+     *
+     * @param message plain message
+     */
+    default void sendPlainMessage(final @NotNull String message) {
+        this.sendMessage(Component.text(message));
+    }
 
     /**
      * Gets the name of the update folder. The update folder is used to safely
@@ -1018,7 +1056,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return the {@link Recipe} resulting from the given crafting matrix.
      */
     @Nullable
-    public Recipe getCraftingRecipe(@NotNull ItemStack[] craftingMatrix, @NotNull World world);
+    public Recipe getCraftingRecipe(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world);
 
     /**
      * Get the crafted item using the list of {@link ItemStack} provided.
@@ -1046,7 +1084,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * an ItemStack of {@link Material#AIR} is returned.
      */
     @NotNull
-    public ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player);
+    public ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world, @NotNull Player player);
 
     /**
      * Get the crafted item using the list of {@link ItemStack} provided.
@@ -1067,7 +1105,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * an ItemStack of {@link Material#AIR} is returned.
      */
     @NotNull
-    public ItemStack craftItem(@NotNull ItemStack[] craftingMatrix, @NotNull World world);
+    public ItemStack craftItem(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world);
 
     /**
      * Get the crafted item using the list of {@link ItemStack} provided.
@@ -1094,7 +1132,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
      */
     @NotNull
-    public ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world, @NotNull Player player);
+    public ItemCraftResult craftItemResult(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world, @NotNull Player player);
 
     /**
      * Get the crafted item using the list of {@link ItemStack} provided.
@@ -1114,7 +1152,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return resulting {@link ItemCraftResult} containing the resulting item, matrix and any overflow items.
      */
     @NotNull
-    public ItemCraftResult craftItemResult(@NotNull ItemStack[] craftingMatrix, @NotNull World world);
+    public ItemCraftResult craftItemResult(@NotNull ItemStack @NotNull [] craftingMatrix, @NotNull World world);
 
     /**
      * Get an iterator through the list of crafting recipes.
@@ -1503,8 +1541,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return an array containing all previous players
      */
-    @NotNull
-    public OfflinePlayer[] getOfflinePlayers();
+    public @NotNull OfflinePlayer @NotNull [] getOfflinePlayers();
 
     /**
      * Gets the {@link Messenger} responsible for this server.
@@ -1529,11 +1566,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * <br>
      * {@link InventoryType#WORKBENCH} will not process crafting recipes if
      * created with this method. Use
-     * {@link Player#openWorkbench(Location, boolean)} instead.
+     * {@link MenuType#CRAFTING} instead.
      * <br>
      * {@link InventoryType#ENCHANTING} will not process {@link ItemStack}s
      * for possible enchanting results. Use
-     * {@link Player#openEnchanting(Location, boolean)} instead.
+     * {@link MenuType#ENCHANTMENT} instead.
      *
      * @param owner the holder of the inventory, or null to indicate no holder
      * @param type the type of inventory to create
@@ -1556,11 +1593,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * <br>
      * {@link InventoryType#WORKBENCH} will not process crafting recipes if
      * created with this method. Use
-     * {@link Player#openWorkbench(Location, boolean)} instead.
+     * {@link MenuType#CRAFTING} instead.
      * <br>
      * {@link InventoryType#ENCHANTING} will not process {@link ItemStack}s
      * for possible enchanting results. Use
-     * {@link Player#openEnchanting(Location, boolean)} instead.
+     * {@link MenuType#ENCHANTMENT} instead.
      *
      * @param owner The holder of the inventory; can be null if there's no holder.
      * @param type The type of inventory to create.
@@ -1584,11 +1621,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * <br>
      * {@link InventoryType#WORKBENCH} will not process crafting recipes if
      * created with this method. Use
-     * {@link Player#openWorkbench(Location, boolean)} instead.
+     * {@link MenuType#CRAFTING} instead.
      * <br>
      * {@link InventoryType#ENCHANTING} will not process {@link ItemStack}s
      * for possible enchanting results. Use
-     * {@link Player#openEnchanting(Location, boolean)} instead.
+     * {@link MenuType#ENCHANTMENT} instead.
      *
      * @param owner The holder of the inventory; can be null if there's no holder.
      * @param type The type of inventory to create.
@@ -1655,7 +1692,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param title the title of the corresponding merchant inventory, displayed
      * when the merchant inventory is viewed
      * @return a new merchant
+     * @deprecated The title parameter is no-longer needed when used with
+     * {@link MenuType#MERCHANT} and {@link MenuType.Typed#builder()}.
      */
+    @Deprecated(since = "1.21.4")
     @NotNull Merchant createMerchant(net.kyori.adventure.text.@Nullable Component title);
     // Paper start
     /**
@@ -1664,7 +1704,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param title the title of the corresponding merchant inventory, displayed
      * when the merchant inventory is viewed
      * @return a new merchant
-     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}
+     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}, The title parameter is
+     * no-longer needed when used with {@link MenuType#MERCHANT} and {@link MenuType.Typed#builder()}.
      */
     @NotNull
     @Deprecated // Paper
@@ -1678,6 +1719,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * negative then the limit it's not used
      */
     int getMaxChainedNeighborUpdates();
+
+    /**
+     * Creates an empty merchant.
+     *
+     * @return a new merchant
+     */
+    @NotNull
+    Merchant createMerchant();
 
     /**
      * Gets user-specified limit for number of monsters that can spawn in a
@@ -2057,16 +2106,14 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      *
      * @return current server TPS (1m, 5m, 15m in Paper-Server)
      */
-    @NotNull
-    public double[] getTPS();
+    public double @NotNull [] getTPS();
 
     /**
      * Get a sample of the servers last tick times (in nanos)
      *
      * @return A sample of the servers last tick times (in nanos)
      */
-    @NotNull
-    long[] getTickTimes();
+    long @NotNull [] getTickTimes();
 
     /**
      * Get the average tick time (in millis)

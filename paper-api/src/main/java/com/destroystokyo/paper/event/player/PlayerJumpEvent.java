@@ -79,7 +79,7 @@ public class PlayerJumpEvent extends PlayerEvent implements Cancellable {
     public void setFrom(final Location from) {
         Preconditions.checkArgument(from != null, "Cannot use null from location!");
         Preconditions.checkArgument(from.getWorld() != null, "Cannot use from location with null world!");
-        this.from = from;
+        this.from = from.clone();
     }
 
     /**

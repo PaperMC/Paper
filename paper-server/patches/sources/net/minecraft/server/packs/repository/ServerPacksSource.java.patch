@@ -1,0 +1,41 @@
+--- a/net/minecraft/server/packs/repository/ServerPacksSource.java
++++ b/net/minecraft/server/packs/repository/ServerPacksSource.java
+@@ -48,7 +_,7 @@
+     public static VanillaPackResources createVanillaPackSource() {
+         return new VanillaPackResourcesBuilder()
+             .setMetadata(BUILT_IN_METADATA)
+-            .exposeNamespace("minecraft")
++            .exposeNamespace("minecraft", ResourceLocation.PAPER_NAMESPACE) // Paper
+             .applyDevelopmentConfig()
+             .pushJarResources()
+             .build(VANILLA_PACK_INFO);
+@@ -68,15 +_,26 @@
+     @Nullable
+     @Override
+     protected Pack createBuiltinPack(String id, Pack.ResourcesSupplier resources, Component title) {
+-        return Pack.readMetaAndCreate(createBuiltInPackLocation(id, title), resources, PackType.SERVER_DATA, FEATURE_SELECTION_CONFIG);
++        // Paper start - custom built-in pack
++        final PackLocationInfo info;
++        final PackSelectionConfig packConfig;
++        if ("paper".equals(id)) {
++            info = new PackLocationInfo(id, title, PackSource.BUILT_IN, Optional.empty());
++            packConfig = new PackSelectionConfig(true, Pack.Position.TOP, true);
++        } else {
++            info = createBuiltInPackLocation(id, title);
++            packConfig = FEATURE_SELECTION_CONFIG;
++        }
++        return Pack.readMetaAndCreate(info, resources, PackType.SERVER_DATA, packConfig);
++        // Paper end - custom built-in pack
+     }
+ 
+     public static PackRepository createPackRepository(Path folder, DirectoryValidator validator) {
+-        return new PackRepository(new ServerPacksSource(validator), new FolderRepositorySource(folder, PackType.SERVER_DATA, PackSource.WORLD, validator));
++        return new PackRepository(validator, new ServerPacksSource(validator), new FolderRepositorySource(folder, PackType.SERVER_DATA, PackSource.WORLD, validator)); // Paper - add validator
+     }
+ 
+     public static PackRepository createVanillaTrustedRepository() {
+-        return new PackRepository(new ServerPacksSource(new DirectoryValidator(path -> true)));
++        return new PackRepository(new DirectoryValidator(path -> true), new ServerPacksSource(new DirectoryValidator(path -> true))); // Paper - add validator
+     }
+ 
+     public static PackRepository createPackRepository(LevelStorageSource.LevelStorageAccess level) {

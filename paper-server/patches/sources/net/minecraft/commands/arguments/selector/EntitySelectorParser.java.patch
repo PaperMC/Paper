@@ -1,0 +1,49 @@
+--- a/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
++++ b/net/minecraft/commands/arguments/selector/EntitySelectorParser.java
+@@ -122,6 +_,11 @@
+     }
+ 
+     public static <S> boolean allowSelectors(S suggestionProvider) {
++        // Paper start - Fix EntityArgument permissions
++        if (suggestionProvider instanceof net.minecraft.commands.CommandSourceStack stack) {
++            return stack.bypassSelectorPermissions || stack.hasPermission(2, "minecraft.command.selector");
++        }
++        // Paper end - Fix EntityArgument permissions
+         return suggestionProvider instanceof SharedSuggestionProvider sharedSuggestionProvider && sharedSuggestionProvider.hasPermission(2);
+     }
+ 
+@@ -198,8 +_,10 @@
+         };
+     }
+ 
+-    protected void parseSelector() throws CommandSyntaxException {
+-        this.usesSelectors = true;
++    // CraftBukkit start
++    protected void parseSelector(boolean overridePermissions) throws CommandSyntaxException {
++        this.usesSelectors = !overridePermissions;
++        // CraftBukkit end
+         this.suggestions = this::suggestSelector;
+         if (!this.reader.canRead()) {
+             throw ERROR_MISSING_SELECTOR_TYPE.createWithContext(this.reader);
+@@ -467,6 +_,12 @@
+     }
+ 
+     public EntitySelector parse() throws CommandSyntaxException {
++        // CraftBukkit start
++        return this.parse(false);
++    }
++
++    public EntitySelector parse(boolean overridePermissions) throws CommandSyntaxException {
++        // CraftBukkit end
+         this.startPosition = this.reader.getCursor();
+         this.suggestions = this::suggestNameOrSelector;
+         if (this.reader.canRead() && this.reader.peek() == '@') {
+@@ -475,7 +_,7 @@
+             }
+ 
+             this.reader.skip();
+-            this.parseSelector();
++            this.parseSelector(overridePermissions); // CraftBukkit
+         } else {
+             this.parseNameOrUUID();
+         }

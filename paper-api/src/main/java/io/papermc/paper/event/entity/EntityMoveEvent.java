@@ -53,7 +53,7 @@ public class EntityMoveEvent extends EntityEvent implements Cancellable {
      */
     public void setFrom(final Location from) {
         this.validateLocation(from);
-        this.from = from;
+        this.from = from.clone();
     }
 
     /**
@@ -72,7 +72,7 @@ public class EntityMoveEvent extends EntityEvent implements Cancellable {
      */
     public void setTo(final Location to) {
         this.validateLocation(to);
-        this.to = to;
+        this.to = to.clone();
     }
 
     /**

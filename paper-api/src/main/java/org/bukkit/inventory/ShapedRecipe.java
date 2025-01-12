@@ -234,8 +234,7 @@ public class ShapedRecipe extends CraftingRecipe {
      * @return The recipe's shape.
      * @throws NullPointerException when not set yet
      */
-    @NotNull
-    public String[] getShape() {
+    public @NotNull String @NotNull [] getShape() {
         return rows.clone();
     }
 }

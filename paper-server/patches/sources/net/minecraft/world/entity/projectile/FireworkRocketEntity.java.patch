@@ -1,0 +1,90 @@
+--- a/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
++++ b/net/minecraft/world/entity/projectile/FireworkRocketEntity.java
+@@ -43,6 +_,7 @@
+     public int lifetime;
+     @Nullable
+     public LivingEntity attachedToEntity;
++    @Nullable public java.util.UUID spawningEntity; // Paper
+ 
+     public FireworkRocketEntity(EntityType<? extends FireworkRocketEntity> entityType, Level level) {
+         super(entityType, level);
+@@ -158,7 +_,7 @@
+         }
+ 
+         if (!this.noPhysics && this.isAlive() && hitResultOnMoveVector.getType() != HitResult.Type.MISS) {
+-            this.hitTargetOrDeflectSelf(hitResultOnMoveVector);
++            this.preHitTargetOrDeflectSelf(hitResultOnMoveVector); // CraftBukkit - projectile hit event
+             this.hasImpulse = true;
+         }
+ 
+@@ -182,7 +_,11 @@
+         }
+ 
+         if (this.life > this.lifetime && this.level() instanceof ServerLevel serverLevel) {
+-            this.explode(serverLevel);
++            // CraftBukkit start
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                this.explode(serverLevel);
++            }
++            // CraftBukkit end
+         }
+     }
+ 
+@@ -190,14 +_,18 @@
+         level.broadcastEntityEvent(this, (byte)17);
+         this.gameEvent(GameEvent.EXPLODE, this.getOwner());
+         this.dealExplosionDamage(level);
+-        this.discard();
++        this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.EXPLODE); // CraftBukkit - add Bukkit remove cause
+     }
+ 
+     @Override
+     protected void onHitEntity(EntityHitResult result) {
+         super.onHitEntity(result);
+         if (this.level() instanceof ServerLevel serverLevel) {
+-            this.explode(serverLevel);
++            // CraftBukkit start
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                this.explode(serverLevel);
++            }
++            // CraftBukkit end
+         }
+     }
+ 
+@@ -206,7 +_,11 @@
+         BlockPos blockPos = new BlockPos(result.getBlockPos());
+         this.level().getBlockState(blockPos).entityInside(this.level(), blockPos, this);
+         if (this.level() instanceof ServerLevel serverLevel && this.hasExplosion()) {
+-            this.explode(serverLevel);
++            // CraftBukkit start
++            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callFireworkExplodeEvent(this).isCancelled()) {
++                this.explode(serverLevel);
++            }
++            // CraftBukkit end
+         }
+ 
+         super.onHitBlock(result);
+@@ -278,6 +_,11 @@
+         compound.putInt("LifeTime", this.lifetime);
+         compound.put("FireworksItem", this.getItem().save(this.registryAccess()));
+         compound.putBoolean("ShotAtAngle", this.entityData.get(DATA_SHOT_AT_ANGLE));
++        // Paper start
++        if (this.spawningEntity != null) {
++            compound.putUUID("SpawningEntity", this.spawningEntity);
++        }
++        // Paper end
+     }
+ 
+     @Override
+@@ -298,6 +_,11 @@
+         if (compound.contains("ShotAtAngle")) {
+             this.entityData.set(DATA_SHOT_AT_ANGLE, compound.getBoolean("ShotAtAngle"));
+         }
++        // Paper start
++        if (compound.hasUUID("SpawningEntity")) {
++            this.spawningEntity = compound.getUUID("SpawningEntity");
++        }
++        // Paper end
+     }
+ 
+     private List<FireworkExplosion> getExplosions() {

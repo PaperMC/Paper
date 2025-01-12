@@ -21,6 +21,7 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Cat;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
@@ -79,6 +80,9 @@ public interface Generators {
         simpleTagKey("BannerPatternTagKeys", PatternType.class, Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN),
         simpleTagKey("PaintingVariantTagKeys", Art.class, Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT),
         simpleTagKey("InstrumentTagKeys", MusicInstrument.class, Registries.INSTRUMENT, RegistryKey.INSTRUMENT),
+
+        // api only
+        simpleTagKey("EntityTypeTagKeys", EntityType.class, Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE),
         new MobGoalGenerator("VanillaGoal", "com.destroystokyo.paper.entity.ai")
     };
 

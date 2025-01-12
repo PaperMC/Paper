@@ -1,0 +1,124 @@
+--- a/net/minecraft/world/entity/player/Inventory.java
++++ b/net/minecraft/world/entity/player/Inventory.java
+@@ -36,6 +_,54 @@
+     public final Player player;
+     private int timesChanged;
+ 
++    // CraftBukkit start - add fields and methods
++    public List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
++    private int maxStack = MAX_STACK;
++
++    public List<ItemStack> getContents() {
++        List<ItemStack> combined = new java.util.ArrayList<>(this.items.size() + this.armor.size() + this.offhand.size());
++        for (List<ItemStack> sub : this.compartments) {
++            combined.addAll(sub);
++        }
++
++        return combined;
++    }
++
++    public List<ItemStack> getArmorContents() {
++        return this.armor;
++    }
++
++    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++        this.transaction.add(player);
++    }
++
++    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
++        this.transaction.remove(player);
++    }
++
++    public List<org.bukkit.entity.HumanEntity> getViewers() {
++        return this.transaction;
++    }
++
++    public org.bukkit.inventory.InventoryHolder getOwner() {
++        return this.player.getBukkitEntity();
++    }
++
++    @Override
++    public int getMaxStackSize() {
++        return this.maxStack;
++    }
++
++    public void setMaxStackSize(int size) {
++        this.maxStack = size;
++    }
++
++    @Override
++    public org.bukkit.Location getLocation() {
++        return this.player.getBukkitEntity().getLocation();
++    }
++    // CraftBukkit end
++
+     public Inventory(Player player) {
+         this.player = player;
+     }
+@@ -50,10 +_,39 @@
+ 
+     private boolean hasRemainingSpaceForItem(ItemStack destination, ItemStack origin) {
+         return !destination.isEmpty()
+-            && ItemStack.isSameItemSameComponents(destination, origin)
+             && destination.isStackable()
+-            && destination.getCount() < this.getMaxStackSize(destination);
+-    }
++            && destination.getCount() < this.getMaxStackSize(destination)
++            && ItemStack.isSameItemSameComponents(destination, origin); // Paper - check if itemstack is stackable first
++    }
++
++    // CraftBukkit start - Watch method above! :D
++    public int canHold(ItemStack itemStack) {
++        int remains = itemStack.getCount();
++        for (int slot = 0; slot < this.items.size(); ++slot) {
++            ItemStack itemInSlot = this.getItem(slot);
++            if (itemInSlot.isEmpty()) {
++                return itemStack.getCount();
++            }
++
++            if (this.hasRemainingSpaceForItem(itemInSlot, itemStack)) {
++                remains -= (itemInSlot.getMaxStackSize() < this.getMaxStackSize() ? itemInSlot.getMaxStackSize() : this.getMaxStackSize()) - itemInSlot.getCount();
++            }
++            if (remains <= 0) {
++                return itemStack.getCount();
++            }
++        }
++
++        ItemStack itemInOffhand = this.getItem(this.items.size() + this.armor.size());
++        if (this.hasRemainingSpaceForItem(itemInOffhand, itemStack)) {
++            remains -= (itemInOffhand.getMaxStackSize() < this.getMaxStackSize() ? itemInOffhand.getMaxStackSize() : this.getMaxStackSize()) - itemInOffhand.getCount();
++        }
++        if (remains <= 0) {
++            return itemStack.getCount();
++        }
++
++        return itemStack.getCount() - remains;
++    }
++    // CraftBukkit end
+ 
+     public int getFreeSlot() {
+         for (int i = 0; i < this.items.size(); i++) {
+@@ -65,7 +_,10 @@
+         return -1;
+     }
+ 
+-    public void addAndPickItem(ItemStack stack) {
++    // Paper start - Add PlayerPickItemEvent
++    public void addAndPickItem(ItemStack stack, final int targetSlot) {
++        this.selected = targetSlot;
++        // Paper end - Add PlayerPickItemEvent
+         this.selected = this.getSuitableHotbarSlot();
+         if (!this.items.get(this.selected).isEmpty()) {
+             int freeSlot = this.getFreeSlot();
+@@ -77,7 +_,10 @@
+         this.items.set(this.selected, stack);
+     }
+ 
+-    public void pickSlot(int index) {
++    // Paper start - Add PlayerPickItemEvent
++    public void pickSlot(int index, final int targetSlot) {
++        this.selected = targetSlot;
++        // Paper end - Add PlayerPickItemEvent
+         this.selected = this.getSuitableHotbarSlot();
+         ItemStack itemStack = this.items.get(this.selected);
+         this.items.set(this.selected, this.items.get(index));

@@ -43,7 +43,7 @@ public class FluidLevelChangeEvent extends BlockEvent implements Cancellable {
         Preconditions.checkArgument(newData != null, "newData null");
         Preconditions.checkArgument(this.newData.getMaterial().equals(newData.getMaterial()), "Cannot change fluid type");
 
-        this.newData = newData;
+        this.newData = newData.clone();
     }
 
     @Override

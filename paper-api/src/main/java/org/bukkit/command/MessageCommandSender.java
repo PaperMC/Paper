@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 public interface MessageCommandSender extends CommandSender {
 
     @Override
-    default void sendMessage(@NotNull String[] messages) {
+    default void sendMessage(@NotNull String @NotNull [] messages) {
         for (String message : messages) {
             sendMessage(message);
         }
@@ -34,7 +34,7 @@ public interface MessageCommandSender extends CommandSender {
     }
 
     @Override
-    default void sendMessage(@Nullable UUID sender, @NotNull String[] messages) {
+    default void sendMessage(@Nullable UUID sender, @NotNull String @NotNull [] messages) {
         for (String message : messages) {
             sendMessage(message);
         }

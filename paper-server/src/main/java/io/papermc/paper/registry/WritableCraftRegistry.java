@@ -2,52 +2,42 @@ package io.papermc.paper.registry;
 
 import com.mojang.serialization.Lifecycle;
 import io.papermc.paper.registry.data.util.Conversions;
-import io.papermc.paper.registry.entry.RegistryEntry;
-import io.papermc.paper.registry.entry.RegistryTypeMapper;
+import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.event.WritableRegistry;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.RegistrationInfo;
 import net.minecraft.resources.ResourceKey;
 import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.ApiVersion;
 
 public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBuilder<M, T>> extends CraftRegistry<T, M> {
 
     private static final RegistrationInfo FROM_PLUGIN = new RegistrationInfo(Optional.empty(), Lifecycle.experimental());
 
-    private final RegistryEntry.BuilderHolder<M, T, B> entry;
+    private final RegistryEntryMeta.Buildable<M, T, B> meta;
     private final MappedRegistry<M> registry;
-    private final PaperRegistryBuilder.Factory<M, T, ? extends B> builderFactory;
 
     public WritableCraftRegistry(
-        final RegistryEntry.BuilderHolder<M, T, B> entry,
-        final Class<?> classToPreload,
         final MappedRegistry<M> registry,
-        final BiFunction<NamespacedKey, ApiVersion, NamespacedKey> serializationUpdater,
-        final PaperRegistryBuilder.Factory<M, T, ? extends B> builderFactory,
-        final RegistryTypeMapper<M, T> minecraftToBukkit
+        final RegistryEntryMeta.Buildable<M, T, B> meta
     ) {
-        super(classToPreload, registry, minecraftToBukkit, serializationUpdater);
-        this.entry = entry;
+        super(meta, registry);
         this.registry = registry;
-        this.builderFactory = builderFactory;
+        this.meta = meta;
     }
 
-    public void register(final TypedKey<T> key, final Consumer<? super B> value, final Conversions conversions) {
+    public void register(final TypedKey<T> key, final Consumer<RegistryBuilderFactory<T, B>> value, final Conversions conversions) {
         final ResourceKey<M> resourceKey = PaperRegistries.toNms(key);
         this.registry.validateWrite(resourceKey);
-        final B builder = this.newBuilder(conversions);
-        value.accept(builder);
+        final PaperRegistryBuilderFactory<M, T, B> builderFactory = new PaperRegistryBuilderFactory<>(conversions, this.meta.builderFiller(), this.registry.temporaryUnfrozenMap::get);
+        value.accept(builderFactory);
         PaperRegistryListenerManager.INSTANCE.registerWithListeners(
             this.registry,
-            RegistryEntry.Modifiable.asModifiable(this.entry),
+            this.meta,
             resourceKey,
-            builder,
+            builderFactory.requireBuilder(),
             FROM_PLUGIN,
             conversions
         );
@@ -55,10 +45,6 @@ public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBu
 
     public WritableRegistry<T, B> createApiWritableRegistry(final Conversions conversions) {
         return new ApiWritableRegistry(conversions);
-    }
-
-    protected B newBuilder(final Conversions conversions) {
-        return this.builderFactory.create(conversions);
     }
 
     public class ApiWritableRegistry implements WritableRegistry<T, B> {
@@ -70,7 +56,7 @@ public class WritableCraftRegistry<M, T extends Keyed, B extends PaperRegistryBu
         }
 
         @Override
-        public void register(final TypedKey<T> key, final Consumer<? super B> value) {
+        public void registerWith(final TypedKey<T> key, final Consumer<RegistryBuilderFactory<T, B>> value) {
             WritableCraftRegistry.this.register(key, value, this.conversions);
         }
     }

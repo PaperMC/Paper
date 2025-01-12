@@ -1,0 +1,44 @@
+--- a/net/minecraft/world/entity/ai/behavior/ShufflingList.java
++++ b/net/minecraft/world/entity/ai/behavior/ShufflingList.java
+@@ -16,12 +_,25 @@
+ public class ShufflingList<U> implements Iterable<U> {
+     protected final List<ShufflingList.WeightedEntry<U>> entries;
+     private final RandomSource random = RandomSource.create();
++    private final boolean isUnsafe; // Paper - Fix Concurrency issue in ShufflingList during worldgen
+ 
+     public ShufflingList() {
++        // Paper start - Fix Concurrency issue in ShufflingList during worldgen
++        this(true);
++    }
++    public ShufflingList(boolean isUnsafe) {
++        this.isUnsafe = isUnsafe;
++        // Paper end - Fix Concurrency issue in ShufflingList during worldgen
+         this.entries = Lists.newArrayList();
+     }
+ 
+     private ShufflingList(List<ShufflingList.WeightedEntry<U>> entries) {
++        // Paper start - Fix Concurrency issue in ShufflingList during worldgen
++        this(entries, true);
++    }
++    private ShufflingList(List<ShufflingList.WeightedEntry<U>> entries, boolean isUnsafe) {
++        this.isUnsafe = isUnsafe;
++        // Paper end - Fix Concurrency issue in ShufflingList during worldgen
+         this.entries = Lists.newArrayList(entries);
+     }
+ 
+@@ -35,9 +_,12 @@
+     }
+ 
+     public ShufflingList<U> shuffle() {
+-        this.entries.forEach(entry -> entry.setRandom(this.random.nextFloat()));
+-        this.entries.sort(Comparator.comparingDouble(ShufflingList.WeightedEntry::getRandWeight));
+-        return this;
++        // Paper start - Fix Concurrency issue in ShufflingList during worldgen
++        List<ShufflingList.WeightedEntry<U>> list = this.isUnsafe ? Lists.newArrayList(this.entries) : this.entries;
++        list.forEach(entry -> entry.setRandom(this.random.nextFloat()));
++        list.sort(Comparator.comparingDouble(ShufflingList.WeightedEntry::getRandWeight));
++        return this.isUnsafe ? new ShufflingList<>(list, this.isUnsafe) : this;
++        // Paper end - Fix Concurrency issue in ShufflingList during worldgen
+     }
+ 
+     public Stream<U> stream() {

@@ -9,7 +9,7 @@ import net.minecraft.world.level.levelgen.PositionalRandomFactory;
 /**
  * Avoid costly CAS of superclass
  */
-public final class ThreadUnsafeRandom implements BitRandomSource {
+public class ThreadUnsafeRandom implements BitRandomSource { // Paper - replace random
 
     private static final long MULTIPLIER = 25214903917L;
     private static final long ADDEND = 11L;

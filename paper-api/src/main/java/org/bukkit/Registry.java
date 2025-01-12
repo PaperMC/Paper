@@ -3,13 +3,22 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.TypedKey;
+import io.papermc.paper.registry.tag.Tag;
+import io.papermc.paper.registry.tag.TagKey;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import net.kyori.adventure.key.Key;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Biome;
@@ -35,8 +44,8 @@ import org.bukkit.map.MapCursor;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a registry of Bukkit objects that may be retrieved by
@@ -44,39 +53,34 @@ import org.jetbrains.annotations.Nullable;
  *
  * @param <T> type of item in the registry
  */
+@NullMarked
 public interface Registry<T extends Keyed> extends Iterable<T> {
+
+    private static <A extends Keyed> Registry<A> registryFor(final RegistryKey<A> registryKey) {
+        return RegistryAccess.registryAccess().getRegistry(registryKey);
+    }
+
+    @SuppressWarnings("removal")
+    @Deprecated(forRemoval = true, since = "1.21.4")
+    private static <A extends Keyed> Registry<A> legacyRegistryFor(final Class<A> clazz) {
+        return Objects.requireNonNull(RegistryAccess.registryAccess().getRegistry(clazz), "No registry present for " + clazz.getSimpleName() + ". This is a bug.");
+    }
 
     /**
      * Server advancements.
      *
-     * @see Bukkit#getAdvancement(org.bukkit.NamespacedKey)
+     * @see Bukkit#getAdvancement(NamespacedKey)
      * @see Bukkit#advancementIterator()
+     * @deprecated use {@link Bukkit#getAdvancement(NamespacedKey)} and {@link Bukkit#advancementIterator()}
      */
-    Registry<Advancement> ADVANCEMENT = new Registry<Advancement>() {
+    @Deprecated(since = "1.21.4", forRemoval = true)
+    Registry<Advancement> ADVANCEMENT = new NotARegistry<>() {
 
-        @Nullable
         @Override
-        public Advancement get(@NotNull NamespacedKey key) {
+        public @Nullable Advancement get(final NamespacedKey key) {
             return Bukkit.getAdvancement(key);
         }
 
-        @NotNull
-        @Override
-        public Advancement getOrThrow(@NotNull NamespacedKey key) {
-            Advancement advancement = get(key);
-
-            Preconditions.checkArgument(advancement != null, "No Advancement registry entry found for key %s.", key);
-
-            return advancement;
-        }
-
-        @NotNull
-        @Override
-        public Stream<Advancement> stream() {
-            return StreamSupport.stream(spliterator(), false);
-        }
-
-        @NotNull
         @Override
         public Iterator<Advancement> iterator() {
             return Bukkit.advancementIterator();
@@ -86,71 +90,54 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Server art.
      *
      * @see Art
-     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#PAINTING_VARIANT}
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#PAINTING_VARIANT}
      */
     @Deprecated(since = "1.21.3") // Paper
-    Registry<Art> ART = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(Art.class), "No registry present for Art. This is a bug.");
+    Registry<Art> ART = legacyRegistryFor(Art.class);
     /**
      * Attribute.
      *
      * @see Attribute
      */
-    Registry<Attribute> ATTRIBUTE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.ATTRIBUTE); // Paper
+    Registry<Attribute> ATTRIBUTE = registryFor(RegistryKey.ATTRIBUTE);
     /**
      * Server banner patterns.
      *
      * @see PatternType
-     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#BANNER_PATTERN}
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#BANNER_PATTERN}
      */
     @Deprecated(since = "1.21") // Paper
-    Registry<PatternType> BANNER_PATTERN = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(PatternType.class), "No registry present for PatternType. This is a bug."); // Paper
+    Registry<PatternType> BANNER_PATTERN = legacyRegistryFor(PatternType.class);
     /**
      * Server biomes.
      *
      * @see Biome
-     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#BIOME}
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#BIOME}
      */
     @Deprecated(since = "1.21.3") // Paper
-    Registry<Biome> BIOME = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(Biome.class), "No registry present for Biome. This is a bug.");
+    Registry<Biome> BIOME = legacyRegistryFor(Biome.class);
     /**
      * Server block types.
      *
      * @see BlockType
-     * @apiNote BlockType is not ready for public usage yet
      */
-    @ApiStatus.Internal
-    Registry<BlockType> BLOCK = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.BLOCK); // Paper
+    @ApiStatus.Experimental
+    Registry<BlockType> BLOCK = registryFor(RegistryKey.BLOCK);
     /**
      * Custom boss bars.
      *
      * @see Bukkit#getBossBar(org.bukkit.NamespacedKey)
      * @see Bukkit#getBossBars()
+     * @deprecated use {@link Bukkit#getBossBar(NamespacedKey)} and {@link Bukkit#getBossBars()}
      */
-    Registry<KeyedBossBar> BOSS_BARS = new Registry<KeyedBossBar>() {
+    @Deprecated(since = "1.21.4", forRemoval = true)
+    Registry<KeyedBossBar> BOSS_BARS = new NotARegistry<>() {
 
-        @Nullable
         @Override
-        public KeyedBossBar get(@NotNull NamespacedKey key) {
+        public @Nullable KeyedBossBar get(final NamespacedKey key) {
             return Bukkit.getBossBar(key);
         }
 
-        @NotNull
-        @Override
-        public KeyedBossBar getOrThrow(@NotNull NamespacedKey key) {
-            KeyedBossBar keyedBossBar = get(key);
-
-            Preconditions.checkArgument(keyedBossBar != null, "No KeyedBossBar registry entry found for key %s.", key);
-
-            return keyedBossBar;
-        }
-
-        @NotNull
-        @Override
-        public Stream<KeyedBossBar> stream() {
-            return StreamSupport.stream(spliterator(), false);
-        }
-
-        @NotNull
         @Override
         public Iterator<KeyedBossBar> iterator() {
             return Bukkit.getBossBars();
@@ -161,37 +148,36 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Cat.Type
      */
-    Registry<Cat.Type> CAT_VARIANT = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.CAT_VARIANT); // Paper
+    Registry<Cat.Type> CAT_VARIANT = registryFor(RegistryKey.CAT_VARIANT);
     /**
      * Server enchantments.
      *
      * @see Enchantment
-     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#ENCHANTMENT}
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#ENCHANTMENT}
      */
     @Deprecated(since = "1.21")
-    Registry<Enchantment> ENCHANTMENT = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(Enchantment.class), "No registry present for Enchantment. This is a bug."); // Paper
+    Registry<Enchantment> ENCHANTMENT = legacyRegistryFor(Enchantment.class);
     /**
      * Server entity types.
      *
      * @see EntityType
      */
-    Registry<EntityType> ENTITY_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.ENTITY_TYPE); // Paper
+    Registry<EntityType> ENTITY_TYPE = registryFor(RegistryKey.ENTITY_TYPE);
     /**
      * Server instruments.
      *
      * @see MusicInstrument
-     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#INSTRUMENT}
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#INSTRUMENT}
      */
     @Deprecated(since = "1.21.2")
-    Registry<MusicInstrument> INSTRUMENT = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(MusicInstrument.class), "No registry present for Instruments. This is a bug."); // Paper
+    Registry<MusicInstrument> INSTRUMENT = legacyRegistryFor(MusicInstrument.class);
     /**
      * Server item types.
      *
      * @see ItemType
-     * @apiNote ItemType is not ready for public usage yet
      */
-    @ApiStatus.Internal
-    Registry<ItemType> ITEM = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.ITEM); // Paper
+    @ApiStatus.Experimental
+    Registry<ItemType> ITEM = registryFor(RegistryKey.ITEM);
     /**
      * Default server loot tables.
      *
@@ -210,25 +196,25 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see MenuType
      */
     @ApiStatus.Experimental
-    Registry<MenuType> MENU = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.MENU); // Paper
+    Registry<MenuType> MENU = registryFor(RegistryKey.MENU);
     /**
      * Server mob effects.
      *
      * @see PotionEffectType
      */
-    Registry<PotionEffectType> EFFECT = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.MOB_EFFECT); // Paper
+    Registry<PotionEffectType> MOB_EFFECT = registryFor(RegistryKey.MOB_EFFECT);
     /**
      * Server particles.
      *
      * @see Particle
      */
-    Registry<Particle> PARTICLE_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.PARTICLE_TYPE); // Paper
+    Registry<Particle> PARTICLE_TYPE = registryFor(RegistryKey.PARTICLE_TYPE); // Paper
     /**
      * Server potions.
      *
      * @see PotionType
      */
-    Registry<PotionType> POTION = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.POTION); // Paper
+    Registry<PotionType> POTION = registryFor(RegistryKey.POTION); // Paper
     /**
      * Server statistics.
      *
@@ -239,100 +225,82 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Server structures.
      *
      * @see Structure
-     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#STRUCTURE}
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#STRUCTURE}
      */
     @Deprecated(since = "1.20.6") // Paper
-    Registry<Structure> STRUCTURE = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(Structure.class), "No registry present for Structure. This is a bug."); // Paper
+    Registry<Structure> STRUCTURE = legacyRegistryFor(Structure.class);
     /**
      * Server structure types.
      *
      * @see StructureType
      */
-    Registry<StructureType> STRUCTURE_TYPE = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.STRUCTURE_TYPE), "No registry present for StructureType. This is a bug."); // Paper
+    Registry<StructureType> STRUCTURE_TYPE = registryFor(RegistryKey.STRUCTURE_TYPE);
     /**
-     * Sound keys.
+     * Sound events.
      *
      * @see Sound
      */
-    Registry<Sound> SOUNDS = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.SOUND_EVENT); // Paper
+    Registry<Sound> SOUND_EVENT = registryFor(RegistryKey.SOUND_EVENT);
     /**
      * Trim materials.
      *
      * @see TrimMaterial
-     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#TRIM_MATERIAL}
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#TRIM_MATERIAL}
      */
     @Deprecated(since = "1.20.6") // Paper
-    Registry<TrimMaterial> TRIM_MATERIAL = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(TrimMaterial.class), "No registry present for TrimMaterial. This is a bug."); // Paper
+    Registry<TrimMaterial> TRIM_MATERIAL = legacyRegistryFor(TrimMaterial.class);
     /**
      * Trim patterns.
      *
      * @see TrimPattern
-     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#TRIM_PATTERN}
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#TRIM_PATTERN}
      */
     @Deprecated(since = "1.20.6")
-    Registry<TrimPattern> TRIM_PATTERN = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(TrimPattern.class), "No registry present for TrimPattern. This is a bug."); // Paper
+    Registry<TrimPattern> TRIM_PATTERN = legacyRegistryFor(TrimPattern.class);
     /**
      * Damage types.
      *
      * @see DamageType
-     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#DAMAGE_TYPE}
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#DAMAGE_TYPE}
      */
     @Deprecated(since = "1.20.6")
-    Registry<DamageType> DAMAGE_TYPE = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(DamageType.class), "No registry present for DamageType. This is a bug."); // Paper
+    Registry<DamageType> DAMAGE_TYPE = legacyRegistryFor(DamageType.class);
     /**
      * Jukebox songs.
      *
      * @see JukeboxSong
-     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#JUKEBOX_SONG}
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#JUKEBOX_SONG}
      */
     @ApiStatus.Experimental
     @Deprecated(since = "1.21")
-    Registry<JukeboxSong> JUKEBOX_SONG = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(JukeboxSong.class), "No registry present for JukeboxSong. This is a bug."); // Paper
+    Registry<JukeboxSong> JUKEBOX_SONG = legacyRegistryFor(JukeboxSong.class);
     /**
      * Villager profession.
      *
      * @see Villager.Profession
      */
-    Registry<Villager.Profession> VILLAGER_PROFESSION = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.VILLAGER_PROFESSION); // Paper
+    Registry<Villager.Profession> VILLAGER_PROFESSION = registryFor(RegistryKey.VILLAGER_PROFESSION);
     /**
      * Villager type.
      *
      * @see Villager.Type
      */
-    Registry<Villager.Type> VILLAGER_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.VILLAGER_TYPE); // Paper
+    Registry<Villager.Type> VILLAGER_TYPE = registryFor(RegistryKey.VILLAGER_TYPE);
     /**
      * Memory Keys.
      *
      * @see MemoryKey
      */
-    Registry<MemoryKey> MEMORY_MODULE_TYPE = new Registry<MemoryKey>() {
+    Registry<MemoryKey> MEMORY_MODULE_TYPE = new NotARegistry<>() {
 
-        @NotNull
         @Override
         public Iterator iterator() {
             return MemoryKey.values().iterator();
         }
 
-        @Nullable
         @Override
-        public MemoryKey get(@NotNull NamespacedKey key) {
+        public @Nullable MemoryKey get(final NamespacedKey key) {
             return MemoryKey.getByKey(key);
-        }
-
-        @NotNull
-        @Override
-        public MemoryKey getOrThrow(@NotNull NamespacedKey key) {
-            MemoryKey memoryKey = get(key);
-
-            Preconditions.checkArgument(memoryKey != null, "No MemoryKey registry entry found for key %s.", key);
-
-            return memoryKey;
-        }
-
-        @NotNull
-        @Override
-        public Stream<MemoryKey> stream() {
-            return StreamSupport.stream(spliterator(), false);
         }
     };
     /**
@@ -340,59 +308,78 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see Fluid
      */
-    Registry<Fluid> FLUID = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.FLUID); // Paper
+    Registry<Fluid> FLUID = registryFor(RegistryKey.FLUID);
     /**
      * Frog variants.
      *
      * @see Frog.Variant
      */
-    Registry<Frog.Variant> FROG_VARIANT = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.FROG_VARIANT); // Paper
+    Registry<Frog.Variant> FROG_VARIANT = registryFor(RegistryKey.FROG_VARIANT);
     /**
      * Wolf variants.
      *
      * @see Wolf.Variant
-     * @deprecated use {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} with {@link io.papermc.paper.registry.RegistryKey#WOLF_VARIANT}
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#WOLF_VARIANT}
      */
     @Deprecated(since = "1.20.6")
-    Registry<Wolf.Variant> WOLF_VARIANT = Objects.requireNonNull(io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(Wolf.Variant.class), "No registry present for Wolf$Variant. This is a bug."); // Paper
+    Registry<Wolf.Variant> WOLF_VARIANT = legacyRegistryFor(Wolf.Variant.class);
     /**
      * Map cursor types.
      *
      * @see MapCursor.Type
      */
-    Registry<MapCursor.Type> MAP_DECORATION_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.MAP_DECORATION_TYPE); // Paper
+    Registry<MapCursor.Type> MAP_DECORATION_TYPE = registryFor(RegistryKey.MAP_DECORATION_TYPE);
     /**
      * Game events.
      *
      * @see GameEvent
+     * @see io.papermc.paper.registry.event.RegistryEvents#GAME_EVENT
      */
-    Registry<GameEvent> GAME_EVENT = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.GAME_EVENT); // Paper
+    Registry<GameEvent> GAME_EVENT = registryFor(RegistryKey.GAME_EVENT);
+    /**
+     * Data component types.
+     *
+     * @see DataComponentType
+     */
+    Registry<DataComponentType> DATA_COMPONENT_TYPE = registryFor(RegistryKey.DATA_COMPONENT_TYPE); // Paper
 
-    // Paper start - potion effect type registry
+    //<editor-fold desc="renames" defaultstate="collapsed">
     /**
-     * Potion effect types.
-     *
-     * @see org.bukkit.potion.PotionEffectType
+     * @apiNote use {@link #MOB_EFFECT} instead
+     * @hidden
      */
+    @ApiStatus.Obsolete(since = "1.21.4")
+    Registry<PotionEffectType> EFFECT = MOB_EFFECT;
+    /**
+     * @apiNote use {@link #MOB_EFFECT} instead
+     * @hidden
+     */
+    @ApiStatus.Obsolete(since = "1.21.4")
     Registry<org.bukkit.potion.PotionEffectType> POTION_EFFECT_TYPE = EFFECT;
-    // Paper end - potion effect type registry
-    Registry<io.papermc.paper.datacomponent.DataComponentType> DATA_COMPONENT_TYPE = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(io.papermc.paper.registry.RegistryKey.DATA_COMPONENT_TYPE); // Paper
     /**
-     * Get the object by its key.
-     *
-     * @param key non-null key
-     * @return item or null if does not exist
+     * @apiNote use {@link #SOUND_EVENT}
+     * @hidden
      */
-    @Nullable
-    T get(@NotNull NamespacedKey key);
-    // Paper start
+    @ApiStatus.Obsolete(since = "1.21.4")
+    Registry<Sound> SOUNDS = registryFor(RegistryKey.SOUND_EVENT);
+    //</editor-fold>
+
     /**
      * Get the object by its key.
      *
      * @param key non-null key
      * @return item or null if it does not exist
      */
-    default @Nullable T get(final net.kyori.adventure.key.@NotNull Key key) {
+    @Nullable T get(NamespacedKey key);
+    // Paper start
+
+    /**
+     * Get the object by its key.
+     *
+     * @param key non-null key
+     * @return item or null if it does not exist
+     */
+    default @Nullable T get(final Key key) {
         return key instanceof final NamespacedKey nsKey ? this.get(nsKey) : this.get(new NamespacedKey(key.namespace(), key.value()));
     }
 
@@ -402,23 +389,26 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @param typedKey non-null typed key
      * @return item or null if it does not exist
      */
-    default @Nullable T get(final io.papermc.paper.registry.@NotNull TypedKey<T> typedKey) {
+    default @Nullable T get(final TypedKey<T> typedKey) {
+        Preconditions.checkArgument(typedKey != null, "typedKey cannot be null");
         return this.get(typedKey.key());
     }
     // Paper end
 
     // Paper start - improve Registry
+
     /**
      * Gets the object by its key or throws if it doesn't exist.
      *
      * @param key the key to get the object of in this registry
      * @return the object for the key
-     * @throws java.util.NoSuchElementException if the key doesn't point to an object in the registry
+     * @throws NoSuchElementException if the key doesn't point to an object in the registry
      */
-    default @NotNull T getOrThrow(final net.kyori.adventure.key.@NotNull Key key) {
+    default T getOrThrow(final net.kyori.adventure.key.Key key) {
+        Preconditions.checkArgument(key != null, "key cannot be null");
         final T value = this.get(key);
         if (value == null) {
-            throw new java.util.NoSuchElementException("No value for " + key + " in " + this);
+            throw new NoSuchElementException("No value for " + key + " in " + this);
         }
         return value;
     }
@@ -428,12 +418,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @param key the key to get the object of in this registry
      * @return the object for the key
-     * @throws java.util.NoSuchElementException if the key doesn't point to an object in the registry
+     * @throws NoSuchElementException if the key doesn't point to an object in the registry
      */
-    default @NotNull T getOrThrow(final io.papermc.paper.registry.@NotNull TypedKey<T> key) {
+    default T getOrThrow(final TypedKey<T> key) {
         final T value = this.get(key);
         if (value == null) {
-            throw new java.util.NoSuchElementException("No value for " + key + " in " + this);
+            throw new NoSuchElementException("No value for " + key + " in " + this);
         }
         return value;
     }
@@ -447,14 +437,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @param value the value to get the key of in this registry
      * @return the key for the value
-     * @throws java.util.NoSuchElementException if the value doesn't exist in this registry
+     * @throws NoSuchElementException if the value doesn't exist in this registry
      * @see #getKey(Keyed)
      */
-    default @NotNull NamespacedKey getKeyOrThrow(final @NotNull T value) {
-        Preconditions.checkArgument(value != null, "value cannot be null");
+    default NamespacedKey getKeyOrThrow(final T value) {
         final NamespacedKey key = this.getKey(value);
         if (key == null) {
-            throw new java.util.NoSuchElementException(value + " has no key in " + this);
+            throw new NoSuchElementException(value + " has no key in " + this);
         }
         return key;
     }
@@ -470,14 +459,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @return the key for the value or null if not in the registry
      * @see #getKeyOrThrow(Keyed)
      */
-    default @Nullable NamespacedKey getKey(final @NotNull T value) {
-        Preconditions.checkArgument(value != null, "value cannot be null");
-        //noinspection ConstantValue (it might not be in the future...)
-        if (value instanceof Keyed) {
-            return value.getKey();
-        }
-        return null;
-    }
+    @Nullable NamespacedKey getKey(T value);
     // Paper end - improve Registry
 
     // Paper start - RegistrySet API
@@ -486,46 +468,52 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @param key the key to check for
      * @return true if this registry has a tag with the given key, false otherwise
-     * @see #getTag(io.papermc.paper.registry.tag.TagKey)
+     * @throws UnsupportedOperationException if this registry doesn't have or support tags
+     * @see #getTag(TagKey)
      */
     @ApiStatus.Experimental
-    default boolean hasTag(final io.papermc.paper.registry.tag.@NotNull TagKey<T> key) {
-        throw new UnsupportedOperationException(this + " doesn't have tags");
-    }
+    boolean hasTag(TagKey<T> key);
 
     /**
      * Gets the named registry set (tag) for the given key.
      *
      * @param key the key to get the tag for
      * @return the tag for the key
-     * @throws java.util.NoSuchElementException if no tag with the given key is found
-     * @throws UnsupportedOperationException if this registry doesn't have or support tags
-     * @see #hasTag(io.papermc.paper.registry.tag.TagKey)
+     * @throws NoSuchElementException if no tag with the given key is found
+     * @throws UnsupportedOperationException    if this registry doesn't have or support tags
+     * @see #hasTag(TagKey)
      */
     @ApiStatus.Experimental
-    default @NotNull io.papermc.paper.registry.tag.Tag<T> getTag(final io.papermc.paper.registry.tag.@NotNull TagKey<T> key) {
-        throw new UnsupportedOperationException(this + " doesn't have tags");
-    }
+    Tag<T> getTag(TagKey<T> key);
+
+    /**
+     * Gets all the tags in this registry.
+     *
+     * @return a stream of all tags in this registry
+     * @throws UnsupportedOperationException if this registry doesn't have or support tags
+     */
+    @ApiStatus.Experimental
+    Collection<Tag<T>> getTags();
     // Paper end - RegistrySet API
 
     /**
      * Get the object by its key.
-     *
+     * <p>
      * If there is no object with the given key, an exception will be thrown.
      *
      * @param key to get the object from
      * @return object with the given key
-     * @throws IllegalArgumentException if there is no object with the given key
+     * @throws NoSuchElementException if there is no object with the given key
      */
-    @NotNull
-    T getOrThrow(@NotNull NamespacedKey key);
+    default T getOrThrow(final NamespacedKey key) {
+        return this.getOrThrow((Key) key);
+    }
 
     /**
      * Returns a new stream, which contains all registry items, which are registered to the registry.
      *
      * @return a stream of all registry items
      */
-    @NotNull
     Stream<T> stream();
 
     /**
@@ -539,64 +527,47 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @deprecated this method's behavior is broken and not useful. If you want to get an object
      * based on its vanilla name, or a key, wrap it in a {@link NamespacedKey} object and use {@link #get(NamespacedKey)}
      */
-    @Nullable
-    @Deprecated(forRemoval = true) // Paper
-    default T match(@NotNull String input) {
+    // Paper
+    @Deprecated(forRemoval = true)
+    default @Nullable T match(final String input) {
         Preconditions.checkArgument(input != null, "input must not be null");
 
-        String filtered = input.toLowerCase(Locale.ROOT).replaceAll("\\s+", "_");
-        NamespacedKey namespacedKey = NamespacedKey.fromString(filtered);
-        return (namespacedKey != null) ? get(namespacedKey) : null;
+        final String filtered = input.toLowerCase(Locale.ROOT).replaceAll("\\s+", "_");
+        final NamespacedKey namespacedKey = NamespacedKey.fromString(filtered);
+        return (namespacedKey != null) ? this.get(namespacedKey) : null;
     }
 
-    class SimpleRegistry<T extends Enum<T> & Keyed> implements Registry<T> { // Paper - remove final
+    @ApiStatus.Internal
+    class SimpleRegistry<T extends Enum<T> & Keyed> extends NotARegistry<T> { // Paper - remove final
 
         private final Class<T> type;
         private final Map<NamespacedKey, T> map;
 
-        protected SimpleRegistry(@NotNull Class<T> type) {
-            this(type, Predicates.<T>alwaysTrue());
+        protected SimpleRegistry(final Class<T> type) {
+            this(type, Predicates.alwaysTrue());
         }
 
-        protected SimpleRegistry(@NotNull Class<T> type, @NotNull Predicate<T> predicate) {
-            ImmutableMap.Builder<NamespacedKey, T> builder = ImmutableMap.builder();
+        protected SimpleRegistry(final Class<T> type, final Predicate<T> predicate) {
+            final ImmutableMap.Builder<NamespacedKey, T> builder = ImmutableMap.builder();
 
-            for (T entry : type.getEnumConstants()) {
+            for (final T entry : type.getEnumConstants()) {
                 if (predicate.test(entry)) {
                     builder.put(entry.getKey(), entry);
                 }
             }
 
-            map = builder.build();
+            this.map = builder.build();
             this.type = type;
         }
 
-        @Nullable
         @Override
-        public T get(@NotNull NamespacedKey key) {
-            return map.get(key);
+        public @Nullable T get(final NamespacedKey key) {
+            return this.map.get(key);
         }
 
-        @NotNull
-        @Override
-        public T getOrThrow(@NotNull NamespacedKey key) {
-            T object = get(key);
-
-            Preconditions.checkArgument(object != null, "No %s registry entry found for key %s.", type, key);
-
-            return object;
-        }
-
-        @NotNull
-        @Override
-        public Stream<T> stream() {
-            return StreamSupport.stream(spliterator(), false);
-        }
-
-        @NotNull
         @Override
         public Iterator<T> iterator() {
-            return map.values().iterator();
+            return this.map.values().iterator();
         }
 
         @ApiStatus.Internal
@@ -604,12 +575,34 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         public Class<T> getType() {
             return this.type;
         }
+    }
 
-        // Paper start - improve Registry
+    @ApiStatus.Internal
+    abstract class NotARegistry<A extends Keyed> implements Registry<A> {
+
         @Override
-        public @NotNull NamespacedKey getKey(final @NotNull T value) {
+        public Stream<A> stream() {
+            return StreamSupport.stream(this.spliterator(), false);
+        }
+
+        @Override
+        public NamespacedKey getKey(final A value) {
             return value.getKey();
         }
-        // Paper end - improve Registry
+
+        @Override
+        public boolean hasTag(final TagKey<A> key) {
+            throw new UnsupportedOperationException("This is not a real registry and therefore cannot support tags");
+        }
+
+        @Override
+        public Tag<A> getTag(final TagKey<A> key) {
+            throw new UnsupportedOperationException("This is not a real registry and therefore cannot support tags");
+        }
+
+        @Override
+        public Collection<Tag<A>> getTags() {
+            throw new UnsupportedOperationException("This is not a real registry and therefore cannot support tags");
+        }
     }
 }

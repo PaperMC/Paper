@@ -2,18 +2,22 @@ package org.bukkit.entity;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.function.Consumer;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.MainHand;
+import org.bukkit.inventory.MenuType;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.FireworkMeta;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -123,7 +127,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#CRAFTING}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openWorkbench(@Nullable Location location, boolean force);
 
@@ -137,7 +144,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     location, no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#ENCHANTMENT}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openEnchanting(@Nullable Location location, boolean force);
 
@@ -163,8 +173,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param trader The merchant to trade with. Cannot be null.
      * @param force whether to force the trade even if another player is trading
      * @return The newly opened inventory view, or null if it could not be
-     * opened.
+     * @deprecated This method can be replaced by using {@link MenuType#MERCHANT}
+     * in conjunction with {@link #openInventory(InventoryView)}.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openMerchant(@NotNull Villager trader, boolean force);
 
@@ -177,8 +189,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param merchant The merchant to trade with. Cannot be null.
      * @param force whether to force the trade even if another player is trading
      * @return The newly opened inventory view, or null if it could not be
-     * opened.
+     * @deprecated This method can be replaced by using {@link MenuType#MERCHANT}
+     * in conjunction with {@link #openInventory(InventoryView)}.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openMerchant(@NotNull Merchant merchant, boolean force);
 
@@ -193,7 +207,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#ANVIL}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openAnvil(@Nullable Location location, boolean force);
 
@@ -207,7 +224,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#CARTOGRAPHY_TABLE}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openCartographyTable(@Nullable Location location, boolean force);
 
@@ -221,7 +241,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#GRINDSTONE}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openGrindstone(@Nullable Location location, boolean force);
 
@@ -235,7 +258,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#LOOM}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openLoom(@Nullable Location location, boolean force);
 
@@ -249,7 +275,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#SMITHING}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openSmithingTable(@Nullable Location location, boolean force);
 
@@ -263,7 +292,10 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *     no inventory will be opened and null will be returned.
      * @return The newly opened inventory view, or null if it could not be
      *     opened.
+     * @deprecated This method should be replaced by {@link MenuType#STONECUTTER}
+     * see {@link MenuType.Typed#builder()} and its options for more information.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public InventoryView openStonecutter(@Nullable Location location, boolean force);
     // Paper end
@@ -421,9 +453,25 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * is still valid.
      *
      * @return Bed Location if has slept in one, otherwise null.
+     * @see #getPotentialRespawnLocation()
+     * @deprecated Misleading name. This method also returns the location of
+     * respawn anchors.
      */
     @Nullable
-    public Location getPotentialBedLocation();
+    @Deprecated(since = "1.21.4")
+    default Location getPotentialBedLocation() {
+        return this.getPotentialRespawnLocation();
+    }
+
+    /**
+     * Gets the Location where the player will spawn at, null if they
+     * don't have a valid respawn point. This method will not attempt
+     * to validate if the current respawn location is still valid.
+     *
+     * @return respawn location if exists, otherwise null.
+     */
+    @Nullable
+    Location getPotentialRespawnLocation();
     // Paper end
     // Paper start
     /**
@@ -703,8 +751,115 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @param dropAll True to drop entire stack, false to drop 1 of the stack
      * @return True if item was dropped successfully
+     * @apiNote You should instead use {@link #dropItem(EquipmentSlot, int)} or {@link #dropItem(EquipmentSlot)} with a {@link EquipmentSlot#HAND} parameter.
      */
-    public boolean dropItem(boolean dropAll);
+    @ApiStatus.Obsolete(since = "1.21.4")
+    boolean dropItem(boolean dropAll);
+
+    /**
+     * Makes the player drop all items from their inventory based on the inventory slot.
+     *
+     * @param slot the equipment slot to drop
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    default Item dropItem(final int slot) {
+        return this.dropItem(slot, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Makes the player drop an item from their inventory based on the inventory slot.
+     *
+     * @param slot   the slot to drop
+     * @param amount the number of items to drop from this slot. Values below one always return null
+     * @return the dropped item entity, or null if the action was unsuccessful
+     * @throws IllegalArgumentException if the slot is negative or bigger than the player's inventory
+     */
+    @Nullable
+    default Item dropItem(final int slot, final int amount) {
+        return this.dropItem(slot, amount, false, null);
+    }
+
+    /**
+     * Makes the player drop an item from their inventory based on the inventory slot.
+     *
+     * @param slot            the slot to drop
+     * @param amount          the number of items to drop from this slot. Values below one always return null
+     * @param throwRandomly   controls the randomness of the dropped items velocity, where {@code true} mimics dropped
+     *                        items during a player's death, while {@code false} acts like a normal item drop.
+     * @param entityOperation the function to be run before adding the entity into the world
+     * @return the dropped item entity, or null if the action was unsuccessful
+     * @throws IllegalArgumentException if the slot is negative or bigger than the player's inventory
+     */
+    @Nullable
+    Item dropItem(int slot, int amount, boolean throwRandomly, @Nullable Consumer<Item> entityOperation);
+
+    /**
+     * Makes the player drop all items from their inventory based on the equipment slot.
+     *
+     * @param slot the equipment slot to drop
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    default Item dropItem(final @NotNull EquipmentSlot slot) {
+        return this.dropItem(slot, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Makes the player drop an item from their inventory based on the equipment slot.
+     *
+     * @param slot   the equipment slot to drop
+     * @param amount the amount of items to drop from this equipment slot. Values below one always return null
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    default Item dropItem(final @NotNull EquipmentSlot slot, final int amount) {
+        return this.dropItem(slot, amount, false, null);
+    }
+
+    /**
+     * Makes the player drop an item from their inventory based on the equipment slot.
+     *
+     * @param slot            the equipment slot to drop
+     * @param amount          The amount of items to drop from this equipment slot. Values below one always return null
+     * @param throwRandomly   controls the randomness of the dropped items velocity, where {@code true} mimics dropped
+     *                        items during a player's death, while {@code false} acts like a normal item drop.
+     * @param entityOperation the function to be run before adding the entity into the world
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    Item dropItem(@NotNull EquipmentSlot slot, int amount, boolean throwRandomly, @Nullable Consumer<Item> entityOperation);
+
+    /**
+     * Makes the player drop any arbitrary {@link ItemStack}, independently of whether the player actually
+     * has that item in their inventory.
+     * <p>
+     * This method modifies neither the item nor the player's inventory.
+     * Item removal has to be handled by the method caller.
+     *
+     * @param itemStack the itemstack to drop
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    default Item dropItem(final @NotNull ItemStack itemStack) {
+        return this.dropItem(itemStack, false, null);
+    }
+
+    /**
+     * Makes the player drop any arbitrary {@link ItemStack}, independently of whether the player actually
+     * has that item in their inventory.
+     * <p>
+     * This method modifies neither the item nor the player's inventory.
+     * Item removal has to be handled by the method caller.
+     *
+     * @param itemStack       the itemstack to drop
+     * @param throwRandomly   controls the randomness of the dropped items velocity, where {@code true} mimics dropped
+     *                        items during a player's death, while {@code false} acts like a normal item drop.
+     * @param entityOperation the function to be run before adding the entity into the world
+     * @return the dropped item entity, or null if the action was unsuccessful
+     */
+    @Nullable
+    Item dropItem(final @NotNull ItemStack itemStack, boolean throwRandomly, @Nullable Consumer<Item> entityOperation);
 
     /**
      * Gets the players current exhaustion level.

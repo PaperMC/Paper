@@ -1,0 +1,40 @@
+--- a/net/minecraft/world/entity/monster/Silverfish.java
++++ b/net/minecraft/world/entity/monster/Silverfish.java
+@@ -119,7 +_,7 @@
+             return true;
+         } else {
+             Player nearestPlayer = level.getNearestPlayer(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5.0, true);
+-            return nearestPlayer == null;
++            return !(nearestPlayer != null && !nearestPlayer.affectsSpawning) && nearestPlayer == null; // Paper - Affects Spawning API
+         }
+     }
+ 
+@@ -170,9 +_,14 @@
+                 BlockPos blockPos = BlockPos.containing(this.mob.getX(), this.mob.getY() + 0.5, this.mob.getZ()).relative(this.selectedDirection);
+                 BlockState blockState = levelAccessor.getBlockState(blockPos);
+                 if (InfestedBlock.isCompatibleHostBlock(blockState)) {
++                    // CraftBukkit start
++                    if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.mob, blockPos, InfestedBlock.infestedStateByHost(blockState))) {
++                        return;
++                    }
++                    // CraftBukkit end
+                     levelAccessor.setBlock(blockPos, InfestedBlock.infestedStateByHost(blockState), 3);
+                     this.mob.spawnAnim();
+-                    this.mob.discard();
++                    this.mob.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.ENTER_BLOCK); // CraftBukkit - add Bukkit remove cause
+                 }
+             }
+         }
+@@ -212,6 +_,12 @@
+                             BlockState blockState = level.getBlockState(blockPos1);
+                             Block block = blockState.getBlock();
+                             if (block instanceof InfestedBlock) {
++                                // CraftBukkit start
++                                BlockState afterState = getServerLevel(level).getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) ? blockState.getFluidState().createLegacyBlock() : ((InfestedBlock) block).hostStateByInfested(level.getBlockState(blockPos1)); // Paper - fix wrong block state
++                                if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(this.silverfish, blockPos1, afterState)) { // Paper - fix wrong block state
++                                    continue;
++                                }
++                                // CraftBukkit end
+                                 if (getServerLevel(level).getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)) {
+                                     level.destroyBlock(blockPos1, true, this.silverfish);
+                                 } else {

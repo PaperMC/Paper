@@ -1,0 +1,46 @@
+--- a/net/minecraft/core/dispenser/MinecartDispenseItemBehavior.java
++++ b/net/minecraft/core/dispenser/MinecartDispenseItemBehavior.java
+@@ -57,12 +_,38 @@
+         }
+ 
+         Vec3 vec31 = new Vec3(d, d1 + d3, d2);
+-        AbstractMinecart abstractMinecart = AbstractMinecart.createMinecart(
+-            serverLevel, vec31.x, vec31.y, vec31.z, this.entityType, EntitySpawnReason.DISPENSER, item, null
+-        );
++        ItemStack itemstack1 = item.copyWithCount(1); // Paper - shrink below and single item in event
++        org.bukkit.block.Block block2 = org.bukkit.craftbukkit.block.CraftBlock.at(serverLevel, blockSource.pos());
++        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack1);
++
++        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block2, craftItem.clone(), new org.bukkit.util.Vector(vec31.x, vec31.y, vec31.z));
++        if (!DispenserBlock.eventFired) {
++            serverLevel.getCraftServer().getPluginManager().callEvent(event);
++        }
++
++        if (event.isCancelled()) {
++            // stack.grow(1); // Paper - shrink below
++            return item;
++        }
++
++        boolean shrink = true; // Paper
++        if (!event.getItem().equals(craftItem)) {
++            shrink = false; // Paper - shrink below
++            // Chain to handler for new item
++            ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
++            DispenseItemBehavior dispenseItemBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack); // Paper - Fix NPE with equippable and items without behavior
++            if (dispenseItemBehavior != DispenseItemBehavior.NOOP && dispenseItemBehavior != this) {
++                dispenseItemBehavior.dispense(blockSource, eventStack);
++                return item;
++            }
++        }
++
++        itemstack1 = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
++        AbstractMinecart abstractMinecart = AbstractMinecart.createMinecart(serverLevel, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), this.entityType, EntitySpawnReason.DISPENSER, itemstack1, null);
++
+         if (abstractMinecart != null) {
+-            serverLevel.addFreshEntity(abstractMinecart);
+-            item.shrink(1);
++            if (serverLevel.addFreshEntity(abstractMinecart) && shrink) item.shrink(1); // Paper - if entity add was successful and supposed to shrink
++            // CraftBukkit end
+         }
+ 
+         return item;

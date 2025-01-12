@@ -7,6 +7,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.entity.LookAnchor;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 import java.io.ByteArrayOutputStream;
@@ -543,7 +544,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public String getDisplayName() {
-        if(true) return io.papermc.paper.adventure.DisplayNames.getLegacy(this); // Paper
+        if (true) return io.papermc.paper.adventure.DisplayNames.getLegacy(this); // Paper
         return this.getHandle().displayName;
     }
 
@@ -1377,27 +1378,8 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor, @NotNull io.papermc.paper.entity.LookAnchor entityAnchor) {
+    public void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull LookAnchor playerAnchor, @NotNull LookAnchor entityAnchor) {
         this.getHandle().lookAt(toNmsAnchor(playerAnchor), ((CraftEntity) entity).getHandle(), toNmsAnchor(entityAnchor));
-    }
-
-    @Override
-    public void lookAt(double x, double y, double z, @NotNull io.papermc.paper.entity.LookAnchor playerAnchor) {
-        this.getHandle().lookAt(toNmsAnchor(playerAnchor), new net.minecraft.world.phys.Vec3(x, y, z));
-    }
-
-    public static net.minecraft.commands.arguments.EntityAnchorArgument.Anchor toNmsAnchor(io.papermc.paper.entity.LookAnchor nmsAnchor) {
-        return switch (nmsAnchor) {
-            case EYES -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES;
-            case FEET -> net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.FEET;
-        };
-    }
-
-    public static io.papermc.paper.entity.LookAnchor toApiAnchor(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor playerAnchor) {
-        return switch (playerAnchor) {
-            case EYES -> io.papermc.paper.entity.LookAnchor.EYES;
-            case FEET -> io.papermc.paper.entity.LookAnchor.FEET;
-        };
     }
 
     public static net.minecraft.world.entity.Relative deltaRelativeToNMS(io.papermc.paper.entity.TeleportFlag.Relative apiFlag) {
@@ -1896,7 +1878,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 handle.serverLevel(), itemstack, amount
             );
             int i = Math.min(possibleDurabilityFromXp, itemstack.getDamageValue());
-            final int consumedExperience = i * amount / possibleDurabilityFromXp; // Paper - taken from ExperienceOrb#repairPlayerItems
+            final int consumedExperience = i > 0 ? i * amount / possibleDurabilityFromXp : possibleDurabilityFromXp; // Paper - taken from ExperienceOrb#repairPlayerItems + prevent division by 0
             org.bukkit.event.player.PlayerItemMendEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerItemMendEvent(handle, orb, itemstack, stackEntry.get().inSlot(), i, consumedExperience);
             i = event.getRepairAmount();
             orb.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN);
@@ -3001,7 +2983,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, T data, boolean force) {
-        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(CraftParticle.createParticleParam(particle, data), false, force, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count); // Paper - fix x/y/z precision loss
+        ClientboundLevelParticlesPacket packetplayoutworldparticles = new ClientboundLevelParticlesPacket(CraftParticle.createParticleParam(particle, data), force, false, x, y, z, (float) offsetX, (float) offsetY, (float) offsetZ, (float) extra, count); // Paper - fix x/y/z precision loss
         this.getHandle().connection.send(packetplayoutworldparticles);
     }
 
@@ -3522,32 +3504,32 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public int getViewDistance() {
-        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getViewDistance(this.getHandle());
+        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getViewDistance(this.getHandle());
     }
 
     @Override
     public void setViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setViewDistance(this.getHandle(), viewDistance); // Paper - chunk system
     }
 
     @Override
     public int getSimulationDistance() {
-        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getTickViewDistance(this.getHandle());
+        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getTickViewDistance(this.getHandle());
     }
 
     @Override
     public void setSimulationDistance(final int simulationDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setSimulationDistance(this.getHandle(), simulationDistance); // Paper - chunk system
     }
 
     @Override
     public int getSendViewDistance() {
-        return ca.spottedleaf.moonrise.common.util.ChunkSystem.getSendViewDistance(this.getHandle());
+        return ca.spottedleaf.moonrise.common.PlatformHooks.get().getSendViewDistance(this.getHandle());
     }
 
     @Override
     public void setSendViewDistance(final int viewDistance) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        FeatureHooks.setSendViewDistance(this.getHandle(), viewDistance); // Paper - chunk system
     }
 
     // Paper start - entity effect API

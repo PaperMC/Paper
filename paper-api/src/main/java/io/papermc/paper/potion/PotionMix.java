@@ -30,9 +30,9 @@ public final class PotionMix implements Keyed {
      */
     public PotionMix(final NamespacedKey key, final ItemStack result, final RecipeChoice input, final RecipeChoice ingredient) {
         this.key = key;
-        this.result = result;
-        this.input = input;
-        this.ingredient = ingredient;
+        this.result = result.clone();
+        this.input = input.clone();
+        this.ingredient = ingredient.clone();
     }
 
     /**
@@ -58,7 +58,7 @@ public final class PotionMix implements Keyed {
      * @return the result itemstack
      */
     public ItemStack getResult() {
-        return this.result;
+        return this.result.clone();
     }
 
     /**
@@ -67,7 +67,7 @@ public final class PotionMix implements Keyed {
      * @return the bottom 3 slot ingredients
      */
     public RecipeChoice getInput() {
-        return this.input;
+        return this.input.clone();
     }
 
     /**
@@ -76,7 +76,7 @@ public final class PotionMix implements Keyed {
      * @return the top slot input
      */
     public RecipeChoice getIngredient() {
-        return this.ingredient;
+        return this.ingredient.clone();
     }
 
     @Override

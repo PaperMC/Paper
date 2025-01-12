@@ -2,6 +2,7 @@ package org.bukkit.attribute;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
 import org.bukkit.Bukkit;
 import org.bukkit.Keyed;
@@ -89,7 +90,7 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
      */
     Attribute JUMP_STRENGTH = getAttribute("jump_strength");
     /**
-     * How long an entity remains burning after ingition.
+     * How long an entity remains burning after ignition.
      */
     Attribute BURNING_TIME = getAttribute("burning_time");
     /**
@@ -158,7 +159,7 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
     @NotNull
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Attribute valueOf(@NotNull String name) {
-        Attribute attribute = Bukkit.getUnsafe().get(Registry.ATTRIBUTE, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+        Attribute attribute = Bukkit.getUnsafe().get(RegistryKey.ATTRIBUTE, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
         Preconditions.checkArgument(attribute != null, "No attribute found with the name %s", name);
         return attribute;
     }

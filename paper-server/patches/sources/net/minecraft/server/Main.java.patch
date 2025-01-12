@@ -1,0 +1,252 @@
+--- a/net/minecraft/server/Main.java
++++ b/net/minecraft/server/Main.java
+@@ -67,8 +_,10 @@
+         reason = "System.out needed before bootstrap"
+     )
+     @DontObfuscate
+-    public static void main(String[] args) {
++    public static void main(final OptionSet optionSet) { // CraftBukkit - replaces main(String[] args)
++        io.papermc.paper.util.LogManagerShutdownThread.hook(); // Paper - Improved watchdog support
+         SharedConstants.tryDetectVersion();
++        /* CraftBukkit start - Replace everything
+         OptionParser optionParser = new OptionParser();
+         OptionSpec<Void> optionSpec = optionParser.accepts("nogui");
+         OptionSpec<Void> optionSpec1 = optionParser.accepts("initSettings", "Initializes 'server.properties' and 'eula.txt', then quits");
+@@ -93,41 +_,94 @@
+                 optionParser.printHelpOn(System.err);
+                 return;
+             }
++            */ // CraftBukkit end
++        try {
+ 
+-            Path path = optionSet.valueOf(optionSpec14);
++            Path path = (Path) optionSet.valueOf("pidFile"); // CraftBukkit
+             if (path != null) {
+                 writePidFile(path);
+             }
+ 
+             CrashReport.preload();
+-            if (optionSet.has(optionSpec13)) {
++            if (optionSet.has("jfrProfile")) { // CraftBukkit
+                 JvmProfiler.INSTANCE.start(Environment.SERVER);
+             }
+ 
++            io.papermc.paper.plugin.PluginInitializerManager.load(optionSet); // Paper
+             Bootstrap.bootStrap();
+             Bootstrap.validate();
+             Util.startTimerHackThread();
+             Path path1 = Paths.get("server.properties");
+-            DedicatedServerSettings dedicatedServerSettings = new DedicatedServerSettings(path1);
++            DedicatedServerSettings dedicatedServerSettings = new DedicatedServerSettings(optionSet); // CraftBukkit - CLI argument support
+             dedicatedServerSettings.forceSave();
+             RegionFileVersion.configure(dedicatedServerSettings.getProperties().regionFileComression);
+             Path path2 = Paths.get("eula.txt");
+             Eula eula = new Eula(path2);
+-            if (optionSet.has(optionSpec1)) {
++            // Paper start - load config files early for access below if needed
++            org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionSet.valueOf("bukkit-settings"));
++            org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionSet.valueOf("spigot-settings"));
++            // Paper end - load config files early for access below if needed
++            if (optionSet.has("initSettings")) { // CraftBukkit
++                // CraftBukkit start - SPIGOT-5761: Create bukkit.yml and commands.yml if not present
++                File configFile = (File) optionSet.valueOf("bukkit-settings");
++                org.bukkit.configuration.file.YamlConfiguration configuration = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(configFile);
++                configuration.options().copyDefaults(true);
++                configuration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/bukkit.yml"), com.google.common.base.Charsets.UTF_8)));
++                configuration.save(configFile);
++
++                File commandFile = (File) optionSet.valueOf("commands-settings");
++                org.bukkit.configuration.file.YamlConfiguration commandsConfiguration = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(commandFile);
++                commandsConfiguration.options().copyDefaults(true);
++                commandsConfiguration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/commands.yml"), com.google.common.base.Charsets.UTF_8)));
++                commandsConfiguration.save(commandFile);
++                // CraftBukkit end
+                 LOGGER.info("Initialized '{}' and '{}'", path1.toAbsolutePath(), path2.toAbsolutePath());
+                 return;
+             }
+ 
+-            if (!eula.hasAgreedToEULA()) {
++            // Spigot start
++            boolean eulaAgreed = Boolean.getBoolean("com.mojang.eula.agree");
++            if (eulaAgreed) {
++                LOGGER.error("You have used the Spigot command line EULA agreement flag.");
++                LOGGER.error("By using this setting you are indicating your agreement to Mojang's EULA (https://aka.ms/MinecraftEULA).");
++                LOGGER.error("If you do not agree to the above EULA please stop your server and remove this flag immediately.");
++            }
++            if (!eula.hasAgreedToEULA() && !eulaAgreed) {
++                // Spigot end
+                 LOGGER.info("You need to agree to the EULA in order to run the server. Go to eula.txt for more info.");
+                 return;
+             }
+ 
+-            File file = new File(optionSet.valueOf(optionSpec9));
+-            Services services = Services.create(new YggdrasilAuthenticationService(Proxy.NO_PROXY), file);
+-            String string = Optional.ofNullable(optionSet.valueOf(optionSpec10)).orElse(dedicatedServerSettings.getProperties().levelName);
++            // Paper start - Detect headless JRE
++            String awtException = io.papermc.paper.util.ServerEnvironment.awtDependencyCheck();
++            if (awtException != null) {
++                LOGGER.error("You are using a headless JRE distribution.");
++                LOGGER.error("This distribution is missing certain graphic libraries that the Minecraft server needs to function.");
++                LOGGER.error("For instructions on how to install the non-headless JRE, see https://docs.papermc.io/misc/java-install");
++                LOGGER.error("");
++                LOGGER.error(awtException);
++                return;
++            }
++            // Paper end - Detect headless JRE
++
++            org.spigotmc.SpigotConfig.disabledAdvancements = spigotConfiguration.getStringList("advancements.disabled"); // Paper - fix SPIGOT-5885, must be set early in init
++
++            // Paper start - fix SPIGOT-5824
++            File file;
++            File userCacheFile = new File(Services.USERID_CACHE_FILE);
++            if (optionSet.has("universe")) {
++                file = (File) optionSet.valueOf("universe"); // CraftBukkit
++                userCacheFile = new File(file, Services.USERID_CACHE_FILE);
++            } else {
++                file = new File(bukkitConfiguration.getString("settings.world-container", "."));
++            }
++            // Paper end - fix SPIGOT-5824
++            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), file, userCacheFile, optionSet); // Paper - pass OptionSet to load paper config files; override authentication service; fix world-container
++            // CraftBukkit start
++            String string = Optional.ofNullable((String) optionSet.valueOf("world")).orElse(dedicatedServerSettings.getProperties().levelName);
+             LevelStorageSource levelStorageSource = LevelStorageSource.createDefault(file.toPath());
+-            LevelStorageSource.LevelStorageAccess levelStorageAccess = levelStorageSource.validateAndCreateAccess(string);
++            LevelStorageSource.LevelStorageAccess levelStorageAccess = levelStorageSource.validateAndCreateAccess(string, LevelStem.OVERWORLD);
++            // CraftBukkit end
+             Dynamic<?> dataTag;
+             if (levelStorageAccess.hasWorldData()) {
+                 LevelSummary summary;
+@@ -169,12 +_,30 @@
+             }
+ 
+             Dynamic<?> dynamic = dataTag;
+-            boolean hasOptionSpec = optionSet.has(optionSpec7);
++            boolean hasOptionSpec = optionSet.has("safeMode"); // CraftBukkit
+             if (hasOptionSpec) {
+                 LOGGER.warn("Safe mode active, only vanilla datapack will be loaded");
+             }
+ 
+             PackRepository packRepository = ServerPacksSource.createPackRepository(levelStorageAccess);
++            // CraftBukkit start
++            File bukkitDataPackFolder = new File(levelStorageAccess.getLevelPath(net.minecraft.world.level.storage.LevelResource.DATAPACK_DIR).toFile(), "bukkit");
++            if (!bukkitDataPackFolder.exists()) {
++                bukkitDataPackFolder.mkdirs();
++            }
++            File mcMeta = new File(bukkitDataPackFolder, "pack.mcmeta");
++            try {
++                com.google.common.io.Files.write("{\n"
++                        + "    \"pack\": {\n"
++                        + "        \"description\": \"Data pack for resources provided by Bukkit plugins\",\n"
++                        + "        \"pack_format\": " + SharedConstants.getCurrentVersion().getPackVersion(net.minecraft.server.packs.PackType.SERVER_DATA) + "\n"
++                        + "    }\n"
++                        + "}\n", mcMeta, com.google.common.base.Charsets.UTF_8);
++            } catch (java.io.IOException ex) {
++                throw new RuntimeException("Could not initialize Bukkit datapack", ex);
++            }
++            java.util.concurrent.atomic.AtomicReference<WorldLoader.DataLoadContext> worldLoader = new java.util.concurrent.atomic.AtomicReference<>();
++            // CraftBukkit end
+ 
+             WorldStem worldStem;
+             try {
+@@ -183,6 +_,7 @@
+                         executor -> WorldLoader.load(
+                             initConfig,
+                             context -> {
++                                worldLoader.set(context); // CraftBukkit
+                                 Registry<LevelStem> registry = context.datapackDimensions().lookupOrThrow(Registries.LEVEL_STEM);
+                                 if (dynamic != null) {
+                                     LevelDataAndDimensions levelDataAndDimensions = LevelStorageSource.getLevelDataAndDimensions(
+@@ -196,7 +_,7 @@
+                                     LevelSettings levelSettings;
+                                     WorldOptions worldOptions;
+                                     WorldDimensions worldDimensions;
+-                                    if (optionSet.has(optionSpec2)) {
++                                    if (optionSet.has("demo")) { // CraftBukkit
+                                         levelSettings = MinecraftServer.DEMO_SETTINGS;
+                                         worldOptions = WorldOptions.DEMO_OPTIONS;
+                                         worldDimensions = WorldPresets.createNormalWorldDimensions(context.datapackWorldgen());
+@@ -211,7 +_,7 @@
+                                             new GameRules(context.dataConfiguration().enabledFeatures()),
+                                             context.dataConfiguration()
+                                         );
+-                                        worldOptions = optionSet.has(optionSpec3) ? properties.worldOptions.withBonusChest(true) : properties.worldOptions;
++                                        worldOptions = optionSet.has("bonusChest") ? properties.worldOptions.withBonusChest(true) : properties.worldOptions; // CraftBukkit
+                                         worldDimensions = properties.createDimensions(context.datapackWorldgen());
+                                     }
+ 
+@@ -237,6 +_,7 @@
+                 return;
+             }
+ 
++            /*
+             RegistryAccess.Frozen frozen = worldStem.registries().compositeAccess();
+             boolean hasOptionSpec1 = optionSet.has(optionSpec6);
+             if (optionSet.has(optionSpec4) || hasOptionSpec1) {
+@@ -245,9 +_,13 @@
+ 
+             WorldData worldData = worldStem.worldData();
+             levelStorageAccess.saveDataTag(frozen, worldData);
++            */
+             final DedicatedServer dedicatedServer = MinecraftServer.spin(
+                 thread1 -> {
+                     DedicatedServer dedicatedServer1 = new DedicatedServer(
++                        // CraftBukkit start
++                        optionSet,
++                        worldLoader.get(),
+                         thread1,
+                         levelStorageAccess,
+                         packRepository,
+@@ -257,17 +_,34 @@
+                         services,
+                         LoggerChunkProgressListener::createFromGameruleRadius
+                     );
++                    /*
+                     dedicatedServer1.setPort(optionSet.valueOf(optionSpec11));
+-                    dedicatedServer1.setDemo(optionSet.has(optionSpec2));
++                     */
++                    // Paper start
++                    if (optionSet.has("serverId")) {
++                        dedicatedServer1.setId((String) optionSet.valueOf("serverId"));
++                    }
++                    dedicatedServer1.setDemo(optionSet.has("demo"));
++                    // Paper end
++                    /*
+                     dedicatedServer1.setId(optionSet.valueOf(optionSpec12));
+-                    boolean flag = !optionSet.has(optionSpec) && !optionSet.valuesOf(optionSpec15).contains("nogui");
++                     */
++                    boolean flag = !optionSet.has("nogui") && !optionSet.nonOptionArguments().contains("nogui");
+                     if (flag && !GraphicsEnvironment.isHeadless()) {
+                         dedicatedServer1.showGui();
+                     }
+ 
++                    if (optionSet.has("port")) {
++                        int port = (Integer) optionSet.valueOf("port");
++                        if (port > 0) {
++                            dedicatedServer1.setPort(port);
++                        }
++                    }
++
+                     return dedicatedServer1;
+                 }
+             );
++            /* CraftBukkit start
+             Thread thread = new Thread("Server Shutdown Thread") {
+                 @Override
+                 public void run() {
+@@ -276,6 +_,7 @@
+             };
+             thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
+             Runtime.getRuntime().addShutdownHook(thread);
++            */ // CraftBukkit end
+         } catch (Exception var42) {
+             LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", (Throwable)var42);
+         }
+@@ -316,7 +_,7 @@
+         RegistryAccess registryAccess,
+         boolean recreateRegionFiles
+     ) {
+-        LOGGER.info("Forcing world upgrade!");
++        LOGGER.info("Forcing world upgrade! {}", levelStorage.getLevelId()); // CraftBukkit
+ 
+         try (WorldUpgrader worldUpgrader = new WorldUpgrader(levelStorage, dataFixer, registryAccess, eraseCache, recreateRegionFiles)) {
+             Component component = null;

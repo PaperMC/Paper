@@ -1,0 +1,52 @@
+--- a/net/minecraft/world/level/block/RailState.java
++++ b/net/minecraft/world/level/block/RailState.java
+@@ -17,6 +_,12 @@
+     private final boolean isStraight;
+     private final List<BlockPos> connections = Lists.newArrayList();
+ 
++    // Paper start - Fix some rails connecting improperly
++    public boolean isValid() {
++        return this.level.getBlockState(this.pos).getBlock() == this.state.getBlock();
++    }
++    // Paper end - Fix some rails connecting improperly
++
+     public RailState(Level level, BlockPos pos, BlockState state) {
+         this.level = level;
+         this.pos = pos;
+@@ -141,6 +_,11 @@
+     }
+ 
+     private void connectTo(RailState state) {
++        // Paper start - Fix some rails connecting improperly
++        if (!this.isValid() || !state.isValid()) {
++            return;
++        }
++        // Paper end - Fix some rails connecting improperly
+         this.connections.add(state.pos);
+         BlockPos blockPos = this.pos.north();
+         BlockPos blockPos1 = this.pos.south();
+@@ -331,10 +_,15 @@
+         this.state = this.state.setValue(this.block.getShapeProperty(), railShape);
+         if (alwaysPlace || this.level.getBlockState(this.pos) != this.state) {
+             this.level.setBlock(this.pos, this.state, 3);
++            // Paper start - Fix some rails connecting improperly
++            if (!this.isValid()) {
++                return this;
++            }
++            // Paper end - Fix some rails connecting improperly
+ 
+             for (int i = 0; i < this.connections.size(); i++) {
+                 RailState rail = this.getRail(this.connections.get(i));
+-                if (rail != null) {
++                if (rail != null && rail.isValid()) { // Paper - Fix some rails connecting improperly
+                     rail.removeSoftConnections();
+                     if (rail.canConnectTo(this)) {
+                         rail.connectTo(this);
+@@ -347,6 +_,6 @@
+     }
+ 
+     public BlockState getState() {
+-        return this.state;
++        return this.level.getBlockState(this.pos); // Paper - Fix some rails connecting improperly
+     }
+ }

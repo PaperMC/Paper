@@ -1,0 +1,37 @@
+--- a/net/minecraft/server/commands/TimeCommand.java
++++ b/net/minecraft/server/commands/TimeCommand.java
+@@ -56,8 +_,15 @@
+     }
+ 
+     public static int setTime(CommandSourceStack source, int time) {
+-        for (ServerLevel serverLevel : source.getServer().getAllLevels()) {
+-            serverLevel.setDayTime(time);
++        for (ServerLevel serverLevel : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) { // CraftBukkit - SPIGOT-6496: Only set the time for the world the command originates in // Paper - add config option for spigot's change
++            // serverLevel.setDayTime(time);
++            // CraftBukkit start
++            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(serverLevel.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, time - serverLevel.getDayTime());
++            org.bukkit.Bukkit.getPluginManager().callEvent(event);
++            if (!event.isCancelled()) {
++                serverLevel.setDayTime(serverLevel.getDayTime() + event.getSkipAmount());
++            }
++            // CraftBukkit end
+         }
+ 
+         source.getServer().forceTimeSynchronization();
+@@ -66,8 +_,14 @@
+     }
+ 
+     public static int addTime(CommandSourceStack source, int amount) {
+-        for (ServerLevel serverLevel : source.getServer().getAllLevels()) {
+-            serverLevel.setDayTime(serverLevel.getDayTime() + amount);
++        for (ServerLevel serverLevel : io.papermc.paper.configuration.GlobalConfiguration.get().commands.timeCommandAffectsAllWorlds ? source.getServer().getAllLevels() : java.util.List.of(source.getLevel())) { // CraftBukkit - SPIGOT-6496: Only set the time for the world the command originates in // Paper - add config option for spigot's change
++            // CraftBukkit start
++            org.bukkit.event.world.TimeSkipEvent event = new org.bukkit.event.world.TimeSkipEvent(serverLevel.getWorld(), org.bukkit.event.world.TimeSkipEvent.SkipReason.COMMAND, amount);
++            org.bukkit.Bukkit.getPluginManager().callEvent(event);
++            if (!event.isCancelled()) {
++                serverLevel.setDayTime(serverLevel.getDayTime() + event.getSkipAmount());
++            }
++            // CraftBukkit end
+         }
+ 
+         source.getServer().forceTimeSynchronization();

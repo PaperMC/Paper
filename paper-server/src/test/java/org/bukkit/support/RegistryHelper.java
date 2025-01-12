@@ -75,7 +75,6 @@ public final class RegistryHelper {
     }
 
     public static void setup(FeatureFlagSet featureFlagSet) {
-        System.setProperty("Paper.pushPaperAssetsRoot", "true"); // Paper - build system changes - push asset root
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
 

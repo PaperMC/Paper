@@ -88,17 +88,6 @@ public class WorldConfiguration extends ConfigurationPart {
 
     public class Anticheat extends ConfigurationPart {
 
-        public Obfuscation obfuscation;
-
-        public class Obfuscation extends ConfigurationPart {
-            public Items items = new Items();
-            public class Items extends ConfigurationPart {
-                public boolean hideItemmeta = false;
-                public boolean hideDurability = false;
-                public boolean hideItemmetaWithVisualEffects = false;
-            }
-        }
-
         public AntiXray antiXray;
 
         public class AntiXray extends ConfigurationPart {
@@ -445,7 +434,6 @@ public class WorldConfiguration extends ConfigurationPart {
         public int portalSearchRadius = 128;
         public int portalCreateRadius = 16;
         public boolean portalSearchVanillaDimensionScaling = true;
-        public boolean disableTeleportationSuffocationCheck = false;
         public IntOr.Disabled netherCeilingVoidDamageHeight = IntOr.Disabled.DISABLED;
         public int maxFluidTicks = 65536;
         public int maxBlockTicks = 65536;

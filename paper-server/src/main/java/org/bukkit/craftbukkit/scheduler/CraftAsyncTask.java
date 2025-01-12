@@ -28,7 +28,7 @@ class CraftAsyncTask extends CraftTask {
         // Paper start - name threads according to running plugin
         final String nameBefore = thread.getName();
         thread.setName(nameBefore + " - " + this.getOwner().getName());
-        try { synchronized (this.workers) {  // Paper end - name threads according to running plugin
+        try { synchronized (this.workers) { // Paper end - name threads according to running plugin
             if (this.getPeriod() == CraftTask.CANCEL) {
                 // Never continue running after cancelled.
                 // Checking this with the lock is important!

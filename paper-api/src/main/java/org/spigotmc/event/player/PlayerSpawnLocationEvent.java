@@ -37,7 +37,7 @@ public class PlayerSpawnLocationEvent extends PlayerEvent {
      * @param location the spawn location
      */
     public void setSpawnLocation(@NotNull Location location) {
-        this.spawnLocation = location;
+        this.spawnLocation = location.clone();
     }
 
     @NotNull

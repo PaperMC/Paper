@@ -1,4 +1,5 @@
 import io.papermc.paperweight.util.*
+import io.papermc.paperweight.util.constants.*
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import java.io.IOException
@@ -11,7 +12,7 @@ import java.nio.file.Path
 import kotlin.random.Random
 
 plugins {
-    id("io.papermc.paperweight.core") version "2.0.0-SNAPSHOT" apply false
+    id("io.papermc.paperweight.core") version "2.0.0-beta.13" apply false
 }
 
 subprojects {
@@ -22,10 +23,6 @@ subprojects {
         toolchain {
             languageVersion = JavaLanguageVersion.of(21)
         }
-    }
-
-    dependencies {
-        "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
     }
 
     tasks.withType<AbstractArchiveTask>().configureEach {
@@ -85,12 +82,13 @@ tasks.register("printPaperVersion") {
     }
 }
 
-tasks.register("gibWork") {
+/*
+// Used when updating to a new Minecraft version
+tasks.register("pickUpdateDirectory") {
     val issue = providers.gradleProperty("updateTaskListIssue").get()
     val patchesFolder = layout.projectDirectory.dir("paper-server/patches/").convertToPath()
     val storage = layout.cache.resolve("last-updating-folder").also { it.parent.createDirectories() }
 
-    @OptIn(ExperimentalPathApi::class)
     doLast {
         val html = URI(issue).toURL().readText()
 
@@ -112,11 +110,13 @@ tasks.register("gibWork") {
         if (!dir.exists()) {
             error("Unapplied patch folder $next does not exist, did someone else already check it out and forgot to mark it?")
         }
-        dir.copyToRecursively(
-            patchesFolder.resolve("sources").resolve(next)
-                .also { it.createDirectories() }, overwrite = true, followLinks = false
-        )
-        dir.deleteRecursively()
+        dir.listDirectoryEntries("*.patch").forEach { patch ->
+            patch.copyTo(patchesFolder.resolve("sources").resolve(next).resolve(patch.fileName).also { it.createDirectories() }, overwrite = true)
+            patch.deleteIfExists()
+        }
+        if (dir.listDirectoryEntries().isEmpty()) {
+            dir.deleteIfExists()
+        }
 
         storage.writeText(next)
         println("please tick the box in the issue: $issue")
@@ -124,7 +124,7 @@ tasks.register("gibWork") {
     }
 }
 
-tasks.register("showWork") {
+tasks.register("showUpdateDirectories") {
     val patchDir = layout.projectDirectory.dir("paper-server/patches/unapplied/").convertToPath()
 
     doLast {
@@ -139,24 +139,24 @@ tasks.register("showWork") {
     }
 }
 
-tasks.register("checkWork") {
+tasks.register("moveUpdateDirectory") {
+    notCompatibleWithConfigurationCache("This task is interactive")
     fun expandUserHome(path: String): Path {
         return Path.of(path.replaceFirst("^~".toRegex(), System.getProperty("user.home")))
     }
 
-    val input = layout.cache.resolve("last-updating-folder").readText()
-    val patchFolder = layout.projectDirectory.file("paper-server/patches/sources").convertToPath().resolve(input)
-    val sourceFolder = layout.projectDirectory.file("paper-server/src/vanilla/java/").convertToPath().resolve(input)
-    val targetFolder = expandUserHome(
-        providers.gradleProperty("cleanPaperRepo").orNull
-            ?: error("cleanPaperRepo is required, define it in gradle.properties")
-    ).resolve(input)
+    val input = providers.fileContents(layout.projectDirectory.file("$CACHE_PATH/last-updating-folder")).asText.map { it.trim() }
+    val patchFolder = layout.projectDirectory.dir("paper-server/patches/sources").dir(input)
+    val sourceFolder = layout.projectDirectory.dir("paper-server/src/minecraft/java").dir(input)
+    val targetFolder = providers.gradleProperty("cleanPaperRepo").map {
+        expandUserHome(it).resolve(input.get())
+    }
 
     fun copy(back: Boolean = false) {
-        patchFolder.listDirectoryEntries().forEach {
-            val relative = patchFolder.relativize(it).toString().replace(".patch", "")
-            val source = sourceFolder.resolve(relative)
-            val target = targetFolder.resolve(relative)
+        patchFolder.path.listDirectoryEntries().forEach {
+            val relative = patchFolder.path.relativize(it).toString().replace(".patch", "")
+            val source = sourceFolder.path.resolve(relative)
+            val target = targetFolder.get().resolve(relative)
             if (target.isDirectory()) { return@forEach }
             if (back) {
                 target.copyTo(source, overwrite = true)
@@ -167,8 +167,11 @@ tasks.register("checkWork") {
     }
 
     doLast {
+        if (!targetFolder.isPresent) {
+            error("cleanPaperRepo is required, define it in gradle.properties")
+        }
         copy()
-        val files = patchFolder.listDirectoryEntries().map { it.fileName.toString().replace(".patch", "") }
+        val files = patchFolder.path.listDirectoryEntries().map { it.fileName.toString().replace(".patch", "") }
         println("Copied $files from $sourceFolder to $targetFolder")
         println("Make the files compile, then press enter to copy them back!")
         System.`in`.read()
@@ -178,7 +181,6 @@ tasks.register("checkWork") {
 }
 
 // see gradle.properties
-/*
 if (providers.gradleProperty("updatingMinecraft").getOrElse("false").toBoolean()) {
     tasks.collectAtsFromPatches {
         val dir = layout.projectDirectory.dir("patches/unapplied/server")
