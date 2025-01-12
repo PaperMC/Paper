@@ -151,12 +151,12 @@ public class CraftBlockType<B extends BlockData> implements BlockType.Typed<B>, 
 
     @Override
     public @NotNull Collection<B> createBlockDataStates() {
-        return this.block.getStateDefinition()
-            .getPossibleStates()
-            .stream()
-            .map(BlockState::createCraftBlockData)
-            .map(this.blockDataClass::cast)
-            .collect(ImmutableList.toImmutableList());
+        final ImmutableList<BlockState> possibleStates = this.block.getStateDefinition().getPossibleStates();
+        final ImmutableList.Builder<B> builder = ImmutableList.builderWithExpectedSize(possibleStates.size());
+        for (final BlockState possibleState : possibleStates) {
+            builder.add(this.blockDataClass.cast(possibleState.createCraftBlockData()));
+        }
+        return builder.build();
     }
 
     @Override
