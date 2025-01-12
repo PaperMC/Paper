@@ -1,10 +1,10 @@
 package io.papermc.paper.world.biome;
 
 import io.papermc.paper.math.Position;
-import io.papermc.paper.util.RGBColor;
 import io.papermc.paper.world.biome.effects.AdditionSound;
 import io.papermc.paper.world.biome.effects.MoodSound;
 import io.papermc.paper.world.biome.effects.MusicEntry;
+import org.bukkit.Color;
 import org.bukkit.Sound;
 import org.jspecify.annotations.NullMarked;
 import java.util.List;
@@ -20,28 +20,28 @@ public interface BiomeSpecialEffects {
      *
      * @return color to use for fog.
      */
-    RGBColor fogColor();
+    Color fogColor();
 
     /**
      * The water color.
      *
      * @return color to use for water blocks and cauldrons.
      */
-    RGBColor waterColor();
+    Color waterColor();
 
     /**
      * The water fog color.
      *
      * @return color to use for fog underwater.
      */
-    RGBColor waterFogColor();
+    Color waterFogColor();
 
     /**
      * The sky color.
      *
      * @return color to use for the sky.
      */
-    RGBColor skyColor();
+    Color skyColor();
 
     /**
      * The color to use for tree leaves and vines.
@@ -49,7 +49,7 @@ public interface BiomeSpecialEffects {
      *
      * @return foliage color.
      */
-    Optional<RGBColor> foliageColor();
+    Optional<Color> foliageColor();
 
     /**
      * The color to use for grass blocks, short grass,
@@ -58,7 +58,7 @@ public interface BiomeSpecialEffects {
      *
      * @return grass color.
      */
-    Optional<RGBColor> grassColor();
+    Optional<Color> grassColor();
 
     /**
      * The biome ambient sound.
@@ -104,5 +104,5 @@ public interface BiomeSpecialEffects {
      * @param position the position of the block.
      * @return the modified grass color.
      */
-    RGBColor modifyGrassColor(RGBColor original, Position position);
+    Color modifyGrassColor(Color original, Position position);
 }

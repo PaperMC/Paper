@@ -1,7 +1,6 @@
 package io.papermc.paper.world.biome;
 
 import io.papermc.paper.math.Position;
-import io.papermc.paper.util.RGBColor;
 import io.papermc.paper.world.biome.effects.AdditionSound;
 import io.papermc.paper.world.biome.effects.MoodSound;
 import io.papermc.paper.world.biome.effects.MusicEntry;
@@ -9,6 +8,7 @@ import io.papermc.paper.world.biome.effects.PaperAdditionSound;
 import io.papermc.paper.world.biome.effects.PaperMoodSound;
 import io.papermc.paper.world.biome.effects.PaperMusicEntry;
 import net.minecraft.world.level.biome.Biome;
+import org.bukkit.Color;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftSound;
 import org.jspecify.annotations.NullMarked;
@@ -30,48 +30,48 @@ public class PaperBiomeSpecialEffects implements BiomeSpecialEffects {
      * {@inheritDoc}
      */
     @Override
-    public RGBColor fogColor() {
-        return RGBColor.fromRGB(effects.getFogColor());
+    public Color fogColor() {
+        return Color.fromRGB(effects.getFogColor());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public RGBColor waterColor() {
-        return RGBColor.fromRGB(effects.getWaterColor());
+    public Color waterColor() {
+        return Color.fromRGB(effects.getWaterColor());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public RGBColor waterFogColor() {
-        return RGBColor.fromRGB(effects.getWaterFogColor());
+    public Color waterFogColor() {
+        return Color.fromRGB(effects.getWaterFogColor());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public RGBColor skyColor() {
-        return RGBColor.fromRGB(effects.getSkyColor());
+    public Color skyColor() {
+        return Color.fromRGB(effects.getSkyColor());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Optional<RGBColor> foliageColor() {
-        return effects.getFoliageColorOverride().map(RGBColor::fromRGB);
+    public Optional<Color> foliageColor() {
+        return effects.getFoliageColorOverride().map(Color::fromRGB);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Optional<RGBColor> grassColor() {
-        return effects.getGrassColorOverride().map(RGBColor::fromRGB);
+    public Optional<Color> grassColor() {
+        return effects.getGrassColorOverride().map(Color::fromRGB);
     }
 
     /**
@@ -122,7 +122,7 @@ public class PaperBiomeSpecialEffects implements BiomeSpecialEffects {
      * {@inheritDoc}
      */
     @Override
-    public RGBColor modifyGrassColor(final RGBColor original, final Position position) {
-        return RGBColor.fromRGB(effects.getGrassColorModifier().modifyColor(position.x(), position.z(), original.asRGB()));
+    public Color modifyGrassColor(final Color original, final Position position) {
+        return Color.fromRGB(effects.getGrassColorModifier().modifyColor(position.x(), position.z(), original.asRGB()));
     }
 }
