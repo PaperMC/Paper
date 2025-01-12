@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import java.util.Locale;
 import java.util.Objects;
 import io.papermc.paper.world.biome.BiomeClimate;
+import io.papermc.paper.world.biome.BiomeMobSpawning;
 import io.papermc.paper.world.biome.BiomeSpecialEffects;
 import io.papermc.paper.world.biome.PaperBiomeClimate;
 import io.papermc.paper.world.biome.PaperBiomeMobSpawning;
@@ -139,7 +140,7 @@ public class CraftBiome implements Biome, Handleable<net.minecraft.world.level.b
     }
 
     @Override
-    public @NotNull PaperBiomeMobSpawning mobSpawning() {
+    public @NotNull BiomeMobSpawning mobSpawning() {
         return this.mobSpawning;
     }
 
