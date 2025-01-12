@@ -1,19 +1,17 @@
-package org.bukkit.event.player;
+package org.bukkit.event.entity;
 
-import java.util.List;
 import org.bukkit.block.Block;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
-import org.bukkit.event.entity.EntityHarvestBlockEvent;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+import java.util.List;
 
 /**
- * This event is called whenever a player harvests a block.
+ * This event is called whenever an entity harvests a block.
  * <br>
- * For the entity case please use {@link org.bukkit.event.entity.EntityHarvestBlockEvent}
+ * For the player case please use {@link org.bukkit.event.player.PlayerHarvestBlockEvent}
  * <br>
  * A 'harvest' is when a block drops an item (usually some sort of crop) and
  * changes state, but is not broken in order to drop the item.
@@ -22,24 +20,17 @@ import org.jetbrains.annotations.NotNull;
  * for {@link org.bukkit.event.block.BlockBreakEvent} and
  * {@link org.bukkit.event.block.BlockDropItemEvent}.
  */
-public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable {
+public class EntityHarvestBlockEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;
     private final Block harvestedBlock;
-    private final EquipmentSlot hand;
     private final List<ItemStack> itemsHarvested;
 
-    public PlayerHarvestBlockEvent(@NotNull Player player, @NotNull Block harvestedBlock, @NotNull EquipmentSlot hand, @NotNull List<ItemStack> itemsHarvested) {
-        super(player);
+    public EntityHarvestBlockEvent(@NotNull Entity entity, @NotNull Block harvestedBlock, @NotNull List<ItemStack> itemsHarvested) {
+        super(entity);
         this.harvestedBlock = harvestedBlock;
-        this.hand = hand;
         this.itemsHarvested = itemsHarvested;
-    }
-
-    @Deprecated(since = "1.19.2")
-    public PlayerHarvestBlockEvent(@NotNull Player player, @NotNull Block harvestedBlock, @NotNull List<ItemStack> itemsHarvested) {
-        this(player, harvestedBlock, EquipmentSlot.HAND, itemsHarvested);
     }
 
     /**
@@ -50,16 +41,6 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
     @NotNull
     public Block getHarvestedBlock() {
         return harvestedBlock;
-    }
-
-    /**
-     * Get the hand used to harvest the block.
-     *
-     * @return the hand
-     */
-    @NotNull
-    public EquipmentSlot getHand() {
-        return hand;
     }
 
     /**
