@@ -21,10 +21,6 @@ paperweight {
     // macheOldPath = file("F:\\Projects\\PaperTooling\\mache\\versions\\1.21.4\\src\\main\\java")
     // gitFilePatches = true
 
-    paper {
-        reobfMappingsPatch = layout.projectDirectory.file("../build-data/reobf-mappings-patch.tiny")
-    }
-
     spigot {
         buildDataRef = "3edaf46ec1eed4115ce1b18d2846cded42577e42"
         packageVersion = "v1_21_R3" // also needs to be updated in MappingEnvironment
