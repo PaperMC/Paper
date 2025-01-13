@@ -6,12 +6,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.raytracing.RayTraceConfiguration;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
 import java.util.ArrayList;
@@ -1252,12 +1252,17 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public @org.jetbrains.annotations.Nullable RayTraceResult rayTrace(Consumer<PositionedRayTraceConfigurationBuilder> builderConsumer) {
-        PositionedRayTraceConfigurationBuilderImpl builder = new PositionedRayTraceConfigurationBuilderImpl(this);
+    public RayTraceResult rayTrace(Consumer<PositionedRayTraceConfigurationBuilder> builderConsumer) {
+        PositionedRayTraceConfigurationBuilderImpl builder = new PositionedRayTraceConfigurationBuilderImpl();
 
         builderConsumer.accept(builder);
 
-        return builder.cast();
+        if (builder.targets().contains(RayTraceTarget.ENTITIES)) {
+            if(builder.targets().contains(RayTraceTarget.BLOCKS))
+                return this.rayTrace(builder.start(), builder.direction(), builder.maxDistance(), builder.fluidCollisionMode(), builder.ignorePassableBlocks(), builder.raySize(), builder.entityFilter(), builder.blockFilter());
+            return this.rayTraceEntities(builder.start(), builder.direction(), builder.maxDistance(), builder.raySize(), builder.entityFilter());
+        }
+        return this.rayTraceBlocks(builder.start(), builder.direction(), builder.maxDistance(), builder.fluidCollisionMode(), builder.ignorePassableBlocks(), builder.blockFilter());
     }
 
     @Override
