@@ -3,7 +3,9 @@ package io.papermc.paper.raytracing;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.UnmodifiableView;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -21,23 +23,23 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
 
     @Override
     public Location start() {
-        return this.start;
+        return this.start.clone();
     }
 
     @Override
     public PositionedRayTraceConfigurationBuilder start(final Location start) {
-        this.start = start;
+        this.start = start.clone();
         return this;
     }
 
     @Override
     public Vector direction() {
-        return this.direction;
+        return this.direction.clone();
     }
 
     @Override
     public PositionedRayTraceConfigurationBuilder direction(final Vector direction) {
-        this.direction = direction;
+        this.direction = direction.clone();
         return this;
     }
 
@@ -108,8 +110,8 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     }
 
     @Override
-    public List<RayTraceTarget> targets() {
-        return this.targets;
+    public @UnmodifiableView List<RayTraceTarget> targets() {
+        return Collections.unmodifiableList(this.targets);
     }
 
     @Override
