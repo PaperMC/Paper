@@ -42,7 +42,11 @@ public class RegistryEntryBuilder<M, A extends Keyed> { // TODO remove Keyed
     }
 
     public CraftStage<M, A> craft(final Class<?> classToPreload, final Function<Holder<M>, ? extends A> minecraftToBukkit) {
-        return new CraftStage<>(this.mcKey, this.apiKey, classToPreload, new RegistryTypeMapper<>(minecraftToBukkit));
+        return this.craft(classToPreload, minecraftToBukkit, false);
+    }
+
+    public CraftStage<M, A> craft(final Class<?> classToPreload, final Function<Holder<M>, ? extends A> minecraftToBukkit, final boolean allowDirect) {
+        return new CraftStage<>(this.mcKey, this.apiKey, classToPreload, new RegistryTypeMapper<>(minecraftToBukkit, allowDirect));
     }
 
     public static final class CraftStage<M, A extends Keyed> extends RegistryEntryBuilder<M, A> { // TODO remove Keyed

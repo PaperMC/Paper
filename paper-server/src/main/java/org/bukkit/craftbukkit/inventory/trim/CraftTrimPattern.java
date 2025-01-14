@@ -36,7 +36,7 @@ public class CraftTrimPattern implements TrimPattern, io.papermc.paper.util.Hold
     public static Object bukkitToObject(TrimPattern bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        return ((CraftTrimPattern) bukkit).toBukkitSerializationObject(net.minecraft.world.item.equipment.trim.TrimPattern.CODEC); // Paper - switch to Holder
+        return ((CraftTrimPattern) bukkit).toBukkitSerializationObject(net.minecraft.world.item.equipment.trim.TrimPattern.DIRECT_CODEC); // Paper - switch to Holder
     }
 
     public static TrimPattern objectToBukkit(Object object) {
