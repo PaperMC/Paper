@@ -2593,9 +2593,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * It is safe to run this method when the block does not exist, it will
      * not create the block.
-     * <p>
-     * This method will return the raw temperature without adjusting for block
-     * height effects.
      *
      * @param x X coordinate of the block
      * @param z Z coordinate of the block
@@ -2610,9 +2607,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * It is safe to run this method when the block does not exist, it will
      * not create the block.
-     * <p>
-     * This method will return the raw temperature without adjusting for block
-     * height effects.
      *
      * @param x X coordinate of the block
      * @param y Y coordinate of the block
