@@ -11,7 +11,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
- * Represents an event that is called when a player right-clicks an unknown entity.
+ * Represents an event that is called when a player clicks an unknown entity.
  * Useful for plugins dealing with virtual entities (entities that aren't actually spawned on the server).
  * <br>
  * This event may be called multiple times per interaction with different interaction hands
