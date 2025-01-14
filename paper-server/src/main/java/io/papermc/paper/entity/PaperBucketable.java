@@ -4,10 +4,11 @@ import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
+import net.minecraft.world.entity.animal.Bucketable;
 
 public interface PaperBucketable extends Bucketable {
 
-    net.minecraft.world.entity.animal.Bucketable getHandle();
+    Bucketable getHandle();
 
     @Override
     default boolean isFromBucket() {
