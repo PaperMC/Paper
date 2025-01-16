@@ -4,6 +4,7 @@ import org.bukkit.ExplosionResult;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
@@ -22,6 +23,7 @@ public class ExplodeEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
+    private DamageSource damageSource;
     private final Location location;
     private final List<Block> blocks;
     private final ExplosionResult result;
@@ -31,7 +33,8 @@ public class ExplodeEvent extends Event implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public ExplodeEvent(final Location location, final List<Block> blocks, final float yield, final ExplosionResult result) {
+    public ExplodeEvent(final DamageSource damageSource, final Location location, final List<Block> blocks, final float yield, final ExplosionResult result) {
+        this.damageSource = damageSource;
         this.location = location;
         this.blocks = blocks;
         this.yield = yield;
@@ -40,14 +43,14 @@ public class ExplodeEvent extends Event implements Cancellable {
     }
 
     @ApiStatus.Internal
-    public ExplodeEvent(final Entity entityExploded, final Location location, final List<Block> blocks, final float yield, final ExplosionResult result) {
-        this(location, blocks, yield, result);
+    public ExplodeEvent(final DamageSource damageSource, final Entity entityExploded, final Location location, final List<Block> blocks, final float yield, final ExplosionResult result) {
+        this(damageSource, location, blocks, yield, result);
         this.entity = entityExploded;
     }
 
     @ApiStatus.Internal
-    public ExplodeEvent(final BlockState blockStateExploded, final Location location, final List<Block> blocks, final float yield, final ExplosionResult result) {
-        this(location, blocks, yield, result);
+    public ExplodeEvent(final DamageSource damageSource, final BlockState blockStateExploded, final Location location, final List<Block> blocks, final float yield, final ExplosionResult result) {
+        this(damageSource, location, blocks, yield, result);
         this.blockState = blockStateExploded;
     }
 
@@ -57,7 +60,18 @@ public class ExplodeEvent extends Event implements Cancellable {
      * @return the result of the explosion.
      */
     public ExplosionResult getExplosionResult() {
-        return result;
+        return this.result;
+    }
+
+    /**
+     * Get the source of damage.
+     * <br>
+     * <b>Note:</b> by default it's the explosion but datapacks using custom explode effect can throw another types of damages.
+     *
+     * @return a DamageSource detailing the source of the damage from the explosion.
+     */
+    public DamageSource getDamageSource() {
+        return this.damageSource;
     }
 
     /**
