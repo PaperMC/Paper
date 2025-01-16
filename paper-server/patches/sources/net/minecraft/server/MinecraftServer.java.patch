@@ -984,7 +984,7 @@
              ObjectArrayList<GameProfile> list = new ObjectArrayList<>(min);
              int randomInt = Mth.nextInt(this.random, 0, players.size() - min);
  
-@@ -1046,17 +_,65 @@
+@@ -1046,17 +_,66 @@
      protected void tickChildren(BooleanSupplier hasTimeLeft) {
          ProfilerFiller profilerFiller = Profiler.get();
          this.getPlayerList().getPlayers().forEach(serverPlayer1 -> serverPlayer1.connection.suspendFlushing());
@@ -1027,8 +1027,9 @@
 +                }
 +                ServerPlayer entityplayer = (ServerPlayer) entityhuman;
 +                long playerTime = entityplayer.getPlayerTime();
-+                ClientboundSetTimePacket packet = (playerTime == dayTime) ? worldPacket :
-+                    new ClientboundSetTimePacket(worldTime, playerTime, doDaylight);
++                boolean relativeTime = entityplayer.relativeTime;
++                ClientboundSetTimePacket packet = ((relativeTime || !doDaylight) && playerTime == dayTime) ? worldPacket :
++                    new ClientboundSetTimePacket(worldTime, playerTime, relativeTime && doDaylight);
 +                entityplayer.connection.send(packet); // Add support for per player time
 +                // Paper end - Perf: Optimize time updates
 +            }
@@ -1262,11 +1263,12 @@
          }
      }
  
-@@ -1652,10 +_,11 @@
+@@ -1651,11 +_,12 @@
+     public void kickUnlistedPlayers(CommandSourceStack commandSource) {
          if (this.isEnforceWhitelist()) {
              PlayerList playerList = commandSource.getServer().getPlayerList();
++            if (!playerList.isUsingWhitelist()) return; // Paper - whitelist not enabled
              UserWhiteList whiteList = playerList.getWhiteList();
-+            if (!((net.minecraft.server.dedicated.DedicatedServer) this).getProperties().whiteList.get()) return; // Paper - whitelist not enabled
  
              for (ServerPlayer serverPlayer : Lists.newArrayList(playerList.getPlayers())) {
 -                if (!whiteList.isWhiteListed(serverPlayer.getGameProfile())) {

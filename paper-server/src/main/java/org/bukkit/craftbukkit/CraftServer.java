@@ -258,6 +258,7 @@ import org.bukkit.scoreboard.Criteria;
 import org.bukkit.structure.StructureManager;
 import org.bukkit.util.StringUtil;
 import org.bukkit.util.permissions.DefaultPermissions;
+import org.jetbrains.annotations.NotNull;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -883,7 +884,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean hasWhitelist() {
-        return this.getProperties().whiteList.get();
+        return this.playerList.isUsingWhitelist();
     }
 
     // NOTE: Temporary calls through to server.properies until its replaced
@@ -2486,6 +2487,11 @@ public final class CraftServer implements Server {
     }
 
     @Override
+    public @NotNull Merchant createMerchant() {
+        return new CraftMerchantCustom(net.kyori.adventure.text.Component.empty());
+    }
+
+    @Override
     public int getMaxChainedNeighborUpdates() {
         return this.getServer().getMaxChainedNeighborUpdates();
     }
@@ -2550,7 +2556,7 @@ public final class CraftServer implements Server {
 
     @Override
     public boolean isPrimaryThread() {
-        return Thread.currentThread().equals(this.console.serverThread) || this.console.hasStopped() || !org.spigotmc.AsyncCatcher.enabled; // All bets are off if we have shut down (e.g. due to watchdog)
+        return ca.spottedleaf.moonrise.common.util.TickThread.isTickThread(); // Paper - rewrite chunk system
     }
 
     // Paper start - Adventure

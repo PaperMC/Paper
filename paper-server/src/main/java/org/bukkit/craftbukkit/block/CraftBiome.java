@@ -4,7 +4,6 @@ import java.util.Locale;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.util.Handleable;
@@ -15,7 +14,7 @@ public class CraftBiome implements Biome, Handleable<net.minecraft.world.level.b
     private static int count = 0;
 
     public static Biome minecraftToBukkit(net.minecraft.world.level.biome.Biome minecraft) {
-        return CraftRegistry.minecraftToBukkit(minecraft, Registries.BIOME, Registry.BIOME);
+        return CraftRegistry.minecraftToBukkit(minecraft, Registries.BIOME);
     }
 
     public static Biome minecraftHolderToBukkit(Holder<net.minecraft.world.level.biome.Biome> minecraft) {

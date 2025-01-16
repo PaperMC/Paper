@@ -40,6 +40,7 @@ import org.bukkit.entity.Villager;
 import org.bukkit.map.MapCursor;
 import org.bukkit.util.OldEnum;
 
+@Deprecated
 @NotInBukkit
 @RequireCompatibility("enum-compatibility-mode")
 @RequirePluginVersion(maxInclusive = "1.20.6")

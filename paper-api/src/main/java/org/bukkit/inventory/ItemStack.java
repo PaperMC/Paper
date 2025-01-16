@@ -2,6 +2,7 @@ package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.registry.RegistryKey;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -543,7 +544,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
                     stringKey = Bukkit.getUnsafe().get(Enchantment.class, stringKey);
                     NamespacedKey key = NamespacedKey.fromString(stringKey.toLowerCase(Locale.ROOT));
 
-                    Enchantment enchantment = Bukkit.getUnsafe().get(Registry.ENCHANTMENT, key);
+                    Enchantment enchantment = Bukkit.getUnsafe().get(RegistryKey.ENCHANTMENT, key);
 
                     if ((enchantment != null) && (entry.getValue() instanceof Integer)) {
                         result.addUnsafeEnchantment(enchantment, (Integer) entry.getValue());

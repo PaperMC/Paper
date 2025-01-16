@@ -64,6 +64,6 @@ public class PaperDiscoveredDatapack implements DiscoveredDatapack {
 
     @Override
     public DatapackSource getSource() {
-        return PACK_SOURCES.computeIfAbsent(this.pack.location().source(), source -> new DatapackSourceImpl(source.toString()));
+        return PACK_SOURCES.get(this.pack.location().source());
     }
 }

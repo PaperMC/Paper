@@ -18,6 +18,37 @@
  
      public CommandSourceStack(
          CommandSource source,
+@@ -187,6 +_,30 @@
+                 this.chatMessageChainer
+             );
+     }
++    
++    // Paper start - Expose 'with' functions from the CommandSourceStack
++    @Override
++    public CommandSourceStack withLocation(org.bukkit.Location location) {
++        return this.getLocation().equals(location)
++            ? this
++            : new CommandSourceStack(
++            this.source,
++            new Vec3(location.x(), location.y(), location.z()),
++            new Vec2(location.getPitch(), location.getYaw()),
++            ((org.bukkit.craftbukkit.CraftWorld) location.getWorld()).getHandle(),
++            this.permissionLevel,
++            this.textName,
++            this.displayName,
++            this.server,
++            this.entity,
++            this.silent,
++            this.resultCallback,
++            this.anchor,
++            this.signingContext,
++            this.chatMessageChainer
++        );
++    }
++    // Paper end - Expose 'with' functions from the CommandSourceStack
+ 
+     public CommandSourceStack withRotation(Vec2 rotation) {
+         return this.rotation.equals(rotation)
 @@ -391,9 +_,44 @@
  
      @Override
@@ -92,6 +123,15 @@
          }
      }
  
+@@ -523,7 +_,7 @@
+ 
+     @Override
+     public Collection<String> getOnlinePlayerNames() {
+-        return Lists.newArrayList(this.server.getPlayerNames());
++        return this.entity instanceof ServerPlayer sourcePlayer && !sourcePlayer.getBukkitEntity().hasPermission("paper.bypass-visibility.tab-completion") ? this.getServer().getPlayerList().getPlayers().stream().filter(serverPlayer -> sourcePlayer.getBukkitEntity().canSee(serverPlayer.getBukkitEntity())).map(serverPlayer -> serverPlayer.getGameProfile().getName()).toList() : Lists.newArrayList(this.server.getPlayerNames()); // Paper - Make CommandSourceStack respect hidden players
+     }
+ 
+     @Override
 @@ -598,4 +_,16 @@
      public boolean isSilent() {
          return this.silent;

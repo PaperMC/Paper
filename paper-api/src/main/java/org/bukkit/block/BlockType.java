@@ -1,5 +1,6 @@
 package org.bukkit.block;
 
+import java.util.Collection;
 import java.util.function.Consumer;
 import org.bukkit.Keyed;
 import org.bukkit.Material;
@@ -120,6 +121,7 @@ import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * While this API is in a public interface, it is not intended for use by
@@ -168,6 +170,15 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
         @NotNull
         @Override
         B createBlockData();
+
+        /**
+         * Creates a collection of {@link BlockData} instances for this block type, with all
+         * possible combinations of properties values.
+         *
+         * @return new block data collection
+         */
+        @Override
+        @Unmodifiable @NotNull Collection<B> createBlockDataStates();
 
         /**
          * Creates a new {@link BlockData} instance for this block type, with all
@@ -3481,6 +3492,14 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockData createBlockData();
 
     /**
+     * Creates a collection of {@link BlockData} instances for this block type, with all
+     * possible combinations of properties values.
+     *
+     * @return new block data collection
+     */
+    @Unmodifiable @NotNull Collection<? extends BlockData> createBlockDataStates();
+
+    /**
      * Creates a new {@link BlockData} instance for this block type, with all
      * properties initialized to unspecified defaults, except for those provided
      * in data.
@@ -3551,7 +3570,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      * state as well. This method will return true if there is at least one
      * state in which additional interact handling is performed for the
      * block type.
-     * 
+     *
      * @deprecated This method is not comprehensive and does not accurately reflect what block types are
      * interactable. Many "interactions" are defined on the item not block, and many are conditional on some other world state
      * checks being true.
@@ -3604,7 +3623,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      *
      * @param world the world to check
      * @return true if this BlockType can be used in this World.
-     * @deprecated Use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
+     * @deprecated use {@link io.papermc.paper.world.flag.FeatureFlagSetHolder#isEnabled(io.papermc.paper.world.flag.FeatureDependant)}
      */
     @Deprecated(forRemoval = true, since = "1.21.1") // Paper
     boolean isEnabledByFeature(@NotNull World world);

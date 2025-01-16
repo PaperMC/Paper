@@ -1,5 +1,7 @@
 package org.bukkit.generator.structure;
 
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -10,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * Listed structures are present in the default server. Depending on the server
  * there might be additional structures present (for example structures added by
- * data packs), which can be received via {@link Registry#STRUCTURE}.
+ * data packs), which can be received via {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)} and {@link io.papermc.paper.registry.RegistryKey#STRUCTURE}.
  */
 public abstract class Structure implements Keyed {
 
@@ -51,7 +53,7 @@ public abstract class Structure implements Keyed {
 
     @NotNull
     private static Structure getStructure(@NotNull String name) {
-        return Registry.STRUCTURE.getOrThrow(NamespacedKey.minecraft(name));
+        return RegistryAccess.registryAccess().getRegistry(RegistryKey.STRUCTURE).getOrThrow(NamespacedKey.minecraft(name));
     }
 
     /**
