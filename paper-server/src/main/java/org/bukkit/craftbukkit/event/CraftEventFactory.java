@@ -2146,7 +2146,7 @@ public class CraftEventFactory {
             EntityExplodeEvent event = CraftEventFactory.callEntityExplodeEvent((serverExplosion.getDirectSourceEntity() != null) ? serverExplosion.getDirectSourceEntity() : serverExplosion.getDamageSource().getCustomEventDamager(), blockList, serverExplosion.yield, serverExplosion.getBlockInteraction());
             serverExplosion.wasCanceled = event.isCancelled();
             serverExplosion.yield = event.getYield();
-            blockList.addAll(event.blockList());
+            blockListPostEvent.addAll(event.blockList());
         } else {
             Location location = CraftLocation.toBukkit(serverExplosion.center(), bworld);
             org.bukkit.block.Block block = location.getBlock();
@@ -2154,7 +2154,7 @@ public class CraftEventFactory {
             BlockExplodeEvent event = CraftEventFactory.callBlockExplodeEvent(block, blockState, blockList, serverExplosion.yield, serverExplosion.getBlockInteraction());
             serverExplosion.wasCanceled = event.isCancelled();
             serverExplosion.yield = event.getYield();
-            blockList.addAll(event.blockList());
+            blockListPostEvent.addAll(event.blockList());
         }
 
         return blockListPostEvent.stream().map(bblock -> new BlockPos(bblock.getX(), bblock.getY(), bblock.getZ())).toList();
