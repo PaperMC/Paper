@@ -84,7 +84,7 @@ public class DataComponentValueConverterProviderImpl implements DataComponentVal
                     Tag decodedSnbt;
                     try {
                         decodedSnbt = tagSerializable.asBinaryTag().get(PaperAdventure.NBT_CODEC);
-                    } catch (CommandSyntaxException e) {
+                    } catch (final CommandSyntaxException e) {
                         throw new IllegalArgumentException("Unable to parse SNBT value", e);
                     }
 
