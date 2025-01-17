@@ -76,6 +76,20 @@ public class DataComponentValueConverterProviderImpl implements DataComponentVal
                         throw new IllegalArgumentException(e);
                     }
                 }
+            ),
+            DataComponentValueConverterRegistry.Conversion.convert(
+                DataComponentValue.TagSerializable.class,
+                GsonDataComponentValue.class,
+                (key, tagSerializable) -> {
+                    Tag decodedSnbt;
+                    try {
+                        decodedSnbt = tagSerializable.asBinaryTag().get(PaperAdventure.NBT_CODEC);
+                    } catch (CommandSyntaxException e) {
+                        throw new IllegalArgumentException("Unable to parse SNBT value", e);
+                    }
+
+                    return GsonDataComponentValue.gsonDataComponentValue(NbtOps.INSTANCE.convertTo(JsonOps.INSTANCE, decodedSnbt));
+                }
             )
         );
     }
