@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: NONPLAYT <76615486+NONPLAYT@users.noreply.github.com>
+Date: Mon, 12 Jun 2023 00:23:38 +0300
+Subject: [PATCH] Disable reload command by default
+
+This patch originates from the DivineMC project. It disables access to the "/reload" command by default.
+However, the command can still be re-enabled using the "-Dpaper.EnableReloadCommand" argument.
+
+diff --git a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+index bdfe68b386b5ca2878475e548d3c9a3808fce848..0a21f2138969f75425b720487e626aac796821d1 100644
+--- a/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/ReloadCommand.java
+@@ -1,8 +1,7 @@
+ package org.bukkit.command.defaults;
+ 
+-import java.util.Arrays;
+-import java.util.Collections;
+ import java.util.List;
++
+ import org.bukkit.Bukkit;
+ import org.bukkit.ChatColor;
+ import org.bukkit.command.Command;
+@@ -15,7 +14,7 @@ public class ReloadCommand extends BukkitCommand {
+         this.description = "Reloads the server configuration and plugins";
+         this.usageMessage = "/reload [permissions|commands|confirm]"; // Paper
+         this.setPermission("bukkit.command.reload");
+-        this.setAliases(Arrays.asList("rl"));
++        this.setAliases(List.of("rl"));
+     }
+ 
+     @org.jetbrains.annotations.ApiStatus.Internal // Paper
+@@ -25,48 +24,53 @@ public class ReloadCommand extends BukkitCommand {
+     public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) { // Paper
+         if (!testPermission(sender)) return true;
+ 
+-        // Paper start - Reload permissions.yml & require confirm
+-        boolean confirmed = System.getProperty("LetMeReload") != null;
+-        if (args.length == 1) {
+-            if (args[0].equalsIgnoreCase("permissions")) {
+-                Bukkit.getServer().reloadPermissions();
+-                Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Permissions successfully reloaded.", net.kyori.adventure.text.format.NamedTextColor.GREEN));
+-                return true;
+-            } else if ("commands".equalsIgnoreCase(args[0])) {
+-                if (Bukkit.getServer().reloadCommandAliases()) {
+-                    Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Command aliases successfully reloaded.", net.kyori.adventure.text.format.NamedTextColor.GREEN));
++        // Paper start - disable reload command by default & add startup flag
++        if (System.getProperty("paper.EnableReloadCommand") == null || false) {
++            sender.sendMessage(net.kyori.adventure.text.Component.text("Operation denied. The /reload command is disabled.", net.kyori.adventure.text.format.NamedTextColor.RED ));
++            sender.sendMessage(net.kyori.adventure.text.Component.text("The /reload command is known to cause memory leaks and other issues. It is strongly recommended that you restart your server instead of reloading it.", net.kyori.adventure.text.format.NamedTextColor.YELLOW));
++            sender.sendMessage(net.kyori.adventure.text.Component.text("If you still wish to enable the /reload command, add the -Dpaper.EnableReloadCommand=true flag to your startup arguments.", net.kyori.adventure.text.format.NamedTextColor.YELLOW));
++            sender.sendMessage(net.kyori.adventure.text.Component.text("To learn more, read this article: https://madelinemiller.dev/blog/problem-with-reload", net.kyori.adventure.text.format.NamedTextColor.GREEN));
++        } else {
++            if (args.length == 1) {
++                if (args[0].equalsIgnoreCase("permissions")) {
++                    Bukkit.getServer().reloadPermissions();
++                    Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Permissions successfully reloaded.", net.kyori.adventure.text.format.NamedTextColor.GREEN));
++                    return true;
++                } else if ("commands".equalsIgnoreCase(args[0])) {
++                    if (Bukkit.getServer().reloadCommandAliases()) {
++                        Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Command aliases successfully reloaded.", net.kyori.adventure.text.format.NamedTextColor.GREEN));
++                    } else {
++                        Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("An error occurred while trying to reload command aliases.", net.kyori.adventure.text.format.NamedTextColor.RED));
++                    }
++                    return true;
+                 } else {
+-                    Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("An error occurred while trying to reload command aliases.", net.kyori.adventure.text.format.NamedTextColor.RED));
++                    Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Usage: " + usageMessage, net.kyori.adventure.text.format.NamedTextColor.RED));
++                    return true;
+                 }
+-                return true;
+-            } else if ("confirm".equalsIgnoreCase(args[0])) {
+-                confirmed = true;
+-            } else {
+-                Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Usage: " + usageMessage, net.kyori.adventure.text.format.NamedTextColor.RED));
+-                return true;
+             }
+-        }
+-        if (!confirmed) {
+-            Command.broadcastCommandMessage(sender, net.kyori.adventure.text.Component.text("Are you sure you wish to reload your server? Doing so may cause bugs and memory leaks. It is recommended to restart instead of using /reload. To confirm, please type ", net.kyori.adventure.text.format.NamedTextColor.RED).append(net.kyori.adventure.text.Component.text("/reload confirm", net.kyori.adventure.text.format.NamedTextColor.YELLOW)));
+-            return true;
+-        }
+-        // Paper end
+ 
+-        Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");
+-        Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
+-        // Paper start - lifecycle events
+-        try {
+-            Bukkit.reload();
+-        } catch (final IllegalStateException ex) {
+-            if (ex.getMessage().equals(RELOADING_DISABLED_MESSAGE)) {
+-                Command.broadcastCommandMessage(sender, ChatColor.RED + RELOADING_DISABLED_MESSAGE);
+-                return true;
++            Command.broadcastCommandMessage(sender, ChatColor.RED + "Please note that this command is not supported and may cause issues when using some plugins.");
++            Command.broadcastCommandMessage(sender, ChatColor.RED + "If you encounter any issues please use the /stop command to restart your server.");
++            // Paper start - lifecycle events
++            try {
++                Bukkit.reload();
++            } catch (final IllegalStateException ex) {
++                if (ex.getMessage().equals(RELOADING_DISABLED_MESSAGE)) {
++                    Command.broadcastCommandMessage(sender, ChatColor.RED + RELOADING_DISABLED_MESSAGE);
++                    return true;
++                }
+             }
++            // Paper end - lifecycle events
++            Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Reload complete.");
++
++            return true;
+         }
+-        // Paper end - lifecycle events
+-        Command.broadcastCommandMessage(sender, ChatColor.GREEN + "Reload complete.");
+ 
+         return true;
++        // Paper end
+     }
+ 
+     @NotNull
