@@ -1,5 +1,8 @@
 package org.bukkit.craftbukkit.block;
 
+import io.papermc.paper.block.LidMode;
+import io.papermc.paper.block.LidState;
+import io.papermc.paper.block.PaperLidded;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
@@ -10,8 +13,10 @@ import org.bukkit.World;
 import org.bukkit.block.ShulkerBox;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.inventory.Inventory;
+import org.jetbrains.annotations.NotNull;
 
-public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implements ShulkerBox {
+public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implements ShulkerBox,
+    PaperLidded {
 
     public CraftShulkerBox(World world, ShulkerBoxBlockEntity tileEntity) {
         super(world, tileEntity);
@@ -43,28 +48,6 @@ public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implem
     }
 
     @Override
-    public void open() {
-        this.requirePlaced();
-        if (!this.getTileEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
-            net.minecraft.world.level.Level world = this.getTileEntity().getLevel();
-            world.blockEvent(this.getPosition(), this.getTileEntity().getBlockState().getBlock(), 1, 1);
-            world.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_OPEN, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F);
-        }
-        this.getTileEntity().opened = true;
-    }
-
-    @Override
-    public void close() {
-        this.requirePlaced();
-        if (this.getTileEntity().opened && this.getWorldHandle() instanceof net.minecraft.world.level.Level) {
-            net.minecraft.world.level.Level world = this.getTileEntity().getLevel();
-            world.blockEvent(this.getPosition(), this.getTileEntity().getBlockState().getBlock(), 1, 0);
-            world.playSound(null, this.getPosition(), SoundEvents.SHULKER_BOX_CLOSE, SoundSource.BLOCKS, 0.5F, world.random.nextFloat() * 0.1F + 0.9F); // Paper - More Lidded Block API (Wrong sound)
-        }
-        this.getTileEntity().opened = false;
-    }
-
-    @Override
     public CraftShulkerBox copy() {
         return new CraftShulkerBox(this, null);
     }
@@ -74,10 +57,53 @@ public class CraftShulkerBox extends CraftLootable<ShulkerBoxBlockEntity> implem
         return new CraftShulkerBox(this, location);
     }
 
-    // Paper start - More Lidded Block API
     @Override
-    public boolean isOpen() {
-        return getTileEntity().opened;
+    public void startForceLiddedLidOpen() {
+        this.requirePlaced();
+        this.getTileEntity().startForceLiddedLidOpen();
     }
-    // Paper end - More Lidded Block API
+
+    @Override
+    public void stopForceLiddedLidOpen() {
+        this.requirePlaced();
+        this.getTileEntity().stopForceLiddedLidOpen();
+    }
+
+    @Override
+    public void startForceLiddedLidClose() {
+        this.requirePlaced();
+        this.getTileEntity().startForceLiddedLidClose();
+    }
+
+    @Override
+    public void stopForceLiddedLidClose() {
+        this.requirePlaced();
+        this.getTileEntity().stopForceLiddedLidClose();
+    }
+
+    @Override
+    public @NotNull LidState getEffectiveLidState() {
+        this.requirePlaced();
+        return this.getTileEntity().getEffectiveLidState();
+    }
+
+    @Override
+    public @NotNull LidState getTrueLidState() {
+        this.requirePlaced();
+        return this.getTileEntity().getTrueLidState();
+    }
+
+    @Override
+    public @NotNull LidMode getLidMode() {
+        this.requirePlaced();
+        return this.getTileEntity().getLidMode();
+    }
+
+    @Override
+    public @NotNull LidMode setLidMode(final @NotNull LidMode targetLidMode) {
+        this.requirePlaced();
+        LidMode newEffectiveMode = PaperLidded.super.setLidMode(targetLidMode);
+        this.getTileEntity().setLidMode(newEffectiveMode);
+        return newEffectiveMode;
+    }
 }
