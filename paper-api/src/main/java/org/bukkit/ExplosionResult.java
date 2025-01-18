@@ -12,7 +12,7 @@ public enum ExplosionResult {
      * Represents an explosion where no change took place.
      * <br>
      * This is the case when {@link org.bukkit.GameRule#MOB_GRIEFING} is
-     * disabled or the {@link org.bukkit.enchantments.Enchantment#WIND_BURST}.
+     * disabled.
      */
     KEEP,
     /**
