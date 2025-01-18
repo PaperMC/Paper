@@ -23,7 +23,7 @@ public class ExplodeEvent extends Event implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
-    private DamageSource damageSource;
+    private final DamageSource damageSource;
     private final Location location;
     private final List<Block> blocks;
     private final ExplosionResult result;
