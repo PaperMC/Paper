@@ -2170,7 +2170,7 @@ public class CraftEventFactory {
         List<Block> blockList = new ObjectArrayList<>();
         for (int posBlockPositionList = blockPositions.size() - 1; posBlockPositionList >= 0; posBlockPositionList--) {
             Block bblock = CraftBlock.at(serverExplosion.level(), blockPositions.get(posBlockPositionList));
-            if (!bblock.isEmpty()) {
+            if (!bblock.isEmpty() || serverExplosion.fire) {
                 blockList.add(bblock);
             }
         }
