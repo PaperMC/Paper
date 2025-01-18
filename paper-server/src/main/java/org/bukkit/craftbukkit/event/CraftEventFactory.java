@@ -70,6 +70,7 @@ import org.bukkit.ExplosionResult;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Statistic.Type;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.BlockState;
@@ -2129,46 +2130,46 @@ public class CraftEventFactory {
 
     public static List<BlockPos> handleExplodeEvent(ServerExplosion serverExplosion, List<BlockPos> blockPositions) {
         // First convert the blockPositionList related to explosion to Bukkit
-        org.bukkit.World bworld = serverExplosion.level().getWorld();
+        World bworld = serverExplosion.level().getWorld();
 
-        List<org.bukkit.block.Block> blockList = new ObjectArrayList<>();
+        List<Block> blockList = new ObjectArrayList<>();
         for (int posBlockPositionList = blockPositions.size() - 1; posBlockPositionList >= 0; posBlockPositionList--) {
-            BlockPos cpos = blockPositions.get(posBlockPositionList);
-            org.bukkit.block.Block bblock = CraftBlock.at(serverExplosion.level(), cpos);
+            Block bblock = CraftBlock.at(serverExplosion.level(), blockPositions.get(posBlockPositionList));
             if (!bblock.isEmpty()) {
                 blockList.add(bblock);
             }
         }
 
+        Entity entity = (serverExplosion.getDirectSourceEntity() != null) ? serverExplosion.getDirectSourceEntity() : serverExplosion.getDamageSource().getCustomEventDamager();
+
         // Handle based in explosion if you need call EntityExplodeEvent or BlockExplodeEvent
-        List<org.bukkit.block.Block> blockListPostEvent = new ObjectArrayList<>();
-        if (serverExplosion.getDirectSourceEntity() != null || serverExplosion.getDamageSource().getCustomEventDamager() != null) {
-            EntityExplodeEvent event = CraftEventFactory.callEntityExplodeEvent((serverExplosion.getDirectSourceEntity() != null) ? serverExplosion.getDirectSourceEntity() : serverExplosion.getDamageSource().getCustomEventDamager(), blockList, serverExplosion.yield, serverExplosion.getBlockInteraction());
+        List<Block> blockListPostEvent = new ObjectArrayList<>();
+        if (entity != null) {
+            EntityExplodeEvent event = CraftEventFactory.callEntityExplodeEvent(entity, blockList, serverExplosion.yield, serverExplosion.getBlockInteraction());
             serverExplosion.wasCanceled = event.isCancelled();
             serverExplosion.yield = event.getYield();
             blockListPostEvent.addAll(event.blockList());
         } else {
             Location location = CraftLocation.toBukkit(serverExplosion.center(), bworld);
-            org.bukkit.block.Block block = location.getBlock();
-            org.bukkit.block.BlockState blockState = (serverExplosion.getDamageSource().getDirectBlockState() != null) ? serverExplosion.getDamageSource().getDirectBlockState() : block.getState();
+            Block block = location.getBlock();
+            BlockState blockState = (serverExplosion.getDamageSource().getDirectBlockState() != null) ? serverExplosion.getDamageSource().getDirectBlockState() : block.getState();
             BlockExplodeEvent event = CraftEventFactory.callBlockExplodeEvent(block, blockState, blockList, serverExplosion.yield, serverExplosion.getBlockInteraction());
             serverExplosion.wasCanceled = event.isCancelled();
             serverExplosion.yield = event.getYield();
             blockListPostEvent.addAll(event.blockList());
         }
 
-        return blockListPostEvent.stream().map(bblock -> new BlockPos(bblock.getX(), bblock.getY(), bblock.getZ())).toList();
+        return blockListPostEvent.stream().map(block -> ((org.bukkit.craftbukkit.block.CraftBlock) block).getPosition()).toList();
     }
 
     public static ExplodeEvent callExplodeEvent(ServerExplosion serverExplosion, List<BlockPos> blockPositions) {
         // First convert the blockPositionList related to explosion to Bukkit
-        org.bukkit.World bworld = serverExplosion.level().getWorld();
+        World bworld = serverExplosion.level().getWorld();
         Location location = CraftLocation.toBukkit(serverExplosion.center(), bworld);
 
-        List<org.bukkit.block.Block> blockList = new ObjectArrayList<>();
-        for (int i1 = blockPositions.size() - 1; i1 >= 0; i1--) {
-            BlockPos cpos = blockPositions.get(i1);
-            org.bukkit.block.Block bblock = bworld.getBlockAt(cpos.getX(), cpos.getY(), cpos.getZ());
+        List<Block> blockList = new ObjectArrayList<>();
+        for (int posBlockPositionList = blockPositions.size() - 1; posBlockPositionList >= 0; posBlockPositionList--) {
+            Block bblock = CraftBlock.at(serverExplosion.level(), blockPositions.get(posBlockPositionList));
             if (!bblock.isEmpty()) {
                 blockList.add(bblock);
             }
