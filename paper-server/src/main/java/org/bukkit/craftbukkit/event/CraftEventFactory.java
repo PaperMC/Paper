@@ -2132,10 +2132,10 @@ public class CraftEventFactory {
         org.bukkit.World bworld = serverExplosion.level().getWorld();
 
         List<org.bukkit.block.Block> blockList = new ObjectArrayList<>();
-        for (int i1 = blockPositions.size() - 1; i1 >= 0; i1--) {
-            BlockPos cpos = blockPositions.get(i1);
-            org.bukkit.block.Block bblock = bworld.getBlockAt(cpos.getX(), cpos.getY(), cpos.getZ());
-            if (!bblock.getType().isAir()) {
+        for (int posBlockPositionList = blockPositions.size() - 1; posBlockPositionList >= 0; posBlockPositionList--) {
+            BlockPos cpos = blockPositions.get(posBlockPositionList);
+            org.bukkit.block.Block bblock = CraftBlock.at(serverExplosion.level(), cpos);
+            if (!bblock.isEmpty()) {
                 blockList.add(bblock);
             }
         }
