@@ -27,6 +27,7 @@ import org.bukkit.craftbukkit.inventory.CraftInventory;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.loot.LootContext;
@@ -68,8 +69,8 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     @Override
     public Collection<ItemStack> populateLoot(Random random, LootContext context) {
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
-        LootParams nmsContext = this.convertContext(context, random);
-        List<net.minecraft.world.item.ItemStack> nmsItems = this.handle.getRandomItems(nmsContext);
+        LootParams nmsContext = this.convertContext(context);
+        List<net.minecraft.world.item.ItemStack> nmsItems = this.handle.getRandomItems(nmsContext, new RandomSourceWrapper(random));
         Collection<ItemStack> bukkit = new ArrayList<>(nmsItems.size());
 
         for (net.minecraft.world.item.ItemStack item : nmsItems) {
@@ -86,12 +87,12 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     public void fillInventory(Inventory inventory, Random random, LootContext context) {
         Preconditions.checkArgument(inventory != null, "Inventory cannot be null");
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
-        LootParams nmsContext = this.convertContext(context, random);
+        LootParams nmsContext = this.convertContext(context);
         CraftInventory craftInventory = (CraftInventory) inventory;
         Container handle = craftInventory.getInventory();
 
         // TODO: When events are added, call event here w/ custom reason?
-        this.getHandle().fillInventory(handle, nmsContext, random.nextLong(), true);
+        this.getHandle().fillInventory(handle, nmsContext, new RandomSourceWrapper(random), true);
     }
 
     @Override
@@ -99,19 +100,16 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         return this.key;
     }
 
-    private LootParams convertContext(LootContext context, Random random) {
+    private LootParams convertContext(LootContext context) {
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
         Location loc = context.getLocation();
         Preconditions.checkArgument(loc.getWorld() != null, "LootContext.getLocation#getWorld cannot be null");
         ServerLevel handle = ((CraftWorld) loc.getWorld()).getHandle();
 
         LootParams.Builder builder = new LootParams.Builder(handle);
-        if (random != null) {
-            // builder = builder.withRandom(new RandomSourceWrapper(random));
-        }
         this.setMaybe(builder, LootContextParams.ORIGIN, CraftLocation.toVec3D(loc));
         if (this.getHandle() != LootTable.EMPTY) {
-            // builder.luck(context.getLuck());
+            builder.withLuck(context.getLuck());
 
             if (context.getLootedEntity() != null) {
                 Entity nmsLootedEntity = ((CraftEntity) context.getLootedEntity()).getHandle();
