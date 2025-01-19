@@ -619,6 +619,14 @@
      public void recordMovementThroughBlocks(Vec3 oldPosition, Vec3 position) {
          this.movementThisTick.add(new Entity.Movement(oldPosition, position));
      }
+@@ -1330,6 +_,7 @@
+         this.updateInWaterStateAndDoWaterCurrentPushing();
+         double d = this.level().dimensionType().ultraWarm() ? 0.007 : 0.0023333333333333335;
+         boolean flag = this.updateFluidHeightAndDoFluidPushing(FluidTags.LAVA, d);
++        this.lastLavaContact = this.getLastFluidContact(FluidTags.LAVA); // Paper - update lastLavaContact
+         return this.isInWater() || flag;
+     }
+ 
 @@ -1485,6 +_,7 @@
          this.setXRot(Mth.clamp(xRot, -90.0F, 90.0F) % 360.0F);
          this.yRotO = this.getYRot();
@@ -1643,6 +1651,94 @@
          );
      }
  
+@@ -3279,6 +_,87 @@
+         this.yRotO = this.getYRot();
+     }
+ 
++    // Paper start - add last fluid contact
++    @Nullable
++    public BlockPos getLastFluidContact(final TagKey<Fluid> fluid) {
++        if (this.touchingUnloadedChunk()) {
++            return null;
++        }
++
++        final AABB boundingBox = this.getBoundingBox().deflate(1.0E-3);
++
++        final Level world = this.level;
++        final int minSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(world);
++
++        final int minBlockX = Mth.floor(boundingBox.minX);
++        final int minBlockY = Math.max((minSection << 4), Mth.floor(boundingBox.minY));
++        final int minBlockZ = Mth.floor(boundingBox.minZ);
++
++        // note: bounds are exclusive in Vanilla, so we subtract 1 - our loop expects bounds to be inclusive
++        final int maxBlockX = Mth.ceil(boundingBox.maxX) - 1;
++        final int maxBlockY = Math.min((ca.spottedleaf.moonrise.common.util.WorldUtil.getMaxSection(world) << 4) | 15, Mth.ceil(boundingBox.maxY) - 1);
++        final int maxBlockZ = Mth.ceil(boundingBox.maxZ) - 1;
++
++        final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
++
++        final int minChunkX = minBlockX >> 4;
++        final int maxChunkX = maxBlockX >> 4;
++
++        final int minChunkY = minBlockY >> 4;
++        final int maxChunkY = maxBlockY >> 4;
++
++        final int minChunkZ = minBlockZ >> 4;
++        final int maxChunkZ = maxBlockZ >> 4;
++
++        final net.minecraft.world.level.chunk.ChunkSource chunkSource = world.getChunkSource();
++
++        for (int currChunkZ = minChunkZ; currChunkZ <= maxChunkZ; ++currChunkZ) {
++            for (int currChunkX = minChunkX; currChunkX <= maxChunkX; ++currChunkX) {
++                final net.minecraft.world.level.chunk.LevelChunkSection[] sections = chunkSource.getChunk(currChunkX, currChunkZ, net.minecraft.world.level.chunk.status.ChunkStatus.FULL, false).getSections();
++
++                // bound y
++                for (int currChunkY = minChunkY; currChunkY <= maxChunkY; ++currChunkY) {
++                    final int sectionIdx = currChunkY - minSection;
++                    if (sectionIdx < 0 || sectionIdx >= sections.length) {
++                        continue;
++                    }
++                    final net.minecraft.world.level.chunk.LevelChunkSection section = sections[sectionIdx];
++                    if (section.hasOnlyAir()) {
++                        // empty
++                        continue;
++                    }
++
++                    final net.minecraft.world.level.chunk.PalettedContainer<net.minecraft.world.level.block.state.BlockState> blocks = section.states;
++
++                    final int minXIterate = currChunkX == minChunkX ? (minBlockX & 15) : 0;
++                    final int maxXIterate = currChunkX == maxChunkX ? (maxBlockX & 15) : 15;
++                    final int minZIterate = currChunkZ == minChunkZ ? (minBlockZ & 15) : 0;
++                    final int maxZIterate = currChunkZ == maxChunkZ ? (maxBlockZ & 15) : 15;
++                    final int minYIterate = currChunkY == minChunkY ? (minBlockY & 15) : 0;
++                    final int maxYIterate = currChunkY == maxChunkY ? (maxBlockY & 15) : 15;
++
++                    for (int currY = minYIterate; currY <= maxYIterate; ++currY) {
++                        for (int currZ = minZIterate; currZ <= maxZIterate; ++currZ) {
++                            for (int currX = minXIterate; currX <= maxXIterate; ++currX) {
++                                final FluidState fluidState = blocks.get((currX) | (currZ << 4) | ((currY) << 8)).getFluidState();
++
++                                if (fluidState.isEmpty() || !fluidState.is(fluid)) {
++                                    continue;
++                                }
++
++                                mutablePos.set(currX | (currChunkX << 4), currY | (currChunkY << 4), currZ | (currChunkZ << 4));
++
++                                return mutablePos;
++                            }
++                        }
++                    }
++                }
++            }
++        }
++        return null;
++    }
++    // Paper end
++
+     public float getPreciseBodyRotation(float partialTick) {
+         return Mth.lerp(partialTick, this.yRotO, this.yRot);
+     }
 @@ -3320,6 +_,11 @@
                                      vec3 = vec3.add(flow);
                                      i++;
