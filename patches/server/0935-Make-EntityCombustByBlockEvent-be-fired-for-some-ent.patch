@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex <alexzatstone@gmail.com>
+Date: Sat, 13 Aug 2022 02:13:05 +0200
+Subject: [PATCH] Make EntityCombustByBlockEvent be fired for some entities
+ that aren't subclasses of LivingEntity, consistent with the way it is fired
+ for entities that are combusted by BaseFireBlock
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index 2283cdb3f90215e741e9fd4a408c363366cf4763..10d34b33029afdcba77f582545ce27347797b636 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -80,6 +80,11 @@ import net.minecraft.world.entity.animal.AbstractFish;
+ import net.minecraft.world.entity.animal.Animal;
+ import net.minecraft.world.entity.item.ItemEntity;
+ import net.minecraft.world.entity.player.Player;
++import net.minecraft.world.entity.projectile.AbstractArrow;
++import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
++import net.minecraft.world.entity.projectile.ShulkerBullet;
++import net.minecraft.world.entity.projectile.ThrowableProjectile;
++import net.minecraft.world.entity.vehicle.AbstractMinecart;
+ import net.minecraft.world.entity.vehicle.Boat;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemStack;
+@@ -888,7 +893,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+     public void lavaHurt() {
+         if (!this.fireImmune()) {
+             // CraftBukkit start - Fallen in lava TODO: this event spams!
+-            if ((this instanceof net.minecraft.world.entity.LivingEntity || this instanceof net.minecraft.world.entity.item.ItemEntity) && this.remainingFireTicks <= 0) { // Paper - EntityCombustByBlockEvent should be called when ItemEntity is burned by lava
++            if (this.remainingFireTicks <= 0 && shouldCallEntityCombustEvent()) { // Paper - EntityCombustByBlockEvent should be called for when an entity is combusted by lava consistent with how it is called for BaseFireBlock
+                 // not on fire yet
+                 org.bukkit.block.Block damager = (this.lastLavaContact == null) ? null : org.bukkit.craftbukkit.block.CraftBlock.at(level, lastLavaContact);
+                 org.bukkit.entity.Entity damagee = this.getBukkitEntity();
+@@ -912,6 +917,18 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+         }
+     }
+ 
++    // Paper start - a helper method for determining whether an entity combust event should be called
++    private boolean shouldCallEntityCombustEvent() {
++        return (this instanceof net.minecraft.world.entity.LivingEntity) ||
++            (this instanceof AbstractArrow) ||
++            (this instanceof AbstractHurtingProjectile) ||
++            (this instanceof ShulkerBullet) ||
++            (this instanceof ThrowableProjectile) ||
++            (this instanceof AbstractMinecart) ||
++            (this instanceof Boat);
++    }
++    // Paper end
++
+     public void setSecondsOnFire(int seconds) {
+         // CraftBukkit start
+         this.setSecondsOnFire(seconds, true);
