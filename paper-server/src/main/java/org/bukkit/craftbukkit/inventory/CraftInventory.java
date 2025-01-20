@@ -84,7 +84,8 @@ public class CraftInventory implements Inventory {
 
     @Override
     public void setContents(ItemStack[] items) {
-        Preconditions.checkArgument(items.length <= this.getSize(), "Invalid inventory size (%s); expected %s or less", items.length, this.getSize());
+        Preconditions.checkArgument(items.length <= this.getSize(), "Invalid inventory size (%s); expected %s or less",
+                items.length, this.getSize());
 
         for (int i = 0; i < this.getSize(); i++) {
             if (i >= items.length) {
@@ -235,7 +236,8 @@ public class CraftInventory implements Inventory {
         }
         // ItemStack[] inventory = this.getStorageContents(); // Paper - let param deal
         for (int i = 0; i < inventory.length; i++) {
-            if (inventory[i] == null) continue;
+            if (inventory[i] == null)
+                continue;
 
             if (withAmount ? item.equals(inventory[i]) : item.isSimilar(inventory[i])) {
                 return i;
@@ -280,11 +282,15 @@ public class CraftInventory implements Inventory {
         Preconditions.checkArgument(items != null, "items cannot be null");
         HashMap<Integer, ItemStack> leftover = new HashMap<>();
 
-        /* TODO: some optimization
-         *  - Create a 'firstPartial' with a 'fromIndex'
-         *  - Record the lastPartial per Material
-         *  - Cache firstEmpty result
+        /*
+         * TODO: some optimization
+         * - Create a 'firstPartial' with a 'fromIndex'
+         * - Record the lastPartial per Material
+         * - Cache firstEmpty result
          */
+
+        // Check if this is a player inventory to handle off-hand
+        boolean isPlayerInventory = this instanceof CraftInventoryPlayer;
 
         for (int i = 0; i < items.length; i++) {
             ItemStack item = items[i];
@@ -293,7 +299,21 @@ public class CraftInventory implements Inventory {
                 // Do we already have a stack of it?
                 int firstPartial = this.firstPartial(item);
 
-                // Drat! no partial stack
+                // If no partial stack found and this is a player inventory, check off-hand
+                if (firstPartial == -1 && isPlayerInventory) {
+                    CraftInventoryPlayer playerInv = (CraftInventoryPlayer) this;
+                    ItemStack offHand = playerInv.getItemInOffHand();
+                    if (offHand != null && offHand.isSimilar(item) && offHand.getAmount() < offHand.getMaxStackSize()) {
+                        int amount = Math.min(item.getAmount(), offHand.getMaxStackSize() - offHand.getAmount());
+                        offHand.setAmount(offHand.getAmount() + amount);
+                        item.setAmount(item.getAmount() - amount);
+                        if (item.getAmount() <= 0) {
+                            break;
+                        }
+                    }
+                }
+
+                // Still no partial stack
                 if (firstPartial == -1) {
                     // Find a free spot!
                     int firstFree = this.firstEmpty();
@@ -304,12 +324,11 @@ public class CraftInventory implements Inventory {
                         break;
                     } else {
                         // More than a single stack!
-                        int maxAmount = this.getMaxItemStack(item);
-                        if (item.getAmount() > maxAmount) {
-                            CraftItemStack stack = CraftItemStack.asCraftCopy(item);
-                            stack.setAmount(maxAmount);
+                        if (item.getAmount() > this.getMaxStackSize()) {
+                            ItemStack stack = item.clone();
+                            stack.setAmount(this.getMaxStackSize());
                             this.setItem(firstFree, stack);
-                            item.setAmount(item.getAmount() - maxAmount);
+                            item.setAmount(item.getAmount() - this.getMaxStackSize());
                         } else {
                             // Just store it
                             this.setItem(firstFree, item);
@@ -322,7 +341,7 @@ public class CraftInventory implements Inventory {
 
                     int amount = item.getAmount();
                     int partialAmount = partialItem.getAmount();
-                    int maxAmount = this.getMaxItemStack(partialItem);
+                    int maxAmount = partialItem.getMaxStackSize();
 
                     // Check if it fully fits
                     if (amount + partialAmount <= maxAmount) {
@@ -439,6 +458,7 @@ public class CraftInventory implements Inventory {
             this.clear(i);
         }
     }
+
     // Paper start
     @Override
     public int close() {
@@ -468,7 +488,8 @@ public class CraftInventory implements Inventory {
 
     @Override
     public InventoryType getType() {
-        // Thanks to Droppers extending Dispensers, Blast Furnaces & Smokers extending Furnace, order is important.
+        // Thanks to Droppers extending Dispensers, Blast Furnaces & Smokers extending
+        // Furnace, order is important.
         if (this.inventory instanceof CraftingContainer) {
             if (this.inventory instanceof CrafterBlockEntity) {
                 return InventoryType.CRAFTER;
@@ -496,7 +517,7 @@ public class CraftInventory implements Inventory {
             // Paper start
         } else if (this.inventory instanceof io.papermc.paper.inventory.PaperInventoryCustomHolderContainer holderContainer) {
             return holderContainer.getType();
-        // Paper end
+            // Paper end
         } else if (this.inventory instanceof PlayerEnderChestContainer) {
             return InventoryType.ENDER_CHEST;
         } else if (this.inventory instanceof MerchantContainer) {
@@ -525,7 +546,9 @@ public class CraftInventory implements Inventory {
             return InventoryType.GRINDSTONE;
         } else if (this instanceof CraftInventoryStonecutter) {
             return InventoryType.STONECUTTER;
-        } else if (this.inventory instanceof ComposterBlock.EmptyContainer || this.inventory instanceof ComposterBlock.InputContainer || this.inventory instanceof ComposterBlock.OutputContainer) {
+        } else if (this.inventory instanceof ComposterBlock.EmptyContainer
+                || this.inventory instanceof ComposterBlock.InputContainer
+                || this.inventory instanceof ComposterBlock.OutputContainer) {
             return InventoryType.COMPOSTER;
         } else if (this.inventory instanceof JukeboxBlockEntity) {
             return InventoryType.JUKEBOX;
@@ -546,7 +569,9 @@ public class CraftInventory implements Inventory {
     // Paper start - getHolder without snapshot
     @Override
     public InventoryHolder getHolder(boolean useSnapshot) {
-        return inventory instanceof net.minecraft.world.level.block.entity.BlockEntity ? ((net.minecraft.world.level.block.entity.BlockEntity) inventory).getOwner(useSnapshot) : getHolder();
+        return inventory instanceof net.minecraft.world.level.block.entity.BlockEntity
+                ? ((net.minecraft.world.level.block.entity.BlockEntity) inventory).getOwner(useSnapshot)
+                : getHolder();
     }
     // Paper end
 

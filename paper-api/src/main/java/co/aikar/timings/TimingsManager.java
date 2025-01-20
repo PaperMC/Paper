@@ -45,8 +45,7 @@ import org.jetbrains.annotations.Nullable;
 @Deprecated(forRemoval = true)
 public final class TimingsManager {
     static final Map<TimingIdentifier, TimingHandler> TIMING_MAP = LoadingMap.of(
-        new ConcurrentHashMap<>(4096, .5F), TimingHandler::new
-    );
+            new ConcurrentHashMap<>(4096, .5F), TimingHandler::new);
     public static final FullServerTickHandler FULL_SERVER_TICK = new FullServerTickHandler();
     public static final TimingHandler TIMINGS_TICK = Timings.ofSafe("Timings Tick", FULL_SERVER_TICK);
     public static final Timing PLUGIN_GROUP_HANDLER = Timings.ofSafe("Plugins");
@@ -63,7 +62,8 @@ public final class TimingsManager {
     static boolean needsFullReset = false;
     static boolean needsRecheckEnabled = false;
 
-    private TimingsManager() {}
+    private TimingsManager() {
+    }
 
     /**
      * Resets all timing data on the next tick
@@ -93,10 +93,12 @@ public final class TimingsManager {
             // Generate TPS/Ping/Tick reports every minute
         }
     }
+
     static void stopServer() {
         Timings.timingsEnabled = false;
         recheckEnabled();
     }
+
     static void recheckEnabled() {
         synchronized (TIMING_MAP) {
             for (TimingHandler timings : TIMING_MAP.values()) {
@@ -105,6 +107,7 @@ public final class TimingsManager {
         }
         needsRecheckEnabled = false;
     }
+
     static void resetTimings() {
         if (needsFullReset) {
             // Full resets need to re-check every handlers enabled state
@@ -139,9 +142,11 @@ public final class TimingsManager {
         return TIMING_MAP.get(new TimingIdentifier(group, name, parent));
     }
 
-
     /**
-     * <p>Due to access restrictions, we need a helper method to get a Command TimingHandler with String group</p>
+     * <p>
+     * Due to access restrictions, we need a helper method to get a Command
+     * TimingHandler with String group
+     * </p>
      *
      * Plugins should never call this
      *
@@ -153,10 +158,9 @@ public final class TimingsManager {
     public static Timing getCommandTiming(@Nullable String pluginName, @NotNull Command command) {
         Plugin plugin = null;
         final Server server = Bukkit.getServer();
-        if (!(  server == null || pluginName == null ||
+        if (!(server == null || pluginName == null ||
                 "minecraft".equals(pluginName) || "bukkit".equals(pluginName) ||
-                "spigot".equalsIgnoreCase(pluginName) || "paper".equals(pluginName)
-        )) {
+                "spigot".equalsIgnoreCase(pluginName) || "paper".equals(pluginName))) {
             plugin = server.getPluginManager().getPlugin(pluginName);
         }
         if (plugin == null) {
@@ -171,7 +175,8 @@ public final class TimingsManager {
     }
 
     /**
-     * Looks up the class loader for the specified class, and if it is a PluginClassLoader, return the
+     * Looks up the class loader for the specified class, and if it is a
+     * PluginClassLoader, return the
      * Plugin that created this class.
      *
      * @param clazz Class to check
