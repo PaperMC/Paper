@@ -21,9 +21,9 @@ public interface DamageResistant {
     }
 
     /**
-     * The types that this damage type is invincible tp.
+     * The types that this damage type is invincible to.
      *
-     * @return item
+     * @return a tag key with the damage types.
      */
     @Contract(value = "-> new", pure = true)
     TagKey<DamageType> types();
