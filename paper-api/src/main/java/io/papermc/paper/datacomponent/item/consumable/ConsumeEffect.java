@@ -21,7 +21,7 @@ public interface ConsumeEffect {
      * Creates a consume effect that randomly teleports the entity on consumption.
      *
      * @param diameter diameter of random teleportation
-     * @return the effect
+     * @return the effect instance
      */
     @Contract(value = "_ -> new", pure = true)
     static TeleportRandomly teleportRandomlyEffect(final float diameter) {
@@ -29,10 +29,10 @@ public interface ConsumeEffect {
     }
 
     /**
-     * Creates a consume effect that gives status effects on consumption.
+     * Creates a consume effect that removes status effects on consumption.
      *
      * @param key the sound effect to play
-     * @return the effect
+     * @return the effect instance
      */
     @Contract(value = "_ -> new", pure = true)
     static RemoveStatusEffects removeEffects(final RegistryKeySet<PotionEffectType> key) {
@@ -43,7 +43,7 @@ public interface ConsumeEffect {
      * Creates a consume effect that plays a sound on consumption.
      *
      * @param key the sound effect to play
-     * @return the effect
+     * @return the effect instance
      */
     @Contract(value = "_ -> new", pure = true)
     static PlaySound playSoundConsumeEffect(final Key key) {
@@ -53,7 +53,7 @@ public interface ConsumeEffect {
     /**
      * Creates a consume effect that clears all status effects.
      *
-     * @return effect instance
+     * @return the effect instance
      */
     @Contract(value = "-> new", pure = true)
     static ClearAllStatusEffects clearAllStatusEffects() {
@@ -61,17 +61,20 @@ public interface ConsumeEffect {
     }
 
     /**
-     * Creates a consume effect that gives status effects on consumption.
+     * Creates a consume effect that gives potion effects on consumption.
      *
      * @param effects     the potion effects to apply
-     * @param probability the probability of these effects being applied, between 0 and 1 inclusive.
-     * @return the effect
+     * @param probability the probability of these effects being applied, between 0 and 1 inclusive
+     * @return the effect instance
      */
     @Contract(value = "_, _ -> new", pure = true)
     static ApplyStatusEffects applyStatusEffects(final List<PotionEffect> effects, final float probability) {
         return ConsumableTypesBridge.bridge().applyStatusEffects(effects, probability);
     }
 
+    /**
+     * Represents a consumable effect that randomly teleports the entity on consumption.
+     */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface TeleportRandomly extends ConsumeEffect {
@@ -85,14 +88,14 @@ public interface ConsumeEffect {
     }
 
     /**
-     * Represents a consumable effect that removes status effects on consumption
+     * Represents a consumable effect that removes status effects on consumption.
      */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface RemoveStatusEffects extends ConsumeEffect {
 
         /**
-         * Potion effects to remove
+         * Potion effects to remove.
          *
          * @return effects
          */
@@ -107,7 +110,7 @@ public interface ConsumeEffect {
     interface PlaySound extends ConsumeEffect {
 
         /**
-         * Sound effect to play in the world
+         * Sound effect to play in the world.
          *
          * @return sound effect
          */
@@ -124,16 +127,16 @@ public interface ConsumeEffect {
     }
 
     /**
-     * Represents a consumable effect that applies effects based on a probability on consumption.
+     * Represents a consumable effect that applies potion effects based on a probability on consumption.
      */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
     interface ApplyStatusEffects extends ConsumeEffect {
 
         /**
-         * Effect instances to grant
+         * Potion effect instances to grant.
          *
-         * @return effect
+         * @return potion effects
          */
         List<PotionEffect> effects();
 
