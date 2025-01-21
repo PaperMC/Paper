@@ -31,18 +31,18 @@ public interface ConsumeEffect {
     /**
      * Creates a consume effect that removes status effects on consumption.
      *
-     * @param key the sound effect to play
+     * @param effects the potion effects to remove
      * @return the effect instance
      */
     @Contract(value = "_ -> new", pure = true)
-    static RemoveStatusEffects removeEffects(final RegistryKeySet<PotionEffectType> key) {
-        return ConsumableTypesBridge.bridge().removeStatusEffects(key);
+    static RemoveStatusEffects removeEffects(final RegistryKeySet<PotionEffectType> effects) {
+        return ConsumableTypesBridge.bridge().removeStatusEffects(effects);
     }
 
     /**
      * Creates a consume effect that plays a sound on consumption.
      *
-     * @param key the sound effect to play
+     * @param key the key sound effect to play
      * @return the effect instance
      */
     @Contract(value = "_ -> new", pure = true)
