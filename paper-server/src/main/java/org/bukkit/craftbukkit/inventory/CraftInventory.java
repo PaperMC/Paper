@@ -289,9 +289,6 @@ public class CraftInventory implements Inventory {
          * - Cache firstEmpty result
          */
 
-        // Check if this is a player inventory to handle off-hand
-        boolean isPlayerInventory = this instanceof CraftInventoryPlayer;
-
         for (int i = 0; i < items.length; i++) {
             ItemStack item = items[i];
             Preconditions.checkArgument(item != null, "ItemStack cannot be null");
@@ -299,21 +296,7 @@ public class CraftInventory implements Inventory {
                 // Do we already have a stack of it?
                 int firstPartial = this.firstPartial(item);
 
-                // If no partial stack found and this is a player inventory, check off-hand
-                if (firstPartial == -1 && isPlayerInventory) {
-                    CraftInventoryPlayer playerInv = (CraftInventoryPlayer) this;
-                    ItemStack offHand = playerInv.getItemInOffHand();
-                    if (offHand != null && offHand.isSimilar(item) && offHand.getAmount() < offHand.getMaxStackSize()) {
-                        int amount = Math.min(item.getAmount(), offHand.getMaxStackSize() - offHand.getAmount());
-                        offHand.setAmount(offHand.getAmount() + amount);
-                        item.setAmount(item.getAmount() - amount);
-                        if (item.getAmount() <= 0) {
-                            break;
-                        }
-                    }
-                }
-
-                // Still no partial stack
+                // Drat! no partial stack
                 if (firstPartial == -1) {
                     // Find a free spot!
                     int firstFree = this.firstEmpty();
