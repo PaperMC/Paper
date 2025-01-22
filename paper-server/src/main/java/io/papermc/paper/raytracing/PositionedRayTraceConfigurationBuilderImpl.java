@@ -2,13 +2,15 @@ package io.papermc.paper.raytracing;
 
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.function.Predicate;
 
 @NullMarked
@@ -19,12 +21,13 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     @Nullable
     private Vector direction;
     private double maxDistance;
-    private org.bukkit.FluidCollisionMode fluidCollisionMode = org.bukkit.FluidCollisionMode.NEVER;
+    private FluidCollisionMode fluidCollisionMode = FluidCollisionMode.NEVER;
     private boolean ignorePassableBlocks;
     private double raySize = 0.0D;
-    private java.util.function.Predicate<? super org.bukkit.entity.Entity> entityFilter;
-    private java.util.function.Predicate<? super org.bukkit.block.Block> blockFilter;
-    private List<RayTraceTarget> targets;
+    private Predicate<? super Entity> entityFilter;
+    private Predicate<? super Block> blockFilter;
+    @Nullable
+    private EnumSet<RayTraceTarget> targets;
 
     @Override
     public Location start() {
@@ -93,37 +96,35 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     }
 
     @Override
-    public Predicate<? super org.bukkit.entity.Entity> entityFilter() {
+    public Predicate<? super Entity> entityFilter() {
         return entityFilter;
     }
 
     @Override
-    public PositionedRayTraceConfigurationBuilder entityFilter(Predicate<? super org.bukkit.entity.Entity> entityFilter) {
+    public PositionedRayTraceConfigurationBuilder entityFilter(Predicate<? super Entity> entityFilter) {
         this.entityFilter = entityFilter;
         return this;
     }
 
     @Override
-    public Predicate<? super org.bukkit.block.Block> blockFilter() {
+    public Predicate<? super Block> blockFilter() {
         return blockFilter;
     }
 
     @Override
-    public PositionedRayTraceConfigurationBuilder blockFilter(Predicate<? super org.bukkit.block.Block> blockFilter) {
+    public PositionedRayTraceConfigurationBuilder blockFilter(Predicate<? super Block> blockFilter) {
         this.blockFilter = blockFilter;
         return this;
     }
 
     @Override
-    public @UnmodifiableView List<RayTraceTarget> targets() {
-        return Collections.unmodifiableList(this.targets);
+    public @UnmodifiableView Set<RayTraceTarget> targets() {
+        return this.targets == null ? Set.of() : Collections.unmodifiableSet(this.targets);
     }
 
     @Override
     public PositionedRayTraceConfigurationBuilder targets(final RayTraceTarget first, final RayTraceTarget ... others) {
-        List<RayTraceTarget> targets = new ArrayList<>(List.of(others));
-        targets.add(first);
-        this.targets = targets;
+        this.targets = EnumSet.of(first, others);
         return this;
     }
 }

@@ -1258,7 +1258,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         builderConsumer.accept(builder);
 
         if (builder.targets().contains(RayTraceTarget.ENTITY)) {
-            if(builder.targets().contains(RayTraceTarget.BLOCK))
+            if (builder.targets().contains(RayTraceTarget.BLOCK))
                 return this.rayTrace(builder.start(), builder.direction(), builder.maxDistance(), builder.fluidCollisionMode(), builder.ignorePassableBlocks(), builder.raySize(), builder.entityFilter(), builder.blockFilter());
             return this.rayTraceEntities(builder.start(), builder.direction(), builder.maxDistance(), builder.raySize(), builder.entityFilter());
         }

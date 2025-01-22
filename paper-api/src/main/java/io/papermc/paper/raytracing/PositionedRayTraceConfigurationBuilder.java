@@ -8,7 +8,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -94,7 +94,8 @@ public interface PositionedRayTraceConfigurationBuilder {
     boolean ignorePassableBlocks();
 
     /**
-     * Gets if the raytrace will ignore passable blocks when looking for block collisions.
+     * Sets whether the raytrace should ignore passable blocks when looking for
+     * block collisions.
      * <p>
      * If collisions with passable blocks are ignored, fluid collisions are
      * ignored as well regardless of the fluid collision mode.
@@ -167,7 +168,7 @@ public interface PositionedRayTraceConfigurationBuilder {
      * @return the targets
      */
     @Nullable
-    List<RayTraceTarget> targets();
+    Set<RayTraceTarget> targets();
 
     /**
      * Sets the targets for the rayTrace.
