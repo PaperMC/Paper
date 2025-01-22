@@ -5,6 +5,7 @@ import org.bukkit.Location;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.UnmodifiableView;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +14,9 @@ import java.util.function.Predicate;
 @NullMarked
 public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRayTraceConfigurationBuilder {
 
+    @Nullable
     private Location start;
+    @Nullable
     private Vector direction;
     private double maxDistance;
     private org.bukkit.FluidCollisionMode fluidCollisionMode = org.bukkit.FluidCollisionMode.NEVER;
