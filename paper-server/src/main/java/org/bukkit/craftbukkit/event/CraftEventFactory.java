@@ -2134,10 +2134,7 @@ public class CraftEventFactory {
 
         List<Block> blockList = new ObjectArrayList<>();
         for (int posBlockPositionList = blockPositions.size() - 1; posBlockPositionList >= 0; posBlockPositionList--) {
-            Block bblock = CraftBlock.at(serverExplosion.level(), blockPositions.get(posBlockPositionList));
-            if (!bblock.isEmpty()) {
-                blockList.add(bblock);
-            }
+            blockList.add(CraftBlock.at(serverExplosion.level(), blockPositions.get(posBlockPositionList)));
         }
 
         Entity entity = (serverExplosion.getDirectSourceEntity() != null) ? serverExplosion.getDirectSourceEntity() : serverExplosion.getDamageSource().getCustomEventDamager();
@@ -2169,10 +2166,7 @@ public class CraftEventFactory {
 
         List<Block> blockList = new ObjectArrayList<>();
         for (int posBlockPositionList = blockPositions.size() - 1; posBlockPositionList >= 0; posBlockPositionList--) {
-            Block bblock = CraftBlock.at(serverExplosion.level(), blockPositions.get(posBlockPositionList));
-            if (!bblock.isEmpty() || serverExplosion.fire) {
-                blockList.add(bblock);
-            }
+            blockList.add(CraftBlock.at(serverExplosion.level(), blockPositions.get(posBlockPositionList)));
         }
 
         ExplosionResult explosionResult = CraftExplosionResult.toBukkit(serverExplosion.getBlockInteraction());
