@@ -2188,6 +2188,7 @@ public class CraftEventFactory {
             event = new ExplodeEvent(new CraftDamageSource(serverExplosion.getDamageSource()), blockState, location, blockList, serverExplosion.yield, explosionResult);
         }
 
+        event.setCancelled(serverExplosion.wasCanceled);
         event.callEvent();
 
         return event;
