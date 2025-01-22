@@ -2858,9 +2858,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (!this.scaledHealth && !force) {
             return;
         }
-        for (AttributeInstance genericInstance : collection) {
+        java.util.Iterator<AttributeInstance> iterator = collection.iterator();
+        while (iterator.hasNext()) {
+            AttributeInstance genericInstance = iterator.next();
             if (genericInstance.getAttribute() == Attributes.MAX_HEALTH) {
-                collection.remove(genericInstance);
+                iterator.remove();
                 break;
             }
         }
