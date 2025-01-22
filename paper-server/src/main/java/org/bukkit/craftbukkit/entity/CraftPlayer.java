@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -2858,7 +2859,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (!this.scaledHealth && !force) {
             return;
         }
-        java.util.Iterator<AttributeInstance> iterator = collection.iterator();
+        Iterator<AttributeInstance> iterator = collection.iterator();
         while (iterator.hasNext()) {
             AttributeInstance genericInstance = iterator.next();
             if (genericInstance.getAttribute() == Attributes.MAX_HEALTH) {
