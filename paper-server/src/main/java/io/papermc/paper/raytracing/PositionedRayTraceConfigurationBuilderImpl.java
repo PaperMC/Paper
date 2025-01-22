@@ -4,11 +4,13 @@ import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.UnmodifiableView;
+import org.jspecify.annotations.NullMarked;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
+@NullMarked
 public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRayTraceConfigurationBuilder {
 
     private Location start;
@@ -23,7 +25,7 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
 
     @Override
     public Location start() {
-        return this.start.clone();
+        return this.start == null ? null : this.start.clone();
     }
 
     @Override
@@ -34,7 +36,7 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
 
     @Override
     public Vector direction() {
-        return this.direction.clone();
+        return this.direction == null ? null : this.direction.clone();
     }
 
     @Override

@@ -76,6 +76,9 @@ public interface PositionedRayTraceConfigurationBuilder {
 
     /**
      * Sets the FluidCollisionMode when looking for block collisions.
+     * <p>
+     * If collisions with passable blocks are ignored, fluid collisions are
+     * ignored as well regardless of the fluid collision mode.
      *
      * @param fluidCollisionMode the new FluidCollisionMode
      * @return a reference to this object
@@ -92,6 +95,13 @@ public interface PositionedRayTraceConfigurationBuilder {
 
     /**
      * Gets if the raytrace will ignore passable blocks when looking for block collisions.
+     * <p>
+     * If collisions with passable blocks are ignored, fluid collisions are
+     * ignored as well regardless of the fluid collision mode.
+     * <p>
+     * Portal blocks are only considered passable if the ray starts within them.
+     * Apart from that collisions with portal blocks will be considered even if
+     * collisions with passable blocks are otherwise ignored.
      *
      * @param ignorePassableBlocks if the raytrace should ignore passable blocks
      * @return a reference to this object
@@ -101,6 +111,8 @@ public interface PositionedRayTraceConfigurationBuilder {
 
     /**
      * Gets the size of the raytrace when looking for entity collisions.
+     * <p>
+     * Block collisions use the blocks' precise collision shapes.
      *
      * @return the raytrace size
      */
