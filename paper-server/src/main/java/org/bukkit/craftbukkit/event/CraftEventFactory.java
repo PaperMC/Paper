@@ -2134,7 +2134,10 @@ public class CraftEventFactory {
 
         List<Block> blockList = new ObjectArrayList<>();
         for (int posBlockPositionList = blockPositions.size() - 1; posBlockPositionList >= 0; posBlockPositionList--) {
-            blockList.add(CraftBlock.at(serverExplosion.level(), blockPositions.get(posBlockPositionList)));
+            org.bukkit.block.Block bblock = CraftBlock.at(serverExplosion.level(), blockPositions.get(posBlockPositionList));
+            if (!bblock.isEmpty() || serverExplosion.fire) {
+                blockList.add(bblock);
+            }
         }
 
         Entity entity = (serverExplosion.getDirectSourceEntity() != null) ? serverExplosion.getDirectSourceEntity() : serverExplosion.getDamageSource().getCustomEventDamager();
