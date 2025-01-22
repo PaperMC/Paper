@@ -27,30 +27,32 @@ public class ExplodeEvent extends Event implements Cancellable {
     private final Location location;
     private final List<Block> blocks;
     private final ExplosionResult result;
+    private final boolean fire;
     private @Nullable BlockState blockState;
     private @Nullable Entity entity;
     private float yield;
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public ExplodeEvent(final DamageSource damageSource, final Location location, final List<Block> blocks, final float yield, final ExplosionResult result) {
+    public ExplodeEvent(final DamageSource damageSource, final Location location, final List<Block> blocks, final float yield, final boolean fire, final ExplosionResult result) {
         this.damageSource = damageSource;
         this.location = location;
         this.blocks = blocks;
         this.yield = yield;
+        this.fire = fire;
         this.result = result;
         this.cancelled = false;
     }
 
     @ApiStatus.Internal
-    public ExplodeEvent(final DamageSource damageSource, final Entity entityExploded, final Location location, final List<Block> blocks, final float yield, final ExplosionResult result) {
-        this(damageSource, location, blocks, yield, result);
+    public ExplodeEvent(final DamageSource damageSource, final Entity entityExploded, final Location location, final List<Block> blocks, final float yield, final boolean fire, final ExplosionResult result) {
+        this(damageSource, location, blocks, yield, fire, result);
         this.entity = entityExploded;
     }
 
     @ApiStatus.Internal
-    public ExplodeEvent(final DamageSource damageSource, final BlockState blockStateExploded, final Location location, final List<Block> blocks, final float yield, final ExplosionResult result) {
-        this(damageSource, location, blocks, yield, result);
+    public ExplodeEvent(final DamageSource damageSource, final BlockState blockStateExploded, final Location location, final List<Block> blocks, final float yield, final boolean fire, final ExplosionResult result) {
+        this(damageSource, location, blocks, yield, fire, result);
         this.blockState = blockStateExploded;
     }
 
@@ -137,6 +139,15 @@ public class ExplodeEvent extends Event implements Cancellable {
      */
     public void setYield(float yield) {
         this.yield = yield;
+    }
+
+    /**
+     * Returns if this explosion should generate fire.
+     *
+     * @return the spread fire status
+     */
+    public boolean shouldSpreadFire() {
+        return this.fire;
     }
 
     @Override

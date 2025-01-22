@@ -2175,11 +2175,11 @@ public class CraftEventFactory {
 
         ExplodeEvent event;
         if (entity != null) {
-            event = new ExplodeEvent(new CraftDamageSource(serverExplosion.getDamageSource()), entity.getBukkitEntity(), location, blockList, serverExplosion.yield, explosionResult);
+            event = new ExplodeEvent(new CraftDamageSource(serverExplosion.getDamageSource()), entity.getBukkitEntity(), location, blockList, serverExplosion.yield, serverExplosion.fire, explosionResult);
         } else {
             org.bukkit.block.Block block = location.getBlock();
             org.bukkit.block.BlockState blockState = (serverExplosion.getDamageSource().getDirectBlockState() != null) ? serverExplosion.getDamageSource().getDirectBlockState() : block.getState();
-            event = new ExplodeEvent(new CraftDamageSource(serverExplosion.getDamageSource()), blockState, location, blockList, serverExplosion.yield, explosionResult);
+            event = new ExplodeEvent(new CraftDamageSource(serverExplosion.getDamageSource()), blockState, location, blockList, serverExplosion.yield, serverExplosion.fire, explosionResult);
         }
 
         event.setCancelled(serverExplosion.wasCanceled);
