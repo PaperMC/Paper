@@ -17,6 +17,7 @@ public class PaperBiomeMobSpawning implements BiomeMobSpawning {
     public PaperBiomeMobSpawning(Biome biome) {
         this.settings = biome.getMobSettings();
     }
+
     @Override
     public Map<SpawnCategory, List<MobData>> spawners() {
         return this.settings.spawners.entrySet().stream().collect(ImmutableMap.toImmutableMap(

@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.biome.Biome;
 import org.bukkit.Location;
+import org.bukkit.craftbukkit.util.CraftLocation;
 
 public class PaperBiomeClimate implements BiomeClimate {
     private final Biome.ClimateSettings climateSettings;
@@ -32,7 +33,6 @@ public class PaperBiomeClimate implements BiomeClimate {
     @Override
     public float adjustedTemperature(final Location location) {
         Preconditions.checkNotNull(location.getWorld(), "Cannot get biome climate for a location with a null world");
-        BlockPos pos = new BlockPos(location.blockX(), location.blockY(), location.blockZ());
-        return biome.getHeightAdjustedTemperature(pos, location.getWorld().getSeaLevel());
+        return biome.getHeightAdjustedTemperature(CraftLocation.toBlockPosition(location), location.getWorld().getSeaLevel());
     }
 }
