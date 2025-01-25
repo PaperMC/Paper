@@ -194,7 +194,6 @@ public class GlobalConfiguration extends ConfigurationPart {
 
     public class Commands extends ConfigurationPart {
         public boolean suggestPlayerNamesWhenNullTabCompletions = true;
-        public boolean fixTargetSelectorTagCompletion = true;
         public boolean timeCommandAffectsAllWorlds = false;
     }
 

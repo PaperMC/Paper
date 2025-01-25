@@ -1,10 +1,18 @@
 --- a/net/minecraft/world/item/ServerItemCooldowns.java
 +++ b/net/minecraft/world/item/ServerItemCooldowns.java
-@@ -11,6 +_,39 @@
+@@ -11,6 +_,50 @@
          this.player = player;
      }
  
 +    // Paper start - Add PlayerItemCooldownEvent
++    private int getCurrentCooldown(final ResourceLocation groupId) {
++        final net.minecraft.world.item.ItemCooldowns.CooldownInstance cooldownInstance = this.cooldowns.get(groupId);
++        if (cooldownInstance == null) {
++            return 0;
++        }
++        return Math.max(0, cooldownInstance.endTime() - this.tickCount);
++    }
++
 +    @Override
 +    public void addCooldown(ItemStack item, int duration) {
 +        final ResourceLocation cooldownGroup = this.getCooldownGroup(item);
@@ -15,7 +23,9 @@
 +            duration
 +        );
 +        if (event.callEvent()) {
-+            super.addCooldown(cooldownGroup, event.getCooldown(), false);
++            this.addCooldown(cooldownGroup, event.getCooldown(), false);
++        } else {
++            this.player.connection.send(new ClientboundCooldownPacket(cooldownGroup, this.getCurrentCooldown(cooldownGroup)));
 +        }
 +    }
 +
@@ -28,6 +38,7 @@
 +                duration
 +            );
 +            if (!event.callEvent()) {
++                this.player.connection.send(new ClientboundCooldownPacket(groupId, this.getCurrentCooldown(groupId)));
 +                return;
 +            }
 +
