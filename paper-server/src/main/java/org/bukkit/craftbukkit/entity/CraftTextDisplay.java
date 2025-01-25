@@ -64,7 +64,7 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
     @Override
     public void setBackgroundColor(Color color) {
         if (color == null) {
-            this.getHandle().getEntityData().set(Display.TextDisplay.DATA_BACKGROUND_COLOR_ID, -1);
+            this.getHandle().getEntityData().set(Display.TextDisplay.DATA_BACKGROUND_COLOR_ID, Display.TextDisplay.INITIAL_BACKGROUND);
         } else {
             this.getHandle().getEntityData().set(Display.TextDisplay.DATA_BACKGROUND_COLOR_ID, color.asARGB());
         }
