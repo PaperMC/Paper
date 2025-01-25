@@ -1,5 +1,6 @@
 package io.papermc.paper.world.biome;
 
+import io.papermc.paper.util.MCUtil;
 import io.papermc.paper.world.biome.effects.AdditionSound;
 import io.papermc.paper.world.biome.effects.MoodSound;
 import io.papermc.paper.world.biome.effects.MusicEntry;
@@ -12,6 +13,7 @@ import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftSound;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -69,11 +71,10 @@ public class PaperBiomeSpecialEffects implements BiomeSpecialEffects {
 
     @Override
     public List<MusicEntry> music() {
-        return effects.getBackgroundMusic()
-            .stream()
-            .flatMap(list -> list.unwrap().stream())
-            .<MusicEntry>map(PaperMusicEntry::new)
-            .toList();
+        if (this.effects.getBackgroundMusic().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return MCUtil.transformUnmodifiable(this.effects.getBackgroundMusic().orElseThrow().unwrap(), PaperMusicEntry::new);
     }
 
     @Override

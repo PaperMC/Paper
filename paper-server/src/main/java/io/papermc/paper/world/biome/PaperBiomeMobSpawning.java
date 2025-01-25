@@ -1,7 +1,7 @@
 package io.papermc.paper.world.biome;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.util.MCUtil;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
@@ -13,25 +13,31 @@ import java.util.Map;
 
 public class PaperBiomeMobSpawning implements BiomeMobSpawning {
     private final MobSpawnSettings settings;
+    private final ImmutableMap<SpawnCategory, List<MobData>> spawners;
 
     public PaperBiomeMobSpawning(Biome biome) {
         this.settings = biome.getMobSettings();
+        ImmutableMap.Builder<SpawnCategory, List<MobData>> spawners = ImmutableMap.builder();
+        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
+            List<MobSpawnSettings.SpawnerData> nms = this.settings.getMobs(CraftSpawnCategory.toNMS(spawnCategory)).unwrap();
+            spawners.put(spawnCategory, MCUtil.transformUnmodifiable(nms, PaperMobData::new));
+        }
+        this.spawners = spawners.build();
     }
 
     @Override
     public Map<SpawnCategory, List<MobData>> spawners() {
-        return this.settings.spawners.entrySet().stream().collect(ImmutableMap.toImmutableMap(
-            entry -> CraftSpawnCategory.toBukkit(entry.getKey()),
-            entry -> entry.getValue().unwrap().stream().map(PaperMobData::new).collect(ImmutableList.toImmutableList())
-        ));
+        return this.spawners;
     }
 
     @Override
     public Map<EntityType, SpawnCost> entityCost() {
-        return this.settings.mobSpawnCosts.entrySet().stream().collect(ImmutableMap.toImmutableMap(
-            entry -> CraftEntityType.minecraftToBukkit(entry.getKey()),
-            entry -> new PaperSpawnCost(entry.getValue())
-        ));
+        ImmutableMap.Builder<EntityType, SpawnCost> builder = ImmutableMap.builder();
+        this.settings.mobSpawnCosts.forEach((entityType, mobSpawnCost) -> {
+            EntityType type = CraftEntityType.minecraftToBukkit(entityType);
+            builder.put(type, new PaperSpawnCost(mobSpawnCost));
+        });
+        return builder.build();
     }
 
     record PaperMobData(@Override EntityType type, @Override int weight, @Override int minCount, @Override int maxCount) implements BiomeMobSpawning.MobData {
@@ -39,6 +45,7 @@ public class PaperBiomeMobSpawning implements BiomeMobSpawning {
             this(CraftEntityType.minecraftToBukkit(data.type), data.getWeight().asInt(), data.minCount, data.maxCount);
         }
     }
+
     record PaperSpawnCost(@Override double energyBudget, @Override double charge) implements BiomeMobSpawning.SpawnCost {
         public PaperSpawnCost(MobSpawnSettings.MobSpawnCost cost) {
             this(cost.energyBudget(), cost.charge());
