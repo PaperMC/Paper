@@ -58,7 +58,7 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
     public Color getBackgroundColor() {
         int color = this.getHandle().getBackgroundColor();
 
-        return (color == -1) ? null : Color.fromARGB(color);
+        return color == Display.TextDisplay.INITIAL_BACKGROUND ? null : Color.fromARGB(color);
     }
 
     @Override
