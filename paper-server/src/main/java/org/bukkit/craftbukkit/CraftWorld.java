@@ -1256,13 +1256,19 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         PositionedRayTraceConfigurationBuilderImpl builder = new PositionedRayTraceConfigurationBuilderImpl();
 
         builderConsumer.accept(builder);
+        Preconditions.checkArgument(builder.start != null, "Start location cannot be null");
+        Preconditions.checkArgument(builder.direction != null, "Direction vector cannot be null");
+        Preconditions.checkArgument(builder.maxDistance.isPresent(), "Max distance must be set");
+        Preconditions.checkArgument(!builder.targets.isEmpty(), "At least one target");
 
-        if (builder.targets().contains(RayTraceTarget.ENTITY)) {
-            if (builder.targets().contains(RayTraceTarget.BLOCK))
-                return this.rayTrace(builder.start(), builder.direction(), builder.maxDistance(), builder.fluidCollisionMode(), builder.ignorePassableBlocks(), builder.raySize(), builder.entityFilter(), builder.blockFilter());
-            return this.rayTraceEntities(builder.start(), builder.direction(), builder.maxDistance(), builder.raySize(), builder.entityFilter());
+        final double masDistance = builder.maxDistance.getAsDouble();
+        if (builder.targets.contains(RayTraceTarget.ENTITY)) {
+            if (builder.targets.contains(RayTraceTarget.BLOCK)) {
+                return this.rayTrace(builder.start, builder.direction, masDistance, builder.fluidCollisionMode, builder.ignorePassableBlocks, builder.raySize, builder.entityFilter, builder.blockFilter);
+            }
+            return this.rayTraceEntities(builder.start, builder.direction, masDistance, builder.raySize, builder.entityFilter);
         }
-        return this.rayTraceBlocks(builder.start(), builder.direction(), builder.maxDistance(), builder.fluidCollisionMode(), builder.ignorePassableBlocks(), builder.blockFilter());
+        return this.rayTraceBlocks(builder.start, builder.direction, masDistance, builder.fluidCollisionMode, builder.ignorePassableBlocks, builder.blockFilter);
     }
 
     @Override

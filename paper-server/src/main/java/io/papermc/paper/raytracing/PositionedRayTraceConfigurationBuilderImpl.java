@@ -1,38 +1,29 @@
 package io.papermc.paper.raytracing;
 
+import com.google.common.base.Preconditions;
+import java.util.EnumSet;
+import java.util.OptionalDouble;
+import java.util.function.Predicate;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.util.Vector;
-import org.jetbrains.annotations.UnmodifiableView;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Set;
-import java.util.function.Predicate;
 
 @NullMarked
 public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRayTraceConfigurationBuilder {
 
-    @Nullable
-    private Location start;
-    @Nullable
-    private Vector direction;
-    private double maxDistance;
-    private FluidCollisionMode fluidCollisionMode = FluidCollisionMode.NEVER;
-    private boolean ignorePassableBlocks;
-    private double raySize = 0.0D;
-    private Predicate<? super Entity> entityFilter;
-    private Predicate<? super Block> blockFilter;
-    @Nullable
-    private EnumSet<RayTraceTarget> targets;
-
-    @Override
-    public Location start() {
-        return this.start == null ? null : this.start.clone();
-    }
+    public @Nullable Location start;
+    public @Nullable Vector direction;
+    public OptionalDouble maxDistance = OptionalDouble.empty();
+    public FluidCollisionMode fluidCollisionMode = FluidCollisionMode.NEVER;
+    public boolean ignorePassableBlocks;
+    public double raySize = 0.0D;
+    public @Nullable Predicate<? super Entity> entityFilter;
+    public @Nullable Predicate<? super Block> blockFilter;
+    public EnumSet<RayTraceTarget> targets = EnumSet.noneOf(RayTraceTarget.class);
 
     @Override
     public PositionedRayTraceConfigurationBuilder start(final Location start) {
@@ -41,89 +32,53 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     }
 
     @Override
-    public Vector direction() {
-        return this.direction == null ? null : this.direction.clone();
-    }
-
-    @Override
     public PositionedRayTraceConfigurationBuilder direction(final Vector direction) {
         this.direction = direction.clone();
         return this;
     }
 
-    @Override
-    public double maxDistance() {
-        return maxDistance;
-    }
 
     @Override
-    public PositionedRayTraceConfigurationBuilder maxDistance(double maxDistance) {
-        this.maxDistance = maxDistance;
+    public PositionedRayTraceConfigurationBuilder maxDistance(final double maxDistance) {
+        Preconditions.checkArgument(maxDistance >= 0, "maxDistance must be non-negative");
+        this.maxDistance = OptionalDouble.of(maxDistance);
         return this;
     }
 
-    @Override
-    public FluidCollisionMode fluidCollisionMode() {
-        return fluidCollisionMode;
-    }
 
     @Override
-    public PositionedRayTraceConfigurationBuilder fluidCollisionMode(FluidCollisionMode fluidCollisionMode) {
+    public PositionedRayTraceConfigurationBuilder fluidCollisionMode(final FluidCollisionMode fluidCollisionMode) {
         this.fluidCollisionMode = fluidCollisionMode;
         return this;
     }
 
     @Override
-    public boolean ignorePassableBlocks() {
-        return ignorePassableBlocks;
-    }
-
-    @Override
-    public PositionedRayTraceConfigurationBuilder ignorePassableBlocks(boolean ignorePassableBlocks) {
+    public PositionedRayTraceConfigurationBuilder ignorePassableBlocks(final boolean ignorePassableBlocks) {
         this.ignorePassableBlocks = ignorePassableBlocks;
         return this;
     }
 
     @Override
-    public double raySize() {
-        return raySize;
-    }
-
-    @Override
-    public PositionedRayTraceConfigurationBuilder raySize(double raySize) {
+    public PositionedRayTraceConfigurationBuilder raySize(final double raySize) {
+        Preconditions.checkArgument(raySize >= 0, "raySize must be non-negative");
         this.raySize = raySize;
         return this;
     }
 
     @Override
-    public Predicate<? super Entity> entityFilter() {
-        return entityFilter;
-    }
-
-    @Override
-    public PositionedRayTraceConfigurationBuilder entityFilter(Predicate<? super Entity> entityFilter) {
+    public PositionedRayTraceConfigurationBuilder entityFilter(final Predicate<? super Entity> entityFilter) {
         this.entityFilter = entityFilter;
         return this;
     }
 
     @Override
-    public Predicate<? super Block> blockFilter() {
-        return blockFilter;
-    }
-
-    @Override
-    public PositionedRayTraceConfigurationBuilder blockFilter(Predicate<? super Block> blockFilter) {
+    public PositionedRayTraceConfigurationBuilder blockFilter(final Predicate<? super Block> blockFilter) {
         this.blockFilter = blockFilter;
         return this;
     }
 
     @Override
-    public @UnmodifiableView Set<RayTraceTarget> targets() {
-        return this.targets == null ? Set.of() : Collections.unmodifiableSet(this.targets);
-    }
-
-    @Override
-    public PositionedRayTraceConfigurationBuilder targets(final RayTraceTarget first, final RayTraceTarget ... others) {
+    public PositionedRayTraceConfigurationBuilder targets(final RayTraceTarget first, final RayTraceTarget... others) {
         this.targets = EnumSet.of(first, others);
         return this;
     }
