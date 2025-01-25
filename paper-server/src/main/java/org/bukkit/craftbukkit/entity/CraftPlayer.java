@@ -1161,6 +1161,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void sendEquipmentChange(LivingEntity entity, Map<EquipmentSlot, ItemStack> items) {
         Preconditions.checkArgument(entity != null, "Entity cannot be null");
         Preconditions.checkArgument(items != null, "items cannot be null");
+        Preconditions.checkArgument(!items.isEmpty(), "items cannot be empty");
 
         if (this.getHandle().connection == null) {
             return;
