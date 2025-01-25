@@ -2167,10 +2167,7 @@ public class CraftEventFactory {
         World bworld = serverExplosion.level().getWorld();
         Location location = CraftLocation.toBukkit(serverExplosion.center(), bworld);
 
-        List<Block> blockList = new ObjectArrayList<>();
-        for (int posBlockPositionList = blockPositions.size() - 1; posBlockPositionList >= 0; posBlockPositionList--) {
-            blockList.add(CraftBlock.at(serverExplosion.level(), blockPositions.get(posBlockPositionList)));
-        }
+        List<Block> blockList = blockPositions.stream().map(blockPos -> CraftBlock.at(serverExplosion.level(), blockPos)).collect(Collectors.toCollection(ObjectArrayList::new));
 
         ExplosionResult explosionResult = CraftExplosionResult.toBukkit(serverExplosion.getBlockInteraction());
 
