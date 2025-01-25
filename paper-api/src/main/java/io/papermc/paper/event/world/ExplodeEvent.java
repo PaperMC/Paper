@@ -7,19 +7,18 @@ import org.bukkit.block.BlockState;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.world.WorldEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 /**
- * Called when an explodes happen. this includes explosion who not affect blocks and are just visual.
+ * Called when an explodes happen including visual-only explosion.
  */
-@ApiStatus.Experimental
 @NullMarked
-public class ExplodeEvent extends Event implements Cancellable {
+public class ExplodeEvent extends WorldEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
@@ -27,50 +26,41 @@ public class ExplodeEvent extends Event implements Cancellable {
     private final Location location;
     private final List<Block> blocks;
     private final ExplosionResult result;
-    private final boolean fire;
+    private final boolean spreadFire;
     private @Nullable BlockState blockState;
     private @Nullable Entity entity;
     private float yield;
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public ExplodeEvent(final DamageSource damageSource, final Location location, final List<Block> blocks, final float yield, final boolean fire, final ExplosionResult result) {
+    private ExplodeEvent(final DamageSource damageSource, final Location location, final List<Block> blocks, final float yield, final boolean spreadFire, final ExplosionResult result) {
+        super(location.getWorld());
         this.damageSource = damageSource;
         this.location = location;
         this.blocks = blocks;
         this.yield = yield;
-        this.fire = fire;
+        this.spreadFire = spreadFire;
         this.result = result;
-        this.cancelled = false;
     }
 
     @ApiStatus.Internal
-    public ExplodeEvent(final DamageSource damageSource, final Entity entityExploded, final Location location, final List<Block> blocks, final float yield, final boolean fire, final ExplosionResult result) {
-        this(damageSource, location, blocks, yield, fire, result);
-        this.entity = entityExploded;
+    public ExplodeEvent(final DamageSource damageSource, final Entity entity, final List<Block> blocks, final float yield, final boolean spreadFire, final ExplosionResult result) {
+        this(damageSource, entity.getLocation(), blocks, yield, spreadFire, result);
+        this.entity = entity;
     }
 
     @ApiStatus.Internal
-    public ExplodeEvent(final DamageSource damageSource, final BlockState blockStateExploded, final Location location, final List<Block> blocks, final float yield, final boolean fire, final ExplosionResult result) {
-        this(damageSource, location, blocks, yield, fire, result);
-        this.blockState = blockStateExploded;
+    public ExplodeEvent(final DamageSource damageSource, final BlockState blockState, final Location location, final List<Block> blocks, final float yield, final boolean spreadFire, final ExplosionResult result) {
+        this(damageSource, location, blocks, yield, spreadFire, result);
+        this.blockState = blockState;
     }
 
     /**
-     * Returns the result of the explosion if it is not cancelled.
-     *
-     * @return the result of the explosion.
-     */
-    public ExplosionResult getExplosionResult() {
-        return this.result;
-    }
-
-    /**
-     * Get the source of damage.
+     * Gets the source of damage.
      * <br>
-     * <b>Note:</b> by default it's the explosion but datapacks using custom explode effect can throw another types of damages.
+     * <b>Note:</b> by default it's the explosion but datapacks using custom explode effect can bind other types of damages.
      *
-     * @return a DamageSource detailing the source of the damage from the explosion.
+     * @return a DamageSource detailing the source of the damage from the explosion
      */
     public DamageSource getDamageSource() {
         return this.damageSource;
@@ -78,11 +68,8 @@ public class ExplodeEvent extends Event implements Cancellable {
 
     /**
      * Returns the location where the explosion happened.
-     * <br>
-     * <b>Note:</b> It is not possible to get this value from the Entity as the Entity no
-     * longer exists in the world.
      *
-     * @return The location of the explosion.
+     * @return the location of the explosion
      */
     public Location getLocation() {
         return this.location.clone();
@@ -91,7 +78,7 @@ public class ExplodeEvent extends Event implements Cancellable {
     /**
      * Returns the entity that exploded, if exists.
      *
-     * @return the entity, if is the source of explosion. {@code null} if it has not.
+     * @return the entity, if is the source of explosion. {@code null} if it has not
      */
     @Nullable
     public Entity getEntity() {
@@ -101,7 +88,7 @@ public class ExplodeEvent extends Event implements Cancellable {
     /**
      * Returns the captured BlockState of the block that exploded.
      *
-     * @return the block state, if is the source of explosion. {@code null} if it has not.
+     * @return the block state, if is the source of explosion. {@code null} if it has not
      */
     @Nullable
     public BlockState getBlockState() {
@@ -113,9 +100,10 @@ public class ExplodeEvent extends Event implements Cancellable {
      * <br>
      * <b>Note:</b> the behaviours with these blocks depends on {@link #getExplosionResult()}.
      *
-     * @return All blocks caught in the explosion.
+     * @return all blocks caught in the explosion
      */
-    public List<Block> blockList() {
+    @ApiStatus.Experimental
+    public List<Block> getAffectedBlocks() {
         return this.blocks;
     }
 
@@ -124,7 +112,7 @@ public class ExplodeEvent extends Event implements Cancellable {
      * <br>
      * <b>Note:</b> this behaviour depends on {@link #getExplosionResult()}.
      *
-     * @return The yield.
+     * @return the yield
      */
     public float getYield() {
         return this.yield;
@@ -142,12 +130,22 @@ public class ExplodeEvent extends Event implements Cancellable {
     }
 
     /**
-     * Returns if this explosion should generate fire.
+     * Checks if this explosion should spread fire
+     * on the ground.
      *
-     * @return the spread fire status
+     * @return if this explosion should spread fire
      */
     public boolean shouldSpreadFire() {
-        return this.fire;
+        return this.spreadFire;
+    }
+
+    /**
+     * Returns the result of the explosion if it is not cancelled.
+     *
+     * @return the result of the explosion
+     */
+    public ExplosionResult getExplosionResult() {
+        return this.result;
     }
 
     @Override
