@@ -1,6 +1,7 @@
 package org.bukkit;
 
 import java.io.File;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import org.bukkit.generator.ChunkGenerator;
 
 import java.util.ArrayList;
@@ -1937,6 +1938,20 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Nullable RayTraceResult rayTrace(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
     // Paper end
+
+    /**
+     * Performs a ray trace that checks for collisions with the specified
+     * targets.
+     * <p>
+     * This may cause loading of chunks! Some implementations may impose
+     * artificial restrictions on the maximum distance.
+     *
+     * @param builderConsumer a consumer to configure the ray trace configuration.
+     *     The received builder is not valid for use outside the consumer
+     * @return the closest ray trace hit result with either a block or an
+     *     entity, or <code>null</code> if there is no hit
+     */
+    @Nullable RayTraceResult rayTrace(@NotNull Consumer<PositionedRayTraceConfigurationBuilder> builderConsumer);
 
     /**
      * Gets the default spawn {@link Location} of this world
