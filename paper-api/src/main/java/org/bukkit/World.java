@@ -2,6 +2,7 @@ package org.bukkit;
 
 import java.io.File;
 import io.papermc.paper.world.biome.BiomeClimate;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import org.bukkit.generator.ChunkGenerator;
 
 import java.util.ArrayList;
@@ -1940,6 +1941,20 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     // Paper end
 
     /**
+     * Performs a ray trace that checks for collisions with the specified
+     * targets.
+     * <p>
+     * This may cause loading of chunks! Some implementations may impose
+     * artificial restrictions on the maximum distance.
+     *
+     * @param builderConsumer a consumer to configure the ray trace configuration.
+     *     The received builder is not valid for use outside the consumer
+     * @return the closest ray trace hit result with either a block or an
+     *     entity, or <code>null</code> if there is no hit
+     */
+    @Nullable RayTraceResult rayTrace(@NotNull Consumer<PositionedRayTraceConfigurationBuilder> builderConsumer);
+
+    /**
      * Gets the default spawn {@link Location} of this world
      *
      * @return The spawn location of this world
@@ -2594,9 +2609,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * It is safe to run this method when the block does not exist, it will
      * not create the block.
-     * <p>
-     * This method will return the raw temperature without adjusting for block
-     * height effects.
      *
      * @param x X coordinate of the block
      * @param z Z coordinate of the block
@@ -2611,9 +2623,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * <p>
      * It is safe to run this method when the block does not exist, it will
      * not create the block.
-     * <p>
-     * This method will return the raw temperature without adjusting for block
-     * height effects.
      *
      * @param x X coordinate of the block
      * @param y Y coordinate of the block

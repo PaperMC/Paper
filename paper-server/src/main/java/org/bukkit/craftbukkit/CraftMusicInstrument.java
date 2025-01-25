@@ -32,7 +32,7 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
     public static Object bukkitToString(MusicInstrument bukkit) { // Paper - switch to Holder
         Preconditions.checkArgument(bukkit != null);
 
-        return ((CraftMusicInstrument) bukkit).toBukkitSerializationObject(Instrument.CODEC); // Paper - switch to Holder
+        return ((CraftMusicInstrument) bukkit).toBukkitSerializationObject(Instrument.DIRECT_CODEC); // Paper - switch to Holder
     }
 
     public static MusicInstrument stringToBukkit(Object string) { // Paper - switch to Holder
