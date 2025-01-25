@@ -7,25 +7,26 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Called when a player is set as loaded. This either happens when the player sends the player loaded packet after
- * loading the world (closing the downloading terrain screen) or when the player has not sent the packet for 60 ticks
- * after joining the server or respawning.
+ * Called when a player is marked as loaded.
+ * <p>
+ * This either happens when the player notifies the server after loading the world (closing the downloading terrain screen)
+ * or when the player has not done so for 60 ticks after joining the server or respawning.
  */
 @NullMarked
-public class PlayerLoadedWorldEvent extends PlayerEvent {
+public class PlayerClientLoadedWorldEvent extends PlayerEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final boolean timeout;
 
     @ApiStatus.Internal
-    public PlayerLoadedWorldEvent(final Player who, final boolean timeout) {
+    public PlayerClientLoadedWorldEvent(final Player who, final boolean timeout) {
         super(who);
         this.timeout = timeout;
     }
 
     /**
-     * True if the event was triggered because the server has not received the player loaded packet
+     * True if the event was triggered because the server has not been notified by the player
      * for 60 ticks after the player joined the server or respawned.
      *
      * @return true if the event was triggered because of a timeout
