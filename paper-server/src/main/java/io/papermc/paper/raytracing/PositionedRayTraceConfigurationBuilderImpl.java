@@ -27,16 +27,17 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
 
     @Override
     public PositionedRayTraceConfigurationBuilder start(final Location start) {
+        Preconditions.checkArgument(start != null, "start must not be null");
         this.start = start.clone();
         return this;
     }
 
     @Override
     public PositionedRayTraceConfigurationBuilder direction(final Vector direction) {
+        Preconditions.checkArgument(direction != null, "direction must not be null");
         this.direction = direction.clone();
         return this;
     }
-
 
     @Override
     public PositionedRayTraceConfigurationBuilder maxDistance(final double maxDistance) {
@@ -45,9 +46,9 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
         return this;
     }
 
-
     @Override
     public PositionedRayTraceConfigurationBuilder fluidCollisionMode(final FluidCollisionMode fluidCollisionMode) {
+        Preconditions.checkArgument(fluidCollisionMode != null, "fluidCollisionMode must not be null");
         this.fluidCollisionMode = fluidCollisionMode;
         return this;
     }
@@ -67,18 +68,22 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
 
     @Override
     public PositionedRayTraceConfigurationBuilder entityFilter(final Predicate<? super Entity> entityFilter) {
+        Preconditions.checkArgument(entityFilter != null, "entityFilter must not be null");
         this.entityFilter = entityFilter;
         return this;
     }
 
     @Override
     public PositionedRayTraceConfigurationBuilder blockFilter(final Predicate<? super Block> blockFilter) {
+        Preconditions.checkArgument(blockFilter != null, "blockFilter must not be null");
         this.blockFilter = blockFilter;
         return this;
     }
 
     @Override
     public PositionedRayTraceConfigurationBuilder targets(final RayTraceTarget first, final RayTraceTarget... others) {
+        Preconditions.checkArgument(first != null, "first must not be null");
+        Preconditions.checkArgument(others != null, "others must not be null");
         this.targets = EnumSet.of(first, others);
         return this;
     }
