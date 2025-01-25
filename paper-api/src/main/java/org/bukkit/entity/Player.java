@@ -1063,7 +1063,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param entity the entity whose equipment to change
      * @param items the slots to change, where the values are the items to which
-     * the slot should be changed. null values will set the slot to air
+     * the slot should be changed. null values will set the slot to air, empty map is not allowed
      */
     public void sendEquipmentChange(@NotNull LivingEntity entity, @NotNull Map<EquipmentSlot, ItemStack> items);
 
