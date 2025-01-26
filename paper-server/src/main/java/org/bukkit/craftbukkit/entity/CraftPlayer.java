@@ -3558,7 +3558,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         // Validate all items before attempting to spawn any.
         for (final ItemStack item : items) {
-            Preconditions.checkNotNull(item, "ItemStack cannot be null");
+            Preconditions.checkArgument(item != null, "ItemStack cannot be null");
             Preconditions.checkArgument(!item.isEmpty(), "ItemStack cannot be empty");
             Preconditions.checkArgument(item.getAmount() <= item.getMaxStackSize(), "ItemStack amount cannot be greater than its max stack size");
         }
