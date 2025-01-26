@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.BaseEncoding;
 import com.mojang.authlib.GameProfile;
@@ -8,6 +9,8 @@ import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.entity.PaperPlayerGiveResult;
+import io.papermc.paper.entity.PlayerGiveResult;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 import java.io.ByteArrayOutputStream;
@@ -101,6 +104,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeMap;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.level.GameType;
@@ -176,6 +180,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
@@ -3545,4 +3550,35 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundEntityEventPacket(((CraftEntity) target).getHandle(), effect.getData()));
     }
     // Paper end - entity effect API
+
+    @Override
+    public @NotNull PlayerGiveResult give(@NotNull final Collection<@NotNull ItemStack> items, final boolean dropIfFull) {
+        Preconditions.checkArgument(items != null, "items cannot be null");
+        if (items.isEmpty()) return PaperPlayerGiveResult.EMPTY; // Early opt out for empty input.
+
+        // Validate all items before attempting to spawn any.
+        for (final ItemStack item : items) {
+            Preconditions.checkArgument(item != null, "ItemStack cannot be null");
+            Preconditions.checkArgument(!item.isEmpty(), "ItemStack cannot be empty");
+            Preconditions.checkArgument(item.getAmount() <= item.getMaxStackSize(), "ItemStack amount cannot be greater than its max stack size");
+        }
+
+        final ServerPlayer handle = this.getHandle();
+        final ImmutableList.Builder<Item> drops = ImmutableList.builder();
+        final ImmutableList.Builder<ItemStack> leftovers = ImmutableList.builder();
+        for (final ItemStack item : items) {
+            final net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(item);
+            final boolean added = handle.getInventory().add(nmsStack);
+            if (added && nmsStack.isEmpty()) continue; // Item was fully added, neither a drop nor a leftover is needed.
+
+            leftovers.add(CraftItemStack.asBukkitCopy(nmsStack)); // Insert copy to avoid mutation to the dropped item from affecting leftovers
+            if (!dropIfFull) continue;
+
+            final ItemEntity entity = handle.drop(nmsStack, false, true, false);
+            if (entity != null) drops.add((Item) entity.getBukkitEntity());
+        }
+
+        handle.containerMenu.broadcastChanges();
+        return new PaperPlayerGiveResult(leftovers.build(), drops.build());
+    }
 }
