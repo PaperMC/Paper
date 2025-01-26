@@ -35,14 +35,10 @@ public interface CraftRecipe extends Recipe {
 
         if (bukkit == null) {
             stack = Ingredient.of();
-        }
-        // Paper start - add PredicateChoice
-        else if (bukkit instanceof RecipeChoice.PredicateChoice predicateChoice) {
+        } else if (bukkit instanceof RecipeChoice.PredicateChoice predicateChoice) {
             stack = Ingredient.ofStacks(Collections.singletonList(CraftItemStack.asNMSCopy(predicateChoice.getItemStack())));
             stack.stackPredicate = nmsStack -> predicateChoice.test(CraftItemStack.asBukkitCopy(nmsStack));
-        }
-        // Paper end
-        else if (bukkit instanceof RecipeChoice.MaterialChoice) {
+        } else if (bukkit instanceof RecipeChoice.MaterialChoice) {
             stack = Ingredient.of(((RecipeChoice.MaterialChoice) bukkit).getChoices().stream().map((mat) -> CraftItemType.bukkitToMinecraft(mat)));
         } else if (bukkit instanceof RecipeChoice.ExactChoice) {
             stack = Ingredient.ofStacks(((RecipeChoice.ExactChoice) bukkit).getChoices().stream().map((mat) -> CraftItemStack.asNMSCopy(mat)).toList());

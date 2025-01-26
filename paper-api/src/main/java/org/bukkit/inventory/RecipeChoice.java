@@ -292,7 +292,6 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         // Paper end - check valid ingredients
     }
 
-    // Paper start - add PredicateChoice
     /**
      * Represents a choice that will be valid only if an item matches the
      * given predicate
@@ -311,7 +310,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         public PredicateChoice(Predicate<ItemStack> predicate, ItemStack exampleStack) {
             Preconditions.checkArgument(predicate != null, "The item predicate cannot be null");
             Preconditions.checkArgument(exampleStack != null, "The example stack cannot be null");
-            Preconditions.checkArgument(!exampleStack.getType().isAir(), "Cannot have empty/air example stack");
+            Preconditions.checkArgument(!exampleStack.isEmpty(), "Cannot have empty/air example stack");
 
             this.predicate = predicate;
             this.exampleStack = exampleStack;
@@ -336,5 +335,4 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             return this.predicate.test(itemStack);
         }
     }
-    // Paper end - add PredicateChoice
 }
