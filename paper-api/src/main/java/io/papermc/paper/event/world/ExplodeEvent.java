@@ -1,18 +1,15 @@
 package io.papermc.paper.event.world;
 
+import java.util.List;
 import org.bukkit.ExplosionResult;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.damage.DamageSource;
-import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.world.WorldEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
-import java.util.List;
 
 /**
  * Called when an explosion happens on the server.
@@ -24,36 +21,33 @@ public class ExplodeEvent extends WorldEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final DamageSource damageSource;
+    private final ExplodeEventSource eventSource;
     private final Location location;
     private final List<Block> blocks;
     private final boolean spreadFire;
     private final ExplosionResult result;
 
-    private @Nullable BlockState blockState;
-    private @Nullable Entity entity;
     private float yield;
     private boolean cancelled;
 
-    private ExplodeEvent(final DamageSource damageSource, final Location location, final List<Block> blocks, final float yield, final boolean spreadFire, final ExplosionResult result) {
+    @ApiStatus.Internal
+    public ExplodeEvent(
+        final Location location,
+        final DamageSource damageSource,
+        final ExplodeEventSource eventSource,
+        final List<Block> blocks,
+        final float yield,
+        final boolean spreadFire,
+        final ExplosionResult result
+    ) {
         super(location.getWorld());
         this.damageSource = damageSource;
+        this.eventSource = eventSource;
         this.location = location;
         this.blocks = blocks;
         this.yield = yield;
         this.spreadFire = spreadFire;
         this.result = result;
-    }
-
-    @ApiStatus.Internal
-    public ExplodeEvent(final DamageSource damageSource, final Entity entity, final List<Block> blocks, final float yield, final boolean spreadFire, final ExplosionResult result) {
-        this(damageSource, entity.getLocation(), blocks, yield, spreadFire, result);
-        this.entity = entity;
-    }
-
-    @ApiStatus.Internal
-    public ExplodeEvent(final DamageSource damageSource, final BlockState blockState, final Location location, final List<Block> blocks, final float yield, final boolean spreadFire, final ExplosionResult result) {
-        this(damageSource, location, blocks, yield, spreadFire, result);
-        this.blockState = blockState;
     }
 
     /**
@@ -76,23 +70,40 @@ public class ExplodeEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * Returns the entity that exploded, if exists.
+     * Yields the source of this explode event.
+     * <p>
+     * The returned interface is sealed and is expected to either be pattern matched or checked via instance of for
+     * further consumption.
+     * Retrieving and processing only entities that caused the explosion could hence be implemented as follows:
+     * <pre>{@code
+     * if (!(event.getSource() instanceof final ExplodeEventSource.EntitySource entitySource)) return;
+     * final Entity entity = entitySource.entity();
+     * ....
+     * }</pre>
+     * <p>
+     * Alternatively, pattern matching may be used to process different types of sources easily:
+     * <pre>
+     * {@code
+     * switch (event.getSource()) {
+     *     case final ExplodeEventSource.BlockSource blockSource -> {
+     *         final BlockState blockState = blockSource.blockState();
+     *     }
+     *     case final ExplodeEventSource.EnchantmentSource enchantmentSource -> {
+     *         final ItemStack itemStack = enchantmentSource.itemStack();
+     *     }
+     *     case final ExplodeEventSource.EntitySource entitySource -> {
+     *         final Entity entity = entitySource.entity();
+     *     }
+     *     case final ExplodeEventSource.UnknownSource ignored -> {
+     *     }
+     * }
+     * }
+     * </pre>
      *
-     * @return the entity for the source of explosion or {@code null}
+     * @return the source of this explosion.
      */
-    @Nullable
-    public Entity getEntity() {
-        return this.entity;
-    }
-
-    /**
-     * Returns the captured block state of the block that exploded.
-     *
-     * @return the block state for the source of explosion or {@code null}
-     */
-    @Nullable
-    public BlockState getBlockState() {
-        return this.blockState;
+    public ExplodeEventSource getSource() {
+        return this.eventSource;
     }
 
     /**

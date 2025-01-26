@@ -1,6 +1,8 @@
 package org.bukkit.event.block;
 
 import java.util.List;
+
+import io.papermc.paper.event.world.ExplodeEvent;
 import org.bukkit.ExplosionResult;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
@@ -18,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
  * <p>
  * The event isn't called if the {@link org.bukkit.GameRule#MOB_GRIEFING}
  * is disabled as no block interaction will occur.
- * @see io.papermc.paper.event.world.ExplodeEvent
+ * @see ExplodeEvent
  */
 @ApiStatus.Obsolete
 public class BlockExplodeEvent extends BlockEvent implements Cancellable {
