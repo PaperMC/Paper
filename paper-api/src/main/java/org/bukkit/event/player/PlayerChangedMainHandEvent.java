@@ -12,22 +12,31 @@ public class PlayerChangedMainHandEvent extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();
     //
-    private final MainHand mainHand;
+    private final MainHand newMainHand;
 
-    public PlayerChangedMainHandEvent(@NotNull Player who, @NotNull MainHand mainHand) {
+    public PlayerChangedMainHandEvent(@NotNull Player who, @NotNull MainHand newMainHand) {
         super(who);
-        this.mainHand = mainHand;
+        this.newMainHand = newMainHand;
     }
 
     /**
-     * Gets the new main hand of the player. The old hand is still momentarily
-     * available via {@link Player#getMainHand()}.
+     * Gets the old main hand of the player.
+     *
+     * @return the old {@link MainHand} of the player
+     */
+    @NotNull
+    public MainHand getMainHand() {
+        return newMainHand == MainHand.LEFT ? MainHand.RIGHT : MainHand.LEFT;
+    }
+
+    /**
+     * Gets the new main hand of the player.
      *
      * @return the new {@link MainHand} of the player
      */
     @NotNull
-    public MainHand getMainHand() {
-        return mainHand;
+    public MainHand getNewMainHand() {
+        return newMainHand;
     }
 
     @NotNull
