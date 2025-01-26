@@ -3557,13 +3557,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Preconditions.checkNotNull(items, "items cannot be null");
         if (items.isEmpty()) return PaperPlayerGiveResult.EMPTY; // Early opt out for empty input.
 
-        final ServerPlayer handle = this.getHandle();
-        final ImmutableList.Builder<Item> drops = ImmutableList.builder();
-        final ImmutableList.Builder<ItemStack> leftovers = ImmutableList.builder();
+        // Validate all items before attempting to spawn any.
         for (final ItemStack item : items) {
             Preconditions.checkNotNull(item, "ItemStack cannot be null");
             Preconditions.checkArgument(!item.isEmpty(), "ItemStack cannot be empty");
             Preconditions.checkArgument(item.getAmount() <= item.getMaxStackSize(), "ItemStack amount cannot be greater than its max stack size");
+        }
+
+        final ServerPlayer handle = this.getHandle();
+        final ImmutableList.Builder<Item> drops = ImmutableList.builder();
+        final ImmutableList.Builder<ItemStack> leftovers = ImmutableList.builder();
+        for (final ItemStack item : items) {
             final net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(item);
             final boolean added = handle.getInventory().add(nmsStack);
             if (added && nmsStack.isEmpty()) continue; // Item was fully added, neither a drop nor a leftover is needed.
