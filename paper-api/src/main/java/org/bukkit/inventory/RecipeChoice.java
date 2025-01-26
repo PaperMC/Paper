@@ -12,6 +12,7 @@ import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a potential item match within a recipe. All choices within a
@@ -290,4 +291,50 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         }
         // Paper end - check valid ingredients
     }
+
+    // Paper start - add PredicateChoice
+    /**
+     * Represents a choice that will be valid only if an item matches the
+     * given predicate
+     */
+    @NullMarked
+    public static class PredicateChoice implements RecipeChoice {
+
+        private final Predicate<ItemStack> predicate;
+        private final ItemStack exampleStack;
+
+        /**
+         * @param predicate The predicate to test the crafting inputs to. Mutating
+         *                  the ItemStack in the predicate is not supported.
+         * @param exampleStack An example ItemStack to be shown in the recipe book.
+         */
+        public PredicateChoice(Predicate<ItemStack> predicate, ItemStack exampleStack) {
+            Preconditions.checkArgument(predicate != null, "The item predicate cannot be null");
+            Preconditions.checkArgument(exampleStack != null, "The example stack cannot be null");
+            Preconditions.checkArgument(!exampleStack.getType().isAir(), "Cannot have empty/air example stack");
+
+            this.predicate = predicate;
+            this.exampleStack = exampleStack;
+        }
+
+        public Predicate<ItemStack> getPredicate() {
+            return this.predicate;
+        }
+
+        @Override
+        public ItemStack getItemStack() {
+            return this.exampleStack.clone();
+        }
+
+        @Override
+        public PredicateChoice clone() {
+            return new PredicateChoice(this.predicate::test, this.exampleStack.clone());
+        }
+
+        @Override
+        public boolean test(final ItemStack itemStack) {
+            return this.predicate.test(itemStack);
+        }
+    }
+    // Paper end - add PredicateChoice
 }
