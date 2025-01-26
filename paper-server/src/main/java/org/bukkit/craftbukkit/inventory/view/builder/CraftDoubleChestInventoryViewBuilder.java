@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory.view.builder;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -15,6 +16,7 @@ public class CraftDoubleChestInventoryViewBuilder<V extends InventoryView> exten
 
     public CraftDoubleChestInventoryViewBuilder(final MenuType<?> handle) {
         super(handle);
+        super.defaultTitle = Component.translatable("container.chestDouble");
     }
 
     @Override

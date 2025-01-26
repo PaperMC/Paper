@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BeaconBlockEntity;
 import net.minecraft.world.level.block.entity.BlastFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 import net.minecraft.world.level.block.entity.CrafterBlockEntity;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.world.level.block.entity.FurnaceBlockEntity;
@@ -87,7 +88,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftDoubleChestInventoryViewBuilder<>(handle)));
         }
         if (menuType == MenuType.GENERIC_9X3) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.CHEST, null)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.CHEST, ChestBlockEntity::new, false)));
         }
         // this isn't ideal as both dispenser and dropper are 3x3, InventoryType can't currently handle generic 3x3s with size 9
         // this needs to be removed when inventory creation is overhauled
@@ -98,7 +99,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(CrafterView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.CRAFTER, CrafterBlockEntity::new)));
         }
         if (menuType == MenuType.ANVIL) {
-            return asType(new MenuTypeData<>(AnvilView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, AnvilMenu::new)));
+            return asType(new MenuTypeData<>(AnvilView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.ANVIL)));
         }
         if (menuType == MenuType.BEACON) {
             return asType(new MenuTypeData<>(BeaconView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.BEACON, BeaconBlockEntity::new)));
@@ -110,16 +111,16 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(BrewingStandView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.BREWING_STAND, BrewingStandBlockEntity::new)));
         }
         if (menuType == MenuType.CRAFTING) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, CraftingMenu::new)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.CRAFTING_TABLE)));
         }
         if (menuType == MenuType.ENCHANTMENT) {
-            return asType(new MenuTypeData<>(EnchantmentView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, EnchantmentMenu::new)));
+            return asType(new MenuTypeData<>(EnchantmentView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.ENCHANTING_TABLE)));
         }
         if (menuType == MenuType.FURNACE) {
             return asType(new MenuTypeData<>(FurnaceView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.FURNACE, FurnaceBlockEntity::new)));
         }
         if (menuType == MenuType.GRINDSTONE) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, GrindstoneMenu::new)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.GRINDSTONE)));
         }
         // We really don't need to be creating a tile entity for hopper but currently InventoryType doesn't have capacity
         // to understand otherwise
@@ -140,16 +141,16 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.SHULKER_BOX, ShulkerBoxBlockEntity::new)));
         }
         if (menuType == MenuType.SMITHING) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, SmithingMenu::new)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.SMITHING_TABLE)));
         }
         if (menuType == MenuType.SMOKER) {
             return asType(new MenuTypeData<>(FurnaceView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.SMOKER, SmokerBlockEntity::new)));
         }
         if (menuType == MenuType.CARTOGRAPHY_TABLE) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, CartographyTableMenu::new)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.CARTOGRAPHY_TABLE)));
         }
         if (menuType == MenuType.STONECUTTER) {
-            return asType(new MenuTypeData<>(StonecutterView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, StonecutterMenu::new)));
+            return asType(new MenuTypeData<>(StonecutterView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.STONECUTTER)));
         }
 
         return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftStandardInventoryViewBuilder<>(handle)));
