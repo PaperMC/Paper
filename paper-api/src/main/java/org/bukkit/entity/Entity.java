@@ -237,6 +237,25 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
 
     /**
      * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
+     * @param destination Entity to teleport to
+     * @return A future that will be completed with the result of the teleport
+     */
+    default java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(final @NotNull Entity destination) {
+        return this.teleportAsync(destination.getLocation(), TeleportCause.PLUGIN);
+    }
+
+    /**
+     * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
+     * @param destination Entity to teleport to
+     * @param cause Reason for teleport
+     * @return A future that will be completed with the result of the teleport
+     */
+    default java.util.concurrent.@NotNull CompletableFuture<Boolean> teleportAsync(final @NotNull Entity destination, final @NotNull TeleportCause cause) {
+        return this.teleportAsync(destination.getLocation(), cause);
+    }
+
+    /**
+     * Loads/Generates(in 1.13+) the Chunk asynchronously, and then teleports the entity when the chunk is ready.
      * @param loc Location to teleport to
      * @param cause Reason for teleport
      * @param teleportFlags Flags to be used in this teleportation
