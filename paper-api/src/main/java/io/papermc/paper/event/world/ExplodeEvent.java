@@ -15,7 +15,8 @@ import org.jspecify.annotations.Nullable;
 import java.util.List;
 
 /**
- * Called when an explodes happen including visual-only explosion.
+ * Called when an explosion happens on the server.
+ * This includes explosions that are visual only or will not affect blocks due to set gamerules.
  */
 @NullMarked
 public class ExplodeEvent extends WorldEvent implements Cancellable {
