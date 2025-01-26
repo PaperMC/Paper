@@ -6,10 +6,12 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.entity.PlayerGiveResult;
 import org.bukkit.BanEntry;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
@@ -3892,4 +3894,38 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     void sendEntityEffect(org.bukkit.@NotNull EntityEffect effect, @NotNull Entity target);
     // Paper end - entity effect API
+
+    /**
+     * Gives the player the items following full vanilla logic,
+     * making the player drop the items that did not fit into
+     * the inventory.
+     *
+     * @param items the items to give.
+     * @return the result of this method, holding leftovers and spawned items.
+     */
+    default @NotNull PlayerGiveResult give(@NotNull final ItemStack @NotNull ... items) {
+        return this.give(List.of(items));
+    }
+
+    /**
+     * Gives the player those items following full vanilla logic,
+     * making the player drop the items that did not fit into
+     * the inventory.
+     *
+     * @param items the items to give
+     * @return the result of this method, holding leftovers and spawned items.
+     */
+    default @NotNull PlayerGiveResult give(@NotNull final Collection<@NotNull ItemStack> items) {
+        return this.give(items, true);
+    }
+
+    /**
+     * Gives the player those items following full vanilla logic.
+     *
+     * @param items      the items to give
+     * @param dropIfFull whether the player should drop items that
+     *                   did not fit the inventory
+     * @return the result of this method, holding leftovers and spawned items.
+     */
+    @NotNull PlayerGiveResult give(@NotNull Collection<@NotNull ItemStack> items, boolean dropIfFull);
 }
