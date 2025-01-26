@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import net.kyori.adventure.text.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.MerchantMenu;
@@ -44,7 +45,6 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
     @Override
     public V build(final HumanEntity player) {
         Preconditions.checkArgument(player != null, "The given player must not be null");
-        Preconditions.checkArgument(this.title != null, "The given title must not be null");
         Preconditions.checkArgument(player instanceof CraftHumanEntity, "The given player must be a CraftHumanEntity");
         final CraftHumanEntity craftHuman = (CraftHumanEntity) player;
         Preconditions.checkArgument(craftHuman.getHandle() instanceof ServerPlayer, "The given player must be an EntityPlayer");
@@ -58,8 +58,19 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
         }
 
         container.checkReachable = super.checkReachable;
-        container.setTitle(PaperAdventure.asVanilla(this.title));
+        setDefaultTitle(this.merchant);
+        container.setTitle(super.title != null ? PaperAdventure.asVanilla(this.title) : super.defaultTitle);
         return (V) container.getBukkitView();
+    }
+
+    private void setDefaultTitle(net.minecraft.world.item.trading.Merchant merchant) {
+        if (merchant instanceof AbstractVillager villager) {
+            super.defaultTitle = villager.getDisplayName();
+        } else if (merchant instanceof CraftMerchantCustom.MinecraftMerchant custom) {
+            super.defaultTitle = custom.getScoreboardDisplayName();
+        } else {
+            throw new IllegalStateException("Provided merchant during MenuType creation can not find a default title! This is a bug!");
+        }
     }
 
     @Override

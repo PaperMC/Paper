@@ -10,7 +10,6 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.view.builder.InventoryViewBuilder;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 public abstract class CraftAbstractInventoryViewBuilder<V extends InventoryView> implements InventoryViewBuilder<V> {
 
