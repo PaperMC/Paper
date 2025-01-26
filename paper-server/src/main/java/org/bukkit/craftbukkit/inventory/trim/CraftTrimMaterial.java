@@ -36,7 +36,7 @@ public class CraftTrimMaterial implements TrimMaterial, io.papermc.paper.util.Ho
     public static Object bukkitToObject(TrimMaterial bukkit) {
         Preconditions.checkArgument(bukkit != null);
 
-        return ((CraftTrimMaterial) bukkit).toBukkitSerializationObject(net.minecraft.world.item.equipment.trim.TrimMaterial.CODEC); // Paper - switch to Holder
+        return ((CraftTrimMaterial) bukkit).toBukkitSerializationObject(net.minecraft.world.item.equipment.trim.TrimMaterial.DIRECT_CODEC); // Paper - switch to Holder
     }
 
     public static TrimMaterial objectToBukkit(Object object) {

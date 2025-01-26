@@ -27,7 +27,7 @@ public interface Holderable<M> extends Handleable<M> {
         return this.getHolder().value();
     }
 
-    static <T extends org.bukkit.Keyed, M> @Nullable T fromBukkitSerializationObject(final Object deserialized, final Codec<? extends Holder<M>> codec, final RegistryKey<T> registryKey) { // TODO remove Keyed
+    static <T extends org.bukkit.Keyed, M> @Nullable T fromBukkitSerializationObject(final Object deserialized, final Codec<M> directCodec, final RegistryKey<T> registryKey) { // TODO remove Keyed
         final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
         return switch (deserialized) {
             case @Subst("key:value") final String string -> {
@@ -41,18 +41,18 @@ public interface Holderable<M> extends Handleable<M> {
                     throw new IllegalArgumentException("Cannot deserialize direct holders for " + registry);
                 }
                 final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
-                final Holder<M> holder = codec.decode(ops, element).getOrThrow().getFirst();
-                yield ((CraftRegistry<T, M>) registry).convertDirectHolder(holder);
+                final M holder = directCodec.decode(ops, element).getOrThrow().getFirst();
+                yield ((CraftRegistry<T, M>) registry).createBukkit(Holder.direct(holder));
             }
             default -> throw new IllegalArgumentException("Cannot deserialize " + deserialized);
         };
     }
 
-    default Object toBukkitSerializationObject(final Codec<? super Holder<M>> codec) {
+    default Object toBukkitSerializationObject(final Codec<? super M> directCodec) {
         return switch (this.getHolder()) {
             case final Holder.Direct<M> direct -> {
                 final RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE);
-                yield new JsonObjectWrapper(codec.encodeStart(ops, direct).getOrThrow().getAsJsonObject());
+                yield new JsonObjectWrapper(directCodec.encodeStart(ops, direct.value()).getOrThrow().getAsJsonObject());
             }
             case final Holder.Reference<M> reference -> reference.key().location().toString();
             default -> throw new IllegalArgumentException("Cannot serialize " + this.getHolder());

@@ -72,5 +72,4 @@ public final class TestPlugin extends JavaPlugin implements Listener {
         });
         // io.papermc.testplugin.brigtests.Registration.registerViaOnEnable(this);
     }
-
 }

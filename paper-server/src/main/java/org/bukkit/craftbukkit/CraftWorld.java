@@ -6,9 +6,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
 import java.util.ArrayList;
@@ -1246,6 +1249,26 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         return blockHit;
+    }
+
+    @Override
+    public RayTraceResult rayTrace(Consumer<PositionedRayTraceConfigurationBuilder> builderConsumer) {
+        PositionedRayTraceConfigurationBuilderImpl builder = new PositionedRayTraceConfigurationBuilderImpl();
+
+        builderConsumer.accept(builder);
+        Preconditions.checkArgument(builder.start != null, "Start location cannot be null");
+        Preconditions.checkArgument(builder.direction != null, "Direction vector cannot be null");
+        Preconditions.checkArgument(builder.maxDistance.isPresent(), "Max distance must be set");
+        Preconditions.checkArgument(!builder.targets.isEmpty(), "At least one target");
+
+        final double maxDistance = builder.maxDistance.getAsDouble();
+        if (builder.targets.contains(RayTraceTarget.ENTITY)) {
+            if (builder.targets.contains(RayTraceTarget.BLOCK)) {
+                return this.rayTrace(builder.start, builder.direction, maxDistance, builder.fluidCollisionMode, builder.ignorePassableBlocks, builder.raySize, builder.entityFilter, builder.blockFilter);
+            }
+            return this.rayTraceEntities(builder.start, builder.direction, maxDistance, builder.raySize, builder.entityFilter);
+        }
+        return this.rayTraceBlocks(builder.start, builder.direction, maxDistance, builder.fluidCollisionMode, builder.ignorePassableBlocks, builder.blockFilter);
     }
 
     @Override
