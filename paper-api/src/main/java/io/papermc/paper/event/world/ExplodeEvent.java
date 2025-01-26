@@ -25,14 +25,14 @@ public class ExplodeEvent extends WorldEvent implements Cancellable {
     private final DamageSource damageSource;
     private final Location location;
     private final List<Block> blocks;
-    private final ExplosionResult result;
     private final boolean spreadFire;
+    private final ExplosionResult result;
+
     private @Nullable BlockState blockState;
     private @Nullable Entity entity;
     private float yield;
     private boolean cancelled;
 
-    @ApiStatus.Internal
     private ExplodeEvent(final DamageSource damageSource, final Location location, final List<Block> blocks, final float yield, final boolean spreadFire, final ExplosionResult result) {
         super(location.getWorld());
         this.damageSource = damageSource;
@@ -57,10 +57,9 @@ public class ExplodeEvent extends WorldEvent implements Cancellable {
 
     /**
      * Gets the source of damage.
-     * <br>
-     * <b>Note:</b> by default it's the explosion but datapacks using custom explode effect can bind other types of damages.
      *
-     * @return a DamageSource detailing the source of the damage from the explosion
+     * @return a damage source detailing the source of the damage from the explosion
+     * @apiNote by default, it's the explosion but data-packs using custom explode effect can set other type of damages
      */
     public DamageSource getDamageSource() {
         return this.damageSource;
@@ -78,7 +77,7 @@ public class ExplodeEvent extends WorldEvent implements Cancellable {
     /**
      * Returns the entity that exploded, if exists.
      *
-     * @return the entity, if is the source of explosion. {@code null} if it has not
+     * @return the entity for the source of explosion or {@code null}
      */
     @Nullable
     public Entity getEntity() {
@@ -86,9 +85,9 @@ public class ExplodeEvent extends WorldEvent implements Cancellable {
     }
 
     /**
-     * Returns the captured BlockState of the block that exploded.
+     * Returns the captured block state of the block that exploded.
      *
-     * @return the block state, if is the source of explosion. {@code null} if it has not
+     * @return the block state for the source of explosion or {@code null}
      */
     @Nullable
     public BlockState getBlockState() {
@@ -97,10 +96,9 @@ public class ExplodeEvent extends WorldEvent implements Cancellable {
 
     /**
      * Returns a mutable list of blocks that would have been caught in the explosion.
-     * <br>
-     * <b>Note:</b> the behaviours with these blocks depends on {@link #getExplosionResult()}.
      *
      * @return all blocks caught in the explosion
+     * @apiNote the behaviors with these blocks depends on {@link #getExplosionResult()}
      */
     @ApiStatus.Experimental
     public List<Block> getAffectedBlocks() {
@@ -109,10 +107,9 @@ public class ExplodeEvent extends WorldEvent implements Cancellable {
 
     /**
      * Returns the percentage of blocks to drop from this explosion.
-     * <br>
-     * <b>Note:</b> this behaviour depends on {@link #getExplosionResult()}.
      *
-     * @return the yield
+     * @return the yield percentage
+     * @apiNote this behavior depends on {@link #getExplosionResult()}
      */
     public float getYield() {
         return this.yield;
@@ -121,9 +118,7 @@ public class ExplodeEvent extends WorldEvent implements Cancellable {
     /**
      * Sets the percentage of blocks to drop from this explosion.
      *
-     * @param yield The new yield percentage
-     *
-     * @see #getYield()
+     * @param yield the new yield percentage
      */
     public void setYield(float yield) {
         this.yield = yield;

@@ -2127,8 +2127,8 @@ public class CraftEventFactory {
         return !event.isCancelled();
     }
 
-    public static List<Block> handleExplodeEvent(ServerExplosion explosion, List<BlockPos> posList) {
-        List<Block> destroyedBlocks = posList.stream()
+    public static List<Block> handleExplodeEvent(ServerExplosion explosion, List<BlockPos> positions) {
+        List<Block> destroyedBlocks = positions.stream()
             .map(pos -> CraftBlock.at(explosion.level(), pos))
             .filter(block -> !block.isEmpty())
             .collect(Collectors.toCollection(ObjectArrayList::new));
@@ -2150,10 +2150,10 @@ public class CraftEventFactory {
         return destroyedBlocks;
     }
 
-    public static ExplodeEvent handleGenericExplodeEvent(ServerExplosion explosion, List<BlockPos> posList) {
-        List<Block> affectedBlocks = posList.stream()
+    public static ExplodeEvent handleGenericExplodeEvent(ServerExplosion explosion, List<BlockPos> positions) {
+        List<Block> affectedBlocks = positions.stream()
             .map(pos -> CraftBlock.at(explosion.level(), pos))
-            .collect(Collectors.toCollection(ObjectArrayList::new));
+            .collect(Collectors.toCollection(ObjectArrayList::new)); // transform?
         return callGenericExplodeEvent(explosion, affectedBlocks);
     }
 
@@ -2161,19 +2161,19 @@ public class CraftEventFactory {
         ExplosionResult explosionResult = CraftExplosionResult.toBukkit(explosion.getBlockInteraction());
 
         Entity entity = (explosion.getDirectSourceEntity() != null) ? explosion.getDirectSourceEntity() : explosion.getDamageSource().getCustomEventDamager();
-
         final ExplodeEvent event;
         if (entity != null) {
             event = new ExplodeEvent(new CraftDamageSource(explosion.getDamageSource()), entity.getBukkitEntity(), affectedBlocks, explosion.yield, explosion.fire, explosionResult);
         } else {
             Location location = CraftLocation.toBukkit(explosion.center(), explosion.level().getWorld());
-            org.bukkit.block.BlockState state = (explosion.getDamageSource().getDirectBlockState() != null) ? explosion.getDamageSource().getDirectBlockState() : location.getBlock().getState();
+            BlockState state = (explosion.getDamageSource().getDirectBlockState() != null) ? explosion.getDamageSource().getDirectBlockState() : location.getBlock().getState();
             event = new ExplodeEvent(new CraftDamageSource(explosion.getDamageSource()), state, location, affectedBlocks, explosion.yield, explosion.fire, explosionResult);
         }
 
         event.setCancelled(explosion.wasCanceled);
         event.callEvent();
         explosion.wasCanceled = event.isCancelled();
+        explosion.yield = event.getYield();
 
         return event;
     }
