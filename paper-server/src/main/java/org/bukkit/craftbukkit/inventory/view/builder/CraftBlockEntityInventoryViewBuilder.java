@@ -51,7 +51,11 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
             return buildFakeBlockEntity(player);
         }
 
-        setDefaultTitle(entity);
+        if (!(entity instanceof MenuProvider provider)) {
+            throw new IllegalStateException("Provided blockEntity during MenuType creation can not find a default title! This is a bug!");
+        }
+
+        super.defaultTitle = provider.getDisplayName();
         return atBlock;
     }
 
@@ -59,7 +63,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         final MenuProvider inventory = this.builder.build(this.position, this.block.defaultBlockState());
         if (inventory instanceof final BlockEntity tile) {
             tile.setLevel(this.world);
-            setDefaultTitle(tile);
+            super.defaultTitle = inventory.getDisplayName();
         }
 
         if (!this.useFakeBlockEntity) { // gets around open noise for chest
@@ -67,14 +71,6 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         }
 
         return inventory.createMenu(player.nextContainerCounter(), player.getInventory(), player);
-    }
-
-    private void setDefaultTitle(BlockEntity blockEntity) {
-        if (!(blockEntity instanceof Nameable nameable)) {
-            throw new IllegalStateException("Provided blockEntity during MenuType creation can not find a default title! This is a bug!");
-        }
-
-        super.defaultTitle = nameable.getDisplayName();
     }
 
     @Override
