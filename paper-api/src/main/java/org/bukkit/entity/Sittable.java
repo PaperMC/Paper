@@ -3,7 +3,7 @@ package org.bukkit.entity;
 /**
  * An animal that can sit still.
  */
-public interface Sittable {
+public interface Sittable extends Animals {
 
     /**
      * Checks if this animal is sitting
