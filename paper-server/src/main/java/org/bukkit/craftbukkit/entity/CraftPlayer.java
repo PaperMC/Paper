@@ -3553,7 +3553,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public @NotNull PlayerGiveResult give(@NotNull final Collection<@NotNull ItemStack> items, final boolean dropIfFull) {
-        Preconditions.checkNotNull(items, "items cannot be null");
+        Preconditions.checkArgument(items != null, "items cannot be null");
         if (items.isEmpty()) return PaperPlayerGiveResult.EMPTY; // Early opt out for empty input.
 
         // Validate all items before attempting to spawn any.
