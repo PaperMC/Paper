@@ -1,5 +1,17 @@
 --- a/net/minecraft/world/level/ServerExplosion.java
 +++ b/net/minecraft/world/level/ServerExplosion.java
+@@ -3,11 +_,9 @@
+ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+ import java.util.ArrayList;
+ import java.util.HashMap;
+-import java.util.HashSet;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Optional;
+-import java.util.Set;
+ import javax.annotation.Nullable;
+ import net.minecraft.Util;
+ import net.minecraft.core.BlockPos;
 @@ -33,6 +_,13 @@
  import net.minecraft.world.phys.HitResult;
  import net.minecraft.world.phys.Vec3;
@@ -14,7 +26,7 @@
  public class ServerExplosion implements Explosion {
      private static final ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
      private static final int MAX_DROPS_PER_COMBINED_STACK = 16;
-@@ -47,6 +_,11 @@
+@@ -47,6 +_,12 @@
      private final DamageSource damageSource;
      private final ExplosionDamageCalculator damageCalculator;
      private final Map<Player, Vec3> hitPlayers = new HashMap<>();
@@ -23,6 +35,7 @@
 +    public float yield;
 +    // CraftBukkit end
 +    public boolean excludeSourceFromDamage = true; // Paper - Allow explosions to damage source
++    public @Nullable io.papermc.paper.event.world.ExplodeEventSource.EnchantmentSource optionalEnchantmentSource; // Paper - track potential enchantment caused explosions
  
      public ServerExplosion(
          ServerLevel level,
@@ -151,7 +164,7 @@
  
 +        // Paper start - call explode events
 +        // call the generic event (new event) after old events
-+        io.papermc.paper.event.world.ExplodeEvent explodeEvent = CraftEventFactory.callGenericExplodeEvent(this, CraftEventFactory.handleExplodeEvent(this, blocks));
++        io.papermc.paper.event.world.ExplodeEvent explodeEvent = CraftEventFactory.callGenericExplodeEvent(this, CraftEventFactory.callLegacyExplodeEvents(this, blocks));
 +        if (this.wasCanceled) {
 +            return;
 +        }
@@ -206,9 +219,9 @@
          }
 +        // Paper start - call generic event for visual-only explosion
 +        else {
-+            io.papermc.paper.event.world.ExplodeEvent explodeEvent = CraftEventFactory.handleGenericExplodeEvent(this, list);
++            final io.papermc.paper.event.world.ExplodeEvent explodeEvent = CraftEventFactory.handleGenericExplodeEvent(this, list);
 +            if (!this.wasCanceled) {
-+                list = explodeEvent.getAffectedBlocks().stream().map(block -> ((org.bukkit.craftbukkit.block.CraftBlock) block).getPosition()).toList();
++                list = io.papermc.paper.util.MCUtil.fromBlocks(explodeEvent.getAffectedBlocks());
 +            }
 +        }
 +        // Paper end - call generic event for visual-only explosion
