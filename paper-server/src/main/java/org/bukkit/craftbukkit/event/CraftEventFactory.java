@@ -2128,10 +2128,13 @@ public class CraftEventFactory {
     }
 
     public static List<Block> handleExplodeEvent(ServerExplosion explosion, List<BlockPos> positions) {
-        List<Block> destroyedBlocks = positions.stream()
-            .map(pos -> CraftBlock.at(explosion.level(), pos))
-            .filter(block -> !block.isEmpty())
-            .collect(Collectors.toCollection(ObjectArrayList::new));
+        final List<Block> destroyedBlocks = new ObjectArrayList<>(positions.size());
+        for (int i = 0; i < positions.size(); i++) {
+            final BlockPos blockPos = positions.get(i);
+            if (explosion.level().isEmptyBlock(blockPos)) continue;
+
+            destroyedBlocks.add(CraftBlock.at(explosion.level(), positions.get(i)));
+        }
 
         Entity entity = (explosion.getDirectSourceEntity() != null) ? explosion.getDirectSourceEntity() : explosion.getDamageSource().getCustomEventDamager();
         if (entity != null) {
