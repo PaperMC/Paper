@@ -1,8 +1,7 @@
 package org.bukkit.event.entity;
 
-import java.util.List;
-
 import io.papermc.paper.event.world.ExplodeEvent;
+import java.util.List;
 import org.bukkit.ExplosionResult;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
