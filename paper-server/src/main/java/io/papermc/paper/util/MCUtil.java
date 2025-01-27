@@ -82,7 +82,7 @@ public final class MCUtil {
     }
 
     public static boolean isMainThread() {
-        return MinecraftServer.getServer().isSameThread();
+        return MinecraftServer.getServer().isSameThread() && org.spigotmc.AsyncCatcher.enabled;
     }
 
     public static void ensureMain(Runnable run) {
