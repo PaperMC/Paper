@@ -1,7 +1,5 @@
 package org.bukkit.entity;
 
-import org.jetbrains.annotations.ApiStatus;
-
 /**
  * Represents a Breeze. Whoosh!
  */

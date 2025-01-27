@@ -1,11 +1,9 @@
 package io.papermc.paper.registry.data;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.RegistryKey;
-import io.papermc.paper.registry.TypedKey;
 import io.papermc.paper.registry.data.util.Checks;
 import io.papermc.paper.registry.data.util.Conversions;
 import io.papermc.paper.registry.set.PaperRegistrySets;
@@ -189,7 +187,6 @@ public class PaperEnchantmentRegistryEntry implements EnchantmentRegistryEntry {
 
         @Override
         public Builder anvilCost(final @Range(from = 0, to = Integer.MAX_VALUE) int anvilCost) {
-            Preconditions.checkArgument(anvilCost >= 0, "anvilCost must be non-negative");
             this.anvilCost = OptionalInt.of(asArgumentMin(anvilCost, "anvilCost", 0));
             return this;
         }
