@@ -25,12 +25,12 @@ public interface Armadillo extends Animals {
     public void setState(final State state);
 
     /**
-     * Attempt to rollUp if it in {@link State#IDLE}
+     * Attempt to roll up if it in {@link State#IDLE}
      */
     public void rollUp();
 
     /**
-     * Attempt to rollUp if it's not in {@link State#IDLE}
+     * Attempt to roll out if it's not in {@link State#IDLE}
      */
     public void rollOut();
 
