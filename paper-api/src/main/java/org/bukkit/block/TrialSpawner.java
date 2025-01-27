@@ -16,14 +16,14 @@ public interface TrialSpawner extends TileState {
      *
      * @return the Gametime in ticks
      */
-    public long getCooldownEndsAt();
+    public long getCooldownEnd();
 
     /**
      * Sets the Gametime in ticks when the cooldown ends.
      *
      * @param ticks the GameTime in ticks for the new cooldown
      */
-    public void setCooldownEndsAt(long ticks);
+    public void setCooldownEnd(long ticks);
 
     /**
      * Gets the Gametime in ticks when the next spawn attempt happens. 0 if not currently active.
