@@ -4,13 +4,40 @@ import java.util.Collection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.spawner.TrialSpawnerConfiguration;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents a captured state of a trial spawner.
  */
 public interface TrialSpawner extends TileState {
+
+    /**
+     * Gets the Gametime in ticks when the cooldown ends. 0 if not currently in cooldown.
+     *
+     * @return the Gametime in ticks
+     */
+    public long getCooldownEndsAt();
+
+    /**
+     * Sets the Gametime in ticks when the cooldown ends.
+     *
+     * @param ticks the GameTime in ticks for the new cooldown
+     */
+    public void setCooldownEndsAt(long ticks);
+
+    /**
+     * Gets the Gametime in ticks when the next spawn attempt happens. 0 if not currently active.
+     *
+     * @return the Gametime in ticks
+     */
+    public long getNextMobSpawnsAt();
+
+    /**
+     * Sets the Gametime in ticks when the next spawn attempt happens.
+     *
+     * @param ticks the Gametime in ticks for the next mob spawn
+     */
+    public void setNextMobSpawnsAt(long ticks);
 
     /**
      * Gets the length in ticks the spawner will stay in cooldown for.
