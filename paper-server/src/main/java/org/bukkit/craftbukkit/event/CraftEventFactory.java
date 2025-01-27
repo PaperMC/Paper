@@ -2130,16 +2130,19 @@ public class CraftEventFactory {
         return !event.isCancelled();
     }
 
-    public static List<Block> callLegacyExplodeEvents(final ServerExplosion explosion, final List<BlockPos> positions) {
+    public static List<Block> handleLegacyExplodeEvents(final ServerExplosion explosion, final List<BlockPos> positions) {
         final ServerLevel level = explosion.level();
-        final List<Block> destroyedBlocks = MCUtil.toBlocksAndFilter(level, positions, pos -> !level.isEmptyBlock(pos));
+        return callLegacyExplodeEvents(explosion, MCUtil.toBlocksAndFilter(level, positions, pos -> !level.isEmptyBlock(pos)));
+    }
 
+    public static List<Block> callLegacyExplodeEvents(final ServerExplosion explosion, final List<Block> affectedBlocks) {
+        final ServerLevel level = explosion.level();
         final Entity entity = explosion.getDirectSourceEntity();
         if (entity != null) {
             final EntityExplodeEvent event = new EntityExplodeEvent(
                 entity.getBukkitEntity(),
                 entity.getBukkitEntity().getLocation(),
-                destroyedBlocks,
+                affectedBlocks,
                 explosion.yield,
                 CraftExplosionResult.toBukkit(explosion.getBlockInteraction())
             );
@@ -2149,13 +2152,13 @@ public class CraftEventFactory {
         } else {
             final Block block = CraftBlock.at(level, BlockPos.containing(explosion.center()));
             final BlockState state = (explosion.getDamageSource().getDirectBlockState() != null) ? explosion.getDamageSource().getDirectBlockState() : block.getState();
-            BlockExplodeEvent event = new BlockExplodeEvent(block, state, destroyedBlocks, explosion.yield, CraftExplosionResult.toBukkit(explosion.getBlockInteraction()));
+            BlockExplodeEvent event = new BlockExplodeEvent(block, state, affectedBlocks, explosion.yield, CraftExplosionResult.toBukkit(explosion.getBlockInteraction()));
             event.callEvent();
             explosion.wasCanceled = event.isCancelled();
             explosion.yield = event.getYield();
         }
 
-        return destroyedBlocks;
+        return affectedBlocks;
     }
 
     public static ExplodeEvent handleGenericExplodeEvent(ServerExplosion explosion, List<BlockPos> positions) {
