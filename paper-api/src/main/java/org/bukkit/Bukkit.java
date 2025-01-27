@@ -1373,7 +1373,10 @@ public final class Bukkit {
      * Sets the radius, in blocks, around each worlds spawn point to protect.
      *
      * @param value new spawn radius, or 0 if none
+     * @deprecated don't work anymore, set the {@code spawn-protection} in
+     * server.properties or use a plugin
      */
+    @Deprecated(since = "1.21.4", forRemoval = true)
     public static void setSpawnRadius(int value) {
         server.setSpawnRadius(value);
     }
