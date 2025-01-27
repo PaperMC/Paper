@@ -26735,7 +26735,7 @@ index da793ad12565c36fffb26eb771ff68c76632caf7..db06f966077928419bfe469260f04d7d
          if (!passengers.equals(this.lastPassengers)) {
              this.broadcastAndSend(new ClientboundSetPassengersPacket(this.entity)); // CraftBukkit
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 192977dd661ee795ada13db895db770293e9b402..95a4e37a3c93f9b3c56c7a7376ed521cd46fbb6f 100644
+index b851520559b83c800eb240cebced0c40f1b8a66c..a293d1481b5f4a1d18addc3e518486c639223f09 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -170,7 +170,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
@@ -27496,7 +27496,7 @@ index 192977dd661ee795ada13db895db770293e9b402..95a4e37a3c93f9b3c56c7a7376ed521c
      }
  
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 472693a7d10dc67b116db02e3e4472adbc5a4d62..422db52e8a0a08350542670bfc9ba94ad9481d0c 100644
+index f054ea710108e5017bc48fdda5f180a04f5b55e2..f44600604a7bf68c990cd74a1ac2d7900ff6e88e 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
 @@ -178,7 +178,7 @@ import net.minecraft.world.scores.Team;
@@ -29379,7 +29379,7 @@ index 9f34fc4278860dd7bcfa1fd79b15e588b0cc3973..a7ebd624652cb6f0edc735bf6b9760e7
  
      public ClipContext(Vec3 from, Vec3 to, ClipContext.Block block, ClipContext.Fluid fluid, Entity entity) {
 diff --git a/net/minecraft/world/level/EntityGetter.java b/net/minecraft/world/level/EntityGetter.java
-index 300f3ed58109219d97846082941b860585f66fed..e81195df621159da67136f020fa7a6d39d1ee5ed 100644
+index 300f3ed58109219d97846082941b860585f66fed..892a7c1eb1b321ca6d5ca709142e7feae1220815 100644
 --- a/net/minecraft/world/level/EntityGetter.java
 +++ b/net/minecraft/world/level/EntityGetter.java
 @@ -15,7 +15,7 @@ import net.minecraft.world.phys.shapes.BooleanOp;
@@ -29397,14 +29397,6 @@ index 300f3ed58109219d97846082941b860585f66fed..e81195df621159da67136f020fa7a6d3
  
 -    default boolean isUnobstructed(@Nullable Entity entity, VoxelShape shape) {
 -        if (shape.isEmpty()) {
--            return true;
--        } else {
--            for (Entity entity1 : this.getEntities(entity, shape.bounds())) {
--                if (!entity1.isRemoved()
--                    && entity1.blocksBuilding
--                    && (entity == null || !entity1.isPassengerOfSameVehicle(entity))
--                    && Shapes.joinIsNotEmpty(shape, Shapes.create(entity1.getBoundingBox()), BooleanOp.AND)) {
--                    return false;
 +    // Paper start - rewrite chunk system
 +    @Override
 +    default List<Entity> moonrise$getHardCollidingEntities(final Entity entity, final AABB box, final Predicate<? super Entity> predicate) {
@@ -29415,7 +29407,14 @@ index 300f3ed58109219d97846082941b860585f66fed..e81195df621159da67136f020fa7a6d3
 +    // Paper start - optimise collisions
 +    default boolean isUnobstructed(@Nullable Entity entity, VoxelShape voxel) {
 +        if (voxel.isEmpty()) {
-+            return false;
+             return true;
+-        } else {
+-            for (Entity entity1 : this.getEntities(entity, shape.bounds())) {
+-                if (!entity1.isRemoved()
+-                    && entity1.blocksBuilding
+-                    && (entity == null || !entity1.isPassengerOfSameVehicle(entity))
+-                    && Shapes.joinIsNotEmpty(shape, Shapes.create(entity1.getBoundingBox()), BooleanOp.AND)) {
+-                    return false;
 +        }
 +
 +        final AABB singleAABB = ((ca.spottedleaf.moonrise.patches.collisions.shape.CollisionVoxelShape)voxel).moonrise$getSingleAABBRepresentation();
@@ -29503,7 +29502,7 @@ index 300f3ed58109219d97846082941b860585f66fed..e81195df621159da67136f020fa7a6d3
  
      // Paper start - Affects Spawning API
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 771d6ed6a7c889c09efd4ff6e20298c851eaa79f..8331b49185500ab3b4307e9ae05126b4f83a318a 100644
+index 771d6ed6a7c889c09efd4ff6e20298c851eaa79f..a768f041fd16d253ec4ab5eb75288b1771d5cb00 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -79,6 +79,7 @@ import net.minecraft.world.level.storage.LevelData;
@@ -29673,7 +29672,7 @@ index 771d6ed6a7c889c09efd4ff6e20298c851eaa79f..8331b49185500ab3b4307e9ae05126b4
 +    public boolean isUnobstructed(final Entity entity) {
 +        final AABB boundingBox = entity.getBoundingBox();
 +        if (ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.isEmpty(boundingBox)) {
-+            return false;
++            return true;
 +        }
 +
 +        final List<Entity> entities = this.getEntities(
