@@ -44,12 +44,12 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
     }
 
     @Override
-    public long getNextMobSpawnsAt() {
+    public long getNextSpawnAttempt() {
         return this.getSnapshot().trialSpawner.getData().nextMobSpawnsAt;
     }
 
     @Override
-    public void setNextMobSpawnsAt(long ticks) {
+    public void setNextSpawnAttempt(long ticks) {
         this.getSnapshot().trialSpawner.getData().nextMobSpawnsAt = ticks;
     }
 

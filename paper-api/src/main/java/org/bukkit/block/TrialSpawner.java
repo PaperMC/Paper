@@ -30,14 +30,14 @@ public interface TrialSpawner extends TileState {
      *
      * @return the Gametime in ticks
      */
-    public long getNextMobSpawnsAt();
+    public long getNextSpawnAttempt();
 
     /**
      * Sets the Gametime in ticks when the next spawn attempt happens.
      *
      * @param ticks the Gametime in ticks for the next mob spawn
      */
-    public void setNextMobSpawnsAt(long ticks);
+    public void setNextSpawnAttempt(long ticks);
 
     /**
      * Gets the length in ticks the spawner will stay in cooldown for.
