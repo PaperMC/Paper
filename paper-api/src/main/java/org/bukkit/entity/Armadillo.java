@@ -13,7 +13,7 @@ public interface Armadillo extends Animals {
      *
      * @return the state of the armadillo
      */
-    public State getState();
+    State getState();
 
     /**
      * Set a new state for the armadillo.
@@ -22,22 +22,22 @@ public interface Armadillo extends Animals {
      *
      * @param state the new state
      */
-    public void setState(final State state);
+    void setState(final State state);
 
     /**
      * Attempt to roll up if it in {@link State#IDLE}
      */
-    public void rollUp();
+    void rollUp();
 
     /**
      * Attempt to roll out if it's not in {@link State#IDLE}
      */
-    public void rollOut();
+    void rollOut();
 
     /**
      * Represents the current state of the Armadillo.
      */
-    public enum State {
+    enum State {
         IDLE,
         ROLLING,
         SCARED,
