@@ -299,25 +299,25 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     @NullMarked
     public static class PredicateChoice implements RecipeChoice {
 
-        private final Predicate<ItemStack> predicate;
+        private final Predicate<ItemStack> stackPredicate;
         private final ItemStack exampleStack;
 
         /**
-         * @param predicate The predicate to test the crafting inputs to. Mutating
+         * @param stackPredicate The predicate to test the crafting inputs to. Mutating
          *                  the ItemStack in the predicate is not supported.
          * @param exampleStack An example ItemStack to be shown in the recipe book.
          */
-        public PredicateChoice(Predicate<ItemStack> predicate, ItemStack exampleStack) {
-            Preconditions.checkArgument(predicate != null, "The item predicate cannot be null");
+        public PredicateChoice(Predicate<ItemStack> stackPredicate, ItemStack exampleStack) {
+            Preconditions.checkArgument(stackPredicate != null, "The item predicate cannot be null");
             Preconditions.checkArgument(exampleStack != null, "The example stack cannot be null");
             Preconditions.checkArgument(!exampleStack.isEmpty(), "Cannot have empty/air example stack");
 
-            this.predicate = predicate;
+            this.stackPredicate = stackPredicate;
             this.exampleStack = exampleStack;
         }
 
         public Predicate<ItemStack> getPredicate() {
-            return this.predicate;
+            return this.stackPredicate;
         }
 
         @Override
@@ -327,12 +327,12 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         @Override
         public PredicateChoice clone() {
-            return new PredicateChoice(this.predicate::test, this.exampleStack.clone());
+            return new PredicateChoice(this.stackPredicate::test, this.exampleStack.clone());
         }
 
         @Override
         public boolean test(final ItemStack itemStack) {
-            return this.predicate.test(itemStack);
+            return this.stackPredicate.test(itemStack);
         }
     }
 }
