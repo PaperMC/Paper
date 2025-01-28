@@ -50,7 +50,8 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
             if (thr instanceof ThreadDeath) {
                 throw (ThreadDeath)thr;
             }
-            throw new RuntimeException("Failed to read BlockState at: world: " + this.getWorld().getName() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")", thr);
+            String worldName = world == null ? "null" : world.getName();
+            throw new RuntimeException("Failed to read BlockState at: world: " + worldName + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")", thr);
         }
         // Paper end - Show blockstate location if we failed to read it
     }
