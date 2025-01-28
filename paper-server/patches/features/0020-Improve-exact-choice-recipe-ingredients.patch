@@ -77,10 +77,10 @@ index 0000000000000000000000000000000000000000..ce745e49cd54fe3ae187785563a1bd31
 +}
 diff --git a/io/papermc/paper/inventory/recipe/StackedContentsExtrasMap.java b/io/papermc/paper/inventory/recipe/StackedContentsExtrasMap.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f47c12e9dd6cfa857ca07a764edc22de372e25b6
+index 0000000000000000000000000000000000000000..affdc873ba54a664f88a90a6f2f03ac007f67111
 --- /dev/null
 +++ b/io/papermc/paper/inventory/recipe/StackedContentsExtrasMap.java
-@@ -0,0 +1,68 @@
+@@ -0,0 +1,80 @@
 +package io.papermc.paper.inventory.recipe;
 +
 +import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -93,12 +93,16 @@ index 0000000000000000000000000000000000000000..f47c12e9dd6cfa857ca07a764edc22de
 +import net.minecraft.world.item.crafting.CraftingInput;
 +import net.minecraft.world.item.crafting.Ingredient;
 +import net.minecraft.world.item.crafting.Recipe;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.function.Predicate;
 +
 +public final class StackedContentsExtrasMap {
 +
 +    private final StackedContents<ItemOrExact> contents;
 +    public Object2IntMap<ItemOrExact.Item> regularRemoved = new Object2IntOpenHashMap<>(); // needed for re-using the regular contents (for ShapelessRecipe)
 +    public final ObjectSet<ItemStack> exactIngredients = new ObjectOpenCustomHashSet<>(ItemStackLinkedSet.TYPE_AND_TAG);
++    public final List<Predicate<ItemStack>> predicateIngredients = new ArrayList<>();
 +
 +    public StackedContentsExtrasMap(final StackedContents<ItemOrExact> contents) {
 +        this.contents = contents;
@@ -107,7 +111,9 @@ index 0000000000000000000000000000000000000000..f47c12e9dd6cfa857ca07a764edc22de
 +    public void initialize(final Recipe<?> recipe) {
 +        this.exactIngredients.clear();
 +        for (final Ingredient ingredient : recipe.placementInfo().ingredients()) {
-+            if (ingredient.isExact()) {
++            if (ingredient.stackPredicate != null) {
++                this.predicateIngredients.add(ingredient.stackPredicate);
++            } if (ingredient.isExact()) {
 +                this.exactIngredients.addAll(ingredient.itemStacks());
 +            }
 +        }
@@ -137,11 +143,17 @@ index 0000000000000000000000000000000000000000..f47c12e9dd6cfa857ca07a764edc22de
 +        for (final Object2IntMap.Entry<ItemOrExact.Item> entry : this.regularRemoved.object2IntEntrySet()) {
 +            this.contents.amounts.addTo(entry.getKey(), entry.getIntValue());
 +        }
++        this.predicateIngredients.clear();
 +        this.exactIngredients.clear();
 +        this.regularRemoved.clear();
 +    }
 +
 +    public boolean accountStack(final ItemStack stack, final int count) {
++        for (Predicate<ItemStack> stackPredicate : this.predicateIngredients) {
++            if (!stackPredicate.test(stack)) continue;
++            this.contents.account(new ItemOrExact.Exact(stack), count);
++            return true;
++        }
 +        if (this.exactIngredients.contains(stack)) {
 +            this.contents.account(new ItemOrExact.Exact(stack), count);
 +            return true;
@@ -341,7 +353,7 @@ index 6bbe2e51ef71d193e0a5d3cace2b0ad1760ce759..83ccde54c625d40dc595e000c533f60a
      }
  
 diff --git a/net/minecraft/world/item/crafting/Ingredient.java b/net/minecraft/world/item/crafting/Ingredient.java
-index 4ed4f4a3ee7df461ccedcf3506ccadcd27d45f94..0f1b550a1eec081f906acdd33984f2b4b0846005 100644
+index 4ed4f4a3ee7df461ccedcf3506ccadcd27d45f94..7a3f2e45ae5dabd0e4ca65b9edf7b5df83b998fc 100644
 --- a/net/minecraft/world/item/crafting/Ingredient.java
 +++ b/net/minecraft/world/item/crafting/Ingredient.java
 @@ -21,7 +21,7 @@ import net.minecraft.world.item.Items;
@@ -381,7 +393,7 @@ index 4ed4f4a3ee7df461ccedcf3506ccadcd27d45f94..0f1b550a1eec081f906acdd33984f2b4
          return recipe;
      }
      // CraftBukkit end
-@@ -88,21 +92,22 @@ public final class Ingredient implements StackedContents.IngredientInfo<Holder<I
+@@ -88,21 +92,26 @@ public final class Ingredient implements StackedContents.IngredientInfo<Holder<I
          // Paper end - add PredicateChoice
          // CraftBukkit start
          if (this.isExact()) {
@@ -406,14 +418,18 @@ index 4ed4f4a3ee7df461ccedcf3506ccadcd27d45f94..0f1b550a1eec081f906acdd33984f2b4
 +        return switch (itemOrExact) {
 +            case io.papermc.paper.inventory.recipe.ItemOrExact.Item(final Holder<Item> item) ->
 +                !this.isExact() && this.values.contains(item);
-+            case io.papermc.paper.inventory.recipe.ItemOrExact.Exact(final ItemStack exact) ->
-+                this.isExact() && this.itemStacks.contains(exact);
++            case io.papermc.paper.inventory.recipe.ItemOrExact.Exact(final ItemStack exact) -> {
++                if (this.stackPredicate != null) {
++                    yield this.stackPredicate.test(exact);
++                }
++                yield this.isExact() && this.itemStacks.contains(exact);
++            }
 +        };
 +        // Paper end - Improve exact choice recipe ingredients
      }
  
      @Override
-@@ -127,6 +132,11 @@ public final class Ingredient implements StackedContents.IngredientInfo<Holder<I
+@@ -127,6 +136,11 @@ public final class Ingredient implements StackedContents.IngredientInfo<Holder<I
      }
  
      public SlotDisplay display() {
