@@ -209,8 +209,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public int getEntityCount() {
         int ret = 0;
-        for (net.minecraft.world.entity.Entity entity : world.getEntities().getAll()) {
-            if (entity.isChunkLoaded()) {
+        for (net.minecraft.world.entity.Entity entity : this.world.getEntities().getAll()) {
+            if (entity.getBukkitEntity().isValid()) {
                 ++ret;
             }
         }
