@@ -37,6 +37,19 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     // Paper end
 
     /**
+     * @param stackPredicate The predicate to test the crafting inputs to. Mutating
+     *                  the ItemStack in the predicate is not supported.
+     * @param exampleStack An example ItemStack to be shown in the recipe book.
+     */
+    static @NotNull PredicateChoice predicate(@NotNull Predicate<ItemStack> stackPredicate, @NotNull ItemStack exampleStack) {
+        Preconditions.checkArgument(stackPredicate != null, "The item predicate cannot be null");
+        Preconditions.checkArgument(exampleStack != null, "The example stack cannot be null");
+        Preconditions.checkArgument(!exampleStack.isEmpty(), "Cannot have empty/air example stack");
+
+        return new PredicateChoiceImpl(stackPredicate, exampleStack);
+    }
+
+    /**
      * Gets a single item stack representative of this stack choice.
      *
      * @return a single representative item
@@ -297,42 +310,8 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * given predicate
      */
     @NullMarked
-    public static class PredicateChoice implements RecipeChoice {
+    interface PredicateChoice extends RecipeChoice {
 
-        private final Predicate<ItemStack> stackPredicate;
-        private final ItemStack exampleStack;
-
-        /**
-         * @param stackPredicate The predicate to test the crafting inputs to. Mutating
-         *                  the ItemStack in the predicate is not supported.
-         * @param exampleStack An example ItemStack to be shown in the recipe book.
-         */
-        public PredicateChoice(Predicate<ItemStack> stackPredicate, ItemStack exampleStack) {
-            Preconditions.checkArgument(stackPredicate != null, "The item predicate cannot be null");
-            Preconditions.checkArgument(exampleStack != null, "The example stack cannot be null");
-            Preconditions.checkArgument(!exampleStack.isEmpty(), "Cannot have empty/air example stack");
-
-            this.stackPredicate = stackPredicate;
-            this.exampleStack = exampleStack;
-        }
-
-        public Predicate<ItemStack> getPredicate() {
-            return this.stackPredicate;
-        }
-
-        @Override
-        public ItemStack getItemStack() {
-            return this.exampleStack.clone();
-        }
-
-        @Override
-        public PredicateChoice clone() {
-            return new PredicateChoice(this.stackPredicate::test, this.exampleStack.clone());
-        }
-
-        @Override
-        public boolean test(final ItemStack itemStack) {
-            return this.stackPredicate.test(itemStack);
-        }
+        Predicate<ItemStack> getPredicate();
     }
 }
