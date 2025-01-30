@@ -37,41 +37,75 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     }
     // Paper end
 
+    /**
+     * Constructs a recipe choice that accepts inputs matching any of the
+     * specified materials.
+     *
+     * @param types The item types to match against. Cannot be empty.
+     * @return A new {@link MaterialChoice} instance.
+     */
     static @NotNull MaterialChoice itemTypeChoice(@NotNull Material... types) {
         return new MaterialChoice(types);
     }
 
+    /**
+     * Constructs a recipe choice that accepts inputs matching any of the
+     * specified materials.
+     *
+     * @param types The material tag to match against. Cannot be empty.
+     * @return A new {@link MaterialChoice} instance.
+     */
     static @NotNull MaterialChoice itemTypeChoice(@NotNull Tag<Material> types) {
         return new MaterialChoice(types);
     }
 
+    /**
+     * Constructs a recipe choice that accepts inputs matching any of the
+     * specified materials.
+     *
+     * @param types The item types to match against. Cannot be empty.
+     * @return A new {@link MaterialChoice} instance.
+     */
     static @NotNull MaterialChoice itemTypeChoice(@NotNull List<Material> types) {
         return new MaterialChoice(types);
     }
 
+    /**
+     * Creates a recipe choice that accepts inputs exactly matching any of
+     * the specified ItemStacks.
+     *
+     * @param stacks The ItemStacks to match against.
+     *               Cannot be empty or contain air.
+     * @return A new {@link ExactChoice} instance.
+     */
     static @NotNull ExactChoice exactChoice(@NotNull ItemStack... stacks) {
         return new ExactChoice(stacks);
     }
 
+    /**
+     * Creates a recipe choice that accepts inputs exactly matching any of
+     * the specified ItemStacks.
+     *
+     * @param stacks The ItemStacks to match against.
+     *               Cannot be empty or contain air.
+     * @return A new {@link ExactChoice} instance.
+     */
     static @NotNull ExactChoice exactChoice(@NotNull List<ItemStack> stacks) {
         return new ExactChoice(stacks);
     }
 
     /**
-     * Constructs a recipe choice that matches inputs based on a given
-     * predicate
+     * Creates a recipe choice that accepts inputs matching the given predicate.
+     * <p>
+     * <b>Note:</b> Mutating the {@link ItemStack} within the predicate is not
+     * supported.
      *
-     * @param stackPredicate The predicate to test the crafting inputs to.
-     *                       Mutating the ItemStack in the predicate is not
-     *                       supported.
-     * @param exampleStack   An example ItemStack to be shown in the recipe
-     *                       book.
+     * @param stackPredicate The predicate to match against.
+     * @param exampleStack   An example {@link ItemStack} to be shown in the
+     *                       recipe book. This stack cannot be empty or air.
+     * @return A new {@link PredicateChoice} instance.
      */
     static @NotNull PredicateChoice predicateChoice(@NotNull Predicate<ItemStack> stackPredicate, @NotNull ItemStack exampleStack) {
-        Preconditions.checkArgument(stackPredicate != null, "The item predicate cannot be null");
-        Preconditions.checkArgument(exampleStack != null, "The example stack cannot be null");
-        Preconditions.checkArgument(!exampleStack.isEmpty(), "Cannot have empty/air example stack");
-
         return new PredicateChoiceImpl(stackPredicate, exampleStack);
     }
 

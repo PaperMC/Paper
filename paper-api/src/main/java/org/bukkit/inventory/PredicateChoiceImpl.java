@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import com.google.common.base.Preconditions;
 import org.jspecify.annotations.NullMarked;
 import java.util.function.Predicate;
 
@@ -7,6 +8,10 @@ import java.util.function.Predicate;
 record PredicateChoiceImpl(Predicate<ItemStack> stackPredicate, ItemStack exampleStack) implements RecipeChoice.PredicateChoice {
 
     public PredicateChoiceImpl(Predicate<ItemStack> stackPredicate, ItemStack exampleStack) {
+        Preconditions.checkArgument(stackPredicate != null, "The item predicate cannot be null");
+        Preconditions.checkArgument(exampleStack != null, "The example stack cannot be null");
+        Preconditions.checkArgument(!exampleStack.isEmpty(), "Cannot have empty/air example stack");
+
         this.stackPredicate = stackPredicate;
         this.exampleStack = exampleStack.clone();
     }
