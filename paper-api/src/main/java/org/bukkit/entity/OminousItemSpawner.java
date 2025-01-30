@@ -1,7 +1,6 @@
 package org.bukkit.entity;
 
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
 /**
