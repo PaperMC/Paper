@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Armadillo;
 
@@ -41,7 +42,7 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
         return "CraftArmadillo";
     }
 
-    private State stateToBukkit(net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState state) {
+    public static State stateToBukkit(ArmadilloState state) {
         return switch (state) {
             case IDLE -> State.IDLE;
             case ROLLING -> State.ROLLING;
@@ -50,12 +51,12 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
         };
     }
 
-    private net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState stateToNMS(State state) {
+    public static ArmadilloState stateToNMS(State state) {
         return switch (state) {
-            case State.IDLE -> net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.IDLE;
-            case State.ROLLING -> net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.ROLLING;
-            case State.SCARED -> net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.SCARED;
-            case State.UNROLLING -> net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.UNROLLING;
+            case State.IDLE -> ArmadilloState.IDLE;
+            case State.ROLLING -> ArmadilloState.ROLLING;
+            case State.SCARED -> ArmadilloState.SCARED;
+            case State.UNROLLING -> ArmadilloState.UNROLLING;
         };
     }
 }
