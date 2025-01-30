@@ -52,11 +52,11 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * Constructs a recipe choice that accepts inputs matching any of the
      * specified materials.
      *
-     * @param types The material tag to match against. Cannot be empty.
+     * @param tag The tag of item types to match against. Cannot be empty.
      * @return A new {@link MaterialChoice} instance.
      */
-    static @NotNull MaterialChoice itemTypeChoice(@NotNull Tag<Material> types) {
-        return new MaterialChoice(types);
+    static @NotNull MaterialChoice itemTypeChoice(@NotNull Tag<Material> tag) {
+        return new MaterialChoice(tag);
     }
 
     /**
