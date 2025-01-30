@@ -38,72 +38,40 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     // Paper end
 
     /**
-     * Constructs a recipe choice that accepts inputs matching any of the
-     * specified materials.
+     * Creates a choice that will be valid only if one of the stacks is
+     * exactly matched (aside from stack size).
      *
-     * @param types The item types to match against. Cannot be empty.
-     * @return A new {@link MaterialChoice} instance.
-     */
-    static @NotNull MaterialChoice itemTypeChoice(@NotNull Material... types) {
-        return new MaterialChoice(types);
-    }
-
-    /**
-     * Constructs a recipe choice that accepts inputs matching any of the
-     * specified materials.
-     *
-     * @param tag The tag of item types to match against. Cannot be empty.
-     * @return A new {@link MaterialChoice} instance.
-     */
-    static @NotNull MaterialChoice itemTypeChoice(@NotNull Tag<Material> tag) {
-        return new MaterialChoice(tag);
-    }
-
-    /**
-     * Constructs a recipe choice that accepts inputs matching any of the
-     * specified materials.
-     *
-     * @param types The item types to match against. Cannot be empty.
-     * @return A new {@link MaterialChoice} instance.
-     */
-    static @NotNull MaterialChoice itemTypeChoice(@NotNull List<Material> types) {
-        return new MaterialChoice(types);
-    }
-
-    /**
-     * Creates a recipe choice that accepts inputs exactly matching any of
-     * the specified ItemStacks.
-     *
-     * @param stacks The ItemStacks to match against.
-     *               Cannot be empty or contain air.
-     * @return A new {@link ExactChoice} instance.
+     * @param stacks the ItemStacks to match against.
+     *               Cannot be empty or contain empty/air stacks.
+     * @return a new ExactChoice.
      */
     static @NotNull ExactChoice exactChoice(@NotNull ItemStack... stacks) {
         return new ExactChoice(stacks);
     }
 
     /**
-     * Creates a recipe choice that accepts inputs exactly matching any of
-     * the specified ItemStacks.
+     * Creates a choice that will be valid only if one of the stacks is
+     * exactly matched (aside from stack size).
      *
-     * @param stacks The ItemStacks to match against.
-     *               Cannot be empty or contain air.
-     * @return A new {@link ExactChoice} instance.
+     * @param stacks the ItemStacks to match against.
+     *               Cannot be empty or contain empty/air stacks.
+     * @return a new ExactChoice.
      */
     static @NotNull ExactChoice exactChoice(@NotNull List<ItemStack> stacks) {
         return new ExactChoice(stacks);
     }
 
     /**
-     * Creates a recipe choice that accepts inputs matching the given predicate.
+     * Creates a recipe choice that will be valid only if an item matches the
+     * given predicate.
      * <p>
      * <b>Note:</b> Mutating the {@link ItemStack} within the predicate is not
      * supported.
      *
-     * @param stackPredicate The predicate to match against.
-     * @param exampleStack   An example {@link ItemStack} to be shown in the
-     *                       recipe book. This stack cannot be empty or air.
-     * @return A new {@link PredicateChoice} instance.
+     * @param stackPredicate the predicate to match against.
+     * @param exampleStack   an example {@link ItemStack} to be shown in the
+     *                       recipe book. Cannot be empty or air.
+     * @return a new PredicateChoice.
      */
     static @NotNull PredicateChoice predicateChoice(@NotNull Predicate<ItemStack> stackPredicate, @NotNull ItemStack exampleStack) {
         return new PredicateChoiceImpl(stackPredicate, exampleStack);
@@ -139,16 +107,10 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         private List<Material> choices;
 
-        /**
-         * @deprecated Use {@link RecipeChoice#itemTypeChoice(Material...)} instead
-         */
         public MaterialChoice(@NotNull Material choice) {
             this(Arrays.asList(choice));
         }
 
-        /**
-         * @deprecated Use {@link RecipeChoice#itemTypeChoice(Material...)} instead
-         */
         public MaterialChoice(@NotNull Material... choices) {
             this(Arrays.asList(choices));
         }
@@ -158,16 +120,12 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
          * tag.
          *
          * @param choices the tag
-         * @deprecated Use {@link RecipeChoice#itemTypeChoice(Tag)} instead
          */
         @Deprecated
         public MaterialChoice(@NotNull Tag<Material> choices) {
             this(new ArrayList<>(java.util.Objects.requireNonNull(choices, "Cannot create a material choice with null tag").getValues())); // Paper - delegate to list ctor to make sure all checks are called
         }
 
-        /**
-         * @deprecated Use {@link RecipeChoice#itemTypeChoice(List)} instead
-         */
         @Deprecated
         public MaterialChoice(@NotNull List<Material> choices) {
             Preconditions.checkArgument(choices != null, "choices");
@@ -388,7 +346,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
     /**
      * Represents a choice that will be valid only if an item matches the
-     * given predicate
+     * given predicate.
      */
     @NullMarked
     sealed interface PredicateChoice extends RecipeChoice permits PredicateChoiceImpl {
