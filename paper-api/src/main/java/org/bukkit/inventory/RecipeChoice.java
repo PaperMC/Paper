@@ -24,6 +24,7 @@ import org.jspecify.annotations.NullMarked;
 public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
     // Paper start - add "empty" choice
+
     /**
      * An "empty" recipe choice. Only valid as a recipe choice in
      * specific places. Check the javadocs of a method before using it
@@ -36,12 +37,37 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
     }
     // Paper end
 
+    static @NotNull MaterialChoice itemTypeChoice(@NotNull Material... types) {
+        return new MaterialChoice(types);
+    }
+
+    static @NotNull MaterialChoice itemTypeChoice(@NotNull Tag<Material> types) {
+        return new MaterialChoice(types);
+    }
+
+    static @NotNull MaterialChoice itemTypeChoice(@NotNull List<Material> types) {
+        return new MaterialChoice(types);
+    }
+
+    static @NotNull ExactChoice exactChoice(@NotNull ItemStack... stacks) {
+        return new ExactChoice(stacks);
+    }
+
+    static @NotNull ExactChoice exactChoice(@NotNull List<ItemStack> stacks) {
+        return new ExactChoice(stacks);
+    }
+
     /**
-     * @param stackPredicate The predicate to test the crafting inputs to. Mutating
-     *                  the ItemStack in the predicate is not supported.
-     * @param exampleStack An example ItemStack to be shown in the recipe book.
+     * Constructs a recipe choice that matches inputs based on a given
+     * predicate
+     *
+     * @param stackPredicate The predicate to test the crafting inputs to.
+     *                       Mutating the ItemStack in the predicate is not
+     *                       supported.
+     * @param exampleStack   An example ItemStack to be shown in the recipe
+     *                       book.
      */
-    static @NotNull PredicateChoice predicate(@NotNull Predicate<ItemStack> stackPredicate, @NotNull ItemStack exampleStack) {
+    static @NotNull PredicateChoice predicateChoice(@NotNull Predicate<ItemStack> stackPredicate, @NotNull ItemStack exampleStack) {
         Preconditions.checkArgument(stackPredicate != null, "The item predicate cannot be null");
         Preconditions.checkArgument(exampleStack != null, "The example stack cannot be null");
         Preconditions.checkArgument(!exampleStack.isEmpty(), "Cannot have empty/air example stack");
@@ -79,10 +105,16 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         private List<Material> choices;
 
+        /**
+         * @deprecated Use {@link RecipeChoice#itemTypeChoice(Material...)} instead
+         */
         public MaterialChoice(@NotNull Material choice) {
             this(Arrays.asList(choice));
         }
 
+        /**
+         * @deprecated Use {@link RecipeChoice#itemTypeChoice(Material...)} instead
+         */
         public MaterialChoice(@NotNull Material... choices) {
             this(Arrays.asList(choices));
         }
@@ -92,11 +124,17 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
          * tag.
          *
          * @param choices the tag
+         * @deprecated Use {@link RecipeChoice#itemTypeChoice(Tag)} instead
          */
+        @Deprecated
         public MaterialChoice(@NotNull Tag<Material> choices) {
             this(new ArrayList<>(java.util.Objects.requireNonNull(choices, "Cannot create a material choice with null tag").getValues())); // Paper - delegate to list ctor to make sure all checks are called
         }
 
+        /**
+         * @deprecated Use {@link RecipeChoice#itemTypeChoice(List)} instead
+         */
+        @Deprecated
         public MaterialChoice(@NotNull List<Material> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
@@ -206,14 +244,23 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         private List<ItemStack> choices;
 
+        /**
+         * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack...)} instead
+         */
         public ExactChoice(@NotNull ItemStack stack) {
             this(Arrays.asList(stack));
         }
 
+        /**
+         * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack...)} instead
+         */
         public ExactChoice(@NotNull ItemStack... stacks) {
             this(Arrays.asList(stacks));
         }
 
+        /**
+         * @deprecated Use {@link RecipeChoice#exactChoice(List)} instead
+         */
         public ExactChoice(@NotNull List<ItemStack> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
@@ -310,7 +357,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * given predicate
      */
     @NullMarked
-    interface PredicateChoice extends RecipeChoice {
+    sealed interface PredicateChoice extends RecipeChoice permits PredicateChoiceImpl {
 
         Predicate<ItemStack> getPredicate();
     }
