@@ -4,6 +4,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.FlyingMob;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ambient.AmbientCreature;
+import net.minecraft.world.entity.animal.AgeableWaterCreature;
 import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.npc.Villager;
@@ -28,7 +29,7 @@ public enum ActivationType {
      * @return activation type
      */
     public static ActivationType activationTypeFor(final Entity entity) {
-        if (entity instanceof WaterAnimal) {
+        if (entity instanceof WaterAnimal || entity instanceof AgeableWaterCreature) {
             return ActivationType.WATER;
         } else if (entity instanceof Villager) {
             return ActivationType.VILLAGER;
