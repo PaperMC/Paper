@@ -271,7 +271,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see JukeboxSong
      * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#JUKEBOX_SONG}
      */
-    @ApiStatus.Experimental
     @Deprecated(since = "1.21")
     Registry<JukeboxSong> JUKEBOX_SONG = legacyRegistryFor(JukeboxSong.class);
     /**
