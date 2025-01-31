@@ -35,7 +35,7 @@ public interface Armadillo extends Animals {
     void rollOut();
 
     /**
-     * Represents the current state of the Armadillo.
+     * Represents the current state of the armadillo.
      */
     enum State {
         IDLE,
