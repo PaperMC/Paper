@@ -92,7 +92,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         Container handle = craftInventory.getInventory();
 
         // TODO: When events are added, call event here w/ custom reason?
-        this.getHandle().fillInventory(handle, nmsContext, new RandomSourceWrapper(random), true);
+        this.getHandle().fill(handle, nmsContext, new RandomSourceWrapper(random), true);
     }
 
     @Override
