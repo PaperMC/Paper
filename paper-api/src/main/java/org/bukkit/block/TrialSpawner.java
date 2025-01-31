@@ -4,11 +4,12 @@ import java.util.Collection;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.spawner.TrialSpawnerConfiguration;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a captured state of a trial spawner.
  */
+@NullMarked
 public interface TrialSpawner extends TileState {
 
     /**
@@ -91,7 +92,7 @@ public interface TrialSpawner extends TileState {
      * @return a collection of players this spawner is tracking or an empty
      *         collection if there aren't any
      */
-    @NotNull Collection<Player> getTrackedPlayers();
+    Collection<Player> getTrackedPlayers();
 
     /**
      * Checks if this spawner is currently tracking the provided player.
@@ -99,7 +100,7 @@ public interface TrialSpawner extends TileState {
      * @param player the player
      * @return true if this spawner is tracking the provided player
      */
-    boolean isTrackingPlayer(@NotNull Player player);
+    boolean isTrackingPlayer(final Player player);
 
     /**
      * Force this spawner to start tracking the provided player.
@@ -109,7 +110,7 @@ public interface TrialSpawner extends TileState {
      *
      * @param player the player
      */
-    void startTrackingPlayer(@NotNull Player player);
+    void startTrackingPlayer(final Player player);
 
     /**
      * Force this spawner to stop tracking the provided player.
@@ -119,7 +120,7 @@ public interface TrialSpawner extends TileState {
      *
      * @param player the player
      */
-    void stopTrackingPlayer(@NotNull Player player);
+    void stopTrackingPlayer(final Player player);
 
     /**
      * Gets a list of entities this spawner is currently tracking.
@@ -131,7 +132,7 @@ public interface TrialSpawner extends TileState {
      * @return a collection of entities this spawner is tracking or an empty
      *         collection if there aren't any
      */
-    @NotNull Collection<Entity> getTrackedEntities();
+     Collection<Entity> getTrackedEntities();
 
     /**
      * Checks if this spawner is currently tracking the provided entity.
@@ -139,7 +140,7 @@ public interface TrialSpawner extends TileState {
      * @param entity the entity
      * @return true if this spawner is tracking the provided entity
      */
-    boolean isTrackingEntity(@NotNull Entity entity);
+    boolean isTrackingEntity(final Entity entity);
 
     /**
      * Force this spawner to start tracking the provided entity.
@@ -149,7 +150,7 @@ public interface TrialSpawner extends TileState {
      *
      * @param entity the entity
      */
-    void startTrackingEntity(@NotNull Entity entity);
+    void startTrackingEntity(final Entity entity);
 
     /**
      * Force this spawner to stop tracking the provided entity.
@@ -159,7 +160,7 @@ public interface TrialSpawner extends TileState {
      *
      * @param entity the entity
      */
-    void stopTrackingEntity(@NotNull Entity entity);
+    void stopTrackingEntity(final Entity entity);
 
     /**
      * Checks if this spawner is using the ominous
@@ -184,7 +185,7 @@ public interface TrialSpawner extends TileState {
      *
      * @return the TrialSpawnerConfiguration
      */
-    @NotNull TrialSpawnerConfiguration getNormalConfiguration();
+    TrialSpawnerConfiguration getNormalConfiguration();
 
     /**
      * Gets the {@link TrialSpawnerConfiguration} used when {@link #isOminous()} is
@@ -192,5 +193,5 @@ public interface TrialSpawner extends TileState {
      *
      * @return the TrialSpawnerConfiguration
      */
-    @NotNull TrialSpawnerConfiguration getOminousConfiguration();
+    TrialSpawnerConfiguration getOminousConfiguration();
 }
