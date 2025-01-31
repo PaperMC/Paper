@@ -70,7 +70,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     public Collection<ItemStack> populateLoot(Random random, LootContext context) {
         Preconditions.checkArgument(context != null, "LootContext cannot be null");
         LootParams nmsContext = this.convertContext(context);
-        List<net.minecraft.world.item.ItemStack> nmsItems = this.handle.getRandomItems(nmsContext, new RandomSourceWrapper(random));
+        List<net.minecraft.world.item.ItemStack> nmsItems = this.handle.getRandomItems(nmsContext, random == null ? null : new RandomSourceWrapper(random));
         Collection<ItemStack> bukkit = new ArrayList<>(nmsItems.size());
 
         for (net.minecraft.world.item.ItemStack item : nmsItems) {
@@ -92,7 +92,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         Container handle = craftInventory.getInventory();
 
         // TODO: When events are added, call event here w/ custom reason?
-        this.getHandle().fill(handle, nmsContext, new RandomSourceWrapper(random), true);
+        this.getHandle().fill(handle, nmsContext, random == null ? null : new RandomSourceWrapper(random), true);
     }
 
     @Override
