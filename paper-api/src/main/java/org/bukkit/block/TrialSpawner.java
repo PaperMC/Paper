@@ -12,30 +12,32 @@ import org.jetbrains.annotations.NotNull;
 public interface TrialSpawner extends TileState {
 
     /**
-     * Gets the Gametime in ticks when the cooldown ends. 0 if not currently in cooldown.
+     * Gets the game time in ticks when the cooldown ends. 0 if not currently in cooldown.
      *
-     * @return the Gametime in ticks
+     * @return the game time in ticks
+     * @see org.bukkit.World#getGameTime()
      */
     long getCooldownEnd();
 
     /**
-     * Sets the Gametime in ticks when the cooldown ends.
+     * Sets the game time in ticks when the cooldown ends.
      *
-     * @param ticks the GameTime in ticks for the new cooldown
+     * @param ticks the game time in ticks for the new cooldown
      */
     void setCooldownEnd(long ticks);
 
     /**
-     * Gets the Gametime in ticks when the next spawn attempt happens. 0 if not currently active.
+     * Gets the game time in ticks when the next spawn attempt happens. 0 if not currently active.
      *
-     * @return the Gametime in ticks
+     * @return the game time in ticks
+     * @see org.bukkit.World#getGameTime()
      */
     long getNextSpawnAttempt();
 
     /**
-     * Sets the Gametime in ticks when the next spawn attempt happens.
+     * Sets the game time in ticks when the next spawn attempt happens.
      *
-     * @param ticks the Gametime in ticks for the next mob spawn
+     * @param ticks the game time in ticks for the next mob spawn
      */
     void setNextSpawnAttempt(long ticks);
 
