@@ -414,7 +414,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isValid() {
-        return this.entity.isAlive() && this.entity.valid && this.entity.isChunkLoaded() && this.isInWorld();
+        return this.entity.isAlive() && this.entity.valid;
     }
 
     @Override

@@ -209,8 +209,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public int getEntityCount() {
         int ret = 0;
-        for (net.minecraft.world.entity.Entity entity : world.getEntities().getAll()) {
-            if (entity.isChunkLoaded()) {
+        for (net.minecraft.world.entity.Entity entity : this.world.getEntities().getAll()) {
+            if (entity.getBukkitEntity().isValid()) {
                 ++ret;
             }
         }
@@ -356,7 +356,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start
     private static void warnUnsafeChunk(String reason, int x, int z) {
         // if any chunk coord is outside of 30 million blocks
-        if (x > 1875000 || z > 1875000 || x < -1875000 || z < -1875000) {
+        int max = (30_000_000 / 16) + 625;
+        if (x > max || z > max || x < -max || z < -max) {
             Plugin plugin = io.papermc.paper.util.StackWalkerUtil.getFirstPluginCaller();
             if (plugin != null) {
                 plugin.getLogger().warning("Plugin is %s at (%s, %s), this might cause issues.".formatted(reason, x, z));

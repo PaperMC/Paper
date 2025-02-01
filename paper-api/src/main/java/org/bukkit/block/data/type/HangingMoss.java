@@ -1,12 +1,10 @@
 package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.BlockData;
-import org.jetbrains.annotations.ApiStatus;
 
 /**
  * 'tip' indicates whether this block is a tip.
  */
-@ApiStatus.Experimental
 public interface HangingMoss extends BlockData {
 
     /**

@@ -590,7 +590,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     e.getStringUUID()
                 );
             } else {
-                // Ensure player flag is not needed
+                // Ensure misc flag is not needed
                 Preconditions.checkArgument(
                     nmsEntity.getType().canSerialize() || allowMiscSerialization,
                     "Cannot serialize misc non-saveable entity %s(%s) without the MISC flag",
@@ -751,9 +751,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
         final net.minecraft.world.entity.EntityType<?> nmsType = org.bukkit.craftbukkit.entity.CraftEntityType.bukkitToMinecraft(entityType);
         final net.minecraft.world.item.SpawnEggItem eggItem = net.minecraft.world.item.SpawnEggItem.byId(nmsType);
         if (eggItem != null) {
-            throw new UnsupportedOperationException("Not yet implemented");
+            throw new UnsupportedOperationException();
         }
-        return eggItem == null ? null : org.bukkit.Color.fromRGB(1); // TODO
+        return null;
     }
     // Paper end - spawn egg color visibility
 
