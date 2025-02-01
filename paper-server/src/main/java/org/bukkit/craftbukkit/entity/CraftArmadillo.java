@@ -18,13 +18,13 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
 
     @Override
     public State getState() {
-        return this.stateToBukkit(this.getHandle().getState());
+        return CraftArmadillo.stateToBukkit(this.getHandle().getState());
     }
 
     @Override
     public void setState(final State state) {
         Preconditions.checkArgument(state != null, "state cannot be null");
-        this.getHandle().switchToState(this.stateToNMS(state));
+        this.getHandle().switchToState(CraftArmadillo.stateToNMS(state));
     }
 
     @Override
