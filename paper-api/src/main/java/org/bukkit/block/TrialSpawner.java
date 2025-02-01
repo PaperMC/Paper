@@ -132,7 +132,7 @@ public interface TrialSpawner extends TileState {
      * @return a collection of entities this spawner is tracking or an empty
      *         collection if there aren't any
      */
-     Collection<Entity> getTrackedEntities();
+    Collection<Entity> getTrackedEntities();
 
     /**
      * Checks if this spawner is currently tracking the provided entity.
