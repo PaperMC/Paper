@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Armadillo;
@@ -29,11 +30,13 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
 
     @Override
     public void rollUp() {
+        this.getHandle().getBrain().setMemoryWithExpiry(MemoryModuleType.DANGER_DETECTED_RECENTLY, true, 80L);
         this.getHandle().rollUp();
     }
 
     @Override
     public void rollOut() {
+        this.getHandle().getBrain().eraseMemory(MemoryModuleType.DANGER_DETECTED_RECENTLY);
         this.getHandle().rollOut();
     }
 
