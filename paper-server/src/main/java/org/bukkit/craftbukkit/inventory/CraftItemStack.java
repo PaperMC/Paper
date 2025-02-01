@@ -571,7 +571,8 @@ public final class CraftItemStack extends ItemStack {
         } else if (newPdcTag.isEmpty() && customData.contains(PDC_CUSTOM_DATA_KEY)) {
             customData = customData.update(tag -> tag.remove(PDC_CUSTOM_DATA_KEY));
         }
-        this.handle.set(DataComponents.CUSTOM_DATA, customData);
+        // mirror CraftMetaItem behavior of clearing component if it's empty.
+        this.handle.set(DataComponents.CUSTOM_DATA, customData.isEmpty() ? null : customData);
         return true;
     }
 
