@@ -30,6 +30,7 @@ import org.bukkit.craftbukkit.inventory.CraftMerchant;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftAccessLocationInventoryViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftBlockEntityInventoryViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftDoubleChestInventoryViewBuilder;
+import org.bukkit.craftbukkit.inventory.view.builder.CraftEnchantmentInventoryViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftMerchantInventoryViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftStandardInventoryViewBuilder;
 import org.bukkit.inventory.InventoryView;
@@ -114,7 +115,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.CRAFTING_TABLE)));
         }
         if (menuType == MenuType.ENCHANTMENT) {
-            return asType(new MenuTypeData<>(EnchantmentView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.ENCHANTING_TABLE)));
+            return asType(new MenuTypeData<>(EnchantmentView.class, () -> new CraftEnchantmentInventoryViewBuilder(handle)));
         }
         if (menuType == MenuType.FURNACE) {
             return asType(new MenuTypeData<>(FurnaceView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.FURNACE, FurnaceBlockEntity::new)));
