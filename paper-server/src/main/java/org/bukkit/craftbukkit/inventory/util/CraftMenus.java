@@ -133,7 +133,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(LecternView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.LECTERN, LecternBlockEntity::new)));
         }
         if (menuType == MenuType.LOOM) {
-            return asType(new MenuTypeData<>(LoomView.class, () -> new CraftStandardInventoryViewBuilder<>(handle)));
+            return asType(new MenuTypeData<>(LoomView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.LOOM)));
         }
         if (menuType == MenuType.MERCHANT) {
             return asType(new MenuTypeData<>(MerchantView.class, () -> new CraftMerchantInventoryViewBuilder<>(handle)));
