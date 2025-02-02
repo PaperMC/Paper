@@ -22,7 +22,7 @@ public class CraftAccessLocationInventoryViewBuilder<V extends InventoryView> ex
     protected AbstractContainerMenu buildContainer(final ServerPlayer player) {
         final ContainerLevelAccess access;
         if (super.position == null) {
-            access = ContainerLevelAccess.create(player.level(), BlockPos.ZERO);
+            access = ContainerLevelAccess.create(player.level(), player.blockPosition());
         } else {
             access = ContainerLevelAccess.create(super.world, super.position);
         }
