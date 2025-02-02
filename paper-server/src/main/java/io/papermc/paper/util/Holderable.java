@@ -36,7 +36,7 @@ public interface Holderable<M> extends Handleable<M> {
                 }
                 yield registry.get(Key.key(string));
             }
-            case JsonObjectWrapper(final JsonObject element) -> {
+            case JsonObjectWrapper(JsonObject element) -> {
                 if (!(registry instanceof final CraftRegistry<?, ?> craftRegistry) || !craftRegistry.supportsDirectHolders()) {
                     throw new IllegalArgumentException("Cannot deserialize direct holders for " + registry);
                 }
