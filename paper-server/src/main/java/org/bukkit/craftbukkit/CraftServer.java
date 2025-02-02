@@ -1864,22 +1864,12 @@ public final class CraftServer implements Server {
         return result;
     }
 
-    public void removeBukkitSpawnRadius() {
-        this.configuration.set("settings.spawn-radius", null);
-        this.saveConfig();
-    }
-
-    public int getBukkitSpawnRadius() {
-        return this.configuration.getInt("settings.spawn-radius", -1);
-    }
-
-    // Paper start
     @Override
     public net.kyori.adventure.text.Component shutdownMessage() {
         String msg = getShutdownMessage();
         return msg != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(msg) : null;
     }
-    // Paper end
+
     @Override
     @Deprecated // Paper
     public String getShutdownMessage() {
