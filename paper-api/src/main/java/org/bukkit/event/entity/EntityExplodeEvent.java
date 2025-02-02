@@ -1,5 +1,6 @@
 package org.bukkit.event.entity;
 
+import io.papermc.paper.event.world.ExplodeEvent;
 import java.util.List;
 import org.bukkit.ExplosionResult;
 import org.bukkit.Location;
@@ -7,13 +8,16 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when an entity explodes interacting with blocks. The
  * event isn't called if the {@link org.bukkit.GameRule#MOB_GRIEFING}
  * is disabled as no block interaction will occur.
+ * @see ExplodeEvent
  */
+@ApiStatus.Obsolete
 public class EntityExplodeEvent extends EntityEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel;
@@ -72,7 +76,7 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public Location getLocation() {
-        return location.clone(); // Paper - clone to avoid changes
+        return location.clone();
     }
 
     /**
