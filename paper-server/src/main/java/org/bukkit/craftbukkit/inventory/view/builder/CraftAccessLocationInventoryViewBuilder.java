@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.inventory.view.builder;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
