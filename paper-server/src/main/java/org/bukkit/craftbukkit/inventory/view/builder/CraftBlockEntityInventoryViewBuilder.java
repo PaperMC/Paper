@@ -32,6 +32,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
 
         if (this.position == null) {
             this.position = player.blockPosition();
+            return buildFakeTile(player); // fixes clashing with container at player position
         }
 
         final BlockEntity entity = this.world.getBlockEntity(position);
