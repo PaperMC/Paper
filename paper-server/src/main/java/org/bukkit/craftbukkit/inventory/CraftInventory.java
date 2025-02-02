@@ -255,6 +255,19 @@ public class CraftInventory implements Inventory {
         return -1;
     }
 
+    // PartyRealms start - Add methods to add items to inventory excluding armor and quickbar
+    @Override
+    public int firstEmptyExcludingArmorAndQuickbar() {
+        ItemStack[] inventory = this.getStorageContents();
+        for (int i = 9; i < 34; i++) {
+            if (inventory[i] == null) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    // PartyRealms end - Add methods to add items to inventory excluding armor and quickbar
+
     @Override
     public boolean isEmpty() {
         return this.inventory.isEmpty();
@@ -274,6 +287,23 @@ public class CraftInventory implements Inventory {
         }
         return -1;
     }
+
+    // PartyRealms start - Add methods to add items to inventory excluding armor and quickbar
+    private int firstPartialExcludingArmorAndQuickbar(ItemStack item) {
+        ItemStack[] inventory = this.getStorageContents();
+        ItemStack filteredItem = CraftItemStack.asCraftCopy(item);
+        if (item == null) {
+            return -1;
+        }
+        for (int i = 9; i < 34; i++) {
+            ItemStack cItem = inventory[i];
+            if (cItem != null && cItem.getAmount() < cItem.getMaxStackSize() && cItem.isSimilar(filteredItem)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    // PartyRealms end - Add methods to add items to inventory excluding armor and quickbar
 
     @Override
     public HashMap<Integer, ItemStack> addItem(ItemStack... items) {
@@ -342,6 +372,76 @@ public class CraftInventory implements Inventory {
         }
         return leftover;
     }
+
+    // PartyRealms start - Add methods to add items to inventory excluding armor and quickbar
+    @Override
+    public HashMap<Integer, ItemStack> addItemExcludingArmorAndQuickbar(ItemStack... items) {
+        Preconditions.checkArgument(items != null, "items cannot be null");
+        HashMap<Integer, ItemStack> leftover = new HashMap<>();
+
+        /* TODO: some optimization
+         *  - Create a 'firstPartial' with a 'fromIndex'
+         *  - Record the lastPartial per Material
+         *  - Cache firstEmpty result
+         */
+
+        for (int i = 0; i < items.length; i++) {
+            ItemStack item = items[i];
+            Preconditions.checkArgument(item != null, "ItemStack cannot be null");
+            while (true) {
+                // Do we already have a stack of it?
+                int firstPartial = this.firstPartialExcludingArmorAndQuickbar(item);
+
+                // Drat! no partial stack
+                if (firstPartial == -1) {
+                    // Find a free spot!
+                    int firstFree = this.firstEmptyExcludingArmorAndQuickbar();
+
+                    if (firstFree == -1) {
+                        // No space at all!
+                        leftover.put(i, item);
+                        break;
+                    } else {
+                        // More than a single stack!
+                        int maxAmount = this.getMaxItemStack(item);
+                        if (item.getAmount() > maxAmount) {
+                            CraftItemStack stack = CraftItemStack.asCraftCopy(item);
+                            stack.setAmount(maxAmount);
+                            this.setItem(firstFree, stack);
+                            item.setAmount(item.getAmount() - maxAmount);
+                        } else {
+                            // Just store it
+                            this.setItem(firstFree, item);
+                            break;
+                        }
+                    }
+                } else {
+                    // So, apparently it might only partially fit, well lets do just that
+                    ItemStack partialItem = this.getItem(firstPartial);
+
+                    int amount = item.getAmount();
+                    int partialAmount = partialItem.getAmount();
+                    int maxAmount = this.getMaxItemStack(partialItem);
+
+                    // Check if it fully fits
+                    if (amount + partialAmount <= maxAmount) {
+                        partialItem.setAmount(amount + partialAmount);
+                        // To make sure the packet is sent to the client
+                        this.setItem(firstPartial, partialItem);
+                        break;
+                    }
+
+                    // It fits partially
+                    partialItem.setAmount(maxAmount);
+                    // To make sure the packet is sent to the client
+                    this.setItem(firstPartial, partialItem);
+                    item.setAmount(amount + partialAmount - maxAmount);
+                }
+            }
+        }
+        return leftover;
+    }
+    // PartyRealms end - Add methods to add items to inventory excluding armor and quickbar
 
     @Override
     public HashMap<Integer, ItemStack> removeItem(ItemStack... items) {

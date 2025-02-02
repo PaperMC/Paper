@@ -105,6 +105,35 @@ public interface Inventory extends Iterable<ItemStack> {
     @NotNull
     public HashMap<Integer, ItemStack> addItem(@NotNull ItemStack... items) throws IllegalArgumentException;
 
+    // PartyRealms start - Add methods to add items to inventory excluding armor and quickbar
+    /**
+     * Stores the given ItemStacks in the inventory. This will try to fill
+     * existing stacks and empty slots as well as it can.
+     * <p>
+     * The returned HashMap contains what it couldn't store, where the key is
+     * the index of the parameter, and the value is the ItemStack at that
+     * index of the varargs parameter. If all items are stored, it will return
+     * an empty HashMap.
+     * <p>
+     * Items resulted from this method will not exceed the minimum
+     * of {@link ItemStack#getMaxStackSize()} and {@link #getMaxStackSize()}.
+     * <p>
+     * First, this method will try to fill all the partial stacks in the inventory.
+     * Then it will try to fill empty slots, over-stacked items being able to
+     * fill several empty slots. The rest are placed in the returned map.
+     * <p>
+     * It is known that in some implementations this method will also set
+     * the inputted argument amount to the number of that item not placed in
+     * slots.
+     *
+     * @param items The ItemStacks to add
+     * @return A HashMap containing items that didn't fit.
+     * @throws IllegalArgumentException if items or any element in it is null
+     */
+    @NotNull
+    public HashMap<Integer, ItemStack> addItemExcludingArmorAndQuickbar(@NotNull ItemStack... items) throws IllegalArgumentException;
+    // PartyRealms end - Add methods to add items to inventory excluding armor and quickbar
+
     /**
      * Removes the given ItemStacks from the storage contents of the inventory.
      * For removing ItemStacks from the inventories that have other content groups,
@@ -318,6 +347,15 @@ public interface Inventory extends Iterable<ItemStack> {
      * @return The first empty Slot found, or -1 if no empty slots.
      */
     public int firstEmpty();
+
+    // PartyRealms start - Add methods to add items to inventory excluding armor and quickbar
+    /**
+     * Returns the first empty Slot.
+     *
+     * @return The first empty Slot found, or -1 if no empty slots.
+     */
+    public int firstEmptyExcludingArmorAndQuickbar();
+    // PartyRealms end - Add methods to add items to inventory excluding armor and quickbar
 
     /**
      * Check whether or not this inventory is empty. An inventory is considered
