@@ -53,7 +53,7 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
 
         final MerchantMenu container;
         if (this.merchant == null) {
-            this.merchant = this.title == null ? new CraftMerchantCustom().getMerchant() : new CraftMerchantCustom.MinecraftMerchant(title);
+            this.merchant = this.title == null ? new CraftMerchantCustom().getMerchant() : new CraftMerchantCustom(title).getMerchant();
             container = new MerchantMenu(serverPlayer.nextContainerCounter(), serverPlayer.getInventory(), this.merchant);
         } else {
             container = new MerchantMenu(serverPlayer.nextContainerCounter(), serverPlayer.getInventory(), this.merchant);
