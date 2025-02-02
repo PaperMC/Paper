@@ -15,6 +15,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.view.builder.MerchantInventoryViewBuilder;
+import org.checkerframework.checker.units.qual.C;
 import org.jspecify.annotations.Nullable;
 
 public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends CraftAbstractInventoryViewBuilder<V> implements MerchantInventoryViewBuilder<V> {
@@ -52,7 +53,8 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
 
         final MerchantMenu container;
         if (this.merchant == null) {
-            container = new MerchantMenu(serverPlayer.nextContainerCounter(), serverPlayer.getInventory(), new CraftMerchantCustom(title).getMerchant());
+            this.merchant = this.title == null ? new CraftMerchantCustom().getMerchant() : new CraftMerchantCustom.MinecraftMerchant(title);
+            container = new MerchantMenu(serverPlayer.nextContainerCounter(), serverPlayer.getInventory(), this.merchant);
         } else {
             container = new MerchantMenu(serverPlayer.nextContainerCounter(), serverPlayer.getInventory(), this.merchant);
         }
