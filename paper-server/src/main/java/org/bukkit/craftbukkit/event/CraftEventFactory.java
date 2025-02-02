@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -87,7 +88,6 @@ import org.bukkit.craftbukkit.damage.CraftDamageSource;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
-import org.bukkit.craftbukkit.entity.CraftRaider;
 import org.bukkit.craftbukkit.entity.CraftSpellcaster;
 import org.bukkit.craftbukkit.inventory.CraftInventoryCrafting;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -2015,14 +2015,14 @@ public class CraftEventFactory {
         Bukkit.getPluginManager().callEvent(event);
     }
 
-    public static void callRaidSpawnWaveEvent(Raid raid, net.minecraft.world.entity.raid.Raider leader, List<net.minecraft.world.entity.raid.Raider> raiders) {
-        Raider craftLeader = (CraftRaider) leader.getBukkitEntity();
-        List<Raider> craftRaiders = new ArrayList<>();
-        for (net.minecraft.world.entity.raid.Raider entityRaider : raiders) {
-            craftRaiders.add((Raider) entityRaider.getBukkitEntity());
+    public static void callRaidSpawnWaveEvent(Raid raid, net.minecraft.world.entity.raid.Raider leader, Set<net.minecraft.world.entity.raid.Raider> raiders) {
+        Raider bukkitLeader = (Raider) leader.getBukkitEntity();
+        List<Raider> bukkitRaiders = new ArrayList<>(raiders.size());
+        for (net.minecraft.world.entity.raid.Raider raider : raiders) {
+            bukkitRaiders.add((Raider) raider.getBukkitEntity());
         }
-        RaidSpawnWaveEvent event = new RaidSpawnWaveEvent(new CraftRaid(raid), raid.getLevel().getWorld(), craftLeader, craftRaiders);
-        Bukkit.getPluginManager().callEvent(event);
+        RaidSpawnWaveEvent event = new RaidSpawnWaveEvent(new CraftRaid(raid), raid.getLevel().getWorld(), bukkitLeader, bukkitRaiders);
+        event.callEvent();
     }
 
     public static LootGenerateEvent callLootGenerateEvent(Container inventory, LootTable lootTable, LootContext lootInfo, List<ItemStack> loot, boolean plugin) {
