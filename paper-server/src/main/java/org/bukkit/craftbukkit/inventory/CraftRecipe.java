@@ -2,10 +2,10 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.ItemStack;
@@ -69,13 +69,19 @@ public interface CraftRecipe extends Recipe {
             return RecipeChoice.empty(); // Paper - null breaks API contracts
         }
 
+        if (list.stackPredicate != null) {
+            ItemStack stack = list.itemStacks().iterator().next();
+            Predicate<org.bukkit.inventory.ItemStack> predicate = bukkitStack -> list.stackPredicate.test(CraftItemStack.asNMSCopy(bukkitStack));
+            return RecipeChoice.predicateChoice(predicate, CraftItemStack.asBukkitCopy(stack));
+        }
+
         if (list.isExact()) {
             List<org.bukkit.inventory.ItemStack> choices = new ArrayList<>(list.itemStacks().size());
             for (net.minecraft.world.item.ItemStack i : list.itemStacks()) {
                 choices.add(CraftItemStack.asBukkitCopy(i));
             }
 
-            return new RecipeChoice.ExactChoice(choices);
+            return RecipeChoice.exactChoice(choices);
         } else {
             List<org.bukkit.Material> choices = list.items().map((i) -> CraftItemType.minecraftToBukkit(i.value())).toList();
 

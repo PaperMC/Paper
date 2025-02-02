@@ -11,8 +11,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.material.MaterialData;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a potential item match within a recipe. All choices within a
@@ -41,11 +41,15 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * Creates a choice that will be valid only if one of the stacks is
      * exactly matched (aside from stack size).
      *
-     * @param stacks the ItemStacks to match against.
-     *               Cannot be empty or contain empty/air stacks.
+     * @param first  an ItemStack to match against.
+     *               Cannot be null or empty/air.
+     * @param others additional ItemStacks to match against.
      * @return a new ExactChoice.
      */
-    static @NotNull ExactChoice exactChoice(@NotNull ItemStack... stacks) {
+    static @NotNull ExactChoice exactChoice(@NotNull ItemStack first, ItemStack... others) {
+        List<ItemStack> stacks = new ArrayList<>(others.length + 1);
+        stacks.add(first);
+        Collections.addAll(stacks, others);
         return new ExactChoice(stacks);
     }
 
@@ -55,7 +59,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      *
      * @param stacks the ItemStacks to match against.
      *               Cannot be empty or contain empty/air stacks.
-     * @return a new ExactChoice.
+     * @return a new ExactChoice
      */
     static @NotNull ExactChoice exactChoice(@NotNull List<ItemStack> stacks) {
         return new ExactChoice(stacks);
@@ -71,10 +75,10 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * @param stackPredicate the predicate to match against.
      * @param exampleStack   an example {@link ItemStack} to be shown in the
      *                       recipe book. Cannot be empty or air.
-     * @return a new PredicateChoice.
+     * @return a new PredicateChoice
      */
     static @NotNull PredicateChoice predicateChoice(@NotNull Predicate<ItemStack> stackPredicate, @NotNull ItemStack exampleStack) {
-        return new PredicateChoiceImpl(stackPredicate, exampleStack);
+        return new PredicateRecipeChoiceImpl(stackPredicate, exampleStack);
     }
 
     /**
@@ -121,12 +125,10 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
          *
          * @param choices the tag
          */
-        @Deprecated
         public MaterialChoice(@NotNull Tag<Material> choices) {
             this(new ArrayList<>(java.util.Objects.requireNonNull(choices, "Cannot create a material choice with null tag").getValues())); // Paper - delegate to list ctor to make sure all checks are called
         }
 
-        @Deprecated
         public MaterialChoice(@NotNull List<Material> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
@@ -237,15 +239,17 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         private List<ItemStack> choices;
 
         /**
-         * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack...)} instead
+         * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack, ItemStack...)} instead
          */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         public ExactChoice(@NotNull ItemStack stack) {
             this(Arrays.asList(stack));
         }
 
         /**
-         * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack...)} instead
+         * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack, ItemStack...)} instead
          */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         public ExactChoice(@NotNull ItemStack... stacks) {
             this(Arrays.asList(stacks));
         }
@@ -253,6 +257,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         /**
          * @deprecated Use {@link RecipeChoice#exactChoice(List)} instead
          */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         public ExactChoice(@NotNull List<ItemStack> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
@@ -348,9 +353,8 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * Represents a choice that will be valid only if an item matches the
      * given predicate.
      */
-    @NullMarked
-    sealed interface PredicateChoice extends RecipeChoice permits PredicateChoiceImpl {
+    @ApiStatus.NonExtendable
+    interface PredicateChoice extends RecipeChoice {
 
-        Predicate<ItemStack> getPredicate();
     }
 }
