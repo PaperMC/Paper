@@ -31,7 +31,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         }
 
         if (this.position == null) {
-            this.position = player.blockPosition();
+            this.position = BlockPos.ZERO;
         }
 
         final BlockEntity entity = this.world.getBlockEntity(position);

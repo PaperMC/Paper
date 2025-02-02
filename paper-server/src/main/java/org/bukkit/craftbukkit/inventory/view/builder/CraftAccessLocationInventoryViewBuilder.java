@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.inventory.view.builder;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -21,7 +22,7 @@ public class CraftAccessLocationInventoryViewBuilder<V extends InventoryView> ex
     protected AbstractContainerMenu buildContainer(final ServerPlayer player) {
         final ContainerLevelAccess access;
         if (super.position == null) {
-            access = ContainerLevelAccess.create(player.level(), player.blockPosition());
+            access = ContainerLevelAccess.create(player.level(), BlockPos.ZERO);
         } else {
             access = ContainerLevelAccess.create(super.world, super.position);
         }
