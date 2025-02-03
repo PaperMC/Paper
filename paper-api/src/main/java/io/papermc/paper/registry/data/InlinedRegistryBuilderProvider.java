@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import org.bukkit.Art;
+import org.bukkit.MusicInstrument;
 import org.jetbrains.annotations.ApiStatus;
 
 @ApiStatus.Internal
@@ -19,4 +20,6 @@ public interface InlinedRegistryBuilderProvider {
     }
 
     Art createPaintingVariant(Consumer<RegistryBuilderFactory<Art, ? extends PaintingVariantRegistryEntry.Builder>> value);
+
+    MusicInstrument createInstrument(Consumer<RegistryBuilderFactory<MusicInstrument, ? extends InstrumentRegistryEntry.Builder>> value);
 }
