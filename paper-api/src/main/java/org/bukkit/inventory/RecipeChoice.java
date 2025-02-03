@@ -12,6 +12,7 @@ import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -44,8 +45,9 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * @param first  an ItemStack to match against.
      *               Cannot be null or empty/air.
      * @param others additional ItemStacks to match against.
-     * @return a new ExactChoice.
+     * @return a new ExactChoice
      */
+    @Contract(value = "_, _ -> new", pure = true)
     static @NotNull ExactChoice exactChoice(@NotNull ItemStack first, ItemStack... others) {
         List<ItemStack> stacks = new ArrayList<>(others.length + 1);
         stacks.add(first);
@@ -61,6 +63,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      *               Cannot be empty or contain empty/air stacks.
      * @return a new ExactChoice
      */
+    @Contract(value = "_ -> new", pure = true)
     static @NotNull ExactChoice exactChoice(@NotNull List<ItemStack> stacks) {
         return new ExactChoice(stacks);
     }
@@ -77,6 +80,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      *                       recipe book. Cannot be empty or air.
      * @return a new PredicateChoice
      */
+    @Contract(value = "_, _ -> new", pure = true)
     static @NotNull PredicateChoice predicateChoice(@NotNull Predicate<ItemStack> stackPredicate, @NotNull ItemStack exampleStack) {
         return new PredicateRecipeChoiceImpl(stackPredicate, exampleStack);
     }
