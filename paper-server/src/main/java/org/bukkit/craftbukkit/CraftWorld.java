@@ -63,9 +63,12 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.storage.LevelResource;
@@ -896,6 +899,18 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start - expand explosion API
         return this.createExplosion(x, y, z, power, setFire, breakBlocks, source, null);
     }
+
+    // Paper start - Multi Block Changes
+    @Override
+    public void setBlocks(Map<Location, BlockData> blocks) {
+        HashMap<Chunk, LevelChunk> chunkCache = new HashMap<>();
+
+        for (Map.Entry<Location, BlockData> entry : blocks.entrySet()) {
+            setBlockData(entry.getKey(), entry.getValue(), chunkCache);
+        }
+    }
+    // Paper end - Multi Block Changes
+
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source, Consumer<net.minecraft.world.level.ServerExplosion> configurator) {
     // Paper end - expand explosion API
         net.minecraft.world.level.Level.ExplosionInteraction explosionType;
