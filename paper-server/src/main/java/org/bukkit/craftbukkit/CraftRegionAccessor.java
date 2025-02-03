@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
@@ -12,6 +13,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
@@ -20,8 +22,11 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.portal.TeleportTransition;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.RegionAccessor;
@@ -50,6 +55,7 @@ import org.bukkit.entity.LargeFireball;
 import org.bukkit.entity.LingeringPotion;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Minecart;
+import org.bukkit.entity.Player;
 import org.bukkit.entity.SizedFireball;
 import org.bukkit.entity.SplashPotion;
 import org.bukkit.entity.ThrownPotion;
@@ -562,6 +568,38 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         net.minecraft.world.phys.AABB aabb = new net.minecraft.world.phys.AABB(boundingBox.getMinX(), boundingBox.getMinY(), boundingBox.getMinZ(), boundingBox.getMaxX(), boundingBox.getMaxY(), boundingBox.getMaxZ());
 
         return !this.getHandle().noCollision(aabb);
+    }
+    // Paper end
+
+    // Paper start
+    public void setBlockData(Location location, BlockData blockData, HashMap<Chunk, LevelChunk> chunkCache) {
+        net.minecraft.world.level.block.state.BlockState blockState = ((CraftBlockData) blockData).getState();
+
+        Chunk chunk = location.getChunk();
+        ServerLevel world = (ServerLevel) getHandle();
+
+        int x = (int) location.getX();
+        int y = location.getBlockY();
+        int z = (int) location.getZ();
+
+        LevelChunk levelChunk = chunkCache.computeIfAbsent(chunk, c -> world.getChunk(c.getX(), c.getZ()));
+
+        LevelChunkSection levelChunkSection = levelChunk.getSection(world.getSectionIndex(y));
+
+        if (levelChunkSection.hasOnlyAir() && blockData.getMaterial().isAir()) {
+            return;
+        }
+
+        net.minecraft.world.level.block.state.BlockState currentBlockState =
+            levelChunkSection.getStates().getAndSetUnchecked(x & 15, y & 15, z & 15, blockState);
+
+        if (currentBlockState.equals(blockState)) {
+            return;
+        }
+
+        for (Player player : chunk.getPlayersSeeingChunk()) {
+            player.sendBlockChange(location, blockData);
+        }
     }
     // Paper end
 

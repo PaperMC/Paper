@@ -2387,9 +2387,18 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Nullable
     public BiomeProvider getBiomeProvider();
 
+
     /**
-     * Saves world to disk
+     * Sets multiple blocks' data at once.
+     * This method can be run asynchronously.
+     *
+     * @param blocks A map of locations and their corresponding block data to be set
      */
+    public void setBlocks(Map<Location, BlockData> blocks);
+
+        /**
+         * Saves world to disk
+         */
     public void save();
 
     /**
