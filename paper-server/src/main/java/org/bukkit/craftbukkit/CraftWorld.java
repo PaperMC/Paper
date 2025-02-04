@@ -899,7 +899,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         HashSet<LevelChunk> chunksToRefresh = new HashSet<>();
         ServerLevel world = getHandle();
         blocks.entrySet().parallelStream().forEach(entry ->
-            setBlockData(world, entry.getKey(), ((CraftBlockData) entry.getValue()).getState(), chunksToRefresh)
+            setBlockData(world, new BlockPos(entry.getKey().getBlockX(), entry.getKey().getBlockY(), entry.getKey().getBlockZ()), ((CraftBlockData) entry.getValue()).getState(), chunksToRefresh)
         );
 
         for (LevelChunk levelChunk : chunksToRefresh) {

@@ -578,12 +578,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     // Paper end
 
     // Paper start - Multi Block Changes
-    public void setBlockData(ServerLevel world, Location location, net.minecraft.world.level.block.state.BlockState blockState, HashSet<LevelChunk> chunksToRefresh) {
-        int x = (int) location.getX();
-        int y = location.getBlockY();
-        int z = (int) location.getZ();
+    public void setBlockData(ServerLevel world, BlockPos blockPos, net.minecraft.world.level.block.state.BlockState blockState, HashSet<LevelChunk> chunksToRefresh) {
+        int x = blockPos.getX();
+        int y = blockPos.getY();
+        int z = blockPos.getZ();
 
-        LevelChunk levelChunk = world.getChunkAt(new BlockPos(x, y, z));
+        LevelChunk levelChunk = world.getChunkAt(blockPos);
 
         LevelChunkSection[] levelChunkSections = levelChunk.getSections();
 
