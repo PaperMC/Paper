@@ -4,20 +4,25 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.server.level.ChunkTaskDispatcher;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
@@ -30,6 +35,7 @@ import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.RegionAccessor;
+import org.bukkit.Server;
 import org.bukkit.TreeType;
 import org.bukkit.block.Biome;
 import org.bukkit.block.BlockState;
@@ -571,37 +577,31 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     }
     // Paper end
 
-    // Paper start
-    public void setBlockData(Location location, BlockData blockData, HashMap<Chunk, LevelChunk> chunkCache) {
-        net.minecraft.world.level.block.state.BlockState blockState = ((CraftBlockData) blockData).getState();
-
-        Chunk chunk = location.getChunk();
-        ServerLevel world = (ServerLevel) getHandle();
-
+    // Paper start - Multi Block Changes
+    public void setBlockData(ServerLevel world, Location location, net.minecraft.world.level.block.state.BlockState blockState, HashSet<LevelChunk> chunksToRefresh) {
         int x = (int) location.getX();
         int y = location.getBlockY();
         int z = (int) location.getZ();
 
-        LevelChunk levelChunk = chunkCache.computeIfAbsent(chunk, c -> world.getChunk(c.getX(), c.getZ()));
+        LevelChunk levelChunk = world.getChunkAt(new BlockPos(x, y, z));
 
-        LevelChunkSection levelChunkSection = levelChunk.getSection(world.getSectionIndex(y));
+        LevelChunkSection[] levelChunkSections = levelChunk.getSections();
 
-        if (levelChunkSection.hasOnlyAir() && blockData.getMaterial().isAir()) {
+        int index = world.getSectionIndex(y);
+
+        if (!(index >= 0 && index < levelChunkSections.length)) return;
+
+        LevelChunkSection levelChunkSection = levelChunkSections[index];
+
+        if (levelChunkSection.hasOnlyAir() && blockState.isAir()) {
             return;
         }
 
-        net.minecraft.world.level.block.state.BlockState currentBlockState =
-            levelChunkSection.getStates().getAndSetUnchecked(x & 15, y & 15, z & 15, blockState);
+        levelChunkSection.setBlockState(x & 15, y & 15, z & 15, blockState, false);
 
-        if (currentBlockState.equals(blockState)) {
-            return;
-        }
-
-        for (Player player : chunk.getPlayersSeeingChunk()) {
-            player.sendBlockChange(location, blockData);
-        }
+        chunksToRefresh.add(levelChunk);
     }
-    // Paper end
+    // Paper end - Multi Block Changes
 
     // Paper start - feature flag API
     @Override

@@ -2391,6 +2391,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Sets multiple blocks' data at once.
      * This method can be run asynchronously.
+     * <p>
+     * Note: Be cautious when using this method in scenarios involving tile entities, as changes to blocks
+     *       that have ticking tile entities may not properly update their states unless the tick is triggered.
+     *       Ensure to handle tile entity updates separately if necessary.
      *
      * @param blocks A map of locations and their corresponding block data to be set
      */

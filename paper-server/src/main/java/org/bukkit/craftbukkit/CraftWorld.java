@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -903,11 +904,16 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start - Multi Block Changes
     @Override
     public void setBlocks(Map<Location, BlockData> blocks) {
-        HashMap<Chunk, LevelChunk> chunkCache = new HashMap<>();
+        HashSet<LevelChunk> chunksToRefresh = new HashSet<>();
+        ServerLevel world = getHandle();
 
         for (Map.Entry<Location, BlockData> entry : blocks.entrySet()) {
-            setBlockData(entry.getKey(), entry.getValue(), chunkCache);
+            setBlockData(world, entry.getKey(), ((CraftBlockData) entry.getValue()).getState(), chunksToRefresh);
         }
+        for (LevelChunk levelChunk : chunksToRefresh) {
+            refreshChunk(levelChunk.locX, levelChunk.locZ);
+        }
+
     }
     // Paper end - Multi Block Changes
 
