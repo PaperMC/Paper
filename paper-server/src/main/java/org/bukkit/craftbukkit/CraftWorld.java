@@ -2,14 +2,11 @@ package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -31,7 +28,6 @@ import java.util.stream.Collectors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.SectionPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -44,15 +40,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.DistanceManager;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.Ticket;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.util.SortedArraySet;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -64,12 +59,10 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.GameRules;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.storage.LevelResource;
@@ -91,7 +84,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Note;
 import org.bukkit.Particle;
 import org.bukkit.Raid;
-import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.TreeType;
 import org.bukkit.World;
@@ -906,15 +898,15 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public void setBlocks(Map<Location, BlockData> blocks) {
         HashSet<LevelChunk> chunksToRefresh = new HashSet<>();
         ServerLevel world = getHandle();
+        blocks.entrySet().parallelStream().forEach(entry ->
+            setBlockData(world, entry.getKey(), ((CraftBlockData) entry.getValue()).getState(), chunksToRefresh)
+        );
 
-        for (Map.Entry<Location, BlockData> entry : blocks.entrySet()) {
-            setBlockData(world, entry.getKey(), ((CraftBlockData) entry.getValue()).getState(), chunksToRefresh);
-        }
         for (LevelChunk levelChunk : chunksToRefresh) {
             refreshChunk(levelChunk.locX, levelChunk.locZ);
         }
-
     }
+
     // Paper end - Multi Block Changes
 
     public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, Entity source, Consumer<net.minecraft.world.level.ServerExplosion> configurator) {
@@ -942,6 +934,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public boolean createExplosion(Location loc, float power) {
         return this.createExplosion(loc, power, false);
     }
+
 
     @Override
     public boolean createExplosion(Location loc, float power, boolean setFire) {

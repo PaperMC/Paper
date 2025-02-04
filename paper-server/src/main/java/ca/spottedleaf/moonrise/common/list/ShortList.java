@@ -15,22 +15,25 @@ public final class ShortList {
     private short[] byIndex = EMPTY_LIST;
     private short count;
 
-    public int size() {
+    public synchronized int size() {
         return (int)this.count;
     }
 
-    public short getRaw(final int index) {
+    public synchronized short getRaw(final int index) {
+        if (index < 0 || index >= count) {
+            throw new IndexOutOfBoundsException("Index out of bounds");
+        }
         return this.byIndex[index];
     }
 
-    public void setMinCapacity(final int len) {
+    public synchronized void setMinCapacity(final int len) {
         final short[] byIndex = this.byIndex;
         if (byIndex.length < len) {
             this.byIndex = Arrays.copyOf(byIndex, len);
         }
     }
 
-    public boolean add(final short value) {
+    public synchronized boolean add(final short value) {
         final int count = (int)this.count;
         final short currIndex = this.map.putIfAbsent(value, (short)count);
 
@@ -51,7 +54,7 @@ public final class ShortList {
         return true;
     }
 
-    public boolean remove(final short value) {
+    public synchronized boolean remove(final short value) {
         final short index = this.map.remove(value);
         if (index == Short.MIN_VALUE) {
             return false;
@@ -70,7 +73,7 @@ public final class ShortList {
         return true;
     }
 
-    public void clear() {
+    public synchronized void clear() {
         this.count = (short)0;
         this.map.clear();
     }
