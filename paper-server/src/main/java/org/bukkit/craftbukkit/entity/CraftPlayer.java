@@ -1048,36 +1048,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
     }
 
-    public void sendBlockChanges(Map<Location, BlockData> blocks) {
-        Preconditions.checkArgument(blocks != null, "blocks must not be null");
-
-        this.getHandle();
-        if (blocks.isEmpty()) {
-            return;
-        }
-
-        Map<SectionPos, ChunkSectionChanges> changes = new HashMap<>();
-        for (Map.Entry<Location, BlockData> entry : blocks.entrySet()) {
-            Location location = entry.getKey();
-            BlockPos blockPosition = new BlockPos(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-
-            // The coordinates of the chunk section in which the block is located, aka chunk x, y, and z
-            SectionPos sectionPosition = SectionPos.of(blockPosition);
-
-            // Push the block change position and block data to the final change map
-            ChunkSectionChanges sectionChanges = changes.computeIfAbsent(sectionPosition, (ignore) -> new ChunkSectionChanges());
-
-            sectionChanges.positions().add(SectionPos.sectionRelativePos(blockPosition));
-        }
-
-        // Construct the packets using the data allocated above and send then to the players
-        for (Map.Entry<SectionPos, ChunkSectionChanges> entry : changes.entrySet()) {
-            ChunkSectionChanges chunkChanges = entry.getValue();
-            ClientboundSectionBlocksUpdatePacket packet = new ClientboundSectionBlocksUpdatePacket(entry.getKey(), chunkChanges.positions(), chunkChanges.blockData().toArray(net.minecraft.world.level.block.state.BlockState[]::new));
-            this.getHandle().connection.send(packet);
-        }
-    }
-
     @Override
     public void sendBlockChanges(Collection<BlockState> blocks, boolean suppressLightUpdates) {
         this.sendBlockChanges(blocks);
