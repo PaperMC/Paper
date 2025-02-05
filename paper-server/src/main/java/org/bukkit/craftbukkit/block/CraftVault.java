@@ -15,6 +15,7 @@ import org.bukkit.loot.LootTable;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -132,5 +133,21 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
     public boolean removeRewardedPlayer(final UUID playerUUID) {
         Preconditions.checkArgument(playerUUID != null, "playerUUID must not be null");
         return this.getSnapshot().serverData.removeFromRewardedPlayers(playerUUID);
+    }
+
+    @Override
+    public @Unmodifiable Collection<UUID> getConnectedPlayers() {
+        return ImmutableSet.copyOf(this.getSnapshot().getSharedData().getConnectedPlayers());
+    }
+
+    @Override
+    public ItemStack getDisplayedItem() {
+        return CraftItemStack.asBukkitCopy(this.getSnapshot().getSharedData().getDisplayItem());
+    }
+
+    @Override
+    public void setDisplayedItem(final ItemStack displayedItem) {
+        Preconditions.checkArgument(displayedItem != null, "displayedItem must not be null");
+        this.getSnapshot().getSharedData().setDisplayItem(CraftItemStack.asNMSCopy(displayedItem));
     }
 }

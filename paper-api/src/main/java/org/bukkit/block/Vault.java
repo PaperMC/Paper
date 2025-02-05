@@ -6,6 +6,7 @@ import org.bukkit.loot.LootTable;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
 
@@ -136,4 +137,30 @@ public interface Vault extends TileState {
      * @apiNote Only the most recent 128 player UUIDs will be stored by vault blocks.
      */
     boolean removeRewardedPlayer(UUID playerUUID);
+
+    /**
+     * Gets an unmodifiable collection of "connected players"; players who are inside this vault's activation range and who have not received rewards yet.
+     *
+     * @apiNote Vaults will only periodically scan for nearby players, so this collection may take until the next {@link #getNextStateUpdateTime() update time} to update
+     * upon a player entering its range.
+     *
+     * @return An unmodifiable list of connected player uuids.
+     */
+    @Unmodifiable
+    Collection<UUID> getConnectedPlayers();
+
+    /**
+     * Gets the item currently being displayed inside this vault. Displayed items will automatically cycle between random items from the {@link #getDisplayedLootTable()}
+     * or {@link #getLootTable()} loot tables while this vault is active.
+     *
+     * @return The item currently being displayed inside this vault.
+     */
+    ItemStack getDisplayedItem();
+
+    /**
+     * Sets the item to display inside this vault until the next cycle.
+     *
+     * @param displayedItem The item to display
+     */
+    void setDisplayedItem(ItemStack displayedItem);
 }
