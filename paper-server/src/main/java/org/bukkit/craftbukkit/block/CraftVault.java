@@ -47,7 +47,7 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
 
     @Override
     public void setActivationRange(final double activationRange) {
-        Preconditions.checkArgument(Double.isFinite(activationRange), "deactivation range must be a number");
+        Preconditions.checkArgument(Double.isFinite(activationRange), "deactivation range must not be NaN or infinite");
         Preconditions.checkArgument(activationRange <= getDeactivationRange(), "New activation range (%f) must be less or equal to deactivation range (%f)".formatted(activationRange, getDeactivationRange()));
 
         final VaultConfig config = this.getSnapshot().getConfig();
@@ -61,7 +61,7 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
 
     @Override
     public void setDeactivationRange(final double deactivationRange) {
-        Preconditions.checkArgument(Double.isFinite(deactivationRange), "deactivation range must be a number");
+        Preconditions.checkArgument(Double.isFinite(deactivationRange), "deactivation range must not be NaN or infinite");
         Preconditions.checkArgument(deactivationRange >= getActivationRange(), "New deactivation range (%f) must be more or equal to activation range (%f)".formatted(deactivationRange, getActivationRange()));
 
         final VaultConfig config = this.getSnapshot().getConfig();
@@ -75,7 +75,7 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
 
     @Override
     public void setKeyItem(final ItemStack key) {
-        Preconditions.checkNotNull(key, "key must not be null");
+        Preconditions.checkArgument(key != null, "key must not be null");
 
         final VaultConfig config = this.getSnapshot().getConfig();
         this.getSnapshot().setConfig(new VaultConfig(config.lootTable(), config.activationRange(), config.deactivationRange(), CraftItemStack.asNMSCopy(key), config.overrideLootTableToDisplay()));
@@ -124,11 +124,13 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
 
     @Override
     public boolean addRewardedPlayer(final UUID playerUUID) {
+        Preconditions.checkArgument(playerUUID != null, "playerUUID must not be null");
         return this.getSnapshot().serverData.addToRewardedPlayers(playerUUID);
     }
 
     @Override
     public boolean removeRewardedPlayer(final UUID playerUUID) {
+        Preconditions.checkArgument(playerUUID != null, "playerUUID must not be null");
         return this.getSnapshot().serverData.removeFromRewardedPlayers(playerUUID);
     }
 }
