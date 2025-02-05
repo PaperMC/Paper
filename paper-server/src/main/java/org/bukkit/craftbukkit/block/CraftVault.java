@@ -48,7 +48,7 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
     @Override
     public void setActivationRange(final double activationRange) {
         Preconditions.checkArgument(Double.isFinite(activationRange), "deactivation range must not be NaN or infinite");
-        Preconditions.checkArgument(activationRange <= getDeactivationRange(), "New activation range (%f) must be less or equal to deactivation range (%f)".formatted(activationRange, getDeactivationRange()));
+        Preconditions.checkArgument(activationRange <= this.getDeactivationRange(), "New activation range (%s) must be less or equal to deactivation range (%s)", activationRange, this.getDeactivationRange());
 
         final VaultConfig config = this.getSnapshot().getConfig();
         this.getSnapshot().setConfig(new VaultConfig(config.lootTable(), activationRange, config.deactivationRange(), config.keyItem(), config.overrideLootTableToDisplay()));
@@ -62,7 +62,7 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
     @Override
     public void setDeactivationRange(final double deactivationRange) {
         Preconditions.checkArgument(Double.isFinite(deactivationRange), "deactivation range must not be NaN or infinite");
-        Preconditions.checkArgument(deactivationRange >= getActivationRange(), "New deactivation range (%f) must be more or equal to activation range (%f)".formatted(deactivationRange, getActivationRange()));
+        Preconditions.checkArgument(deactivationRange >= this.getActivationRange(), "New deactivation range (%s) must be more or equal to activation range (%s)", deactivationRange, this.getActivationRange());
 
         final VaultConfig config = this.getSnapshot().getConfig();
         this.getSnapshot().setConfig(new VaultConfig(config.lootTable(), config.activationRange(), deactivationRange, config.keyItem(), config.overrideLootTableToDisplay()));
