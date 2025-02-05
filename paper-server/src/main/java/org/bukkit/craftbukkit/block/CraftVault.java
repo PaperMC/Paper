@@ -96,12 +96,12 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
     }
 
     @Override
-    public @Nullable LootTable getDisplayLootTable() {
+    public @Nullable LootTable getDisplayedLootTable() {
         return this.getSnapshot().getConfig().overrideLootTableToDisplay().map(CraftLootTable::minecraftToBukkit).orElse(null);
     }
 
     @Override
-    public void setDisplayLootTable(final @Nullable LootTable lootTable) {
+    public void setDisplayedLootTable(final @Nullable LootTable lootTable) {
         final VaultConfig config = this.getSnapshot().getConfig();
 
         this.getSnapshot().setConfig(new VaultConfig(config.lootTable(), config.activationRange(), config.deactivationRange(), config.keyItem(), Optional.ofNullable(CraftLootTable.bukkitToMinecraft(lootTable))));

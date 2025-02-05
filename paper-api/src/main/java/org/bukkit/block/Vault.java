@@ -80,14 +80,14 @@ public interface Vault extends TileState {
      * @return The {@link LootTable} that will be used to display items.
      */
     @Nullable
-    LootTable getDisplayLootTable();
+    LootTable getDisplayedLootTable();
 
     /**
      * Sets the loot table that this vault will display items from.
      *
-     * @param lootTable The new display loot table, or {@code null} to clear this display override.
+     * @param lootTable The new loot table to display, or {@code null} to clear this display override.
      */
-    void setDisplayLootTable(@Nullable LootTable lootTable);
+    void setDisplayedLootTable(@Nullable LootTable lootTable);
 
     /**
      * Gets the next time (in {@link World#getGameTime() game time}) that this vault block will be updated/ticked at.
