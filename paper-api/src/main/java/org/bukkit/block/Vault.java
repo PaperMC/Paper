@@ -141,7 +141,7 @@ public interface Vault extends TileState {
     /**
      * Gets an unmodifiable set of "connected players"; players who are inside this vault's activation range and who have not received rewards yet.
      *
-     * @apiNote  Vaults will only periodically scan for nearby players, so it may take until the next {@link #getNextStateUpdateTime() update time} for this
+     * @apiNote Vaults will only periodically scan for nearby players, so it may take until the next {@link #getNextStateUpdateTime() update time} for this
      * set to be updated upon a player entering its range.
      *
      * @return An unmodifiable set of connected player uuids.
