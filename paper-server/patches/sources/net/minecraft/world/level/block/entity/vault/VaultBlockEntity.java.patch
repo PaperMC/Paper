@@ -1,17 +1,54 @@
 --- a/net/minecraft/world/level/block/entity/vault/VaultBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/vault/VaultBlockEntity.java
-@@ -272,6 +_,11 @@
+@@ -272,7 +_,12 @@
                      if (!list.isEmpty()) {
                          player.awardStat(Stats.ITEM_USED.get(stack.getItem()));
                          stack.consume(config.keyItem().getCount(), player);
+-                        unlock(level, state, pos, config, serverData, sharedData, list);
 +                        // CraftBukkit start
 +                        org.bukkit.event.block.BlockDispenseLootEvent vaultDispenseLootEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDispenseLootEvent(level, pos, player, list);
 +                        if (vaultDispenseLootEvent.isCancelled()) return;
 +                        list = vaultDispenseLootEvent.getDispensedLoot().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).toList();
 +                        // CraftBukkit end
-                         unlock(level, state, pos, config, serverData, sharedData, list);
++                        unlock(level, state, pos, config, serverData, sharedData, list, player); // Paper - Vault API
                          serverData.addToRewardedPlayers(player);
                          sharedData.updateConnectedPlayersWithinRange(level, pos, serverData, config, config.deactivationRange());
+                     }
+@@ -280,9 +_,34 @@
+             }
+         }
+ 
++        // Paper start - Vault API
+         static void setVaultState(ServerLevel level, BlockPos pos, BlockState oldState, BlockState newState, VaultConfig config, VaultSharedData sharedData) {
++            setVaultState(level, pos, oldState, newState, config,sharedData, null);
++        }
++
++        static void setVaultState(ServerLevel level, BlockPos pos, BlockState oldState, BlockState newState, VaultConfig config, VaultSharedData sharedData, @org.jspecify.annotations.Nullable Player player) {
++            // Paper end - Vault API
+             VaultState vaultState = oldState.getValue(VaultBlock.STATE);
+             VaultState vaultState1 = newState.getValue(VaultBlock.STATE);
++            // Paper start - Vault API
++            UUID playerUUID = player == null ? null : player.getUUID();
++
++            // Attempt to get the first connected player if the new state is active.
++            if (playerUUID == null && vaultState1 == VaultState.ACTIVE && sharedData.hasConnectedPlayers())
++                playerUUID = com.google.common.collect.Iterables.getFirst(sharedData.getConnectedPlayers(), null);
++
++            final org.bukkit.entity.Player bukkitPlayer = playerUUID == null ? null : level.getCraftServer().getPlayer(playerUUID);
++
++            final io.papermc.paper.event.block.VaultChangeStateEvent event = new io.papermc.paper.event.block.VaultChangeStateEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), bukkitPlayer, vaultState.toBukkitState(), vaultState1.toBukkitState());
++            if (!event.callEvent())
++                return;
++
++            final VaultState newEventState = VaultState.fromBukkitState(event.getNewState());
++            if (newEventState != vaultState1) {
++                newState = newState.setValue(VaultBlock.STATE, newEventState);
++                vaultState1 = newEventState;
++            }
++            // Paper end - Vault API
+             level.setBlock(pos, newState, 3);
+             vaultState.onTransition(level, pos, vaultState1, config, sharedData, newState.getValue(VaultBlock.OMINOUS));
+         }
 @@ -294,6 +_,11 @@
                  ItemStack randomDisplayItemFromLootTable = getRandomDisplayItemFromLootTable(
                      level, pos, config.overrideLootTableToDisplay().orElse(config.lootTable())
@@ -24,3 +61,30 @@
                  sharedData.setDisplayItem(randomDisplayItemFromLootTable);
              }
          }
+@@ -307,6 +_,12 @@
+             return randomItems.isEmpty() ? ItemStack.EMPTY : Util.getRandom(randomItems, level.getRandom());
+         }
+ 
++        // Paper start - Vault API
++        private static void unlock(ServerLevel level, BlockState state, BlockPos pos, VaultConfig config, VaultServerData serverData, VaultSharedData sharedData, List<ItemStack> itemsToEject) {
++            unlock(level, state, pos, config, serverData, sharedData, itemsToEject, null);
++        }
++        // Paper end - Vault API
++
+         private static void unlock(
+             ServerLevel level,
+             BlockState state,
+@@ -315,11 +_,12 @@
+             VaultServerData serverData,
+             VaultSharedData sharedData,
+             List<ItemStack> itemsToEject
++            , @org.jspecify.annotations.Nullable Player player // Paper - Vault API
+         ) {
+             serverData.setItemsToEject(itemsToEject);
+             sharedData.setDisplayItem(serverData.getNextItemToEject());
+             serverData.pauseStateUpdatingUntil(level.getGameTime() + 14L);
+-            setVaultState(level, pos, state, state.setValue(VaultBlock.STATE, VaultState.UNLOCKING), config, sharedData);
++            setVaultState(level, pos, state, state.setValue(VaultBlock.STATE, VaultState.UNLOCKING), config, sharedData, player); // Paper - Vault API
+         }
+ 
+         private static List<ItemStack> resolveItemsToEject(ServerLevel level, VaultConfig config, BlockPos pos, Player player, ItemStack key) {
