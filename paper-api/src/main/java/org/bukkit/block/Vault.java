@@ -144,10 +144,10 @@ public interface Vault extends TileState {
      * @apiNote Vaults will only periodically scan for nearby players, so this collection may take until the next {@link #getNextStateUpdateTime() update time} to update
      * upon a player entering its range.
      *
-     * @return An unmodifiable list of connected player uuids.
+     * @return An unmodifiable set of connected player uuids.
      */
     @Unmodifiable
-    Collection<UUID> getConnectedPlayers();
+    Set<UUID> getConnectedPlayers();
 
     /**
      * Gets the item currently being displayed inside this vault. Displayed items will automatically cycle between random items from the {@link #getDisplayedLootTable()}
