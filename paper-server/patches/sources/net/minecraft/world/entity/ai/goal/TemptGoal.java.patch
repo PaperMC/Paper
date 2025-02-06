@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/ai/goal/TemptGoal.java
 +++ b/net/minecraft/world/entity/ai/goal/TemptGoal.java
-@@ -21,11 +_,12 @@
+@@ -21,7 +_,7 @@
      private double pRotX;
      private double pRotY;
      @Nullable
@@ -9,72 +9,10 @@
      private int calmDown;
      private boolean isRunning;
      private final Predicate<ItemStack> items;
-     private final boolean canScare;
-+    private final int temptGoalLookupIndex; // Paper - optimise tempt goal
- 
-     public TemptGoal(PathfinderMob mob, double speedModifier, Predicate<ItemStack> items, boolean canScare) {
-         this.mob = mob;
-@@ -34,7 +_,20 @@
-         this.canScare = canScare;
-         this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
-         this.targetingConditions = TEMPT_TARGETING.copy().selector((entity, level) -> this.shouldFollow(entity));
--    }
-+        this.temptGoalLookupIndex = -1; // Paper - optimise tempt goal
-+    }
-+
-+    // Paper start - optimise tempt goal
-+    public TemptGoal(PathfinderMob mob, double speedModifier, io.papermc.paper.entity.goal.TemptGoalLookup.TemptGoalPredicate temptGoalPredicate, boolean canScare) {
-+        this.mob = mob;
-+        this.speedModifier = speedModifier;
-+        this.items = temptGoalPredicate.predicate();
-+        this.canScare = canScare;
-+        this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
-+        this.targetingConditions = TEMPT_TARGETING.copy();
-+        this.temptGoalLookupIndex = temptGoalPredicate.index();
-+    }
-+    // Paper end - optimise tempt goal
- 
-     @Override
-     public boolean canUse() {
-@@ -42,8 +_,48 @@
-             this.calmDown--;
-             return false;
+@@ -44,6 +_,15 @@
          } else {
--            this.player = getServerLevel(this.mob)
--                .getNearestPlayer(this.targetingConditions.range(this.mob.getAttributeValue(Attributes.TEMPT_RANGE)), this.mob);
-+            // Paper start - optimise tempt goal
-+            final TargetingConditions rangeTargetingConditions = this.targetingConditions.range(this.mob.getAttributeValue(Attributes.TEMPT_RANGE));
-+
-+            if (this.temptGoalLookupIndex != -1) {
-+                final io.papermc.paper.entity.goal.TemptGoalLookup lookup = ((net.minecraft.server.level.ServerLevel) this.mob.level()).getTemptGoalLookup();
-+                final java.util.BitSet lookupBitSet = lookup.getBitSet(this.temptGoalLookupIndex);
-+                final net.minecraft.server.level.ServerLevel level = getServerLevel(this.mob);
-+                final java.util.List<net.minecraft.server.level.ServerPlayer> players = level.players();
-+                if (!lookup.isCalculated(this.temptGoalLookupIndex)) {
-+                    for (int i = 0; i < players.size(); i++) {
-+                        lookupBitSet.set(i, shouldFollow(players.get(i)));
-+                    }
-+                    lookup.setCalculated(this.temptGoalLookupIndex);
-+                }
-+                double d = -1.0;
-+                net.minecraft.server.level.ServerPlayer nearestPlayer = null;
-+                for (int i = lookupBitSet.nextSetBit(0); i >= 0; i = lookupBitSet.nextSetBit(i + 1)) {
-+                    final net.minecraft.server.level.ServerPlayer player = players.get(i);
-+                    if (rangeTargetingConditions.test(level, this.mob, player)) {
-+                        final double d1 = player.distanceToSqr(this.mob.getX(), this.mob.getY(), this.mob.getZ());
-+                        if (d == -1.0 || d1 < d) {
-+                            d = d1;
-+                            nearestPlayer = player;
-+                        }
-+                    }
-+                }
-+                this.player = nearestPlayer;
-+            } else {
-+                this.player = getServerLevel(this.mob)
-+                    .getNearestPlayer(rangeTargetingConditions, this.mob);
-+            }
-+            // Paper end - optimise tempt goal
-+
+             this.player = getServerLevel(this.mob)
+                 .getNearestPlayer(this.targetingConditions.range(this.mob.getAttributeValue(Attributes.TEMPT_RANGE)), this.mob);
 +            // CraftBukkit start
 +            if (this.player != null) {
 +                org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this.mob, this.player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TEMPT);
