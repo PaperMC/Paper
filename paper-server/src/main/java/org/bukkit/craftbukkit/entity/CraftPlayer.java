@@ -11,6 +11,7 @@ import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
+import io.papermc.paper.entity.TeleportFlag;
 import it.unimi.dsi.fastutil.shorts.ShortArraySet;
 import it.unimi.dsi.fastutil.shorts.ShortSet;
 import java.io.ByteArrayOutputStream;
@@ -1406,6 +1407,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             case ROTATE_DELTA -> io.papermc.paper.entity.TeleportFlag.Relative.VELOCITY_ROTATION;
             default -> null;
         };
+    }
+
+    @Override
+    public boolean teleportVanilla(Location location, PlayerTeleportEvent.TeleportCause cause, TeleportFlag... flags) {
+        Preconditions.checkArgument(location != null, "location cannot be null");
+        if (this.isSleeping()) {
+            this.wakeup(false);
+        }
+        return super.teleportVanilla(location, cause, flags);
     }
 
     @Override

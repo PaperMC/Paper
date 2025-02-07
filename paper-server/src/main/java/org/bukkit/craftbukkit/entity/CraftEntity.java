@@ -9,7 +9,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import com.google.common.collect.Sets;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.entity.TeleportFlag;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -19,6 +21,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.Relative;
 import net.minecraft.world.entity.boss.EnderDragonPart;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import net.minecraft.world.entity.projectile.AbstractArrow;
@@ -236,6 +239,36 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     public boolean teleport(Location location, TeleportCause cause) {
         // Paper start - Teleport passenger API
         return teleport(location, cause, new io.papermc.paper.entity.TeleportFlag[0]);
+    }
+
+    @Override
+    public boolean teleportVanilla(Location location, TeleportCause cause, TeleportFlag... flags) {
+        Preconditions.checkArgument(location != null, "location cannot be null");
+        if (this.isInsideVehicle()) {
+            return this.getVehicle().teleportVanilla(location, cause, flags);
+        }
+        World world = location.getWorld();
+        ServerLevel level = world != null ? ((CraftWorld) world).getHandle() : (ServerLevel) this.entity.level();
+
+        Set<Relative> relatives = Sets.newHashSet();
+        if (flags != null) {
+            for (final TeleportFlag flag : flags) {
+                if (flag instanceof TeleportFlag.Relative paperRelative) {
+                    Relative relative = CraftPlayer.deltaRelativeToNMS(paperRelative);
+                    relatives.add(relative);
+                }
+            }
+        }
+        TeleportTransition transition = new TeleportTransition(
+            level,
+            CraftLocation.toVec3D(location),
+            this.getHandle().getDeltaMovement(),
+            location.getPitch(),
+            location.getYaw(),
+            relatives,
+            TeleportTransition.DO_NOTHING,
+            cause);
+        return this.entity.teleport(transition) != null;
     }
 
     @Override

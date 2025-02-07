@@ -154,6 +154,17 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     boolean teleport(@NotNull Location location, @NotNull TeleportCause cause, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags);
 
     /**
+     * Teleports this entity to the given location.
+     *
+     * @param location New location to teleport this entity to
+     * @param cause The cause of this teleportation
+     * @param teleportFlags Flags to be used in this teleportation
+     * @return <code>true</code> if the teleport was successful
+     */
+    boolean teleportVanilla(@NotNull Location location, @NotNull TeleportCause cause, @NotNull io.papermc.paper.entity.TeleportFlag @NotNull... teleportFlags);
+
+
+    /**
      * Causes the entity to look towards the given position.
      *
      * @param x x coordinate

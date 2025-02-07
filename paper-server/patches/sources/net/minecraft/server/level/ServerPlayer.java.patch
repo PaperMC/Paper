@@ -668,12 +668,24 @@
                  this.isChangingDimension = true;
                  LevelData levelData = level.getLevelData();
                  this.connection.send(new ClientboundRespawnPacket(this.createCommonSpawnInfo(level), (byte)3));
-@@ -1050,16 +_,30 @@
+@@ -1050,16 +_,42 @@
                  playerList.sendPlayerPermissionLevel(this);
                  serverLevel.removePlayerImmediately(this, Entity.RemovalReason.CHANGED_DIMENSION);
                  this.unsetRemoved();
 +                */
 +                // CraftBukkit end
++                // Paper start - Teleport with passengers
++                List<Entity> passengers = this.getPassengers();
++                List<Entity> newPassengers = new java.util.ArrayList<>(passengers.size());
++                this.ejectPassengers();
++
++                for (Entity passenger : passengers) {
++                    Entity newPassenger = passenger.teleport(this.calculatePassengerTransition(teleportTransition, passenger));
++                    if (newPassenger != null) {
++                        newPassengers.add(newPassenger);
++                    }
++                }
++                // Paper end - Teleport with passengers
                  ProfilerFiller profilerFiller = Profiler.get();
                  profilerFiller.push("moving");
 -                if (resourceKey == Level.OVERWORLD && level.dimension() == Level.NETHER) {
@@ -701,12 +713,16 @@
                  this.connection.resetPosition();
                  level.addDuringTeleport(this);
                  profilerFiller.pop();
-@@ -1073,10 +_,40 @@
+@@ -1073,10 +_,44 @@
                  this.lastSentExp = -1;
                  this.lastSentHealth = -1.0F;
                  this.lastSentFood = -1;
 +
-+
++                // Paper start - Teleport with passengers
++                for (Entity passenger : newPassengers) {
++                    passenger.startRiding(this, true);
++                }
++                // Paper end - Teleport with passengers
 +                // CraftBukkit start
 +                org.bukkit.event.player.PlayerChangedWorldEvent changeEvent = new org.bukkit.event.player.PlayerChangedWorldEvent(this.getBukkitEntity(), serverLevel.getWorld());
 +                this.level().getCraftServer().getPluginManager().callEvent(changeEvent);
