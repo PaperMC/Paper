@@ -24,26 +24,20 @@ public class CraftAccessLocationInventoryViewBuilder<V extends InventoryView> ex
 
     @Override
     protected AbstractContainerMenu buildContainer(final ServerPlayer player) {
-//        final ContainerLevelAccess access;
-//        if (super.position == null) {
-//            access = ContainerLevelAccess.create(player.level(), player.blockPosition());
-//        } else {
-//            access = ContainerLevelAccess.create(super.world, super.position);
-//        }
-        final BlockState state;
-        final BlockPos defPos;
-        final Level defLevel;
+        final BlockState effectiveBlockState;
+        final BlockPos effectiveBlockPos;
+        final Level effectiveLevel;
         if (super.position != null) {
-            defPos = super.position;
-            defLevel = super.world;
-            state = super.world.getBlockState(position);
+            effectiveBlockPos = super.position;
+            effectiveLevel = super.world;
+            effectiveBlockState = super.world.getBlockState(position);
         } else {
-            defPos = player.blockPosition();
-            defLevel = player.level();
-            state = block.defaultBlockState();
+            effectiveBlockPos = player.blockPosition();
+            effectiveLevel = player.level();
+            effectiveBlockState = block.defaultBlockState();
         }
 
-        final MenuProvider provider = block.getMenuProvider(state, defLevel, defPos);
+        final MenuProvider provider = block.getMenuProvider(effectiveBlockState, effectiveLevel, effectiveBlockPos);
         super.defaultTitle = provider.getDisplayName();
         return provider.createMenu(player.nextContainerCounter(), player.getInventory(), player);
     }
