@@ -1219,8 +1219,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * Sets the radius, in blocks, around each worlds spawn point to protect.
      *
      * @param value new spawn radius, or 0 if none
-     * @deprecated don't work anymore, set the {@code spawn-protection} in
-     * server.properties or use a plugin
+     * @deprecated has not functioned for a long time as the spawn radius is defined by the server.properties file.
+     * There is no API replacement for this method. It is generally recommended to implement "protection"-like behaviour
+     * via events or third-party plugin APIs.
      */
     @Deprecated(since = "1.21.4", forRemoval = true)
     public void setSpawnRadius(int value);
