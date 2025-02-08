@@ -263,8 +263,8 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             level,
             CraftLocation.toVec3D(location),
             this.getHandle().getDeltaMovement(),
-            location.getPitch(),
             location.getYaw(),
+            location.getPitch(),
             relatives,
             TeleportTransition.DO_NOTHING,
             cause);
