@@ -47,7 +47,7 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
 
     @Override
     public void setActivationRange(final double activationRange) {
-        Preconditions.checkArgument(Double.isFinite(activationRange), "deactivation range must not be NaN or infinite");
+        Preconditions.checkArgument(Double.isFinite(activationRange), "ctivation range must not be NaN or infinite");
         Preconditions.checkArgument(activationRange <= this.getDeactivationRange(), "New activation range (%s) must be less or equal to deactivation range (%s)", activationRange, this.getDeactivationRange());
 
         final VaultConfig config = this.getSnapshot().getConfig();
