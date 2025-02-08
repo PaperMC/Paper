@@ -89,7 +89,7 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
     @Override
     public void setLootTable(final LootTable lootTable) {
         final ResourceKey<net.minecraft.world.level.storage.loot.LootTable> lootTableKey = CraftLootTable.bukkitToMinecraft(lootTable);
-        Preconditions.checkNotNull(lootTableKey, "lootTable must not be null");
+        Preconditions.checkArgument(lootTableKey != null, "lootTable must not be null");
 
         final VaultConfig config = this.getSnapshot().getConfig();
         this.getSnapshot().setConfig(new VaultConfig(lootTableKey, config.activationRange(), config.deactivationRange(), config.keyItem(), config.overrideLootTableToDisplay()));
