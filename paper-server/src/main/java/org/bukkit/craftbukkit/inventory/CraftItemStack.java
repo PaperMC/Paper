@@ -526,7 +526,7 @@ public final class CraftItemStack extends ItemStack {
     }
     // Paper end
 
-    private static final String PDC_CUSTOM_DATA_KEY = "PublicBukkitValues";
+    public static final String PDC_CUSTOM_DATA_KEY = "PublicBukkitValues";
     private net.minecraft.nbt.CompoundTag getPdcTag() {
         if (this.handle == null) {
             return new net.minecraft.nbt.CompoundTag();

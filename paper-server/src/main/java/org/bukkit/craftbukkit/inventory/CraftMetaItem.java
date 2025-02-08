@@ -273,7 +273,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     static final ItemMetaKeyType<Integer> MAX_DAMAGE = new ItemMetaKeyType<>(DataComponents.MAX_DAMAGE, "max-damage");
     @Specific(Specific.To.NBT)
     static final ItemMetaKeyType<BlockItemStateProperties> BLOCK_DATA = new ItemMetaKeyType<>(DataComponents.BLOCK_STATE, "BlockStateTag");
-    static final ItemMetaKey BUKKIT_CUSTOM_TAG = new ItemMetaKey("PublicBukkitValues");
+    static final ItemMetaKey BUKKIT_CUSTOM_TAG = new ItemMetaKey(CraftItemStack.PDC_CUSTOM_DATA_KEY);
     @Specific(Specific.To.NBT)
     static final ItemMetaKeyType<Unit> HIDE_ADDITIONAL_TOOLTIP = new ItemMetaKeyType(DataComponents.HIDE_ADDITIONAL_TOOLTIP);
     @Specific(Specific.To.NBT)
