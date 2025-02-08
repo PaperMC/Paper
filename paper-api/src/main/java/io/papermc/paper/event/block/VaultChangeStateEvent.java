@@ -13,7 +13,6 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Called when a vault block changes state.
- * @since 1.21.4
  */
 @NullMarked
 public class VaultChangeStateEvent extends BlockEvent implements Cancellable {
