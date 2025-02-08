@@ -78,9 +78,10 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * consumer.
      *
      * @param consumer the persistent data container consumer
-     * @return {@code true} if the edit was successful, {@code false} otherwise
+     * @return {@code true} if the edit was successful, {@code false} otherwise. Failure to edit the persistent data
+     * container may be caused by empty or invalid itemstacks.
      */
-    public boolean editPersistentDataContainer(Consumer<PersistentDataContainer> consumer) {
+    public boolean editPersistentDataContainer(@NotNull Consumer<PersistentDataContainer> consumer) {
         return this.craftDelegate.editPersistentDataContainer(consumer);
     }
     // Paper end - pdc

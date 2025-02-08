@@ -558,19 +558,21 @@ public final class CraftItemStack extends ItemStack {
     @Override
     public boolean editPersistentDataContainer(final Consumer<PersistentDataContainer> consumer) {
         if (this.handle == null || this.handle.isEmpty()) return false;
+
         final CraftPersistentDataContainer container = new CraftPersistentDataContainer(REGISTRY);
         CustomData customData = this.handle.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         //noinspection deprecation // we copy only the pdc tag
         final CompoundTag pdcTag = customData.getUnsafe().getCompound(PDC_CUSTOM_DATA_KEY).copy();
         container.putAll(pdcTag);
         consumer.accept(container);
-        final CompoundTag newPdcTag = container.toTagCompound();
 
+        final CompoundTag newPdcTag = container.toTagCompound();
         if (!newPdcTag.isEmpty()) {
             customData = customData.update(tag -> tag.put(PDC_CUSTOM_DATA_KEY, newPdcTag));
         } else if (newPdcTag.isEmpty() && customData.contains(PDC_CUSTOM_DATA_KEY)) {
             customData = customData.update(tag -> tag.remove(PDC_CUSTOM_DATA_KEY));
         }
+
         // mirror CraftMetaItem behavior of clearing component if it's empty.
         this.handle.set(DataComponents.CUSTOM_DATA, customData.isEmpty() ? null : customData);
         return true;
