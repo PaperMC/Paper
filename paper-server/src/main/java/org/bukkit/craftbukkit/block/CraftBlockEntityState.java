@@ -50,13 +50,12 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
             if (thr instanceof ThreadDeath) {
                 throw (ThreadDeath)thr;
             }
-            String message;
-            if (world == null) {
-                message = "Failed to read non-placed BlockState";
-            } else {
-                message = "Failed to read BlockState at: world: " + world.getName() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")";
-            }
-            throw new RuntimeException(message, thr);
+            throw new RuntimeException(
+                world == null
+                    ? "Failed to read non-placed BlockState"
+                    : "Failed to read BlockState at: world: " + world.getName() + " location: (" + this.getX() + ", " + this.getY() + ", " + this.getZ() + ")",
+                thr
+            );
         }
         // Paper end - Show blockstate location if we failed to read it
     }
