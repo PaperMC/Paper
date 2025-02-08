@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.Merchant;
@@ -61,7 +62,7 @@ public class CraftMerchantCustom implements CraftMerchant {
         }
 
         public MinecraftMerchant() {
-            this.title = Component.translatable("entity.minecraft.villager");
+            this.title = EntityType.VILLAGER.getDescription();
         }
         // Paper end
 
