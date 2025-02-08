@@ -366,7 +366,7 @@ index d95413af04121fe91ca0f3b0c70025b9808acef9..ad665c7535c615d2b03a3e7864be435f
  import org.slf4j.Logger;
  
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index c383aa70e4a3c2bd48fe55eeb65744782ecf4079..a61ceff02688f3494d3a510f7c1a83ab9586e24d 100644
+index 8204528c26456929fdec0d8ba7a5a52128409097..01bc2d1639be9f04afc63e5841c5c99730ea37d8 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -551,6 +551,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -378,7 +378,7 @@ index c383aa70e4a3c2bd48fe55eeb65744782ecf4079..a61ceff02688f3494d3a510f7c1a83ab
                  .forEach(
                      entity -> {
 @@ -980,12 +981,15 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
-         entity.totalTickCount++; // Paper
+         entity.totalEntityAge++; // Paper - age-like counter for all entities
          profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
          profilerFiller.incrementCounter("tickNonPassenger");
 +        final boolean isActive = io.papermc.paper.entity.activation.ActivationRange.checkIfActive(entity); // Paper - EAR 2
@@ -476,12 +476,12 @@ index 24735284fda151414d99faad401d25ba60995f9a..23b342cc31c7e72ade0e1ccad86a9ccf
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 8f73c917a5d287ecf20b6cb47f97ecf92ad41a05..75a4066818deab6e939ff4d9b20e9a89d873b9cf 100644
+index 62598fa46b19d9c28ded959efe2c5e607336ea50..3cb21c66104a63d014720880553aaf5d28b9681a 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
-@@ -381,6 +381,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
-     public boolean fixedPose = false; // Paper - Expand Pose API
+@@ -380,6 +380,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      private final int despawnTime; // Paper - entity despawn time limit
+     public int totalEntityAge; // Paper - age-like counter for all entities
      public final io.papermc.paper.entity.activation.ActivationType activationType = io.papermc.paper.entity.activation.ActivationType.activationTypeFor(this); // Paper - EAR 2/tracking ranges
 +    // Paper start - EAR 2
 +    public final boolean defaultActivationState;
@@ -495,7 +495,7 @@ index 8f73c917a5d287ecf20b6cb47f97ecf92ad41a05..75a4066818deab6e939ff4d9b20e9a89
  
      public void setOrigin(@javax.annotation.Nonnull org.bukkit.Location location) {
          this.origin = location.toVector();
-@@ -414,6 +423,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -413,6 +422,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          this.position = Vec3.ZERO;
          this.blockPosition = BlockPos.ZERO;
          this.chunkPosition = ChunkPos.ZERO;
@@ -509,7 +509,7 @@ index 8f73c917a5d287ecf20b6cb47f97ecf92ad41a05..75a4066818deab6e939ff4d9b20e9a89
          SynchedEntityData.Builder builder = new SynchedEntityData.Builder(this);
          builder.define(DATA_SHARED_FLAGS_ID, (byte)0);
          builder.define(DATA_AIR_SUPPLY_ID, this.getMaxAirSupply());
-@@ -978,6 +994,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -977,6 +993,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
          } else {
              this.wasOnFire = this.isOnFire();
              if (type == MoverType.PISTON) {
@@ -518,7 +518,7 @@ index 8f73c917a5d287ecf20b6cb47f97ecf92ad41a05..75a4066818deab6e939ff4d9b20e9a89
                  movement = this.limitPistonMovement(movement);
                  if (movement.equals(Vec3.ZERO)) {
                      return;
-@@ -991,6 +1009,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -990,6 +1008,13 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
                  this.stuckSpeedMultiplier = Vec3.ZERO;
                  this.setDeltaMovement(Vec3.ZERO);
              }

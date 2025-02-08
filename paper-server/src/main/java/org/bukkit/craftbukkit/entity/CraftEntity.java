@@ -519,14 +519,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public int getTicksLived() {
-        return this.getHandle().totalTickCount; // Paper
+        return this.getHandle().totalEntityAge;
     }
 
     @Override
     public void setTicksLived(int value) {
         Preconditions.checkArgument(value > 0, "Age value (%s) must be greater than 0", value);
         this.getHandle().tickCount = value;
-        this.getHandle().totalTickCount = value; // Paper
+        this.getHandle().totalEntityAge = value;
     }
 
     public Entity getHandle() {
