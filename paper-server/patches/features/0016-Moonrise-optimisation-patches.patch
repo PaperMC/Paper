@@ -27976,7 +27976,7 @@ index 4eb040006f5d41b47e5ac9df5d9f19c4315d6343..7fa41dea184b01891f45d8e404bc1cba
          this.generatingStep = generatingStep;
          this.cache = cache;
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index ff0315cffdb282fdc0a1ffd15e2954caa76835c9..5e94dd9e26aa4fd6545dbaae2ae0cb51cb6f13e0 100644
+index 5d88b2790710a885957ffcffc02fb99c917123c5..7d1d4abfb04829d8c4722e326c6c6b8fb2ab91f4 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
 @@ -1312,7 +1312,7 @@ public abstract class PlayerList {
@@ -28372,7 +28372,7 @@ index 8cc5c0716392ba06501542ff5cbe71ee43979e5d..09fd99c9cbd23b5f3c899bfb00c9b896
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 55e0bd63a65867f4e496ec0b188ccba7a4a8ebef..161c7a53427917fdbd328401a84a7cab703701a8 100644
+index 449c43286e1483b69667c626b234529a16c19ee1..b268b428ec8f2e50737e1dd5cc705c537322433c 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -135,7 +135,7 @@ import net.minecraft.world.scores.ScoreHolder;
@@ -35961,53 +35961,3 @@ index 5b6bd88a5bbbce6cce351938418eba4326e41002..faf45ac459f7c25309d6ef6dce371d48
              int i = -this.pendingTicks.size();
  
              for (SavedTick<T> savedTick : this.pendingTicks) {
-diff --git a/src/main/java/ca/spottedleaf/moonrise/common/util/EntityUtil.java b/src/main/java/ca/spottedleaf/moonrise/common/util/EntityUtil.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..db5805298d33fbde3f3ed23d706dbc6af814122d
---- /dev/null
-+++ b/src/main/java/ca/spottedleaf/moonrise/common/util/EntityUtil.java
-@@ -0,0 +1,44 @@
-+package ca.spottedleaf.moonrise.common.util;
-+
-+import net.minecraft.world.entity.Entity;
-+import net.minecraft.world.phys.Vec3;
-+import java.text.DecimalFormat;
-+import java.util.ArrayList;
-+import java.util.List;
-+
-+public final class EntityUtil {
-+
-+    private static final ThreadLocal<DecimalFormat> THREE_DECIMAL_PLACES = ThreadLocal.withInitial(() -> {
-+        return new DecimalFormat("#,##0.000");
-+    });
-+
-+    private static String formatVec(final Vec3 vec) {
-+        final DecimalFormat format = THREE_DECIMAL_PLACES.get();
-+
-+        return "(" + format.format(vec.x) + "," + format.format(vec.y) + "," + format.format(vec.z) + ")";
-+    }
-+
-+    private static String dumpEntityWithoutReferences(final Entity entity) {
-+        if (entity == null) {
-+            return "{null}";
-+        }
-+
-+        return "{type=" + entity.getClass().getSimpleName() + ",id=" + entity.getId() + ",uuid=" + entity.getUUID() + ",pos=" + formatVec(entity.position())
-+            + ",mot=" + formatVec(entity.getDeltaMovement()) + ",aabb=" + entity.getBoundingBox() + ",removed=" + entity.getRemovalReason() + ",has_vehicle=" + (entity.getVehicle() != null)
-+            + ",passenger_count=" + entity.getPassengers().size();
-+    }
-+
-+    public static String dumpEntity(final Entity entity) {
-+        final List<Entity> passengers = entity.getPassengers();
-+        final List<String> passengerStrings = new ArrayList<>(passengers.size());
-+
-+        for (final Entity passenger : passengers) {
-+            passengerStrings.add("(" + dumpEntityWithoutReferences(passenger) + ")");
-+        }
-+
-+        return "{root=[" + dumpEntityWithoutReferences(entity) + "], vehicle=[" + dumpEntityWithoutReferences(entity.getVehicle())
-+            + "], passengers=[" + String.join(",", passengerStrings) + "]";
-+    }
-+
-+    private EntityUtil() {}
-+}
