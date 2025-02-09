@@ -23,11 +23,13 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Waitable;
+import org.joml.Vector2f;
 
 public final class MCUtil {
     public static final java.util.concurrent.Executor MAIN_EXECUTOR = (run) -> {
@@ -162,6 +164,10 @@ public final class MCUtil {
 
     public static BlockPosition toPosition(Vec3i vector) {
         return Position.block(vector.getX(), vector.getY(), vector.getZ());
+    }
+
+    public static Vector2f toRotation(Vec2 vector) {
+        return new Vector2f(vector.x, vector.y);
     }
 
     public static Vec3 toVec3(Position position) {
