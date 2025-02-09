@@ -48,7 +48,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * @return a new ExactChoice
      */
     @Contract(value = "_, _ -> new", pure = true)
-    static @NotNull ExactChoice exactChoice(@NotNull ItemStack first, ItemStack... others) {
+    static @NotNull ExactChoice exactChoice(@NotNull ItemStack first, @NotNull ItemStack... others) {
         List<ItemStack> stacks = new ArrayList<>(others.length + 1);
         stacks.add(first);
         Collections.addAll(stacks, others);
