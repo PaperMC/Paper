@@ -2777,7 +2777,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public boolean isAutoSave();
 
     /**
-     * Sets whether or not the world will automatically save<br><br>
+     * Sets whether or not the world will automatically save
+     * <p>
      * <b>Note:</b>
      * This does not disable saving entirely, the world will still be saved on shutdown.<br>
      * The intended use of this method is to disable the periodical autosave by the game.
