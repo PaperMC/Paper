@@ -37,7 +37,9 @@ public interface Creaking extends Monster {
     void deactivate();
 
     /**
-     * Gets if this Creaking is active.
+     * Returns if this creaking is currently active and hunting.
+     *
+     * @see #activate(Player)
      *
      * @return true if active
      */
