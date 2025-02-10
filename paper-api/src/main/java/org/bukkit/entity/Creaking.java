@@ -19,6 +19,11 @@ public interface Creaking extends Monster {
     Location getHome();
 
     /**
+     * Detach the home for this Creaking.
+     */
+    void detachHome();
+
+    /**
      * Activates this Creaking to target and follow a player.
      *
      * @param player the target
