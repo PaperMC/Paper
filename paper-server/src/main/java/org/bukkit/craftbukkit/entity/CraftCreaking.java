@@ -1,12 +1,14 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.monster.creaking.Creaking;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Creaking {
@@ -20,9 +22,11 @@ public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Cre
         return (Creaking) this.entity;
     }
 
+    @Nullable
     @Override
     public Location getHome() {
-        return CraftLocation.toBukkit(this.getHandle().getHomePos(), this.getHandle().level());
+        BlockPos homePos = this.getHandle().getHomePos();
+        return homePos != null ? CraftLocation.toBukkit(homePos, this.getHandle().level()) : null;
     }
 
     @Override

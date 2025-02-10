@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import org.bukkit.Location;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a Creaking.
@@ -12,8 +13,9 @@ public interface Creaking extends Monster {
     /**
      * Gets the home location for this Creaking (where its {@link org.bukkit.block.CreakingHeart} could be found).
      *
-     * @return the location of the home
+     * @return the location of the home if available, null otherwise
      */
+    @Nullable
     Location getHome();
 
     /**
