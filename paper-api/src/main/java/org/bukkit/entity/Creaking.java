@@ -31,7 +31,8 @@ public interface Creaking extends Monster {
     void activate(final Player player);
 
     /**
-     * Deactivates from following and attacking the target.
+     * Deactivates the entity, clearing its current attack target and
+     * marking it as inactive.
      */
     void deactivate();
 
