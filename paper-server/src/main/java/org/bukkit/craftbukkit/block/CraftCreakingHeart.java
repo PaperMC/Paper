@@ -8,6 +8,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.CreakingHeart;
 import org.bukkit.craftbukkit.entity.CraftCreaking;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Creaking;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -58,5 +59,11 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
             this.getTileEntity().getLevel().playSound(null, this.getTileEntity().getBlockPos(), SoundEvents.CREAKING_HEART_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
         }
         return creaking != null ? ((Creaking) creaking.getBukkitEntity()) : null;
+    }
+
+    @Nullable
+    @Override
+    public Location spreadResin() {
+        return this.getTileEntity().spreadResin().map(blockPos -> CraftLocation.toBukkit(blockPos, this.getWorld())).orElse(null);
     }
 }

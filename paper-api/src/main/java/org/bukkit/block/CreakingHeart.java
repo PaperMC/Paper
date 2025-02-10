@@ -1,5 +1,6 @@
 package org.bukkit.block;
 
+import org.bukkit.Location;
 import org.bukkit.entity.Creaking;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -33,5 +34,13 @@ public interface CreakingHeart extends TileState {
      */
     @NullMarked
     Creaking spawnCreaking();
+
+    /**
+     * Attempts to spread resin to adjacent blocks.
+     *
+     * @return the location of spread resin or null if it cannot spread
+     */
+    @Nullable
+    Location spreadResin();
 
 }
