@@ -28,6 +28,21 @@ public interface CreakingHeart extends TileState {
     void setCreaking(@Nullable Creaking creaking);
 
     /**
+     * Gets the max distance between the Creaking Heart and the Creaking before to remove.
+     *
+     * @return the max distance
+     */
+    int getMaxDistanceForCreaking();
+
+    /**
+     * Sets the max distance between the Creaking Heart and the Creaking before to remove.
+     *
+     * @param distance the max distance
+     * @throws IllegalArgumentException if the distance is negative
+     */
+    void setMaxDistanceForCreaking(int distance);
+
+    /**
      * Attempts to spawn a creaking for protect this creaking heart.
      *
      * @return the {@link Creaking} for protect the creaking heart or null if fails
