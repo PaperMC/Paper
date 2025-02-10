@@ -47,7 +47,7 @@ public interface CreakingHeart extends TileState {
      *
      * @return the {@link Creaking} for protect the creaking heart or null if fails
      */
-    @NullMarked
+    @Nullable
     Creaking spawnCreaking();
 
     /**
