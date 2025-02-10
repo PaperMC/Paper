@@ -57,5 +57,4 @@ public interface CreakingHeart extends TileState {
      */
     @Nullable
     Location spreadResin();
-
 }
