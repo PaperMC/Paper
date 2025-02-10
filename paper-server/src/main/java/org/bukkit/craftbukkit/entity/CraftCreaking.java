@@ -30,13 +30,6 @@ public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Cre
     }
 
     @Override
-    public void setHome(Location location) {
-        Preconditions.checkArgument(location != null, "location cannot be null");
-        Preconditions.checkArgument(this.getLocation().getWorld().equals(location.getWorld()), "location world need to be the same than the current world where is the creaking");
-        this.getHandle().setHomePos(CraftLocation.toBlockPosition(location));
-    }
-
-    @Override
     public void activate(Player player) {
         Preconditions.checkArgument(player != null, "player cannot be null");
         this.getHandle().activate(((CraftPlayer) player).getHandle());
