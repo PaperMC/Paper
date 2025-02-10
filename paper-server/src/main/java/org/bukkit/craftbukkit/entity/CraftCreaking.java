@@ -9,6 +9,7 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import java.util.Optional;
 
 @NullMarked
 public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Creaking {
@@ -27,6 +28,11 @@ public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Cre
     public Location getHome() {
         BlockPos homePos = this.getHandle().getHomePos();
         return homePos != null ? CraftLocation.toBukkit(homePos, this.getHandle().level()) : null;
+    }
+
+    @Override
+    public void detachHome() {
+        this.getHandle().getEntityData().set(Creaking.HOME_POS, Optional.empty());
     }
 
     @Override
