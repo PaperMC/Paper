@@ -21,10 +21,6 @@ paperweight {
     // macheOldPath = file("F:\\Projects\\PaperTooling\\mache\\versions\\1.21.4\\src\\main\\java")
     // gitFilePatches = true
 
-    paper {
-        reobfMappingsPatch = layout.projectDirectory.file("../build-data/reobf-mappings-patch.tiny")
-    }
-
     spigot {
         buildDataRef = "3edaf46ec1eed4115ce1b18d2846cded42577e42"
         packageVersion = "v1_21_R3" // also needs to be updated in MappingEnvironment
@@ -141,10 +137,10 @@ dependencies {
     runtimeOnly(log4jPlugins.output)
     alsoShade(log4jPlugins.output)
 
-    implementation("com.velocitypowered:velocity-native:3.3.0-SNAPSHOT") {
+    implementation("com.velocitypowered:velocity-native:3.4.0-SNAPSHOT") {
         isTransitive = false
     }
-    implementation("io.netty:netty-codec-haproxy:4.1.97.Final") // Add support for proxy protocol
+    implementation("io.netty:netty-codec-haproxy:4.1.115.Final") // Add support for proxy protocol
     implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1")
     implementation("org.ow2.asm:asm-commons:9.7.1")
     implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT")

@@ -6,9 +6,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
+import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.io.File;
 import java.util.ArrayList;
@@ -206,8 +209,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public int getEntityCount() {
         int ret = 0;
-        for (net.minecraft.world.entity.Entity entity : world.getEntities().getAll()) {
-            if (entity.isChunkLoaded()) {
+        for (net.minecraft.world.entity.Entity entity : this.world.getEntities().getAll()) {
+            if (entity.getBukkitEntity().isValid()) {
                 ++ret;
             }
         }
@@ -353,7 +356,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start
     private static void warnUnsafeChunk(String reason, int x, int z) {
         // if any chunk coord is outside of 30 million blocks
-        if (x > 1875000 || z > 1875000 || x < -1875000 || z < -1875000) {
+        int max = (30_000_000 / 16) + 625;
+        if (x > max || z > max || x < -max || z < -max) {
             Plugin plugin = io.papermc.paper.util.StackWalkerUtil.getFirstPluginCaller();
             if (plugin != null) {
                 plugin.getLogger().warning("Plugin is %s at (%s, %s), this might cause issues.".formatted(reason, x, z));
@@ -1246,6 +1250,26 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         return blockHit;
+    }
+
+    @Override
+    public RayTraceResult rayTrace(Consumer<PositionedRayTraceConfigurationBuilder> builderConsumer) {
+        PositionedRayTraceConfigurationBuilderImpl builder = new PositionedRayTraceConfigurationBuilderImpl();
+
+        builderConsumer.accept(builder);
+        Preconditions.checkArgument(builder.start != null, "Start location cannot be null");
+        Preconditions.checkArgument(builder.direction != null, "Direction vector cannot be null");
+        Preconditions.checkArgument(builder.maxDistance.isPresent(), "Max distance must be set");
+        Preconditions.checkArgument(!builder.targets.isEmpty(), "At least one target");
+
+        final double maxDistance = builder.maxDistance.getAsDouble();
+        if (builder.targets.contains(RayTraceTarget.ENTITY)) {
+            if (builder.targets.contains(RayTraceTarget.BLOCK)) {
+                return this.rayTrace(builder.start, builder.direction, maxDistance, builder.fluidCollisionMode, builder.ignorePassableBlocks, builder.raySize, builder.entityFilter, builder.blockFilter);
+            }
+            return this.rayTraceEntities(builder.start, builder.direction, maxDistance, builder.raySize, builder.entityFilter);
+        }
+        return this.rayTraceBlocks(builder.start, builder.direction, maxDistance, builder.fluidCollisionMode, builder.ignorePassableBlocks, builder.blockFilter);
     }
 
     @Override

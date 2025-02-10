@@ -62,7 +62,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         final Registry<B> bukkitRegistry = RegistryAccess.registryAccess().getRegistry(PaperRegistries.registryFromNms(registryKey));
         final java.util.Optional<ResourceKey<M>> resourceKey = registry.getResourceKey(minecraft);
         if (resourceKey.isEmpty() && bukkitRegistry instanceof final CraftRegistry<?, ?> craftRegistry && craftRegistry.supportsDirectHolders()) {
-            return ((CraftRegistry<B, M>) bukkitRegistry).convertDirectHolder(Holder.direct(minecraft));
+            return ((CraftRegistry<B, M>) bukkitRegistry).createBukkit(Holder.direct(minecraft));
         } else if (resourceKey.isEmpty()) {
             throw new IllegalStateException(String.format("Cannot convert '%s' to bukkit representation, since it is not registered.", minecraft));
         }
@@ -82,7 +82,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
                 if (!(bukkitRegistry instanceof final CraftRegistry<?, ?> craftRegistry) || !craftRegistry.supportsDirectHolders()) {
                     throw new IllegalArgumentException("Cannot convert direct holder to bukkit representation");
                 }
-                yield ((CraftRegistry<B, M>) bukkitRegistry).convertDirectHolder(direct);
+                yield ((CraftRegistry<B, M>) bukkitRegistry).createBukkit(direct);
             }
             case final Holder.Reference<M> reference -> bukkitRegistry.get(MCUtil.fromResourceKey(reference.key()));
             default -> throw new IllegalArgumentException("Unknown holder: " + minecraft);
@@ -126,8 +126,8 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     // Paper start - fixup upstream being dum
     public static <T extends Keyed, M> Optional<T> unwrapAndConvertHolder(final RegistryKey<T> registryKey, final Holder<M> value) {
         final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
-        if (registry instanceof CraftRegistry<?,?> craftRegistry && craftRegistry.supportsDirectHolders() && value.kind() == Holder.Kind.DIRECT) {
-            return Optional.of(((CraftRegistry<T, M>) registry).convertDirectHolder(value));
+        if (registry instanceof final CraftRegistry<?,?> craftRegistry && craftRegistry.supportsDirectHolders() && value.kind() == Holder.Kind.DIRECT) {
+            return Optional.of(((CraftRegistry<T, M>) registry).createBukkit(value));
         }
         return value.unwrapKey().map(key -> registry.get(CraftNamespacedKey.fromMinecraft(key.location())));
     }
@@ -178,7 +178,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         this.minecraftRegistry = minecraftRegistry;
         this.minecraftToBukkit = minecraftToBukkit;
         this.serializationUpdater = serializationUpdater;
-        this.lockReferenceHolders = !this.minecraftToBukkit.supportsDirectHolders();
+        this.lockReferenceHolders = !this.minecraftToBukkit.constructorUsesHolder();
     }
 
     public void lockReferenceHolders() {
@@ -189,7 +189,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         } catch (final ClassNotFoundException e) {
             throw new IllegalStateException("Failed to load class " + this.bukkitClass.getSimpleName(), e);
         }
-        if (!this.minecraftToBukkit.supportsDirectHolders()) {
+        if (!this.minecraftToBukkit.constructorUsesHolder()) {
             return;
         }
         Preconditions.checkState(!this.lockReferenceHolders, "Reference holders are already locked");
@@ -209,7 +209,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         final Holder.Reference<M> holder;
         if (holderOptional.isPresent()) {
             holder = holderOptional.get();
-        } else if (!this.lockReferenceHolders && this.minecraftToBukkit.supportsDirectHolders()) { // only works if its Holderable
+        } else if (!this.lockReferenceHolders && this.minecraftToBukkit.constructorUsesHolder()) { // only works if its Holderable
             // we lock the reference holders after the preload class has been initialized
             // this is to support the vanilla mechanic of preventing vanilla registry entries being loaded. We need
             // to create something to fill the API constant fields, so we create a dummy reference holder.
@@ -217,7 +217,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         } else {
             holder = null;
         }
-        final B bukkit = this.createBukkit(namespacedKey, holder);
+        final B bukkit = this.createBukkit(holder);
         if (bukkit == null) {
             return null;
         }
@@ -225,16 +225,6 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         this.cache.put(namespacedKey, bukkit);
 
         return bukkit;
-    }
-
-    @NotNull
-    @Override
-    public B getOrThrow(@NotNull NamespacedKey namespacedKey) {
-        B object = this.get(namespacedKey);
-
-        Preconditions.checkArgument(object != null, "No %s registry entry found for key %s.", this.minecraftRegistry.key(), namespacedKey);
-
-        return object;
     }
 
     @NotNull
@@ -248,23 +238,17 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return this.stream().iterator();
     }
 
-    public B createBukkit(NamespacedKey namespacedKey, Holder<M> minecraft) { // Paper - switch to Holder
+    public B createBukkit(Holder<M> minecraft) {
         if (minecraft == null) {
             return null;
         }
 
-        return this.minecraftToBukkit.createBukkit(namespacedKey, minecraft); // Paper - switch to Holder
+        return this.minecraftToBukkit.createBukkit(minecraft);
     }
 
-    // Paper start - support Direct Holders
     public boolean supportsDirectHolders() {
         return this.minecraftToBukkit.supportsDirectHolders();
     }
-
-    public B convertDirectHolder(Holder<M> holder) {
-        return this.minecraftToBukkit.convertDirectHolder(holder);
-    }
-    // Paper end - support Direct Holders
 
     // Paper start - improve Registry
     @Override

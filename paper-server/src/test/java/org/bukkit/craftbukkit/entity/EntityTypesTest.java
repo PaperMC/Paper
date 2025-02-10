@@ -49,6 +49,7 @@ import org.bukkit.entity.NPC;
 import org.bukkit.entity.PiglinAbstract;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Raider;
+import org.bukkit.entity.Sittable;
 import org.bukkit.entity.SizedFireball;
 import org.bukkit.entity.Spellcaster;
 import org.bukkit.entity.SplashPotion;
@@ -110,6 +111,7 @@ public class EntityTypesTest {
             PiglinAbstract.class,
             Projectile.class,
             Raider.class,
+            Sittable.class,
             SizedFireball.class,
             Spellcaster.class,
             SplashPotion.class,
