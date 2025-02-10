@@ -43,7 +43,7 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
         if (creaking == null) {
             this.getTileEntity().clearCreakingInfo();
         } else {
-            Preconditions.checkArgument(this.getLocation().getWorld().equals(creaking.getLocation().getWorld()), "the location of this creaking must be in the same world than this CrakingHeart");
+            Preconditions.checkArgument(this.getLocation().getWorld().equals(creaking.getLocation().getWorld()), "the location of this creaking must be in the same world than this CreakingHeart");
             this.getTileEntity().setCreakingInfo(((CraftCreaking) creaking).getHandle());
         }
     }
