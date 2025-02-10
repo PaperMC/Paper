@@ -53,6 +53,7 @@ public interface CreakingHeart extends TileState {
     /**
      * Attempts to spread resin to adjacent blocks.
      *
+     * @apiNote This method triggers events related to a block being modified
      * @return the location of spread resin or null if it cannot spread
      */
     @Nullable
