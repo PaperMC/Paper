@@ -31,7 +31,7 @@ public interface Creaking extends Monster {
     void activate(final Player player);
 
     /**
-     * Deactivates the entity, clearing its current attack target and
+     * Deactivates the creaking, clearing its current attack target and
      * marking it as inactive.
      */
     void deactivate();
