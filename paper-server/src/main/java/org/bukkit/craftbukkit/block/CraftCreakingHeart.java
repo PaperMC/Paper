@@ -1,6 +1,8 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.block.entity.CreakingHeartBlockEntity;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -50,6 +52,11 @@ public class CraftCreakingHeart extends CraftBlockEntityState<CreakingHeartBlock
     @Override
     public Creaking spawnCreaking() {
         net.minecraft.world.entity.monster.creaking.Creaking creaking = CreakingHeartBlockEntity.spawnProtector(this.getTileEntity().getLevel().getMinecraftWorld(), this.getTileEntity());
+        if (creaking != null) {
+            this.getTileEntity().setCreakingInfo(creaking);
+            creaking.makeSound(SoundEvents.CREAKING_SPAWN);
+            this.getTileEntity().getLevel().playSound(null, this.getTileEntity().getBlockPos(), SoundEvents.CREAKING_HEART_SPAWN, SoundSource.BLOCKS, 1.0F, 1.0F);
+        }
         return creaking != null ? ((Creaking) creaking.getBukkitEntity()) : null;
     }
 }
