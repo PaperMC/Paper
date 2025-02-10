@@ -24,7 +24,7 @@ public interface Creaking extends Monster {
     void detachHome();
 
     /**
-     * Activates this Creaking to target and follow a player.
+     * Activates this creaking to target and follow a player.
      *
      * @param player the target
      */
