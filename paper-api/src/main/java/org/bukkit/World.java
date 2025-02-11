@@ -2781,6 +2781,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param value true if the world should automatically save, otherwise
      *     false
+     * @apiNote This does not disable saving entirely, the world will still be saved on shutdown.<br>
+     * The intended use of this method is to disable the periodical autosave by the game.
      */
     public void setAutoSave(boolean value);
 
