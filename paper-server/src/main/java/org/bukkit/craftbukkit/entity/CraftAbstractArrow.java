@@ -13,10 +13,7 @@ import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
-import org.jspecify.annotations.Nullable;
 import java.util.List;
-import java.util.Set;
 
 public class CraftAbstractArrow extends AbstractProjectile implements AbstractArrow {
 
