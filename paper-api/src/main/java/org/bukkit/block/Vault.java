@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.util.Collection;
-import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -110,12 +109,12 @@ public interface Vault extends TileState {
     /**
      * Gets the players who have used a key on this vault and unlocked it.
      *
-     * @return An unmodifiable set of player uuids.
+     * @return An unmodifiable collection of player uuids.
      *
      * @apiNote Only the most recent 128 player UUIDs will be stored by vault blocks.
      */
     @Unmodifiable
-    Set<UUID> getRewardedPlayers();
+    Collection<UUID> getRewardedPlayers();
 
     /**
      * Adds a player as rewarded for this vault.
@@ -139,15 +138,33 @@ public interface Vault extends TileState {
     boolean removeRewardedPlayer(UUID playerUUID);
 
     /**
-     * Gets an unmodifiable set of "connected players"; players who are inside this vault's activation range and who have not received rewards yet.
+     * Returns whether a given player has already been rewarded by this vault.
+     *
+     * @param playerUUID The player's uuid.
+     * @return Whether this player was previously rewarded by this vault.
+     */
+    boolean hasRewardedPlayer(UUID playerUUID);
+
+    /**
+     * Gets an unmodifiable collection of "connected players"; players who are inside this vault's activation range and who have not received rewards yet.
      *
      * @apiNote Vaults will only periodically scan for nearby players, so it may take until the next {@link #getNextStateUpdateTime() update time} for this
-     * set to be updated upon a player entering its range.
+     * collection to be updated upon a player entering its range.
      *
-     * @return An unmodifiable set of connected player uuids.
+     * @return An unmodifiable collection of connected player uuids.
      */
     @Unmodifiable
-    Set<UUID> getConnectedPlayers();
+    Collection<UUID> getConnectedPlayers();
+
+    /**
+     * Returns whether a given player is currently connected to this vault.
+     *
+     * @param playerUUID the player's uuid
+     * @return {@code true} if this player is currently connected to this vault.
+     *
+     * @see #getConnectedPlayers()
+     */
+    boolean hasConnectedPlayer(UUID playerUUID);
 
     /**
      * Gets the item currently being displayed inside this vault. Displayed items will automatically cycle between random items from the {@link #getDisplayedLootTable()}

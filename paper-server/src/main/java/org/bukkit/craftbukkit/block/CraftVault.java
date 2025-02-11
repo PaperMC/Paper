@@ -135,8 +135,18 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
     }
 
     @Override
+    public boolean hasRewardedPlayer(final UUID playerUUID) {
+        return this.getSnapshot().serverData.getRewardedPlayers().contains(playerUUID);
+    }
+
+    @Override
     public @Unmodifiable Set<UUID> getConnectedPlayers() {
         return ImmutableSet.copyOf(this.getSnapshot().getSharedData().getConnectedPlayers());
+    }
+
+    @Override
+    public boolean hasConnectedPlayer(final UUID playerUUID) {
+        return this.getSnapshot().getSharedData().getConnectedPlayers().contains(playerUUID);
     }
 
     @Override
