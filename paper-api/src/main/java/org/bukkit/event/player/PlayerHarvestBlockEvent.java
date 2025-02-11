@@ -70,7 +70,7 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
     /**
      * Gets a list of items that are being harvested from this block.
      *
-     * @return A list of items that are being harvested from this block
+     * @return A mutable list of items that are being harvested from this block
      */
     @NotNull
     public List<ItemStack> getItemsHarvested() {
