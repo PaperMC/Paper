@@ -50,7 +50,7 @@ public class EntityHarvestBlockEvent extends EntityEvent implements Cancellable 
     /**
      * Gets a list of items that are being harvested from this block.
      *
-     * @return A list of items that are being harvested from this block
+     * @return A mutable list of items that are being harvested from this block
      */
     public List<ItemStack> getItemsHarvested() {
         return itemsHarvested;
