@@ -1,6 +1,7 @@
 package io.papermc.paper.command.brigadier.argument.resolvers;
 
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.math.Rotation;
 import org.jetbrains.annotations.ApiStatus;
 import org.joml.Vector2f;
 
@@ -12,5 +13,5 @@ import org.joml.Vector2f;
  */
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface RotationResolver extends ArgumentResolver<Vector2f> {
+public interface RotationResolver extends ArgumentResolver<Rotation> {
 }

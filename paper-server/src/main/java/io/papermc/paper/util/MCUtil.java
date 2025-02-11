@@ -17,6 +17,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import io.papermc.paper.math.Rotation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceKey;
@@ -29,7 +30,6 @@ import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.craftbukkit.util.Waitable;
-import org.joml.Vector2f;
 
 public final class MCUtil {
     public static final java.util.concurrent.Executor MAIN_EXECUTOR = (run) -> {
@@ -166,8 +166,8 @@ public final class MCUtil {
         return Position.block(vector.getX(), vector.getY(), vector.getZ());
     }
 
-    public static Vector2f toRotation(Vec2 vector) {
-        return new Vector2f(vector.x, vector.y);
+    public static Rotation toRotation(Vec2 vector) {
+        return new RotationImpl(vector.y, vector.x);
     }
 
     public static Vec3 toVec3(Position position) {
