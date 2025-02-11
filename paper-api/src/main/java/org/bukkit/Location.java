@@ -19,6 +19,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Represents a 3-dimensional position in a world.
@@ -421,7 +422,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      */
     @NotNull
     @Contract(value = "_ -> this", mutates = "this")
-    public Location addRotation(Rotation rotation) {
+    public Location addRotation(@NonNull Rotation rotation) {
         return addRotation(rotation.yaw(), rotation.pitch());
     }
 
@@ -503,7 +504,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      */
     @NotNull
     @Contract(value = "_ -> this", mutates = "this")
-    public Location subtractRotation(Rotation rotation) {
+    public Location subtractRotation(@NonNull Rotation rotation) {
         return subtractRotation(rotation.yaw(), rotation.pitch());
     }
 
@@ -659,7 +660,7 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
      */
     @NotNull
     @Contract(value = "_ -> this", mutates = "this")
-    public Location setRotation(Rotation rotation) {
+    public Location setRotation(@NonNull Rotation rotation) {
         return setRotation(rotation.yaw(), rotation.pitch());
     }
 
