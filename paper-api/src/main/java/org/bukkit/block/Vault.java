@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import java.util.Collection;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -146,15 +147,15 @@ public interface Vault extends TileState {
     boolean hasRewardedPlayer(UUID playerUUID);
 
     /**
-     * Gets an unmodifiable collection of "connected players"; players who are inside this vault's activation range and who have not received rewards yet.
+     * Gets an unmodifiable set of "connected players"; players who are inside this vault's activation range and who have not received rewards yet.
      *
      * @apiNote Vaults will only periodically scan for nearby players, so it may take until the next {@link #getNextStateUpdateTime() update time} for this
      * collection to be updated upon a player entering its range.
      *
-     * @return An unmodifiable collection of connected player uuids.
+     * @return An unmodifiable set of connected player uuids.
      */
     @Unmodifiable
-    Collection<UUID> getConnectedPlayers();
+    Set<UUID> getConnectedPlayers();
 
     /**
      * Returns whether a given player is currently connected to this vault.

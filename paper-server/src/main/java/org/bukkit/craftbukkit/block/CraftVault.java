@@ -15,6 +15,7 @@ import org.bukkit.loot.LootTable;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -118,7 +119,7 @@ public class CraftVault extends CraftBlockEntityState<VaultBlockEntity> implemen
     }
 
     @Override
-    public @Unmodifiable Set<UUID> getRewardedPlayers() {
+    public @Unmodifiable Collection<UUID> getRewardedPlayers() {
         return ImmutableSet.copyOf(this.getSnapshot().serverData.getRewardedPlayers());
     }
 
