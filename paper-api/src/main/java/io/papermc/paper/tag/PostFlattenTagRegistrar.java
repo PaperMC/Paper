@@ -23,6 +23,8 @@ import org.jspecify.annotations.NullMarked;
  * <pre>{@code
  * class YourBootstrapClass implements PluginBootstrap {
  *
+ *     public static final TypedKey<Enchantment> CUSTOM_ENCHANT = EnchantmentKeys.create(Key.key("test", "custom_enchant"));
+ *
  *     @Override
  *     public void bootstrap(BootstrapContext context) {
  *         LifecycleEventManager<BootstrapContext> manager = context.getLifecycleManager();
