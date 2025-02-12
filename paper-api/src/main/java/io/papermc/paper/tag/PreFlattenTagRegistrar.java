@@ -22,6 +22,8 @@ import org.jspecify.annotations.NullMarked;
  * <pre>{@code
  * class YourBootstrapClass implements PluginBootstrap {
  *
+ *     public static final TagKey<ItemType> AXE_PICKAXE = TagKey.create(RegistryKey.ITEM, Key.key("papermc:axe_pickaxe"));
+ *
  *     @Override
  *     public void bootstrap(BootstrapContext context) {
  *         LifecycleEventManager<BootstrapContext> manager = context.getLifecycleManager();
