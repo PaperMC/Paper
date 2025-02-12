@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 public interface Tag<T extends Keyed> extends Keyed {
 
     /**
-     * Key for the built in block registry.
+     * Key for the built-in block registry.
      */
     String REGISTRY_BLOCKS = "blocks";
     /**
@@ -46,7 +46,7 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> STONE_BUTTONS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("stone_buttons"), Material.class);
     /**
      * Vanilla block tag representing all buttons (inherits from
-     * {@link #WOODEN_BUTTONS}.
+     * {@link #WOODEN_BUTTONS}).
      */
     Tag<Material> BUTTONS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("buttons"), Material.class);
     /**
@@ -96,7 +96,7 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> WOODEN_TRAPDOORS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wooden_trapdoors"), Material.class);
     /**
      * Vanilla block tag representing all doors (inherits from
-     * {@link #WOODEN_DOORS}.
+     * {@link #WOODEN_DOORS}).
      */
     Tag<Material> DOORS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("doors"), Material.class);
     /**
@@ -197,7 +197,7 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> LEAVES = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("leaves"), Material.class);
     /**
      * Vanilla block tag representing all trapdoors (inherits from
-     * {@link #WOODEN_TRAPDOORS}.
+     * {@link #WOODEN_TRAPDOORS}).
      */
     Tag<Material> TRAPDOORS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("trapdoors"), Material.class);
     /**
@@ -536,7 +536,15 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla block tag representing all blocks that are replaceable by
      * dripstone.
      */
-    Tag<Material> DRIPSTONE_REPLACEABLE = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("dripstone_replaceable_blocks"), Material.class);
+    Tag<Material> DRIPSTONE_REPLACEABLE_BLOCKS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("dripstone_replaceable_blocks"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks that are replaceable by
+     * dripstone.
+     *
+     * @deprecated in favour of {@link #DRIPSTONE_REPLACEABLE_BLOCKS}
+     */
+    @Deprecated(since = "1.21.4", forRemoval = true)
+    Tag<Material> DRIPSTONE_REPLACEABLE = DRIPSTONE_REPLACEABLE_BLOCKS;
     /**
      * Vanilla block tag representing all cave vines.
      */
@@ -792,7 +800,7 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> AIR = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("air"), Material.class);
     /**
-     * Key for the built in item registry.
+     * Key for the built-in item registry.
      */
     String REGISTRY_ITEMS = "items";
     /**
@@ -1075,8 +1083,16 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<Material> ITEMS_CREEPER_IGNITERS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("creeper_igniters"), Material.class);
     /**
      * Vanilla item tag representing all items which modify note block sounds when placed on top.
+     *
      */
-    Tag<Material> ITEMS_NOTE_BLOCK_TOP_INSTRUMENTS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("noteblock_top_instruments"), Material.class);
+    Tag<Material> ITEMS_NOTEBLOCK_TOP_INSTRUMENTS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("noteblock_top_instruments"), Material.class);
+    /**
+     * Vanilla item tag representing all items which modify note block sounds when placed on top.
+     *
+     * @deprecated in favour of {@link #ITEMS_NOTEBLOCK_TOP_INSTRUMENTS}
+     */
+    @Deprecated(since = "1.21.4", forRemoval = true)
+    Tag<Material> ITEMS_NOTE_BLOCK_TOP_INSTRUMENTS = ITEMS_NOTEBLOCK_TOP_INSTRUMENTS;
     /**
      * Vanilla item tag representing all foot armor.
      */
@@ -1288,7 +1304,7 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> CLUSTER_MAX_HARVESTABLES = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("cluster_max_harvestables"), Material.class);
     /**
-     * Key for the built in fluid registry.
+     * Key for the built-in fluid registry.
      */
     String REGISTRY_FLUIDS = "fluids";
     /**
@@ -1300,7 +1316,7 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Fluid> FLUIDS_WATER = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("water"), Fluid.class);
     /**
-     * Key for the built in entity registry.
+     * Key for the built-in entity registry.
      */
     String REGISTRY_ENTITY_TYPES = "entity_types";
     /**
@@ -1311,6 +1327,10 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla tag representing raiders.
      */
     Tag<EntityType> ENTITY_TYPES_RAIDERS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("raiders"), EntityType.class);
+    /**
+     * Vanilla tag representing undeads.
+     */
+    Tag<EntityType> ENTITY_TYPES_UNDEAD = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("undead"), EntityType.class);
     /**
      * Vanilla tag representing entities which can live in beehives.
      */
@@ -1378,11 +1398,11 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<EntityType> ENTITY_TYPES_ILLAGER = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("illager"), EntityType.class);
     /**
-     * Vanilla tag representing all entities sensitive to aquatic enchantments..
+     * Vanilla tag representing all entities sensitive to aquatic enchantments.
      */
     Tag<EntityType> ENTITY_TYPES_AQUATIC = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("aquatic"), EntityType.class);
     /**
-     * Vanilla tag representing all entities sensitive to arthropod enchantments..
+     * Vanilla tag representing all entities sensitive to arthropod enchantments.
      */
     Tag<EntityType> ENTITY_TYPES_ARTHROPOD = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("arthropod"), EntityType.class);
     /**
@@ -1433,20 +1453,18 @@ public interface Tag<T extends Keyed> extends Keyed {
      * Vanilla tag representing all projectiles which can be punched back.
      */
     Tag<EntityType> ENTITY_TYPES_REDIRECTABLE_PROJECTILE = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("redirectable_projectile"), EntityType.class);
-
-    // Paper start
+    /**
+     * Key for the built-in game event registry.
+     */
     String REGISTRY_GAME_EVENTS = "game_events";
-
     /**
      * Tag for game events that trigger sculk sensors
      */
     Tag<GameEvent> GAME_EVENT_VIBRATIONS = Bukkit.getTag(REGISTRY_GAME_EVENTS, NamespacedKey.minecraft("vibrations"), GameEvent.class);
-
     /**
      * Tag for game events that are ignored if the entity is sneaking
      */
     Tag<GameEvent> GAME_EVENT_IGNORE_VIBRATIONS_SNEAKING = Bukkit.getTag(REGISTRY_GAME_EVENTS, NamespacedKey.minecraft("ignore_vibrations_sneaking"), GameEvent.class);
-
     /**
      * Tag for game events that an allay can listen to
      */

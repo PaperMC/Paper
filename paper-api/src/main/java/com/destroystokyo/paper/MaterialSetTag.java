@@ -93,8 +93,4 @@ public class MaterialSetTag extends BaseTag<Material, MaterialSetTag> {
     public boolean isTagged(@NotNull ItemStack item) {
         return isTagged(item.getType());
     }
-
-    public boolean isTagged(@NotNull Material material) {
-        return this.tagged.contains(material);
-    }
 }
