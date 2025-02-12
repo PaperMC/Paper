@@ -23,6 +23,7 @@ import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
+import io.papermc.paper.math.Rotation;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -164,7 +165,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         return this.wrap(RotationArgument.rotation(), (result) -> sourceStack -> {
             final Vec2 vec2 = result.getRotation((CommandSourceStack) sourceStack);
 
-            return MCUtil.toRotation(vec2);
+            return Rotation.rotation(vec2.y, vec2.x);
         });
     }
 

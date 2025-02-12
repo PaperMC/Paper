@@ -17,7 +17,6 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import io.papermc.paper.math.Rotation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceKey;
@@ -164,10 +163,6 @@ public final class MCUtil {
 
     public static BlockPosition toPosition(Vec3i vector) {
         return Position.block(vector.getX(), vector.getY(), vector.getZ());
-    }
-
-    public static Rotation toRotation(Vec2 vector) {
-        return new RotationImpl(vector.y, vector.x);
     }
 
     public static Vec3 toVec3(Position position) {
