@@ -5,6 +5,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 import java.util.List;
 
 /**
@@ -114,6 +115,7 @@ public interface AbstractArrow extends Projectile {
      * @return the attached block(s) or an empty list if not attached
      */
     @NotNull
+    @Unmodifiable
     List<Block> getAttachedBlocks();
 
     /**

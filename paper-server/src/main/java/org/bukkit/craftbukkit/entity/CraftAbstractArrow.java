@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Items;
@@ -72,7 +73,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
 
     @Override
     public Block getAttachedBlock() {
-        return getAttachedBlocks().stream().findFirst().orElse(null);
+        return Iterables.getFirst(getAttachedBlocks(), null);
     }
 
     @Override
