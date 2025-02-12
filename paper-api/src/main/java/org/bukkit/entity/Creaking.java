@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 public interface Creaking extends Monster {
 
     /**
-     * Gets the home location for this Creaking (where its {@link org.bukkit.block.CreakingHeart} could be found).
+     * Gets the home location for this creaking (where its {@link org.bukkit.block.CreakingHeart} could be found).
      *
      * @return the location of the home if available, null otherwise
      */
