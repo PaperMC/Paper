@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
  * <pre>{@code
  * class YourBootstrapClass implements PluginBootstrap {
  *
- *     public static final TypedKey<Enchantment> CUSTOM_ENCHANT = EnchantmentKeys.create(Key.key("test", "custom_enchant"));
+ *     public static final TypedKey<Enchantment> CUSTOM_POINTY_ENCHANT = EnchantmentKeys.create(Key.key("papermc:pointy"));
  *
  *     @Override
  *     public void bootstrap(BootstrapContext context) {
@@ -32,7 +32,7 @@ import org.jspecify.annotations.NullMarked;
  *             final PostFlattenTagRegistrar<Enchantment> registrar = event.registrar();
  *             registrar.addToTag(
  *                 EnchantmentTagKeys.IN_ENCHANTING_TABLE,
- *                 Set.of(CUSTOM_ENCHANT)
+ *                 Set.of(CUSTOM_POINTY_ENCHANT)
  *             );
  *         });
  *     }
