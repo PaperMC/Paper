@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
  * magnitude than 360 are valid, but may be normalized to any other equivalent
  * representation by the implementation.
  */
-public class Location implements Cloneable, ConfigurationSerializable, io.papermc.paper.math.FinePosition {
+public class Location implements Cloneable, ConfigurationSerializable, io.papermc.paper.math.FinePosition, Rotation {
     private Reference<World> world;
     private double x;
     private double y;
@@ -1242,6 +1242,16 @@ public class Location implements Cloneable, ConfigurationSerializable, io.paperm
     @Override
     public double z() {
         return this.getZ();
+    }
+
+    @Override
+    public float pitch() {
+        return pitch;
+    }
+
+    @Override
+    public float yaw() {
+        return yaw;
     }
 
     @Override
