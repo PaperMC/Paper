@@ -55,17 +55,18 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a player, connected or not
  */
+@NullMarked
 public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginMessageRecipient, net.kyori.adventure.identity.Identified, net.kyori.adventure.bossbar.BossBarViewer, com.destroystokyo.paper.network.NetworkClient { // Paper
 
     // Paper start
     @Override
-    default net.kyori.adventure.identity.@NotNull Identity identity() {
+    default net.kyori.adventure.identity.Identity identity() {
         return net.kyori.adventure.identity.Identity.identity(this.getUniqueId());
     }
 
@@ -80,14 +81,14 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @since 4.14.0
      */
     @Override
-    @org.jetbrains.annotations.UnmodifiableView @NotNull Iterable<? extends net.kyori.adventure.bossbar.BossBar> activeBossBars();
+    @org.jetbrains.annotations.UnmodifiableView Iterable<? extends net.kyori.adventure.bossbar.BossBar> activeBossBars();
 
     /**
      * Gets the "friendly" name to display of this player.
      *
      * @return the display name
      */
-    net.kyori.adventure.text.@NotNull Component displayName();
+    net.kyori.adventure.text.Component displayName();
 
     /**
      * Sets the "friendly" name to display of this player.
@@ -100,7 +101,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * {@inheritDoc}
      */
-    @NotNull
     @Override
     public String getName();
 
@@ -115,7 +115,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated in favour of {@link #displayName()}
      */
     @Deprecated // Paper
-    @NotNull
     public String getDisplayName();
 
     /**
@@ -146,7 +145,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return the player list name
      */
-    net.kyori.adventure.text.@NotNull Component playerListName();
+    net.kyori.adventure.text.Component playerListName();
 
     /**
      * Gets the currently displayed player list header for this player.
@@ -168,7 +167,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return the player list name
      * @deprecated in favour of {@link #playerListName()}
      */
-    @NotNull
     @Deprecated // Paper
     public String getPlayerListName();
 
@@ -252,14 +250,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param loc Location to point to
      */
-    public void setCompassTarget(@NotNull Location loc);
+    public void setCompassTarget(Location loc);
 
     /**
      * Get the previously set compass target.
      *
      * @return location of the target
      */
-    @NotNull
     public Location getCompassTarget();
 
     /**
@@ -296,8 +293,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * set in the client, the {@link CompletableFuture} will complete with a
      * null value.
      */
-    @NotNull
-    CompletableFuture<byte[]> retrieveCookie(@NotNull NamespacedKey key);
+    CompletableFuture<byte[]> retrieveCookie(NamespacedKey key);
 
     /**
      * Stores a cookie in this player's client.
@@ -306,7 +302,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param value the data to store in the cookie
      * @throws IllegalStateException if a cookie cannot be stored at this time
      */
-    void storeCookie(@NotNull NamespacedKey key, @NotNull byte[] value);
+    void storeCookie(NamespacedKey key, byte[] value);
 
     /**
      * Requests this player to connect to a different server specified by host
@@ -317,7 +313,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalStateException if a transfer cannot take place at this
      * time
      */
-    void transfer(@NotNull String host, int port);
+    void transfer(String host, int port);
 
     /**
      * Sends this sender a message raw
@@ -325,7 +321,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param message Message to be displayed
      */
     @Override
-    public void sendRawMessage(@NotNull String message);
+    public void sendRawMessage(String message);
 
     /**
      * Kicks player with custom kick message.
@@ -355,7 +351,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param message kick message
      * @param cause kick cause
      */
-    void kick(final net.kyori.adventure.text.@Nullable Component message, org.bukkit.event.player.PlayerKickEvent.@NotNull Cause cause);
+    void kick(final net.kyori.adventure.text.@Nullable Component message, org.bukkit.event.player.PlayerKickEvent.Cause cause);
     // Paper end
 
     /**
@@ -459,7 +455,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param msg message to print
      */
-    public void chat(@NotNull String msg);
+    public void chat(String msg);
 
     /**
      * Makes the player perform the given command
@@ -467,7 +463,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param command Command to perform
      * @return true if the command was successful, otherwise false
      */
-    public boolean performCommand(@NotNull String command);
+    public boolean performCommand(String command);
 
     /**
      * Returns true if the entity is supported by a block.
@@ -622,7 +618,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return collection of entities corresponding to current pearls.
      */
-    @NotNull
     @ApiStatus.Experimental
     public Collection<EnderPearl> getEnderPearls();
 
@@ -634,7 +629,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return current input
      */
-    @NotNull
     @ApiStatus.Experimental
     public Input getCurrentInput();
 
@@ -648,7 +642,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Magic value
      */
     @Deprecated(since = "1.6.2")
-    public void playNote(@NotNull Location loc, byte instrument, byte note);
+    public void playNote(Location loc, byte instrument, byte note);
 
     /**
      * Play a note for the player at a location. <br>
@@ -659,7 +653,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param instrument The instrument
      * @param note The note
      */
-    public void playNote(@NotNull Location loc, @NotNull Instrument instrument, @NotNull Note note);
+    public void playNote(Location loc, Instrument instrument, Note note);
 
 
     /**
@@ -672,7 +666,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    public void playSound(@NotNull Location location, @NotNull Sound sound, float volume, float pitch);
+    public void playSound(Location location, Sound sound, float volume, float pitch);
 
     /**
      * Play a sound for a player at the location.
@@ -686,7 +680,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    public void playSound(@NotNull Location location, @NotNull String sound, float volume, float pitch);
+    public void playSound(Location location, String sound, float volume, float pitch);
 
     /**
      * Play a sound for a player at the location.
@@ -699,7 +693,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    public void playSound(@NotNull Location location, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch);
+    public void playSound(Location location, Sound sound, SoundCategory category, float volume, float pitch);
 
     /**
      * Play a sound for a player at the location.
@@ -714,7 +708,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    public void playSound(@NotNull Location location, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
+    public void playSound(Location location, String sound, SoundCategory category, float volume, float pitch);
 
     /**
      * Play a sound for a player at the location. For sounds with multiple
@@ -729,7 +723,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param pitch The pitch of the sound
      * @param seed The seed for the sound
      */
-    public void playSound(@NotNull Location location, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+    public void playSound(Location location, Sound sound, SoundCategory category, float volume, float pitch, long seed);
 
     /**
      * Play a sound for a player at the location. For sounds with multiple
@@ -746,7 +740,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param pitch The pitch of the sound
      * @param seed The seed for the sound
      */
-    public void playSound(@NotNull Location location, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+    public void playSound(Location location, String sound, SoundCategory category, float volume, float pitch, long seed);
 
     /**
      * Play a sound for a player at the location of the entity.
@@ -758,7 +752,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    public void playSound(@NotNull Entity entity, @NotNull Sound sound, float volume, float pitch);
+    public void playSound(Entity entity, Sound sound, float volume, float pitch);
 
     /**
      * Play a sound for a player at the location of the entity.
@@ -770,20 +764,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    public void playSound(@NotNull Entity entity, @NotNull String sound, float volume, float pitch);
-
-    /**
-     * Play a sound for a player at the location of the entity.
-     * <p>
-     * This function will fail silently if Entity or Sound are null.
-     *
-     * @param entity The entity to play the sound
-     * @param sound The sound to play
-     * @param category The category of the sound
-     * @param volume The volume of the sound
-     * @param pitch The pitch of the sound
-     */
-    public void playSound(@NotNull Entity entity, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch);
+    public void playSound(Entity entity, String sound, float volume, float pitch);
 
     /**
      * Play a sound for a player at the location of the entity.
@@ -796,7 +777,20 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    public void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
+    public void playSound(Entity entity, Sound sound, SoundCategory category, float volume, float pitch);
+
+    /**
+     * Play a sound for a player at the location of the entity.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    public void playSound(Entity entity, String sound, SoundCategory category, float volume, float pitch);
 
     /**
      * Play a sound for a player at the location of the entity. For sounds with
@@ -811,7 +805,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param pitch The pitch of the sound
      * @param seed The seed for the sound
      */
-    public void playSound(@NotNull Entity entity, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+    public void playSound(Entity entity, Sound sound, SoundCategory category, float volume, float pitch, long seed);
 
     /**
      * Play a sound for a player at the location of the entity. For sounds with
@@ -826,29 +820,21 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param pitch The pitch of the sound
      * @param seed The seed for the sound
      */
-    public void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
+    public void playSound(Entity entity, String sound, SoundCategory category, float volume, float pitch, long seed);
 
     /**
      * Stop the specified sound from playing.
      *
      * @param sound the sound to stop
      */
-    public void stopSound(@NotNull Sound sound);
+    public void stopSound(Sound sound);
 
     /**
      * Stop the specified sound from playing.
      *
      * @param sound the sound to stop
      */
-    public void stopSound(@NotNull String sound);
-
-    /**
-     * Stop the specified sound from playing.
-     *
-     * @param sound the sound to stop
-     * @param category the category of the sound
-     */
-    public void stopSound(@NotNull Sound sound, @Nullable SoundCategory category);
+    public void stopSound(String sound);
 
     /**
      * Stop the specified sound from playing.
@@ -856,14 +842,22 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param sound the sound to stop
      * @param category the category of the sound
      */
-    public void stopSound(@NotNull String sound, @Nullable SoundCategory category);
+    public void stopSound(Sound sound, @Nullable SoundCategory category);
+
+    /**
+     * Stop the specified sound from playing.
+     *
+     * @param sound the sound to stop
+     * @param category the category of the sound
+     */
+    public void stopSound(String sound, @Nullable SoundCategory category);
 
     /**
      * Stop the specified sound category from playing.
      *
      * @param category the sound category to stop
      */
-    public void stopSound(@NotNull SoundCategory category);
+    public void stopSound(SoundCategory category);
 
     /**
      * Stop all sounds from playing.
@@ -879,7 +873,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Magic value
      */
     @Deprecated(since = "1.6.2")
-    public void playEffect(@NotNull Location loc, @NotNull Effect effect, int data);
+    public void playEffect(Location loc, Effect effect, int data);
 
     /**
      * Plays an effect to just this player.
@@ -889,7 +883,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param effect the {@link Effect}
      * @param data a data bit needed for some effects
      */
-    public <T> void playEffect(@NotNull Location loc, @NotNull Effect effect, @Nullable T data);
+    public <T> void playEffect(Location loc, Effect effect, @Nullable T data);
 
     /**
      * Force this player to break a Block using the item in their main hand.
@@ -913,7 +907,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return true if the block was broken, false if the break failed
      */
-    public boolean breakBlock(@NotNull Block block);
+    public boolean breakBlock(Block block);
 
     /**
      * Send a block change. This fakes a block change packet for a user at a
@@ -925,7 +919,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Magic value
      */
     @Deprecated(since = "1.6.2")
-    public void sendBlockChange(@NotNull Location loc, @NotNull Material material, byte data);
+    public void sendBlockChange(Location loc, Material material, byte data);
 
     /**
      * Send a block change. This fakes a block change packet for a user at a
@@ -934,7 +928,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param loc The location of the changed block
      * @param block The new block
      */
-    public void sendBlockChange(@NotNull Location loc, @NotNull BlockData block);
+    public void sendBlockChange(Location loc, BlockData block);
 
     /**
      * Send a multi-block change. This fakes a block change packet for a user
@@ -954,7 +948,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param blocks the block states to send to the player
      */
-    public void sendBlockChanges(@NotNull Collection<BlockState> blocks);
+    public void sendBlockChanges(Collection<BlockState> blocks);
 
     /**
      * Send a multi-block change. This fakes a block change packet for a user
@@ -979,7 +973,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * than 1.19.4
      */
     @Deprecated(since = "1.20")
-    public void sendBlockChanges(@NotNull Collection<BlockState> blocks, boolean suppressLightUpdates);
+    public void sendBlockChanges(Collection<BlockState> blocks, boolean suppressLightUpdates);
 
     /**
      * Send block damage. This fakes block break progress at a certain location
@@ -990,7 +984,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param progress the progress from 0.0 - 1.0 where 0 is no damage and
      * 1.0 is the most damaged
      */
-    public void sendBlockDamage(@NotNull Location loc, float progress);
+    public void sendBlockDamage(Location loc, float progress);
 
     // Paper start
     /**
@@ -999,7 +993,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param blockChanges A map of the positions you want to change to their new block data
      */
-    void sendMultiBlockChange(@NotNull Map<? extends io.papermc.paper.math.Position, BlockData> blockChanges);
+    void sendMultiBlockChange(Map<? extends io.papermc.paper.math.Position, BlockData> blockChanges);
 
     /**
      * Send multiple block changes. This fakes a multi block change packet for each
@@ -1010,7 +1004,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated suppressLightUpdates is no longer available in 1.20+, use {@link #sendMultiBlockChange(Map)}
      */
     @Deprecated
-    default void sendMultiBlockChange(@NotNull Map<? extends io.papermc.paper.math.Position, BlockData> blockChanges, boolean suppressLightUpdates) {
+    default void sendMultiBlockChange(Map<? extends io.papermc.paper.math.Position, BlockData> blockChanges, boolean suppressLightUpdates) {
         this.sendMultiBlockChange(blockChanges);
     }
     // Paper end
@@ -1029,7 +1023,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * 1.0 is the most damaged
      * @param source the entity to which the damage belongs
      */
-    public void sendBlockDamage(@NotNull Location loc, float progress, @NotNull Entity source);
+    public void sendBlockDamage(Location loc, float progress, Entity source);
 
     /**
      * Send block damage. This fakes block break progress at a certain location
@@ -1046,7 +1040,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param sourceId the entity id of the entity to which the damage belongs.
      * Can be an id that does not associate directly with an existing or loaded entity.
      */
-    public void sendBlockDamage(@NotNull Location loc, float progress, int sourceId);
+    public void sendBlockDamage(Location loc, float progress, int sourceId);
 
     /**
      * Send an equipment change for the target entity. This will not
@@ -1057,7 +1051,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param item the item to which the slot should be changed, or null to set
      * it to air
      */
-    public void sendEquipmentChange(@NotNull LivingEntity entity, @NotNull EquipmentSlot slot, @Nullable ItemStack item);
+    public void sendEquipmentChange(LivingEntity entity, EquipmentSlot slot, @Nullable ItemStack item);
 
     /**
      * Send multiple equipment changes for the target entity. This will not
@@ -1067,7 +1061,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param items the slots to change, where the values are the items to which
      * the slot should be changed. null values will set the slot to air, empty map is not allowed
      */
-    public void sendEquipmentChange(@NotNull LivingEntity entity, @NotNull Map<EquipmentSlot, ItemStack> items);
+    public void sendEquipmentChange(LivingEntity entity, Map<EquipmentSlot, ItemStack> items);
 
     // Paper start
     /**
@@ -1089,7 +1083,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated
-    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<? extends net.kyori.adventure.text.Component> lines) throws IllegalArgumentException {
+    default void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines) throws IllegalArgumentException {
         this.sendSignChange(loc, lines, DyeColor.BLACK);
     }
 
@@ -1114,7 +1108,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated
-    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<? extends net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException {
+    default void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines, DyeColor dyeColor) throws IllegalArgumentException {
         this.sendSignChange(loc, lines, dyeColor, false);
     }
 
@@ -1139,7 +1133,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated
-    default void sendSignChange(@NotNull Location loc, @Nullable java.util.List<? extends net.kyori.adventure.text.Component> lines, boolean hasGlowingText) throws IllegalArgumentException {
+    default void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines, boolean hasGlowingText) throws IllegalArgumentException {
         this.sendSignChange(loc, lines, DyeColor.BLACK, hasGlowingText);
     }
 
@@ -1165,7 +1159,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated
-    void sendSignChange(@NotNull Location loc, @Nullable java.util.List<? extends net.kyori.adventure.text.Component> lines, @NotNull DyeColor dyeColor, boolean hasGlowingText)
+    void sendSignChange(Location loc, java.util.@Nullable List<? extends net.kyori.adventure.text.Component> lines, DyeColor dyeColor, boolean hasGlowingText)
         throws IllegalArgumentException;
     // Paper end
 
@@ -1191,7 +1185,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(@NotNull Location loc, @Nullable String[] lines) throws IllegalArgumentException;
+    public void sendSignChange(Location loc, @Nullable String[] lines) throws IllegalArgumentException;
 
     /**
      * Send a sign change. This fakes a sign change packet for a user at
@@ -1217,7 +1211,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor) throws IllegalArgumentException;
+    public void sendSignChange(Location loc, @Nullable String[] lines, DyeColor dyeColor) throws IllegalArgumentException;
 
     /**
      * Send a sign change. This fakes a sign change packet for a user at
@@ -1244,7 +1238,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(@NotNull Location loc, @Nullable String[] lines, @NotNull DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
+    public void sendSignChange(Location loc, @Nullable String[] lines, DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
 
     /**
      * Send a TileState change. This fakes a TileState change for a user at
@@ -1264,7 +1258,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException if tileState is null
      */
     @ApiStatus.Experimental
-    public void sendBlockUpdate(@NotNull Location loc, @NotNull TileState tileState) throws IllegalArgumentException;
+    public void sendBlockUpdate(Location loc, TileState tileState) throws IllegalArgumentException;
 
     /**
      * Change a potion effect for the target entity. This will not actually
@@ -1278,7 +1272,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param entity the entity whose potion effects to change
      * @param effect the effect to change
      */
-    public void sendPotionEffectChange(@NotNull LivingEntity entity, @NotNull PotionEffect effect);
+    public void sendPotionEffectChange(LivingEntity entity, PotionEffect effect);
 
     /**
      * Remove a potion effect for the target entity. This will not actually
@@ -1290,7 +1284,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param entity the entity whose potion effects to change
      * @param type the effect type to remove
      */
-    public void sendPotionEffectChangeRemove(@NotNull LivingEntity entity, @NotNull PotionEffectType type);
+    public void sendPotionEffectChangeRemove(LivingEntity entity, PotionEffectType type);
 
     /**
      * Render a map and send it to the player in its entirety. This may be
@@ -1298,7 +1292,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param map The map to be sent
      */
-    public void sendMap(@NotNull MapView map);
+    public void sendMap(MapView map);
 
     // Paper start
     /**
@@ -1350,9 +1344,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
     // For reference, Bukkit defines this as nullable, while they impl isn't, we'll follow API.
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerFull(@Nullable String reason) {
+    public default org.bukkit.@Nullable BanEntry banPlayerFull(@Nullable String reason) {
         return banPlayerFull(reason, null, null);
     }
 
@@ -1364,9 +1357,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerFull(@Nullable String reason, @Nullable String source) {
+    public default org.bukkit.@Nullable BanEntry banPlayerFull(@Nullable String reason, @Nullable String source) {
         return banPlayerFull(reason, null, source);
     }
 
@@ -1378,9 +1370,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerFull(@Nullable String reason, @Nullable java.util.Date expires) {
+    public default org.bukkit.@Nullable BanEntry banPlayerFull(@Nullable String reason, java.util.@Nullable Date expires) {
         return banPlayerFull(reason, expires, null);
     }
 
@@ -1393,9 +1384,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerFull(@Nullable String reason, @Nullable java.util.Date expires, @Nullable String source) {
+    public default org.bukkit.@Nullable BanEntry banPlayerFull(@Nullable String reason, java.util.@Nullable Date expires, @Nullable String source) {
         banPlayer(reason, expires, source);
         return banPlayerIP(reason, expires, source, true);
     }
@@ -1409,9 +1399,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerIP(@Nullable String reason, boolean kickPlayer) {
+    public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, boolean kickPlayer) {
         return banPlayerIP(reason, null, null, kickPlayer);
     }
 
@@ -1424,9 +1413,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerIP(@Nullable String reason, @Nullable String source, boolean kickPlayer) {
+    public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, @Nullable String source, boolean kickPlayer) {
         return banPlayerIP(reason, null, source, kickPlayer);
     }
 
@@ -1439,9 +1427,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerIP(@Nullable String reason, @Nullable java.util.Date expires, boolean kickPlayer) {
+    public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, java.util.@Nullable Date expires, boolean kickPlayer) {
         return banPlayerIP(reason, expires, null, kickPlayer);
     }
 
@@ -1453,9 +1440,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerIP(@Nullable String reason) {
+    public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason) {
         return banPlayerIP(reason, null, null);
     }
 
@@ -1467,9 +1453,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerIP(@Nullable String reason, @Nullable String source) {
+    public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, @Nullable String source) {
         return banPlayerIP(reason, null, source);
     }
 
@@ -1481,9 +1466,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerIP(@Nullable String reason, @Nullable java.util.Date expires) {
+    public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, java.util.@Nullable Date expires) {
         return banPlayerIP(reason, expires, null);
     }
 
@@ -1496,9 +1480,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerIP(@Nullable String reason, @Nullable java.util.Date expires, @Nullable String source) {
+    public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, java.util.@Nullable Date expires, @Nullable String source) {
         return banPlayerIP(reason, expires, source, true);
     }
 
@@ -1512,9 +1495,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return Ban Entry
      * @deprecated use {@link #ban(String, Date, String)} and {@link #banIp(String, Date, String, boolean)}
      */
-    @Nullable
     @Deprecated(since = "1.20.4")
-    public default org.bukkit.BanEntry banPlayerIP(@Nullable String reason, @Nullable java.util.Date expires, @Nullable String source, boolean kickPlayer) {
+    public default org.bukkit.@Nullable BanEntry banPlayerIP(@Nullable String reason, java.util.@Nullable Date expires, @Nullable String source, boolean kickPlayer) {
         org.bukkit.BanEntry banEntry = org.bukkit.Bukkit.getServer().getBanList(org.bukkit.BanList.Type.IP).addBan(getAddress().getAddress().getHostAddress(), reason, expires, source);
         if (kickPlayer && isOnline()) {
             getPlayer().kickPlayer(reason);
@@ -1532,7 +1514,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated use {@link #sendActionBar(net.kyori.adventure.text.Component)}
      */
     @Deprecated
-    public void sendActionBar(@NotNull String message);
+    public void sendActionBar(String message);
 
     /**
      * Sends an Action Bar message to the client.
@@ -1544,7 +1526,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated use {@link #sendActionBar(net.kyori.adventure.text.Component)}
      */
     @Deprecated
-    public void sendActionBar(char alternateChar, @NotNull String message);
+    public void sendActionBar(char alternateChar, String message);
 
     /**
      * Sends an Action Bar message to the client.
@@ -1553,7 +1535,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated use {@link #sendActionBar(net.kyori.adventure.text.Component)}
      */
     @Deprecated
-    public void sendActionBar(@NotNull net.md_5.bungee.api.chat.BaseComponent... message);
+    public void sendActionBar(net.md_5.bungee.api.chat.BaseComponent... message);
 
     /**
      * Sends the component to the player
@@ -1563,7 +1545,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Override
     @Deprecated
-    public default void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+    public default void sendMessage(net.md_5.bungee.api.chat.BaseComponent component) {
         spigot().sendMessage(component);
     }
 
@@ -1575,7 +1557,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      */
     @Override
     @Deprecated
-    public default void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+    public default void sendMessage(net.md_5.bungee.api.chat.BaseComponent... components) {
         spigot().sendMessage(components);
     }
 
@@ -1599,7 +1581,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated in favour of {@link #sendPlayerListHeaderAndFooter(net.kyori.adventure.text.Component, net.kyori.adventure.text.Component)}
      */
     @Deprecated
-    public void setPlayerListHeaderFooter(@Nullable net.md_5.bungee.api.chat.BaseComponent[] header, @Nullable net.md_5.bungee.api.chat.BaseComponent[] footer);
+    public void setPlayerListHeaderFooter(net.md_5.bungee.api.chat.BaseComponent @Nullable [] header, net.md_5.bungee.api.chat.BaseComponent @Nullable [] footer);
 
     /**
      * Set the text displayed in the player list header and footer for this player
@@ -1609,7 +1591,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated in favour of {@link #sendPlayerListHeaderAndFooter(net.kyori.adventure.text.Component, net.kyori.adventure.text.Component)}
      */
     @Deprecated
-    public void setPlayerListHeaderFooter(@Nullable net.md_5.bungee.api.chat.BaseComponent header, @Nullable net.md_5.bungee.api.chat.BaseComponent footer);
+    public void setPlayerListHeaderFooter(net.md_5.bungee.api.chat.@Nullable BaseComponent header, net.md_5.bungee.api.chat.@Nullable BaseComponent footer);
 
     /**
      * Update the times for titles displayed to the player
@@ -1647,7 +1629,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
      */
     @Deprecated
-    public void showTitle(@Nullable net.md_5.bungee.api.chat.BaseComponent[] title);
+    public void showTitle(net.md_5.bungee.api.chat.@Nullable BaseComponent[] title);
 
     /**
      * Show the given title to the player, along with the last subtitle set, using the last set times
@@ -1656,7 +1638,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
      */
     @Deprecated
-    public void showTitle(@Nullable net.md_5.bungee.api.chat.BaseComponent title);
+    public void showTitle(net.md_5.bungee.api.chat.@Nullable BaseComponent title);
 
     /**
      * Show the given title and subtitle to the player using the given times
@@ -1669,7 +1651,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
      */
     @Deprecated
-    public void showTitle(@Nullable net.md_5.bungee.api.chat.BaseComponent[] title, @Nullable net.md_5.bungee.api.chat.BaseComponent[] subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks);
+    public void showTitle(net.md_5.bungee.api.chat.@Nullable BaseComponent[] title, net.md_5.bungee.api.chat.@Nullable BaseComponent[] subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks);
 
     /**
      * Show the given title and subtitle to the player using the given times
@@ -1682,7 +1664,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
      */
     @Deprecated
-    public void showTitle(@Nullable net.md_5.bungee.api.chat.BaseComponent title, @Nullable net.md_5.bungee.api.chat.BaseComponent subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks);
+    public void showTitle(net.md_5.bungee.api.chat.@Nullable BaseComponent title, net.md_5.bungee.api.chat.@Nullable BaseComponent subtitle, int fadeInTicks, int stayTicks, int fadeOutTicks);
 
     /**
      * Show the title to the player, overriding any previously displayed title.
@@ -1694,7 +1676,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
      */
     @Deprecated
-    void sendTitle(@NotNull com.destroystokyo.paper.Title title);
+    void sendTitle(com.destroystokyo.paper.Title title);
 
     /**
      * Show the title to the player, overriding any previously displayed title.
@@ -1706,7 +1688,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated Use {@link #showTitle(net.kyori.adventure.title.Title)} or {@link #sendTitlePart(net.kyori.adventure.title.TitlePart, Object)}
      */
     @Deprecated
-    void updateTitle(@NotNull com.destroystokyo.paper.Title title);
+    void updateTitle(com.destroystokyo.paper.Title title);
 
     /**
      * Hide any title that is currently visible to the player
@@ -1732,7 +1714,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param links links to send
      */
-    public void sendLinks(@NotNull ServerLinks links);
+    public void sendLinks(ServerLinks links);
 
     /**
      * Add custom chat completion suggestions shown to the player while typing a
@@ -1740,7 +1722,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param completions the completions to send
      */
-    public void addCustomChatCompletions(@NotNull Collection<String> completions);
+    public void addCustomChatCompletions(Collection<String> completions);
 
     /**
      * Remove custom chat completion suggestions shown to the player while
@@ -1752,7 +1734,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param completions the completions to remove
      */
-    public void removeCustomChatCompletions(@NotNull Collection<String> completions);
+    public void removeCustomChatCompletions(Collection<String> completions);
 
     /**
      * Set the list of chat completion suggestions shown to the player while
@@ -1763,7 +1745,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param completions the completions to set
      */
-    public void setCustomChatCompletions(@NotNull Collection<String> completions);
+    public void setCustomChatCompletions(Collection<String> completions);
 
     /**
      * Forces an update of the player's entire inventory.
@@ -1835,7 +1817,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param type The WeatherType enum type the player should experience
      */
-    public void setPlayerWeather(@NotNull WeatherType type);
+    public void setPlayerWeather(WeatherType type);
 
     /**
      * Returns the type of weather the player is currently experiencing.
@@ -2047,14 +2029,13 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param flyingFallDamage Enables fall damage when {@link #getAllowFlight()} is {@code true}
      */
-    public void setFlyingFallDamage(@NotNull net.kyori.adventure.util.TriState flyingFallDamage);
+    public void setFlyingFallDamage(net.kyori.adventure.util.TriState flyingFallDamage);
 
     /**
      * Allows you to get if fall damage is enabled while {@link #getAllowFlight()} is {@code true}
      *
      * @return A tristate of whether fall damage is enabled, not set, or disabled when {@link #getAllowFlight()} is {@code true}
      */
-    @NotNull
     public net.kyori.adventure.util.TriState hasFlyingFallDamage();
     // Paper end
 
@@ -2065,7 +2046,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated see {@link #hidePlayer(Plugin, Player)}
      */
     @Deprecated(since = "1.12.2")
-    public void hidePlayer(@NotNull Player player);
+    public void hidePlayer(Player player);
 
     /**
      * Hides a player from this player
@@ -2073,7 +2054,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param plugin Plugin that wants to hide the player
      * @param player Player to hide
      */
-    public void hidePlayer(@NotNull Plugin plugin, @NotNull Player player);
+    public void hidePlayer(Plugin plugin, Player player);
 
     /**
      * Allows this player to see a player that was previously hidden
@@ -2082,7 +2063,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated see {@link #showPlayer(Plugin, Player)}
      */
     @Deprecated(since = "1.12.2")
-    public void showPlayer(@NotNull Player player);
+    public void showPlayer(Player player);
 
     /**
      * Allows this player to see a player that was previously hidden. If
@@ -2092,7 +2073,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param plugin Plugin that wants to show the player
      * @param player Player to show
      */
-    public void showPlayer(@NotNull Plugin plugin, @NotNull Player player);
+    public void showPlayer(Plugin plugin, Player player);
 
     /**
      * Checks to see if a player has been hidden from this player
@@ -2101,7 +2082,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return True if the provided player is not being hidden from this
      *     player
      */
-    public boolean canSee(@NotNull Player player);
+    public boolean canSee(Player player);
 
     /**
      * Visually hides an entity from this player.
@@ -2109,7 +2090,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param plugin Plugin that wants to hide the entity
      * @param entity Entity to hide
      */
-    public void hideEntity(@NotNull Plugin plugin, @NotNull Entity entity);
+    public void hideEntity(Plugin plugin, Entity entity);
 
     /**
      * Allows this player to see an entity that was previously hidden. If
@@ -2119,7 +2100,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param plugin Plugin that wants to show the entity
      * @param entity Entity to show
      */
-    public void showEntity(@NotNull Plugin plugin, @NotNull Entity entity);
+    public void showEntity(Plugin plugin, Entity entity);
 
     /**
      * Checks to see if an entity has been visually hidden from this player.
@@ -2128,7 +2109,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return True if the provided entity is not being hidden from this
      *     player
      */
-    public boolean canSee(@NotNull Entity entity);
+    public boolean canSee(Entity entity);
 
     // Paper start
     /**
@@ -2137,7 +2118,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param other The other {@link Player} to check for listing.
      * @return True if the {@code other} player is listed for {@code this}.
      */
-    boolean isListed(@NotNull Player other);
+    boolean isListed(Player other);
 
     /**
      * Unlists the {@code other} player from the tablist.
@@ -2145,7 +2126,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param other The other {@link Player} to de-list.
      * @return True if the {@code other} player was listed.
      */
-    boolean unlistPlayer(@NotNull Player other);
+    boolean unlistPlayer(Player other);
 
     /**
      * Lists the {@code other} player.
@@ -2153,7 +2134,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param other The other {@link Player} to list.
      * @return True if the {@code other} player was not listed.
      */
-    boolean listPlayer(@NotNull Player other);
+    boolean listPlayer(Player other);
     // Paper end
 
     /**
@@ -2235,7 +2216,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     should use {@link #setResourcePack(UUID, String, byte[], net.kyori.adventure.text.Component, boolean)}.
      */
     @Deprecated(since = "1.7.2")
-    public void setTexturePack(@NotNull String url);
+    public void setTexturePack(String url);
 
     /**
      * Request that the player's client download and switch resource packs.
@@ -2268,7 +2249,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
      */
     @Deprecated // Paper - adventure
-    public void setResourcePack(@NotNull String url);
+    public void setResourcePack(String url);
 
     /**
      * Request that the player's client download and switch resource packs.
@@ -2310,7 +2291,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     long.
      */
     @Deprecated // Paper - adventure
-    public void setResourcePack(@NotNull String url, byte @Nullable [] hash);
+    public void setResourcePack(String url, byte @Nullable [] hash);
 
     /**
      * Request that the player's client download and switch resource packs.
@@ -2355,7 +2336,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     long.
      */
     @Deprecated // Paper - adventure
-    public void setResourcePack(@NotNull String url, byte @Nullable [] hash, @Nullable String prompt);
+    public void setResourcePack(String url, byte @Nullable [] hash, @Nullable String prompt);
 
     // Paper start
     /**
@@ -2400,7 +2381,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     long.
      * @see #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)
      */
-    default void setResourcePack(final @NotNull String url, final byte @Nullable [] hash, final net.kyori.adventure.text.@Nullable Component prompt) {
+    default void setResourcePack(final String url, final byte @Nullable [] hash, final net.kyori.adventure.text.@Nullable Component prompt) {
         this.setResourcePack(url, hash, prompt, false);
     }
     // Paper end
@@ -2449,7 +2430,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
      */
     @Deprecated // Paper - adventure
-    public void setResourcePack(@NotNull String url, byte @Nullable [] hash, boolean force);
+    public void setResourcePack(String url, byte @Nullable [] hash, boolean force);
 
     /**
      * Request that the player's client download and switch resource packs.
@@ -2496,7 +2477,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
      */
     @Deprecated // Paper
-    public void setResourcePack(@NotNull String url, byte @Nullable [] hash, @Nullable String prompt, boolean force);
+    public void setResourcePack(String url, byte @Nullable [] hash, @Nullable String prompt, boolean force);
 
     // Paper start
     /**
@@ -2543,7 +2524,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     long.
      * @see #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)
      */
-    default void setResourcePack(final @NotNull String url, final byte @Nullable [] hash, final net.kyori.adventure.text.@Nullable Component prompt, final boolean force) {
+    default void setResourcePack(final String url, final byte @Nullable [] hash, final net.kyori.adventure.text.@Nullable Component prompt, final boolean force) {
         this.setResourcePack(UUID.nameUUIDFromBytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)), url, hash, prompt, force);
     }
     // Paper end
@@ -2594,7 +2575,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated in favour of {@link #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)}
      */
     @Deprecated // Paper - adventure
-    public void setResourcePack(@NotNull UUID id, @NotNull String url, byte @Nullable [] hash, @Nullable String prompt, boolean force);
+    public void setResourcePack(UUID id, String url, byte @Nullable [] hash, @Nullable String prompt, boolean force);
 
     // Paper start
     /**
@@ -2642,7 +2623,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *     long.
      * @see #sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest)
      */
-    void setResourcePack(@NotNull UUID uuid, @NotNull String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt, boolean force);
+    void setResourcePack(UUID uuid, String url, byte @Nullable [] hash, net.kyori.adventure.text.@Nullable Component prompt, boolean force);
     // Paper end
 
     // Paper start - more resource pack API
@@ -2675,7 +2656,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException Thrown if the URL is too long. The
      *     length restriction is an implementation specific arbitrary value.
      */
-    default void setResourcePack(final @NotNull String url, final @NotNull String hash) {
+    default void setResourcePack(final String url, final String hash) {
         this.setResourcePack(url, hash, false);
     }
 
@@ -2709,7 +2690,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException Thrown if the URL is too long. The
      *     length restriction is an implementation specific arbitrary value.
      */
-    default void setResourcePack(final @NotNull String url, final @NotNull String hash, final boolean required) {
+    default void setResourcePack(final String url, final String hash, final boolean required) {
         this.setResourcePack(url, hash, required, null);
     }
 
@@ -2744,7 +2725,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException Thrown if the URL is too long. The
      *     length restriction is an implementation specific arbitrary value.
      */
-    default void setResourcePack(final @NotNull String url, final @NotNull String hash, final boolean required, final net.kyori.adventure.text.@Nullable Component resourcePackPrompt) {
+    default void setResourcePack(final String url, final String hash, final boolean required, final net.kyori.adventure.text.@Nullable Component resourcePackPrompt) {
         this.setResourcePack(UUID.nameUUIDFromBytes(url.getBytes(java.nio.charset.StandardCharsets.UTF_8)), url, hash, resourcePackPrompt, required);
     }
 
@@ -2780,7 +2761,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException Thrown if the URL is too long. The
      *     length restriction is an implementation specific arbitrary value.
      */
-    default void setResourcePack(final @NotNull UUID uuid, final @NotNull String url, final @NotNull String hash, final net.kyori.adventure.text.@Nullable Component resourcePackPrompt, final boolean required) {
+    default void setResourcePack(final UUID uuid, final String url, final String hash, final net.kyori.adventure.text.@Nullable Component resourcePackPrompt, final boolean required) {
         this.sendResourcePacks(net.kyori.adventure.resource.ResourcePackRequest.resourcePackRequest()
             .required(required)
             .replace(true)
@@ -2863,7 +2844,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
      *     long.
      */
-    public void addResourcePack(@NotNull UUID id, @NotNull String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
+    public void addResourcePack(UUID id, String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
 
     /**
      * Request that the player's client remove a resource pack sent by the
@@ -2873,7 +2854,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException If the ID is null.
      * @see #removeResourcePacks(UUID, UUID...)
      */
-    public void removeResourcePack(@NotNull UUID id);
+    public void removeResourcePack(UUID id);
 
     /**
      * Request that the player's client remove all loaded resource pack sent by
@@ -2887,7 +2868,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return The current scoreboard seen by this player
      */
-    @NotNull
     public Scoreboard getScoreboard();
 
     /**
@@ -2900,7 +2880,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalStateException if this is a player that is not logged
      *     yet or has logged out
      */
-    public void setScoreboard(@NotNull Scoreboard scoreboard) throws IllegalArgumentException, IllegalStateException;
+    public void setScoreboard(Scoreboard scoreboard) throws IllegalArgumentException, IllegalStateException;
 
     /**
      * Gets the {@link WorldBorder} visible to this Player, or null if viewing
@@ -3054,7 +3034,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param location the location to spawn at
      * @param count the number of particles
      */
-    public void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count);
+    public void spawnParticle(Particle particle, Location location, int count);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3066,7 +3046,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param z the position on the z axis to spawn at
      * @param count the number of particles
      */
-    public void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count);
+    public void spawnParticle(Particle particle, double x, double y, double z, int count);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3079,7 +3059,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    public <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, @Nullable T data);
+    public <T> void spawnParticle(Particle particle, Location location, int count, @Nullable T data);
 
 
     /**
@@ -3095,7 +3075,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    public <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, @Nullable T data);
+    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, @Nullable T data);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3110,7 +3090,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
      */
-    public void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ);
+    public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3127,7 +3107,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
      */
-    public void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ);
+    public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3145,7 +3125,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    public <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, @Nullable T data);
+    public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, @Nullable T data);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3165,7 +3145,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    public <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, @Nullable T data);
+    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, @Nullable T data);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3182,7 +3162,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param extra the extra data for this particle, depends on the
      *              particle used (normally speed)
      */
-    public void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double extra);
+    public void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3201,7 +3181,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param extra the extra data for this particle, depends on the
      *              particle used (normally speed)
      */
-    public void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra);
+    public void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3221,7 +3201,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    public <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data);
+    public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3243,7 +3223,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    public <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data);
+    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3266,7 +3246,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *              range and encourage their client to render it regardless of
      *              settings
      */
-    public <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
+    public <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3291,7 +3271,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *              range and encourage their client to render it regardless of
      *              settings
      */
-    public <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
+    public <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
 
     /**
      * Return the player's progression on the specified advancement.
@@ -3299,8 +3279,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param advancement advancement
      * @return object detailing the player's progress
      */
-    @NotNull
-    public AdvancementProgress getAdvancementProgress(@NotNull Advancement advancement);
+    public AdvancementProgress getAdvancementProgress(Advancement advancement);
 
     /**
      * Get the player's current client side view distance.
@@ -3318,7 +3297,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return the player's locale
      */
-    @NotNull java.util.Locale locale();
+    java.util.Locale locale();
     // Paper end
     /**
      * Gets the player's estimated ping in milliseconds.
@@ -3347,7 +3326,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return the player's locale
      * @deprecated in favour of {@link #locale()}
      */
-    @NotNull
     @Deprecated // Paper
     public String getLocale();
 
@@ -3456,7 +3434,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param book The book to open for this player
      */
-    public void openBook(@NotNull ItemStack book);
+    public void openBook(ItemStack book);
 
     /**
      * Open a Sign for editing by the Player.
@@ -3467,7 +3445,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated use {@link #openSign(Sign, Side)}
      */
     @Deprecated
-    public void openSign(@NotNull Sign sign);
+    public void openSign(Sign sign);
 
     /**
      * Open a Sign for editing by the Player.
@@ -3477,7 +3455,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param sign The sign to edit
      * @param side The side to edit
      */
-    public void openSign(@NotNull Sign sign, @NotNull Side side);
+    public void openSign(Sign sign, Side side);
 
     /**
      * Shows the demo screen to the player, this screen is normally only seen in
@@ -3495,9 +3473,8 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     public boolean isAllowingServerListings();
 
     // Paper start
-    @NotNull
     @Override
-    default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
+    default net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowEntity> asHoverEvent(final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowEntity> op) {
         return net.kyori.adventure.text.event.HoverEvent.showEntity(op.apply(net.kyori.adventure.text.event.HoverEvent.ShowEntity.of(this.getType().getKey(), this.getUniqueId(), this.displayName())));
     }
     // Paper end
@@ -3508,7 +3485,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return The players profile object
      */
-    com.destroystokyo.paper.profile.@NotNull PlayerProfile getPlayerProfile();
+    com.destroystokyo.paper.profile.PlayerProfile getPlayerProfile();
 
     /**
      * Changes the PlayerProfile for this player. This will cause this player
@@ -3519,7 +3496,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @param profile The new profile to use
      */
-    void setPlayerProfile(com.destroystokyo.paper.profile.@NotNull PlayerProfile profile);
+    void setPlayerProfile(com.destroystokyo.paper.profile.PlayerProfile profile);
     // Paper end - Player Profile API
 
     // Paper start - attack cooldown API
@@ -3548,7 +3525,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     /**
      * @return the client option value of the player
      */
-    <T> @NotNull T getClientOption(com.destroystokyo.paper.@NotNull ClientOption<T> option);
+    <T> T getClientOption(com.destroystokyo.paper.ClientOption<T> option);
     // Paper end - client option API
 
     // Paper start - elytra boost API
@@ -3564,7 +3541,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated use {@link HumanEntity#fireworkBoost(ItemStack)} instead. Note that this method <b>does not</b>
      * check if the player is gliding or not.
      */
-    default @Nullable Firework boostElytra(final @NotNull ItemStack firework) {
+    default @Nullable Firework boostElytra(final ItemStack firework) {
         com.google.common.base.Preconditions.checkState(this.isGliding(), "Player must be gliding");
         return this.fireworkBoost(firework);
     }
@@ -3592,7 +3569,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated use {@link #addCustomChatCompletions(Collection)}
      */
     @Deprecated(since = "1.20.1")
-    void addAdditionalChatCompletions(@NotNull java.util.Collection<String> completions);
+    void addAdditionalChatCompletions(java.util.Collection<String> completions);
 
     /**
      * Removes custom chat completion suggestions that the client
@@ -3605,7 +3582,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @deprecated use {@link #addCustomChatCompletions(Collection)}
      */
     @Deprecated(since = "1.20.1")
-    void removeAdditionalChatCompletions(@NotNull java.util.Collection<String> completions);
+    void removeAdditionalChatCompletions(java.util.Collection<String> completions);
     // Paper end - custom chat completions API
 
     // Spigot start
@@ -3617,7 +3594,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          *
          * @return the player's connection address
          */
-        @NotNull
         public InetSocketAddress getRawAddress() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -3634,20 +3610,19 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          *
          * @return a Set with all hidden players
          */
-        @NotNull
         public java.util.Set<Player> getHiddenPlayers() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Deprecated // Paper
         @Override
-        public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+        public void sendMessage(net.md_5.bungee.api.chat.BaseComponent component) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Deprecated // Paper
         @Override
-        public void sendMessage(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+        public void sendMessage(net.md_5.bungee.api.chat.BaseComponent... components) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -3659,7 +3634,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
          */
         @Deprecated // Paper
-        public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+        public void sendMessage(net.md_5.bungee.api.ChatMessageType position, net.md_5.bungee.api.chat.BaseComponent component) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -3671,7 +3646,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
          */
         @Deprecated // Paper
-        public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+        public void sendMessage(net.md_5.bungee.api.ChatMessageType position, net.md_5.bungee.api.chat.BaseComponent... components) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -3684,7 +3659,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
          */
         @Deprecated // Paper
-        public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable java.util.UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent component) {
+        public void sendMessage(net.md_5.bungee.api.ChatMessageType position, java.util.@Nullable UUID sender, net.md_5.bungee.api.chat.BaseComponent component) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -3697,7 +3672,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
          * @deprecated use {@code sendMessage} methods that accept {@link net.kyori.adventure.text.Component}
          */
         @Deprecated // Paper
-        public void sendMessage(@NotNull net.md_5.bungee.api.ChatMessageType position, @Nullable java.util.UUID sender, @NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
+        public void sendMessage(net.md_5.bungee.api.ChatMessageType position, java.util.@Nullable UUID sender, net.md_5.bungee.api.chat.BaseComponent... components) {
             throw new UnsupportedOperationException("Not supported yet.");
 
         }
@@ -3740,7 +3715,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param playerAnchor What part of the player should face the entity
      * @param entityAnchor What part of the entity the player should face
      */
-    void lookAt(@NotNull org.bukkit.entity.Entity entity, @NotNull LookAnchor playerAnchor, @NotNull LookAnchor entityAnchor);
+    void lookAt(org.bukkit.entity.Entity entity, LookAnchor playerAnchor, LookAnchor entityAnchor);
     // Paper end - Teleport API
 
     // Paper start
@@ -3824,7 +3799,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *
      * @return the current idle duration of this player
      */
-    @NotNull Duration getIdleDuration();
+    Duration getIdleDuration();
 
     /**
      * Resets this player's idle duration.
@@ -3846,7 +3821,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * vs it potentially being an unmodifiable view of the set chunks.
      */
     @ApiStatus.Experimental
-    java.util.@NotNull @org.jetbrains.annotations.Unmodifiable Set<Long> getSentChunkKeys();
+    java.util.@org.jetbrains.annotations.Unmodifiable Set<Long> getSentChunkKeys();
 
     /**
      * Gets the set of chunks that have been sent to the player.
@@ -3856,7 +3831,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
       * vs it potentially being an unmodifiable view of the set chunks.
      */
     @ApiStatus.Experimental
-    java.util.@NotNull @org.jetbrains.annotations.Unmodifiable Set<org.bukkit.Chunk> getSentChunks();
+    java.util.@org.jetbrains.annotations.Unmodifiable Set<org.bukkit.Chunk> getSentChunks();
 
     /**
      * Checks if the player has been sent a specific chunk.
@@ -3864,7 +3839,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param chunk the chunk to check
      * @return true if the player has been sent the chunk, false otherwise
      */
-    default boolean isChunkSent(@NotNull org.bukkit.Chunk chunk) {
+    default boolean isChunkSent(org.bukkit.Chunk chunk) {
         return this.isChunkSent(chunk.getChunkKey());
     }
 
@@ -3878,7 +3853,6 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     boolean isChunkSent(long chunkKey);
     // Paper end
 
-    @NotNull
     @Override
     Spigot spigot();
     // Spigot end
@@ -3892,7 +3866,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param effect the entity effect
      * @param target the target entity
      */
-    void sendEntityEffect(org.bukkit.@NotNull EntityEffect effect, @NotNull Entity target);
+    void sendEntityEffect(org.bukkit.EntityEffect effect, Entity target);
     // Paper end - entity effect API
 
     /**
@@ -3903,7 +3877,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param items the items to give.
      * @return the result of this method, holding leftovers and spawned items.
      */
-    default @NotNull PlayerGiveResult give(@NotNull final ItemStack @NotNull ... items) {
+    default PlayerGiveResult give(final ItemStack ... items) {
         return this.give(List.of(items));
     }
 
@@ -3915,7 +3889,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param items the items to give
      * @return the result of this method, holding leftovers and spawned items.
      */
-    default @NotNull PlayerGiveResult give(@NotNull final Collection<@NotNull ItemStack> items) {
+    default PlayerGiveResult give(final Collection<ItemStack> items) {
         return this.give(items, true);
     }
 
@@ -3927,5 +3901,5 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      *                   did not fit the inventory
      * @return the result of this method, holding leftovers and spawned items.
      */
-    @NotNull PlayerGiveResult give(@NotNull Collection<@NotNull ItemStack> items, boolean dropIfFull);
+    PlayerGiveResult give(Collection<ItemStack> items, boolean dropIfFull);
 }

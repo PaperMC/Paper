@@ -18,17 +18,18 @@ import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a human entity, such as an NPC or a player
  */
+@NullMarked
 public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder {
 
     // Paper start
     @Override
-    org.bukkit.inventory.@NotNull EntityEquipment getEquipment();
+    org.bukkit.inventory.EntityEquipment getEquipment();
     // Paper end
 
     /**
@@ -36,7 +37,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @return Player name
      */
-    @NotNull
     @Override
     public String getName();
 
@@ -46,7 +46,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return The inventory of the player, this also contains the armor
      *     slots.
      */
-    @NotNull
     @Override
     public PlayerInventory getInventory();
 
@@ -55,7 +54,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @return The EnderChest of the player
      */
-    @NotNull
     public Inventory getEnderChest();
 
     /**
@@ -63,7 +61,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @return the players main hand
      */
-    @NotNull
     public MainHand getMainHand();
 
     /**
@@ -76,7 +73,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @deprecated use {@link InventoryView} and its children.
      */
     @Deprecated(forRemoval = true, since = "1.21")
-    public boolean setWindowProperty(@NotNull InventoryView.Property prop, int value);
+    public boolean setWindowProperty(InventoryView.Property prop, int value);
 
     /**
      * Gets the player's current enchantment seed.
@@ -104,7 +101,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @return The inventory view.
      */
-    @NotNull
     public InventoryView getOpenInventory();
 
     /**
@@ -115,7 +111,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return The newly opened inventory view
      */
     @Nullable
-    public InventoryView openInventory(@NotNull Inventory inventory);
+    public InventoryView openInventory(Inventory inventory);
 
     /**
      * Opens an empty workbench inventory window with the player's inventory
@@ -162,7 +158,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @param inventory The view to open
      */
-    public void openInventory(@NotNull InventoryView inventory);
+    public void openInventory(InventoryView inventory);
 
     /**
      * Starts a trade between the player and the villager.
@@ -178,7 +174,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     @Deprecated(since = "1.21.4")
     @Nullable
-    public InventoryView openMerchant(@NotNull Villager trader, boolean force);
+    public InventoryView openMerchant(Villager trader, boolean force);
 
     /**
      * Starts a trade between the player and the merchant.
@@ -194,7 +190,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      */
     @Deprecated(since = "1.21.4")
     @Nullable
-    public InventoryView openMerchant(@NotNull Merchant merchant, boolean force);
+    public InventoryView openMerchant(Merchant merchant, boolean force);
 
     // Paper start - Add additional containers
     /**
@@ -311,7 +307,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @param reason why the inventory is closing
      */
-    public void closeInventory(@NotNull org.bukkit.event.inventory.InventoryCloseEvent.Reason reason);
+    public void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason);
     // Paper end
 
     /**
@@ -322,7 +318,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * methods in {@link PlayerInventory}.
      */
     @Deprecated(since = "1.9")
-    @NotNull
     public ItemStack getItemInHand();
 
     /**
@@ -342,7 +337,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @return The ItemStack of the item you are currently moving around.
      */
-    @NotNull
     public ItemStack getItemOnCursor();
 
     /**
@@ -361,7 +355,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return if a cooldown is active on the material
      * @throws IllegalArgumentException if the material is not an item
      */
-    public boolean hasCooldown(@NotNull Material material);
+    public boolean hasCooldown(Material material);
 
     /**
      * Get the cooldown time in ticks remaining for the specified material.
@@ -370,7 +364,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return the remaining cooldown time in ticks
      * @throws IllegalArgumentException if the material is not an item
      */
-    public int getCooldown(@NotNull Material material);
+    public int getCooldown(Material material);
 
     /**
      * Set a cooldown on the specified material for a certain amount of ticks.
@@ -386,7 +380,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param ticks the amount of ticks to set or 0 to remove
      * @throws IllegalArgumentException if the material is not an item
      */
-    public void setCooldown(@NotNull Material material, int ticks);
+    public void setCooldown(Material material, int ticks);
 
     // Paper start
     /**
@@ -413,7 +407,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param item the item to check
      * @return if a cooldown is active on the item
      */
-    public boolean hasCooldown(@NotNull ItemStack item);
+    public boolean hasCooldown(ItemStack item);
 
     /**
      * Get the cooldown time in ticks remaining for the specified item.
@@ -421,7 +415,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param item the item to check
      * @return the remaining cooldown time in ticks
      */
-    public int getCooldown(@NotNull ItemStack item);
+    public int getCooldown(ItemStack item);
 
     /**
      * Set a cooldown on the specified item for a certain amount of ticks.
@@ -436,7 +430,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param item the item to set the cooldown for
      * @param ticks the amount of ticks to set or 0 to remove
      */
-    public void setCooldown(@NotNull ItemStack item, int ticks);
+    public void setCooldown(ItemStack item, int ticks);
 
     /**
      * Get the sleep ticks of the player. This value may be capped.
@@ -493,7 +487,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * normally possible
      * @return whether the sleep was successful
      */
-    public boolean sleep(@NotNull Location location, boolean force);
+    public boolean sleep(Location location, boolean force);
 
     /**
      * Causes the player to wakeup if they are currently sleeping.
@@ -519,7 +513,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return location
      * @throws IllegalStateException if not sleeping
      */
-    @NotNull
     public Location getBedLocation();
 
     /**
@@ -527,7 +520,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @return Current game mode
      */
-    @NotNull
     public GameMode getGameMode();
 
     /**
@@ -535,7 +527,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @param mode New game mode
      */
-    public void setGameMode(@NotNull GameMode mode);
+    public void setGameMode(GameMode mode);
 
     /**
      * Check if the player is currently blocking (ie with a shield).
@@ -600,7 +592,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @return whether or not the recipe was newly discovered
      */
-    public boolean discoverRecipe(@NotNull NamespacedKey recipe);
+    public boolean discoverRecipe(NamespacedKey recipe);
 
     /**
      * Discover a collection of recipes for this player such that they have not
@@ -614,7 +606,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * none were newly discovered and a number equal to {@code recipes.size()}
      * indicates that all were new
      */
-    public int discoverRecipes(@NotNull Collection<NamespacedKey> recipes);
+    public int discoverRecipes(Collection<NamespacedKey> recipes);
 
     /**
      * Undiscover a recipe for this player such that it has already been
@@ -626,7 +618,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return whether or not the recipe was successfully undiscovered (i.e. it
      * was previously discovered)
      */
-    public boolean undiscoverRecipe(@NotNull NamespacedKey recipe);
+    public boolean undiscoverRecipe(NamespacedKey recipe);
 
     /**
      * Undiscover a collection of recipes for this player such that they have
@@ -640,7 +632,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * were undiscovered and a number equal to {@code recipes.size()} indicates
      * that all were undiscovered
      */
-    public int undiscoverRecipes(@NotNull Collection<NamespacedKey> recipes);
+    public int undiscoverRecipes(Collection<NamespacedKey> recipes);
 
     /**
      * Check whether or not this entity has discovered the specified recipe.
@@ -649,14 +641,13 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      *
      * @return true if discovered, false otherwise
      */
-    public boolean hasDiscoveredRecipe(@NotNull NamespacedKey recipe);
+    public boolean hasDiscoveredRecipe(NamespacedKey recipe);
 
     /**
      * Get an immutable set of recipes this entity has discovered.
      *
      * @return all discovered recipes
      */
-    @NotNull
     public Set<NamespacedKey> getDiscoveredRecipes();
 
     /**
@@ -730,7 +721,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @deprecated use {@link #openSign(org.bukkit.block.Sign, org.bukkit.block.sign.Side)}
      */
     @Deprecated
-    default void openSign(@NotNull org.bukkit.block.Sign sign) {
+    default void openSign(org.bukkit.block.Sign sign) {
         this.openSign(sign, org.bukkit.block.sign.Side.FRONT);
     }
 
@@ -740,7 +731,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @param sign The sign to open
      * @param side The side of the sign to open
      */
-    void openSign(org.bukkit.block.@NotNull Sign sign, org.bukkit.block.sign.@NotNull Side side);
+    void openSign(org.bukkit.block.Sign sign, org.bukkit.block.sign.Side side);
     // Paper end
 
     /**
@@ -801,7 +792,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return the dropped item entity, or null if the action was unsuccessful
      */
     @Nullable
-    default Item dropItem(final @NotNull EquipmentSlot slot) {
+    default Item dropItem(final EquipmentSlot slot) {
         return this.dropItem(slot, Integer.MAX_VALUE);
     }
 
@@ -813,7 +804,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return the dropped item entity, or null if the action was unsuccessful
      */
     @Nullable
-    default Item dropItem(final @NotNull EquipmentSlot slot, final int amount) {
+    default Item dropItem(final EquipmentSlot slot, final int amount) {
         return this.dropItem(slot, amount, false, null);
     }
 
@@ -828,7 +819,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return the dropped item entity, or null if the action was unsuccessful
      */
     @Nullable
-    Item dropItem(@NotNull EquipmentSlot slot, int amount, boolean throwRandomly, @Nullable Consumer<Item> entityOperation);
+    Item dropItem(EquipmentSlot slot, int amount, boolean throwRandomly, @Nullable Consumer<Item> entityOperation);
 
     /**
      * Makes the player drop any arbitrary {@link ItemStack}, independently of whether the player actually
@@ -841,7 +832,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return the dropped item entity, or null if the action was unsuccessful
      */
     @Nullable
-    default Item dropItem(final @NotNull ItemStack itemStack) {
+    default Item dropItem(final ItemStack itemStack) {
         return this.dropItem(itemStack, false, null);
     }
 
@@ -859,7 +850,7 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @return the dropped item entity, or null if the action was unsuccessful
      */
     @Nullable
-    Item dropItem(final @NotNull ItemStack itemStack, boolean throwRandomly, @Nullable Consumer<Item> entityOperation);
+    Item dropItem(final ItemStack itemStack, boolean throwRandomly, @Nullable Consumer<Item> entityOperation);
 
     /**
      * Gets the players current exhaustion level.
@@ -996,6 +987,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * @throws IllegalArgumentException if the fireworkItemStack is not a firework
      */
     @Nullable
-    public Firework fireworkBoost(@NotNull ItemStack fireworkItemStack);
+    public Firework fireworkBoost(ItemStack fireworkItemStack);
 
 }

@@ -544,13 +544,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public void playEffect(EntityEffect type) {
-        Preconditions.checkArgument(type != null, "Type cannot be null");
+    public void playEffect(EntityEffect effect) {
+        Preconditions.checkArgument(effect != null, "Entity effect cannot be null");
         Preconditions.checkState(!this.entity.generation, "Cannot play effect during world generation");
+        Preconditions.checkArgument(effect.isApplicableTo(this), "Entity effect cannot apply to this entity");
 
-        if (type.getApplicable().isInstance(this)) {
-            this.getHandle().level().broadcastEntityEvent(this.getHandle(), type.getData());
-        }
+        this.getHandle().level().broadcastEntityEvent(this.getHandle(), effect.getData());
     }
 
     @Override
