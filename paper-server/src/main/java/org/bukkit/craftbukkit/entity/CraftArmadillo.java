@@ -30,7 +30,7 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
 
     @Override
     public void rollUp() {
-        this.getHandle().getBrain().setMemoryWithExpiry(MemoryModuleType.DANGER_DETECTED_RECENTLY, true, 80L);
+        this.getHandle().getBrain().setMemoryWithExpiry(MemoryModuleType.DANGER_DETECTED_RECENTLY, true, net.minecraft.world.entity.animal.armadillo.Armadillo.SCARE_CHECK_INTERVAL);
         this.getHandle().rollUp();
     }
 
