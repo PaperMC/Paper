@@ -3,6 +3,7 @@ package io.papermc.paper.world.biome;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.SpawnCategory;
 import org.checkerframework.checker.index.qual.Positive;
+import org.jetbrains.annotations.Unmodifiable;
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +16,7 @@ public interface BiomeMobSpawning {
      *
      * @return the spawner data
      */
-    Map<SpawnCategory, List<MobData>> spawners();
+    @Unmodifiable Map<SpawnCategory, @Unmodifiable List<MobData>> spawners();
 
     /**
      * New mob's cost. Only mobs listed here use the spawn cost mechanism.
@@ -23,7 +24,7 @@ public interface BiomeMobSpawning {
      * @see <a href="https://minecraft.wiki/w/Mob_spawning#Spawn_costs">Mob spawning#Spawn costs</a>
      * @return the map of entity type to cost
      */
-    Map<EntityType, SpawnCost> entityCost();
+    @Unmodifiable Map<EntityType, SpawnCost> entityCost();
 
     /**
      * The spawner data for a single mob.

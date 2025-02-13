@@ -32,7 +32,7 @@ public class PaperBiomeClimate implements BiomeClimate {
 
     @Override
     public float adjustedTemperature(final Location location) {
-        Preconditions.checkNotNull(location.getWorld(), "Cannot get biome climate for a location with a null world");
+        Preconditions.checkArgument(location.getWorld() != null, "Cannot get biome climate for a location with a null world");
         return biome.getHeightAdjustedTemperature(CraftLocation.toBlockPosition(location), location.getWorld().getSeaLevel());
     }
 }
