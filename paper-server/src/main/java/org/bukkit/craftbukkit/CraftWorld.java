@@ -472,29 +472,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean regenerateChunk(int x, int z) {
-        org.spigotmc.AsyncCatcher.catchOp("chunk regenerate"); // Spigot
-        throw new UnsupportedOperationException("Not supported in this Minecraft version! Unless you can fix it, this is not a bug :)");
-        /*
-        if (!unloadChunk0(x, z, false)) {
-            return false;
-        }
-        warnUnsafeChunk("regenerating a faraway chunk", x, z); // Paper
-
-        final long chunkKey = ChunkCoordIntPair.pair(x, z);
-        world.getChunkProvider().unloadQueue.remove(chunkKey);
-
-        net.minecraft.server.Chunk chunk = world.getChunkProvider().generateChunk(x, z);
-        PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
-        if (playerChunk != null) {
-            playerChunk.chunk = chunk;
-        }
-
-        if (chunk != null) {
-            refreshChunk(x, z);
-        }
-
-        return chunk != null;
-        */
+        throw new UnsupportedOperationException("Not supported in this Minecraft version! This is not a bug.");
     }
 
     @Override
