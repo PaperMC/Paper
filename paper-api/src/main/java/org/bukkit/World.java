@@ -476,7 +476,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @return Whether the chunk was actually regenerated
      *
-     * @throws UnsupportedOperationException api is not implemented since 1.14.
+     * @throws UnsupportedOperationException not implemented
      * @deprecated regenerating a single chunk is not likely to produce the same
      * chunk as before as terrain decoration may be spread across chunks. It may
      * or may not change blocks in the adjacent chunks as well.
