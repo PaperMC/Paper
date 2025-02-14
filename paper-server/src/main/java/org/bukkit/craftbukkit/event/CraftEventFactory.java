@@ -363,7 +363,7 @@ public class CraftEventFactory {
         List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
         Player player = (Player) who.getBukkitEntity();
         PlayerHarvestBlockEvent playerHarvestBlockEvent = new PlayerHarvestBlockEvent(player, CraftBlock.at(world, blockposition), CraftEquipmentSlot.getHand(enumhand), bukkitItemsToHarvest);
-        Bukkit.getPluginManager().callEvent(playerHarvestBlockEvent);
+        playerHarvestBlockEvent.callEvent();
         return playerHarvestBlockEvent;
     }
 
