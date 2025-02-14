@@ -12,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
  * Called when an entity tries to perform a smash attack
  */
 @NullMarked
-public class EntitySmashAttackEvent extends EntityEvent implements Cancellable {
+public class EntityAttemptSmashAttackEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
@@ -22,7 +22,7 @@ public class EntitySmashAttackEvent extends EntityEvent implements Cancellable {
     private Result result;
 
     @ApiStatus.Internal
-    public EntitySmashAttackEvent(LivingEntity attacker, LivingEntity target, ItemStack weapon) {
+    public EntityAttemptSmashAttackEvent(LivingEntity attacker, LivingEntity target, ItemStack weapon) {
         super(attacker);
         this.target = target;
         this.weapon = weapon;
