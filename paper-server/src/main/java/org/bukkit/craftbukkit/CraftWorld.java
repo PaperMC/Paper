@@ -2,14 +2,11 @@ package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -45,13 +42,11 @@ import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.DistanceManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.Ticket;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.util.SortedArraySet;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -87,7 +82,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Note;
 import org.bukkit.Particle;
 import org.bukkit.Raid;
-import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.TreeType;
 import org.bukkit.World;
@@ -2078,13 +2072,19 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public <T> T getGameRuleValue(GameRule<T> rule) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
-        return this.convert(rule, this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule.getName())));
+        GameRules.Key<? extends GameRules.Value<?>> key = this.getGameRulesNMS().get(rule.getName());
+        Preconditions.checkArgument(key != null, "GameRule '%s' is not available", rule.getName());
+
+        return this.getGameRuleResult(rule, this.getHandle().getGameRules().getRule(key));
     }
 
     @Override
     public <T> T getGameRuleDefault(GameRule<T> rule) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
-        return this.convert(rule, this.getGameRuleDefinitions().get(rule.getName()).createRule());
+        GameRules.Type<?> type = this.getGameRuleDefinitions().get(rule.getName());
+        Preconditions.checkArgument(type != null, "GameRule '%s' is not available", rule.getName());
+
+        return this.getGameRuleResult(rule, type.createRule());
     }
 
     @Override
@@ -2104,7 +2104,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return true;
     }
 
-    private <T> T convert(GameRule<T> rule, GameRules.Value<?> value) {
+    private <T> T getGameRuleResult(GameRule<T> rule, GameRules.Value<?> value) {
         if (value == null) {
             return null;
         }
