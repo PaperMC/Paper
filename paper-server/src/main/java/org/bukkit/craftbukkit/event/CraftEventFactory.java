@@ -352,7 +352,7 @@ public class CraftEventFactory {
         List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
         org.bukkit.entity.Entity entity = who.getBukkitEntity();
         EntityHarvestBlockEvent entityHarvestBlockEvent = new EntityHarvestBlockEvent(entity, CraftBlock.at(world, blockposition), bukkitItemsToHarvest);
-        Bukkit.getPluginManager().callEvent(entityHarvestBlockEvent);
+        entityHarvestBlockEvent.callEvent();
         return entityHarvestBlockEvent;
     }
 
