@@ -1250,8 +1250,20 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void lore(final List<? extends net.kyori.adventure.text.Component> lore) {
-        Preconditions.checkArgument(lore == null || lore.size() <= ItemLore.MAX_LINES, "lore cannot have more than %s lines", ItemLore.MAX_LINES); // Paper - limit lore lines
-        this.lore = lore != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(lore) : null;
+        if (lore == null) {
+            this.lore = null;
+            return;
+        }
+
+        Preconditions.checkArgument(lore.size() <= ItemLore.MAX_LINES, "lore cannot have more than %s lines", ItemLore.MAX_LINES); // Paper - limit lore lines
+
+        for (int i = 0; i < lore.size(); i++) {
+            if (lore.get(i) == null) {
+                throw new IllegalArgumentException("lore contains null entry at index: " + i);
+            }
+        }
+
+        this.lore = io.papermc.paper.adventure.PaperAdventure.asVanilla(lore);
     }
     // Paper end
 
