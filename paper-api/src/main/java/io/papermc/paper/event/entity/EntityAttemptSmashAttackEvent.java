@@ -30,7 +30,6 @@ public class EntityAttemptSmashAttackEvent extends EntityEvent implements Cancel
         this.target = target;
         this.weapon = weapon;
         this.canSmashAttack = canSmashAttack;
-        this.cancelled = !canSmashAttack;
     }
 
     /**
