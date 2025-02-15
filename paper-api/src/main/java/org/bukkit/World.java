@@ -476,12 +476,15 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @return Whether the chunk was actually regenerated
      *
+     * @throws UnsupportedOperationException not implemented
      * @deprecated regenerating a single chunk is not likely to produce the same
      * chunk as before as terrain decoration may be spread across chunks. It may
      * or may not change blocks in the adjacent chunks as well.
      */
-    @Deprecated(since = "1.13")
-    public boolean regenerateChunk(int x, int z);
+    @Deprecated(since = "1.13", forRemoval = true)
+    default boolean regenerateChunk(int x, int z) {
+        throw new UnsupportedOperationException("Not supported in this Minecraft version! This is not a bug.");
+    }
 
     /**
      * Resends the {@link Chunk} to all clients
