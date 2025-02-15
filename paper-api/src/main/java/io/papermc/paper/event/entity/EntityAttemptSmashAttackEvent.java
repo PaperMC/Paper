@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Called when an entity tries to perform a smash attack
+ * <p>
+ * Note: This event is marked as cancelled if the player can't normally perform the smash attack
  */
 @NullMarked
 public class EntityAttemptSmashAttackEvent extends EntityEvent implements Cancellable {
@@ -18,15 +20,17 @@ public class EntityAttemptSmashAttackEvent extends EntityEvent implements Cancel
 
     private final LivingEntity target;
     private final ItemStack weapon;
+    private final boolean canSmashAttack;
 
-    private Result result;
+    private boolean cancelled;
 
     @ApiStatus.Internal
-    public EntityAttemptSmashAttackEvent(LivingEntity attacker, LivingEntity target, ItemStack weapon) {
+    public EntityAttemptSmashAttackEvent(LivingEntity attacker, LivingEntity target, ItemStack weapon, boolean canSmashAttack) {
         super(attacker);
         this.target = target;
         this.weapon = weapon;
-        this.result = Result.DEFAULT;
+        this.canSmashAttack = canSmashAttack;
+        this.cancelled = !canSmashAttack;
     }
 
     /**
@@ -44,47 +48,33 @@ public class EntityAttemptSmashAttackEvent extends EntityEvent implements Cancel
     }
 
     /**
-     * Gets the result of this event.
-     *
-     * @return the result
-     * @see #setResult(Result)
+     * @return If the entity can perform a smash attack before any modifications have been made by this event
      */
-    public Result getResult() {
-        return result;
-    }
-
-    /**
-     * Sets the result of this event. {@link Result#DEFAULT} is the default
-     * allowing the vanilla logic to check if the entity can perform a smash attack. Set to {@link Result#ALLOW}
-     * or {@link Result#DENY} to override that behavior.
-     * @param result the result of this event
-     */
-    public void setResult(Result result) {
-        this.result = result;
+    public boolean canSmashAttack() {
+        return canSmashAttack;
     }
 
     /**
      * Gets the cancellation state of this event.
-     * @see #setResult(Result)
+     * <p>
+     * This is equivalent to whether the player can perform the smash attack
      * @see #setCancelled(boolean)
      * @return boolean cancellation state
      */
     @Override
     public boolean isCancelled() {
-        return getResult() == Result.DENY;
+        return cancelled;
     }
 
     /**
      * Sets the cancellation state of this event. A canceled event will not be
      * executed in the server, but will still pass to other plugins.
-     * <p>
-     * Canceling this event will prevent the smash attack.
-     *
+     * @see #isCancelled()
      * @param cancel true if you wish to cancel this event
      */
     @Override
     public void setCancelled(boolean cancel) {
-        setResult(cancel ? Result.DENY : Result.ALLOW);
+        this.cancelled = cancel;
     }
 
     @Override
