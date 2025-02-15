@@ -523,7 +523,11 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * Gets the humidity of the biome of this block
      *
      * @return Humidity of this block
+     * @see Biome#climate()
+     * @see BiomeClimate#downfall()
+     * @deprecated Get the humidity from the biome instead
      */
+    @Deprecated(since = "1.21.4")
     double getHumidity();
 
     /**
