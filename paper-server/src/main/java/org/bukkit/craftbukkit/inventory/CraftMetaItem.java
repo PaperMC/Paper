@@ -1258,9 +1258,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         Preconditions.checkArgument(lore.size() <= ItemLore.MAX_LINES, "lore cannot have more than %s lines", ItemLore.MAX_LINES); // Paper - limit lore lines
 
         for (int i = 0; i < lore.size(); i++) {
-            if (lore.get(i) == null) {
-                throw new IllegalArgumentException("lore contains null entry at index: " + i);
-            }
+            Preconditions.checkArgument(lore.get(i) != null, "lore contains null entry at index: %s", i);
         }
 
         this.lore = io.papermc.paper.adventure.PaperAdventure.asVanilla(lore);
