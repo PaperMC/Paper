@@ -51,9 +51,9 @@ public class EntityHarvestBlockEvent extends EntityEvent implements Cancellable 
      * Gets a list of items that are being harvested from this block.
      *
      * @return A mutable list of items that are being harvested from this block
-     * @apiNote {@link org.bukkit.entity.Fox} has a behavior where, if it does not have an item
-     * in {@link org.bukkit.inventory.EquipmentSlot#HAND}, it will take one unit from the first
-     * item in its inventory stack and use it in the hand slot.
+     * @apiNote {@link org.bukkit.entity.Fox} has a behavior where, if it does not have
+     * an item in its mouth ({@link org.bukkit.inventory.EquipmentSlot#HAND}), it will
+     * take one unit from the first ItemStack in this harvest and put it there.
      */
     public List<ItemStack> getItemsHarvested() {
         return itemsHarvested;
