@@ -471,11 +471,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public boolean regenerateChunk(int x, int z) {
-        throw new UnsupportedOperationException("Not supported in this Minecraft version! This is not a bug.");
-    }
-
-    @Override
     public boolean refreshChunk(int x, int z) {
         ChunkHolder playerChunk = this.world.getChunkSource().chunkMap.getVisibleChunkIfPresent(ChunkPos.asLong(x, z));
         if (playerChunk == null) return false;

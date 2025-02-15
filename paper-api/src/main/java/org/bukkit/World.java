@@ -482,7 +482,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * or may not change blocks in the adjacent chunks as well.
      */
     @Deprecated(since = "1.13", forRemoval = true)
-    public boolean regenerateChunk(int x, int z);
+    default boolean regenerateChunk(int x, int z) {
+        throw new UnsupportedOperationException("Not supported in this Minecraft version! This is not a bug.");
+    }
 
     /**
      * Resends the {@link Chunk} to all clients
