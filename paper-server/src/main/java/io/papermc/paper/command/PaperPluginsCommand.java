@@ -55,8 +55,8 @@ public class PaperPluginsCommand extends BukkitCommand {
 
     private static final Component LEGACY_PLUGIN_STAR = Component.text('*', TextColor.color(255, 212, 42)).hoverEvent(LEGACY_PLUGIN_INFO);
     private static final Component INFO_ICON_START = Component.text("ℹ ", INFO_COLOR);
-    private static final Component PAPER_HEADER = Component.text("Paper Plugins:", TextColor.color(2, 136, 209));
-    private static final Component BUKKIT_HEADER = Component.text("Bukkit Plugins:", TextColor.color(237, 129, 6));
+    private static final Component PAPER_HEADER = Component.text("Paper Plugins (PLUGIN_SIZE_PLACEHOLDER):", TextColor.color(2, 136, 209));
+    private static final Component BUKKIT_HEADER = Component.text("Bukkit Plugins (PLUGIN_SIZE_PLACEHOLDER):", TextColor.color(237, 129, 6));
     private static final Component PLUGIN_TICK = Component.text("- ", NamedTextColor.DARK_GRAY);
     private static final Component PLUGIN_TICK_EMPTY = Component.text(" ");
 
@@ -178,7 +178,7 @@ public class PaperPluginsCommand extends BukkitCommand {
         sender.sendMessage(infoMessage);
 
         if (!paperPlugins.isEmpty()) {
-            sender.sendMessage(PAPER_HEADER);
+            sender.sendMessage(PAPER_HEADER.replaceText(b -> b.match("PLUGIN_SIZE_PLACEHOLDER").replacement(Component.text(paperPlugins.size()))));
         }
 
         for (Component component : formatProviders(paperPlugins)) {
@@ -186,7 +186,7 @@ public class PaperPluginsCommand extends BukkitCommand {
         }
 
         if (!spigotPlugins.isEmpty()) {
-            sender.sendMessage(BUKKIT_HEADER);
+            sender.sendMessage(BUKKIT_HEADER.replaceText(b -> b.match("PLUGIN_SIZE_PLACEHOLDER").replacement(Component.text(spigotPlugins.size()))));
         }
 
         for (Component component : formatProviders(spigotPlugins)) {
