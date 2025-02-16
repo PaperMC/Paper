@@ -1123,8 +1123,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * on the main Server Thread.
      *
      * @deprecated Use either the Future or the Consumer based methods
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
      */
@@ -1192,8 +1192,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The {@link java.util.function.Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
      */
@@ -1214,8 +1214,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The {@link java.util.function.Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @param gen Should we generate a chunk if it doesn't exist or not
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
@@ -1237,8 +1237,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The {@link java.util.function.Consumer} will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @param gen Should we generate a chunk if it doesn't exist or not
      * @param urgent If true, the chunk may be prioritised to be loaded above other chunks in queue
      * @param cb Callback to receive the chunk when it is loaded.
@@ -1260,10 +1260,10 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The {@link Runnable} will always be executed synchronously
      * on the main Server Thread, and when invoked all chunks requested will be loaded.
      *
-     * @param minX Minimum chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param minZ Minimum chunk Z-coordinate of the chunk - floor(world coordinate / 16)
-     * @param maxX Maximum chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param maxZ Maximum chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param minX Minimum Chunk x-coordinate
+     * @param minZ Minimum Chunk z-coordinate
+     * @param maxX Maximum Chunk x-coordinate
+     * @param maxZ Maximum Chunk z-coordinate
      * @param urgent If true, the chunks may be prioritised to be loaded above other chunks in queue
      * @param cb Callback to invoke when all chunks are loaded.
      *           Will be executed synchronously
@@ -1449,8 +1449,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The future will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @return Future that will resolve when the chunk is loaded
      */
     default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z) {
@@ -1470,8 +1470,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The future will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @param gen Should we generate a chunk if it doesn't exist or not
      * @return Future that will resolve when the chunk is loaded
      */
