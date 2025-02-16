@@ -19,7 +19,8 @@ import org.jspecify.annotations.Nullable;
  * is called anytime the game tries to discover datapacks at any of the
  * configured locations. This means that if a datapack should stay available to the server,
  * it must always be discovered whenever this event fires.
- * <p>An example of a plugin loading a datapack from within it's own jar is below</p>
+ * <p>An example of a plugin loading a datapack from within it's own jar is below,
+ * assuming the datapack is included under <code>resources/pack</code></p>
  * <pre>{@code
  * public class YourPluginBootstrap implements PluginBootstrap {
  *     @Override
