@@ -147,7 +147,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
 
     @Override
     public String toString() {
-        return "CraftArrow";
+        return "CraftAbstractArrow";
     }
 
     // Paper start
