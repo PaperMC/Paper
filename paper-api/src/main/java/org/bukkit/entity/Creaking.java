@@ -19,7 +19,7 @@ public interface Creaking extends Monster {
     Location getHome();
 
     /**
-     * Detach the home for this Creaking.
+     * Detach the home for this creaking.
      */
     void detachHome();
 
