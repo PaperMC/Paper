@@ -1336,11 +1336,24 @@
          Map<EquipmentSlot, ItemStack> map = this.collectEquipmentChanges();
          if (map != null) {
              this.handleHandSwap(map);
-@@ -2586,6 +_,7 @@
+@@ -2586,6 +_,20 @@
      @Nullable
      private Map<EquipmentSlot, ItemStack> collectEquipmentChanges() {
          Map<EquipmentSlot, ItemStack> map = null;
-+        Map<org.bukkit.inventory.EquipmentSlot, io.papermc.paper.event.entity.EntityEquipmentChangedEvent.EquipmentChange> equipmentChanges = null; // Paper - EntityEquipmentChangedEvent
++        // Paper start - EntityEquipmentChangedEvent
++        record EquipmentChangeImpl(org.bukkit.inventory.ItemStack oldItem, org.bukkit.inventory.ItemStack newItem) implements io.papermc.paper.event.entity.EntityEquipmentChangedEvent.EquipmentChange {
++            @Override
++            public org.bukkit.inventory.ItemStack oldItem() {
++                return this.oldItem.clone();
++            }
++
++            @Override
++            public org.bukkit.inventory.ItemStack newItem() {
++                return this.newItem.clone();
++            }
++        }
++        Map<org.bukkit.inventory.EquipmentSlot, io.papermc.paper.event.entity.EntityEquipmentChangedEvent.EquipmentChange> equipmentChanges = null;
++        // Paper end - EntityEquipmentChangedEvent
  
          for (EquipmentSlot equipmentSlot : EquipmentSlot.VALUES) {
              ItemStack itemStack = switch (equipmentSlot.getType()) {
@@ -1361,7 +1374,7 @@
                  }
  
                  map.put(equipmentSlot, itemBySlot);
-+                equipmentChanges.put(org.bukkit.craftbukkit.CraftEquipmentSlot.getSlot(equipmentSlot), new io.papermc.paper.event.entity.EntityEquipmentChangedEvent.EquipmentChange(oldItem, newItem)); // Paper - EntityEquipmentChangedEvent
++                equipmentChanges.put(org.bukkit.craftbukkit.CraftEquipmentSlot.getSlot(equipmentSlot), new EquipmentChangeImpl(oldItem, newItem)); // Paper - EntityEquipmentChangedEvent
                  AttributeMap attributes = this.getAttributes();
                  if (!itemStack.isEmpty()) {
                      this.stopLocationBasedEffects(itemStack, equipmentSlot, attributes);
