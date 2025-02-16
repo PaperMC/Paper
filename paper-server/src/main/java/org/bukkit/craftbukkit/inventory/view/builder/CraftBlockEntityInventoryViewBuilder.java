@@ -17,12 +17,12 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
 
     private final Block block;
     private final boolean useFakeBlockEntity;
-    private final @Nullable CraftTileInventoryBuilder builder;
+    private final @Nullable CraftBlockInventoryBuilder builder;
 
     public CraftBlockEntityInventoryViewBuilder(
         final MenuType<?> handle,
         final Block block,
-        final @Nullable CraftTileInventoryBuilder builder
+        final @Nullable CraftBlockInventoryBuilder builder
     ) {
         this(handle, block, builder, true);
     }
@@ -30,7 +30,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
     public CraftBlockEntityInventoryViewBuilder(
         final MenuType<?> handle,
         final Block block,
-        final @Nullable CraftTileInventoryBuilder builder,
+        final @Nullable CraftBlockInventoryBuilder builder,
         final boolean useFakeBlockEntity
     ) {
         super(handle);
@@ -70,8 +70,8 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
 
     private AbstractContainerMenu buildFakeBlockEntity(final ServerPlayer player) {
         final MenuProvider inventory = this.builder.build(this.position, this.block.defaultBlockState());
-        if (inventory instanceof final BlockEntity tile) {
-            tile.setLevel(this.world);
+        if (inventory instanceof final BlockEntity blockEntity) {
+            blockEntity.setLevel(this.world);
             super.defaultTitle = inventory.getDisplayName();
         }
 
@@ -92,7 +92,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
         return copy;
     }
 
-    public interface CraftTileInventoryBuilder {
+    public interface CraftBlockInventoryBuilder {
         MenuProvider build(BlockPos blockPosition, BlockState blockData);
     }
 }
