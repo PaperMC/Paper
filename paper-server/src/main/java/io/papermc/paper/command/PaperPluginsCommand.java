@@ -201,7 +201,7 @@ public class PaperPluginsCommand extends BukkitCommand {
         }
 
         if (!spigotPlugins.isEmpty()) {
-            sender.sendMessage(header("Bukkit Plugins", 0xED8106, sizePaperPlugins, hasAllPluginTypes));
+            sender.sendMessage(header("Bukkit Plugins", 0xED8106, sizeSpigotPlugins, hasAllPluginTypes));
         }
 
         for (final Component component : formatProviders(spigotPlugins)) {
