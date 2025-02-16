@@ -1336,20 +1336,57 @@
          Map<EquipmentSlot, ItemStack> map = this.collectEquipmentChanges();
          if (map != null) {
              this.handleHandSwap(map);
-@@ -2595,6 +_,13 @@
+@@ -2586,6 +_,20 @@
+     @Nullable
+     private Map<EquipmentSlot, ItemStack> collectEquipmentChanges() {
+         Map<EquipmentSlot, ItemStack> map = null;
++        // Paper start - EntityEquipmentChangedEvent
++        record EquipmentChangeImpl(org.bukkit.inventory.ItemStack oldItem, org.bukkit.inventory.ItemStack newItem) implements io.papermc.paper.event.entity.EntityEquipmentChangedEvent.EquipmentChange {
++            @Override
++            public org.bukkit.inventory.ItemStack oldItem() {
++                return this.oldItem.clone();
++            }
++
++            @Override
++            public org.bukkit.inventory.ItemStack newItem() {
++                return this.newItem.clone();
++            }
++        }
++        Map<org.bukkit.inventory.EquipmentSlot, io.papermc.paper.event.entity.EntityEquipmentChangedEvent.EquipmentChange> equipmentChanges = null;
++        // Paper end - EntityEquipmentChangedEvent
+ 
+         for (EquipmentSlot equipmentSlot : EquipmentSlot.VALUES) {
+             ItemStack itemStack = switch (equipmentSlot.getType()) {
+@@ -2595,11 +_,20 @@
              };
              ItemStack itemBySlot = this.getItemBySlot(equipmentSlot);
              if (this.equipmentHasChanged(itemStack, itemBySlot)) {
-+                // Paper start - PlayerArmorChangeEvent
++                // Paper start - EntityEquipmentChangedEvent, PlayerArmorChangeEvent
++                final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(itemStack);
++                final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(itemBySlot);
 +                if (this instanceof ServerPlayer && equipmentSlot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
-+                    final org.bukkit.inventory.ItemStack oldItem = CraftItemStack.asBukkitCopy(itemStack);
-+                    final org.bukkit.inventory.ItemStack newItem = CraftItemStack.asBukkitCopy(itemBySlot);
 +                    new com.destroystokyo.paper.event.player.PlayerArmorChangeEvent((org.bukkit.entity.Player) this.getBukkitEntity(), com.destroystokyo.paper.event.player.PlayerArmorChangeEvent.SlotType.valueOf(equipmentSlot.name()), oldItem, newItem).callEvent();
 +                }
-+                // Paper end - PlayerArmorChangeEvent
++                // Paper end - EntityEquipmentChangedEvent, PlayerArmorChangeEvent
                  if (map == null) {
                      map = Maps.newEnumMap(EquipmentSlot.class);
++                    equipmentChanges = Maps.newEnumMap(org.bukkit.inventory.EquipmentSlot.class); // Paper - EntityEquipmentChangedEvent
                  }
+ 
+                 map.put(equipmentSlot, itemBySlot);
++                equipmentChanges.put(org.bukkit.craftbukkit.CraftEquipmentSlot.getSlot(equipmentSlot), new EquipmentChangeImpl(oldItem, newItem)); // Paper - EntityEquipmentChangedEvent
+                 AttributeMap attributes = this.getAttributes();
+                 if (!itemStack.isEmpty()) {
+                     this.stopLocationBasedEffects(itemStack, equipmentSlot, attributes);
+@@ -2624,6 +_,8 @@
+                     }
+                 }
+             }
++
++            new io.papermc.paper.event.entity.EntityEquipmentChangedEvent(this.getBukkitLivingEntity(), equipmentChanges).callEvent(); // Paper - EntityEquipmentChangedEvent
+         }
+ 
+         return map;
 @@ -2664,7 +_,7 @@
                      this.lastBodyItemStack = itemStack;
              }
