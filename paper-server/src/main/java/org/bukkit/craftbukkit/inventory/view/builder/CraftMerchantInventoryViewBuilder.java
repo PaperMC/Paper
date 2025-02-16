@@ -26,7 +26,7 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
     }
 
     @Override
-    public MerchantInventoryViewBuilder<V> title(final Component title) {
+    public MerchantInventoryViewBuilder<V> title(final @Nullable Component title) {
         return (MerchantInventoryViewBuilder<V>) super.title(title);
     }
 
@@ -47,16 +47,15 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
         Preconditions.checkArgument(player != null, "The given player must not be null");
         Preconditions.checkArgument(player instanceof CraftHumanEntity, "The given player must be a CraftHumanEntity");
         final CraftHumanEntity craftHuman = (CraftHumanEntity) player;
-        Preconditions.checkArgument(craftHuman.getHandle() instanceof ServerPlayer, "The given player must be an EntityPlayer");
+        Preconditions.checkArgument(craftHuman.getHandle() instanceof ServerPlayer, "The given player must be an ServerPlayer");
         final ServerPlayer serverPlayer = (ServerPlayer) craftHuman.getHandle();
 
         final MerchantMenu container;
         if (this.merchant == null) {
             this.merchant = this.title == null ? new CraftMerchantCustom().getMerchant() : new CraftMerchantCustom(title).getMerchant();
-            container = new MerchantMenu(serverPlayer.nextContainerCounter(), serverPlayer.getInventory(), this.merchant);
-        } else {
-            container = new MerchantMenu(serverPlayer.nextContainerCounter(), serverPlayer.getInventory(), this.merchant);
         }
+
+        container = new MerchantMenu(serverPlayer.nextContainerCounter(), serverPlayer.getInventory(), this.merchant);
 
         container.checkReachable = super.checkReachable;
         setDefaultTitle(this.merchant);
@@ -64,10 +63,10 @@ public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends 
         return (V) container.getBukkitView();
     }
 
-    private void setDefaultTitle(net.minecraft.world.item.trading.Merchant merchant) {
-        if (merchant instanceof AbstractVillager villager) {
+    private void setDefaultTitle(final net.minecraft.world.item.trading.Merchant merchant) {
+        if (merchant instanceof final AbstractVillager villager) {
             super.defaultTitle = villager.getDisplayName();
-        } else if (merchant instanceof CraftMerchantCustom.MinecraftMerchant custom) {
+        } else if (merchant instanceof final CraftMerchantCustom.MinecraftMerchant custom) {
             super.defaultTitle = custom.getScoreboardDisplayName();
         } else {
             throw new IllegalStateException("Provided merchant during MenuType creation can not find a default title! This is a bug!");

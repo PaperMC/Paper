@@ -19,11 +19,20 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
     private final boolean useFakeBlockEntity;
     private final @Nullable CraftTileInventoryBuilder builder;
 
-    public CraftBlockEntityInventoryViewBuilder(final MenuType<?> handle, final Block block, final @Nullable CraftTileInventoryBuilder builder) {
+    public CraftBlockEntityInventoryViewBuilder(
+        final MenuType<?> handle,
+        final Block block,
+        final @Nullable CraftTileInventoryBuilder builder
+    ) {
         this(handle, block, builder, true);
     }
 
-    public CraftBlockEntityInventoryViewBuilder(final MenuType<?> handle, final Block block, final @Nullable CraftTileInventoryBuilder builder, boolean useFakeBlockEntity) {
+    public CraftBlockEntityInventoryViewBuilder(
+        final MenuType<?> handle,
+        final Block block,
+        final @Nullable CraftTileInventoryBuilder builder,
+        final boolean useFakeBlockEntity
+    ) {
         super(handle);
         this.useFakeBlockEntity = useFakeBlockEntity;
         this.block = block;
@@ -51,7 +60,7 @@ public class CraftBlockEntityInventoryViewBuilder<V extends InventoryView> exten
             return buildFakeBlockEntity(player);
         }
 
-        if (!(entity instanceof MenuProvider provider)) {
+        if (!(entity instanceof final MenuProvider provider)) {
             throw new IllegalStateException("Provided blockEntity during MenuType creation can not find a default title! This is a bug!");
         }
 

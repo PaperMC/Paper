@@ -26,7 +26,9 @@ public class CraftDoubleChestInventoryViewBuilder<V extends InventoryView> exten
         }
 
         final ChestBlock chest = (ChestBlock) Blocks.CHEST;
-        final DoubleBlockCombiner.NeighborCombineResult<? extends ChestBlockEntity> result = chest.combine(super.world.getBlockState(super.position), super.world, super.position, false);
+        final DoubleBlockCombiner.NeighborCombineResult<? extends ChestBlockEntity> result = chest.combine(
+            super.world.getBlockState(super.position), super.world, super.position, false
+        );
         if (result instanceof DoubleBlockCombiner.NeighborCombineResult.Single<? extends ChestBlockEntity>) {
             return handle.create(player.nextContainerCounter(), player.getInventory());
         }
@@ -35,6 +37,7 @@ public class CraftDoubleChestInventoryViewBuilder<V extends InventoryView> exten
         if (combined == null) {
             return handle.create(player.nextContainerCounter(), player.getInventory());
         }
+
         return combined.createMenu(player.nextContainerCounter(), player.getInventory(), player);
     }
 

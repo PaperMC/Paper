@@ -24,15 +24,15 @@ public class CraftEnchantmentInventoryViewBuilder extends CraftAbstractLocationI
 
         if (this.position == null) {
             this.position = player.blockPosition();
-            defaultTitle = new EnchantingTableBlockEntity(this.position, Blocks.ENCHANTING_TABLE.defaultBlockState()).getDisplayName();
+            super.defaultTitle = new EnchantingTableBlockEntity(this.position, Blocks.ENCHANTING_TABLE.defaultBlockState()).getDisplayName();
             return new EnchantmentMenu(player.nextContainerCounter(), player.getInventory(), ContainerLevelAccess.create(this.world, this.position));
         }
 
         final BlockEntity entity = this.world.getBlockEntity(position);
-        if (entity instanceof EnchantingTableBlockEntity enchantingBlockEntity) {
-            defaultTitle = enchantingBlockEntity.getDisplayName();
+        if (entity instanceof final EnchantingTableBlockEntity enchantingBlockEntity) {
+            super.defaultTitle = enchantingBlockEntity.getDisplayName();
         } else {
-            defaultTitle = new EnchantingTableBlockEntity(this.position, Blocks.ENCHANTING_TABLE.defaultBlockState()).getDisplayName();
+            super.defaultTitle = new EnchantingTableBlockEntity(this.position, Blocks.ENCHANTING_TABLE.defaultBlockState()).getDisplayName();
         }
 
         return new EnchantmentMenu(player.nextContainerCounter(), player.getInventory(), ContainerLevelAccess.create(this.world, this.position));
