@@ -8,6 +8,7 @@ import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
 
@@ -37,12 +38,12 @@ public class EntityEquipmentChangedEvent extends EntityEvent {
     public EntityEquipmentChangedEvent(final LivingEntity entity, final Map<EquipmentSlot, EquipmentChange> equipmentChanges) {
         super(entity);
 
-        this.equipmentChanges = Collections.unmodifiableMap(equipmentChanges);
+        this.equipmentChanges = equipmentChanges;
     }
 
     @Override
     public LivingEntity getEntity() {
-        return (LivingEntity) entity;
+        return (LivingEntity) this.entity;
     }
 
     /**
@@ -50,9 +51,8 @@ public class EntityEquipmentChangedEvent extends EntityEvent {
      *
      * @return the equipment changes map
      */
-    @Unmodifiable
-    public Map<EquipmentSlot, EquipmentChange> getEquipmentChanges() {
-        return equipmentChanges;
+    public @Unmodifiable Map<EquipmentSlot, EquipmentChange> getEquipmentChanges() {
+        return Collections.unmodifiableMap(this.equipmentChanges);
     }
 
     @Override
@@ -66,12 +66,24 @@ public class EntityEquipmentChangedEvent extends EntityEvent {
 
     /**
      * Represents a change in equipment for a single equipment slot.
-     *
-     * @param oldItem the existing item that is being replaced
-     * @param newItem the new item that is replacing the existing item
      */
-    public record EquipmentChange(ItemStack oldItem, ItemStack newItem) {
+    @ApiStatus.NonExtendable
+    public interface EquipmentChange {
 
+        /**
+         * Gets the existing item that is being replaced.
+         *
+         * @return the existing item
+         */
+        @Contract(pure = true, value = "-> new")
+        ItemStack oldItem();
+
+        /**
+         * Gets the new item that is replacing the existing item.
+         *
+         * @return the new item
+         */
+        @Contract(pure = true, value = "-> new")
+        ItemStack newItem();
     }
-
 }
