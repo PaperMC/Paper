@@ -1,0 +1,150 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: wyrdix <wyrdix@github.com>
+Date: Sat, 22 Apr 2023 17:39:23 +0200
+Subject: [PATCH] Add speed argument to ProjectileSource#launchProjectile
+
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index d43859f8aa7beed82dd3a146bb1086982cd0cda7..e5eb4cdb69f761709ecf8a45183ba50f472bef8c 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -83,8 +83,11 @@ import org.bukkit.potion.PotionEffect;
+ import org.bukkit.potion.PotionEffectType;
+ import org.bukkit.potion.PotionType;
+ import org.bukkit.util.BlockIterator;
++import org.bukkit.util.Consumer; //Paper
+ import org.bukkit.util.RayTraceResult;
+ import org.bukkit.util.Vector;
+ 
+ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     private CraftEntityEquipment equipment;
+@@ -502,13 +505,25 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+     @Override
+     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
+         // Paper start - launchProjectile consumer
+-        return this.launchProjectile(projectile, velocity, null);
++        return this.launchProjectile(projectile, velocity, 1f,null);
++    }
++
++    @Override
++    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, Consumer<T> function) {
++        return this.launchProjectile(projectile, velocity, 1f, function);
++    }
++
++    @Override
++    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, float speed) {
++        // Paper start - initial speed
++        return this.launchProjectile(projectile, velocity, speed, null);
+     }
+ 
+     @Override
+     @SuppressWarnings("unchecked")
+-    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, org.bukkit.util.Consumer<T> function) {
++    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, float speed, org.bukkit.util.Consumer<T> function) {
+         // Paper end - launchProjectile consumer & initial speed
+         Preconditions.checkState(!this.getHandle().generation, "Cannot launch projectile during world generation");
+ 
+         net.minecraft.world.level.Level world = ((CraftWorld) getWorld()).getHandle();
+@@ -516,13 +531,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+ 
+         if (Snowball.class.isAssignableFrom(projectile)) {
+             launch = new net.minecraft.world.entity.projectile.Snowball(world, this.getHandle());
+-            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // ItemSnowball
++            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F * speed, 1.0F); // ItemSnowball
+         } else if (Egg.class.isAssignableFrom(projectile)) {
+             launch = new ThrownEgg(world, this.getHandle());
+-            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // ItemEgg
++            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F * speed, 1.0F); // ItemEgg
+         } else if (EnderPearl.class.isAssignableFrom(projectile)) {
+             launch = new ThrownEnderpearl(world, this.getHandle());
+-            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F, 1.0F); // ItemEnderPearl
++            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 1.5F * speed, 1.0F); // ItemEnderPearl
+         } else if (AbstractArrow.class.isAssignableFrom(projectile)) {
+             if (TippedArrow.class.isAssignableFrom(projectile)) {
+                 launch = new Arrow(world, this.getHandle());
+@@ -534,7 +549,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+             } else {
+                 launch = new Arrow(world, this.getHandle());
+             }
+-            ((net.minecraft.world.entity.projectile.AbstractArrow) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 3.0F, 1.0F); // ItemBow
++            ((net.minecraft.world.entity.projectile.AbstractArrow) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, 3.0F * speed, 1.0F); // ItemBow
+         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
+             if (LingeringPotion.class.isAssignableFrom(projectile)) {
+                 launch = new net.minecraft.world.entity.projectile.ThrownPotion(world, this.getHandle());
+@@ -543,15 +558,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+                 launch = new net.minecraft.world.entity.projectile.ThrownPotion(world, this.getHandle());
+                 ((net.minecraft.world.entity.projectile.ThrownPotion) launch).setItem(CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.SPLASH_POTION, 1)));
+             }
+-            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), -20.0F, 0.5F, 1.0F); // ItemSplashPotion
++            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), -20.0F, 0.5F * speed, 1.0F); // ItemSplashPotion
+         } else if (ThrownExpBottle.class.isAssignableFrom(projectile)) {
+             launch = new ThrownExperienceBottle(world, this.getHandle());
+-            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), -20.0F, 0.7F, 1.0F); // ItemExpBottle
++            ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), -20.0F, 0.7F * speed, 1.0F); // ItemExpBottle
+         } else if (FishHook.class.isAssignableFrom(projectile) && this.getHandle() instanceof net.minecraft.world.entity.player.Player) {
+             launch = new FishingHook((net.minecraft.world.entity.player.Player) this.getHandle(), world, 0, 0);
+         } else if (Fireball.class.isAssignableFrom(projectile)) {
+             Location location = this.getEyeLocation();
+-            Vector direction = location.getDirection().multiply(10);
++            Vector direction = location.getDirection().multiply(10 * speed);
+ 
+             if (SmallFireball.class.isAssignableFrom(projectile)) {
+                 launch = new net.minecraft.world.entity.projectile.SmallFireball(world, this.getHandle(), direction.getX(), direction.getY(), direction.getZ());
+@@ -572,7 +587,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+             launch = net.minecraft.world.entity.EntityType.LLAMA_SPIT.create(world);
+ 
+             ((net.minecraft.world.entity.projectile.LlamaSpit) launch).setOwner(this.getHandle());
+-            ((net.minecraft.world.entity.projectile.LlamaSpit) launch).shoot(direction.getX(), direction.getY(), direction.getZ(), 1.5F, 10.0F); // EntityLlama
++            ((net.minecraft.world.entity.projectile.LlamaSpit) launch).shoot(direction.getX(), direction.getY(), direction.getZ(), 1.5F * speed, 10.0F); // EntityLlama
+             launch.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+         } else if (ShulkerBullet.class.isAssignableFrom(projectile)) {
+             Location location = this.getEyeLocation();
+diff --git a/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java b/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java
+index 2afb7af0a90959edd3b0ead2fe4d9018b5560aa4..7f3ce96dbc158400ff23515d7c0ac02642729419 100644
+--- a/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java
++++ b/src/main/java/org/bukkit/craftbukkit/projectiles/CraftBlockProjectileSource.java
+@@ -36,7 +36,10 @@ import org.bukkit.inventory.ItemStack;
+ import org.bukkit.potion.PotionData;
+ import org.bukkit.potion.PotionType;
+ import org.bukkit.projectiles.BlockProjectileSource;
++import org.bukkit.util.Consumer;
+ import org.bukkit.util.Vector;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
+ 
+ public class CraftBlockProjectileSource implements BlockProjectileSource {
+     private final DispenserBlockEntity dispenserBlock;
+@@ -58,11 +61,22 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
+     @Override
+     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
+         // Paper start - launchProjectile consumer
+-        return this.launchProjectile(projectile, velocity, null);
++        return this.launchProjectile(projectile, velocity, 1f, null);
+     }
+ 
+     @Override
+-    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, org.bukkit.util.Consumer<T> function) {
++    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, Consumer<T> function) {
++        return this.launchProjectile(projectile, velocity, 1f, null);
++    }
++
++    @Override
++    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, float speed) {
++        // Paper start - initial speed
++        return this.launchProjectile(projectile, velocity, speed, null);
++    }
++
++    @Override
++    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, float speed, org.bukkit.util.Consumer<T> function) {
+         // Paper end - launchProjectile consumer
+         Validate.isTrue(this.getBlock().getType() == Material.DISPENSER, "Block is no longer dispenser");
+         // Copied from BlockDispenser.dispense()
+@@ -148,7 +162,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
+                 b *= 1.25F;
+             }
+             // Copied from DispenseBehaviorProjectile
+-            ((net.minecraft.world.entity.projectile.Projectile) launch).shoot((double) enumdirection.getStepX(), (double) ((float) enumdirection.getStepY() + 0.1F), (double) enumdirection.getStepZ(), b, a);
++            ((net.minecraft.world.entity.projectile.Projectile) launch).shoot((double) enumdirection.getStepX(), (double) ((float) enumdirection.getStepY() + 0.1F), (double) enumdirection.getStepZ(), b * speed, a);
+         }
+ 
+         if (velocity != null) {
