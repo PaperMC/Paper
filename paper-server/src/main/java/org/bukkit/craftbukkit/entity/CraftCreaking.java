@@ -1,7 +1,8 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.BlockPos;
+import java.util.Optional;
+import net.minecraft.Optionull;
 import net.minecraft.world.entity.monster.creaking.Creaking;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
@@ -9,12 +10,11 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.Optional;
 
 @NullMarked
 public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Creaking {
 
-    public CraftCreaking(CraftServer server, Creaking entity) {
+    public CraftCreaking(final CraftServer server, final Creaking entity) {
         super(server, entity);
     }
 
@@ -26,8 +26,7 @@ public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Cre
     @Nullable
     @Override
     public Location getHome() {
-        BlockPos homePos = this.getHandle().getHomePos();
-        return homePos != null ? CraftLocation.toBukkit(homePos, this.getHandle().level()) : null;
+        return Optionull.map(this.getHandle().getHomePos(), pos -> CraftLocation.toBukkit(pos, this.getHandle().level()));
     }
 
     @Override
@@ -36,7 +35,7 @@ public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Cre
     }
 
     @Override
-    public void activate(Player player) {
+    public void activate(final Player player) {
         Preconditions.checkArgument(player != null, "player cannot be null");
         this.getHandle().activate(((CraftPlayer) player).getHandle());
     }
