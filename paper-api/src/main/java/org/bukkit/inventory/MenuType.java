@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -148,9 +149,23 @@ public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDepe
          * for more information.
          *
          * @param player the player the view belongs to
+         * @return the created {@link InventoryView}
+         */
+        default V create(HumanEntity player) {
+            return create(player, (Component) null);
+        }
+
+        /**
+         * Creates a view of the specified menu type.
+         * <p>
+         * The player provided to create this view must be the player the view
+         * is opened for. See {@link HumanEntity#openInventory(InventoryView)}
+         * for more information.
+         *
+         * @param player the player the view belongs to
          * @param title the title of the view
          * @return the created {@link InventoryView}
-         * @deprecated Use {@link #create(HumanEntity, net.kyori.adventure.text.Component)} instead.
+         * @deprecated Use {@link #create(HumanEntity, Component)} instead.
          */
         @Deprecated(since = "1.21") // Paper - adventure
         V create(HumanEntity player, @Nullable String title);
@@ -167,7 +182,7 @@ public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDepe
          * @param title the title of the view
          * @return the created {@link InventoryView}
          */
-        V create(HumanEntity player, net.kyori.adventure.text.@Nullable Component title);
+        V create(HumanEntity player, @Nullable Component title);
         // Paper end - adventure
 
         B builder();
@@ -185,7 +200,7 @@ public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDepe
      * @param title the title of the view
      * @return the created {@link InventoryView}
      */
-    InventoryView create(HumanEntity player, net.kyori.adventure.text.@Nullable Component title);
+    InventoryView create(HumanEntity player, @Nullable Component title);
     // Paper end - adventure
 
     /**

@@ -15,7 +15,6 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Merchant;
 import org.bukkit.inventory.view.builder.MerchantInventoryViewBuilder;
-import org.checkerframework.checker.units.qual.C;
 import org.jspecify.annotations.Nullable;
 
 public class CraftMerchantInventoryViewBuilder<V extends InventoryView> extends CraftAbstractInventoryViewBuilder<V> implements MerchantInventoryViewBuilder<V> {
