@@ -1,7 +1,6 @@
 package io.papermc.paper.event.entity;
 
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
 import org.bukkit.inventory.ItemStack;
@@ -9,71 +8,88 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Called when an entity tries to perform a smash attack
- * <p>
- * Note: This event is marked as cancelled if the player can't normally perform the smash attack
+ * Called when an entity attempts to perform a smash attack.
  */
 @NullMarked
-public class EntityAttemptSmashAttackEvent extends EntityEvent implements Cancellable {
+public class EntityAttemptSmashAttackEvent extends EntityEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final LivingEntity target;
     private final ItemStack weapon;
-    private final boolean canSmashAttack;
-
-    private boolean cancelled;
+    private final boolean originalResult;
+    private Result result = Result.DEFAULT;
 
     @ApiStatus.Internal
-    public EntityAttemptSmashAttackEvent(LivingEntity attacker, LivingEntity target, ItemStack weapon, boolean canSmashAttack) {
+    public EntityAttemptSmashAttackEvent(
+        final LivingEntity attacker,
+        final LivingEntity target,
+        final ItemStack weapon,
+        final boolean originalResult
+    ) {
         super(attacker);
         this.target = target;
         this.weapon = weapon;
-        this.canSmashAttack = canSmashAttack;
+        this.originalResult = originalResult;
     }
 
     /**
-     * @return The entity being attacked with a smash attack
+     * Yields the target of the attempted smash attack.
+     *
+     * @return the target entity
      */
     public LivingEntity getTarget() {
         return target;
     }
 
     /**
-     * @return The weapon being used to perform a smash attack
+     * Yields a copy of the itemstack used in the smash attack attempt.
+     *
+     * @return the itemstack
      */
     public ItemStack getWeapon() {
         return weapon.clone();
     }
 
     /**
-     * @return If the entity can perform a smash attack before any modifications have been made by this event
+     * Yields the original result the server computed.
+     *
+     * @return {@code true} if this attempt would have been successful by vanilla's logic, {@code false} otherwise.
      */
-    public boolean canSmashAttack() {
-        return canSmashAttack;
+    public boolean getOriginalResult() {
+        return originalResult;
     }
 
     /**
-     * Gets the cancellation state of this event.
-     * <p>
-     * This is equivalent to whether the player can perform the smash attack
-     * @see #setCancelled(boolean)
-     * @return boolean cancellation state
+     * Yields the effective result of this event.
+     * The result may take one of three values:
+     *
+     * <ul>
+     *     <li>{@link Result#ALLOW}: The attempt will succeed.</li>
+     *     <li>{@link Result#DENY}: The attempt will fail.</li>
+     *     <li>{@link Result#DEFAULT}: The attempt will succeed if {@link #getOriginalResult()} is {@code true} and fail otherwise.</li>
+     * </ul>
+     *
+     * @return the result.
      */
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
+    public Result getResult() {
+        return this.result;
     }
 
     /**
-     * Sets the cancellation state of this event. A canceled event will not be
-     * executed in the server, but will still pass to other plugins.
-     * @see #isCancelled()
-     * @param cancel true if you wish to cancel this event
+     * Configures a new result for this event.
+     * The passes result may take one of three values:
+     *
+     * <ul>
+     *     <li>{@link Result#ALLOW}: The attempt will succeed.</li>
+     *     <li>{@link Result#DENY}: The attempt will fail.</li>
+     *     <li>{@link Result#DEFAULT}: The attempt will succeed if {@link #getOriginalResult()} is {@code true} and fail otherwise.</li>
+     * </ul>
+     *
+     * @param result the new result of the event.
      */
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
+    public void setResult(final Result result) {
+        this.result = result;
     }
 
     @Override
