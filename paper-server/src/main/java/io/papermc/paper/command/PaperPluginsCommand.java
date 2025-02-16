@@ -42,7 +42,7 @@ public class PaperPluginsCommand extends BukkitCommand {
             Server plugins can add new behavior to your server!
             You can find new plugins on Paper's plugin repository, Hangar.
                         
-            <link to hangar>
+            https://hangar.papermc.io/
             """));
 
     private static final Component SERVER_INITIALIZER_INFO = Component.text("ℹ What is a server initializer?", INFO_COLOR)
@@ -75,7 +75,7 @@ public class PaperPluginsCommand extends BukkitCommand {
         this.description = "Gets a list of plugins running on the server";
         this.usageMessage = "/plugins";
         this.setPermission("bukkit.command.plugins");
-        this.setAliases(Arrays.asList("pl"));
+        this.setAliases(List.of("pl"));
     }
 
     private static <T> List<Component> formatProviders(TreeMap<String, PluginProvider<T>> plugins) {
@@ -165,7 +165,7 @@ public class PaperPluginsCommand extends BukkitCommand {
     }
 
     @Override
-    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String[] args) {
+    public boolean execute(@NotNull CommandSender sender, @NotNull String currentAlias, @NotNull String @NotNull [] args) {
         if (!this.testPermission(sender)) return true;
 
         TreeMap<String, PluginProvider<JavaPlugin>> paperPlugins = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -182,8 +182,7 @@ public class PaperPluginsCommand extends BukkitCommand {
             }
         }
 
-        Component infoMessage = Component.text("Server Plugins (%s):".formatted(paperPlugins.size() + spigotPlugins.size()), NamedTextColor.WHITE);
-            //.append(INFO_ICON_START.hoverEvent(SERVER_PLUGIN_INFO)); TODO: Add docs
+        Component infoMessage = Component.text().append(INFO_ICON_START.hoverEvent(SERVER_PLUGIN_INFO).clickEvent(ClickEvent.openUrl("https://docs.papermc.io/paper/adding-plugins"))).append(Component.text("Server Plugins (%s):".formatted(paperPlugins.size() + spigotPlugins.size()), NamedTextColor.WHITE)).build();
 
         sender.sendMessage(infoMessage);
 
@@ -198,7 +197,7 @@ public class PaperPluginsCommand extends BukkitCommand {
         if (!spigotPlugins.isEmpty()) {
             sender.sendMessage(BUKKIT_HEADER);
         }
-        
+
         for (Component component : formatProviders(spigotPlugins)) {
             sender.sendMessage(component);
         }
