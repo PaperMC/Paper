@@ -116,6 +116,14 @@ public class PaperPluginsCommand extends BukkitCommand {
         return builder.build();
     }
 
+    private static Component formatHeader(Component componentHeader, int size, boolean showSize) {
+        if (!showSize) {
+            return componentHeader.replaceText(builder -> builder.matchLiteral(" (PLUGIN_SIZE_PLACEHOLDER)").replacement(""));
+        }
+
+        return componentHeader.replaceText(b -> b.match("PLUGIN_SIZE_PLACEHOLDER").replacement(Component.text(size)));
+    }
+
     private static Component asPlainComponents(String strings) {
         net.kyori.adventure.text.TextComponent.Builder builder = Component.text();
         for (String string : strings.split("\n")) {
@@ -173,12 +181,17 @@ public class PaperPluginsCommand extends BukkitCommand {
             }
         }
 
-        Component infoMessage = Component.text().append(INFO_ICON_START.hoverEvent(SERVER_PLUGIN_INFO).clickEvent(ClickEvent.openUrl("https://docs.papermc.io/paper/adding-plugins"))).append(Component.text("Server Plugins (%s):".formatted(paperPlugins.size() + spigotPlugins.size()), NamedTextColor.WHITE)).build();
+        final int sizePaperPlugins = paperPlugins.size();
+        final int sizeSpigotPlugins = spigotPlugins.size();
+        final int sizePlugins = sizePaperPlugins + sizeSpigotPlugins;
+        final boolean hasAllPluginTypes = (sizePaperPlugins > 0 && sizeSpigotPlugins > 0);
+
+        Component infoMessage = Component.text().append(INFO_ICON_START.hoverEvent(SERVER_PLUGIN_INFO).clickEvent(ClickEvent.openUrl("https://docs.papermc.io/paper/adding-plugins"))).append(Component.text("Server Plugins (%s):".formatted(sizePlugins), NamedTextColor.WHITE)).build();
 
         sender.sendMessage(infoMessage);
 
         if (!paperPlugins.isEmpty()) {
-            sender.sendMessage(PAPER_HEADER.replaceText(b -> b.match("PLUGIN_SIZE_PLACEHOLDER").replacement(Component.text(paperPlugins.size()))));
+            sender.sendMessage(formatHeader(PAPER_HEADER, sizePaperPlugins, hasAllPluginTypes));
         }
 
         for (Component component : formatProviders(paperPlugins)) {
@@ -186,7 +199,7 @@ public class PaperPluginsCommand extends BukkitCommand {
         }
 
         if (!spigotPlugins.isEmpty()) {
-            sender.sendMessage(BUKKIT_HEADER.replaceText(b -> b.match("PLUGIN_SIZE_PLACEHOLDER").replacement(Component.text(spigotPlugins.size()))));
+            sender.sendMessage(formatHeader(BUKKIT_HEADER, sizePaperPlugins, hasAllPluginTypes));
         }
 
         for (Component component : formatProviders(spigotPlugins)) {
