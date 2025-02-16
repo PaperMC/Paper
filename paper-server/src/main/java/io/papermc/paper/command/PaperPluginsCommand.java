@@ -43,12 +43,6 @@ public class PaperPluginsCommand extends BukkitCommand {
             https://hangar.papermc.io/
             """));
 
-    private static final Component SERVER_INITIALIZER_INFO = Component.text("ℹ What is a server initializer?", INFO_COLOR)
-        .append(asPlainComponents("""
-            Server initializers are ran before your server
-            starts and are provided by paper plugins.
-            """));
-
     private static final Component LEGACY_PLUGIN_INFO = Component.text("ℹ What is a legacy plugin?", INFO_COLOR)
         .append(asPlainComponents("""
             A legacy plugin is a plugin that was made on
