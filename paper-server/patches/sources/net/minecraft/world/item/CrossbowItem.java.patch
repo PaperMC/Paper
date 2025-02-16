@@ -27,7 +27,7 @@
 +        return CrossbowItem.tryLoadProjectiles(shooter, crossbowStack, true);
 +    }
 +    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbowStack, boolean consume) {
-+        List<ItemStack> list = draw(crossbowStack, shooter.getProjectile(crossbowStack), shooter, consume);
++        List<ItemStack> list = draw(crossbowStack, shooter.getProjectile(crossbowStack), shooter, consume ? ProjectileDrawingItemConsumption.IMMEDIATELY : ProjectileDrawingItemConsumption.NEVER);
 +        // Paper end - Add EntityLoadCrossbowEvent
          if (!list.isEmpty()) {
              crossbowStack.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(list));
@@ -45,3 +45,15 @@
          } else {
              Projectile projectile = super.createProjectile(level, shooter, weapon, ammo, isCrit);
              if (projectile instanceof AbstractArrow abstractArrow) {
+@@ -184,9 +_,9 @@
+         Level level, LivingEntity shooter, InteractionHand hand, ItemStack weapon, float velocity, float inaccuracy, @Nullable LivingEntity target
+     ) {
+         if (level instanceof ServerLevel serverLevel) {
+-            ChargedProjectiles chargedProjectiles = weapon.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.EMPTY);
++            ChargedProjectiles chargedProjectiles = weapon.get(DataComponents.CHARGED_PROJECTILES);
+             if (chargedProjectiles != null && !chargedProjectiles.isEmpty()) {
+-                this.shoot(serverLevel, shooter, hand, weapon, chargedProjectiles.getItems(), velocity, inaccuracy, shooter instanceof Player, target);
++                if (!this.shoot(serverLevel, shooter, hand, weapon, new UnrealizedDrawResult(chargedProjectiles.getItems(), null), velocity, inaccuracy, shooter instanceof Player, target)) return;
+                 if (shooter instanceof ServerPlayer serverPlayer) {
+                     CriteriaTriggers.SHOT_CROSSBOW.trigger(serverPlayer, weapon);
+                     serverPlayer.awardStat(Stats.ITEM_USED.get(weapon.getItem()));
