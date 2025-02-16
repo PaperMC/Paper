@@ -92,7 +92,6 @@ public class PaperPluginsCommand extends BukkitCommand {
                 isFirst = false;
             } else {
                 component = PLUGIN_TICK_EMPTY;
-                //formattedSubLists.add(Component.empty()); // Add an empty line, the auto chat wrapping and this makes it quite jarring.
             }
 
             formattedSubLists.add(component.append(Component.join(JoinConfiguration.commas(true), componentSublist)));
