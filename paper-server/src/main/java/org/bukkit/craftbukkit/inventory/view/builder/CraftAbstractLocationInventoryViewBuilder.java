@@ -22,7 +22,7 @@ public abstract class CraftAbstractLocationInventoryViewBuilder<V extends Invent
     }
 
     @Override
-    public LocationInventoryViewBuilder<V> title(final Component title) {
+    public LocationInventoryViewBuilder<V> title(final @Nullable Component title) {
         return (LocationInventoryViewBuilder<V>) super.title(title);
     }
 
