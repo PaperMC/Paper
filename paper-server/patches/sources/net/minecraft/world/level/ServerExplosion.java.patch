@@ -1,6 +1,18 @@
 --- a/net/minecraft/world/level/ServerExplosion.java
 +++ b/net/minecraft/world/level/ServerExplosion.java
-@@ -33,6 +_,17 @@
+@@ -3,11 +_,9 @@
+ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+ import java.util.ArrayList;
+ import java.util.HashMap;
+-import java.util.HashSet;
+ import java.util.List;
+ import java.util.Map;
+ import java.util.Optional;
+-import java.util.Set;
+ import javax.annotation.Nullable;
+ import net.minecraft.Util;
+ import net.minecraft.core.BlockPos;
+@@ -33,6 +_,13 @@
  import net.minecraft.world.phys.HitResult;
  import net.minecraft.world.phys.Vec3;
  
@@ -9,16 +21,12 @@
 +import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 +import net.minecraft.world.level.block.Blocks;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.util.CraftLocation;
-+import org.bukkit.event.entity.EntityExplodeEvent;
-+import org.bukkit.Location;
-+import org.bukkit.event.block.BlockExplodeEvent;
 +// CraftBukkit end
 +
  public class ServerExplosion implements Explosion {
      private static final ExplosionDamageCalculator EXPLOSION_DAMAGE_CALCULATOR = new ExplosionDamageCalculator();
      private static final int MAX_DROPS_PER_COMBINED_STACK = 16;
-@@ -47,6 +_,11 @@
+@@ -47,6 +_,12 @@
      private final DamageSource damageSource;
      private final ExplosionDamageCalculator damageCalculator;
      private final Map<Player, Vec3> hitPlayers = new HashMap<>();
@@ -27,6 +35,7 @@
 +    public float yield;
 +    // CraftBukkit end
 +    public boolean excludeSourceFromDamage = true; // Paper - Allow explosions to damage source
++    public @Nullable io.papermc.paper.event.world.ExplodeEventSource.EnchantmentSource optionalEnchantmentSource; // Paper - track potential enchantment caused explosions
  
      public ServerExplosion(
          ServerLevel level,
@@ -149,50 +158,20 @@
                                  this.hitPlayers.put(player, vec3);
                              }
                          }
-@@ -225,7 +_,61 @@
+@@ -225,7 +_,31 @@
          List<ServerExplosion.StackCollector> list = new ArrayList<>();
          Util.shuffle(blocks, this.level.random);
  
-+        // CraftBukkit start
-+        org.bukkit.World bworld = this.level.getWorld();
-+        Location location = CraftLocation.toBukkit(this.center, bworld);
-+
-+        List<org.bukkit.block.Block> blockList = new ObjectArrayList<>();
-+        for (int i1 = blocks.size() - 1; i1 >= 0; i1--) {
-+            BlockPos cpos = blocks.get(i1);
-+            org.bukkit.block.Block bblock = bworld.getBlockAt(cpos.getX(), cpos.getY(), cpos.getZ());
-+            if (!bblock.getType().isAir()) {
-+                blockList.add(bblock);
-+            }
-+        }
-+
-+        List<org.bukkit.block.Block> bukkitBlocks;
-+
-+        if (this.source != null) {
-+            EntityExplodeEvent event = CraftEventFactory.callEntityExplodeEvent(this.source, blockList, this.yield, this.getBlockInteraction());
-+            this.wasCanceled = event.isCancelled();
-+            bukkitBlocks = event.blockList();
-+            this.yield = event.getYield();
-+        } else {
-+            org.bukkit.block.Block block = location.getBlock();
-+            org.bukkit.block.BlockState blockState = (this.damageSource.getDirectBlockState() != null) ? this.damageSource.getDirectBlockState() : block.getState();
-+            BlockExplodeEvent event = CraftEventFactory.callBlockExplodeEvent(block, blockState, blockList, this.yield, this.getBlockInteraction());
-+            this.wasCanceled = event.isCancelled();
-+            bukkitBlocks = event.blockList();
-+            this.yield = event.getYield();
-+        }
-+
-+        blocks.clear();
-+
-+        for (org.bukkit.block.Block bblock : bukkitBlocks) {
-+            BlockPos coords = new BlockPos(bblock.getX(), bblock.getY(), bblock.getZ());
-+            blocks.add(coords);
-+        }
-+
++        // Paper start - call explode events
++        // call the generic event (new event) after old events
++        io.papermc.paper.event.world.ExplodeEvent explodeEvent = CraftEventFactory.callGenericExplodeEvent(this, CraftEventFactory.handleLegacyExplodeEvents(this, blocks));
 +        if (this.wasCanceled) {
 +            return;
 +        }
-+        // CraftBukkit end
++
++        blocks.clear();
++        blocks.addAll(explodeEvent.getAffectedBlocks().stream().map(block -> ((org.bukkit.craftbukkit.block.CraftBlock) block).getPosition()).toList());
++        // Paper end - call explode events
 +
          for (BlockPos blockPos : blocks) {
 +            // CraftBukkit start - TNTPrimeEvent
@@ -234,7 +213,23 @@
          this.level.gameEvent(this.source, GameEvent.EXPLODE, this.center);
          List<BlockPos> list = this.calculateExplodedPositions();
          this.hurtEntities();
-@@ -261,6 +_,7 @@
+@@ -254,13 +_,22 @@
+             this.interactWithBlocks(list);
+             profilerFiller.pop();
+         }
++        // Paper start - call generic event for visual-only explosion
++        else {
++            final io.papermc.paper.event.world.ExplodeEvent explodeEvent = CraftEventFactory.handleGenericExplodeEvent(this, list);
++            if (!this.wasCanceled) {
++                list = io.papermc.paper.util.MCUtil.fromBlocks(explodeEvent.getAffectedBlocks());
++            }
++        }
++        // Paper end - call generic event for visual-only explosion
+ 
+-        if (this.fire) {
++        if (this.fire && !this.wasCanceled) { // Paper - skip fire spread if explosion was canceled
+             this.createFire(list);
+         }
      }
  
      private static void addOrAppendStack(List<ServerExplosion.StackCollector> stackCollectors, ItemStack stack, BlockPos pos) {
