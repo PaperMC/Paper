@@ -114,11 +114,6 @@ public interface PoiType extends Keyed {
      * A PoiType occupancy is defined by how much "space" a point of interest
      * has.
      * <p>
-     * With context to a Beehive, if a beehive can have 3 bees inside of it
-     * and only 2 bees are inside the occupancy of the Beehive would be
-     * considered {@link Occupancy#HAS_SPACE}. However, if all 3 bees are
-     * inside of a Beehive occupancy would be {@link Occupancy#IS_OCCUPIED}.
-     * <p>
      * With context to a Villager workstation if a villager is currently using
      * a workstation as a source of its profession the occupancy would be
      * {@link Occupancy#IS_OCCUPIED}, however, if no villager was attached to
