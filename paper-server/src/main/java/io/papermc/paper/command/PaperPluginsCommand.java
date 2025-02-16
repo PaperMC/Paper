@@ -58,6 +58,8 @@ public class PaperPluginsCommand extends BukkitCommand {
     private static final Component PLUGIN_TICK = Component.text("- ", NamedTextColor.DARK_GRAY);
     private static final Component PLUGIN_TICK_EMPTY = Component.text(" ");
 
+    private static final Component INFO_ICON_SERVER_PLUGIN = INFO_ICON_START.hoverEvent(SERVER_PLUGIN_INFO).clickEvent(ClickEvent.openUrl("https://docs.papermc.io/paper/adding-plugins"));
+
     private static final Type JAVA_PLUGIN_PROVIDER_TYPE = new TypeToken<PluginProvider<JavaPlugin>>() {}.getType();
 
     public PaperPluginsCommand() {
@@ -196,7 +198,7 @@ public class PaperPluginsCommand extends BukkitCommand {
         final int sizePlugins = sizePaperPlugins + sizeSpigotPlugins;
         final boolean hasAllPluginTypes = (sizePaperPlugins > 0 && sizeSpigotPlugins > 0);
 
-        Component infoMessage = Component.text().append(INFO_ICON_START.hoverEvent(SERVER_PLUGIN_INFO).clickEvent(ClickEvent.openUrl("https://docs.papermc.io/paper/adding-plugins"))).append(Component.text("Server Plugins (%s):".formatted(sizePlugins), NamedTextColor.WHITE)).build();
+        Component infoMessage = Component.text().append(INFO_ICON_SERVER_PLUGIN).append(Component.text("Server Plugins (%s):".formatted(sizePlugins), NamedTextColor.WHITE)).build();
 
         sender.sendMessage(infoMessage);
 
