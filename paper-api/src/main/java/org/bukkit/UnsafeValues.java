@@ -383,6 +383,4 @@ public interface UnsafeValues {
     @NotNull java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(@NotNull ItemStack itemStack, @NotNull io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, @Nullable org.bukkit.entity.Player player); // Paper - expose itemstack tooltip lines
 
     ItemStack createEmptyStack(); // Paper - proxy ItemStack
-
-    PoiType.Occupancy createOccupancy(String enumNameEntry);
 }

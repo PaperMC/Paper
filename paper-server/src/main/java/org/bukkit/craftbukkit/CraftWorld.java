@@ -2357,6 +2357,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(origin.getWorld().equals(this), "The provided location must be in the same world");
         Preconditions.checkArgument(poiType != null, "PoiType cannot be null");
         Preconditions.checkArgument(occupancy != null, "Occupancy cannot be null");
+        Preconditions.checkArgument(radius > 0, "The provided radius must be greater than 0");
 
         final Holder<net.minecraft.world.entity.ai.village.poi.PoiType> nms = PaperPoiType.bukkitToMinecraftHolder(poiType);
         final PoiManager.Occupancy nmsOccupancy = PaperPoiType.PaperOccupancy.bukkitToMinecraft(occupancy);

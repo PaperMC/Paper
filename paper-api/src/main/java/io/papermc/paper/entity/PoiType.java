@@ -1,6 +1,6 @@
 package io.papermc.paper.entity;
 
-import org.bukkit.Bukkit;
+import io.papermc.paper.InternalAPIBridge;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -140,7 +140,7 @@ public interface PoiType extends Keyed {
         Occupancy ANY = occupancy("ANY");
 
         private static Occupancy occupancy(String enumEntryName) {
-            return Bukkit.getUnsafe().createOccupancy(enumEntryName);
+            return InternalAPIBridge.get().createOccupancy(enumEntryName);
         }
     }
 

@@ -18,12 +18,12 @@ public interface PoiSearchResult {
      *
      * @return the {@link PoiType}
      */
-    PoiType getPoiType();
+    PoiType poiType();
 
     /**
      * Return the location of the {@link PoiType}.
      *
      * @return the location the {@link PoiType} was found at
      */
-    Location getLocation();
+    Location location();
 }

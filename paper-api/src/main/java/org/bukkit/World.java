@@ -50,6 +50,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 /**
  * Represents a world, which may contain entities, chunks and blocks
@@ -4098,7 +4099,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *         was found.
      */
     @Nullable
-    PoiSearchResult locateNearestPoi(@NotNull Location origin, @NotNull PoiType poiType, int radius, @NotNull PoiType.Occupancy occupancy);
+    PoiSearchResult locateNearestPoi(@NotNull Location origin, @NotNull PoiType poiType, @Range(from = 1, to = Integer.MAX_VALUE) int radius, @NotNull PoiType.Occupancy occupancy);
 
     /**
      * Gets the coordinate scaling of this world.

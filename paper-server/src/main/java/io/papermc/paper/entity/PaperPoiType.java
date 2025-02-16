@@ -10,7 +10,9 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public class PaperPoiType implements PoiType, Handleable<net.minecraft.world.entity.ai.village.poi.PoiType> {
 
     public static PaperPoiType minecraftToBukkit(net.minecraft.world.entity.ai.village.poi.PoiType minecraft) {
