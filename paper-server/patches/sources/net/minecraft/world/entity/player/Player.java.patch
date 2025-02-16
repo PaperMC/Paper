@@ -645,18 +645,21 @@
      }
  
      @Override
-@@ -1988,17 +_,28 @@
+@@ -1988,17 +_,32 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }
  
 +    // Paper start - PlayerReadyArrowEvent
-+    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack) {
-+        return !(this instanceof ServerPlayer) ||
-+                new com.destroystokyo.paper.event.player.PlayerReadyArrowEvent(
-+                    ((ServerPlayer) this).getBukkitEntity(),
-+                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
-+                    org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
-+                ).callEvent();
++    // We pass a result mutable boolean in to allow the caller of this method to know if the event was cancelled.
++    protected boolean tryReadyArrow(ItemStack bow, ItemStack itemstack, final org.apache.commons.lang3.mutable.MutableBoolean cancelled) {
++        if (!(this instanceof final ServerPlayer serverPlayer)) return true;
++        final boolean notCancelled = new com.destroystokyo.paper.event.player.PlayerReadyArrowEvent(
++            serverPlayer.getBukkitEntity(),
++            org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(bow),
++            org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemstack)
++        ).callEvent();
++        if (!notCancelled) cancelled.setValue(true);
++        return notCancelled;
 +    }
 +    // Paper end - PlayerReadyArrowEvent
 +
@@ -666,13 +669,14 @@
              return ItemStack.EMPTY;
          } else {
 -            Predicate<ItemStack> supportedHeldProjectiles = ((ProjectileWeaponItem)shootable.getItem()).getSupportedHeldProjectiles();
-+            Predicate<ItemStack> supportedHeldProjectiles = ((ProjectileWeaponItem)shootable.getItem()).getSupportedHeldProjectiles().and(item -> this.tryReadyArrow(shootable, item)); // Paper - PlayerReadyArrowEvent
++            final org.apache.commons.lang3.mutable.MutableBoolean anyEventCancelled = new org.apache.commons.lang3.mutable.MutableBoolean(); // Paper - PlayerReadyArrowEvent
++            Predicate<ItemStack> supportedHeldProjectiles = ((ProjectileWeaponItem)shootable.getItem()).getSupportedHeldProjectiles().and(item -> this.tryReadyArrow(shootable, item, anyEventCancelled)); // Paper - PlayerReadyArrowEvent
              ItemStack heldProjectile = ProjectileWeaponItem.getHeldProjectile(this, supportedHeldProjectiles);
              if (!heldProjectile.isEmpty()) {
                  return heldProjectile;
              } else {
 -                supportedHeldProjectiles = ((ProjectileWeaponItem)shootable.getItem()).getAllSupportedProjectiles();
-+                supportedHeldProjectiles = ((ProjectileWeaponItem)shootable.getItem()).getAllSupportedProjectiles().and(item -> this.tryReadyArrow(shootable, item)); // Paper - PlayerReadyArrowEvent
++                supportedHeldProjectiles = ((ProjectileWeaponItem)shootable.getItem()).getAllSupportedProjectiles().and(item -> this.tryReadyArrow(shootable, item, anyEventCancelled)); // Paper - PlayerReadyArrowEvent
  
                  for (int i = 0; i < this.inventory.getContainerSize(); i++) {
                      ItemStack item = this.inventory.getItem(i);
@@ -680,7 +684,7 @@
                      }
                  }
  
-+                if (!this.abilities.instabuild && this instanceof ServerPlayer player) this.resyncUsingItem(player); // Paper - resync if no item matched the Predicate
++                if (anyEventCancelled.booleanValue() && !this.abilities.instabuild && this instanceof final ServerPlayer player) this.resyncUsingItem(player); // Paper - resync if no item matched the Predicate
                  return this.abilities.instabuild ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
              }
          }
