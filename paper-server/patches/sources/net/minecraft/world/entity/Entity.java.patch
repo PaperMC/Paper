@@ -127,7 +127,7 @@
      private final double[] pistonDeltas = new double[]{0.0, 0.0, 0.0};
      private long pistonDeltasGameTime;
      private EntityDimensions dimensions;
-@@ -250,6 +_,59 @@
+@@ -250,6 +_,60 @@
      private final List<Entity.Movement> movementThisTick = new ArrayList<>();
      private final Set<BlockState> blocksInside = new ReferenceArraySet<>();
      private final LongSet visitedBlocks = new LongOpenHashSet();
@@ -158,6 +158,7 @@
 +    public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
 +    public boolean fixedPose = false; // Paper - Expand Pose API
 +    private final int despawnTime; // Paper - entity despawn time limit
++    public int totalEntityAge; // Paper - age-like counter for all entities
 +    public final io.papermc.paper.entity.activation.ActivationType activationType = io.papermc.paper.entity.activation.ActivationType.activationTypeFor(this); // Paper - EAR 2/tracking ranges
 +
 +    public void setOrigin(@javax.annotation.Nonnull org.bukkit.Location location) {
@@ -369,7 +370,7 @@
  
      public void tick() {
 +        // Paper start - entity despawn time limit
-+        if (this.despawnTime >= 0 && this.tickCount >= this.despawnTime) {
++        if (this.despawnTime >= 0 && this.totalEntityAge >= this.despawnTime) {
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN);
 +            return;
 +        }
@@ -798,7 +799,7 @@
 +            if (this.maxAirTicks != this.getDefaultMaxAirSupply()) {
 +                compound.putInt("Bukkit.MaxAirSupply", this.getMaxAirSupply());
 +            }
-+            compound.putInt("Spigot.ticksLived", this.tickCount);
++            compound.putInt("Spigot.ticksLived", this.totalEntityAge); // Paper
 +            // CraftBukkit end
              Component customName = this.getCustomName();
              if (customName != null) {
@@ -860,7 +861,7 @@
 +            // CraftBukkit start
 +            // Spigot start
 +            if (this instanceof net.minecraft.world.entity.LivingEntity) {
-+                this.tickCount = compound.getInt("Spigot.ticksLived");
++                this.totalEntityAge = compound.getInt("Spigot.ticksLived"); // Paper
 +            }
 +            // Spigot end
 +            this.persist = !compound.contains("Bukkit.persist") || compound.getBoolean("Bukkit.persist");
