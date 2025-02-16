@@ -1570,8 +1570,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The future will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @return Future that will resolve when the chunk is loaded
      */
     default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final int x, final int z) {
@@ -1591,8 +1591,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * The future will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
-     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param x Chunk x-coordinate
+     * @param z Chunk z-coordinate
      * @param gen Should the chunk generate if it doesn't exist
      * @param urgent If true, the chunk may be prioritised to be loaded above other chunks in queue
      *
