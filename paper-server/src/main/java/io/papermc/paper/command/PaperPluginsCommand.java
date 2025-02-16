@@ -84,7 +84,7 @@ public class PaperPluginsCommand extends BukkitCommand {
         }
 
         boolean isFirst = true;
-        List<Component> formattedSublists = new ArrayList<>();
+        List<Component> formattedSubLists = new ArrayList<>();
         /*
         Split up the plugin list for each 10 plugins to get size down
 
@@ -99,13 +99,13 @@ public class PaperPluginsCommand extends BukkitCommand {
                 isFirst = false;
             } else {
                 component = PLUGIN_TICK_EMPTY;
-                //formattedSublists.add(Component.empty()); // Add an empty line, the auto chat wrapping and this makes it quite jarring.
+                //formattedSubLists.add(Component.empty()); // Add an empty line, the auto chat wrapping and this makes it quite jarring.
             }
 
-            formattedSublists.add(component.append(Component.join(JoinConfiguration.commas(true), componentSublist)));
+            formattedSubLists.add(component.append(Component.join(JoinConfiguration.commas(true), componentSublist)));
         }
 
-        return formattedSublists;
+        return formattedSubLists;
     }
 
     private static Component formatProvider(PluginProvider<?> provider) {
