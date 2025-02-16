@@ -1481,14 +1481,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Requests a {@link Chunk} to be loaded at the given coordinates
-     *
+     * <p>
      * This method makes no guarantee on how fast the chunk will load,
      * and will return the chunk to the callback at a later time.
-     *
+     * <p>
      * You should use this method if you need a chunk but do not need it
-     * immediately, and you wish to let the server control the speed
-     * of chunk loads, keeping performance in mind.
-     *
+     * immediately, and you wish for it to be prioritised over other
+     * chunk loads in queue.
+     * <p>
      * The future will always be executed synchronously
      * on the main Server Thread.
      * @param loc Location to load the corresponding chunk from
@@ -1500,14 +1500,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Requests a {@link Chunk} to be loaded at the given coordinates
-     *
+     * <p>
      * This method makes no guarantee on how fast the chunk will load,
      * and will return the chunk to the callback at a later time.
-     *
+     * <p>
      * You should use this method if you need a chunk but do not need it
-     * immediately, and you wish to let the server control the speed
-     * of chunk loads, keeping performance in mind.
-     *
+     * immediately, and you wish for it to be prioritised over other
+     * chunk loads in queue.
+     * <p>
      * The future will always be executed synchronously
      * on the main Server Thread.
      * @param loc Location to load the corresponding chunk from
@@ -1520,14 +1520,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Requests a {@link Chunk} to be loaded at the given coordinates
-     *
+     * <p>
      * This method makes no guarantee on how fast the chunk will load,
      * and will return the chunk to the callback at a later time.
-     *
+     * <p>
      * You should use this method if you need a chunk but do not need it
-     * immediately, and you wish to let the server control the speed
-     * of chunk loads, keeping performance in mind.
-     *
+     * immediately, and you wish for it to be prioritised over other
+     * chunk loads in queue.
+     * <p>
      * The future will always be executed synchronously
      * on the main Server Thread.
      * @param block Block to load the corresponding chunk from
@@ -1539,14 +1539,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Requests a {@link Chunk} to be loaded at the given coordinates
-     *
+     * <p>
      * This method makes no guarantee on how fast the chunk will load,
      * and will return the chunk to the callback at a later time.
-     *
+     * <p>
      * You should use this method if you need a chunk but do not need it
-     * immediately, and you wish to let the server control the speed
-     * of chunk loads, keeping performance in mind.
-     *
+     * immediately, and you wish for it to be prioritised over other
+     * chunk loads in queue.
+     * <p>
      * The future will always be executed synchronously
      * on the main Server Thread.
      * @param block Block to load the corresponding chunk from
@@ -1559,25 +1559,45 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     /**
      * Requests a {@link Chunk} to be loaded at the given coordinates
-     *
+     * <p>
      * This method makes no guarantee on how fast the chunk will load,
-     * and will return the chunk to the callback at a later time.
-     *
+     * and will complete the future at a later time.
+     * <p>
      * You should use this method if you need a chunk but do not need it
-     * immediately, and you wish to let the server control the speed
-     * of chunk loads, keeping performance in mind.
-     *
+     * immediately, and you wish for it to be prioritised over other
+     * chunk loads in queue.
+     * <p>
      * The future will always be executed synchronously
      * on the main Server Thread.
      *
-     * @param x X Coord
-     * @param z Z Coord
+     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
+     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
      * @return Future that will resolve when the chunk is loaded
      */
     default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final int x, final int z) {
         return this.getChunkAtAsync(x, z, true, true);
     }
 
+    /**
+     * Requests a {@link Chunk} to be loaded at the given coordinates.
+     * <p>
+     * This method makes no guarantee on how fast the chunk will load,
+     * and will return the chunk to the callback at a later time.
+     * <p>
+     * You should use this method if you need a chunk but do not need it
+     * immediately, and you wish to let the server control the speed
+     * of chunk loads, keeping performance in mind.
+     * <p>
+     * The future will always be executed synchronously
+     * on the main Server Thread.
+     *
+     * @param x Chunk X-coordinate of the chunk - floor(world coordinate / 16)
+     * @param z Chunk Z-coordinate of the chunk - floor(world coordinate / 16)
+     * @param gen Should the chunk generate if it doesn't exist
+     * @param urgent If true, the chunk may be prioritised to be loaded above other chunks in queue
+     *
+     * @return Future that will resolve when the chunk is loaded
+     */
     default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
         java.util.concurrent.CompletableFuture<Chunk> ret = new java.util.concurrent.CompletableFuture<>();
         this.getChunkAtAsync(x, z, gen, urgent, ret::complete);
