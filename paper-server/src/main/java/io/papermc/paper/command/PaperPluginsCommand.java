@@ -39,7 +39,7 @@ public class PaperPluginsCommand extends BukkitCommand {
         .append(asPlainComponents("""
             Server plugins can add new behavior to your server!
             You can find new plugins on Paper's plugin repository, Hangar.
-                        
+            
             https://hangar.papermc.io/
             """));
 
@@ -53,7 +53,7 @@ public class PaperPluginsCommand extends BukkitCommand {
         .append(asPlainComponents("""
             A legacy plugin is a plugin that was made on
             very old unsupported versions of the game.
-                        
+            
             It is encouraged that you replace this plugin,
             as they might not work in the future and may cause
             performance issues.
