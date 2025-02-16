@@ -5,6 +5,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.PlayerEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
@@ -40,11 +41,25 @@ public class PlayerArmorChangeEvent extends PlayerEvent {
      * Gets the type of slot being altered.
      *
      * @return type of slot being altered
-     * @deprecated {@link SlotType} does not accurately represent what item types are valid in each slot.
+     * @deprecated {@link SlotType} does not accurately represent what item types are valid in each slot. Use {@link #getSlot()} instead.
      */
     @Deprecated(since = "1.21.4")
     public SlotType getSlotType() {
         return this.slotType;
+    }
+
+    /**
+     * Gets the slot being altered.
+     *
+     * @return slot being altered
+     */
+    public EquipmentSlot getSlot() {
+        return switch (this.slotType) {
+            case HEAD -> EquipmentSlot.HEAD;
+            case CHEST -> EquipmentSlot.CHEST;
+            case LEGS -> EquipmentSlot.LEGS;
+            case FEET -> EquipmentSlot.FEET;
+        };
     }
 
     /**
