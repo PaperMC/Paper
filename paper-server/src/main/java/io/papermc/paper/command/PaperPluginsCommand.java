@@ -36,7 +36,6 @@ public class PaperPluginsCommand extends BukkitCommand {
 
     private static final TextColor INFO_COLOR = TextColor.color(52, 159, 218);
 
-    // TODO: LINK?
     private static final Component SERVER_PLUGIN_INFO = Component.text("ℹ What is a server plugin?", INFO_COLOR)
         .append(asPlainComponents("""
             Server plugins can add new behavior to your server!
