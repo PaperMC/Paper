@@ -1,5 +1,34 @@
 --- a/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
+@@ -75,7 +_,12 @@
+                 if (completionState != completionState1) {
+                     BlockState blockState = this.getBlockState();
+                     BlockState blockState1 = blockState.setValue(BlockStateProperties.DUSTED, Integer.valueOf(completionState1));
+-                    level.setBlock(this.getBlockPos(), blockState1, 3);
++                    // PaperMC start - Fire EntityChangeBlockEvent for BrushableBlockEntity
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, this.worldPosition, blockState1)) {
++                        level.setBlockAndUpdate(this.worldPosition, blockState1);
++                    }
++                    // level.setBlock(this.getBlockPos(), blockState1, 3);
++                    // PaperMC end - Fire EntityChangeBlockEvent for BrushableBlockEntity
+                 }
+ 
+                 return false;
+@@ -122,7 +_,13 @@
+             turnsInto = Blocks.AIR;
+         }
+ 
+-        level.setBlock(this.worldPosition, turnsInto.defaultBlockState(), 3);
++        // PaperMC start - Fire EntityChangeBlockEvent for BrushableBlockEntity
++        final var nbst = turnsInto.defaultBlockState();
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, this.worldPosition, nbst)) {
++            level.setBlockAndUpdate(this.worldPosition, nbst);
++        }
++        // level.setBlock(this.worldPosition, turnsInto.defaultBlockState(), 3);
++        // PaperMC end - Fire EntityChangeBlockEvent for BrushableBlockEntity
+     }
+ 
+     private void dropContent(ServerLevel level, Player player, ItemStack stack) {
 @@ -138,7 +_,10 @@
              double d5 = blockPos.getZ() + 0.5 * d1 + d2;
              ItemEntity itemEntity = new ItemEntity(level, d3, d4, d5, this.item.split(level.random.nextInt(21) + 10));
