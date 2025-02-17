@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.EnumSet;
 import java.util.OptionalDouble;
 import java.util.function.Predicate;
+import io.papermc.paper.raytrace.BlockCollisionMode;
 import org.bukkit.FluidCollisionMode;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -19,7 +20,7 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     public @Nullable Vector direction;
     public OptionalDouble maxDistance = OptionalDouble.empty();
     public FluidCollisionMode fluidCollisionMode = FluidCollisionMode.NEVER;
-    public boolean ignorePassableBlocks;
+    public BlockCollisionMode blockCollisionMode = BlockCollisionMode.OUTLINE;
     public double raySize = 0.0D;
     public @Nullable Predicate<? super Entity> entityFilter;
     public @Nullable Predicate<? super Block> blockFilter;
@@ -54,8 +55,15 @@ public class PositionedRayTraceConfigurationBuilderImpl implements PositionedRay
     }
 
     @Override
+    public PositionedRayTraceConfigurationBuilder blockCollisionMode(final BlockCollisionMode blockCollisionMode) {
+        Preconditions.checkArgument(blockCollisionMode != null, "blockCollisionMode must not be null");
+        this.blockCollisionMode = blockCollisionMode;
+        return this;
+    }
+
+    @Override
     public PositionedRayTraceConfigurationBuilder ignorePassableBlocks(final boolean ignorePassableBlocks) {
-        this.ignorePassableBlocks = ignorePassableBlocks;
+        this.blockCollisionMode = ignorePassableBlocks ? BlockCollisionMode.COLLIDER : BlockCollisionMode.OUTLINE;
         return this;
     }
 
