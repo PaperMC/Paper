@@ -2,6 +2,8 @@ package org.bukkit.plugin.java;
 
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
+import io.papermc.paper.command.brigadier.BasicCommand;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -11,6 +13,8 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
@@ -26,6 +30,7 @@ import org.bukkit.generator.ChunkGenerator;
 import org.bukkit.plugin.PluginBase;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -337,6 +342,7 @@ public abstract class JavaPlugin extends PluginBase {
      * @param name name or alias of the command
      * @return the plugin command if found, otherwise null
      * @throws UnsupportedOperationException if this plugin is a paper plugin and the method is called in {@link #onEnable()}
+     * @see #registerCommand(String, String, Collection, BasicCommand)
      */
     @Nullable
     public PluginCommand getCommand(@NotNull String name) {
@@ -360,6 +366,88 @@ public abstract class JavaPlugin extends PluginBase {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Registers a command for this plugin. Only valid to be called inside {@link #onEnable()}.
+     *
+     * <p>Commands have certain overriding behavior:
+     * <ul>
+     *   <li>Aliases will not override already existing commands (excluding namespaced ones)</li>
+     *   <li>Aliases are <b>not</b> Brigadier redirects, they just copy the command to a different label</li>
+     *   <li>The main command/namespaced label will override already existing commands</li>
+     * </ul>
+     *
+     * @param label        the label of the to-be-registered command
+     * @param basicCommand the basic command instance to register
+     * @see LifecycleEvents#COMMANDS
+     */
+    @ApiStatus.Experimental
+    public void registerCommand(final String label, final BasicCommand basicCommand) {
+        this.registerCommand(label, null, Collections.emptyList(), basicCommand);
+    }
+
+    /**
+     * Registers a command for this plugin. Only valid to be called inside {@link #onEnable()}.
+     *
+     * <p>Commands have certain overriding behavior:
+     * <ul>
+     *   <li>Aliases will not override already existing commands (excluding namespaced ones)</li>
+     *   <li>Aliases are <b>not</b> Brigadier redirects, they just copy the command to a different label</li>
+     *   <li>The main command/namespaced label will override already existing commands</li>
+     * </ul>
+     *
+     * @param label        the label of the to-be-registered command
+     * @param description  the help description for the root literal node
+     * @param basicCommand the basic command instance to register
+     * @see LifecycleEvents#COMMANDS
+     */
+    @ApiStatus.Experimental
+    public void registerCommand(final String label, final @Nullable String description, final BasicCommand basicCommand) {
+        this.registerCommand(label, description, Collections.emptyList(), basicCommand);
+    }
+
+    /**
+     * Registers a command for this plugin. Only valid to be called inside {@link #onEnable()}.
+     *
+     * <p>Commands have certain overriding behavior:
+     * <ul>
+     *   <li>Aliases will not override already existing commands (excluding namespaced ones)</li>
+     *   <li>Aliases are <b>not</b> Brigadier redirects, they just copy the command to a different label</li>
+     *   <li>The main command/namespaced label will override already existing commands</li>
+     * </ul>
+     *
+     * @param label        the label of the to-be-registered command
+     * @param aliases      a collection of aliases to register the basic command under.
+     * @param basicCommand the basic command instance to register
+     * @see LifecycleEvents#COMMANDS
+     */
+    @ApiStatus.Experimental
+    public void registerCommand(final String label, final Collection<String> aliases, final BasicCommand basicCommand) {
+        this.registerCommand(label, null, aliases, basicCommand);
+    }
+
+    /**
+     * Registers a command for this plugin. Only valid to be called inside {@link #onEnable()}.
+     *
+     * <p>Commands have certain overriding behavior:
+     * <ul>
+     *   <li>Aliases will not override already existing commands (excluding namespaced ones)</li>
+     *   <li>Aliases are <b>not</b> Brigadier redirects, they just copy the command to a different label</li>
+     *   <li>The main command/namespaced label will override already existing commands</li>
+     * </ul>
+     *
+     * @param label        the label of the to-be-registered command
+     * @param description  the help description for the root literal node
+     * @param aliases      a collection of aliases to register the basic command under.
+     * @param basicCommand the basic command instance to register
+     * @see LifecycleEvents#COMMANDS
+     */
+    @ApiStatus.Experimental
+    public void registerCommand(final String label, final @Nullable String description, final Collection<String> aliases, final BasicCommand basicCommand) {
+        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            event.registrar().register(label, description, aliases, basicCommand);
+        });
     }
 
     @Override
