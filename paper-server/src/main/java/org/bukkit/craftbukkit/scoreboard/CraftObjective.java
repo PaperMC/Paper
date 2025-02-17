@@ -12,7 +12,7 @@ import org.bukkit.scoreboard.Score;
 
 final class CraftObjective extends CraftScoreboardComponent implements Objective {
     private final net.minecraft.world.scores.Objective objective;
-    private final CraftCriteria criteria;
+    private final Criteria criteria; // Paper - stats api
 
     CraftObjective(CraftScoreboard scoreboard, net.minecraft.world.scores.Objective objective) {
         super(scoreboard);
@@ -65,7 +65,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     public String getCriteria() {
         this.checkState();
 
-        return this.criteria.bukkitName;
+        return this.criteria.getName(); // Paper - stats api
     }
 
     @Override
@@ -79,7 +79,7 @@ final class CraftObjective extends CraftScoreboardComponent implements Objective
     public boolean isModifiable() {
         this.checkState();
 
-        return !this.criteria.criteria.isReadOnly();
+        return !this.criteria.isReadOnly(); // Paper - stats api
     }
 
     @Override
