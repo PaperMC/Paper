@@ -340,6 +340,7 @@ public abstract class JavaPlugin extends PluginBase {
                 You are trying to call JavaPlugin#getCommand on a Paper plugin during startup:
                 you are probably trying to get a command you tried to define in paper-plugin.yml.
                 Paper plugins do not support YAML-based command declarations!
+                You can use JavaPlugin#registerCommand to define commands in Paper plugins.
                 Please check the documentation for more information on how to define commands in Paper plugins: https://docs.papermc.io/paper/dev/getting-started/paper-plugins#commands
                 """);
         }
