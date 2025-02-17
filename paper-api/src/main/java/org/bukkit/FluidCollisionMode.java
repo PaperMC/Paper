@@ -14,6 +14,10 @@ public enum FluidCollisionMode {
      */
     SOURCE_ONLY,
     /**
+     * Collide only with water.
+     */
+    WATER,
+    /**
      * Collide with all fluids.
      */
     ALWAYS;
