@@ -117,6 +117,7 @@ public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwn
         }
 
         pluginLiteral.pluginCommandMeta = new PluginCommandMeta(pluginMeta, description, registeredAliases);
+        node.pluginCommandMeta = pluginLiteral.pluginCommandMeta;
 
         registeredLabels.addAll(registeredAliases);
         return registeredLabels.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(registeredLabels);
