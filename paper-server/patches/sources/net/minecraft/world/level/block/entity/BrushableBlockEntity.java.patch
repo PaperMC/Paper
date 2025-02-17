@@ -1,20 +1,39 @@
 --- a/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
-@@ -75,7 +_,12 @@
+@@ -64,7 +_,7 @@
+             return false;
+         } else {
+             this.coolDownEndsAtTick = startTick + 10L;
+-            this.unpackLootTable(level, player, stack);
++            int oldCount = this.brushCount;// this.unpackLootTable(level, player, stack); PaperMC - Fire EntityChangeBlockEvent for BrushableBlockEntity
+             int completionState = this.getCompletionState();
+             if (++this.brushCount >= 10) {
+                 this.brushingCompleted(level, player, stack);
+@@ -75,7 +_,13 @@
                  if (completionState != completionState1) {
                      BlockState blockState = this.getBlockState();
                      BlockState blockState1 = blockState.setValue(BlockStateProperties.DUSTED, Integer.valueOf(completionState1));
 -                    level.setBlock(this.getBlockPos(), blockState1, 3);
 +                    // PaperMC start - Fire EntityChangeBlockEvent for BrushableBlockEntity
 +                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, this.worldPosition, blockState1)) {
++                        this.unpackLootTable(level, player, stack);
 +                        level.setBlockAndUpdate(this.worldPosition, blockState1);
-+                    }
++                    } else this.brushCount = oldCount;
 +                    // level.setBlock(this.getBlockPos(), blockState1, 3);
 +                    // PaperMC end - Fire EntityChangeBlockEvent for BrushableBlockEntity
                  }
  
                  return false;
-@@ -122,7 +_,13 @@
+@@ -112,7 +_,7 @@
+     }
+ 
+     private void brushingCompleted(ServerLevel level, Player player, ItemStack stack) {
+-        this.dropContent(level, player, stack);
++        // this.dropContent(level, player, stack); - Fire EntityChangeBlockEvent for BrushableBlockEntity
+         BlockState blockState = this.getBlockState();
+         level.levelEvent(3008, this.getBlockPos(), Block.getId(blockState));
+         Block turnsInto;
+@@ -122,7 +_,14 @@
              turnsInto = Blocks.AIR;
          }
  
@@ -22,6 +41,7 @@
 +        // PaperMC start - Fire EntityChangeBlockEvent for BrushableBlockEntity
 +        final var nbst = turnsInto.defaultBlockState();
 +        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, this.worldPosition, nbst)) {
++            this.dropContent(level, player, stack);
 +            level.setBlockAndUpdate(this.worldPosition, nbst);
 +        }
 +        // level.setBlock(this.worldPosition, turnsInto.defaultBlockState(), 3);
