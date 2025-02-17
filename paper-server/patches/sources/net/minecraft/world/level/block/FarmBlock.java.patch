@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/FarmBlock.java
 +++ b/net/minecraft/world/level/block/FarmBlock.java
-@@ -95,31 +_,56 @@
+@@ -95,28 +_,53 @@
      @Override
      protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
          int moistureValue = state.getValue(MOISTURE);
@@ -11,6 +11,11 @@
 -                level.setBlock(pos, state.setValue(MOISTURE, Integer.valueOf(moistureValue - 1)), 2);
 +                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(level, pos, state.setValue(FarmBlock.MOISTURE, moistureValue - 1), 2); // CraftBukkit
              } else if (!shouldMaintainFarmland(level, pos)) {
++                // Paper start - call BlockFadeEvent for dried up farmland turning to dirt
++                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
++                    return;
++                }
++                // Paper end - call BlockFadeEvent for dried up farmland turning to dirt
                  turnToDirt(null, state, level, pos);
              }
          } else if (moistureValue < 7) {
@@ -52,14 +57,6 @@
      }
  
      public static void turnToDirt(@Nullable Entity entity, BlockState state, Level level, BlockPos pos) {
-+        // CraftBukkit start
-+        if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
-+            return;
-+        }
-+        // CraftBukkit end
-         BlockState blockState = pushEntitiesUp(state, Blocks.DIRT.defaultBlockState(), level, pos);
-         level.setBlockAndUpdate(pos, blockState);
-         level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(entity, blockState));
 @@ -130,13 +_,27 @@
      }
  
