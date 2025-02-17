@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.entity.PoiType;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
@@ -279,6 +280,12 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * @see Villager.Profession
      */
     Registry<Villager.Profession> VILLAGER_PROFESSION = registryFor(RegistryKey.VILLAGER_PROFESSION);
+    /**
+     * Point of interest types.
+     *
+     * @see PoiType
+     */
+    Registry<PoiType> POINT_OF_INTEREST_TYPE = registryFor(RegistryKey.POINT_OF_INTEREST_TYPE);
     /**
      * Villager type.
      *

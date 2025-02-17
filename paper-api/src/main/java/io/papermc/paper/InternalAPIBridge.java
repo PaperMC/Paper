@@ -1,5 +1,6 @@
 package io.papermc.paper;
 
+import io.papermc.paper.entity.PoiType;
 import net.kyori.adventure.util.Services;
 import org.bukkit.damage.DamageEffect;
 import org.jetbrains.annotations.ApiStatus;
@@ -35,5 +36,13 @@ public interface InternalAPIBridge {
      * @return the damage effect.
      */
     DamageEffect getDamageEffect(String key);
+
+    /**
+     * Creates a occupancy instance for the passed enum entry name.
+     *
+     * @param enumNameEntry the enum entry
+     * @return the occupancy
+     */
+    PoiType.Occupancy createOccupancy(String enumNameEntry);
 }
 

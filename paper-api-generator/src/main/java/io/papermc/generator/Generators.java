@@ -4,6 +4,7 @@ import io.papermc.generator.types.GeneratedKeyType;
 import io.papermc.generator.types.GeneratedTagKeyType;
 import io.papermc.generator.types.SourceGenerator;
 import io.papermc.generator.types.goal.MobGoalGenerator;
+import io.papermc.paper.entity.PoiType;
 import io.papermc.paper.registry.RegistryKey;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -46,6 +47,7 @@ public interface Generators {
         simpleKey("CatVariantKeys", Cat.Type.class, Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT, false),
         simpleKey("FrogVariantKeys", Frog.Variant.class, Registries.FROG_VARIANT, RegistryKey.FROG_VARIANT, false),
         simpleKey("VillagerProfessionKeys", Villager.Profession.class, Registries.VILLAGER_PROFESSION, RegistryKey.VILLAGER_PROFESSION, false),
+        simpleKey("PoiTypeKeys", PoiType.class, Registries.POINT_OF_INTEREST_TYPE, RegistryKey.POINT_OF_INTEREST_TYPE, false),
         simpleKey("VillagerTypeKeys", Villager.Type.class, Registries.VILLAGER_TYPE, RegistryKey.VILLAGER_TYPE, false),
         simpleKey("MapDecorationTypeKeys", MapCursor.Type.class, Registries.MAP_DECORATION_TYPE, RegistryKey.MAP_DECORATION_TYPE, false),
         simpleKey("MenuTypeKeys", MenuType.class, Registries.MENU, RegistryKey.MENU, false),
@@ -79,6 +81,7 @@ public interface Generators {
         simpleTagKey("EnchantmentTagKeys", Enchantment.class, Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT),
         simpleTagKey("BannerPatternTagKeys", PatternType.class, Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN),
         simpleTagKey("PaintingVariantTagKeys", Art.class, Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT),
+        simpleTagKey("PoiTypeTagKeys", PoiType.class, Registries.POINT_OF_INTEREST_TYPE, RegistryKey.POINT_OF_INTEREST_TYPE),
         simpleTagKey("InstrumentTagKeys", MusicInstrument.class, Registries.INSTRUMENT, RegistryKey.INSTRUMENT),
 
         // api only
