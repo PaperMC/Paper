@@ -3589,10 +3589,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         final boolean leftMovement = this.getHandle().getLastClientInput().left();
         final boolean rightMovement = this.getHandle().getLastClientInput().right();
 
-        if (leftMovement == rightMovement)
-            return 0;
-
-        return leftMovement ? 1 : -1;
+        return leftMovement == rightMovement ? 0 : leftMovement ? 1 : -1;
     }
 
     @Override
@@ -3600,9 +3597,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         final boolean forwardMovement = this.getHandle().getLastClientInput().forward();
         final boolean backwardMovement = this.getHandle().getLastClientInput().backward();
 
-        if (forwardMovement == backwardMovement)
-            return 0;
-
-        return forwardMovement ? 1 : -1;
+        return forwardMovement == backwardMovement ? 0 : forwardMovement ? 1 : -1;
     }
 }
