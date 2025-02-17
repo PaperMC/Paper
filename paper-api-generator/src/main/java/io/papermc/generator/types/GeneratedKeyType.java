@@ -101,7 +101,6 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
             .addCode("return $T.create($T.$L, $N);", TypedKey.class, RegistryKey.class, requireNonNull(REGISTRY_KEY_FIELD_NAMES.get(this.apiRegistryKey), "Missing field for " + this.apiRegistryKey), keyParam)
             .returns(returnType);
         if (this.publicCreateKeyMethod) {
-            create.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO remove once not experimental
             create.addJavadoc(CREATE_JAVADOC, this.apiType, this.registryKey.location().toString());
         }
         return create;
@@ -157,8 +156,6 @@ public class GeneratedKeyType<T, A> extends SimpleGenerator {
         if (allExperimental) {
             typeBuilder.addAnnotations(experimentalAnnotations(null)); // Update for Experimental API
             createMethod.addAnnotations(experimentalAnnotations(null)); // Update for Experimental API
-        } else {
-            typeBuilder.addAnnotation(EXPERIMENTAL_API_ANNOTATION); // TODO experimental API
         }
         return typeBuilder.addMethod(createMethod.build()).build();
     }
