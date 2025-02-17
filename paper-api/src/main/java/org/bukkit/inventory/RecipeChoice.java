@@ -310,7 +310,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
-    interface ItemTypeChoice extends RecipeChoice {
+    sealed interface ItemTypeChoice extends RecipeChoice permits ItemTypeRecipeChoiceImpl {
 
         /**
          * Gets the set of item types that this choice will match.
