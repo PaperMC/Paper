@@ -1,10 +1,14 @@
 package io.papermc.generator;
 
+import com.google.common.reflect.TypeToken;
 import io.papermc.generator.types.GeneratedKeyType;
 import io.papermc.generator.types.GeneratedTagKeyType;
 import io.papermc.generator.types.SourceGenerator;
 import io.papermc.generator.types.goal.MobGoalGenerator;
+import io.papermc.paper.math.provider.IntProviderType;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.world.WorldPreset;
+import io.papermc.paper.world.worldgen.DimensionType;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -52,6 +56,7 @@ public interface Generators {
         simpleKey("AttributeKeys", Attribute.class, Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, false),
         simpleKey("FluidKeys", Fluid.class, Registries.FLUID, RegistryKey.FLUID, false),
         simpleKey("SoundEventKeys", Sound.class, Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT, false),
+        simpleKey("IntProviderTypeKeys", new TypeToken<>() {}, Registries.INT_PROVIDER_TYPE, RegistryKey.INT_PROVIDER_TYPE, false),
 
         // data-driven
         simpleKey("BiomeKeys", Biome.class, Registries.BIOME, RegistryKey.BIOME, true),
@@ -65,6 +70,9 @@ public interface Generators {
         simpleKey("BannerPatternKeys", PatternType.class, Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, true),
         simpleKey("PaintingVariantKeys", Art.class, Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, true),
         simpleKey("InstrumentKeys", MusicInstrument.class, Registries.INSTRUMENT, RegistryKey.INSTRUMENT, true),
+        simpleKey("WorldPresetKeys", WorldPreset.class, Registries.WORLD_PRESET, RegistryKey.WORLD_PRESET, true),
+        simpleKey("DimensionTypeKeys", DimensionType.class, Registries.DIMENSION_TYPE, RegistryKey.DIMENSION_TYPE, true),
+        // skip LevelStem (none in vanilla)
 
         // tags
         simpleTagKey("GameEventTagKeys", GameEvent.class, Registries.GAME_EVENT, RegistryKey.GAME_EVENT),
@@ -87,6 +95,10 @@ public interface Generators {
     };
 
     private static <T, A> SourceGenerator simpleKey(final String className, final Class<A> apiType, final ResourceKey<? extends Registry<T>> registryKey, final RegistryKey<A> apiRegistryKey, final boolean publicCreateKeyMethod) {
+        return simpleKey(className, TypeToken.of(apiType), registryKey, apiRegistryKey, publicCreateKeyMethod);
+    }
+
+    private static <T, A> SourceGenerator simpleKey(final String className, final TypeToken<A> apiType, final ResourceKey<? extends Registry<T>> registryKey, final RegistryKey<A> apiRegistryKey, final boolean publicCreateKeyMethod) {
         return new GeneratedKeyType<>(className, apiType, "io.papermc.paper.registry.keys", registryKey, apiRegistryKey, publicCreateKeyMethod);
     }
 

@@ -3,6 +3,7 @@ package org.bukkit.support;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 import net.minecraft.SharedConstants;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.HolderLookup;
@@ -78,22 +79,25 @@ public final class RegistryHelper {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
 
-        MultiPackResourceManager ireloadableresourcemanager = RegistryHelper.createResourceManager(featureFlagSet);
+        final MultiPackResourceManager resourceManager = RegistryHelper.createResourceManager(featureFlagSet);
         // add tags and loot tables for unit tests
-        LayeredRegistryAccess<RegistryLayer> layeredregistryaccess = RegistryLayer.createRegistryAccess();
-        List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(ireloadableresourcemanager, layeredregistryaccess.getLayer(RegistryLayer.STATIC));
-        RegistryAccess.Frozen iregistrycustom_dimension = layeredregistryaccess.getAccessForLoading(RegistryLayer.WORLDGEN);
-        List<HolderLookup.RegistryLookup<?>> list1 = TagLoader.buildUpdatedLookups(iregistrycustom_dimension, list);
-        RegistryAccess.Frozen iregistrycustom_dimension1 = RegistryDataLoader.load((ResourceManager) ireloadableresourcemanager, list1, RegistryDataLoader.WORLDGEN_REGISTRIES);
-        LayeredRegistryAccess<RegistryLayer> layers = layeredregistryaccess.replaceFrom(RegistryLayer.WORLDGEN, iregistrycustom_dimension1);
+        LayeredRegistryAccess<RegistryLayer> layeredRegistryAccess = RegistryLayer.createRegistryAccess();
+        final List<Registry.PendingTags<?>> staticPendingTags = TagLoader.loadTagsForExistingRegistries(resourceManager, layeredRegistryAccess.getLayer(RegistryLayer.STATIC));
+        final RegistryAccess.Frozen registryAccessForWorldgen = layeredRegistryAccess.getAccessForLoading(RegistryLayer.WORLDGEN);
+        final List<HolderLookup.RegistryLookup<?>> lookupsWithPendingTags = TagLoader.buildUpdatedLookups(registryAccessForWorldgen, staticPendingTags);
+        final RegistryAccess.Frozen worldGenRegistries = RegistryDataLoader.load((ResourceManager) resourceManager, lookupsWithPendingTags, RegistryDataLoader.WORLDGEN_REGISTRIES);
+        layeredRegistryAccess = layeredRegistryAccess.replaceFrom(RegistryLayer.WORLDGEN, worldGenRegistries);
+        final List<HolderLookup.RegistryLookup<?>> staticAndWorldgenLookups = Stream.concat(lookupsWithPendingTags.stream(), worldGenRegistries.listRegistries()).toList();
+        final RegistryAccess.Frozen dimensionRegistries = RegistryDataLoader.load(resourceManager, staticAndWorldgenLookups, RegistryDataLoader.DIMENSION_REGISTRIES);
+        layeredRegistryAccess = layeredRegistryAccess.replaceFrom(RegistryLayer.DIMENSIONS, dimensionRegistries);
         // Paper start - load registry here to ensure bukkit object registry are correctly delayed if needed
         try {
             Class.forName("org.bukkit.Registry");
         } catch (final ClassNotFoundException ignored) {}
         // Paper end - load registry here to ensure bukkit object registry are correctly delayed if needed
-        RegistryHelper.registry = layers.compositeAccess().freeze();
+        RegistryHelper.registry = layeredRegistryAccess.compositeAccess().freeze();
         // Register vanilla pack
-        RegistryHelper.dataPack = ReloadableServerResources.loadResources(ireloadableresourcemanager, layers, list, featureFlagSet, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
+        RegistryHelper.dataPack = ReloadableServerResources.loadResources(resourceManager, layeredRegistryAccess, staticPendingTags, featureFlagSet, Commands.CommandSelection.DEDICATED, 0, MoreExecutors.directExecutor(), MoreExecutors.directExecutor()).join();
         // Bind tags
         RegistryHelper.dataPack.updateStaticRegistryTags();
         // Biome shortcut
