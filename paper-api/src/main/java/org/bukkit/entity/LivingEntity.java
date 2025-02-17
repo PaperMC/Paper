@@ -1118,7 +1118,8 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * - Positive 1 represents movement to the left.
      * - Negative 1 represents movement to the right.
      * <p>
-     * Please note that for entities of type {@link Player}, this value is updated only when riding another entity.
+     * Please note that for entities of type {@link Player}, this value will only return whole numbers depending
+     * on what keys are held, see {@link Player#getCurrentInput()}.
      * <p>
      * This method specifically provides information about the entity's sideways movement, whereas {@link #getVelocity()} returns
      * a vector representing the entity's overall current momentum.
@@ -1151,7 +1152,8 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * - Positive 1 represents movement forwards.
      * - Negative 1 represents movement backwards.
      * <p>
-     * Please note that for entities of type {@link Player}, this value is updated only when riding another entity.
+     * Please note that for entities of type {@link Player}, this value will only return whole numbers depending
+     * on what keys are held, see {@link Player#getCurrentInput()}.
      * <p>
      * This method specifically provides information about the entity's forward and backward movement,
      * whereas {@link #getVelocity()} returns a vector representing the entity's overall current momentum.
