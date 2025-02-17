@@ -11,6 +11,10 @@ public final class CraftFluidCollisionMode {
         if (fluidCollisionMode == null) return null;
 
         switch (fluidCollisionMode) {
+            case WATER:
+                return Fluid.WATER;
+            case LAVA:
+                return Fluid.LAVA;
             case ALWAYS:
                 return Fluid.ANY;
             case SOURCE_ONLY:
