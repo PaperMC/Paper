@@ -1,6 +1,18 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -251,6 +_,24 @@
+@@ -150,6 +_,11 @@
+     private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
+ 
+     public Commands(Commands.CommandSelection selection, CommandBuildContext context) {
++    // Paper start - Brigadier API - modern minecraft overloads that do not use redirects but are copies instead
++        this(selection, context, false);
++    }
++    public Commands(Commands.CommandSelection selection, CommandBuildContext context, final boolean modern) {
++    // Paper end - Brigadier API - modern minecraft overloads that do not use redirects but are copies instead
+         AdvancementCommands.register(this.dispatcher);
+         AttributeCommand.register(this.dispatcher, context);
+         ExecuteCommand.register(this.dispatcher, context);
+@@ -251,6 +_,40 @@
              PublishCommand.register(this.dispatcher);
          }
  
@@ -14,12 +26,28 @@
 +        // Paper start - Brigadier Command API
 +        // Create legacy minecraft namespace commands
 +        for (final CommandNode<CommandSourceStack> node : new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren())) {
-+            this.dispatcher.getRoot().addChild(
-+                io.papermc.paper.command.brigadier.PaperBrigadier.copyLiteral(
-+                    "minecraft:" + node.getName(),
-+                    (com.mojang.brigadier.tree.LiteralCommandNode<CommandSourceStack>) node
-+                )
-+            );
++            if (modern) {
++                // Modern behaviour that simply creates a full copy of the commands node.
++                // Avoids plenty of issues around registering redirects *to* these nodes from the API
++                this.dispatcher.getRoot().addChild(
++                    io.papermc.paper.command.brigadier.PaperBrigadier.copyLiteral(
++                        "minecraft:" + node.getName(),
++                        (com.mojang.brigadier.tree.LiteralCommandNode<CommandSourceStack>) node
++                    )
++                );
++                continue;
++            }
++
++            // Legacy behaviour of creating a flattened redirecting node.
++            // Used by CommandArgumentUpgrader
++            CommandNode<CommandSourceStack> flattenedAliasTarget = node;
++            while (flattenedAliasTarget.getRedirect() != null) flattenedAliasTarget = flattenedAliasTarget.getRedirect();
++
++            this.dispatcher.register(
++                com.mojang.brigadier.builder.LiteralArgumentBuilder.<CommandSourceStack>literal("minecraft:" + node.getName())
++                    .executes(flattenedAliasTarget.getCommand())
++                    .requires(flattenedAliasTarget.getRequirement())
++                    .redirect(flattenedAliasTarget));
 +        }
 +        // Paper end - Brigadier Command API
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
