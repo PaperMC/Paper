@@ -3,6 +3,7 @@ package org.bukkit.inventory;
 import com.google.common.base.Preconditions;
 import io.papermc.paper.datacomponent.DataComponentHolder;
 import io.papermc.paper.registry.RegistryKey;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -24,6 +25,7 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Represents a stack of items.
@@ -1373,4 +1375,20 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return this.craftDelegate.matchesWithoutData(item, excludeTypes, ignoreCount);
     }
     // Paper end - data component API
+
+    /**
+     * Gets the creative categories to which this item stack belongs.
+     * <p>
+     * This method is different from {@link ItemType#getCreativeCategories()}, as data components
+     * on items can cause them to be put into different categories, such as ominous banners.
+     *
+     * @return A collection of creative categories to which this item stack belongs, which
+     * can be empty.
+     * @see ItemType#getCreativeCategories()
+     */
+    @Unmodifiable
+    @NotNull
+    public Collection<CreativeCategory> getCreativeCategories() {
+        return this.craftDelegate.getCreativeCategories();
+    }
 }
