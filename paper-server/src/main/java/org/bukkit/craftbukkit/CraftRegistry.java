@@ -8,7 +8,6 @@ import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.set.NamedRegistryKeySetImpl;
 import io.papermc.paper.registry.tag.Tag;
 import io.papermc.paper.util.Holderable;
-import io.papermc.paper.util.MCUtil;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,14 +32,24 @@ import org.jetbrains.annotations.NotNull;
 public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
     private static net.minecraft.core.RegistryAccess registry;
+    private static net.minecraft.world.flag.FeatureFlagSet enabledFeatures;
 
     public static void setMinecraftRegistry(final net.minecraft.core.RegistryAccess registry) {
         Preconditions.checkState(CraftRegistry.registry == null, "Registry already set");
         CraftRegistry.registry = registry;
     }
 
+    public static void setEnabledFeatures(final net.minecraft.world.flag.FeatureFlagSet featureFlagSet) {
+        Preconditions.checkState(CraftRegistry.enabledFeatures == null, "FeatureFlagSet already set");
+        CraftRegistry.enabledFeatures = featureFlagSet;
+    }
+
     public static net.minecraft.core.RegistryAccess getMinecraftRegistry() {
         return CraftRegistry.registry;
+    }
+
+    public static net.minecraft.world.flag.FeatureFlagSet getEnabledFeatures() {
+        return CraftRegistry.enabledFeatures;
     }
 
     public static <E> net.minecraft.core.Registry<E> getMinecraftRegistry(ResourceKey<? extends net.minecraft.core.Registry<E>> key) {

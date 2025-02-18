@@ -1,9 +1,11 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
+import io.papermc.paper.inventory.CreativeModeTab;
 import io.papermc.paper.inventory.tooltip.TooltipContext;
 import io.papermc.paper.persistence.PaperPersistentDataContainerView;
 import io.papermc.paper.persistence.PersistentDataContainerView;
@@ -11,6 +13,7 @@ import io.papermc.paper.util.MCUtil;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -45,6 +48,7 @@ import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
@@ -793,6 +797,21 @@ public final class CraftItemStack extends ItemStack {
         // Check the patch by first stripping excluded types and then compare the trimmed patches
         return left.getComponentsPatch().forget(skippingTypes::contains).equals(right.getComponentsPatch().forget(skippingTypes::contains));
     }
-
     // Paper end - data component API
+
+    @Override
+    public @NotNull Collection<CreativeModeTab> getCreativeCategories() {
+        if (this.handle == null) {
+            return ImmutableSet.of();
+        }
+
+        final ImmutableSet.Builder<CreativeModeTab> builder = ImmutableSet.builder();
+        for (final CreativeModeTab tab : Registry.CREATIVE_MODE_TAB) {
+            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItem(this)) {
+                builder.add(tab);
+            }
+        }
+
+        return builder.build();
+    }
 }
