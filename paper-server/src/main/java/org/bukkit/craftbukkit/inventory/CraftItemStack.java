@@ -1,7 +1,10 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
 import io.papermc.paper.adventure.PaperAdventure;
+import io.papermc.paper.inventory.CreativeModeTab;
+import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -23,6 +26,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
@@ -681,4 +685,20 @@ public final class CraftItemStack extends ItemStack {
     }
 
     // Paper end - data component API
+
+    @Override
+    public @NotNull Collection<CreativeModeTab> getCreativeModeTabs() {
+        if (this.handle == null) {
+            return ImmutableSet.of();
+        }
+
+        final ImmutableSet.Builder<CreativeModeTab> builder = ImmutableSet.builder();
+        for (final CreativeModeTab tab : Registry.CREATIVE_MODE_TAB) {
+            if (tab.containsItem(this)) {
+                builder.add(tab);
+            }
+        }
+
+        return builder.build();
+    }
 }
