@@ -1,11 +1,15 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.PaperRegistries;
+import io.papermc.paper.registry.tag.TagKey;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.projectile.FishingHook;
+import org.bukkit.Fluid;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftFishHook extends CraftProjectile implements FishHook {
     private double biteChance = -1;
@@ -232,6 +236,16 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
         final FishingHook hook = this.getHandle();
         hook.resetTimeUntilLured();
         hook.timeUntilHooked = 0; // Reset time until hooked, will be repopulated once lured time is ticked down.
+    }
+
+    @Override
+    public @NotNull TagKey<Fluid> getBobbingFluids() {
+        return PaperRegistries.fromNms(this.getHandle().fluidTagKey);
+    }
+
+    @Override
+    public void setBobbingFluids(@NotNull final TagKey<Fluid> fluids) {
+        this.getHandle().fluidTagKey = PaperRegistries.toNms(fluids);
     }
     // Paper end
 }

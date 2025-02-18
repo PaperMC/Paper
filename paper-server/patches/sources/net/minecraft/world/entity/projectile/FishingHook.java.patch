@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/projectile/FishingHook.java
 +++ b/net/minecraft/world/entity/projectile/FishingHook.java
-@@ -66,10 +_,26 @@
+@@ -66,10 +_,28 @@
      private final int luck;
      private final int lureSpeed;
  
@@ -15,6 +15,8 @@
 +    public boolean rainInfluenced = true;
 +    public boolean skyInfluenced = true;
 +    // CraftBukkit end
++
++    public net.minecraft.tags.TagKey<net.minecraft.world.level.material.Fluid> fluidTagKey = FluidTags.WATER; // Paper - Add FishHook#(set/get)bobbingFluids api
 +
      private FishingHook(EntityType<? extends FishingHook> entityType, Level level, int luck, int lureSpeed) {
          super(entityType, level);
@@ -42,6 +44,24 @@
                      return;
                  }
              } else {
+@@ -162,7 +_,7 @@
+             float f = 0.0F;
+             BlockPos blockPos = this.blockPosition();
+             FluidState fluidState = this.level().getFluidState(blockPos);
+-            if (fluidState.is(FluidTags.WATER)) {
++            if (fluidState.is(this.fluidTagKey)) { // Paper - Add FishHook#(set/get)bobbingFluids api
+                 f = fluidState.getHeight(this.level(), blockPos);
+             }
+ 
+@@ -226,7 +_,7 @@
+                 }
+             }
+ 
+-            if (!fluidState.is(FluidTags.WATER)) {
++            if (!fluidState.is(this.fluidTagKey)) { // Paper - Add FishHook#(set/get)bobbingFluids api
+                 this.setDeltaMovement(this.getDeltaMovement().add(0.0, -0.03, 0.0));
+             }
+ 
 @@ -251,14 +_,14 @@
          if (!player.isRemoved() && player.isAlive() && (isFishingRod || isFishingRod1) && !(this.distanceToSqr(player) > 1024.0)) {
              return false;
@@ -84,6 +104,21 @@
              }
          } else if (this.timeUntilHooked > 0) {
              this.timeUntilHooked -= i;
+@@ -314,8 +_,12 @@
+                 double d = this.getX() + sin * this.timeUntilHooked * 0.1F;
+                 double d1 = Mth.floor(this.getY()) + 1.0F;
+                 double d2 = this.getZ() + cos * this.timeUntilHooked * 0.1F;
+-                BlockState blockState = serverLevel.getBlockState(BlockPos.containing(d, d1 - 1.0, d2));
+-                if (blockState.is(Blocks.WATER)) {
++                // Paper start - Modify to generate particles with fluids other than water.
++                // BlockState blockState = serverLevel.getBlockState(BlockPos.containing(d, d1 - 1.0, d2));
++                // if (blockState.is(Blocks.WATER)) {
++                FluidState fluidState = serverLevel.getFluidState(BlockPos.containing(d, d1 - 1.0, d2));
++                if (fluidState.is(this.fluidTagKey)) {
++                // Paper end - Modify to generate particles with fluids other than water.
+                     if (this.random.nextFloat() < 0.15F) {
+                         serverLevel.sendParticles(ParticleTypes.BUBBLE, d, d1 - 0.1F, d2, 1, sin, 0.1, cos, 0.0);
+                     }
 @@ -326,6 +_,13 @@
                      serverLevel.sendParticles(ParticleTypes.FISHING, d, d1, d2, 0, -f2, 0.01, f1, 1.0);
                  }
@@ -98,7 +133,20 @@
                  this.playSound(SoundEvents.FISHING_BOBBER_SPLASH, 0.25F, 1.0F + (this.random.nextFloat() - this.random.nextFloat()) * 0.4F);
                  double d3 = this.getY() + 0.5;
                  serverLevel.sendParticles(
-@@ -377,14 +_,33 @@
+@@ -370,21 +_,44 @@
+                 double d = this.getX() + Mth.sin(sin) * cos * 0.1;
+                 double d1 = Mth.floor(this.getY()) + 1.0F;
+                 double d2 = this.getZ() + Mth.cos(sin) * cos * 0.1;
+-                BlockState blockState = serverLevel.getBlockState(BlockPos.containing(d, d1 - 1.0, d2));
+-                if (blockState.is(Blocks.WATER)) {
++                // Paper start - Modify to generate particles with fluids other than water.
++                // BlockState blockState = serverLevel.getBlockState(BlockPos.containing(d, d1 - 1.0, d2));
++                // if (blockState.is(Blocks.WATER)) {
++                FluidState fluidState = serverLevel.getFluidState(BlockPos.containing(d, d1 - 1.0, d2));
++                if (fluidState.is(this.fluidTagKey)) {
++                // Paper end - Modify to generate particles with fluids other than water.
+                     serverLevel.sendParticles(ParticleTypes.SPLASH, d, d1, d2, 2 + this.random.nextInt(2), 0.1F, 0.0, 0.1F, 0.0);
+                 }
              }
  
              if (this.timeUntilLured <= 0) {
@@ -136,6 +184,15 @@
  
      public boolean calculateOpenWater(BlockPos pos) {
          FishingHook.OpenWaterType openWaterType = FishingHook.OpenWaterType.INVALID;
+@@ -423,7 +_,7 @@
+         BlockState blockState = this.level().getBlockState(pos);
+         if (!blockState.isAir() && !blockState.is(Blocks.LILY_PAD)) {
+             FluidState fluidState = blockState.getFluidState();
+-            return fluidState.is(FluidTags.WATER) && fluidState.isSource() && blockState.getCollisionShape(this.level(), pos).isEmpty()
++            return fluidState.is(this.fluidTagKey) && fluidState.isSource() && blockState.getCollisionShape(this.level(), pos).isEmpty() // Paper - More fishhook api
+                 ? FishingHook.OpenWaterType.INSIDE_WATER
+                 : FishingHook.OpenWaterType.INVALID;
+         } else {
 @@ -443,15 +_,34 @@
      public void readAdditionalSaveData(CompoundTag compound) {
      }
