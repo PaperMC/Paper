@@ -81,7 +81,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      * @return a new PredicateChoice
      */
     @Contract(value = "_, _ -> new", pure = true)
-    static @NotNull PredicateChoice predicateChoice(@NotNull Predicate<ItemStack> stackPredicate, @NotNull ItemStack exampleStack) {
+    static @NotNull PredicateChoice predicateChoice(@NotNull Predicate<? super ItemStack> stackPredicate, @NotNull ItemStack exampleStack) {
         return new PredicateRecipeChoiceImpl(stackPredicate, exampleStack);
     }
 
