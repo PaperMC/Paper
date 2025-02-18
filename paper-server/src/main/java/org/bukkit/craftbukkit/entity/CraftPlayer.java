@@ -3583,4 +3583,20 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         handle.containerMenu.broadcastChanges();
         return new PaperPlayerGiveResult(leftovers.build(), drops.build());
     }
+
+    @Override
+    public float getSidewaysMovement() {
+        final boolean leftMovement = this.getHandle().getLastClientInput().left();
+        final boolean rightMovement = this.getHandle().getLastClientInput().right();
+
+        return leftMovement == rightMovement ? 0 : leftMovement ? 1 : -1;
+    }
+
+    @Override
+    public float getForwardsMovement() {
+        final boolean forwardMovement = this.getHandle().getLastClientInput().forward();
+        final boolean backwardMovement = this.getHandle().getLastClientInput().backward();
+
+        return forwardMovement == backwardMovement ? 0 : forwardMovement ? 1 : -1;
+    }
 }

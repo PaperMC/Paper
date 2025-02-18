@@ -1115,10 +1115,13 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Retrieves the sideways movement direction of the entity.
      * <p>
      * The returned value ranges from -1 to 1, where:
-     * - Positive 1 represents movement to the left.
-     * - Negative 1 represents movement to the right.
-     * <p>
-     * Please note that for entities of type {@link Player}, this value is updated only when riding another entity.
+     * <ul>
+     *     <li>Positive 1 represents movement to the left.</li>
+     *     <li>Negative 1 represents movement to the right.</li>
+     * </ul>
+     *
+     * Please note that for entities of type {@link Player}, this value will only return whole numbers depending
+     * on what keys are held, see {@link Player#getCurrentInput()}.
      * <p>
      * This method specifically provides information about the entity's sideways movement, whereas {@link #getVelocity()} returns
      * a vector representing the entity's overall current momentum.
@@ -1131,9 +1134,11 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Retrieves the upwards movement direction of the entity.
      * <p>
      * The returned value ranges from -1 to 1, where:
-     * - Positive 1 represents upward movement.
-     * - Negative 1 represents downward movement.
-     * <p>
+     * <ul>
+     *     <li>Positive 1 represents upward movement.</li>
+     *     <li>Negative 1 represents downward movement.</li>
+     * </ul>
+     *
      * Please note that for entities of type {@link Player}, this value is never updated.
      * <p>
      * This method specifically provides information about the entity's vertical movement,
@@ -1148,10 +1153,13 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Retrieves the forwards movement direction of the entity.
      * <p>
      * The returned value ranges from -1 to 1, where:
-     * - Positive 1 represents movement forwards.
-     * - Negative 1 represents movement backwards.
-     * <p>
-     * Please note that for entities of type {@link Player}, this value is updated only when riding another entity.
+     * <ul>
+     *     <li>Positive 1 represents movement forwards.</li>
+     *     <li>Negative 1 represents movement backwards.</li>
+     * </ul>
+     *
+     * Please note that for entities of type {@link Player}, this value will only return whole numbers depending
+     * on what keys are held, see {@link Player#getCurrentInput()}.
      * <p>
      * This method specifically provides information about the entity's forward and backward movement,
      * whereas {@link #getVelocity()} returns a vector representing the entity's overall current momentum.
