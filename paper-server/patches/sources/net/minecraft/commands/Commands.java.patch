@@ -1,6 +1,18 @@
 --- a/net/minecraft/commands/Commands.java
 +++ b/net/minecraft/commands/Commands.java
-@@ -251,6 +_,24 @@
+@@ -150,6 +_,11 @@
+     private final CommandDispatcher<CommandSourceStack> dispatcher = new CommandDispatcher<>();
+ 
+     public Commands(Commands.CommandSelection selection, CommandBuildContext context) {
++    // Paper start - Brigadier API - modern minecraft overloads that do not use redirects but are copies instead
++        this(selection, context, false);
++    }
++    public Commands(Commands.CommandSelection selection, CommandBuildContext context, final boolean modern) {
++    // Paper end - Brigadier API - modern minecraft overloads that do not use redirects but are copies instead
+         AdvancementCommands.register(this.dispatcher);
+         AttributeCommand.register(this.dispatcher, context);
+         ExecuteCommand.register(this.dispatcher, context);
+@@ -251,6 +_,40 @@
              PublishCommand.register(this.dispatcher);
          }
  
@@ -14,12 +26,28 @@
 +        // Paper start - Brigadier Command API
 +        // Create legacy minecraft namespace commands
 +        for (final CommandNode<CommandSourceStack> node : new java.util.ArrayList<>(this.dispatcher.getRoot().getChildren())) {
-+            this.dispatcher.getRoot().addChild(
-+                io.papermc.paper.command.brigadier.PaperBrigadier.copyLiteral(
-+                    "minecraft:" + node.getName(),
-+                    (com.mojang.brigadier.tree.LiteralCommandNode<CommandSourceStack>) node
-+                )
-+            );
++            if (modern) {
++                // Modern behaviour that simply creates a full copy of the commands node.
++                // Avoids plenty of issues around registering redirects *to* these nodes from the API
++                this.dispatcher.getRoot().addChild(
++                    io.papermc.paper.command.brigadier.PaperBrigadier.copyLiteral(
++                        "minecraft:" + node.getName(),
++                        (com.mojang.brigadier.tree.LiteralCommandNode<CommandSourceStack>) node
++                    )
++                );
++                continue;
++            }
++
++            // Legacy behaviour of creating a flattened redirecting node.
++            // Used by CommandArgumentUpgrader
++            CommandNode<CommandSourceStack> flattenedAliasTarget = node;
++            while (flattenedAliasTarget.getRedirect() != null) flattenedAliasTarget = flattenedAliasTarget.getRedirect();
++
++            this.dispatcher.register(
++                com.mojang.brigadier.builder.LiteralArgumentBuilder.<CommandSourceStack>literal("minecraft:" + node.getName())
++                    .executes(flattenedAliasTarget.getCommand())
++                    .requires(flattenedAliasTarget.getRequirement())
++                    .redirect(flattenedAliasTarget));
 +        }
 +        // Paper end - Brigadier Command API
          this.dispatcher.setConsumer(ExecutionCommandSource.resultConsumer());
@@ -144,7 +172,7 @@
              }
  
              return null;
-@@ -360,26 +_,85 @@
+@@ -360,26 +_,120 @@
      }
  
      public void sendCommands(ServerPlayer player) {
@@ -226,6 +254,41 @@
 +            if (!org.spigotmc.SpigotConfig.sendNamespaced && commandNode.getName().contains(":")) continue; // Spigot
              if (commandNode.canUse(source)) {
                  ArgumentBuilder<SharedSuggestionProvider, ?> argumentBuilder = (ArgumentBuilder) commandNode.createBuilder();
++                // Paper start
++                /*
++                Because of how commands can be yeeted right left and center due to bad bukkit practices
++                we need to be able to ensure that ALL commands are registered (even redirects).
++
++                What this will do is IF the redirect seems to be "dead" it will create a builder and essentially populate (flatten)
++                all the children from the dead redirect to the node.
++
++                So, if minecraft:msg redirects to msg but the original msg node has been overriden minecraft:msg will now act as msg and will explicilty inherit its children.
++
++                The only way to fix this is to either:
++                - Send EVERYTHING flattened, don't use redirects
++                - Don't allow command nodes to be deleted
++                - Do this :)
++                 */
++                // Is there an invalid command redirect?
++                if (argumentBuilder.getRedirect() != null && commandNodeToSuggestionNode.get(argumentBuilder.getRedirect()) == null) {
++                    // Create the argument builder with the same values as the specified node, but with a different literal and populated children
++
++                    final CommandNode<SharedSuggestionProvider> redirect = argumentBuilder.getRedirect();
++                    // Diff copied from LiteralCommand#createBuilder
++                    final com.mojang.brigadier.builder.LiteralArgumentBuilder<SharedSuggestionProvider> builder = com.mojang.brigadier.builder.LiteralArgumentBuilder.literal(commandNode.getName());
++                    builder.requires(redirect.getRequirement());
++                    // builder.forward(redirect.getRedirect(), redirect.getRedirectModifier(), redirect.isFork()); We don't want to migrate the forward, since it's invalid.
++                    if (redirect.getCommand() != null) {
++                        builder.executes(redirect.getCommand());
++                    }
++                    // Diff copied from LiteralCommand#createBuilder
++                    for (final CommandNode<SharedSuggestionProvider> child : redirect.getChildren()) {
++                        builder.then(child);
++                    }
++
++                    argumentBuilder = builder;
++                }
++                // Paper end
                  argumentBuilder.requires(suggestions -> true);
 -                if (argumentBuilder.getCommand() != null) {
 -                    argumentBuilder.executes(commandContext -> 0);
