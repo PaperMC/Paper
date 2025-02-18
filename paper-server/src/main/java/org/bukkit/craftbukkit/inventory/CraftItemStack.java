@@ -689,9 +689,10 @@ public final class CraftItemStack extends ItemStack {
 
         // Differing data components (i.e. durability) may cause the above contains to fail, return the categories for the item type if empty.
         final Collection<CreativeCategory> built = builder.build();
-        if (built.isEmpty())
+        if (built.isEmpty()) {
             return CraftItemType.minecraftToBukkitNew(this.handle.getItem()).getCreativeCategories();
-        else
+        } else {
             return built;
+        }
     }
 }
