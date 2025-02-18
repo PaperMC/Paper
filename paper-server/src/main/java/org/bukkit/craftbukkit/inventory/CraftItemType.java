@@ -222,7 +222,7 @@ public class CraftItemType<M extends ItemMeta> extends HolderableBase<Item> impl
     }
 
     @Override
-    public @NotNull Collection<CreativeCategory> getCreativeCategories() {
+    public Collection<CreativeCategory> getCreativeCategories() {
         final ImmutableSet.Builder<CreativeCategory> builder = ImmutableSet.builder();
 
         final net.minecraft.world.item.ItemStack itemStack = new net.minecraft.world.item.ItemStack(this.getHandle());
