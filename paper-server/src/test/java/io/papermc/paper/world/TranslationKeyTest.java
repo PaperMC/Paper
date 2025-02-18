@@ -2,9 +2,12 @@ package io.papermc.paper.world;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import io.papermc.paper.inventory.PaperCreativeCategory;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.biome.Biome;
@@ -13,10 +16,10 @@ import org.bukkit.FireworkEffect;
 import org.bukkit.GameMode;
 import org.bukkit.GameRule;
 import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.support.RegistryHelper;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @AllFeatures
@@ -47,12 +50,13 @@ public class TranslationKeyTest {
     }
 
     @Test
-    @Disabled // TODO fix
     public void testCreativeCategory() {
-        // for (CreativeModeTab tab : CreativeModeTabs.tabs()) {
-        //     CreativeCategory category = Objects.requireNonNull(CraftCreativeCategory.fromNMS(tab));
-        //     Assertions.assertEquals("translation key mismatch for " + category, ((TranslatableContents) tab.getDisplayName().getContents()).getKey(), category.translationKey());
-        // }
+        for (CreativeModeTab tab : PaperCreativeCategory.CATEGORIES) {
+            final String translationKey = ((TranslatableContents) tab.getDisplayName().getContents()).getKey();
+
+            CreativeCategory category = Objects.requireNonNull(PaperCreativeCategory.fromNms(tab), "missing API creative category for " + translationKey);
+            Assertions.assertEquals(translationKey, category.translationKey(), "translation key mismatch for " + category);
+        }
     }
 
     @Test
