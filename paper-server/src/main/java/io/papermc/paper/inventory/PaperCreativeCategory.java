@@ -4,12 +4,12 @@ import com.google.common.base.Enums;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.Util;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.world.flag.FeatureFlagSet;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackLinkedSet;
+import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.inventory.CreativeCategory;
 import java.util.Collection;
 import java.util.HashMap;
@@ -42,13 +42,12 @@ public class PaperCreativeCategory {
 
     public static final Map<CreativeModeTab, Collection<ItemStack>> CATEGORY_CONTENTS = Util.make(ImmutableMap.<CreativeModeTab, Collection<ItemStack>>builder(), map -> {
         // Based on CreativeModeTab#buildContents to obtain the items within each category.
-        final FeatureFlagSet featureFlags = MinecraftServer.getServer().getWorldData().enabledFeatures();
 
         // Parameters to pass to the display item generator, true is passed for hasPermissions to include operator blocks.
-        final CreativeModeTab.ItemDisplayParameters parameters = new CreativeModeTab.ItemDisplayParameters(featureFlags, true, MinecraftServer.getServer().registryAccess());
+        final CreativeModeTab.ItemDisplayParameters parameters = new CreativeModeTab.ItemDisplayParameters(FeatureFlags.REGISTRY.allFlags(), true, CraftRegistry.getMinecraftRegistry());
 
         for (final CreativeModeTab category : CATEGORIES) {
-            CreativeModeTab.ItemDisplayBuilder itemDisplayBuilder = new CreativeModeTab.ItemDisplayBuilder(category, featureFlags);
+            CreativeModeTab.ItemDisplayBuilder itemDisplayBuilder = new CreativeModeTab.ItemDisplayBuilder(category, parameters.enabledFeatures());
 
             category.displayItemsGenerator.accept(parameters, itemDisplayBuilder);
 

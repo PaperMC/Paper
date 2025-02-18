@@ -29,7 +29,6 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.support.LegacyHelper;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -315,7 +314,6 @@ public class PerMaterialTest {
 
     @ParameterizedTest
     @EnumSource(value = Material.class, names = "LEGACY_.*", mode = EnumSource.Mode.MATCH_NONE)
-    @Disabled
     public void testCreativeCategory(Material material) {
         if (material.isItem()) {
             material.getCreativeCategory();
