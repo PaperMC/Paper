@@ -1,5 +1,66 @@
 --- a/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BrushableBlockEntity.java
+@@ -49,6 +_,7 @@
+     @Nullable
+     public ResourceKey<LootTable> lootTable;
+     public long lootTableSeed;
++    private int oldBrushCount; // PaperMC - store old brush count for EntityChangeBlockEvent reversion
+ 
+     public BrushableBlockEntity(BlockPos pos, BlockState blockState) {
+         super(BlockEntityType.BRUSHABLE_BLOCK, pos, blockState);
+@@ -64,7 +_,7 @@
+             return false;
+         } else {
+             this.coolDownEndsAtTick = startTick + 10L;
+-            this.unpackLootTable(level, player, stack);
++            this.oldBrushCount = this.brushCount; // this.unpackLootTable(level, player, stack); PaperMC - Fire EntityChangeBlockEvent for BrushableBlockEntity
+             int completionState = this.getCompletionState();
+             if (++this.brushCount >= 10) {
+                 this.brushingCompleted(level, player, stack);
+@@ -75,7 +_,13 @@
+                 if (completionState != completionState1) {
+                     BlockState blockState = this.getBlockState();
+                     BlockState blockState1 = blockState.setValue(BlockStateProperties.DUSTED, Integer.valueOf(completionState1));
+-                    level.setBlock(this.getBlockPos(), blockState1, 3);
++                    // PaperMC start - Fire EntityChangeBlockEvent for BrushableBlockEntity
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, this.worldPosition, blockState1)) {
++                        this.unpackLootTable(level, player, stack);
++                        level.setBlockAndUpdate(this.worldPosition, blockState1);
++                    } else this.brushCount = this.oldBrushCount;
++                    // level.setBlock(this.getBlockPos(), blockState1, 3);
++                    // PaperMC end - Fire EntityChangeBlockEvent for BrushableBlockEntity
+                 }
+ 
+                 return false;
+@@ -112,9 +_,9 @@
+     }
+ 
+     private void brushingCompleted(ServerLevel level, Player player, ItemStack stack) {
+-        this.dropContent(level, player, stack);
++        // this.dropContent(level, player, stack); - Fire EntityChangeBlockEvent for BrushableBlockEntity
+         BlockState blockState = this.getBlockState();
+-        level.levelEvent(3008, this.getBlockPos(), Block.getId(blockState));
++        // level.levelEvent(3008, this.getBlockPos(), Block.getId(blockState)); - Fire EntityChangeBlockEvent for BrushableBlockEntity
+         Block turnsInto;
+         if (this.getBlockState().getBlock() instanceof BrushableBlock brushableBlock) {
+             turnsInto = brushableBlock.getTurnsInto();
+@@ -122,7 +_,15 @@
+             turnsInto = Blocks.AIR;
+         }
+ 
+-        level.setBlock(this.worldPosition, turnsInto.defaultBlockState(), 3);
++        // PaperMC start - Fire EntityChangeBlockEvent for BrushableBlockEntity
++        final var nbst = turnsInto.defaultBlockState();
++        if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, this.worldPosition, nbst)) {
++            this.dropContent(level, player, stack);
++            level.levelEvent(3008, this.getBlockPos(), Block.getId(blockState));
++            level.setBlockAndUpdate(this.worldPosition, nbst);
++        } else this.brushCount = this.oldBrushCount;
++        // level.setBlock(this.worldPosition, turnsInto.defaultBlockState(), 3);
++        // PaperMC end - Fire EntityChangeBlockEvent for BrushableBlockEntity
+     }
+ 
+     private void dropContent(ServerLevel level, Player player, ItemStack stack) {
 @@ -138,7 +_,10 @@
              double d5 = blockPos.getZ() + 0.5 * d1 + d2;
              ItemEntity itemEntity = new ItemEntity(level, d3, d4, d5, this.item.split(level.random.nextInt(21) + 10));
