@@ -1,5 +1,11 @@
 package org.bukkit.entity;
 
+import io.papermc.paper.registry.keys.FluidKeys;
+import io.papermc.paper.registry.keys.tags.FluidTagKeys;
+import io.papermc.paper.registry.tag.TagKey;
+import org.bukkit.Fluid;
+import org.bukkit.event.player.PlayerFishEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -367,5 +373,25 @@ public interface FishHook extends Projectile {
      * enchantment.
      */
     void resetFishingState();
+
+    /**
+     * Gets the bobbing fluid tag key that this fish hook can bob in.
+     *
+     * <p>The default is {@link FluidTagKeys#WATER}, meaning the hook will bob in water.</p>
+     * @return the fluid tag key that this fish hook can bob in
+     */
+    @ApiStatus.Experimental
+    @NotNull
+    TagKey<Fluid> getBobbingFluids();
+
+    /**
+     * Sets the bobbing fluid tag key that this fish hook can bob in.
+     *
+     * <p>The hook will be able to bob in the specified fluid. Notably, setting this to a tag key that
+     * includes {@link FluidKeys#LAVA} or {@link FluidKeys#FLOWING_LAVA} allows fish to bite even in lava.
+     * This also means that {@link PlayerFishEvent} will be triggered accordingly based on the state.</p>
+     */
+    @ApiStatus.Experimental
+    void setBobbingFluids(@NotNull TagKey<Fluid> fluids);
     // Paper end
 }
