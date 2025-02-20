@@ -169,6 +169,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityEnterLoveModeEvent;
 import org.bukkit.event.entity.EntityExhaustionEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import io.papermc.paper.event.entity.EntityHarvestBlockEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.entity.EntityKnockbackByEntityEvent;
 import org.bukkit.event.entity.EntityKnockbackEvent;
@@ -345,13 +346,24 @@ public class CraftEventFactory {
     }
 
     /**
+     * Entity Harvest Block Event
+     */
+    public static EntityHarvestBlockEvent callEntityHarvestBlockEvent(Level world, BlockPos blockposition, net.minecraft.world.entity.Entity who, List<ItemStack> itemsToHarvest) {
+        List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
+        org.bukkit.entity.Entity entity = who.getBukkitEntity();
+        EntityHarvestBlockEvent entityHarvestBlockEvent = new EntityHarvestBlockEvent(entity, CraftBlock.at(world, blockposition), bukkitItemsToHarvest);
+        entityHarvestBlockEvent.callEvent();
+        return entityHarvestBlockEvent;
+    }
+
+    /**
      * Player Harvest Block Event
      */
     public static PlayerHarvestBlockEvent callPlayerHarvestBlockEvent(Level world, BlockPos blockposition, net.minecraft.world.entity.player.Player who, InteractionHand enumhand, List<ItemStack> itemsToHarvest) {
-        List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = new ArrayList<>(itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList()));
+        List<org.bukkit.inventory.ItemStack> bukkitItemsToHarvest = itemsToHarvest.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
         Player player = (Player) who.getBukkitEntity();
         PlayerHarvestBlockEvent playerHarvestBlockEvent = new PlayerHarvestBlockEvent(player, CraftBlock.at(world, blockposition), CraftEquipmentSlot.getHand(enumhand), bukkitItemsToHarvest);
-        Bukkit.getPluginManager().callEvent(playerHarvestBlockEvent);
+        playerHarvestBlockEvent.callEvent();
         return playerHarvestBlockEvent;
     }
 
