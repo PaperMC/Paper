@@ -22,9 +22,11 @@ import org.jspecify.annotations.NullMarked;
  * <pre>{@code
  * class YourBootstrapClass implements PluginBootstrap {
  *
+ *     public static final TagKey<ItemType> AXE_PICKAXE = ItemTypeTagKeys.create(Key.key("papermc:axe_pickaxe"));
+ *
  *     @Override
  *     public void bootstrap(BootstrapContext context) {
- *         LifecycleEventManager<BootstrapContext> manager = context.getLifecycleManager();
+ *         final LifecycleEventManager<BootstrapContext> manager = context.getLifecycleManager();
  *         manager.registerEventHandler(LifecycleEvents.TAGS.preFlatten(RegistryKey.ITEM), event -> {
  *             final PreFlattenTagRegistrar<ItemType> registrar = event.registrar();
  *             registrar.setTag(AXE_PICKAXE, Set.of(

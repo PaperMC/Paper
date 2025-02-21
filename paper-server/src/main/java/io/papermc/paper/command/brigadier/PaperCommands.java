@@ -21,23 +21,20 @@ import java.util.Set;
 import net.minecraft.commands.CommandBuildContext;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.checkerframework.checker.nullness.qual.NonNull;
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.checkerframework.framework.qual.DefaultQualifier;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import static java.util.Objects.requireNonNull;
 
-@DefaultQualifier(NonNull.class)
+@NullMarked
 public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwner> {
 
     public static final PaperCommands INSTANCE = new PaperCommands();
 
     private @Nullable LifecycleEventOwner currentContext;
-    private @MonotonicNonNull CommandDispatcher<CommandSourceStack> dispatcher;
-    private @MonotonicNonNull CommandBuildContext buildContext;
+    private @Nullable CommandDispatcher<CommandSourceStack> dispatcher;
+    private @Nullable CommandBuildContext buildContext;
     private boolean invalid = false;
 
     @Override
@@ -93,65 +90,48 @@ public class PaperCommands implements Commands, PaperRegistrar<LifecycleEventOwn
     }
 
     @Override
-    public @Unmodifiable Set<String> registerWithFlags(@NotNull final PluginMeta pluginMeta, @NotNull final LiteralCommandNode<CommandSourceStack> node, @org.jetbrains.annotations.Nullable final String description, @NotNull final Collection<String> aliases, @NotNull final Set<CommandRegistrationFlag> flags) {
-        final boolean hasFlattenRedirectFlag = flags.contains(CommandRegistrationFlag.FLATTEN_ALIASES);
+    public @Unmodifiable Set<String> registerWithFlags(final PluginMeta pluginMeta, final LiteralCommandNode<CommandSourceStack> node, final @Nullable String description, final Collection<String> aliases, final Set<CommandRegistrationFlag> flags) {
+        final PluginCommandMeta meta = new PluginCommandMeta(pluginMeta, description);
         final String identifier = pluginMeta.getName().toLowerCase(Locale.ROOT);
         final String literal = node.getLiteral();
-        final PluginCommandNode pluginLiteral = new PluginCommandNode(identifier + ":" + literal, pluginMeta, node, description);  // Treat the keyed version of the command as the root
+        final LiteralCommandNode<CommandSourceStack> pluginLiteral = PaperBrigadier.copyLiteral(identifier + ":" + literal, node);
 
         final Set<String> registeredLabels = new HashSet<>(aliases.size() * 2 + 2);
 
         if (this.registerIntoDispatcher(pluginLiteral, true)) {
             registeredLabels.add(pluginLiteral.getLiteral());
         }
-        if (this.registerRedirect(literal, pluginMeta, pluginLiteral, description, true, hasFlattenRedirectFlag)) { // Plugin commands should override vanilla commands
+        if (this.registerIntoDispatcher(node, true)) { // Plugin commands should override vanilla commands
             registeredLabels.add(literal);
         }
 
         // Add aliases
         final List<String> registeredAliases = new ArrayList<>(aliases.size() * 2);
         for (final String alias : aliases) {
-            if (this.registerRedirect(alias, pluginMeta, pluginLiteral, description, false, hasFlattenRedirectFlag)) {
+            if (this.registerCopy(alias, pluginLiteral, meta)) {
                 registeredAliases.add(alias);
             }
-            if (this.registerRedirect(identifier + ":" + alias, pluginMeta, pluginLiteral, description, false, hasFlattenRedirectFlag)) {
+            if (this.registerCopy(identifier + ":" + alias, pluginLiteral, meta)) {
                 registeredAliases.add(identifier + ":" + alias);
             }
         }
 
-        if (!registeredAliases.isEmpty()) {
-            pluginLiteral.setAliases(registeredAliases);
-        }
+        pluginLiteral.pluginCommandMeta = new PluginCommandMeta(pluginMeta, description, registeredAliases);
+        node.pluginCommandMeta = pluginLiteral.pluginCommandMeta;
 
         registeredLabels.addAll(registeredAliases);
         return registeredLabels.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(registeredLabels);
     }
 
-    private boolean registerRedirect(final String aliasLiteral, final PluginMeta plugin, final PluginCommandNode redirectTo, final @Nullable String description, final boolean override, boolean hasFlattenRedirectFlag) {
-        final LiteralCommandNode<CommandSourceStack> redirect;
-        if (redirectTo.getChildren().isEmpty() || hasFlattenRedirectFlag) {
-            redirect = Commands.literal(aliasLiteral)
-                .executes(redirectTo.getCommand())
-                .requires(redirectTo.getRequirement())
-                .build();
-
-            for (final CommandNode<CommandSourceStack> child : redirectTo.getChildren()) {
-                redirect.addChild(child);
-            }
-        } else {
-            redirect = Commands.literal(aliasLiteral)
-                .executes(redirectTo.getCommand())
-                .redirect(redirectTo)
-                .requires(redirectTo.getRequirement())
-                .build();
-        }
-
-        return this.registerIntoDispatcher(new PluginCommandNode(aliasLiteral, plugin, redirect, description), override);
+    private boolean registerCopy(final String aliasLiteral, final LiteralCommandNode<CommandSourceStack> redirectTo, final PluginCommandMeta meta) {
+        final LiteralCommandNode<CommandSourceStack> node = PaperBrigadier.copyLiteral(aliasLiteral, redirectTo);
+        node.pluginCommandMeta = meta;
+        return this.registerIntoDispatcher(node, false);
     }
 
-    private boolean registerIntoDispatcher(final PluginCommandNode node, boolean override) {
-        final @Nullable CommandNode<CommandSourceStack> existingChild = this.getDispatcher().getRoot().getChild(node.getLiteral());
-        if (existingChild != null && !(existingChild instanceof PluginCommandNode) && !(existingChild instanceof BukkitCommandNode)) {
+    private boolean registerIntoDispatcher(final LiteralCommandNode<CommandSourceStack> node, boolean override) {
+        final CommandNode<CommandSourceStack> existingChild = this.getDispatcher().getRoot().getChild(node.getLiteral());
+        if (existingChild != null && existingChild.pluginCommandMeta == null && !(existingChild instanceof BukkitCommandNode)) {
             override = true; // override vanilla commands
         }
         if (existingChild == null || override) { // Avoid merging behavior. Maybe something to look into in the future

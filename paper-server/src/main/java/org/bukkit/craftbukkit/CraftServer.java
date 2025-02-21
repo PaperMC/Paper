@@ -131,6 +131,7 @@ import org.bukkit.World;
 import org.bukkit.World.Environment;
 import org.bukkit.WorldBorder;
 import org.bukkit.WorldCreator;
+import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
@@ -2478,7 +2479,7 @@ public final class CraftServer implements Server {
 
     @Override
     public @NotNull Merchant createMerchant() {
-        return new CraftMerchantCustom(net.kyori.adventure.text.Component.empty());
+        return new CraftMerchantCustom();
     }
 
     @Override
@@ -2852,8 +2853,13 @@ public final class CraftServer implements Server {
     @Override
     public BlockData createBlockData(org.bukkit.Material material, String data) {
         Preconditions.checkArgument(material != null || data != null, "Must provide one of material or data");
+        BlockType type = null;
+        if (material != null) {
+            type = material.asBlockType();
+            Preconditions.checkArgument(type != null, "Provided material must be a block");
+        }
 
-        return CraftBlockData.newData((material != null) ? material.asBlockType() : null, data);
+        return CraftBlockData.newData(type, data);
     }
 
     @Override

@@ -5,6 +5,8 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
+import java.util.List;
 
 /**
  * Represents an arrow.
@@ -99,9 +101,22 @@ public interface AbstractArrow extends Projectile {
      * Gets the block to which this arrow is attached.
      *
      * @return the attached block or null if not attached
+     * @deprecated can be attached to multiple blocks use {@link AbstractArrow#getAttachedBlocks()} instead
      */
     @Nullable
+    @Deprecated(since = "1.21.4")
     public Block getAttachedBlock();
+
+    /**
+     * Gets the block(s) which this arrow is attached to.
+     * All the returned blocks are responsible for preventing
+     * the arrow from falling.
+     *
+     * @return the attached block(s) or an empty list if not attached
+     */
+    @NotNull
+    @Unmodifiable
+    List<Block> getAttachedBlocks();
 
     /**
      * Gets the current pickup status of this arrow.

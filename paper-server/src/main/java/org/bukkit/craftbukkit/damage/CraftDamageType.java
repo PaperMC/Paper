@@ -58,7 +58,7 @@ public class CraftDamageType implements DamageType, Handleable<net.minecraft.wor
 
     @Override
     public String toString() {
-        return "CraftDamageType{" + "key=" + this.getKey() + ",damageScaling=" + this.getDamageScaling() + ",damageEffect=" + this.getDamageEffect() + ",deathMessageType=" + this.getDeathMessageType() + ",exhaustion=" + this.getExhaustion() + "}";
+        return "CraftDamageType{" + "key=" + this.getKey() + ", damageScaling=" + this.getDamageScaling() + ", damageEffect=" + this.getDamageEffect() + ", deathMessageType=" + this.getDeathMessageType() + ", exhaustion=" + this.getExhaustion() + "}";
     }
 
     public static DeathMessageType deathMessageTypeToBukkit(net.minecraft.world.damagesource.DeathMessageType deathMessageType) {

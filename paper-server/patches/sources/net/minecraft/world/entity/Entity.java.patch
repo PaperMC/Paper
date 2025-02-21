@@ -86,7 +86,7 @@
 +    // Paper end - Share random for entities to make them more random
 +    public org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason; // Paper - Entity#getEntitySpawnReason
 +
-+    private org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity;
++    private @Nullable org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity;
 +
 +    public org.bukkit.craftbukkit.entity.CraftEntity getBukkitEntity() {
 +        if (this.bukkitEntity == null) {
@@ -101,7 +101,7 @@
 +        return this.bukkitEntity;
 +    }
 +    // Paper start
-+    public org.bukkit.craftbukkit.entity.CraftEntity getBukkitEntityRaw() {
++    public @Nullable org.bukkit.craftbukkit.entity.CraftEntity getBukkitEntityRaw() {
 +        return this.bukkitEntity;
 +    }
 +    // Paper end
@@ -127,7 +127,7 @@
      private final double[] pistonDeltas = new double[]{0.0, 0.0, 0.0};
      private long pistonDeltasGameTime;
      private EntityDimensions dimensions;
-@@ -250,6 +_,59 @@
+@@ -250,6 +_,60 @@
      private final List<Entity.Movement> movementThisTick = new ArrayList<>();
      private final Set<BlockState> blocksInside = new ReferenceArraySet<>();
      private final LongSet visitedBlocks = new LongOpenHashSet();
@@ -158,6 +158,7 @@
 +    public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
 +    public boolean fixedPose = false; // Paper - Expand Pose API
 +    private final int despawnTime; // Paper - entity despawn time limit
++    public int totalEntityAge; // Paper - age-like counter for all entities
 +    public final io.papermc.paper.entity.activation.ActivationType activationType = io.papermc.paper.entity.activation.ActivationType.activationTypeFor(this); // Paper - EAR 2/tracking ranges
 +
 +    public void setOrigin(@javax.annotation.Nonnull org.bukkit.Location location) {
@@ -369,7 +370,7 @@
  
      public void tick() {
 +        // Paper start - entity despawn time limit
-+        if (this.despawnTime >= 0 && this.tickCount >= this.despawnTime) {
++        if (this.despawnTime >= 0 && this.totalEntityAge >= this.despawnTime) {
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN);
 +            return;
 +        }
@@ -459,7 +460,7 @@
 +            // CraftBukkit end
              if (this.level() instanceof ServerLevel serverLevel
 -                && this.hurtServer(serverLevel, this.damageSources().lava(), 4.0F)
-+                && this.hurtServer(serverLevel, this.damageSources().lava().directBlock(this.level, this.lastLavaContact), 4.0F) // CraftBukkit - we also don't throw an event unless the object in lava is living, to save on some event calls
++                && this.hurtServer(serverLevel, this.damageSources().lava().eventBlockDamager(this.level, this.lastLavaContact), 4.0F) // CraftBukkit - we also don't throw an event unless the object in lava is living, to save on some event calls
                  && this.shouldPlayLavaHurtSound()
                  && !this.isSilent()) {
                  serverLevel.playSound(
@@ -798,7 +799,7 @@
 +            if (this.maxAirTicks != this.getDefaultMaxAirSupply()) {
 +                compound.putInt("Bukkit.MaxAirSupply", this.getMaxAirSupply());
 +            }
-+            compound.putInt("Spigot.ticksLived", this.tickCount);
++            compound.putInt("Spigot.ticksLived", this.totalEntityAge); // Paper
 +            // CraftBukkit end
              Component customName = this.getCustomName();
              if (customName != null) {
@@ -860,7 +861,7 @@
 +            // CraftBukkit start
 +            // Spigot start
 +            if (this instanceof net.minecraft.world.entity.LivingEntity) {
-+                this.tickCount = compound.getInt("Spigot.ticksLived");
++                this.totalEntityAge = compound.getInt("Spigot.ticksLived"); // Paper
 +            }
 +            // Spigot end
 +            this.persist = !compound.contains("Bukkit.persist") || compound.getBoolean("Bukkit.persist");
@@ -1300,7 +1301,7 @@
 +            return;
 +        }
 +
-+        if (!this.hurtServer(level, this.damageSources().lightningBolt().customEventDamager(lightning), 5.0F)) { // Paper - fix DamageSource API
++        if (!this.hurtServer(level, this.damageSources().lightningBolt().eventEntityDamager(lightning), 5.0F)) { // Paper - fix DamageSource API
 +            return;
 +        }
 +        // CraftBukkit end

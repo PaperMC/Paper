@@ -519,13 +519,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public int getTicksLived() {
-        return this.getHandle().tickCount;
+        return this.getHandle().totalEntityAge;
     }
 
     @Override
     public void setTicksLived(int value) {
         Preconditions.checkArgument(value > 0, "Age value (%s) must be greater than 0", value);
         this.getHandle().tickCount = value;
+        this.getHandle().totalEntityAge = value;
     }
 
     public Entity getHandle() {
@@ -544,13 +545,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     @Override
-    public void playEffect(EntityEffect type) {
-        Preconditions.checkArgument(type != null, "Type cannot be null");
+    public void playEffect(EntityEffect effect) {
+        Preconditions.checkArgument(effect != null, "Entity effect cannot be null");
         Preconditions.checkState(!this.entity.generation, "Cannot play effect during world generation");
+        Preconditions.checkArgument(effect.isApplicableTo(this), "Entity effect cannot apply to this entity");
 
-        if (type.getApplicable().isInstance(this)) {
-            this.getHandle().level().broadcastEntityEvent(this.getHandle(), type.getData());
-        }
+        this.getHandle().level().broadcastEntityEvent(this.getHandle(), effect.getData());
     }
 
     @Override

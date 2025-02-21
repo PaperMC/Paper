@@ -23,7 +23,7 @@ public class EntityDamageByBlockEvent extends EntityDamageEvent {
 
     @Deprecated(since = "1.20.4", forRemoval = true)
     public EntityDamageByBlockEvent(@Nullable final Block damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
-        this(damager, (damager != null) ? damager.getState() : null, damagee, cause, (damager != null) ? DamageSource.builder(DamageType.GENERIC).withDamageLocation(damager.getLocation()).build() : DamageSource.builder(DamageType.GENERIC).build(), damage);
+        this(damager, (damager != null) ? damager.getState() : null, damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), damage);
     }
 
     public EntityDamageByBlockEvent(@Nullable final Block damager, @Nullable final BlockState damagerState, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, final double damage) {
