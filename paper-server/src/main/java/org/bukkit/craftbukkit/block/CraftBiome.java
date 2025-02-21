@@ -1,8 +1,16 @@
 package org.bukkit.craftbukkit.block;
 
 import java.util.Locale;
+import java.util.Objects;
+import io.papermc.paper.world.biome.BiomeClimate;
+import io.papermc.paper.world.biome.BiomeMobSpawning;
+import io.papermc.paper.world.biome.BiomeSpecialEffects;
+import io.papermc.paper.world.biome.PaperBiomeClimate;
+import io.papermc.paper.world.biome.PaperBiomeMobSpawning;
+import io.papermc.paper.world.biome.PaperBiomeSpecialEffects;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.biome.Biomes;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Biome;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -44,7 +52,14 @@ public class CraftBiome implements Biome, Handleable<net.minecraft.world.level.b
                 + ", this can happen if a plugin creates its own biome base with out properly registering it.");
     }
 
+    private static net.minecraft.world.level.biome.Biome getDefaultBiome() {
+        return CraftRegistry.getMinecraftRegistry(Registries.BIOME).getValue(Biomes.PLAINS);
+    }
+
     private final NamespacedKey key;
+    private final PaperBiomeClimate climate;
+    private final PaperBiomeSpecialEffects specialEffects;
+    private final PaperBiomeMobSpawning mobSpawning;
     private final net.minecraft.world.level.biome.Biome biomeBase;
     private final String name;
     private final int ordinal;
@@ -52,6 +67,10 @@ public class CraftBiome implements Biome, Handleable<net.minecraft.world.level.b
     public CraftBiome(NamespacedKey key, net.minecraft.world.level.biome.Biome biomeBase) {
         this.key = key;
         this.biomeBase = biomeBase;
+        // Biome base is null on deprecated for removal custom craft biome
+        this.climate = new PaperBiomeClimate(Objects.requireNonNullElseGet(biomeBase, CraftBiome::getDefaultBiome));
+        this.specialEffects = new PaperBiomeSpecialEffects(Objects.requireNonNullElseGet(biomeBase, CraftBiome::getDefaultBiome));
+        this.mobSpawning = new PaperBiomeMobSpawning(Objects.requireNonNullElseGet(biomeBase, CraftBiome::getDefaultBiome));
         // For backwards compatibility, minecraft values will stile return the uppercase name without the namespace,
         // in case plugins use for example the name as key in a config file to receive biome specific values.
         // Custom biomes will return the key with namespace. For a plugin this should look than like a new biome
@@ -108,6 +127,21 @@ public class CraftBiome implements Biome, Handleable<net.minecraft.world.level.b
         }
 
         return this.getKey().equals(otherBiome.getKey());
+    }
+
+    @Override
+    public @NotNull BiomeSpecialEffects specialEffects() {
+        return this.specialEffects;
+    }
+
+    @Override
+    public @NotNull BiomeClimate climate() {
+        return this.climate;
+    }
+
+    @Override
+    public @NotNull BiomeMobSpawning mobSpawning() {
+        return this.mobSpawning;
     }
 
     @Override
