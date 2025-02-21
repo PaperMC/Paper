@@ -31,11 +31,6 @@ public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Cre
     }
 
     @Override
-    public void detachHome() {
-        this.getHandle().getEntityData().set(Creaking.HOME_POS, Optional.empty());
-    }
-
-    @Override
     public void activate(Player player) {
         Preconditions.checkArgument(player != null, "player cannot be null");
         this.getHandle().activate(((CraftPlayer) player).getHandle());
