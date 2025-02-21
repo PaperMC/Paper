@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
 public interface Creaking extends Monster {
 
     /**
-     * Gets the home location for this Creaking (where its {@link org.bukkit.block.CreakingHeart} could be found).
+     * Gets the home location for this creaking (where its {@link org.bukkit.block.CreakingHeart} could be found).
      *
      * @return the location of the home if available, null otherwise
      */
@@ -19,20 +19,22 @@ public interface Creaking extends Monster {
     Location getHome();
 
     /**
-     * Activates this Creaking to target and follow a player.
+     * Activates this creaking to target and follow a player.
      *
      * @param player the target
      */
     void activate(final Player player);
 
     /**
-     * Deactivates the entity, clearing its current attack target and
+     * Deactivates the creaking, clearing its current attack target and
      * marking it as inactive.
      */
     void deactivate();
 
     /**
-     * Gets if this Creaking is active.
+     * Returns if this creaking is currently active and hunting.
+     *
+     * @see #activate(Player)
      *
      * @return true if active
      */
