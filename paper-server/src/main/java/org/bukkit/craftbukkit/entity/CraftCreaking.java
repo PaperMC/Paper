@@ -9,7 +9,6 @@ import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Player;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import java.util.Optional;
 
 @NullMarked
 public class CraftCreaking extends CraftMonster implements org.bukkit.entity.Creaking {
