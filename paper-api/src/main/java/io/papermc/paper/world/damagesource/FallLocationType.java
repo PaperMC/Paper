@@ -6,8 +6,6 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents a type of location from which the entity fell
- *
- * @since 1.21.4
  */
 @NullMarked
 @ApiStatus.Experimental

@@ -10,8 +10,6 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a combat entry
- *
- * @since 1.21.4
  */
 @NullMarked
 @ApiStatus.Experimental
