@@ -7,13 +7,13 @@
 -    protected void shoot(
 +    // Paper start - prevent item consumption for cancelled events
 +    protected record UnrealizedDrawResult(
-+        List<com.mojang.datafixers.util.Pair<ItemStack, Boolean>> projectileStacks,
-+        @Nullable ItemStack originalInPlayerInventory// Null in case the unrealised draw result is a noop (case of Crossbow)
++        List<ItemStack> projectileStacks,
++        @Nullable ItemStack originalInPlayerInventory // Null in case the unrealised draw result is a noop (case of Crossbow)
 +    ) {
 +        public void consumeProjectilesFromPlayerInventory(int projectStackIndex) {
 +            if (projectStackIndex != 0 || originalInPlayerInventory == null) return;
-+            if (projectileStacks.isEmpty()) return; // Whatever happened hear, nothing
-+            final ItemStack nonIntangibleStack = projectileStacks.get(projectStackIndex).getFirst();
++            if (projectileStacks.isEmpty()) return; // Whatever happened here, nothing
++            final ItemStack nonIntangibleStack = projectileStacks.get(projectStackIndex);
 +            originalInPlayerInventory.shrink(nonIntangibleStack.getCount());
 +        }
 +    }
@@ -22,12 +22,12 @@
          ServerLevel level,
          LivingEntity shooter,
          InteractionHand hand,
-@@ -51,29 +_,76 @@
+@@ -51,6 +_,24 @@
          boolean isCrit,
          @Nullable LivingEntity target
      ) {
 +        // Paper start - prevent item consumption for cancelled events
-+        return shoot(level, shooter, hand, weapon, new UnrealizedDrawResult(projectileItems.stream().map(itemStack -> com.mojang.datafixers.util.Pair.of(itemStack, true)).toList(), null), velocity, inaccuracy, isCrit, target);
++        return shoot(level, shooter, hand, weapon, new UnrealizedDrawResult(projectileItems, null), velocity, inaccuracy, isCrit, target);
 +    }
 +
 +    protected boolean shoot(
@@ -41,18 +41,13 @@
 +        boolean isCrit,
 +        @Nullable LivingEntity target
 +    ) {
-+        List<com.mojang.datafixers.util.Pair<ItemStack, Boolean>> projectileItems = unrealizedDrawResult.projectileStacks();
++        List<ItemStack> projectileItems = unrealizedDrawResult.projectileStacks();
 +        boolean atLeastOneShootBowEventUncancelled = false;
 +        // Paper end - prevent item consumption for cancelled events
          float f = EnchantmentHelper.processProjectileSpread(level, weapon, shooter, 0.0F);
          float f1 = projectileItems.size() == 1 ? 0.0F : 2.0F * f / (projectileItems.size() - 1);
          float f2 = (projectileItems.size() - 1) % 2 * f1 / 2.0F;
-         float f3 = 1.0F;
- 
-         for (int i = 0; i < projectileItems.size(); i++) {
--            ItemStack itemStack = projectileItems.get(i);
-+            ItemStack itemStack = projectileItems.get(i).getFirst(); // Paper - prevent item consumption for cancelled events
-             if (!itemStack.isEmpty()) {
+@@ -62,18 +_,47 @@
                  float f4 = f2 + f3 * ((i + 1) / 2) * f1;
                  f3 = -f3;
                  int i1 = i;
@@ -90,7 +85,7 @@
 +                if (event.shouldConsumeItem()) {
 +                    if (weapon.is(net.minecraft.world.item.Items.CROSSBOW)) {
 +                        weapon.set(net.minecraft.core.component.DataComponents.CHARGED_PROJECTILES, net.minecraft.world.item.component.ChargedProjectiles.EMPTY);
-+                    } else if (projectileItems.get(i).getSecond()) {
++                    } else if (level.shouldConsumeArrow) {
 +                        unrealizedDrawResult.consumeProjectilesFromPlayerInventory(i); // Paper - improve shoot bow - correctly prevent item consumption
 +                        // Paper end - prevent item consumption for cancelled events
 +                    }
@@ -106,13 +101,12 @@
      }
  
      protected int getDurabilityUse(ItemStack stack) {
-@@ -94,18 +_,35 @@
+@@ -94,18 +_,36 @@
          return abstractArrow;
      }
  
--    protected static List<ItemStack> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter) {
 +    // Paper start - prevent item consumption for cancelled events
-+    protected static List<com.mojang.datafixers.util.Pair<ItemStack, Boolean>> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter) {
+     protected static List<ItemStack> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter) {
 +        return draw(weapon, ammo, shooter, ProjectileDrawingItemConsumption.IMMEDIATELY);
 +    }
 +    protected enum ProjectileDrawingItemConsumption {
@@ -125,59 +119,55 @@
 +        MAYBE_LATER,
 +        NEVER,
 +    }
-+    protected static List<com.mojang.datafixers.util.Pair<ItemStack, Boolean>> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter, final ProjectileDrawingItemConsumption consume) {
++    protected static List<ItemStack> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter, final ProjectileDrawingItemConsumption consume) {
 +    // Paper end - prevent item consumption for cancelled events
          if (ammo.isEmpty()) {
              return List.of();
          } else {
              int i = shooter.level() instanceof ServerLevel serverLevel ? EnchantmentHelper.processProjectileCount(serverLevel, weapon, shooter, 1) : 1;
 -            List<ItemStack> list = new ArrayList<>(i);
-+            List<com.mojang.datafixers.util.Pair<ItemStack, Boolean>> list = new ArrayList<>(i); // Paper - prevent item consumption for cancelled events
++            List<ItemStack> list = new ArrayList<>(i); // Paper - prevent item consumption for cancelled events
              ItemStack itemStack = ammo.copy();
  
++            shooter.level().shouldConsumeArrow = true;
              for (int i1 = 0; i1 < i; i1++) {
 -                ItemStack itemStack1 = useAmmo(weapon, i1 == 0 ? ammo : itemStack, shooter, i1 > 0);
 -                if (!itemStack1.isEmpty()) {
 -                    list.add(itemStack1);
 +                // Paper start - prevent item consumption for cancelled events
-+                com.mojang.datafixers.util.Pair<ItemStack, Boolean> ammoResult = useAmmo(weapon, i1 == 0 ? ammo : itemStack, shooter, i1 > 0 || consume == ProjectileDrawingItemConsumption.NEVER, consume); // Paper
-+                if (!ammoResult.getFirst().isEmpty()) {
++                ItemStack ammoResult = useAmmo(weapon, i1 == 0 ? ammo : itemStack, shooter, i1 > 0, consume); // Paper
++                if (!ammoResult.isEmpty()) {
 +                    list.add(ammoResult);
 +                    // Paper end - prevent item consumption for cancelled events
                  }
              }
  
-@@ -113,23 +_,28 @@
+@@ -113,18 +_,26 @@
          }
      }
  
--    protected static ItemStack useAmmo(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean intangable) {
 +    // Paper start - prevent item consumption for cancelled events
-+    protected static com.mojang.datafixers.util.Pair<ItemStack, Boolean> useAmmo(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean intangable) {
+     protected static ItemStack useAmmo(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean intangable) {
+-        int i = !intangable && !shooter.hasInfiniteMaterials() && shooter.level() instanceof ServerLevel serverLevel
 +        return useAmmo(weapon, ammo, shooter, intangable, ProjectileDrawingItemConsumption.IMMEDIATELY);
 +    }
-+    protected static com.mojang.datafixers.util.Pair<ItemStack, Boolean> useAmmo(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean intangable, final ProjectileDrawingItemConsumption consumption) {
++    protected static ItemStack useAmmo(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean intangable, final ProjectileDrawingItemConsumption consumption) {
 +    // Paper end - prevent item consumption for cancelled events
-         int i = !intangable && !shooter.hasInfiniteMaterials() && shooter.level() instanceof ServerLevel serverLevel
++        int i = !intangable && consumption != ProjectileDrawingItemConsumption.NEVER && !shooter.hasInfiniteMaterials() && shooter.level() instanceof ServerLevel serverLevel
              ? EnchantmentHelper.processAmmoUse(serverLevel, weapon, ammo, 1)
              : 0;
          if (i > ammo.getCount()) {
--            return ItemStack.EMPTY;
-+            return com.mojang.datafixers.util.Pair.of(ItemStack.EMPTY, true); // Paper - prevent item consumption for cancelled events
+             return ItemStack.EMPTY;
          } else if (i == 0) {
++            if (!intangable) {
++                shooter.level().shouldConsumeArrow = false;
++            }
              ItemStack itemStack = ammo.copyWithCount(1);
              itemStack.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
--            return itemStack;
-+            return com.mojang.datafixers.util.Pair.of(itemStack, false); // Paper - prevent item consumption for cancelled events
+             return itemStack;
          } else {
 -            ItemStack itemStack = ammo.split(i);
 +            ItemStack itemStack = consumption == ProjectileDrawingItemConsumption.MAYBE_LATER ? ammo.copyWithCount(i) : ammo.split(i); // Paper start - prevent item consumption for cancelled events
              if (ammo.isEmpty() && shooter instanceof Player player) {
                  player.getInventory().removeItem(ammo);
              }
- 
--            return itemStack;
-+            return com.mojang.datafixers.util.Pair.of(itemStack, true); // Paper - prevent item consumption for cancelled events
-         }
-     }
- }
