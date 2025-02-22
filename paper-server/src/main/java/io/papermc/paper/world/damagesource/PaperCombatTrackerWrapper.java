@@ -19,7 +19,7 @@ public record PaperCombatTrackerWrapper(net.minecraft.world.damagesource.CombatT
 
     @Override
     public List<CombatEntry> getCombatEntries() {
-        List<CombatEntry> combatEntries = new ArrayList<>();
+        List<CombatEntry> combatEntries = new ArrayList<>(this.handle.entries.size());
         this.handle.entries.forEach(combatEntry -> combatEntries.add(new PaperCombatEntryWrapper(combatEntry)));
         return combatEntries;
     }
@@ -31,7 +31,7 @@ public record PaperCombatTrackerWrapper(net.minecraft.world.damagesource.CombatT
     }
 
     @Override
-    public @Nullable CombatEntry getMostSignificantFall() {
+    public @Nullable CombatEntry computeMostSignificantFall() {
         net.minecraft.world.damagesource.CombatEntry combatEntry = this.handle.getMostSignificantFall();
         return combatEntry == null ? null : new PaperCombatEntryWrapper(combatEntry);
     }
