@@ -101,12 +101,11 @@
      }
  
      protected int getDurabilityUse(ItemStack stack) {
-@@ -94,18 +_,36 @@
-         return abstractArrow;
+@@ -95,6 +_,21 @@
      }
  
-+    // Paper start - prevent item consumption for cancelled events
      protected static List<ItemStack> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter) {
++        // Paper start - prevent item consumption for cancelled events
 +        return draw(weapon, ammo, shooter, ProjectileDrawingItemConsumption.IMMEDIATELY);
 +    }
 +    protected enum ProjectileDrawingItemConsumption {
@@ -120,54 +119,44 @@
 +        NEVER,
 +    }
 +    protected static List<ItemStack> draw(ItemStack weapon, ItemStack ammo, LivingEntity shooter, final ProjectileDrawingItemConsumption consume) {
-+    // Paper end - prevent item consumption for cancelled events
++        // Paper end - prevent item consumption for cancelled events
          if (ammo.isEmpty()) {
              return List.of();
          } else {
-             int i = shooter.level() instanceof ServerLevel serverLevel ? EnchantmentHelper.processProjectileCount(serverLevel, weapon, shooter, 1) : 1;
--            List<ItemStack> list = new ArrayList<>(i);
-+            List<ItemStack> list = new ArrayList<>(i); // Paper - prevent item consumption for cancelled events
+@@ -102,8 +_,9 @@
+             List<ItemStack> list = new ArrayList<>(i);
              ItemStack itemStack = ammo.copy();
  
-+            shooter.level().shouldConsumeArrow = true;
++            shooter.level().shouldConsumeArrow = true; // Paper - prevent item consumption for cancelled events
              for (int i1 = 0; i1 < i; i1++) {
 -                ItemStack itemStack1 = useAmmo(weapon, i1 == 0 ? ammo : itemStack, shooter, i1 > 0);
--                if (!itemStack1.isEmpty()) {
--                    list.add(itemStack1);
-+                // Paper start - prevent item consumption for cancelled events
-+                ItemStack ammoResult = useAmmo(weapon, i1 == 0 ? ammo : itemStack, shooter, i1 > 0, consume); // Paper
-+                if (!ammoResult.isEmpty()) {
-+                    list.add(ammoResult);
-+                    // Paper end - prevent item consumption for cancelled events
++                ItemStack itemStack1 = useAmmo(weapon, i1 == 0 ? ammo : itemStack, shooter, i1 > 0, consume); // Paper
+                 if (!itemStack1.isEmpty()) {
+                     list.add(itemStack1);
                  }
-             }
- 
-@@ -113,18 +_,26 @@
-         }
+@@ -114,17 +_,23 @@
      }
  
-+    // Paper start - prevent item consumption for cancelled events
      protected static ItemStack useAmmo(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean intangable) {
 -        int i = !intangable && !shooter.hasInfiniteMaterials() && shooter.level() instanceof ServerLevel serverLevel
++        // Paper start - prevent item consumption for cancelled events
 +        return useAmmo(weapon, ammo, shooter, intangable, ProjectileDrawingItemConsumption.IMMEDIATELY);
 +    }
 +    protected static ItemStack useAmmo(ItemStack weapon, ItemStack ammo, LivingEntity shooter, boolean intangable, final ProjectileDrawingItemConsumption consumption) {
-+    // Paper end - prevent item consumption for cancelled events
 +        int i = !intangable && consumption != ProjectileDrawingItemConsumption.NEVER && !shooter.hasInfiniteMaterials() && shooter.level() instanceof ServerLevel serverLevel
              ? EnchantmentHelper.processAmmoUse(serverLevel, weapon, ammo, 1)
              : 0;
++        // Paper end - prevent item consumption for cancelled events
          if (i > ammo.getCount()) {
              return ItemStack.EMPTY;
          } else if (i == 0) {
-+            if (!intangable) {
-+                shooter.level().shouldConsumeArrow = false;
-+            }
++            if (!intangable) shooter.level().shouldConsumeArrow = false; // Paper - prevent item consumption for cancelled events
              ItemStack itemStack = ammo.copyWithCount(1);
              itemStack.set(DataComponents.INTANGIBLE_PROJECTILE, Unit.INSTANCE);
              return itemStack;
          } else {
 -            ItemStack itemStack = ammo.split(i);
-+            ItemStack itemStack = consumption == ProjectileDrawingItemConsumption.MAYBE_LATER ? ammo.copyWithCount(i) : ammo.split(i); // Paper start - prevent item consumption for cancelled events
++            ItemStack itemStack = consumption == ProjectileDrawingItemConsumption.MAYBE_LATER ? ammo.copyWithCount(i) : ammo.split(i); // Paper - prevent item consumption for cancelled events
              if (ammo.isEmpty() && shooter instanceof Player player) {
                  player.getInventory().removeItem(ammo);
              }
