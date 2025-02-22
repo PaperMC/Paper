@@ -22,7 +22,7 @@
          ServerLevel level,
          LivingEntity shooter,
          InteractionHand hand,
-@@ -51,6 +_,24 @@
+@@ -51,6 +_,25 @@
          boolean isCrit,
          @Nullable LivingEntity target
      ) {
@@ -43,11 +43,12 @@
 +    ) {
 +        List<ItemStack> projectileItems = unrealizedDrawResult.projectileStacks();
 +        boolean atLeastOneShootBowEventUncancelled = false;
++        int crossbowRemovals = 0;
 +        // Paper end - prevent item consumption for cancelled events
          float f = EnchantmentHelper.processProjectileSpread(level, weapon, shooter, 0.0F);
          float f1 = projectileItems.size() == 1 ? 0.0F : 2.0F * f / (projectileItems.size() - 1);
          float f2 = (projectileItems.size() - 1) % 2 * f1 / 2.0F;
-@@ -62,18 +_,47 @@
+@@ -62,18 +_,51 @@
                  float f4 = f2 + f3 * ((i + 1) / 2) * f1;
                  f3 = -f3;
                  int i1 = i;
@@ -61,7 +62,8 @@
 +                Projectile projectile = this.createProjectile(level, shooter, weapon, itemStack, isCrit);
 +                this.shootProjectile(shooter, projectile, i1, velocity, inaccuracy, f4, target);
 +
-+                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, weapon, itemStack, projectile, hand, velocity, true);
++                boolean preConsumption = weapon.is(Items.CROSSBOW) || shooter.level().shouldConsumeArrow;
++                org.bukkit.event.entity.EntityShootBowEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityShootBowEvent(shooter, weapon, itemStack, projectile, hand, velocity, preConsumption);
 +                if (event.isCancelled()) {
 +                    event.getProjectile().remove();
 +                    continue; // Paper - prevent item consumption for cancelled events; call for each shot projectile
@@ -81,10 +83,13 @@
 +                        continue; // call for each shot projectile
 +                    }
 +                }
-+                if (!event.shouldConsumeItem() && projectile instanceof final AbstractArrow abstractArrow) abstractArrow.pickup = AbstractArrow.Pickup.CREATIVE_ONLY; // Paper - improve shoot bow - correctly prevent item consumption
++                if (!event.shouldConsumeItem() && projectile instanceof final AbstractArrow abstractArrow) abstractArrow.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
 +                if (event.shouldConsumeItem()) {
 +                    if (weapon.is(net.minecraft.world.item.Items.CROSSBOW)) {
-+                        weapon.set(net.minecraft.core.component.DataComponents.CHARGED_PROJECTILES, net.minecraft.world.item.component.ChargedProjectiles.EMPTY);
++                        List<ItemStack> newProjectiles = new java.util.ArrayList<>(weapon.get(DataComponents.CHARGED_PROJECTILES).getItems());
++                        newProjectiles.remove(i-crossbowRemovals);
++                        weapon.set(DataComponents.CHARGED_PROJECTILES, net.minecraft.world.item.component.ChargedProjectiles.of(newProjectiles));
++                        crossbowRemovals++;
 +                    } else if (level.shouldConsumeArrow) {
 +                        unrealizedDrawResult.consumeProjectilesFromPlayerInventory(i); // Paper - improve shoot bow - correctly prevent item consumption
 +                        // Paper end - prevent item consumption for cancelled events
