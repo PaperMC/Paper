@@ -1460,7 +1460,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Gets the entity's combat tracker
      *
      * @return the entity's combat tracker
-     * @since 1.21.4
      */
     @ApiStatus.Experimental
     @NotNull CombatTracker getCombatTracker();
@@ -1469,7 +1468,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * Calculates fall location from current entity's location
      *
      * @return fall location
-     * @since 1.21.4
      */
     @ApiStatus.Experimental
     @NotNull FallLocationType calculateFallLocationType();

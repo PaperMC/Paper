@@ -10,8 +10,6 @@ import java.util.List;
 
 /**
  * Represents entity's combat tracker
- *
- * @since 1.21.4
  */
 @NullMarked
 @ApiStatus.Experimental
@@ -29,7 +27,7 @@ public interface CombatTracker {
      * Gets the list of recorded combat entries.
      * <br>
      * The returned list is a copy, so any modifications
-     * to its contents won't have an effect on this entity's
+     * to its contents won't affect this entity's
      * combat history.
      *
      * @return the list of combat entries
@@ -56,7 +54,7 @@ public interface CombatTracker {
      *
      * @return the most significant fall damage entry
      */
-    @Nullable CombatEntry getMostSignificantFall();
+    @Nullable CombatEntry computeMostSignificantFall();
 
     /**
      * Checks whether the entity is in combat,

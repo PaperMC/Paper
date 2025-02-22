@@ -37,11 +37,16 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
         net.minecraft.world.entity.LivingEntity mob = ((CraftLivingEntity) entity).getHandle();
         net.minecraft.world.damagesource.FallLocation fallLocation = net.minecraft.world.damagesource.FallLocation.getCurrentFallLocation(mob);
         float fallDistance = mob.fallDistance;
-        return new PaperCombatEntryWrapper(new net.minecraft.world.damagesource.CombatEntry(((CraftDamageSource) damageSource).getHandle(), damage, fallLocation, fallDistance));
+        return createCombatEntry(((CraftDamageSource) damageSource).getHandle(), damage, fallLocation, fallDistance);
     }
 
     @Override
     public CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance) {
-        return new PaperCombatEntryWrapper(new net.minecraft.world.damagesource.CombatEntry(((CraftDamageSource) damageSource).getHandle(), damage, fallLocationType == null ? null : PaperCombatTrackerWrapper.paperToMinecraft(fallLocationType), fallDistance));
+        net.minecraft.world.damagesource.FallLocation fallLocation = fallLocationType == null ? null : PaperCombatTrackerWrapper.paperToMinecraft(fallLocationType);
+        return createCombatEntry(((CraftDamageSource) damageSource).getHandle(), damage, fallLocation, fallDistance);
+    }
+
+    private CombatEntry createCombatEntry(net.minecraft.world.damagesource.DamageSource damageSource, float damage, net.minecraft.world.damagesource.@Nullable FallLocation fallLocation, float fallDistance) {
+        return new PaperCombatEntryWrapper(new net.minecraft.world.damagesource.CombatEntry(damageSource, damage, fallLocation, fallDistance));
     }
 }
