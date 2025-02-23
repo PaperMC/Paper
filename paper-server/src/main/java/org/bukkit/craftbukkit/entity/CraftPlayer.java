@@ -43,6 +43,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -202,8 +203,6 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
-
-import net.md_5.bungee.api.chat.BaseComponent; // Spigot
 
 @DelegateDeserialization(CraftOfflinePlayer.class)
 public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -946,14 +945,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public <T> void playEffect(Location loc, Effect effect, T data) {
         Preconditions.checkArgument(effect != null, "Effect cannot be null");
         if (data != null) {
-            Preconditions.checkArgument(effect.getData() != null, "Effect.%s does not have a valid Data", effect);
+            Preconditions.checkArgument(effect.getData() != null, "Effect.%s does not have a valid data", effect.name());
             Preconditions.checkArgument(effect.isApplicable(data), "%s data cannot be used for the %s effect", data.getClass().getName(), effect); // Paper
         } else {
             // Special case: the axis is optional for ELECTRIC_SPARK
             Preconditions.checkArgument(effect.getData() == null || effect == Effect.ELECTRIC_SPARK, "Wrong kind of data for the %s effect", effect);
         }
 
-        int datavalue = CraftEffect.getDataValue(effect, data);
+        int datavalue = CraftEffect.getDataValue(effect, data, this.getHandle().registryAccess());
         this.playEffect(loc, effect, datavalue);
     }
 
