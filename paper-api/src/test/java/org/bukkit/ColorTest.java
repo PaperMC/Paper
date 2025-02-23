@@ -1,13 +1,15 @@
 package org.bukkit;
 
-import static org.bukkit.support.MatcherAssert.*;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.*;
 import java.util.Locale;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings("javadoc")
+import static org.bukkit.support.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class ColorTest {
     static class TestColor {
         static int id = 0;
@@ -32,7 +34,8 @@ public class ColorTest {
             this.r = r;
             this.g = g;
             this.b = b;
-            this.name = id + ":" + Integer.toHexString(argb).toUpperCase(Locale.ROOT) + "_" + Integer.toHexString(rgb).toUpperCase(Locale.ROOT) + "_" + Integer.toHexString(bgr).toUpperCase(Locale.ROOT) + "-a" + Integer.toHexString(a).toUpperCase(Locale.ROOT) + "-r" + Integer.toHexString(r).toUpperCase(Locale.ROOT) + "-g" + Integer.toHexString(g).toUpperCase(Locale.ROOT) + "-b" + Integer.toHexString(b).toUpperCase(Locale.ROOT);
+            this.name = id + ":" + Integer.toHexString(argb).toUpperCase(Locale.ROOT) + "_" + Integer.toHexString(bgr).toUpperCase(Locale.ROOT) + "-a" + Integer.toHexString(a).toUpperCase(Locale.ROOT) + "-r" + Integer.toHexString(r).toUpperCase(Locale.ROOT) + "-g" + Integer.toHexString(g).toUpperCase(Locale.ROOT) + "-b" + Integer.toHexString(b).toUpperCase(Locale.ROOT);
+            id++;
         }
     }
 
@@ -51,7 +54,7 @@ public class ColorTest {
     @Test
     public void testSerialization() throws Throwable {
         for (TestColor testColor : examples) {
-            Color base = Color.fromRGB(testColor.rgb);
+            Color base = Color.fromARGB(testColor.argb);
 
             YamlConfiguration toSerialize = new YamlConfiguration();
             toSerialize.set("color", base);
@@ -69,14 +72,13 @@ public class ColorTest {
     public void testEqualities() {
         for (TestColor testColor : examples) {
             Color fromARGB = Color.fromARGB(testColor.argb);
-            Color fromARGBs = Color.fromARGB(testColor.a, testColor.r, testColor.g, testColor.b);
             Color fromRGB = Color.fromRGB(testColor.rgb);
             Color fromBGR = Color.fromBGR(testColor.bgr);
+            Color fromARGBs = Color.fromARGB(testColor.a, testColor.r, testColor.g, testColor.b);
             Color fromRGBs = Color.fromRGB(testColor.r, testColor.g, testColor.b);
             Color fromBGRs = Color.fromBGR(testColor.b, testColor.g, testColor.r);
 
-            assertThat(fromARGB, is(fromARGB), testColor.name);
-            assertThat(fromARGBs, is(fromARGBs), testColor.name);
+            assertThat(fromARGB, is(fromARGBs), testColor.name);
             assertThat(fromRGB, is(fromRGBs), testColor.name);
             assertThat(fromRGB, is(fromBGR), testColor.name);
             assertThat(fromRGB, is(fromBGRs), testColor.name);
