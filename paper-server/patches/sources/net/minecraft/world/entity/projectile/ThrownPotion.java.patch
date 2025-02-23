@@ -1,13 +1,5 @@
 --- a/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/net/minecraft/world/entity/projectile/ThrownPotion.java
-@@ -9,6 +_,7 @@
- import net.minecraft.core.Holder;
- import net.minecraft.core.component.DataComponents;
- import net.minecraft.server.level.ServerLevel;
-+import net.minecraft.server.level.ServerPlayer;
- import net.minecraft.tags.BlockTags;
- import net.minecraft.world.damagesource.DamageSource;
- import net.minecraft.world.effect.MobEffect;
 @@ -82,51 +_,87 @@
      @Override
      protected void onHit(HitResult result) {
@@ -109,7 +101,7 @@
          if (!entitiesOfClass.isEmpty()) {
              Entity effectSource = this.getEffectSource();
  
-@@ -135,33 +_,57 @@
+@@ -135,33 +_,48 @@
                      double d = this.distanceToSqr(livingEntity);
                      if (d < 16.0) {
                          double d1;
@@ -133,11 +125,6 @@
 -                                    livingEntity.addEffect(mobEffectInstance1, effectSource);
 -                                }
 -                            }
--                        }
--                    }
--                }
--            }
--        }
 +                        affected.put(livingEntity.getBukkitLivingEntity(), d1);
 +                    }
 +                }
@@ -155,15 +142,6 @@
 +                // CraftBukkit end
 +                for (MobEffectInstance mobEffectInstance : effects) {
 +                    Holder<MobEffect> effect = mobEffectInstance.getEffect();
-+                    // CraftBukkit start - Abide by PVP settings - for players only!
-+                    if (!this.level().pvpMode && this.getOwner() instanceof ServerPlayer && livingEntity instanceof ServerPlayer && livingEntity != this.getOwner()) {
-+                        MobEffect mobEffect = effect.value();
-+                        if (mobEffect == net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN || mobEffect == net.minecraft.world.effect.MobEffects.DIG_SLOWDOWN || mobEffect == net.minecraft.world.effect.MobEffects.HARM || mobEffect == net.minecraft.world.effect.MobEffects.BLINDNESS
-+                                || mobEffect == net.minecraft.world.effect.MobEffects.HUNGER || mobEffect == net.minecraft.world.effect.MobEffects.WEAKNESS || mobEffect == net.minecraft.world.effect.MobEffects.POISON) {
-+                            continue;
-+                        }
-+                    }
-+                    // CraftBukkit end
 +                    if (effect.value().isInstantenous()) {
 +                        effect.value().applyInstantenousEffect(level, this, this.getOwner(), livingEntity, mobEffectInstance.getAmplifier(), d1);
 +                    } else {
@@ -173,11 +151,11 @@
 +                        );
 +                        if (!mobEffectInstance1.endsWithin(20)) {
 +                            livingEntity.addEffect(mobEffectInstance1, effectSource, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.POTION_SPLASH); // CraftBukkit
-+                        }
-+                    }
-+                }
-+            }
-+        }
+                         }
+                     }
+                 }
+             }
+         }
 +        return !event.isCancelled(); // Paper - Fix potions splash events
      }
  
