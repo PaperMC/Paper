@@ -17,12 +17,7 @@ public class CraftFox extends CraftAnimals implements Fox {
 
     @Override
     public net.minecraft.world.entity.animal.Fox getHandle() {
-        return (net.minecraft.world.entity.animal.Fox) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftFox";
+        return (net.minecraft.world.entity.animal.Fox) this.entity;
     }
 
     @Override

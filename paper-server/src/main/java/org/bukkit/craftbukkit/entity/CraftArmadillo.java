@@ -13,7 +13,7 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
 
     @Override
     public net.minecraft.world.entity.animal.armadillo.Armadillo getHandle() {
-        return (net.minecraft.world.entity.animal.armadillo.Armadillo) super.getHandle();
+        return (net.minecraft.world.entity.animal.armadillo.Armadillo) this.entity;
     }
 
     @Override
@@ -36,11 +36,6 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
 
         this.getHandle().lastHurtByMob = null; // Clear this memory to not have the sensor trigger rollUp instantly for damaged armadillo
         this.getHandle().getBrain().setMemoryWithExpiry(MemoryModuleType.DANGER_DETECTED_RECENTLY, true, ArmadilloState.UNROLLING.animationDuration());
-    }
-
-    @Override
-    public String toString() {
-        return "CraftArmadillo";
     }
 
     public static State stateToBukkit(ArmadilloState state) {

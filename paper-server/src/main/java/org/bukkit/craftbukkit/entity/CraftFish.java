@@ -14,9 +14,4 @@ public class CraftFish extends CraftWaterMob implements Fish, io.papermc.paper.e
     public AbstractFish getHandle() {
         return (AbstractFish) this.entity;
     }
-
-    @Override
-    public String toString() {
-        return "CraftFish";
-    }
 }

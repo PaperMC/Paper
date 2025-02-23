@@ -12,7 +12,7 @@ public abstract class CraftChestedHorse extends CraftAbstractHorse implements Ch
 
     @Override
     public AbstractChestedHorse getHandle() {
-        return (AbstractChestedHorse) super.getHandle();
+        return (AbstractChestedHorse) this.entity;
     }
 
     @Override

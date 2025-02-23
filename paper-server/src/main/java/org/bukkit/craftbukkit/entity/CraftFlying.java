@@ -14,9 +14,4 @@ public class CraftFlying extends CraftMob implements Flying {
     public FlyingMob getHandle() {
         return (FlyingMob) this.entity;
     }
-
-    @Override
-    public String toString() {
-        return "CraftFlying";
-    }
 }
