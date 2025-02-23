@@ -14,11 +14,6 @@ public class CraftChicken extends CraftAnimals implements Chicken {
         return (net.minecraft.world.entity.animal.Chicken) this.entity;
     }
 
-    @Override
-    public String toString() {
-        return "CraftChicken";
-    }
-
     // Paper start
     @Override
     public boolean isChickenJockey() {

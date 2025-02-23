@@ -8,6 +8,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
 
 public class CraftFishHook extends CraftProjectile implements FishHook {
+
     private double biteChance = -1;
 
     public CraftFishHook(CraftServer server, FishingHook entity) {
@@ -17,11 +18,6 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     @Override
     public FishingHook getHandle() {
         return (FishingHook) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftFishingHook";
     }
 
     @Override

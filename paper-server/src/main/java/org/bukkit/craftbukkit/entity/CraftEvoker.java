@@ -13,12 +13,7 @@ public class CraftEvoker extends CraftSpellcaster implements Evoker {
 
     @Override
     public net.minecraft.world.entity.monster.Evoker getHandle() {
-        return (net.minecraft.world.entity.monster.Evoker) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEvoker";
+        return (net.minecraft.world.entity.monster.Evoker) this.entity;
     }
 
     @Override

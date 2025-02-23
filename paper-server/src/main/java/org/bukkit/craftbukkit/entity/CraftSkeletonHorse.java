@@ -11,18 +11,13 @@ public class CraftSkeletonHorse extends CraftAbstractHorse implements SkeletonHo
     }
 
     @Override
-    public String toString() {
-        return "CraftSkeletonHorse";
+    public net.minecraft.world.entity.animal.horse.SkeletonHorse getHandle() {
+        return (net.minecraft.world.entity.animal.horse.SkeletonHorse) this.entity;
     }
 
     @Override
     public Variant getVariant() {
         return Variant.SKELETON_HORSE;
-    }
-
-    @Override
-    public net.minecraft.world.entity.animal.horse.SkeletonHorse getHandle() {
-        return (net.minecraft.world.entity.animal.horse.SkeletonHorse) this.entity;
     }
 
     @Override

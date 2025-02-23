@@ -20,12 +20,7 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
 
     @Override
     public net.minecraft.world.entity.animal.Cat getHandle() {
-        return (net.minecraft.world.entity.animal.Cat) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftCat";
+        return (net.minecraft.world.entity.animal.Cat) this.entity;
     }
 
     @Override
