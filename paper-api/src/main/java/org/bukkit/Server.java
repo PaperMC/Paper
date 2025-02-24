@@ -422,7 +422,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param message MiniMessage content
      */
     default void sendRichMessage(final @NotNull String message) {
-        this.sendMessage(MiniMessage.miniMessage().deserialize(message));
+        this.sendMessage(MiniMessage.miniMessage().deserialize(message, this));
     }
 
     /**
@@ -435,7 +435,7 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param resolvers resolvers to use
      */
     default void sendRichMessage(final @NotNull String message, final @NotNull TagResolver... resolvers) {
-        this.sendMessage(MiniMessage.miniMessage().deserialize(message, resolvers));
+        this.sendMessage(MiniMessage.miniMessage().deserialize(message, this, resolvers));
     }
 
     /**
