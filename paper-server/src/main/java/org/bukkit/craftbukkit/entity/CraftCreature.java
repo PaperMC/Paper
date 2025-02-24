@@ -13,9 +13,4 @@ public class CraftCreature extends CraftMob implements Creature {
     public PathfinderMob getHandle() {
         return (PathfinderMob) this.entity;
     }
-
-    @Override
-    public String toString() {
-        return "CraftCreature";
-    }
 }

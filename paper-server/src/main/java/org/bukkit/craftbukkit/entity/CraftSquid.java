@@ -13,9 +13,4 @@ public class CraftSquid extends CraftAgeable implements Squid {
     public net.minecraft.world.entity.animal.Squid getHandle() {
         return (net.minecraft.world.entity.animal.Squid) this.entity;
     }
-
-    @Override
-    public String toString() {
-        return "CraftSquid";
-    }
 }

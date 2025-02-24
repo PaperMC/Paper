@@ -11,7 +11,7 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
 
     @Override
     public net.minecraft.world.entity.monster.Phantom getHandle() {
-        return (net.minecraft.world.entity.monster.Phantom) super.getHandle();
+        return (net.minecraft.world.entity.monster.Phantom) this.entity;
     }
 
     @Override
@@ -22,11 +22,6 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
     @Override
     public void setSize(int sz) {
         this.getHandle().setPhantomSize(sz);
-    }
-
-    @Override
-    public String toString() {
-        return "CraftPhantom";
     }
 
     // Paper start

@@ -42,6 +42,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -173,7 +174,6 @@ import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
-import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -188,7 +188,6 @@ import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
 import org.bukkit.event.player.PlayerHideEntityEvent;
 import org.bukkit.event.player.PlayerRegisterChannelEvent;
 import org.bukkit.event.player.PlayerShowEntityEvent;
-import org.bukkit.event.player.PlayerSpawnChangeEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerUnregisterChannelEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -201,14 +200,12 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 
-import net.md_5.bungee.api.chat.BaseComponent; // Spigot
-
 @DelegateDeserialization(CraftOfflinePlayer.class)
 public class CraftPlayer extends CraftHumanEntity implements Player {
+
     private long firstPlayed = 0;
     private long lastPlayed = 0;
     private boolean hasPlayedBefore = false;
@@ -231,6 +228,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         super(server, entity);
 
         this.firstPlayed = System.currentTimeMillis();
+    }
+
+    @Override
+    public ServerPlayer getHandle() {
+        return (ServerPlayer) this.entity;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        // Long-term, this should just use the super equals... for now, check the UUID
+        if (obj == this) return true;
+        if (!(obj instanceof OfflinePlayer other)) return false;
+        return this.getUniqueId().equals(other.getUniqueId());
+    }
+
+    @Override
+    public int hashCode() {
+        if (this.hash == 0 || this.hash == 485) {
+            this.hash = 97 * 5 + this.getUniqueId().hashCode();
+        }
+        return this.hash;
     }
 
     public GameProfile getProfile() {
@@ -661,14 +679,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         ClientboundTabListPacket packet = new ClientboundTabListPacket(io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(this.playerListHeader), io.papermc.paper.adventure.PaperAdventure.asVanillaNullToEmpty(this.playerListFooter)); // Paper - adventure
         this.getHandle().connection.send(packet);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        // Long-term, this should just use the super equals... for now, check the UUID
-        if (obj == this) return true;
-        if (!(obj instanceof OfflinePlayer other)) return false;
-        return this.getUniqueId().equals(other.getUniqueId());
     }
 
     @Override
@@ -2319,28 +2329,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public Player getPlayer() {
         return this;
-    }
-
-    @Override
-    public ServerPlayer getHandle() {
-        return (ServerPlayer) this.entity;
-    }
-
-    public void setHandle(final ServerPlayer entity) {
-        super.setHandle(entity);
-    }
-
-    @Override
-    public String toString() {
-        return "CraftPlayer{" + "name=" + this.getName() + '}';
-    }
-
-    @Override
-    public int hashCode() {
-        if (this.hash == 0 || this.hash == 485) {
-            this.hash = 97 * 5 + this.getUniqueId().hashCode();
-        }
-        return this.hash;
     }
 
     @Override

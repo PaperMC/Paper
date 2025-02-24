@@ -11,13 +11,9 @@ public class CraftRavager extends CraftRaider implements Ravager {
 
     @Override
     public net.minecraft.world.entity.monster.Ravager getHandle() {
-        return (net.minecraft.world.entity.monster.Ravager) super.getHandle();
+        return (net.minecraft.world.entity.monster.Ravager) this.entity;
     }
 
-    @Override
-    public String toString() {
-        return "CraftRavager";
-    }
     // Paper start - Missing Entity Behavior
     @Override
     public int getAttackTicks() {

@@ -7,8 +7,14 @@ import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Player;
 
 public class CraftLightningStrike extends CraftEntity implements LightningStrike {
+
     public CraftLightningStrike(final CraftServer server, final LightningBolt entity) {
         super(server, entity);
+    }
+
+    @Override
+    public LightningBolt getHandle() {
+        return (LightningBolt) this.entity;
     }
 
     @Override
@@ -39,16 +45,6 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
 
     public void setCausingPlayer(Player player) {
         this.getHandle().setCause((player != null) ? ((CraftPlayer) player).getHandle() : null);
-    }
-
-    @Override
-    public LightningBolt getHandle() {
-        return (LightningBolt) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftLightningStrike";
     }
 
     // Spigot start

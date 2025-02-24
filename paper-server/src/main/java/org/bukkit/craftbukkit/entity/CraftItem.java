@@ -10,8 +10,8 @@ import org.bukkit.inventory.ItemStack;
 public class CraftItem extends CraftEntity implements Item {
 
     // Paper start
-    private final static int NO_AGE_TIME = Short.MIN_VALUE;
-    private final static int NO_PICKUP_TIME = Short.MAX_VALUE;
+    private final static int NO_AGE_TIME = Short.MIN_VALUE; // ItemEntity#INFINITE_LIFETIME
+    private final static int NO_PICKUP_TIME = Short.MAX_VALUE; // ItemEntity#INFINITE_PICKUP_DELAY
     // Paper end
 
     public CraftItem(CraftServer server, ItemEntity entity) {
@@ -145,10 +145,5 @@ public class CraftItem extends CraftEntity implements Item {
     @Override
     public UUID getThrower() {
         return this.getHandle().thrower;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftItem";
     }
 }

@@ -14,8 +14,14 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.util.Vector;
 
 public abstract class CraftMinecart extends CraftVehicle implements Minecart {
+
     public CraftMinecart(CraftServer server, AbstractMinecart entity) {
         super(server, entity);
+    }
+
+    @Override
+    public AbstractMinecart getHandle() {
+        return (AbstractMinecart) this.entity;
     }
 
     @Override
@@ -76,11 +82,6 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
         return CraftMagicNumbers.getMaterial(this.getHandle().publicGetDropItem());
     }
     // Paper end
-
-    @Override
-    public AbstractMinecart getHandle() {
-        return (AbstractMinecart) this.entity;
-    }
 
     @Override
     public void setDisplayBlock(MaterialData material) {

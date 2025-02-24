@@ -20,11 +20,6 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
     }
 
     @Override
-    public String toString() {
-        return "CraftFallingBlock";
-    }
-
-    @Override
     public Material getMaterial() {
         return this.getBlockData().getMaterial();
     }
@@ -33,6 +28,7 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
     public BlockData getBlockData() {
         return CraftBlockData.fromData(this.getHandle().getBlockState());
     }
+
     // Paper start - Expand FallingBlock API
     @Override
     public void setBlockData(final BlockData blockData) {

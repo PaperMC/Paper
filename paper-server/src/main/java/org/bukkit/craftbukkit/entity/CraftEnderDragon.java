@@ -11,12 +11,16 @@ import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.entity.ComplexEntityPart;
 import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.EnderDragon.Phase;
 
 public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnemy {
 
     public CraftEnderDragon(CraftServer server, net.minecraft.world.entity.boss.enderdragon.EnderDragon entity) {
         super(server, entity);
+    }
+
+    @Override
+    public net.minecraft.world.entity.boss.enderdragon.EnderDragon getHandle() {
+        return (net.minecraft.world.entity.boss.enderdragon.EnderDragon) this.entity;
     }
 
     @Override
@@ -28,16 +32,6 @@ public class CraftEnderDragon extends CraftMob implements EnderDragon, CraftEnem
         }
 
         return builder.build();
-    }
-
-    @Override
-    public net.minecraft.world.entity.boss.enderdragon.EnderDragon getHandle() {
-        return (net.minecraft.world.entity.boss.enderdragon.EnderDragon) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEnderDragon";
     }
 
     @Override

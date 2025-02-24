@@ -4,8 +4,6 @@ import com.google.common.base.Preconditions;
 import java.util.Random;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import org.bukkit.Material;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Firework;
@@ -15,36 +13,14 @@ import org.bukkit.inventory.meta.FireworkMeta;
 public class CraftFirework extends CraftProjectile implements Firework {
 
     private final Random random = new Random();
-    //private CraftItemStack item; // Paper - Remove usage, not accurate representation of current item.
 
     public CraftFirework(CraftServer server, FireworkRocketEntity entity) {
         super(server, entity);
-
-        // Paper start - Expose firework item directly
-//        ItemStack item = this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM);
-//
-//        if (item.isEmpty()) {
-//            item = new ItemStack(Items.FIREWORK_ROCKET);
-//            this.getHandle().getEntityData().set(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM, item);
-//        }
-//
-//        this.item = CraftItemStack.asCraftMirror(item);
-//
-//        // Ensure the item is a firework...
-//        if (this.item.getType() != Material.FIREWORK_ROCKET) {
-//            this.item.setType(Material.FIREWORK_ROCKET);
-//        }
-        // Paper end - Expose firework item directly
     }
 
     @Override
     public FireworkRocketEntity getHandle() {
         return (FireworkRocketEntity) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftFirework";
     }
 
     @Override
