@@ -26735,7 +26735,7 @@ index da793ad12565c36fffb26eb771ff68c76632caf7..db06f966077928419bfe469260f04d7d
          if (!passengers.equals(this.lastPassengers)) {
              this.broadcastAndSend(new ClientboundSetPassengersPacket(this.entity)); // CraftBukkit
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 4a521a37e5fa0250d2cb7b4bc061d309c977e034..fc4a1efaa1f0005237340a236a231d8d3fec8d84 100644
+index 400b56657414177cd76a7b94c426dc7c886aa957..a275b17d0852d9d9bc850614713244e580ae81f1 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -170,7 +170,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
@@ -28372,7 +28372,7 @@ index 8cc5c0716392ba06501542ff5cbe71ee43979e5d..09fd99c9cbd23b5f3c899bfb00c9b896
 +    // Paper end - block counting
  }
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index 19e4576b4b3be92961e993a8b14c8368789c692e..216482b4bb705520411bdeaa58f6044d05190eb6 100644
+index 994791a83ca6712db3e74ca9aba4bfcd95a0ec6d..1b54cf07616a10d93e9336dbd299ba5f09678a28 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -135,7 +135,7 @@ import net.minecraft.world.scores.ScoreHolder;
@@ -33698,6 +33698,25 @@ index 342c83309b19c64d86e0dd97c1756c96be52772b..423779a2b690f387a4f0bd07b97b50e0
 +        // Paper end - rewrite chunk system
      }
  }
+diff --git a/net/minecraft/world/level/gameevent/DynamicGameEventListener.java b/net/minecraft/world/level/gameevent/DynamicGameEventListener.java
+index 2b98932e69271571e6e9350c55c82edc858d76f6..c8980c50713e1526c526ed181fb2ad9486bab353 100644
+--- a/net/minecraft/world/level/gameevent/DynamicGameEventListener.java
++++ b/net/minecraft/world/level/gameevent/DynamicGameEventListener.java
+@@ -27,6 +27,14 @@ public class DynamicGameEventListener<T extends GameEventListener> {
+ 
+     public void remove(ServerLevel level) {
+         ifChunkExists(level, this.lastSection, listenerRegistry -> listenerRegistry.unregister(this.listener));
++        // Paper start - rewrite chunk system
++        // We need to unset the last section when removed, otherwise if the same instance is re-added at the same position it
++        // will assume there was no change and fail to re-register.
++        // In vanilla, chunks rarely unload and re-load quickly enough to trigger this issue. However, our chunk system has a
++        // quirk where fast chunk reload cycles will often occur on player login (see PR #22).
++        // So we fix this vanilla oversight as our changes cause it to manifest in bugs much more often (see issue #87).
++        this.lastSection = null;
++        // Paper end - rewrite chunk system
+     }
+ 
+     public void move(ServerLevel level) {
 diff --git a/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
 index 6d61739574155f89511b9adcaf1174841bdc7da7..65728ef17e63d71833677fdcbd5bb90794b4822b 100644
 --- a/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
