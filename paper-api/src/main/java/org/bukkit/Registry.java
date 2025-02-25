@@ -83,11 +83,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
 
         @Override
-        public int size() {
-            return Iterables.size(this);
-        }
-
-        @Override
         public Iterator<Advancement> iterator() {
             return Bukkit.advancementIterator();
         }
@@ -142,11 +137,6 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public @Nullable KeyedBossBar get(final NamespacedKey key) {
             return Bukkit.getBossBar(key);
-        }
-
-        @Override
-        public int size() {
-            return Iterables.size(this);
         }
 
         @Override
@@ -610,6 +600,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public Stream<A> stream() {
             return StreamSupport.stream(this.spliterator(), false);
+        }
+
+        @Override
+        public int size() {
+            return Iterables.size(this);
         }
 
         @Override
