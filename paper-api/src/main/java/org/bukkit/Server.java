@@ -2309,24 +2309,52 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     // Spigot start
     public class Spigot {
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @return The server's spigot config.
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @return The server's bukkit config.
+         */
         // Paper start
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
         {
             throw new UnsupportedOperationException( "Not supported yet." );
         }
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @return The server's spigot config.
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @return The server's paper config.
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
         {
@@ -2358,15 +2386,27 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
 
         /**
          * Restart the server. If the server administrator has not configured restarting, the server will stop.
+         *
+         * @deprecated Use {@link Server#restart()} instead.
          */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         public void restart() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
+    /**
+     * @deprecated All methods on this class have been deprecated, see the individual methods for replacements.
+     */
+    @Deprecated(since = "1.21.4", forRemoval = true)
     @NotNull
     Spigot spigot();
     // Spigot end
+
+    /**
+     * Restarts the server. If the server administrator has not configured restarting, the server will stop.
+     */
+    void restart();
 
     void reloadPermissions(); // Paper
 
