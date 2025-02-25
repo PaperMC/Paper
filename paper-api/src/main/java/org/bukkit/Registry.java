@@ -3,6 +3,7 @@ package org.bukkit;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -82,6 +83,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
 
         @Override
+        public int size() {
+            return Iterables.size(this);
+        }
+
+        @Override
         public Iterator<Advancement> iterator() {
             return Bukkit.advancementIterator();
         }
@@ -136,6 +142,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public @Nullable KeyedBossBar get(final NamespacedKey key) {
             return Bukkit.getBossBar(key);
+        }
+
+        @Override
+        public int size() {
+            return Iterables.size(this);
         }
 
         @Override
@@ -295,6 +306,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public Iterator iterator() {
             return MemoryKey.values().iterator();
+        }
+
+        @Override
+        public int size() {
+            return MemoryKey.values().size();
         }
 
         @Override
@@ -536,6 +552,13 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         return (namespacedKey != null) ? this.get(namespacedKey) : null;
     }
 
+    /**
+     * Gets the size of the registry.
+     *
+     * @return the size of the registry
+     */
+    int size();
+
     @ApiStatus.Internal
     class SimpleRegistry<T extends Enum<T> & Keyed> extends NotARegistry<T> { // Paper - remove final
 
@@ -562,6 +585,11 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         @Override
         public @Nullable T get(final NamespacedKey key) {
             return this.map.get(key);
+        }
+
+        @Override
+        public int size() {
+            return map.size();
         }
 
         @Override
