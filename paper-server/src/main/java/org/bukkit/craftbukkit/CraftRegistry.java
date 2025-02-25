@@ -234,6 +234,11 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     }
 
     @Override
+    public int size() {
+        return this.minecraftRegistry.size();
+    }
+
+    @Override
     public Iterator<B> iterator() {
         return this.stream().iterator();
     }
