@@ -2386,15 +2386,27 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
 
         /**
          * Restart the server. If the server administrator has not configured restarting, the server will stop.
+         *
+         * @deprecated Use {@link Server#restart()} instead.
          */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         public void restart() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
+    /**
+     * @deprecated All methods on this class have been deprecated, see the individual methods for replacements.
+     */
+    @Deprecated(since = "1.21.4", forRemoval = true)
     @NotNull
     Spigot spigot();
     // Spigot end
+
+    /**
+     * Restarts the server. If the server administrator has not configured restarting, the server will stop.
+     */
+    void restart();
 
     void reloadPermissions(); // Paper
 

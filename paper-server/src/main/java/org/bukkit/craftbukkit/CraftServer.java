@@ -3053,7 +3053,7 @@ public final class CraftServer implements Server {
 
         @Override
         public void restart() {
-            org.spigotmc.RestartCommand.restart();
+            CraftServer.this.restart();
         }
 
         @Override
@@ -3076,6 +3076,11 @@ public final class CraftServer implements Server {
         return this.spigot;
     }
     // Spigot end
+
+    @Override
+    public void restart() {
+        org.spigotmc.RestartCommand.restart();
+    }
 
     @Override
     public double[] getTPS() {
