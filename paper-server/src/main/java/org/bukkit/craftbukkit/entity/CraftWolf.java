@@ -12,8 +12,14 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Wolf;
 
 public class CraftWolf extends CraftTameableAnimal implements Wolf {
+
     public CraftWolf(CraftServer server, net.minecraft.world.entity.animal.Wolf wolf) {
         super(server, wolf);
+    }
+
+    @Override
+    public net.minecraft.world.entity.animal.Wolf getHandle() {
+        return (net.minecraft.world.entity.animal.Wolf) this.entity;
     }
 
     @Override
@@ -28,11 +34,6 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
         } else {
             this.getHandle().stopBeingAngry();
         }
-    }
-
-    @Override
-    public net.minecraft.world.entity.animal.Wolf getHandle() {
-        return (net.minecraft.world.entity.animal.Wolf) this.entity;
     }
 
     @Override

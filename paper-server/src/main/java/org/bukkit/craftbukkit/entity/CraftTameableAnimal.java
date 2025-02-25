@@ -8,19 +8,21 @@ import org.bukkit.entity.Creature;
 import org.bukkit.entity.Tameable;
 
 public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creature {
+
     public CraftTameableAnimal(CraftServer server, TamableAnimal entity) {
         super(server, entity);
     }
 
     @Override
     public TamableAnimal getHandle() {
-        return (TamableAnimal) super.getHandle();
+        return (TamableAnimal) this.entity;
     }
 
     @Override
     public UUID getOwnerUniqueId() {
         return getOwnerUUID();
     }
+
     public UUID getOwnerUUID() {
         try {
             return this.getHandle().getOwnerUUID();
@@ -79,10 +81,5 @@ public class CraftTameableAnimal extends CraftAnimals implements Tameable, Creat
     public void setSitting(boolean sitting) {
         this.getHandle().setInSittingPose(sitting);
         this.getHandle().setOrderedToSit(sitting);
-    }
-
-    @Override
-    public String toString() {
-        return this.getClass().getSimpleName() + "{owner=" + this.getOwner() + ",tamed=" + this.isTamed() + "}";
     }
 }

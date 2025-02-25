@@ -20,7 +20,6 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
@@ -98,6 +97,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (entity instanceof Mob || entity instanceof ArmorStand) {
             this.equipment = new CraftEntityEquipment(this);
         }
+    }
+
+    @Override
+    public net.minecraft.world.entity.LivingEntity getHandle() {
+        return (net.minecraft.world.entity.LivingEntity) this.entity;
     }
 
     @Override
@@ -496,20 +500,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void setNoActionTicks(int ticks) {
         Preconditions.checkArgument(ticks >= 0, "ticks must be >= 0");
         this.getHandle().setNoActionTime(ticks);
-    }
-
-    @Override
-    public net.minecraft.world.entity.LivingEntity getHandle() {
-        return (net.minecraft.world.entity.LivingEntity) this.entity;
-    }
-
-    public void setHandle(final net.minecraft.world.entity.LivingEntity entity) {
-        super.setHandle(entity);
-    }
-
-    @Override
-    public String toString() {
-        return "CraftLivingEntity{" + "id=" + this.getEntityId() + '}';
     }
 
     @Override

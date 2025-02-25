@@ -14,11 +14,6 @@ public class CraftBat extends CraftAmbient implements Bat {
     }
 
     @Override
-    public String toString() {
-        return "CraftBat";
-    }
-
-    @Override
     public boolean isAwake() {
         return !this.getHandle().isResting();
     }

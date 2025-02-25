@@ -15,8 +15,14 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
 
 public class CraftThrownPotion extends CraftThrowableProjectile implements ThrownPotion, org.bukkit.entity.SplashPotion, org.bukkit.entity.LingeringPotion { // Paper - implement other classes to avoid violating spawn method generic contracts
+
     public CraftThrownPotion(CraftServer server, net.minecraft.world.entity.projectile.ThrownPotion entity) {
         super(server, entity);
+    }
+
+    @Override
+    public net.minecraft.world.entity.projectile.ThrownPotion getHandle() {
+        return (net.minecraft.world.entity.projectile.ThrownPotion) this.entity;
     }
 
     @Override
@@ -61,8 +67,4 @@ public class CraftThrownPotion extends CraftThrowableProjectile implements Throw
         this.getHandle().splash(null);
     }
     // Paper end
-    @Override
-    public net.minecraft.world.entity.projectile.ThrownPotion getHandle() {
-        return (net.minecraft.world.entity.projectile.ThrownPotion) this.entity;
-    }
 }

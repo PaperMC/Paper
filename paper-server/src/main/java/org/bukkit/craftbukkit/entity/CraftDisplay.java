@@ -14,12 +14,7 @@ public class CraftDisplay extends CraftEntity implements Display {
 
     @Override
     public net.minecraft.world.entity.Display getHandle() {
-        return (net.minecraft.world.entity.Display) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftDisplay";
+        return (net.minecraft.world.entity.Display) this.entity;
     }
 
     @Override

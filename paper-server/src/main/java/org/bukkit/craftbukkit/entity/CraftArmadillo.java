@@ -11,11 +11,6 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
 
     @Override
     public net.minecraft.world.entity.animal.armadillo.Armadillo getHandle() {
-        return (net.minecraft.world.entity.animal.armadillo.Armadillo) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftArmadillo";
+        return (net.minecraft.world.entity.animal.armadillo.Armadillo) this.entity;
     }
 }

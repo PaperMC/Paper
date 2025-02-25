@@ -12,6 +12,11 @@ public class CraftPig extends CraftAnimals implements Pig {
     }
 
     @Override
+    public net.minecraft.world.entity.animal.Pig getHandle() {
+        return (net.minecraft.world.entity.animal.Pig) this.entity;
+    }
+
+    @Override
     public boolean hasSaddle() {
         return this.getHandle().isSaddled();
     }
@@ -53,15 +58,5 @@ public class CraftPig extends CraftAnimals implements Pig {
     @Override
     public Material getSteerMaterial() {
         return Material.CARROT_ON_A_STICK;
-    }
-
-    @Override
-    public net.minecraft.world.entity.animal.Pig getHandle() {
-        return (net.minecraft.world.entity.animal.Pig) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftPig";
     }
 }

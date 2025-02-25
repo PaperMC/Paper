@@ -13,11 +13,21 @@ import org.bukkit.entity.Entity;
 import org.bukkit.material.MaterialData;
 
 public class CraftEnderman extends CraftMonster implements Enderman {
+
     public CraftEnderman(CraftServer server, EnderMan entity) {
         super(server, entity);
     }
 
-    @Override public boolean teleportRandomly() { return getHandle().teleport(); } // Paper
+    @Override
+    public EnderMan getHandle() {
+        return (EnderMan) this.entity;
+    }
+
+    @Override
+    public boolean teleportRandomly() {
+        return getHandle().teleport();
+    }
+
     @Override
     public MaterialData getCarriedMaterial() {
         BlockState blockData = this.getHandle().getCarriedBlock();
@@ -61,16 +71,6 @@ public class CraftEnderman extends CraftMonster implements Enderman {
         this.getHandle().setHasBeenStaredAt(hasBeenStaredAt);
     }
     // Paper end
-
-    @Override
-    public EnderMan getHandle() {
-        return (EnderMan) this.entity;
-    }
-
-    @Override
-    public String toString() {
-        return "CraftEnderman";
-    }
 
     @Override
     public boolean teleport() {

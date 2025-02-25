@@ -13,12 +13,7 @@ public class CraftPillager extends CraftIllager implements Pillager, com.destroy
 
     @Override
     public net.minecraft.world.entity.monster.Pillager getHandle() {
-        return (net.minecraft.world.entity.monster.Pillager) super.getHandle();
-    }
-
-    @Override
-    public String toString() {
-        return "CraftPillager";
+        return (net.minecraft.world.entity.monster.Pillager) this.entity;
     }
 
     @Override

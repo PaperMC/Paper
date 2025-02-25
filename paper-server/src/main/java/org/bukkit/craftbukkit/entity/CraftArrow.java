@@ -30,11 +30,6 @@ public class CraftArrow extends CraftAbstractArrow implements Arrow {
     }
 
     @Override
-    public String toString() {
-        return "CraftArrow";
-    }
-
-    @Override
     public boolean addCustomEffect(PotionEffect effect, boolean override) {
         if (this.hasCustomEffect(effect.getType())) {
             if (!override) {
