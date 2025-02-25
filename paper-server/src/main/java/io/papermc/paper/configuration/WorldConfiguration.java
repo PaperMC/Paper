@@ -328,7 +328,7 @@ public class WorldConfiguration extends ConfigurationPart {
                 }
             }
 
-            @Comment("Adds a cooldown to bees being released after a failed release, which can occur if the hive is blocked or it is being night.")
+            @Comment("Adds a cooldown to bees being released after a failed release, which can occur if the hive is blocked or it being night.")
             public boolean cooldownFailedBeehiveReleases = true;
         }
 
