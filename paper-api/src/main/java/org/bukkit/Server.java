@@ -2309,24 +2309,52 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     // Spigot start
     public class Spigot {
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @return The server's spigot config.
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getConfig() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @return The server's bukkit config.
+         */
         // Paper start
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getBukkitConfig()
         {
             throw new UnsupportedOperationException( "Not supported yet." );
         }
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @return The server's spigot config.
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getSpigotConfig()
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
+        /**
+         * @deprecated Server config options may be renamed or removed without notice. Prefer using existing API
+         *  wherever possible, rather than directly reading from a server config.
+         *
+         * @return The server's paper config.
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         @NotNull
         public org.bukkit.configuration.file.YamlConfiguration getPaperConfig()
         {
