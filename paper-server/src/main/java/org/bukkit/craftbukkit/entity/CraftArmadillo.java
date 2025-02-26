@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Armadillo;
@@ -26,18 +25,6 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
     public void setState(final State state) {
         Preconditions.checkArgument(state != null, "state cannot be null");
         this.getHandle().switchToState(CraftArmadillo.stateToNMS(state));
-    }
-
-    @Override
-    public void rollUp() {
-        this.getHandle().getBrain().setMemoryWithExpiry(MemoryModuleType.DANGER_DETECTED_RECENTLY, true, net.minecraft.world.entity.animal.armadillo.Armadillo.SCARE_CHECK_INTERVAL);
-        this.getHandle().rollUp();
-    }
-
-    @Override
-    public void rollOut() {
-        this.getHandle().getBrain().eraseMemory(MemoryModuleType.DANGER_DETECTED_RECENTLY);
-        this.getHandle().rollOut();
     }
 
     @Override
