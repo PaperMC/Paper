@@ -25,16 +25,6 @@ public interface Armadillo extends Animals {
     void setState(final State state);
 
     /**
-     * Attempt to roll up if it in {@link State#IDLE}
-     */
-    void rollUp();
-
-    /**
-     * Attempt to roll out if it's not in {@link State#IDLE}
-     */
-    void rollOut();
-
-    /**
      * Represents the current state of the armadillo.
      */
     enum State {
