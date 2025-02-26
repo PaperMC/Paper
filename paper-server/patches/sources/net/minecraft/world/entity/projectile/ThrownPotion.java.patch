@@ -1,6 +1,50 @@
 --- a/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/net/minecraft/world/entity/projectile/ThrownPotion.java
-@@ -82,51 +_,86 @@
+@@ -59,74 +_,121 @@
+         return 0.05;
+     }
+ 
+-    @Override
+-    protected void onHitBlock(BlockHitResult result) {
+-        super.onHitBlock(result);
+-        if (!this.level().isClientSide) {
+-            ItemStack item = this.getItem();
+-            Direction direction = result.getDirection();
+-            BlockPos blockPos = result.getBlockPos();
+-            BlockPos blockPos1 = blockPos.relative(direction);
+-            PotionContents potionContents = item.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
+-            if (potionContents.is(Potions.WATER)) {
+-                this.dowseFire(blockPos1);
+-                this.dowseFire(blockPos1.relative(direction.getOpposite()));
+-
+-                for (Direction direction1 : Direction.Plane.HORIZONTAL) {
+-                    this.dowseFire(blockPos1.relative(direction1));
+-                }
+-            }
+-        }
+-    }
++    // Paper start - move after PotionSplashEvent call to prevent putting out fires for cancelled events
++    // @Override
++    // protected void onHitBlock(BlockHitResult result) {
++    //     super.onHitBlock(result);
++    //     if (!this.level().isClientSide) {
++    //         ItemStack item = this.getItem();
++    //         Direction direction = result.getDirection();
++    //         BlockPos blockPos = result.getBlockPos();
++    //         BlockPos blockPos1 = blockPos.relative(direction);
++    //         PotionContents potionContents = item.getOrDefault(DataComponents.POTION_CONTENTS, PotionContents.EMPTY);
++    //         if (potionContents.is(Potions.WATER)) {
++    //             this.dowseFire(blockPos1);
++    //             this.dowseFire(blockPos1.relative(direction.getOpposite()));
++    //
++    //             for (Direction direction1 : Direction.Plane.HORIZONTAL) {
++    //                 this.dowseFire(blockPos1.relative(direction1));
++    //             }
++    //         }
++    //     }
++    // }
++    // Paper end - move after PotionSplashEvent call to prevent putting out fires for cancelled events
+ 
      @Override
      protected void onHit(HitResult result) {
          super.onHit(result);
@@ -64,18 +108,33 @@
  
                  if (livingEntity.isOnFire() && livingEntity.isAlive()) {
 -                    livingEntity.extinguishFire();
-+                    extinguish.add(livingEntity.getBukkitLivingEntity()); // Paper - Fix potions splash events
-                 }
-             }
-         }
- 
+-                }
+-            }
+-        }
+-
 -        for (Axolotl axolotl : this.level().getEntitiesOfClass(Axolotl.class, aabb)) {
 -            axolotl.rehydrate();
+-        }
++                    extinguish.add(livingEntity.getBukkitLivingEntity()); // Paper - Fix potions splash events
++                }
++            }
++        }
++
 +        // Paper start - Fix potions splash events
 +        io.papermc.paper.event.entity.WaterBottleSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callWaterBottleSplashEvent(
 +            this, result, affected, rehydrate, extinguish
 +        );
 +        if (!event.isCancelled()) {
++            // moved here from onHitBlock override to prevent putting out fires for cancelled event
++            if (result instanceof BlockHitResult blockHitResult) {
++                BlockPos blockPos = blockHitResult.getBlockPos().relative(blockHitResult.getDirection());
++                this.dowseFire(blockPos);
++                this.dowseFire(blockPos.relative(blockHitResult.getDirection().getOpposite()));
++                for (Direction direction : Direction.Plane.HORIZONTAL) {
++                    this.dowseFire(blockPos.relative(direction));
++                }
++            }
++
 +            for (org.bukkit.entity.LivingEntity affectedEntity : event.getToDamage()) {
 +                ((org.bukkit.craftbukkit.entity.CraftLivingEntity) affectedEntity).getHandle().hurtServer(level, this.damageSources().indirectMagic(this, this.getOwner()), 1.0F);
 +            }
@@ -88,7 +147,7 @@
 +                }
 +            }
 +            // Paper end - Fix potions splash events
-         }
++        }
 +        return !event.isCancelled(); // Paper - Fix potions splash events
      }
  
