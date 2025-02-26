@@ -98,7 +98,8 @@ public class CraftInventoryView<T extends AbstractContainerMenu, I extends Inven
 
     @Override
     public org.bukkit.inventory.MenuType getMenuType() {
-        return CraftMenuType.minecraftToBukkit(container.getType());
+        MenuType<?> menuType = container.menuType;
+        return menuType != null ? CraftMenuType.minecraftToBukkit(menuType) : null;
     }
 
     public boolean isInTop(int rawSlot) {

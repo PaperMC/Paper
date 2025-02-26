@@ -321,8 +321,8 @@ public interface InventoryView {
     /**
      * Gets the menu type of the inventory view.
      *
-     * @return the menu type of the inventory view
+     * @return the menu type of the inventory view or null if not applicable
      */
     @ApiStatus.Experimental
-    @NotNull MenuType getMenuType();
+    @Nullable MenuType getMenuType();
 }
