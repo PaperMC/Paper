@@ -50,6 +50,11 @@ public final class DelayedRegistry<T extends Keyed, R extends Registry<T>> imple
     }
 
     @Override
+    public int size() {
+        return this.delegate().size();
+    }
+
+    @Override
     public @Nullable NamespacedKey getKey(final T value) {
         return this.delegate().getKey(value);
     }

@@ -2980,8 +2980,19 @@ public final class Bukkit {
     }
     // Paper end - Folia region threading API
 
+    /**
+     * @deprecated All methods on this class have been deprecated, see the individual methods for replacements.
+     */
+    @Deprecated(since = "1.21.4", forRemoval = true)
     @NotNull
     public static Server.Spigot spigot() {
         return server.spigot();
+    }
+
+    /**
+     * Restarts the server. If the server administrator has not configured restarting, the server will stop.
+     */
+    public static void restart() {
+        server.restart();
     }
 }
