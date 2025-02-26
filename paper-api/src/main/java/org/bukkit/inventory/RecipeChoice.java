@@ -11,6 +11,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.material.MaterialData;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -23,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
     // Paper start - add "empty" choice
+
     /**
      * An "empty" recipe choice. Only valid as a recipe choice in
      * specific places. Check the javadocs of a method before using it
@@ -34,6 +37,53 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
         return EmptyRecipeChoice.INSTANCE;
     }
     // Paper end
+
+    /**
+     * Creates a choice that will be valid only if one of the stacks is
+     * exactly matched (aside from stack size).
+     *
+     * @param first  an ItemStack to match against.
+     *               Cannot be null or empty/air.
+     * @param others additional ItemStacks to match against.
+     * @return a new ExactChoice
+     */
+    @Contract(value = "_, _ -> new", pure = true)
+    static @NotNull ExactChoice exactChoice(@NotNull ItemStack first, @NotNull ItemStack... others) {
+        List<ItemStack> stacks = new ArrayList<>(others.length + 1);
+        stacks.add(first);
+        Collections.addAll(stacks, others);
+        return new ExactChoice(stacks);
+    }
+
+    /**
+     * Creates a choice that will be valid only if one of the stacks is
+     * exactly matched (aside from stack size).
+     *
+     * @param stacks the ItemStacks to match against.
+     *               Cannot be empty or contain empty/air stacks.
+     * @return a new ExactChoice
+     */
+    @Contract(value = "_ -> new", pure = true)
+    static @NotNull ExactChoice exactChoice(@NotNull List<ItemStack> stacks) {
+        return new ExactChoice(stacks);
+    }
+
+    /**
+     * Creates a recipe choice that will be valid only if an item matches the
+     * given predicate.
+     * <p>
+     * <b>Note:</b> Mutating the {@link ItemStack} within the predicate is not
+     * supported.
+     *
+     * @param stackPredicate the predicate to match against.
+     * @param exampleStack   an example {@link ItemStack} to be shown in the
+     *                       recipe book. Cannot be empty or air.
+     * @return a new PredicateChoice
+     */
+    @Contract(value = "_, _ -> new", pure = true)
+    static @NotNull PredicateChoice predicateChoice(@NotNull Predicate<? super ItemStack> stackPredicate, @NotNull ItemStack exampleStack) {
+        return new PredicateRecipeChoiceImpl(stackPredicate, exampleStack);
+    }
 
     /**
      * Gets a single item stack representative of this stack choice.
@@ -192,14 +242,26 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
 
         private List<ItemStack> choices;
 
+        /**
+         * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack, ItemStack...)} instead
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         public ExactChoice(@NotNull ItemStack stack) {
             this(Arrays.asList(stack));
         }
 
+        /**
+         * @deprecated Use {@link RecipeChoice#exactChoice(ItemStack, ItemStack...)} instead
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         public ExactChoice(@NotNull ItemStack... stacks) {
             this(Arrays.asList(stacks));
         }
 
+        /**
+         * @deprecated Use {@link RecipeChoice#exactChoice(List)} instead
+         */
+        @Deprecated(since = "1.21.4", forRemoval = true)
         public ExactChoice(@NotNull List<ItemStack> choices) {
             Preconditions.checkArgument(choices != null, "choices");
             Preconditions.checkArgument(!choices.isEmpty(), "Must have at least one choice");
@@ -289,5 +351,14 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
             return this;
         }
         // Paper end - check valid ingredients
+    }
+
+    /**
+     * Represents a choice that will be valid only if an item matches the
+     * given predicate.
+     */
+    @ApiStatus.NonExtendable
+    interface PredicateChoice extends RecipeChoice {
+
     }
 }
