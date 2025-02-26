@@ -367,6 +367,11 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
         }
 
         @Override
+        public <S> P parse(final StringReader reader, final S source) throws CommandSyntaxException {
+            return this.converter.convert(this.nmsBase.parse(reader, source));
+        }
+
+        @Override
         public <S> CompletableFuture<Suggestions> listSuggestions(final CommandContext<S> context, final SuggestionsBuilder builder) {
             return this.nmsBase.listSuggestions(context, builder);
         }
