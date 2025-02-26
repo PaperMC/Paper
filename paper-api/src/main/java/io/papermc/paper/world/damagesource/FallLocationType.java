@@ -52,7 +52,7 @@ public sealed interface FallLocationType extends Translatable permits FallLocati
      */
     FallLocationType SCAFFOLDING = new FallLocationTypeImpl("scaffolding");
     /**
-     * The entity is within some other climable block
+     * The entity is within some other climbable block
      */
     FallLocationType OTHER_CLIMBABLE = new FallLocationTypeImpl("other_climbable");
     /**

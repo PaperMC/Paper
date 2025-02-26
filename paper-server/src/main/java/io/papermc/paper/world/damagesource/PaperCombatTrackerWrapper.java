@@ -77,7 +77,7 @@ public record PaperCombatTrackerWrapper(net.minecraft.world.damagesource.CombatT
             case FallLocationType fl when fl == FallLocationType.SCAFFOLDING -> net.minecraft.world.damagesource.FallLocation.SCAFFOLDING;
             case FallLocationType fl when fl == FallLocationType.OTHER_CLIMBABLE -> net.minecraft.world.damagesource.FallLocation.OTHER_CLIMBABLE;
             case FallLocationType fl when fl == FallLocationType.WATER -> net.minecraft.world.damagesource.FallLocation.WATER;
-            default -> throw new IllegalArgumentException("Unknown fall location: " + fallLocationType.id());
+            default -> throw new IllegalArgumentException("Unknown fall location type: " + fallLocationType.id());
         };
     }
 
