@@ -44,8 +44,10 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
     /**
      * Blocks and items typically used for decorative purposes including
      * candles, saplings, flora, fauna, fences, walls, carpets, etc.
+     *
+     * @deprecated removed in 1.19.3
      */
-    @Deprecated(forRemoval = true, since = "1.21.4")
+    @Deprecated(forRemoval = true, since = "1.19.3")
     DECORATIONS("decorations"),
     /**
      * Blocks used and associated with redstone contraptions including buttons,
@@ -57,14 +59,14 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
      * elytra, etc.
      * @deprecated removed in 1.19.3
      */
-    @Deprecated(forRemoval = true, since = "1.21.4")
+    @Deprecated(forRemoval = true, since = "1.19.3")
     TRANSPORTATION("transportation"),
     /**
      * Miscellaneous items and blocks that do not fit into other categories
      * including gems, dyes, spawn eggs, discs, banner patterns, etc.
      * @deprecated removed in 1.19.3
      */
-    @Deprecated(forRemoval = true, since = "1.21.4")
+    @Deprecated(forRemoval = true, since = "1.19.3")
     MISC("misc"),
     /**
      * Food items consumable by the player including meats, berries, edible
@@ -86,13 +88,13 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
      * their variants, and ingredients to brew them.
      * @deprecated removed in 1.19.3
      */
-    @Deprecated(forRemoval = true, since = "1.21.4")
+    @Deprecated(forRemoval = true, since = "1.19.3")
     BREWING("brewing");
 
     /**
      * @deprecated Renamed to {@link #FOOD_AND_DRINK} in 1.19.3
      */
-    @Deprecated(forRemoval = true, since = "1.21.4")
+    @Deprecated(forRemoval = true, since = "1.19.3")
     public static final CreativeCategory FOOD = FOOD_AND_DRINK;
 
     private final String translationKey;
