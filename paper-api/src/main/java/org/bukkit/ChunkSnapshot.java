@@ -1,5 +1,6 @@
 package org.bukkit;
 
+import io.papermc.paper.world.biome.BiomeClimate;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.jetbrains.annotations.NotNull;
@@ -139,7 +140,11 @@ public interface ChunkSnapshot {
      * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
      * @param z Z-coordinate (0-15)
      * @return temperature at given coordinate
+     * @see Biome#climate()
+     * @see BiomeClimate#adjustedTemperature(Location)
+     * @deprecated Get the temperature from the biome instead
      */
+    @Deprecated(since = "1.21.4")
     double getRawBiomeTemperature(int x, int y, int z);
 
     /**
