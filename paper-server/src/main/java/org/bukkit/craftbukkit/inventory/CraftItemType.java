@@ -3,13 +3,19 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import java.util.Collection;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import io.papermc.paper.inventory.PaperCreativeCategory;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.block.ComposterBlock;
@@ -231,7 +237,21 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     @Override
     public CreativeCategory getCreativeCategory() {
-        return CreativeCategory.BUILDING_BLOCKS;
+        return Iterables.getFirst(getCreativeCategories(), null);
+    }
+
+    @Override
+    public @NotNull Collection<CreativeCategory> getCreativeCategories() {
+        final ImmutableSet.Builder<CreativeCategory> builder = ImmutableSet.builder();
+
+        final net.minecraft.world.item.ItemStack itemStack = new net.minecraft.world.item.ItemStack(this.getHandle());
+        for (final Map.Entry<CreativeModeTab, Collection<net.minecraft.world.item.ItemStack>> tab : PaperCreativeCategory.CATEGORY_CONTENTS.entrySet()) {
+            if (tab.getValue().contains(itemStack)) {
+                builder.add(PaperCreativeCategory.fromNms(tab.getKey()));
+            }
+        }
+
+        return builder.build();
     }
 
     @Override
