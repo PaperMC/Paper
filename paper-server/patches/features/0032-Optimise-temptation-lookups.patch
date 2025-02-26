@@ -1,0 +1,468 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: okx-code <okx@okx.sh>
+Date: Thu, 6 Feb 2025 19:05:00 +0100
+Subject: [PATCH] Optimise temptation lookups
+
+Both TemptGoal and TemptingSensor recheck their validity each tick.
+For this, they iterate all online players, checking their main and
+offhand items against item tags.
+This logic quickly explodes as each brain/goal selector queries all
+players.
+
+This patch attempts to optimise this behaviour by lazily caching the
+results of the non-entity specific checks in a single BitSet.
+Such cache is valid for a single tick but can be re-used by each tempt
+goal or sensor sharing the same non-entity specific selection
+predicates.
+
+diff --git a/io/papermc/paper/entity/temptation/GlobalTemptationLookup.java b/io/papermc/paper/entity/temptation/GlobalTemptationLookup.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a9440106fa179b4b32c8e515eaf8b498c1d3bb4c
+--- /dev/null
++++ b/io/papermc/paper/entity/temptation/GlobalTemptationLookup.java
+@@ -0,0 +1,89 @@
++package io.papermc.paper.entity.temptation;
++
++import java.util.ArrayList;
++import java.util.BitSet;
++import java.util.List;
++import java.util.function.Predicate;
++import net.minecraft.tags.ItemTags;
++import net.minecraft.world.entity.animal.armadillo.ArmadilloAi;
++import net.minecraft.world.entity.animal.axolotl.AxolotlAi;
++import net.minecraft.world.entity.animal.camel.CamelAi;
++import net.minecraft.world.entity.animal.frog.FrogAi;
++import net.minecraft.world.entity.animal.goat.GoatAi;
++import net.minecraft.world.entity.animal.sniffer.SnifferAi;
++import net.minecraft.world.item.ItemStack;
++import net.minecraft.world.item.Items;
++
++/**
++ * The tempt state lookup holds onto cached temptation flags of players in the world.
++ */
++public class GlobalTemptationLookup {
++    private static int registeredPredicateCounter = 0;
++
++    public static final TemptationPredicate BEE_FOOD = register(stack -> stack.is(ItemTags.BEE_FOOD));
++    public static final TemptationPredicate CHICKEN_FOOD = register(stack -> stack.is(ItemTags.CHICKEN_FOOD));
++    public static final TemptationPredicate COW_FOOD = register(stack -> stack.is(ItemTags.COW_FOOD));
++    public static final TemptationPredicate PANDA_FOOD = register(stack -> stack.is(ItemTags.PANDA_FOOD));
++    public static final TemptationPredicate PIG_CARROT_ON_A_STICK = register(stack -> stack.is(Items.CARROT_ON_A_STICK));
++    public static final TemptationPredicate PIG = register(stack -> stack.is(ItemTags.PIG_FOOD));
++    public static final TemptationPredicate RABBIT_FOOD = register(stack -> stack.is(ItemTags.RABBIT_FOOD));
++    public static final TemptationPredicate SHEEP_FOOD = register(stack -> stack.is(ItemTags.SHEEP_FOOD));
++    public static final TemptationPredicate TURTLE_FOOD = register(stack -> stack.is(ItemTags.TURTLE_FOOD));
++    public static final TemptationPredicate HORSE_FOOD = register(stack -> stack.is(ItemTags.HORSE_TEMPT_ITEMS));
++    public static final TemptationPredicate LLAMA_TEMPT_ITEMS = register(stack -> stack.is(ItemTags.LLAMA_TEMPT_ITEMS));
++    public static final TemptationPredicate STRIDER_TEMPT_ITEMS = register(stack -> stack.is(ItemTags.STRIDER_TEMPT_ITEMS));
++    public static final TemptationPredicate CAT_FOOD = register(stack -> stack.is(ItemTags.CAT_FOOD));
++    public static final TemptationPredicate OCELOT_FOOD = register(itemStack -> itemStack.is(ItemTags.OCELOT_FOOD));
++    public static final TemptationPredicate AXOLOTL_TEMPTATIONS = register(AxolotlAi.getTemptations());
++    public static final TemptationPredicate GOAT_TEMPTATIONS = register(GoatAi.getTemptations());
++    public static final TemptationPredicate FROG_TEMPTATIONS = register(FrogAi.getTemptations());
++    public static final TemptationPredicate CAMEL_TEMPTATIONS = register(CamelAi.getTemptations());
++    public static final TemptationPredicate ARMADILLO_TEMPTATIONS = register(ArmadilloAi.getTemptations());
++    public static final TemptationPredicate SNIFFER_TEMPTATIONS = register(SnifferAi.getTemptations());
++
++    public record TemptationPredicate(int index, Predicate<ItemStack> predicate) implements Predicate<ItemStack> {
++
++        @Override
++        public boolean test(final ItemStack itemStack) {
++            return this.predicate.test(itemStack);
++        }
++    }
++
++    public static int indexFor(final Predicate<ItemStack> predicate) {
++        return predicate instanceof final TemptationPredicate temptationPredicate ? temptationPredicate.index() : -1;
++    }
++
++    private static TemptationPredicate register(final Predicate<ItemStack> predicate) {
++        final TemptationPredicate val = new TemptationPredicate(registeredPredicateCounter, predicate);
++        registeredPredicateCounter++;
++        return val;
++    }
++
++    private final List<BitSet> precalculatedTemptItems = new ArrayList<>();
++    private final BitSet calculatedThisTick = new BitSet();
++
++    {
++        for (int i = 0; i < registeredPredicateCounter; i++) {
++            this.precalculatedTemptItems.add(new BitSet());
++        }
++    }
++
++    public void reset() {
++        for (int i = 0; i < registeredPredicateCounter; i++) {
++            this.precalculatedTemptItems.get(i).clear();
++        }
++        this.calculatedThisTick.clear();
++    }
++
++    public boolean isCalculated(final int index) {
++        return this.calculatedThisTick.get(index);
++    }
++
++    public void setCalculated(final int index) {
++        this.calculatedThisTick.set(index);
++    }
++
++    public BitSet getBitSet(final int index) {
++        return this.precalculatedTemptItems.get(index);
++    }
++}
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 67de67cf1e33672fe33fbb88aeb92e3a020a4ae5..618e28a61671d018be0ea07853970b008e80da0a 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -795,6 +795,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+             }
+ 
+             io.papermc.paper.entity.activation.ActivationRange.activateEntities(this); // Paper - EAR
++            this.globalTemptationLookup.reset(); // Paper - optimise temptation lookups - reset global cache prior to next entity tick
+             this.entityTickList
+                 .forEach(
+                     entity -> {
+@@ -2745,4 +2746,11 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         this.lagCompensationTick = (System.nanoTime() - MinecraftServer.SERVER_INIT) / (java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(50L));
+     }
+     // Paper end - lag compensation
++
++    // Paper start - optimise temptation lookups
++    private final io.papermc.paper.entity.temptation.GlobalTemptationLookup globalTemptationLookup = new io.papermc.paper.entity.temptation.GlobalTemptationLookup(); // Paper - Optimise TemptGoal
++    public io.papermc.paper.entity.temptation.GlobalTemptationLookup getTemptGoalLookup() {
++        return globalTemptationLookup;
++    }
++    // Paper end - optimise temptation lookups
+ }
+diff --git a/net/minecraft/world/entity/ai/goal/TemptGoal.java b/net/minecraft/world/entity/ai/goal/TemptGoal.java
+index 438d6347778a94b4fe430320b268a2d67afa209a..bd1ecdf4872519c9c180137ac563345c717c4ddd 100644
+--- a/net/minecraft/world/entity/ai/goal/TemptGoal.java
++++ b/net/minecraft/world/entity/ai/goal/TemptGoal.java
+@@ -26,14 +26,16 @@ public class TemptGoal extends Goal {
+     private boolean isRunning;
+     private final Predicate<ItemStack> items;
+     private final boolean canScare;
++    private final int globalTemptationLookupIndex; // Paper - optimise temptation checks
+ 
+     public TemptGoal(PathfinderMob mob, double speedModifier, Predicate<ItemStack> items, boolean canScare) {
++        this.globalTemptationLookupIndex = io.papermc.paper.entity.temptation.GlobalTemptationLookup.indexFor(items); // Paper - optimise temptation checks
+         this.mob = mob;
+         this.speedModifier = speedModifier;
+         this.items = items;
+         this.canScare = canScare;
+         this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+-        this.targetingConditions = TEMPT_TARGETING.copy().selector((entity, level) -> this.shouldFollow(entity));
++        this.targetingConditions = globalTemptationLookupIndex >= 0 ? TEMPT_TARGETING.copy() : TEMPT_TARGETING.copy().selector((entity, level) -> this.shouldFollow(entity)); // Paper - optimise temptation checks - skip selector if we have a lookup index.
+     }
+ 
+     @Override
+@@ -42,8 +44,41 @@ public class TemptGoal extends Goal {
+             this.calmDown--;
+             return false;
+         } else {
++            // Paper start - optimise temptation lookups
++            final TargetingConditions rangeTargetingConditions = this.targetingConditions.range(this.mob.getAttributeValue(Attributes.TEMPT_RANGE));
++
++            if (this.globalTemptationLookupIndex != -1) {
++                final net.minecraft.server.level.ServerLevel level = getServerLevel(this.mob);
++                final io.papermc.paper.entity.temptation.GlobalTemptationLookup lookup = level.getTemptGoalLookup();
++                final java.util.BitSet lookupBitSet = lookup.getBitSet(this.globalTemptationLookupIndex);
++                final java.util.List<net.minecraft.server.level.ServerPlayer> players = level.players();
++                // Check if the lookup needs to be computed this tick. Do so for all players if needed.
++                if (!lookup.isCalculated(this.globalTemptationLookupIndex)) {
++                    for (int i = 0; i < players.size(); i++) {
++                        lookupBitSet.set(i, shouldFollow(players.get(i)));
++                    }
++                    lookup.setCalculated(this.globalTemptationLookupIndex);
++                }
++                double d = -1.0;
++                net.minecraft.server.level.ServerPlayer nearestPlayer = null;
++                // Only iterate over players that passed #shouldFollow either in the prior computation or another goals canUse check.
++                for (int i = lookupBitSet.nextSetBit(0); i >= 0; i = lookupBitSet.nextSetBit(i + 1)) {
++                    final net.minecraft.server.level.ServerPlayer player = players.get(i);
++                    if (rangeTargetingConditions.test(level, this.mob, player)) {
++                        final double d1 = player.distanceToSqr(this.mob.getX(), this.mob.getY(), this.mob.getZ());
++                        if (d == -1.0 || d1 < d) {
++                            d = d1;
++                            nearestPlayer = player;
++                        }
++                    }
++                }
++                this.player = nearestPlayer;
++            } else {
++            // Default case for non-optimized / non vanilla tempt goal predicates.
++            // Paper end - optimise temptation lookups
+             this.player = getServerLevel(this.mob)
+                 .getNearestPlayer(this.targetingConditions.range(this.mob.getAttributeValue(Attributes.TEMPT_RANGE)), this.mob);
++            } // Paper - optimise temptation lookups
+             // CraftBukkit start
+             if (this.player != null) {
+                 org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(this.mob, this.player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TEMPT);
+diff --git a/net/minecraft/world/entity/ai/sensing/SensorType.java b/net/minecraft/world/entity/ai/sensing/SensorType.java
+index 6dfa1aa301c28c98c850038185efb49ae8df1102..f4fdac0978afa86e8ec9bc8bd26b1acb8d548da5 100644
+--- a/net/minecraft/world/entity/ai/sensing/SensorType.java
++++ b/net/minecraft/world/entity/ai/sensing/SensorType.java
+@@ -37,17 +37,17 @@ public class SensorType<U extends Sensor<?>> {
+     public static final SensorType<HoglinSpecificSensor> HOGLIN_SPECIFIC_SENSOR = register("hoglin_specific_sensor", HoglinSpecificSensor::new);
+     public static final SensorType<AdultSensor> NEAREST_ADULT = register("nearest_adult", AdultSensor::new);
+     public static final SensorType<AxolotlAttackablesSensor> AXOLOTL_ATTACKABLES = register("axolotl_attackables", AxolotlAttackablesSensor::new);
+-    public static final SensorType<TemptingSensor> AXOLOTL_TEMPTATIONS = register("axolotl_temptations", () -> new TemptingSensor(AxolotlAi.getTemptations()));
+-    public static final SensorType<TemptingSensor> GOAT_TEMPTATIONS = register("goat_temptations", () -> new TemptingSensor(GoatAi.getTemptations()));
+-    public static final SensorType<TemptingSensor> FROG_TEMPTATIONS = register("frog_temptations", () -> new TemptingSensor(FrogAi.getTemptations()));
+-    public static final SensorType<TemptingSensor> CAMEL_TEMPTATIONS = register("camel_temptations", () -> new TemptingSensor(CamelAi.getTemptations()));
++    public static final SensorType<TemptingSensor> AXOLOTL_TEMPTATIONS = register("axolotl_temptations", () -> new TemptingSensor(io.papermc.paper.entity.temptation.GlobalTemptationLookup.AXOLOTL_TEMPTATIONS)); // Paper - optimise temptation lookups
++    public static final SensorType<TemptingSensor> GOAT_TEMPTATIONS = register("goat_temptations", () -> new TemptingSensor(io.papermc.paper.entity.temptation.GlobalTemptationLookup.GOAT_TEMPTATIONS)); // Paper - optimise temptation lookups
++    public static final SensorType<TemptingSensor> FROG_TEMPTATIONS = register("frog_temptations", () -> new TemptingSensor(io.papermc.paper.entity.temptation.GlobalTemptationLookup.FROG_TEMPTATIONS)); // Paper - optimise temptation lookups
++    public static final SensorType<TemptingSensor> CAMEL_TEMPTATIONS = register("camel_temptations", () -> new TemptingSensor(io.papermc.paper.entity.temptation.GlobalTemptationLookup.CAMEL_TEMPTATIONS)); // Paper - optimise temptation lookups
+     public static final SensorType<TemptingSensor> ARMADILLO_TEMPTATIONS = register(
+-        "armadillo_temptations", () -> new TemptingSensor(ArmadilloAi.getTemptations())
++        "armadillo_temptations", () -> new TemptingSensor(io.papermc.paper.entity.temptation.GlobalTemptationLookup.ARMADILLO_TEMPTATIONS) // Paper - optimise temptation lookups
+     );
+     public static final SensorType<FrogAttackablesSensor> FROG_ATTACKABLES = register("frog_attackables", FrogAttackablesSensor::new);
+     public static final SensorType<IsInWaterSensor> IS_IN_WATER = register("is_in_water", IsInWaterSensor::new);
+     public static final SensorType<WardenEntitySensor> WARDEN_ENTITY_SENSOR = register("warden_entity_sensor", WardenEntitySensor::new);
+-    public static final SensorType<TemptingSensor> SNIFFER_TEMPTATIONS = register("sniffer_temptations", () -> new TemptingSensor(SnifferAi.getTemptations()));
++    public static final SensorType<TemptingSensor> SNIFFER_TEMPTATIONS = register("sniffer_temptations", () -> new TemptingSensor(io.papermc.paper.entity.temptation.GlobalTemptationLookup.SNIFFER_TEMPTATIONS)); // Paper - optimise temptation lookups
+     public static final SensorType<BreezeAttackEntitySensor> BREEZE_ATTACK_ENTITY_SENSOR = register(
+         "breeze_attack_entity_sensor", BreezeAttackEntitySensor::new
+     );
+diff --git a/net/minecraft/world/entity/ai/sensing/TemptingSensor.java b/net/minecraft/world/entity/ai/sensing/TemptingSensor.java
+index 4b3ba795bc18417f983600f1edbc1895ccb7deab..5126bbf86eb150d525ac799cea451ec82903c357 100644
+--- a/net/minecraft/world/entity/ai/sensing/TemptingSensor.java
++++ b/net/minecraft/world/entity/ai/sensing/TemptingSensor.java
+@@ -27,8 +27,10 @@ import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
+ public class TemptingSensor extends Sensor<PathfinderMob> {
+     private static final TargetingConditions TEMPT_TARGETING = TargetingConditions.forNonCombat().ignoreLineOfSight();
+     private final Predicate<ItemStack> temptations;
++    private final int globalTemptationLookupIndex; // Paper - optimise temptation lookups
+ 
+     public TemptingSensor(Predicate<ItemStack> temptations) {
++        this.globalTemptationLookupIndex = io.papermc.paper.entity.temptation.GlobalTemptationLookup.indexFor(temptations); // Paper - optimise temptation lookups
+         this.temptations = temptations;
+     }
+ 
+@@ -36,6 +38,38 @@ public class TemptingSensor extends Sensor<PathfinderMob> {
+     protected void doTick(ServerLevel level, PathfinderMob entity) {
+         Brain<?> brain = entity.getBrain();
+         TargetingConditions targetingConditions = TEMPT_TARGETING.copy().range((float)entity.getAttributeValue(Attributes.TEMPT_RANGE));
++        // Paper start - optimise temptation lookups - on update, ensure below diff filters correctly
++        Player targetPlayer;
++        if (this.globalTemptationLookupIndex != -1) {
++            final io.papermc.paper.entity.temptation.GlobalTemptationLookup lookup = level.getTemptGoalLookup();
++            final java.util.BitSet lookupBitSet = lookup.getBitSet(this.globalTemptationLookupIndex);
++            final java.util.List<net.minecraft.server.level.ServerPlayer> players = level.players();
++            // Check if the lookup needs to be computed this tick. Do so for all players if needed.
++            if (!lookup.isCalculated(this.globalTemptationLookupIndex)) {
++                for (int i = 0; i < players.size(); i++) {
++                    final net.minecraft.server.level.ServerPlayer serverPlayer = players.get(i);
++                    lookupBitSet.set(i, net.minecraft.world.entity.EntitySelector.NO_SPECTATORS.test(serverPlayer) && this.playerHoldingTemptation(serverPlayer)); // check on update
++                }
++                lookup.setCalculated(this.globalTemptationLookupIndex);
++            }
++            double d = -1.0;
++            net.minecraft.server.level.ServerPlayer nearestPlayer = null;
++            // Only iterate over players that passed #shouldFollow either in the prior computation or another goals canUse check.
++            for (int i = lookupBitSet.nextSetBit(0); i >= 0; i = lookupBitSet.nextSetBit(i + 1)) {
++                final net.minecraft.server.level.ServerPlayer player = players.get(i);
++                if (targetingConditions.test(level, entity, player) && !entity.hasPassenger(player)) { // check on update - consider non passengers
++                    final double d1 = player.distanceToSqr(entity.getX(), entity.getY(), entity.getZ());
++                    if (d == -1.0 || d1 < d) {
++                        d = d1;
++                        nearestPlayer = player;
++                    }
++                }
++            }
++            targetPlayer = nearestPlayer;
++        } else {
++        // Default case for non-optimized / non vanilla tempt goal predicates. Sorting the entire list is completely useless, but none of the vanilla logic uses this path now so
++        // less diff and easier for updates.
++        // Paper end - optimise temptation lookups
+         List<Player> list = level.players()
+             .stream()
+             .filter(EntitySelector.NO_SPECTATORS)
+@@ -44,8 +78,12 @@ public class TemptingSensor extends Sensor<PathfinderMob> {
+             .filter(serverPlayer -> !entity.hasPassenger(serverPlayer))
+             .sorted(Comparator.comparingDouble(entity::distanceToSqr))
+             .collect(Collectors.toList());
+-        if (!list.isEmpty()) {
+-            Player player = list.get(0);
++        // Paper start - optimise temptation lookups
++            targetPlayer = list.isEmpty() ? null : list.getFirst();
++        }
++        if (targetPlayer != null) {
++            Player player = targetPlayer;
++        // Paper end - optimise temptation lookups
+             // CraftBukkit start
+             EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, player, EntityTargetEvent.TargetReason.TEMPT);
+             if (event.isCancelled()) {
+diff --git a/net/minecraft/world/entity/animal/Bee.java b/net/minecraft/world/entity/animal/Bee.java
+index 94244b148533ef026bf5c56abbc2bb5cfa83c938..5b8a32dd541198173b87499b9076d95a04844fb5 100644
+--- a/net/minecraft/world/entity/animal/Bee.java
++++ b/net/minecraft/world/entity/animal/Bee.java
+@@ -186,7 +186,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+         this.goalSelector.addGoal(0, new Bee.BeeAttackGoal(this, 1.4F, true));
+         this.goalSelector.addGoal(1, new Bee.BeeEnterHiveGoal());
+         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
+-        this.goalSelector.addGoal(3, new TemptGoal(this, 1.25, stack -> stack.is(ItemTags.BEE_FOOD), false));
++        this.goalSelector.addGoal(3, new TemptGoal(this, 1.25, io.papermc.paper.entity.temptation.GlobalTemptationLookup.BEE_FOOD, false)); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(3, new Bee.ValidateHiveGoal());
+         this.goalSelector.addGoal(3, new Bee.ValidateFlowerGoal());
+         this.beePollinateGoal = new Bee.BeePollinateGoal();
+diff --git a/net/minecraft/world/entity/animal/Cat.java b/net/minecraft/world/entity/animal/Cat.java
+index 1a7a5c81a260cc740994d1a63c4775c41c238dea..0d3171d40f8422905272aeb9e8629525be47c3a4 100644
+--- a/net/minecraft/world/entity/animal/Cat.java
++++ b/net/minecraft/world/entity/animal/Cat.java
+@@ -95,7 +95,7 @@ public class Cat extends TamableAnimal implements VariantHolder<Holder<CatVarian
+ 
+     @Override
+     protected void registerGoals() {
+-        this.temptGoal = new Cat.CatTemptGoal(this, 0.6, itemStack -> itemStack.is(ItemTags.CAT_FOOD), true);
++        this.temptGoal = new Cat.CatTemptGoal(this, 0.6, io.papermc.paper.entity.temptation.GlobalTemptationLookup.CAT_FOOD, true); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(1, new FloatGoal(this));
+         this.goalSelector.addGoal(1, new TamableAnimal.TamableAnimalPanicGoal(1.5));
+         this.goalSelector.addGoal(2, new SitWhenOrderedToGoal(this));
+diff --git a/net/minecraft/world/entity/animal/Chicken.java b/net/minecraft/world/entity/animal/Chicken.java
+index 1235e46776589d519351d380b57f86e530b881ab..a2b3873ef9976658de26c6efd869d1bb57bc5eab 100644
+--- a/net/minecraft/world/entity/animal/Chicken.java
++++ b/net/minecraft/world/entity/animal/Chicken.java
+@@ -56,7 +56,7 @@ public class Chicken extends Animal {
+         this.goalSelector.addGoal(0, new FloatGoal(this));
+         this.goalSelector.addGoal(1, new PanicGoal(this, 1.4));
+         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
+-        this.goalSelector.addGoal(3, new TemptGoal(this, 1.0, itemStack -> itemStack.is(ItemTags.CHICKEN_FOOD), false));
++        this.goalSelector.addGoal(3, new TemptGoal(this, 1.0, io.papermc.paper.entity.temptation.GlobalTemptationLookup.CHICKEN_FOOD, false)); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.1));
+         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0));
+         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
+diff --git a/net/minecraft/world/entity/animal/Cow.java b/net/minecraft/world/entity/animal/Cow.java
+index befb99f0a96cb23f139061f92497737e9203a8fd..752e8adca46245b9f597b905887bc09ca0f1b6ef 100644
+--- a/net/minecraft/world/entity/animal/Cow.java
++++ b/net/minecraft/world/entity/animal/Cow.java
+@@ -43,7 +43,7 @@ public class Cow extends Animal {
+         this.goalSelector.addGoal(0, new FloatGoal(this));
+         this.goalSelector.addGoal(1, new PanicGoal(this, 2.0));
+         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
+-        this.goalSelector.addGoal(3, new TemptGoal(this, 1.25, itemStack -> itemStack.is(ItemTags.COW_FOOD), false));
++        this.goalSelector.addGoal(3, new TemptGoal(this, 1.25, io.papermc.paper.entity.temptation.GlobalTemptationLookup.COW_FOOD, false)); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.25));
+         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 1.0));
+         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
+diff --git a/net/minecraft/world/entity/animal/Ocelot.java b/net/minecraft/world/entity/animal/Ocelot.java
+index 5b59f68141c2ceeaf7907bbf5e7b9e08cbe2239e..2e868fb01a1b1a8ee77a51ceb738f465569541ca 100644
+--- a/net/minecraft/world/entity/animal/Ocelot.java
++++ b/net/minecraft/world/entity/animal/Ocelot.java
+@@ -91,7 +91,7 @@ public class Ocelot extends Animal {
+ 
+     @Override
+     protected void registerGoals() {
+-        this.temptGoal = new Ocelot.OcelotTemptGoal(this, 0.6, itemStack -> itemStack.is(ItemTags.OCELOT_FOOD), true);
++        this.temptGoal = new Ocelot.OcelotTemptGoal(this, 0.6, io.papermc.paper.entity.temptation.GlobalTemptationLookup.OCELOT_FOOD, true); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(1, new FloatGoal(this));
+         this.goalSelector.addGoal(3, this.temptGoal);
+         this.goalSelector.addGoal(7, new LeapAtTargetGoal(this, 0.3F));
+diff --git a/net/minecraft/world/entity/animal/Panda.java b/net/minecraft/world/entity/animal/Panda.java
+index 283ddf7d13a17c0a6df5a52b7fd26ed7b7a4826b..819ea27adc7613dc7bb90fc08d7bfcd52cbf93c6 100644
+--- a/net/minecraft/world/entity/animal/Panda.java
++++ b/net/minecraft/world/entity/animal/Panda.java
+@@ -261,7 +261,7 @@ public class Panda extends Animal {
+         this.goalSelector.addGoal(2, new Panda.PandaPanicGoal(this, 2.0));
+         this.goalSelector.addGoal(2, new Panda.PandaBreedGoal(this, 1.0));
+         this.goalSelector.addGoal(3, new Panda.PandaAttackGoal(this, 1.2F, true));
+-        this.goalSelector.addGoal(4, new TemptGoal(this, 1.0, stack -> stack.is(ItemTags.PANDA_FOOD), false));
++        this.goalSelector.addGoal(4, new TemptGoal(this, 1.0, io.papermc.paper.entity.temptation.GlobalTemptationLookup.PANDA_FOOD, false)); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(6, new Panda.PandaAvoidGoal<>(this, Player.class, 8.0F, 2.0, 2.0));
+         this.goalSelector.addGoal(6, new Panda.PandaAvoidGoal<>(this, Monster.class, 4.0F, 2.0, 2.0));
+         this.goalSelector.addGoal(7, new Panda.PandaSitGoal());
+diff --git a/net/minecraft/world/entity/animal/Pig.java b/net/minecraft/world/entity/animal/Pig.java
+index d203d9c63c13f40a913235ad78a24a3bf489a083..7baa1bfc0c73058854a5f0d26dde4c11f556a3bd 100644
+--- a/net/minecraft/world/entity/animal/Pig.java
++++ b/net/minecraft/world/entity/animal/Pig.java
+@@ -61,8 +61,8 @@ public class Pig extends Animal implements ItemSteerable, Saddleable {
+         this.goalSelector.addGoal(0, new FloatGoal(this));
+         this.goalSelector.addGoal(1, new PanicGoal(this, 1.25));
+         this.goalSelector.addGoal(3, new BreedGoal(this, 1.0));
+-        this.goalSelector.addGoal(4, new TemptGoal(this, 1.2, itemStack -> itemStack.is(Items.CARROT_ON_A_STICK), false));
+-        this.goalSelector.addGoal(4, new TemptGoal(this, 1.2, itemStack -> itemStack.is(ItemTags.PIG_FOOD), false));
++        this.goalSelector.addGoal(4, new TemptGoal(this, 1.2, io.papermc.paper.entity.temptation.GlobalTemptationLookup.PIG_CARROT_ON_A_STICK, false)); // Paper - optimise temptation lookups
++        this.goalSelector.addGoal(4, new TemptGoal(this, 1.2, io.papermc.paper.entity.temptation.GlobalTemptationLookup.PIG, false)); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(5, new FollowParentGoal(this, 1.1));
+         this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0));
+         this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 6.0F));
+diff --git a/net/minecraft/world/entity/animal/Rabbit.java b/net/minecraft/world/entity/animal/Rabbit.java
+index c5346b6e4ffe09ca1ec4b85e612c9ee52ae77329..0bd39b4f6c3105f0e59799e7ad27a631aa5bcdd7 100644
+--- a/net/minecraft/world/entity/animal/Rabbit.java
++++ b/net/minecraft/world/entity/animal/Rabbit.java
+@@ -97,7 +97,7 @@ public class Rabbit extends Animal implements VariantHolder<Rabbit.Variant> {
+         this.goalSelector.addGoal(1, new ClimbOnTopOfPowderSnowGoal(this, this.level()));
+         this.goalSelector.addGoal(1, new Rabbit.RabbitPanicGoal(this, 2.2));
+         this.goalSelector.addGoal(2, new BreedGoal(this, 0.8));
+-        this.goalSelector.addGoal(3, new TemptGoal(this, 1.0, itemStack -> itemStack.is(ItemTags.RABBIT_FOOD), false));
++        this.goalSelector.addGoal(3, new TemptGoal(this, 1.0, io.papermc.paper.entity.temptation.GlobalTemptationLookup.RABBIT_FOOD, false)); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(4, new Rabbit.RabbitAvoidEntityGoal<>(this, Player.class, 8.0F, 2.2, 2.2));
+         this.goalSelector.addGoal(4, new Rabbit.RabbitAvoidEntityGoal<>(this, Wolf.class, 10.0F, 2.2, 2.2));
+         this.goalSelector.addGoal(4, new Rabbit.RabbitAvoidEntityGoal<>(this, Monster.class, 4.0F, 2.2, 2.2));
+diff --git a/net/minecraft/world/entity/animal/Sheep.java b/net/minecraft/world/entity/animal/Sheep.java
+index e686c500e4b5f3e7b0e808af8b2e43ddbd163bef..b9bb095e01421f9538c8711c493104cf4406a94c 100644
+--- a/net/minecraft/world/entity/animal/Sheep.java
++++ b/net/minecraft/world/entity/animal/Sheep.java
+@@ -87,7 +87,7 @@ public class Sheep extends Animal implements Shearable {
+         this.goalSelector.addGoal(0, new FloatGoal(this));
+         this.goalSelector.addGoal(1, new PanicGoal(this, 1.25));
+         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
+-        this.goalSelector.addGoal(3, new TemptGoal(this, 1.1, stack -> stack.is(ItemTags.SHEEP_FOOD), false));
++        this.goalSelector.addGoal(3, new TemptGoal(this, 1.1, io.papermc.paper.entity.temptation.GlobalTemptationLookup.SHEEP_FOOD, false)); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(4, new FollowParentGoal(this, 1.1));
+         this.goalSelector.addGoal(5, this.eatBlockGoal);
+         this.goalSelector.addGoal(6, new WaterAvoidingRandomStrollGoal(this, 1.0));
+diff --git a/net/minecraft/world/entity/animal/Turtle.java b/net/minecraft/world/entity/animal/Turtle.java
+index 354ec2b987882d8f40ef4ac5257183d2fda73bb8..d00f831f5d7fa2216781d61b370171b0f33293f6 100644
+--- a/net/minecraft/world/entity/animal/Turtle.java
++++ b/net/minecraft/world/entity/animal/Turtle.java
+@@ -191,7 +191,7 @@ public class Turtle extends Animal {
+         this.goalSelector.addGoal(0, new Turtle.TurtlePanicGoal(this, 1.2));
+         this.goalSelector.addGoal(1, new Turtle.TurtleBreedGoal(this, 1.0));
+         this.goalSelector.addGoal(1, new Turtle.TurtleLayEggGoal(this, 1.0));
+-        this.goalSelector.addGoal(2, new TemptGoal(this, 1.1, itemStack -> itemStack.is(ItemTags.TURTLE_FOOD), false));
++        this.goalSelector.addGoal(2, new TemptGoal(this, 1.1, io.papermc.paper.entity.temptation.GlobalTemptationLookup.TURTLE_FOOD, false)); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(3, new Turtle.TurtleGoToWaterGoal(this, 1.0));
+         this.goalSelector.addGoal(4, new Turtle.TurtleGoHomeGoal(this, 1.0));
+         this.goalSelector.addGoal(7, new Turtle.TurtleTravelGoal(this, 1.0));
+diff --git a/net/minecraft/world/entity/animal/horse/AbstractHorse.java b/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+index d52a8315f1e6876c26c732f4c4caa47bc6bebf6e..5a6646e364ed1725e6b1f76b39eef2cca381af69 100644
+--- a/net/minecraft/world/entity/animal/horse/AbstractHorse.java
++++ b/net/minecraft/world/entity/animal/horse/AbstractHorse.java
+@@ -227,7 +227,7 @@ public abstract class AbstractHorse extends Animal implements ContainerListener,
+ 
+     protected void addBehaviourGoals() {
+         this.goalSelector.addGoal(0, new FloatGoal(this));
+-        this.goalSelector.addGoal(3, new TemptGoal(this, 1.25, stack -> stack.is(ItemTags.HORSE_TEMPT_ITEMS), false));
++        this.goalSelector.addGoal(3, new TemptGoal(this, 1.25, io.papermc.paper.entity.temptation.GlobalTemptationLookup.HORSE_FOOD, false)); // Paper - optimise temptation lookups
+     }
+ 
+     @Override
+diff --git a/net/minecraft/world/entity/animal/horse/Llama.java b/net/minecraft/world/entity/animal/horse/Llama.java
+index 58bb056ce934c793b16e63e44a4029be955c7caa..2ad66ae7cff33c2dd2d580c1b16ef0d63b78320c 100644
+--- a/net/minecraft/world/entity/animal/horse/Llama.java
++++ b/net/minecraft/world/entity/animal/horse/Llama.java
+@@ -123,7 +123,7 @@ public class Llama extends AbstractChestedHorse implements VariantHolder<Llama.V
+         this.goalSelector.addGoal(3, new RangedAttackGoal(this, 1.25, 40, 20.0F));
+         this.goalSelector.addGoal(3, new PanicGoal(this, 1.2));
+         this.goalSelector.addGoal(4, new BreedGoal(this, 1.0));
+-        this.goalSelector.addGoal(5, new TemptGoal(this, 1.25, itemStack -> itemStack.is(ItemTags.LLAMA_TEMPT_ITEMS), false));
++        this.goalSelector.addGoal(5, new TemptGoal(this, 1.25, io.papermc.paper.entity.temptation.GlobalTemptationLookup.LLAMA_TEMPT_ITEMS, false)); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(6, new FollowParentGoal(this, 1.0));
+         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.7));
+         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 6.0F));
+diff --git a/net/minecraft/world/entity/monster/Strider.java b/net/minecraft/world/entity/monster/Strider.java
+index cbae85171a1bb64ee3be40ba211d88e68bf672e4..a01db8ecc15cdcb1e944574c47661f3b34384221 100644
+--- a/net/minecraft/world/entity/monster/Strider.java
++++ b/net/minecraft/world/entity/monster/Strider.java
+@@ -157,7 +157,7 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
+     protected void registerGoals() {
+         this.goalSelector.addGoal(1, new PanicGoal(this, 1.65));
+         this.goalSelector.addGoal(2, new BreedGoal(this, 1.0));
+-        this.temptGoal = new TemptGoal(this, 1.4, itemStack -> itemStack.is(ItemTags.STRIDER_TEMPT_ITEMS), false);
++        this.temptGoal = new TemptGoal(this, 1.4, io.papermc.paper.entity.temptation.GlobalTemptationLookup.STRIDER_TEMPT_ITEMS, false); // Paper - optimise temptation lookups
+         this.goalSelector.addGoal(3, this.temptGoal);
+         this.goalSelector.addGoal(4, new Strider.StriderGoToLavaGoal(this, 1.0));
+         this.goalSelector.addGoal(5, new FollowParentGoal(this, 1.0));
