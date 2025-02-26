@@ -971,7 +971,7 @@
                  int i = (this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
                  int i1 = 25 - i;
                  float f = damageAmount * i1;
-@@ -1768,24 +_,217 @@
+@@ -1768,24 +_,219 @@
          }
      }
  
@@ -984,6 +984,10 @@
 +            if (invulnerabilityRelatedLastDamage == 0) return 0D; // no last damage, no reduction
 +            // last damage existed, this means the reduction *technically* is (new damage - last damage).
 +            // If the event damage was changed to something less than invul damage, hard lock it at 0.
++            //
++            // Cast the passed in double down to a float as double -> float -> double is lossly.
++            // If last damage is a (float) 3.2D (given spigot events use doubles), we cannot compare
++            // the new damage value of this damage instance by upcasting it again to a double as 3.2D != (double) (float) 3.2D.
 +            if (d.floatValue() < invulnerabilityRelatedLastDamage) return 0D;
 +            return (double) -invulnerabilityRelatedLastDamage;
 +        };
@@ -1118,12 +1122,10 @@
 +
 +            // Apply damage to armor
 +            if (!damageSource.is(DamageTypeTags.BYPASSES_ARMOR)) {
-+                // Paper start - fix invulnerability reduction in EntityDamageEvent
 +                float armorDamage = (float) event.getDamage();
 +                armorDamage += (float) event.getDamage(DamageModifier.INVULNERABILITY_REDUCTION);
 +                armorDamage += (float) event.getDamage(DamageModifier.BLOCKING);
 +                armorDamage += (float) event.getDamage(DamageModifier.HARD_HAT);
-+                // Paper end - fix invulnerability reduction in EntityDamageEvent
 +                this.hurtArmor(damageSource, armorDamage);
 +            }
 +
