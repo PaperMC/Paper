@@ -31,11 +31,11 @@ public interface CombatEntry {
     float getDamage();
 
     /**
-     * Gets the fall location at the time of this damage
+     * Gets the fall location type at the time of this damage
      *
-     * @return the fall location
+     * @return the fall location type
      */
-    @Nullable FallLocationType getFallLocation();
+    @Nullable FallLocationType getFallLocationType();
 
     /**
      * Gets the fall distance at the time of this damage
