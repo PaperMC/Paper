@@ -2,6 +2,7 @@ package org.bukkit.inventory;
 
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.inventory.InventoryType;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -316,4 +317,12 @@ public interface InventoryView {
      */
     @Deprecated(since = "1.21.1") // Paper
     public void setTitle(@NotNull String title);
+
+    /**
+     * Gets the menu type of the inventory view.
+     *
+     * @return the menu type of the inventory view
+     */
+    @ApiStatus.Experimental
+    @NotNull MenuType getMenuType();
 }
