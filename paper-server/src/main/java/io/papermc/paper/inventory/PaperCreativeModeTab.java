@@ -20,7 +20,9 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.ItemType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -83,13 +85,7 @@ public class PaperCreativeModeTab implements io.papermc.paper.inventory.Creative
 
     @Override
     public @NotNull Iterator<org.bukkit.inventory.ItemStack> iterator() {
-        final ImmutableList.Builder<org.bukkit.inventory.ItemStack> list = ImmutableList.builder();
-
-        for (final ItemStack itemStack : this.itemStacks) {
-            list.add(CraftItemStack.asBukkitCopy(itemStack));
-        }
-
-        return list.build().iterator();
+        return this.getContents().iterator();
     }
 
     @Override
@@ -129,6 +125,17 @@ public class PaperCreativeModeTab implements io.papermc.paper.inventory.Creative
 
         final ItemStack stack = CraftItemStack.unwrap(itemStack);
         return this.itemStacks.contains(stack);
+    }
+
+    @Override
+    public @Unmodifiable Collection<org.bukkit.inventory.ItemStack> getContents() {
+        final ImmutableList.Builder<org.bukkit.inventory.ItemStack> list = ImmutableList.builder();
+
+        for (final ItemStack itemStack : this.itemStacks) {
+            list.add(CraftItemStack.asBukkitCopy(itemStack));
+        }
+
+        return list.build();
     }
 
     @Override
