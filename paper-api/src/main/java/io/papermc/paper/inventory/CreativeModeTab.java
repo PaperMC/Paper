@@ -8,7 +8,9 @@ import org.bukkit.Keyed;
 import org.bukkit.Registry;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ItemType;
+import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.NullMarked;
+import java.util.Collection;
 
 /**
  * Represents a tab in the creative inventory.
@@ -44,19 +46,18 @@ public interface CreativeModeTab extends Keyed, Translatable, Iterable<ItemStack
     CreativeModeTab REDSTONE_BLOCKS = getTab(CreativeModeTabKeys.REDSTONE_BLOCKS);
 
     /**
-     * Equipment items meant for general utility including pickaxes, axes, hoes,
-     * flint and steel, and useful enchantment books for said tools.
+     * Equipment items meant for general utility including pickaxes, axes, hoes, and
+     * flint and steel.
      */
     CreativeModeTab TOOLS_AND_UTILITIES = getTab(CreativeModeTabKeys.TOOLS_AND_UTILITIES);
 
     /**
-     * Equipment items meant for combat including armor, swords, bows, tipped
-     * arrows, and useful enchantment books for said equipment.
+     * Equipment items meant for combat including armor, swords, bows, and tipped arrows.
      */
     CreativeModeTab COMBAT = getTab(CreativeModeTabKeys.COMBAT);
 
     /**
-     * Food items consumable by the player including meats, berries, edible
+     * Food items or potions consumable by the player including meats, berries, edible
      * drops from creatures, etc.
      */
     CreativeModeTab FOOD_AND_DRINK = getTab(CreativeModeTabKeys.FOOD_AND_DRINKS);
@@ -125,6 +126,12 @@ public interface CreativeModeTab extends Keyed, Translatable, Iterable<ItemStack
      * @return {@code true} if this tab contains the specified item.
      */
     boolean containsItem(final ItemStack itemStack);
+
+    /**
+     * @return An unmodifiable collection of items that are included in this tab.
+     */
+    @Unmodifiable
+    Collection<ItemStack> getContents();
 
     /**
      * @return The row that this tab is in.
