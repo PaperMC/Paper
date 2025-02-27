@@ -74,18 +74,17 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
     @Deprecated(forRemoval = true, since = "1.19.3")
     MISC("misc"),
     /**
-     * Food items consumable by the player including meats, berries, edible
+     * Food items or potions consumable by the player including meats, berries, edible
      * drops from creatures, etc.
      */
     FOOD("foodAndDrink"),
     /**
-     * Equipment items meant for general utility including pickaxes, axes, hoes,
-     * flint and steel, and useful enchantment books for said tools.
+     * Equipment items meant for general utility including pickaxes, axes, hoes, and
+     * flint and steel.
      */
     TOOLS("tools"),
     /**
-     * Equipment items meant for combat including armor, swords, bows, tipped
-     * arrows, and useful enchantment books for said equipment.
+     * Equipment items meant for combat including armor, swords, bows, and tipped arrows.
      */
     COMBAT("combat"),
     /**
