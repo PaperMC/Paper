@@ -175,7 +175,7 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     public ArgumentType<BlockState> blockState() {
         return this.wrap(BlockStateArgument.block(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
             CompoundTag tag = result.tag;
-            if (tag != null) {
+            if (tag != null && !tag.contains("id")) {
                 tag.putString("id", BuiltInRegistries.BLOCK.getKey(result.getState().getBlock()).toString());
             }
             return CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), BlockPos.ZERO, result.getState(), tag);
