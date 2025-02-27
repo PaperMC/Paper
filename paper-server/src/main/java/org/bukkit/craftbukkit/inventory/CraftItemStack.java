@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import io.papermc.paper.inventory.PaperCreativeCategory;
+import io.papermc.paper.inventory.CreativeModeTab;
 import net.kyori.adventure.text.Component;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
@@ -21,18 +21,17 @@ import net.minecraft.core.component.DataComponentPredicate;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
@@ -700,19 +699,19 @@ public final class CraftItemStack extends ItemStack {
     // Paper end - data component API
 
     @Override
-    public @NotNull Collection<CreativeCategory> getCreativeCategories() {
-        final ImmutableSet.Builder<CreativeCategory> builder = ImmutableSet.builder();
+    public @NotNull Collection<CreativeModeTab> getCreativeModeTabs() {
+        final ImmutableSet.Builder<CreativeModeTab> builder = ImmutableSet.builder();
 
-        for (final Map.Entry<CreativeModeTab, Collection<net.minecraft.world.item.ItemStack>> tab : PaperCreativeCategory.CATEGORY_CONTENTS.entrySet()) {
-            if (tab.getValue().contains(this.handle)) {
-                builder.add(PaperCreativeCategory.fromNms(tab.getKey()));
+        for (final CreativeModeTab tab : Registry.CREATIVE_MODE_TAB) {
+            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItem(this)) {
+                builder.add(tab);
             }
         }
 
         // Differing data components (i.e. durability) may cause the above contains to fail, return the categories for the item type if empty.
-        final Collection<CreativeCategory> built = builder.build();
-        if (built.isEmpty()) {
-            return CraftItemType.minecraftToBukkitNew(this.handle.getItem()).getCreativeCategories();
+        final Collection<CreativeModeTab> built = builder.build();
+        if (built.isEmpty() && this.handle != null) {
+            return CraftItemType.minecraftToBukkitNew(this.handle.getItem()).getCreativeModeTabs();
         } else {
             return built;
         }

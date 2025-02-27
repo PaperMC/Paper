@@ -5,10 +5,13 @@ import com.google.common.base.Suppliers;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import java.lang.reflect.Constructor;
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import io.papermc.paper.inventory.CreativeModeTab;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
@@ -5644,11 +5647,26 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * Get the {@link CreativeCategory} to which this material belongs.
      *
      * @return the creative category. null if does not belong to a category
+     *
+     * @deprecated items can belong to multiple creative categories, use {@link #getCreativeModeTabs()} instead.
      */
+    @Deprecated(since = "1.21.4")
     @Nullable
     public CreativeCategory getCreativeCategory() {
         ItemType type = asItemType();
         return type == null ? null : type.getCreativeCategory();
+    }
+
+    /**
+     * Gets the {@link CreativeModeTab}s to which this material belongs.
+     *
+     * @return A collection of creative mode tabs to which this material belongs, which
+     * can be empty.
+     */
+    @NotNull
+    public Collection<CreativeModeTab> getCreativeModeTabs() {
+        final ItemType type = asItemType();
+        return type == null ? List.of() : type.getCreativeModeTabs();
     }
 
     /**

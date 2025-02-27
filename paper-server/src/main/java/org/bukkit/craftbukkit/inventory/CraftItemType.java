@@ -7,15 +7,14 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import java.util.Collection;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import io.papermc.paper.inventory.PaperCreativeCategory;
+import io.papermc.paper.inventory.CreativeModeTab;
+import io.papermc.paper.inventory.PaperCreativeModeTab;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.level.block.ComposterBlock;
@@ -237,17 +236,17 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     @Override
     public CreativeCategory getCreativeCategory() {
-        return Iterables.getFirst(getCreativeCategories(), null);
+        final CreativeModeTab tab = Iterables.getFirst(getCreativeModeTabs(), null);
+        return tab == null ? null : ((PaperCreativeModeTab) tab).toLegacy();
     }
 
     @Override
-    public @NotNull Collection<CreativeCategory> getCreativeCategories() {
-        final ImmutableSet.Builder<CreativeCategory> builder = ImmutableSet.builder();
+    public @NotNull Collection<CreativeModeTab> getCreativeModeTabs() {
+        final ImmutableSet.Builder<CreativeModeTab> builder = ImmutableSet.builder();
 
-        final net.minecraft.world.item.ItemStack itemStack = new net.minecraft.world.item.ItemStack(this.getHandle());
-        for (final Map.Entry<CreativeModeTab, Collection<net.minecraft.world.item.ItemStack>> tab : PaperCreativeCategory.CATEGORY_CONTENTS.entrySet()) {
-            if (tab.getValue().contains(itemStack)) {
-                builder.add(PaperCreativeCategory.fromNms(tab.getKey()));
+        for (final CreativeModeTab tab : Registry.CREATIVE_MODE_TAB) {
+            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItemType(this)) {
+                builder.add(tab);
             }
         }
 
