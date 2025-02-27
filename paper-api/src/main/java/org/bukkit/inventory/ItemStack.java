@@ -2,15 +2,14 @@ package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import io.papermc.paper.datacomponent.DataComponentHolder;
+import io.papermc.paper.inventory.CreativeModeTab;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -1377,18 +1376,18 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     // Paper end - data component API
 
     /**
-     * Gets the creative categories to which this item stack belongs.
+     * Gets the creative mode tabs to which this item stack belongs.
      * <p>
-     * This method is different from {@link ItemType#getCreativeCategories()}, as data components
-     * on items can cause them to be put into different categories, such as ominous banners.
+     * This method is different from {@link ItemType#getCreativeModeTabs()}, as data components
+     * on items can cause them to be put into different tabs, such as ominous banners.
      *
-     * @return A collection of creative categories to which this item stack belongs, which
+     * @return A collection of creative mode tabs to which this item stack belongs, which
      * can be empty.
-     * @see ItemType#getCreativeCategories()
+     * @see ItemType#getCreativeModeTabs()
      */
     @Unmodifiable
     @NotNull
-    public Collection<CreativeCategory> getCreativeCategories() {
-        return this.craftDelegate.getCreativeCategories();
+    public Collection<CreativeModeTab> getCreativeModeTabs() {
+        return this.craftDelegate.getCreativeModeTabs();
     }
 }
