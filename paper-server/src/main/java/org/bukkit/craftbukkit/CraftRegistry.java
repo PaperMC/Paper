@@ -33,14 +33,24 @@ import org.jetbrains.annotations.NotNull;
 public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
 
     private static net.minecraft.core.RegistryAccess registry;
+    private static net.minecraft.world.flag.FeatureFlagSet FEATURE_FLAG_SET;
 
     public static void setMinecraftRegistry(final net.minecraft.core.RegistryAccess registry) {
         Preconditions.checkState(CraftRegistry.registry == null, "Registry already set");
         CraftRegistry.registry = registry;
     }
 
+    public static void setFeatureFlags(final net.minecraft.world.flag.FeatureFlagSet featureFlagSet) {
+        Preconditions.checkState(CraftRegistry.FEATURE_FLAG_SET == null, "FeatureFlagSet already set");
+        CraftRegistry.FEATURE_FLAG_SET = featureFlagSet;
+    }
+
     public static net.minecraft.core.RegistryAccess getMinecraftRegistry() {
         return CraftRegistry.registry;
+    }
+
+    public static net.minecraft.world.flag.FeatureFlagSet getFeatureFlags() {
+        return CraftRegistry.FEATURE_FLAG_SET;
     }
 
     public static <E> net.minecraft.core.Registry<E> getMinecraftRegistry(ResourceKey<? extends net.minecraft.core.Registry<E>> key) {
