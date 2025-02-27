@@ -70,7 +70,7 @@
      private double firstGoodX;
      private double firstGoodY;
      private double firstGoodZ;
-@@ -236,22 +_,39 @@
+@@ -236,22 +_,41 @@
      private int receivedMovePacketCount;
      private int knownMovePacketCount;
      private boolean receivedMovementThisTick;
@@ -98,6 +98,7 @@
      private final FutureChain chatMessageChain;
      private boolean waitingForSwitchToConfig;
 +    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper - Limit client sign length
++    private final io.papermc.paper.event.packet.ClientTickEndEvent tickEndEvent; // Paper - add client tick end event
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player, CommonListenerCookie cookie) {
 -        super(server, connection, cookie);
@@ -109,6 +110,7 @@
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(player.getUUID(), server::enforceSecureProfile);
 -        this.chatMessageChain = new FutureChain(server);
 +        this.chatMessageChain = new FutureChain(server.chatExecutor); // CraftBukkit - async chat
++        this.tickEndEvent = new io.papermc.paper.event.packet.ClientTickEndEvent(player.getBukkitEntity()); // Paper - add client tick end event
      }
  
      @Override
@@ -2598,7 +2600,7 @@
          this.signedMessageDecoder = chatSession.createMessageDecoder(this.player.getUUID());
          this.chatMessageChain
              .append(
-@@ -1919,15 +_,17 @@
+@@ -1919,19 +_,22 @@
                      this.server
                          .getPlayerList()
                          .broadcastAll(
@@ -2620,6 +2622,11 @@
  
      @Override
      public void handleClientTickEnd(ServerboundClientTickEndPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
++        this.tickEndEvent.callEvent(); // Paper - add client tick end event
+         if (!this.receivedMovementThisTick) {
+             this.player.setKnownMovement(Vec3.ZERO);
+         }
 @@ -1957,4 +_,17 @@
      interface EntityInteraction {
          InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
