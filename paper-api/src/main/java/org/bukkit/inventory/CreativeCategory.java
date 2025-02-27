@@ -1,8 +1,13 @@
 package org.bukkit.inventory;
 
+import io.papermc.paper.inventory.CreativeModeTab;
+
 /**
  * Represents a category in the creative inventory.
+ *
+ * @deprecated Replaced by {@link CreativeModeTab}
  */
+@Deprecated(since = "1.21.4")
 public enum CreativeCategory implements net.kyori.adventure.translation.Translatable { // Paper
 
     /**
@@ -72,7 +77,7 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
      * Food items consumable by the player including meats, berries, edible
      * drops from creatures, etc.
      */
-    FOOD_AND_DRINK("foodAndDrink"),
+    FOOD("foodAndDrink"),
     /**
      * Equipment items meant for general utility including pickaxes, axes, hoes,
      * flint and steel, and useful enchantment books for said tools.
@@ -90,12 +95,6 @@ public enum CreativeCategory implements net.kyori.adventure.translation.Translat
      */
     @Deprecated(forRemoval = true, since = "1.19.3")
     BREWING("brewing");
-
-    /**
-     * @deprecated Renamed to {@link #FOOD_AND_DRINK} in 1.19.3
-     */
-    @Deprecated(forRemoval = true, since = "1.19.3")
-    public static final CreativeCategory FOOD = FOOD_AND_DRINK;
 
     private final String translationKey;
 
