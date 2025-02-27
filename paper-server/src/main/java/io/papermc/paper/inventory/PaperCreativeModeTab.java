@@ -75,7 +75,7 @@ public class PaperCreativeModeTab implements io.papermc.paper.inventory.Creative
 
     private static ItemDisplayBuilder buildTab(final CreativeModeTab tab) {
         // Tab contents are not built by the server, so we have to build them ourselves.
-        final CreativeModeTab.ItemDisplayParameters parameters = new CreativeModeTab.ItemDisplayParameters(FeatureFlags.REGISTRY.allFlags(), true, CraftRegistry.getMinecraftRegistry()); // TODO: use correct flags
+        final CreativeModeTab.ItemDisplayParameters parameters = new CreativeModeTab.ItemDisplayParameters(CraftRegistry.getFeatureFlags(), true, CraftRegistry.getMinecraftRegistry());
         ItemDisplayBuilder itemDisplayBuilder = new ItemDisplayBuilder(tab, parameters.enabledFeatures());
 
         tab.displayItemsGenerator.accept(parameters, itemDisplayBuilder);
