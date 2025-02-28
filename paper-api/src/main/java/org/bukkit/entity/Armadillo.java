@@ -16,7 +16,7 @@ public interface Armadillo extends Animals {
     State getState();
 
     /**
-     * Attempt to roll up if it in {@link State#IDLE}
+     * Attempt to roll up if the armadillo is {@link State#IDLE}
      */
     void rollUp();
 
