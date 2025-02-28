@@ -26,7 +26,7 @@ public interface MusicEntry {
     int maxDelay();
 
     /**
-     * Whether to replace music which is already playing.
+     * Whether to replace the music which is already playing.
      *
      * @return true if the music should be replaced.
      */
