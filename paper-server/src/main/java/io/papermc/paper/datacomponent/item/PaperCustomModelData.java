@@ -40,7 +40,7 @@ public record PaperCustomModelData(
 
     @Override
     public List<Color> colors() {
-        return MCUtil.transformUnmodifiable(this.impl.colors(), Color::fromRGB);
+        return MCUtil.transformUnmodifiable(this.impl.colors(), color -> Color.fromRGB(color & 0x00FFFFFF)); // skip alpha channel
     }
 
     static final class BuilderImpl implements CustomModelData.Builder {
