@@ -4,7 +4,8 @@ import org.bukkit.Sound;
 import org.jetbrains.annotations.Range;
 
 /**
- * Settings for additions sound.
+ * Settings for additions sound, which can play along
+ * the biome music and provides extra ambience to the biome.
  */
 public interface AdditionSound {
 
