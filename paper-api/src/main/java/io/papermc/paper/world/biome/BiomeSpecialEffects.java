@@ -6,6 +6,7 @@ import io.papermc.paper.world.biome.effects.MusicEntry;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Sound;
+import org.jetbrains.annotations.Unmodifiable;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +14,7 @@ import java.util.Optional;
  * Ambient effects in this biome.
  */
 public interface BiomeSpecialEffects {
+
     /**
      * The fog color.
      *
@@ -84,7 +86,7 @@ public interface BiomeSpecialEffects {
      *
      * @return the music entries.
      */
-    List<MusicEntry> music();
+    @Unmodifiable List<MusicEntry> music();
 
     /**
      * The game smoothly transitions between the current music volume

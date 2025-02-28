@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Range;
  * Settings for additions sound.
  */
 public interface AdditionSound {
+
     /**
      * One sound event — The additions sound.
      *

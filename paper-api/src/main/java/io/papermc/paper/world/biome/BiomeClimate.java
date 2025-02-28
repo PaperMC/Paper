@@ -3,6 +3,7 @@ package io.papermc.paper.world.biome;
 import org.bukkit.Location;
 
 public interface BiomeClimate {
+
     /**
      * Determines if the biome has precipitation.
      *

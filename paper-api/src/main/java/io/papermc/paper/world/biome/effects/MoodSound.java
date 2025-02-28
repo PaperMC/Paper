@@ -6,6 +6,7 @@ import org.bukkit.Sound;
  * Settings for mood sound.
  */
 public interface MoodSound {
+
     /**
      * One sound event — The mood sound.
      *

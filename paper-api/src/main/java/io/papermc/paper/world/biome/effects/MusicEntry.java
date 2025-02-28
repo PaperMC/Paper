@@ -3,6 +3,7 @@ package io.papermc.paper.world.biome.effects;
 import org.bukkit.Sound;
 
 public interface MusicEntry {
+
     /**
      * One sound event — The music sound.
      *
