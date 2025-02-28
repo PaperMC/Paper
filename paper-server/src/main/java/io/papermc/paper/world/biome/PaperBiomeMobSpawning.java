@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 public class PaperBiomeMobSpawning implements BiomeMobSpawning {
+
     private final MobSpawnSettings settings;
     private final ImmutableMap<SpawnCategory, List<MobData>> spawners;
 

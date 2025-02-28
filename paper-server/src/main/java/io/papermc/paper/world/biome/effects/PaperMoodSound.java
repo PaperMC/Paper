@@ -5,6 +5,7 @@ import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftSound;
 
 public class PaperMoodSound implements MoodSound {
+
     private final AmbientMoodSettings settings;
 
     public PaperMoodSound(AmbientMoodSettings settings) {

@@ -6,6 +6,7 @@ import org.bukkit.Sound;
 import org.bukkit.craftbukkit.CraftSound;
 
 public class PaperMusicEntry implements MusicEntry {
+
     private final WeightedEntry.Wrapper<Music> entry;
 
     public PaperMusicEntry(WeightedEntry.Wrapper<Music> entry) {

@@ -7,6 +7,7 @@ import org.bukkit.Location;
 import org.bukkit.craftbukkit.util.CraftLocation;
 
 public class PaperBiomeClimate implements BiomeClimate {
+
     private final Biome.ClimateSettings climateSettings;
     private final Biome biome;
 

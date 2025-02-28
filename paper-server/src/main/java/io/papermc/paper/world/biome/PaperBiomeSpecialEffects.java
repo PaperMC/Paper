@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class PaperBiomeSpecialEffects implements BiomeSpecialEffects {
+
     private final net.minecraft.world.level.biome.BiomeSpecialEffects effects;
 
     public PaperBiomeSpecialEffects(Biome biome) {
