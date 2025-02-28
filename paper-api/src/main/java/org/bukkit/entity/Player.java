@@ -293,7 +293,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * set in the client, the {@link CompletableFuture} will complete with a
      * null value.
      */
-    CompletableFuture<byte[]> retrieveCookie(NamespacedKey key);
+    CompletableFuture<byte @Nullable []> retrieveCookie(NamespacedKey key);
 
     /**
      * Stores a cookie in this player's client.
@@ -1185,7 +1185,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(Location loc, @Nullable String[] lines) throws IllegalArgumentException;
+    public void sendSignChange(Location loc, @Nullable String @Nullable [] lines) throws IllegalArgumentException;
 
     /**
      * Send a sign change. This fakes a sign change packet for a user at
@@ -1211,7 +1211,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(Location loc, @Nullable String[] lines, DyeColor dyeColor) throws IllegalArgumentException;
+    public void sendSignChange(Location loc, @Nullable String @Nullable [] lines, DyeColor dyeColor) throws IllegalArgumentException;
 
     /**
      * Send a sign change. This fakes a sign change packet for a user at
@@ -1238,7 +1238,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * (constructed e.g. via {@link Material#createBlockData()})
      */
     @Deprecated // Paper
-    public void sendSignChange(Location loc, @Nullable String[] lines, DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
+    public void sendSignChange(Location loc, @Nullable String @Nullable [] lines, DyeColor dyeColor, boolean hasGlowingText) throws IllegalArgumentException;
 
     /**
      * Send a TileState change. This fakes a TileState change for a user at
@@ -2844,7 +2844,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @throws IllegalArgumentException Thrown if the hash is not 20 bytes
      *     long.
      */
-    public void addResourcePack(UUID id, String url, @Nullable byte[] hash, @Nullable String prompt, boolean force);
+    public void addResourcePack(UUID id, String url, byte @Nullable [] hash, @Nullable String prompt, boolean force);
 
     /**
      * Request that the player's client remove a resource pack sent by the
