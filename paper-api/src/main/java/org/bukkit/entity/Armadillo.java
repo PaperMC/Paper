@@ -21,7 +21,7 @@ public interface Armadillo extends Animals {
     void rollUp();
 
     /**
-     * Attempt to roll out if it's not in {@link State#IDLE}
+     * Attempt to roll out if the armadillo is not {@link State#IDLE}
      */
     void rollOut();
 
