@@ -140,9 +140,8 @@ public interface ChunkSnapshot {
      * @param y Y-coordinate (world minHeight (inclusive) - world maxHeight (exclusive))
      * @param z Z-coordinate (0-15)
      * @return temperature at given coordinate
-     * @see Biome#climate()
-     * @see BiomeClimate#adjustedTemperature(Location)
-     * @deprecated Get the temperature from the biome instead
+     * @deprecated Get the temperature from the biome instead.
+     *      See {@link BiomeClimate#adjustedTemperature(Location)} and {@link Biome#climate()}
      */
     @Deprecated(since = "1.21.4")
     double getRawBiomeTemperature(int x, int y, int z);
