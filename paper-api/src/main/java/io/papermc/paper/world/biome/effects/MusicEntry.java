@@ -12,14 +12,14 @@ public interface MusicEntry {
     Sound sound();
 
     /**
-     * The min delay between two music.
+     * The min delay between two music entries.
      *
      * @return the min delay.
      */
     int minDelay();
 
     /**
-     * The max delay between two music.
+     * The max delay between two music entries.
      *
      * @return the max delay.
      */
