@@ -1551,14 +1551,14 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static BlockRedstoneEvent callRedstoneChange(Level world, BlockPos pos, int oldCurrent, int newCurrent) {
-        BlockRedstoneEvent event = new BlockRedstoneEvent(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), oldCurrent, newCurrent);
-        world.getCraftServer().getPluginManager().callEvent(event);
+    public static BlockRedstoneEvent callRedstoneChange(LevelAccessor level, BlockPos pos, int oldCurrent, int newCurrent) {
+        BlockRedstoneEvent event = new BlockRedstoneEvent(CraftBlock.at(level, pos), oldCurrent, newCurrent);
+        event.callEvent();
         return event;
     }
 
     public static NotePlayEvent callNotePlayEvent(Level world, BlockPos pos, NoteBlockInstrument instrument, int note) {
-        NotePlayEvent event = new NotePlayEvent(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), org.bukkit.Instrument.getByType((byte) instrument.ordinal()), new org.bukkit.Note(note));
+        NotePlayEvent event = new NotePlayEvent(CraftBlock.at(world, pos), org.bukkit.Instrument.getByType((byte) instrument.ordinal()), new org.bukkit.Note(note));
         world.getCraftServer().getPluginManager().callEvent(event);
         return event;
     }

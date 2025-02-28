@@ -1,27 +1,25 @@
 --- a/net/minecraft/world/level/block/TrapDoorBlock.java
 +++ b/net/minecraft/world/level/block/TrapDoorBlock.java
-@@ -146,7 +_,40 @@
+@@ -146,7 +_,38 @@
          if (!level.isClientSide) {
              boolean hasNeighborSignal = level.hasNeighborSignal(pos);
              if (hasNeighborSignal != state.getValue(POWERED)) {
 -                if (state.getValue(OPEN) != hasNeighborSignal) {
-+                // if (state.getValue(OPEN) != hasNeighborSignal) {
 +                // CraftBukkit start
-+                org.bukkit.World bworld = level.getWorld();
-+                org.bukkit.block.Block bblock = bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +
-+                int power = bblock.getBlockPower();
++                int power = block.getBlockPower();
 +                int oldPower = state.getValue(TrapDoorBlock.OPEN) ? 15 : 0;
 +
 +                if (oldPower == 0 ^ power == 0 || neighborBlock.defaultBlockState().isSignalSource()) {
-+                    org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(bblock, oldPower, power);
-+                    level.getCraftServer().getPluginManager().callEvent(eventRedstone);
-+                    hasNeighborSignal = eventRedstone.getNewCurrent() > 0;
++                    org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(block, oldPower, power);
++                    event.callEvent();
++                    hasNeighborSignal = event.getNewCurrent() > 0;
 +                }
 +                // CraftBukkit end
 +                // Paper start - break redstone on trapdoors early
 +                boolean open = state.getValue(TrapDoorBlock.OPEN) != hasNeighborSignal;
-+                // note: this must run before any state for this block/its neighborus are written to the world
++                // note: this must run before any state for this block/its neighbours are written to the world
 +                // we allow the redstone event to fire so that plugins can block
 +                if (hasNeighborSignal && open) { // if we are now powered and it caused the trap door to open
 +                    // in this case, first check for the redstone on top first
