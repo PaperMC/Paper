@@ -11,8 +11,8 @@ public interface BiomeMobSpawning {
 
     /**
      * Spawn category to a list of spawner data objects, one for each
-     * mob which should spawn in this biome. If this object doesn't
-     * contain a certain category, mobs in this category do not spawn.
+     * mob which should spawn in this biome. If the list of a certain
+     * category is empty, mobs in this category do not spawn.
      *
      * @return the spawner data
      */
