@@ -327,8 +327,6 @@ public interface ItemFactory {
      *
      * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
      *
-     * <p>Levels must be in range {@code [1, 30]}.</p>
-     *
      * @param itemStack ItemStack to enchant
      * @param levels levels to use for enchanting
      * @param allowTreasure whether to allow enchantments where {@link org.bukkit.enchantments.Enchantment#isTreasure()} returns true
@@ -336,15 +334,13 @@ public interface ItemFactory {
      * @return enchanted copy of the provided ItemStack
      * @throws IllegalArgumentException on bad arguments
      */
-    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, boolean allowTreasure, @NotNull java.util.Random random);
+    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, int levels, boolean allowTreasure, @NotNull java.util.Random random);
     // Paper end - enchantWithLevels API
     // Paper start - enchantWithLevels with tag specification
     /**
      * Randomly enchants a copy of the provided {@link ItemStack} using the given experience levels.
      *
      * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
-     *
-     * <p>Levels must be in range {@code [1, 30]}.</p>
      *
      * @param itemStack ItemStack to enchant
      * @param levels levels to use for enchanting
@@ -353,6 +349,6 @@ public interface ItemFactory {
      * @return enchanted copy of the provided ItemStack
      * @throws IllegalArgumentException on bad arguments
      */
-    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, @NotNull java.util.Random random);
+    @NotNull ItemStack enchantWithLevels(@NotNull ItemStack itemStack, int levels, @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, @NotNull java.util.Random random);
     // Paper end - enchantWithLevels with tag specification
 }

@@ -349,7 +349,6 @@ public final class CraftItemFactory implements ItemFactory {
     ) {
         Preconditions.checkArgument(itemStack != null, "Argument 'itemStack' must not be null");
         Preconditions.checkArgument(!itemStack.isEmpty(), "Argument 'itemStack' cannot be empty");
-        Preconditions.checkArgument(levels > 0 && levels <= 30, "Argument 'levels' must be in range [1, 30] (attempted " + levels + ")");
         Preconditions.checkArgument(random != null, "Argument 'random' must not be null");
         final net.minecraft.world.item.ItemStack internalStack = CraftItemStack.asNMSCopy(itemStack);
         if (internalStack.isEnchanted()) {
