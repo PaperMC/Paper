@@ -558,7 +558,6 @@ public class WorldConfiguration extends ConfigurationPart {
     public Misc misc;
 
     public class Misc extends ConfigurationPart {
-        public int lightQueueSize = 20;
         public boolean updatePathfindingOnBlockUpdate = true;
         public boolean showSignClickCommandFailureMsgsToPlayer = false;
         public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;
