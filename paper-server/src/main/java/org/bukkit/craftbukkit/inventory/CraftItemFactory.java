@@ -213,9 +213,9 @@ public final class CraftItemFactory implements ItemFactory {
         return CraftItemStack.asCraftMirror(EnchantmentHelper.enchantItem(source, craft.handle, level, registry, optional));
     }
 
-    // Paper start - Adventure
     @Override
     public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final ItemStack item, final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
+        Preconditions.checkArgument(item.getAmount() > 1 && item.getAmount() <= 99, "ItemStack amount must be between 1 and 99 but was " + item.getAmount());
         return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(
             net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(
                 item.getType().getKey(),
@@ -228,7 +228,6 @@ public final class CraftItemFactory implements ItemFactory {
     public net.kyori.adventure.text.@org.jetbrains.annotations.NotNull Component displayName(@org.jetbrains.annotations.NotNull ItemStack itemStack) {
         return io.papermc.paper.adventure.PaperAdventure.asAdventure(CraftItemStack.asNMSCopy(itemStack).getDisplayName());
     }
-    // Paper end - Adventure
 
     // Paper start - ensure server conversions API
     // TODO: DO WE NEED THIS?
