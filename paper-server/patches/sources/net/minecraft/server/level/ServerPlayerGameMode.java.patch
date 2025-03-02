@@ -1,6 +1,13 @@
 --- a/net/minecraft/server/level/ServerPlayerGameMode.java
 +++ b/net/minecraft/server/level/ServerPlayerGameMode.java
-@@ -41,28 +_,49 @@
+@@ -35,34 +_,55 @@
+     private GameType previousGameModeForPlayer;
+     private boolean isDestroyingBlock;
+     private int destroyProgressStart;
+-    private BlockPos destroyPos = BlockPos.ZERO;
++    @Nullable private BlockPos destroyPos; // Paper
+     private int gameTicks;
+     private boolean hasDelayedDestroy;
      private BlockPos delayedDestroyPos = BlockPos.ZERO;
      private int delayedTickStart;
      private int lastSentState = -1;
@@ -92,7 +99,7 @@
              this.debugLogging(pos, false, sequence, "too far");
          } else if (pos.getY() > maxBuildHeight) {
              this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
-@@ -138,16 +_,39 @@
+@@ -138,16 +_,40 @@
          } else {
              if (action == ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK) {
                  if (!this.level.mayInteract(this.player, pos)) {
@@ -115,6 +122,7 @@
 +                    // this.player.connection.send(new ClientboundBlockUpdatePacket(this.level, pos)); // Paper - Don't resync blocks
 +                    // Update any tile entity data for this block
 +                    this.capturedBlockEntity = true; // Paper - Send block entities after destroy prediction
++                    this.destroyPos = null; // Paper
 +                    return;
 +                }
 +                // CraftBukkit end
@@ -174,14 +182,14 @@
 -                if (!Objects.equals(this.destroyPos, pos)) {
 -                    LOGGER.warn("Mismatch in destroy block pos: {} {}", this.destroyPos, pos);
 +                // Paper start - Don't allow digging into unloaded chunks
-+                if (!Objects.equals(this.destroyPos, pos) && !BlockPos.ZERO.equals(this.destroyPos)) { // Paper
++                if (!Objects.equals(this.destroyPos, pos) && this.destroyPos != null) { // Paper
 +                    ServerPlayerGameMode.LOGGER.debug("Mismatch in destroy block pos: {} {}", this.destroyPos, pos); // CraftBukkit - SPIGOT-5457 sent by client when interact event cancelled
 +                    BlockState type = this.level.getBlockStateIfLoaded(this.destroyPos); // Don't load unloaded chunks for stale records here
 +                    if (type != null) {
                      this.level.destroyBlockProgress(this.player.getId(), this.destroyPos, -1);
                      this.debugLogging(pos, true, sequence, "aborted mismatched destroying");
 +                    }
-+                    this.destroyPos = BlockPos.ZERO;
++                    this.destroyPos = null;
 +                    // Paper end - Don't allow digging into unloaded chunks
                  }
  
