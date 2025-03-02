@@ -215,7 +215,7 @@ public final class CraftItemFactory implements ItemFactory {
 
     @Override
     public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final ItemStack item, final java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
-        Preconditions.checkArgument(item.getAmount() > 1 && item.getAmount() <= 99, "ItemStack amount must be between 1 and 99 but was " + item.getAmount());
+        Preconditions.checkArgument(item.getAmount() > 1 && item.getAmount() <= 99, "ItemStack amount must be between 1 and 99 but was %s", item.getAmount());
         return net.kyori.adventure.text.event.HoverEvent.showItem(op.apply(
             net.kyori.adventure.text.event.HoverEvent.ShowItem.showItem(
                 item.getType().getKey(),
