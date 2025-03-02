@@ -59,6 +59,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     public static @NotNull ItemStack of(final @NotNull Material type, final int amount) {
         Preconditions.checkArgument(type.asItemType() != null, type + " isn't an item");
         Preconditions.checkArgument(amount > 0, "amount must be greater than 0");
+        Preconditions.checkArgument(amount > 99, "amount must be no greater than 99");
         return java.util.Objects.requireNonNull(type.asItemType(), type + " is not an item").createItemStack(amount); // Paper - delegate
     }
     // Paper end
