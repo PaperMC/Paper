@@ -120,6 +120,7 @@ import org.bukkit.BanList;
 import org.bukkit.Bukkit;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
+import org.bukkit.EntityEffect;
 import org.bukkit.GameMode;
 import org.bukkit.Input;
 import org.bukkit.Instrument;
@@ -3543,10 +3544,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     // Paper start - entity effect API
     @Override
-    public void sendEntityEffect(final org.bukkit.EntityEffect effect, final org.bukkit.entity.Entity target) {
-        if (this.getHandle().connection == null || !effect.isApplicableTo(target)) {
+    public void sendEntityEffect(final EntityEffect effect, final org.bukkit.entity.Entity target) {
+        if (this.getHandle().connection == null) {
             return;
         }
+        Preconditions.checkArgument(effect.isApplicableTo(target), "Entity effect cannot apply to the target");
         this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundEntityEventPacket(((CraftEntity) target).getHandle(), effect.getData()));
     }
     // Paper end - entity effect API
@@ -3580,5 +3582,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         handle.containerMenu.broadcastChanges();
         return new PaperPlayerGiveResult(leftovers.build(), drops.build());
+    }
+
+    @Override
+    public float getSidewaysMovement() {
+        final boolean leftMovement = this.getHandle().getLastClientInput().left();
+        final boolean rightMovement = this.getHandle().getLastClientInput().right();
+
+        return leftMovement == rightMovement ? 0 : leftMovement ? 1 : -1;
+    }
+
+    @Override
+    public float getForwardsMovement() {
+        final boolean forwardMovement = this.getHandle().getLastClientInput().forward();
+        final boolean backwardMovement = this.getHandle().getLastClientInput().backward();
+
+        return forwardMovement == backwardMovement ? 0 : forwardMovement ? 1 : -1;
     }
 }

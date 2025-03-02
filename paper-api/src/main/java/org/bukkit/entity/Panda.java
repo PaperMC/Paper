@@ -172,22 +172,6 @@ public interface Panda extends Animals, Sittable {
     }
 
     /**
-     * Sets if this panda is currently sitting.
-     *
-     * @param sitting is currently sitting
-     */
-    @Override
-    void setSitting(boolean sitting);
-
-    /**
-     * Gets if this panda is sitting.
-     *
-     * @return is sitting
-     */
-    @Override
-    boolean isSitting();
-
-    /**
      * Gets this Panda's combined gene.
      * <p>
      * The combined gene can be modified using

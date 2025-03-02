@@ -5,7 +5,7 @@ import org.bukkit.Server;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.Merchant;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An InventoryViewBuilder for creating merchant views
@@ -19,7 +19,7 @@ public interface MerchantInventoryViewBuilder<V extends InventoryView> extends I
     MerchantInventoryViewBuilder<V> copy();
 
     @Override
-    MerchantInventoryViewBuilder<V> title(final @NotNull Component title);
+    MerchantInventoryViewBuilder<V> title(final @Nullable Component title);
 
     /**
      * Adds a merchant to this builder

@@ -1,16 +1,15 @@
 package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.Translatable;
 import org.bukkit.UndefinedNullability;
 import org.bukkit.Utility;
@@ -19,6 +18,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -64,9 +64,25 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     // Paper end
 
     // Paper start - pdc
+    /**
+     * @see #editPersistentDataContainer(Consumer)
+     */
     @Override
     public io.papermc.paper.persistence.@NotNull PersistentDataContainerView getPersistentDataContainer() {
         return this.craftDelegate.getPersistentDataContainer();
+    }
+
+    /**
+     * Edits the {@link PersistentDataContainer} of this stack. The
+     * {@link PersistentDataContainer} instance is only valid inside the
+     * consumer.
+     *
+     * @param consumer the persistent data container consumer
+     * @return {@code true} if the edit was successful, {@code false} otherwise. Failure to edit the persistent data
+     * container may be caused by empty or invalid itemstacks.
+     */
+    public boolean editPersistentDataContainer(@NotNull Consumer<PersistentDataContainer> consumer) {
+        return this.craftDelegate.editPersistentDataContainer(consumer);
     }
     // Paper end - pdc
 

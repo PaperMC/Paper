@@ -27,9 +27,12 @@ public final class ItemComponentSanitizer {
      */
     static final Map<DataComponentType<?>, UnaryOperator<?>> SANITIZATION_OVERRIDES = Util.make(ImmutableMap.<DataComponentType<?>, UnaryOperator<?>>builder(), (map) -> {
             put(map, DataComponents.LODESTONE_TRACKER, empty(new LodestoneTracker(Optional.empty(), false))); // We need it to be present to keep the glint
-            put(map, DataComponents.ENCHANTMENTS, empty(dummyEnchantments())); // We need to keep it present to keep the glint
-            put(map, DataComponents.STORED_ENCHANTMENTS, empty(dummyEnchantments())); // We need to keep it present to keep the glint
             put(map, DataComponents.POTION_CONTENTS, ItemComponentSanitizer::sanitizePotionContents); // Custom situational serialization
+
+            if (MinecraftServer.getServer().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).size() > 0) {
+                put(map, DataComponents.ENCHANTMENTS, empty(dummyEnchantments())); // We need to keep it present to keep the glint
+                put(map, DataComponents.STORED_ENCHANTMENTS, empty(dummyEnchantments())); // We need to keep it present to keep the glint
+            }
         }
     ).build();
 

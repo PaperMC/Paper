@@ -1373,7 +1373,11 @@ public final class Bukkit {
      * Sets the radius, in blocks, around each worlds spawn point to protect.
      *
      * @param value new spawn radius, or 0 if none
+     * @deprecated has not functioned for a long time as the spawn radius is defined by the server.properties file.
+     * There is no API replacement for this method. It is generally recommended to implement "protection"-like behaviour
+     * via events or third-party plugin APIs.
      */
+    @Deprecated(since = "1.21.4", forRemoval = true)
     public static void setSpawnRadius(int value) {
         server.setSpawnRadius(value);
     }
@@ -2976,8 +2980,19 @@ public final class Bukkit {
     }
     // Paper end - Folia region threading API
 
+    /**
+     * @deprecated All methods on this class have been deprecated, see the individual methods for replacements.
+     */
+    @Deprecated(since = "1.21.4", forRemoval = true)
     @NotNull
     public static Server.Spigot spigot() {
         return server.spigot();
+    }
+
+    /**
+     * Restarts the server. If the server administrator has not configured restarting, the server will stop.
+     */
+    public static void restart() {
+        server.restart();
     }
 }

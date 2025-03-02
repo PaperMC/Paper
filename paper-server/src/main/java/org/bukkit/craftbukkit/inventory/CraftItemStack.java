@@ -2,10 +2,11 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import io.papermc.paper.adventure.PaperAdventure;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import io.papermc.paper.adventure.PaperAdventure;
+import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
@@ -16,17 +17,21 @@ import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentPredicate;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.component.PatchedDataComponentMap;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.bukkit.Material;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
+import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.jetbrains.annotations.NotNull;
 
 @DelegateDeserialization(ItemStack.class)
@@ -159,7 +164,6 @@ public final class CraftItemStack extends ItemStack {
     }
 
     public net.minecraft.world.item.ItemStack handle;
-    private boolean isForInventoryDrop;
 
     /**
      * Mirror
@@ -522,7 +526,7 @@ public final class CraftItemStack extends ItemStack {
     }
     // Paper end
 
-    // Paper start - pdc
+    public static final String PDC_CUSTOM_DATA_KEY = "PublicBukkitValues";
     private net.minecraft.nbt.CompoundTag getPdcTag() {
         if (this.handle == null) {
             return new net.minecraft.nbt.CompoundTag();
@@ -530,7 +534,7 @@ public final class CraftItemStack extends ItemStack {
         final net.minecraft.world.item.component.CustomData customData = this.handle.getOrDefault(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY);
         // getUnsafe is OK here because we are only ever *reading* the data so immutability is preserved
         //noinspection deprecation
-        return customData.getUnsafe().getCompound("PublicBukkitValues");
+        return customData.getUnsafe().getCompound(PDC_CUSTOM_DATA_KEY);
     }
 
     private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
@@ -550,7 +554,30 @@ public final class CraftItemStack extends ItemStack {
     public io.papermc.paper.persistence.PersistentDataContainerView getPersistentDataContainer() {
         return this.pdcView;
     }
-    // Paper end - pdc
+
+    @Override
+    public boolean editPersistentDataContainer(final Consumer<PersistentDataContainer> consumer) {
+        if (this.handle == null || this.handle.isEmpty()) return false;
+
+        final CraftPersistentDataContainer container = new CraftPersistentDataContainer(REGISTRY);
+        CustomData customData = this.handle.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
+        //noinspection deprecation // we copy only the pdc tag
+        final CompoundTag pdcTag = customData.getUnsafe().getCompound(PDC_CUSTOM_DATA_KEY).copy();
+        container.putAll(pdcTag);
+        consumer.accept(container);
+
+        final CompoundTag newPdcTag = container.toTagCompound();
+        if (!newPdcTag.isEmpty()) {
+            customData = customData.update(tag -> tag.put(PDC_CUSTOM_DATA_KEY, newPdcTag));
+        } else if (newPdcTag.isEmpty() && customData.contains(PDC_CUSTOM_DATA_KEY)) {
+            customData = customData.update(tag -> tag.remove(PDC_CUSTOM_DATA_KEY));
+        }
+
+        // mirror CraftMetaItem behavior of clearing component if it's empty.
+        this.handle.set(DataComponents.CUSTOM_DATA, customData.isEmpty() ? null : customData);
+        return true;
+    }
+
     // Paper start - data component API
     @Override
     public <T> T getData(final io.papermc.paper.datacomponent.DataComponentType.Valued<T> type) {

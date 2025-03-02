@@ -17,7 +17,7 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
 
     @Deprecated(since = "1.20.4", forRemoval = true)
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
-        this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).withCausingEntity(damager).withDirectEntity(damager).build(), damage);
+        this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), damage);
     }
 
     @Deprecated
@@ -29,7 +29,7 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
 
     @Deprecated(since = "1.20.4", forRemoval = true)
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
-        this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).withCausingEntity(damager).withDirectEntity(damager).build(), modifiers, modifierFunctions);
+        this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), modifiers, modifierFunctions);
     }
 
     @Deprecated
@@ -65,7 +65,7 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
      * {@inheritDoc}
      * <p>
      * The {@link DamageSource#getDirectEntity()} may be different from the {@link #getDamager()}
-     * if the Minecraft damage source did not originally include an damager entity, but one was included
+     * if the damage source did not originally include a damager entity, but one was included
      * for this event {@link #getDamager()}.
      */
     @Override

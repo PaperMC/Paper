@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.Merchant;
@@ -23,6 +24,11 @@ public class CraftMerchantCustom implements CraftMerchant {
     // Paper start
     public CraftMerchantCustom(net.kyori.adventure.text.Component title) {
         this.merchant = new MinecraftMerchant(title);
+        getMerchant().craftMerchant = this;
+    }
+
+    public CraftMerchantCustom() {
+        this.merchant = new MinecraftMerchant();
         getMerchant().craftMerchant = this;
     }
     // Paper end
@@ -53,6 +59,10 @@ public class CraftMerchantCustom implements CraftMerchant {
         public MinecraftMerchant(net.kyori.adventure.text.Component title) {
             Preconditions.checkArgument(title != null, "Title cannot be null");
             this.title = io.papermc.paper.adventure.PaperAdventure.asVanilla(title);
+        }
+
+        public MinecraftMerchant() {
+            this.title = EntityType.VILLAGER.getDescription();
         }
         // Paper end
 

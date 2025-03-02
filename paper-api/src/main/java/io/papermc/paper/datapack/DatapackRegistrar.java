@@ -19,11 +19,13 @@ import org.jspecify.annotations.Nullable;
  * is called anytime the game tries to discover datapacks at any of the
  * configured locations. This means that if a datapack should stay available to the server,
  * it must always be discovered whenever this event fires.
- * <p>An example of a plugin loading a datapack from within it's own jar is below</p>
+ * <p>
+ * An example of a plugin loading a datapack from within its own jar is below,
+ * assuming the datapack is included under {@code resources/pack} folder:
  * <pre>{@code
  * public class YourPluginBootstrap implements PluginBootstrap {
  *     @Override
- *     public void bootstrap(BoostrapContext context) {
+ *     public void bootstrap(BootstrapContext context) {
  *         final LifecycleEventManager<BootstrapContext> manager = context.getLifecycleManager();
  *         manager.registerEventHandler(LifecycleEvents.DATAPACK_DISCOVERY, event -> {
  *             DatapackRegistrar registrar = event.registrar();
@@ -39,6 +41,7 @@ import org.jspecify.annotations.Nullable;
  *     }
  * }
  * }</pre>
+ *
  * @see io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents#DATAPACK_DISCOVERY
  */
 @ApiStatus.NonExtendable

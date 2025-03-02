@@ -46,7 +46,7 @@ public class WrappedArgumentCommandNode<NMS, API> extends ArgumentCommandNode<Co
     @Override
     public void parse(final StringReader reader, final CommandContextBuilder<CommandSourceStack> contextBuilder) throws CommandSyntaxException {
         final int start = reader.getCursor();
-        final API result = this.pureArgumentType.parse(reader); // Use the api argument parser
+        final API result = this.pureArgumentType.parse(reader, contextBuilder.getSource()); // Use the api argument parser
         final ParsedArgument<CommandSourceStack, API> parsed = new ParsedArgument<>(start, reader.getCursor(), result); // Return an API parsed argument instead.
 
         contextBuilder.withArgument(this.getName(), parsed);

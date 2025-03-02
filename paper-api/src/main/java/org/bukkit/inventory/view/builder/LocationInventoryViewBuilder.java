@@ -4,7 +4,7 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.inventory.InventoryView;
 import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An InventoryViewBuilder that can be bound by location within the world
@@ -18,7 +18,7 @@ public interface LocationInventoryViewBuilder<V extends InventoryView> extends I
     LocationInventoryViewBuilder<V> copy();
 
     @Override
-    LocationInventoryViewBuilder<V> title(final @NotNull Component title);
+    LocationInventoryViewBuilder<V> title(final @Nullable Component title);
 
     /**
      * Determines whether or not the server should check if the player can reach

@@ -63,7 +63,7 @@
  
          this.level().broadcastEntityEvent(this, (byte)18);
      }
-@@ -220,23 +_,45 @@
+@@ -220,23 +_,44 @@
          if (breedOffspring != null) {
              breedOffspring.setBaby(true);
              breedOffspring.moveTo(this.getX(), this.getY(), this.getZ(), 0.0F, 0.0F);
@@ -74,43 +74,43 @@
 +            int experience = this.getRandom().nextInt(7) + 1;
 +            org.bukkit.event.entity.EntityBreedEvent entityBreedEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityBreedEvent(breedOffspring, this, mate, breeder, this.breedItem, experience);
 +            if (entityBreedEvent.isCancelled()) {
++                this.resetLove();
++                mate.resetLove();
 +                return;
 +            }
 +            experience = entityBreedEvent.getExperience();
 +            this.finalizeSpawnChildFromBreeding(level, mate, breedOffspring, experience);
 +            level.addFreshEntityWithPassengers(breedOffspring, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING);
-+            // CraftBukkit end
++            // CraftBukkit end - call EntityBreedEvent
          }
      }
  
      public void finalizeSpawnChildFromBreeding(ServerLevel level, Animal animal, @Nullable AgeableMob baby) {
 -        Optional.ofNullable(this.getLoveCause()).or(() -> Optional.ofNullable(animal.getLoveCause())).ifPresent(player -> {
-+        // CraftBukkit start
++        // CraftBukkit start - call EntityBreedEvent
 +        this.finalizeSpawnChildFromBreeding(level, animal, baby, this.getRandom().nextInt(7) + 1);
 +    }
++
 +    public void finalizeSpawnChildFromBreeding(ServerLevel level, Animal animal, @Nullable AgeableMob baby, int experience) {
-+        // CraftBukkit end
-+        // Paper start
++        // CraftBukkit end - call EntityBreedEvent
++        // Paper start - call EntityBreedEvent
 +        ServerPlayer player = this.getLoveCause();
 +        if (player == null) player = animal.getLoveCause();
 +        if (player != null) {
-+            // Paper end
++            // Paper end - call EntityBreedEvent
              player.awardStat(Stats.ANIMALS_BRED);
              CriteriaTriggers.BRED_ANIMALS.trigger(player, this, animal, baby);
 -        });
-+        } // Paper
++        } // Paper - call EntityBreedEvent
          this.setAge(6000);
          animal.setAge(6000);
          this.resetLove();
          animal.resetLove();
          level.broadcastEntityEvent(this, (byte)18);
-         if (level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
+-        if (level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
 -            level.addFreshEntity(new ExperienceOrb(level, this.getX(), this.getY(), this.getZ(), this.getRandom().nextInt(7) + 1));
-+            // CraftBukkit start - use event experience
-+            if (experience > 0) {
-+                level.addFreshEntity(new ExperienceOrb(level, this.getX(), this.getY(), this.getZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, player, baby)); // Paper
-+            }
-+            // CraftBukkit end
++        if (experience > 0 && level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - call EntityBreedEvent
++            level.addFreshEntity(new ExperienceOrb(level, this.getX(), this.getY(), this.getZ(), experience, org.bukkit.entity.ExperienceOrb.SpawnReason.BREED, player, baby)); // Paper - call EntityBreedEvent, add spawn context
          }
      }
  
