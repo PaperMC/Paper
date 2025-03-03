@@ -4,19 +4,39 @@
                  makeParticle(blockState, level, pos, 1.0F);
              }
          } else {
-+            // CraftBukkit start - Interact Lever
-+            boolean powered = state.getValue(LeverBlock.POWERED); // Old powered state
-+            org.bukkit.block.Block block = level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
-+            int old = (powered) ? 15 : 0;
-+            int current = (!powered) ? 15 : 0;
++            // Paper start - Call BlockRedstoneEvent
++            boolean wasPowered = state.getValue(LeverBlock.POWERED);
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
++            int oldCurrent = wasPowered ? 15 : 0;
++            int newCurrent = !wasPowered ? 15 : 0;
 +
-+            org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(block, old, current);
-+            level.getCraftServer().getPluginManager().callEvent(eventRedstone);
++            org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(block, oldCurrent, newCurrent);
++            event.callEvent();
 +
-+            if ((eventRedstone.getNewCurrent() > 0) != (!powered)) {
++            if ((event.getNewCurrent() > 0) == wasPowered) {
 +                return InteractionResult.SUCCESS;
 +            }
-+            // CraftBukkit end
++            // Paper end - Call BlockRedstoneEvent
              this.pull(state, level, pos, null);
          }
  
+@@ -109,7 +_,19 @@
+     @Override
+     protected void onExplosionHit(BlockState state, ServerLevel level, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> dropConsumer) {
+         if (explosion.canTriggerBlocks()) {
++            // Paper start - Call BlockRedstoneEvent
++            boolean wasPowered = state.getValue(LeverBlock.POWERED);
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
++            int oldCurrent = wasPowered ? 15 : 0;
++            int newCurrent = !wasPowered ? 15 : 0;
++
++            org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(block, oldCurrent, newCurrent);
++            event.callEvent();
++
++            if ((event.getNewCurrent() <= 0) == wasPowered) {
++            // Paper end - Call BlockRedstoneEvent
+             this.pull(state, level, pos, null);
++            } // Paper - Call BlockRedstoneEvent
+         }
+ 
+         super.onExplosionHit(state, level, pos, explosion, dropConsumer);
