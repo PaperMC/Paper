@@ -172,7 +172,7 @@
              }
  
              return null;
-@@ -359,26 +_,121 @@
+@@ -359,26 +_,131 @@
      }
  
      public void sendCommands(ServerPlayer player) {
@@ -245,6 +245,17 @@
          Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> commandNodeToSuggestionNode
      ) {
 -        for (CommandNode<CommandSourceStack> commandNode : rootCommandSource.getChildren()) {
++        // Paper start - support filling builders
++        this.fillUsableCommands(children, rootSuggestion::addChild, source, commandNodeToSuggestionNode);
++    }
++
++    private void fillUsableCommands(
++        java.util.Collection<CommandNode<CommandSourceStack>> children, // Paper - Perf: Async command map building; pass copy of children
++        Consumer<CommandNode<SharedSuggestionProvider>> rootSuggestion,
++        CommandSourceStack source,
++        Map<CommandNode<CommandSourceStack>, CommandNode<SharedSuggestionProvider>> commandNodeToSuggestionNode
++    ) {
++        // Paper end - support filling builders
 +        for (CommandNode<CommandSourceStack> commandNode : children) { // Paper - Perf: Async command map building; pass copy of children
 +            // Paper start - Brigadier API
 +            if (commandNode.clientNode != null) {
@@ -282,10 +293,9 @@
 +                    if (redirect.getCommand() != null) {
 +                        builder.executes(redirect.getCommand());
 +                    }
-+                    // Diff copied from LiteralCommand#createBuilder
-+                    for (final CommandNode<SharedSuggestionProvider> child : redirect.getChildren()) {
-+                        builder.then(child);
-+                    }
++                    // don't blindly copy over children
++                    this.fillUsableCommands(commandNode.getRedirect().getChildren(),
++                            builder::then, source, commandNodeToSuggestionNode);
 +
 +                    argumentBuilder = builder;
 +                }
@@ -300,9 +310,12 @@
  
                  if (argumentBuilder instanceof RequiredArgumentBuilder requiredArgumentBuilder
                      && requiredArgumentBuilder.getSuggestionsProvider() != null) {
-@@ -393,7 +_,7 @@
+@@ -391,9 +_,9 @@
+ 
+                 CommandNode<SharedSuggestionProvider> commandNode1 = argumentBuilder.build();
                  commandNodeToSuggestionNode.put(commandNode, commandNode1);
-                 rootSuggestion.addChild(commandNode1);
+-                rootSuggestion.addChild(commandNode1);
++                rootSuggestion.accept(commandNode1); // Paper - support filling builders
                  if (!commandNode.getChildren().isEmpty()) {
 -                    this.fillUsableCommands(commandNode, commandNode1, source, commandNodeToSuggestionNode);
 +                    this.fillUsableCommands(commandNode.getChildren(), commandNode1, source, commandNodeToSuggestionNode); // Paper - Perf: Async command map building; pass copy of children
