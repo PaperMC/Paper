@@ -7,6 +7,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -713,6 +714,13 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return Bukkit.getItemFactory().enchantWithLevels(this, levels, keySet, random);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param op transformation on value
+     * @return a hover event
+     * @throws IllegalArgumentException if the {@link ItemStack#getAmount()} is not between 1 and 99
+     */
     @NotNull
     @Override
     public net.kyori.adventure.text.event.HoverEvent<net.kyori.adventure.text.event.HoverEvent.ShowItem> asHoverEvent(final @NotNull java.util.function.UnaryOperator<net.kyori.adventure.text.event.HoverEvent.ShowItem> op) {
@@ -722,6 +730,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     /**
      * Get the formatted display name of the {@link ItemStack}.
      *
+     * @apiNote this component include a {@link net.kyori.adventure.text.event.HoverEvent item hover event}.
+     * When used in chat, make sure to follow the ItemStack rules regarding amount, type, and other properties.
      * @return display name of the {@link ItemStack}
      */
     public net.kyori.adventure.text.@NotNull Component displayName() {
