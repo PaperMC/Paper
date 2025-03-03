@@ -1,6 +1,8 @@
 package org.bukkit.event.entity;
 
 import java.util.List;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -12,39 +14,37 @@ import org.jetbrains.annotations.Nullable;
  */
 public class PlayerDeathEvent extends EntityDeathEvent {
     private int newExp = 0;
-    private net.kyori.adventure.text.Component deathMessage; // Paper - adventure
+    private boolean displayDeathMessage;
+    private Component deathChatMessage;
+    private Component deathScreenMessage;
     private int newLevel = 0;
     private int newTotalExp = 0;
     private boolean keepLevel = false;
     private boolean keepInventory = false;
     private boolean doExpDrop; // Paper - shouldDropExperience API
-    // Paper start - adventure
+
     @org.jetbrains.annotations.ApiStatus.Internal
-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final @Nullable net.kyori.adventure.text.Component deathMessage) {
-        this(player, damageSource, drops, droppedExp, 0, deathMessage);
+    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final boolean displayDeathMessage, final @Nullable Component deathMessage) {
+        this(player, damageSource, drops, droppedExp, newExp, 0, 0, displayDeathMessage, deathMessage);
     }
 
     @org.jetbrains.annotations.ApiStatus.Internal
-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final @Nullable net.kyori.adventure.text.Component deathMessage) {
-        this(player, damageSource, drops, droppedExp, newExp, 0, 0, deathMessage);
-    }
-
-    @org.jetbrains.annotations.ApiStatus.Internal
-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage) {
+    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final boolean displayDeathMessage, final @Nullable Component deathMessage) {
         // Paper start - shouldDropExperience API
-        this(player, damageSource, drops, droppedExp, newExp, newTotalExp, newLevel, deathMessage, true);
+        this(player, damageSource, drops, droppedExp, newExp, newTotalExp, newLevel, displayDeathMessage, deathMessage, true);
     }
     @org.jetbrains.annotations.ApiStatus.Internal
-    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage, final boolean doExpDrop) {
+    public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final boolean displayDeathMessage, final @Nullable Component deathMessage, final boolean doExpDrop) {
         // Paper end - shouldDropExperience API
         super(player, damageSource, drops, droppedExp);
         this.newExp = newExp;
         this.newTotalExp = newTotalExp;
         this.newLevel = newLevel;
-        this.deathMessage = deathMessage;
+        this.displayDeathMessage = displayDeathMessage;
+        this.deathChatMessage = deathMessage;
+        this.deathScreenMessage = deathMessage;
         this.doExpDrop = doExpDrop; // Paper - shouldDropExperience API
     }
-    // Paper end - adventure
 
     @Deprecated // Paper
     public PlayerDeathEvent(@NotNull final Player player, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp, @Nullable final String deathMessage) {
@@ -69,7 +69,9 @@ public class PlayerDeathEvent extends EntityDeathEvent {
         this.newExp = newExp;
         this.newTotalExp = newTotalExp;
         this.newLevel = newLevel;
-        this.deathMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage); // Paper
+        this.displayDeathMessage = true;
+        this.deathChatMessage = LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage); // Paper
+        this.deathScreenMessage = deathChatMessage;
         this.doExpDrop = doExpDrop; // Paper - shouldDropExperience API
     }
 
@@ -143,49 +145,116 @@ public class PlayerDeathEvent extends EntityDeathEvent {
 
     // Paper end - improve death events
 
-    // Paper start - adventure
     /**
-     * Set the death message that will appear to everyone on the server.
+     * Get whether the death message should be shown.
+     * By default, this is determined by {@link org.bukkit.GameRule#SHOW_DEATH_MESSAGES}.
+     *
+     * @return whether the death message should be shown
+     * @see #deathChatMessage()
+     * @see #deathScreenMessage()
+     */
+    public boolean shouldDisplayDeathMessage() {
+        return displayDeathMessage;
+    }
+
+    /**
+     * Set whether the death message should be shown.
+     * By default, this is determined by {@link org.bukkit.GameRule#SHOW_DEATH_MESSAGES}.
+     *
+     * @param displayDeathMessage whether the death message should be shown
+     * @see #deathChatMessage()
+     * @see #deathScreenMessage()
+     */
+    public void setShouldDisplayDeathMessage(boolean displayDeathMessage) {
+        this.displayDeathMessage = displayDeathMessage;
+    }
+
+    /**
+     * Set the death message that will appear in chat and on death screen to everyone on the server.
      *
      * @param deathMessage Component message to appear to other players on the server.
      */
-    public void deathMessage(final net.kyori.adventure.text.@Nullable Component deathMessage) {
-        this.deathMessage = deathMessage;
+    public void deathMessage(final @Nullable Component deathMessage) {
+        this.deathChatMessage = deathMessage;
+        this.deathScreenMessage = deathMessage;
     }
 
     /**
      * Get the death message that will appear to everyone on the server.
      *
      * @return Component message to appear to other players on the server.
+     * @deprecated in favour of {@link #deathChatMessage()} and {@link #deathScreenMessage()}
      */
-    public net.kyori.adventure.text.@Nullable Component deathMessage() {
-        return this.deathMessage;
+    @Deprecated
+    public @Nullable Component deathMessage() {
+        return this.deathChatMessage;
     }
-    // Paper end - adventure
 
     /**
-     * Set the death message that will appear to everyone on the server.
+     * Set the death message that will appear in chat and on death screen to everyone on the server.
      *
      * @param deathMessage Message to appear to other players on the server.
-     * @deprecated in favour of {@link #deathMessage(net.kyori.adventure.text.Component)}
+     * @deprecated in favour of {@link #deathMessage(Component)}
      */
-    @Deprecated // Paper
+    @Deprecated
     public void setDeathMessage(@Nullable String deathMessage) {
-        this.deathMessage = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage); // Paper
+        this.deathChatMessage = this.deathScreenMessage = LegacyComponentSerializer.legacySection().deserializeOrNull(deathMessage);
     }
 
     /**
      * Get the death message that will appear to everyone on the server.
      *
      * @return Message to appear to other players on the server.
-     * @deprecated in favour of {@link #deathMessage()}
+     * @deprecated in favour of {@link #deathChatMessage()} and {@link #deathScreenMessage()}
      */
     @Nullable
-    @Deprecated // Paper
+    @Deprecated
     public String getDeathMessage() {
-        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serializeOrNull(this.deathMessage); // Paper
+        return LegacyComponentSerializer.legacySection().serializeOrNull(this.deathChatMessage);
     }
-    // Paper end
+
+    /**
+     * Set the death message that will appear in the chat.
+     * <p>
+     * If set to null, no message will be sent to chat.
+     *
+     * @param deathChatMessage Message to appear in the chat when the player dies.
+     */
+    public void deathChatMessage(@Nullable Component deathChatMessage) {
+        this.deathChatMessage = deathChatMessage;
+    }
+
+    /**
+     * Get the death message that will appear in the chat.
+     *
+     * @return Message to appear in chat.
+     */
+    public @Nullable Component deathChatMessage() {
+        return this.deathChatMessage;
+    }
+    /**
+     * Set the death message that will appear on the death screen of the dying player.
+     * <p>
+     * If set to null, no message will be shown to the dying player.
+     * <p>
+     * If the message exceeds 256 characters it will be truncated.
+     *
+     * @param deathScreenMessage Message to appear on the death screen to the dying player.
+     */
+    public void deathScreenMessage(@Nullable Component deathScreenMessage) {
+        this.deathScreenMessage = deathScreenMessage;
+    }
+
+    /**
+     * Get the death message that will appear on the death screen of the dying player.
+     * By default, it is the same value as {@link #deathChatMessage()}.
+     *
+     * @return Message to appear on the death screen to the dying player.
+     */
+    public @Nullable Component deathScreenMessage() {
+        return this.deathScreenMessage;
+    }
+
     /**
      * Gets how much EXP the Player should have at respawn.
      * <p>
