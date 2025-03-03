@@ -8,6 +8,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import io.papermc.paper.world.damagesource.CombatTracker;
+import io.papermc.paper.world.damagesource.PaperCombatTrackerWrapper;
+import io.papermc.paper.world.damagesource.FallLocationType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -20,7 +23,6 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
@@ -90,10 +92,14 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+
+    private final PaperCombatTrackerWrapper combatTracker;
     private CraftEntityEquipment equipment;
 
     public CraftLivingEntity(final CraftServer server, final net.minecraft.world.entity.LivingEntity entity) {
         super(server, entity);
+
+        this.combatTracker = new PaperCombatTrackerWrapper(entity.getCombatTracker());
 
         if (entity instanceof Mob || entity instanceof ArmorStand) {
             this.equipment = new CraftEntityEquipment(this);
@@ -1211,4 +1217,15 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return this.getHandle().canUseSlot(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot));
     }
     // Paper end - Expose canUseSlot
+
+    @Override
+    public CombatTracker getCombatTracker() {
+        return this.combatTracker;
+    }
+
+    @Override
+    public FallLocationType calculateFallLocationType() {
+        net.minecraft.world.damagesource.FallLocation fallLocation = net.minecraft.world.damagesource.FallLocation.getCurrentFallLocation(this.getHandle());
+        return fallLocation == null ? FallLocationType.GENERIC : PaperCombatTrackerWrapper.minecraftToPaper(fallLocation);
+    }
 }
