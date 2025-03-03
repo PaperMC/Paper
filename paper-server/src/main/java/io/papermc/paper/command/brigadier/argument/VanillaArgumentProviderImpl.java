@@ -74,6 +74,8 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.GameMode;
@@ -172,7 +174,13 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     @Override
     public ArgumentType<BlockState> blockState() {
         return this.wrap(BlockStateArgument.block(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
-            return CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), BlockPos.ZERO, result.getState(), result.tag);
+            if (!result.getState().hasBlockEntity()) {
+                return CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), BlockPos.ZERO, result.getState(), null);
+            }
+
+            final BlockEntity blockEntity = ((EntityBlock) result.getState().getBlock()).newBlockEntity(BlockPos.ZERO, result.getState());
+            blockEntity.loadWithComponents(result.tag, CraftRegistry.getMinecraftRegistry());
+            return CraftBlockStates.getBlockState(null, BlockPos.ZERO, result.getState(), blockEntity);
         });
     }
 
