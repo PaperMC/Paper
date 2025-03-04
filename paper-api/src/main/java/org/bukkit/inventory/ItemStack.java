@@ -1307,6 +1307,18 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
+     * Copies the values of components from the provided ItemStack. Will only copy the value of components from the
+     * source ItemStack that are set or overridden.
+     *
+     * @param source the item stack to copy from
+     * @param filter predicate for which components to copy
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public void copyData(final @NotNull ItemStack source, final java.util.function.@Nullable Predicate<io.papermc.paper.datacomponent.@NotNull DataComponentType> filter) {
+        this.craftDelegate.copyData(source, filter);
+    }
+
+    /**
      * Checks if the data component type is overridden from the default for the
      * item type.
      *
