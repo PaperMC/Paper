@@ -1,25 +1,11 @@
 --- a/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -365,12 +_,33 @@
+@@ -365,12 +_,21 @@
                  if (state.canSurvive(level, pos)) {
                      this.updatePowerStrength(level, pos, state, orientation, false);
                  } else {
 -                    dropResources(state, level, pos);
-+                    // Paper start - BlockDestroyEvent
-+                    com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), level.getFluidState(pos).createLegacyBlock().createCraftBlockData(), state.createCraftBlockData(), 0, true);
-+                    event.setPlayEffect(false);
-+                    if (!event.callEvent()) {
-+                        return;
-+                    }
-+                    if (event.playEffect()) {
-+                        level.levelEvent(2001, pos, Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getEffectBlock()).getState()));
-+                    }
-+                    if (event.willDrop()) {
-+                        level.expToDrop = event.getExpToDrop();
-+                        dropResources(state, level, pos);
-+                        level.expToDrop = 0;
-+                    }
-+                    // Paper end - BlockDestroyEvent
++                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockDestroyEvent(this, level, state, pos, null).isCancelled()) return; // Paper - call BlockDestroyEvent for all blocks
                      level.removeBlock(pos, false);
                  }
              }
@@ -29,7 +15,9 @@
 +    // Paper start - BlockDestroyEvent
 +    @Override
 +    public int getExpDrop(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos, net.minecraft.world.item.ItemStack stack, boolean dropExperience) {
-+        return level.expToDrop;
++        Integer expToDrop = level.expToDrop;
++        level.expToDrop = null;
++        return expToDrop == null ? super.getExpDrop(state, level, pos, stack, dropExperience) : expToDrop;
 +    }
 +    // Paper end - BlockDestroyEvent
  
