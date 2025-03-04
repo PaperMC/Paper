@@ -19,7 +19,7 @@
                  level.setBlock(pos, state.setValue(POWERED, Boolean.valueOf(true)), 2);
                  if (!shouldTurnOn) {
                      level.scheduleTick(pos, this, this.getDelay(state), TickPriority.VERY_HIGH);
-@@ -86,7 +_,19 @@
+@@ -86,7 +_,22 @@
              this.checkTickOnNeighbor(level, pos, state);
          } else {
              BlockEntity blockEntity = state.hasBlockEntity() ? level.getBlockEntity(pos) : null;
@@ -28,14 +28,17 @@
 +            // Paper start - BlockDestroyEvent
 +            com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), level.getFluidState(pos).createLegacyBlock().createCraftBlockData(), state.createCraftBlockData(), 0, true);
 +            event.setPlayEffect(false);
-+            if (!event.callEvent())
++            if (!event.callEvent()) {
 +                return;
-+            level.expToDrop = event.getExpToDrop();
-+            if (event.playEffect())
++            }
++            if (event.playEffect()) {
 +                level.levelEvent(2001, pos, Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getEffectBlock()).getState()));
-+            if (event.willDrop())
++            }
++            if (event.willDrop()) {
++                level.expToDrop = event.getExpToDrop();
 +                dropResources(state, level, pos, blockEntity);;
-+            level.expToDrop = 0;
++                level.expToDrop = 0;
++            }
 +            // Paper end - BlockDestroyEvent
              level.removeBlock(pos, false);
  
@@ -47,8 +50,8 @@
 +
 +    // Paper start - BlockDestroyEvent
 +    @Override
-+    public int getExpDrop(final BlockState iblockdata, final ServerLevel worldserver, final BlockPos blockposition, final ItemStack itemstack, final boolean flag) {
-+        return worldserver.expToDrop;
++    public int getExpDrop(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos, net.minecraft.world.item.ItemStack stack, boolean dropExperience) {
++        return level.expToDrop;
 +    }
 +    // Paper end - BlockDestroyEvent
  
