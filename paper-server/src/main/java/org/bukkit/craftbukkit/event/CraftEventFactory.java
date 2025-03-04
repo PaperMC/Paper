@@ -2290,7 +2290,6 @@ public class CraftEventFactory {
         if (event.willDrop()) {
             level.expToDrop = event.getExpToDrop();
             net.minecraft.world.level.block.Block.dropResources(state, level, pos, blockEntity);
-            level.expToDrop = 0;
         }
         return true;
     }
