@@ -649,6 +649,25 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
+    public void copyDataFrom(final ItemStack source, final java.util.function.Predicate<io.papermc.paper.datacomponent.DataComponentType> filter) {
+        if (this.isEmpty() || source.isEmpty()) {
+            return;
+        }
+
+        CraftItemStack nmsStack = getCraftStack(source);
+
+        DataComponentMap components = nmsStack.handle.getComponents();
+        if (filter != null) {
+            components = components.filter(nms -> {
+                io.papermc.paper.datacomponent.DataComponentType api = io.papermc.paper.datacomponent.PaperDataComponentType.minecraftToBukkit(nms);
+                return filter.test(api);
+            });
+        }
+
+        this.handle.applyComponents(components);
+    }
+
+    @Override
     public boolean isDataOverridden(final io.papermc.paper.datacomponent.DataComponentType type) {
         if (this.isEmpty()) {
             return false;
