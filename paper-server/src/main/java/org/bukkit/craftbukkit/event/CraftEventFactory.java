@@ -2278,11 +2278,11 @@ public class CraftEventFactory {
     // Paper end - add EntityFertilizeEggEvent
 
     // method used for blocks that don't use the usual Level#destoryBlock method
-    public static BlockDestroyEvent callBlockDestroyEvent(net.minecraft.world.level.block.Block block, Level level, net.minecraft.world.level.block.state.BlockState state, BlockPos pos, BlockEntity blockEntity) {
+    public static boolean callBlockDestroyEvent(net.minecraft.world.level.block.Block block, Level level, net.minecraft.world.level.block.state.BlockState state, BlockPos pos, BlockEntity blockEntity) {
         com.destroystokyo.paper.event.block.BlockDestroyEvent event = new com.destroystokyo.paper.event.block.BlockDestroyEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), level.getFluidState(pos).createLegacyBlock().createCraftBlockData(), state.createCraftBlockData(), level instanceof ServerLevel serverLevel ? block.getExpDrop(state, serverLevel, pos, ItemStack.EMPTY, true) : 0, true);
         event.setPlayEffect(false);
         if (!event.callEvent()) {
-            return event;
+            return false;
         }
         if (event.playEffect()) {
             level.levelEvent(2001, pos, net.minecraft.world.level.block.Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getEffectBlock()).getState()));
@@ -2292,6 +2292,6 @@ public class CraftEventFactory {
             net.minecraft.world.level.block.Block.dropResources(state, level, pos, blockEntity);
             level.expToDrop = 0;
         }
-        return event;
+        return true;
     }
 }
