@@ -558,15 +558,11 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     @Deprecated(since = "1.20.4")
     public Location getBedSpawnLocation();
 
-    /**
-     * Gets the Location where the player will spawn at, null if they
-     * don't have a valid respawn point.
-     *
-     * @return respawn location if exists, otherwise null.
-     */
     @Nullable
     @Override
-    public Location getRespawnLocation();
+    default Location getRespawnLocation() {
+        return this.getRespawnLocation(true);
+    }
 
     /**
      * Sets the Location where the player will spawn at their bed.
