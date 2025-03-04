@@ -8,26 +8,21 @@
          if (!level.isClientSide) {
              int signalForState = this.getSignalForState(state);
              if (signalForState == 0) {
-@@ -93,6 +_,19 @@
+@@ -93,7 +_,14 @@
          int signalStrength = this.getSignalStrength(level, pos);
          boolean flag = currentSignal > 0;
          boolean flag1 = signalStrength > 0;
-+        
-+        // CraftBukkit start - Interact Pressure Plate
-+        org.bukkit.World bworld = level.getWorld();
-+        org.bukkit.plugin.PluginManager manager = level.getCraftServer().getPluginManager();
 +
-+        if (flag != flag1) {
-+            org.bukkit.event.block.BlockRedstoneEvent eventRedstone = new org.bukkit.event.block.BlockRedstoneEvent(bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()), currentSignal, signalStrength);
-+            manager.callEvent(eventRedstone);
-+
-+            flag1 = eventRedstone.getNewCurrent() > 0;
-+            signalStrength = eventRedstone.getNewCurrent();
-+        }
-+        // CraftBukkit end
          if (currentSignal != signalStrength) {
++            // CraftBukkit start
++            org.bukkit.event.block.BlockRedstoneEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, currentSignal, signalStrength);
++
++            signalStrength = event.getNewCurrent();
++            flag1 = signalStrength > 0;
++            // CraftBukkit end
              BlockState blockState = this.setSignalForState(state, signalStrength);
              level.setBlock(pos, blockState, 2);
+             this.updateNeighbours(level, pos);
 @@ -145,7 +_,13 @@
      }
  
