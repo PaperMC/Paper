@@ -1,9 +1,14 @@
 package io.papermc.paper;
 
+import io.papermc.paper.world.damagesource.CombatEntry;
+import io.papermc.paper.world.damagesource.FallLocationType;
 import net.kyori.adventure.util.Services;
 import org.bukkit.damage.DamageEffect;
+import org.bukkit.damage.DamageSource;
+import org.bukkit.entity.LivingEntity;
 import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Static bridge to the server internals.
@@ -35,5 +40,28 @@ public interface InternalAPIBridge {
      * @return the damage effect.
      */
     DamageEffect getDamageEffect(String key);
+
+    /**
+     * Creates a new combat entry.
+     * <p>
+     * The fall location and fall distance will be calculated from the entity's current state.
+     *
+     * @param entity entity
+     * @param damageSource damage source
+     * @param damage damage amount
+     * @return new combat entry
+     */
+    CombatEntry createCombatEntry(LivingEntity entity, DamageSource damageSource, float damage);
+
+    /**
+     * Creates a new combat entry
+     *
+     * @param damageSource damage source
+     * @param damage damage amount
+     * @param fallLocationType fall location type
+     * @param fallDistance fall distance
+     * @return combat entry
+     */
+    CombatEntry createCombatEntry(DamageSource damageSource, float damage, @Nullable FallLocationType fallLocationType, float fallDistance);
 }
 
