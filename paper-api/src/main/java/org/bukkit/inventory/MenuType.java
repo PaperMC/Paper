@@ -116,7 +116,7 @@ public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDepe
      */
     MenuType.Typed<InventoryView, LocationInventoryViewBuilder<InventoryView>> SHULKER_BOX = get("shulker_box");
     /**
-     * A MenuType which represents a smithing.
+     * A MenuType which represents a smithing table.
      */
     MenuType.Typed<InventoryView, LocationInventoryViewBuilder<InventoryView>> SMITHING = get("smithing");
     /**
