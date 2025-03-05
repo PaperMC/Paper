@@ -212,7 +212,7 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          */
         OMINOUS_ITEM_SPAWNER,
         /**
-         * When an entity spawns from a mob bucket
+         * When an entity spawns from a bucket
          */
         BUCKET,
         // Paper end - Fixes and additions to the SpawnReason API
