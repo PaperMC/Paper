@@ -15,8 +15,16 @@ public record DataComponentAdapter<NMS, API>(
 ) {
     static final Function<Void, Unit> API_TO_UNIT_CONVERTER = $ -> Unit.INSTANCE;
 
+    static final Function API_TO_UNIMPLEMENTED_CONVERTER = $ -> {
+        throw new UnsupportedOperationException("Cannot convert an API value to an unimplemented type");
+    };
+
     public boolean isValued() {
         return this.apiToVanilla != API_TO_UNIT_CONVERTER;
+    }
+
+    public boolean isUnimplemented() {
+        return this.apiToVanilla == API_TO_UNIMPLEMENTED_CONVERTER;
     }
 
     public NMS toVanilla(final API value) {
