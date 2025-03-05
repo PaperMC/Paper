@@ -148,6 +148,7 @@ public interface BukkitScheduler {
      *
      * @param taskId Id number of task to be removed
      */
+    @Deprecated
     public void cancelTask(int taskId);
 
     /**
@@ -172,6 +173,7 @@ public interface BukkitScheduler {
      * <p>
      * @return If the task is currently running.
      */
+    @Deprecated
     public boolean isCurrentlyRunning(int taskId);
 
     /**
@@ -185,6 +187,7 @@ public interface BukkitScheduler {
      * <p>
      * @return If the task is queued to be run.
      */
+    @Deprecated
     public boolean isQueued(int taskId);
 
     /**
