@@ -25,7 +25,7 @@ public interface CombatTracker {
 
     /**
      * Gets the list of recorded combat entries.
-     * <br>
+     * <p>
      * The returned list is a copy, so any modifications
      * to its contents won't affect this entity's
      * combat history.
@@ -37,7 +37,7 @@ public interface CombatTracker {
 
     /**
      * Sets the entity's combat history.
-     * <br>
+     * <p>
      * Note that overriding the entity's combat history won't
      * have an effect on the entity's current or new combat state.
      * Reset the current combat state and register new combat entries instead
