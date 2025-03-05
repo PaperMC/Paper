@@ -27,7 +27,8 @@ public abstract class BukkitRunnable implements Runnable {
      * @throws IllegalStateException if task was not scheduled yet
      */
     public synchronized void cancel() throws IllegalStateException {
-        Bukkit.getScheduler().cancelTask(getTaskId());
+        checkScheduled();
+        task.cancel();
     }
 
     /**

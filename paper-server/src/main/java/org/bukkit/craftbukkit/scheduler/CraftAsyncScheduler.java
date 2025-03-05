@@ -43,7 +43,6 @@ public class CraftAsyncScheduler extends CraftScheduler {
             new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %1$d").build());
     private final Executor management = Executors.newSingleThreadExecutor(new ThreadFactoryBuilder()
             .setNameFormat("Craft Async Scheduler Management Thread").build());
-    private final List<CraftTask> temp = new ArrayList<>();
 
     CraftAsyncScheduler() {
         super(true);
@@ -58,25 +57,25 @@ public class CraftAsyncScheduler extends CraftScheduler {
 
     private synchronized void removeTask(int taskId) {
         parsePending();
-        this.pending.removeIf((task) -> {
+        for (Iterator<CraftTask> iterator = this.pending.iterator(); iterator.hasNext(); ) {
+            CraftTask task = iterator.next();
             if (task.getTaskId() == taskId) {
                 task.cancel0();
-                return true;
+                iterator.remove();
+                break;
             }
-            return false;
-        });
+        }
     }
 
     @Override
     public void mainThreadHeartbeat() {
-        this.currentTick++;
-        this.management.execute(() -> this.runTasks(currentTick));
+        this.management.execute(() -> this.runTasks(now()));
     }
 
     private synchronized void runTasks(int currentTick) {
         parsePending();
-        while (!this.pending.isEmpty() && this.pending.peek().getNextRun() <= currentTick) {
-            CraftTask task = this.pending.remove();
+        final List<CraftTask> temp = new ArrayList<>();
+        this.pending.dropAll(task -> {
             if (executeTask(task)) {
                 final long period = task.getPeriod();
                 if (period > 0) {
@@ -85,9 +84,8 @@ public class CraftAsyncScheduler extends CraftScheduler {
                 }
             }
             parsePending();
-        }
-        this.pending.addAll(temp);
-        temp.clear();
+        });
+        temp.forEach(pending::push);
     }
 
     private boolean executeTask(CraftTask task) {

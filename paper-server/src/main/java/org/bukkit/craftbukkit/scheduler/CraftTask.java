@@ -6,9 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
-public class CraftTask implements BukkitTask, Runnable { // Spigot
-
-    private volatile CraftTask next = null;
+public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { // Spigot
     public static final int ERROR = 0;
     public static final int NO_REPEATING = -1;
     public static final int CANCEL = -2;
@@ -24,35 +22,25 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
      */
     private volatile long period;
     private long nextRun;
-    public final Runnable rTask;
-    public final Consumer<BukkitTask> cTask;
+    private final Consumer<? super BukkitTask> task;
     private final Plugin plugin;
     private final int id;
     private final long createdAt = System.nanoTime();
 
-    CraftTask() {
-        this(null, null, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
+    CraftTask(final Runnable task) {
+        this(null,
+            t -> task.run(),
+            CraftTask.NO_REPEATING,
+            CraftTask.NO_REPEATING
+        );
     }
 
-    CraftTask(final Object task) {
-        this(null, task, CraftTask.NO_REPEATING, CraftTask.NO_REPEATING);
-    }
-
-    CraftTask(final Plugin plugin, final Object task, final int id, final long period) {
+    CraftTask(final Plugin plugin,
+              final Consumer<? super BukkitTask> task,
+              final int id,
+              final long period) {
         this.plugin = plugin;
-        if (task instanceof Runnable) {
-            this.rTask = (Runnable) task;
-            this.cTask = null;
-        } else if (task instanceof Consumer) {
-            this.cTask = (Consumer<BukkitTask>) task;
-            this.rTask = null;
-        } else if (task == null) {
-            // Head or Future task
-            this.rTask = null;
-            this.cTask = null;
-        } else {
-            throw new AssertionError("Illegal task class " + task);
-        }
+        this.task = task;
         this.id = id;
         this.period = period;
     }
@@ -74,10 +62,8 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
 
     @Override
     public void run() {
-        if (this.rTask != null) {
-            this.rTask.run();
-        } else {
-            this.cTask.accept(this);
+        if (task != null) {
+            task.accept(this);
         }
     }
 
@@ -101,18 +87,6 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
         this.nextRun = nextRun;
     }
 
-    CraftTask getNext() {
-        return this.next;
-    }
-
-    void setNext(CraftTask next) {
-        this.next = next;
-    }
-
-    Class<?> getTaskClass() {
-        return (this.rTask != null) ? this.rTask.getClass() : ((this.cTask != null) ? this.cTask.getClass() : null);
-    }
-
     @Override
     public boolean isCancelled() {
         return (this.period == CraftTask.CANCEL);
@@ -133,4 +107,13 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
         return true;
     }
 
+    @Override
+    public int compareTo(final CraftTask o) {
+        if (o == this) {
+            return 0;
+        }
+        int value = Long.compare(getNextRun(), o.getNextRun());
+        // If the tasks should run on the same tick they should be run FIFO
+        return value != 0 ? value : Long.compare(createdAt, o.createdAt);
+    }
 }

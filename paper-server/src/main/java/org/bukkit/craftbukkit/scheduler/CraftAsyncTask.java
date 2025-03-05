@@ -3,8 +3,10 @@ package org.bukkit.craftbukkit.scheduler;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scheduler.BukkitWorker;
 
 class CraftAsyncTask extends CraftTask {
@@ -12,7 +14,10 @@ class CraftAsyncTask extends CraftTask {
     private final LinkedList<BukkitWorker> workers = new LinkedList<BukkitWorker>();
     private final Map<Integer, CraftTask> runners;
 
-    CraftAsyncTask(final Map<Integer, CraftTask> runners, final Plugin plugin, final Object task, final int id, final long delay) {
+    CraftAsyncTask(final Map<Integer, CraftTask> runners,
+                   final Plugin plugin,
+                   final Consumer<? super BukkitTask> task,
+                   final int id, final long delay) {
         super(plugin, task, id, delay);
         this.runners = runners;
     }
