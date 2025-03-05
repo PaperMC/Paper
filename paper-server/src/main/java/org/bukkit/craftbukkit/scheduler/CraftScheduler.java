@@ -4,7 +4,6 @@ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
 import com.destroystokyo.paper.exception.ServerSchedulerException;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,7 +47,7 @@ public class CraftScheduler implements BukkitScheduler {
      */
     private final AtomicLong ids = new AtomicLong();
 
-    private final WorkQueue external = new HdTlWorkQueue();
+    private final WorkQueue external = new LinkedWorkQueue();
     /**
      * Main thread logic only
      */
@@ -250,38 +249,9 @@ public class CraftScheduler implements BukkitScheduler {
         if (task != null) {
             cancelTask(task);
         } else {
-            task = new CraftTask(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        if (!this.check(CraftScheduler.this.temp)) {
-                            this.check(CraftScheduler.this.pending);
-                        }
-                    }
-
-                    private boolean check(final Iterable<CraftTask> collection) {
-                        final Iterator<CraftTask> tasks = collection.iterator();
-                        while (tasks.hasNext()) {
-                            final CraftTask task = tasks.next();
-                            if (task.getTaskId() == taskId) {
-                                task.cancel0();
-                                tasks.remove();
-                                if (task.isSync()) {
-                                    CraftScheduler.this.runners.remove(taskId);
-                                }
-                                return true;
-                            }
-                        }
-                        return false;
-                    }
-                });
-            this.handle(task, 0L);
             for (CraftTask taskPending : this.external) {
-                if (taskPending == task) {
-                    return;
-                }
                 if (taskPending.getTaskId() == taskId) {
-                    taskPending.cancel0();
+                    cancelTask(taskPending);
                 }
             }
         }
@@ -295,39 +265,14 @@ public class CraftScheduler implements BukkitScheduler {
             this.asyncScheduler.cancelTasks(plugin);
         }
         // Paper end
-        final CraftTask task = new CraftTask(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        this.check(CraftScheduler.this.pending);
-                        this.check(CraftScheduler.this.temp);
-                    }
-                    void check(final Iterable<CraftTask> collection) {
-                        final Iterator<CraftTask> tasks = collection.iterator();
-                        while (tasks.hasNext()) {
-                            final CraftTask task = tasks.next();
-                            if (task.getOwner().equals(plugin)) {
-                                task.cancel0();
-                                tasks.remove();
-                                if (task.isSync()) {
-                                    CraftScheduler.this.runners.remove(task.getTaskId());
-                                }
-                            }
-                        }
-                    }
-                });
-        this.handle(task, 0L);
         for (CraftTask taskPending : this.external) {
-            if (taskPending == task) {
-                break;
-            }
             if (taskPending.getTaskId() != -1 && taskPending.getOwner().equals(plugin)) {
-                taskPending.cancel0();
+                cancelTask(taskPending);
             }
         }
         for (CraftTask runner : this.runners.values()) {
             if (runner.getOwner().equals(plugin)) {
-                runner.cancel0();
+                cancelTask(runner);
             }
         }
     }
@@ -442,7 +387,6 @@ public class CraftScheduler implements BukkitScheduler {
                 if (task.isSync()) {
                     this.runners.remove(task.getTaskId(), task);
                 }
-                this.parsePending();
                 return;
             }
             if (task.isSync()) {
@@ -467,7 +411,6 @@ public class CraftScheduler implements BukkitScheduler {
                 } finally {
                     this.currentTask = null;
                 }
-                this.parsePending();
             } else {
                 // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
                 task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Paper"); // Paper
@@ -517,9 +460,7 @@ public class CraftScheduler implements BukkitScheduler {
 
     void parsePending() { // Paper
         external.dropAll(task -> {
-            if (task.getTaskId() == -1) {
-                task.run();
-            } else if (task.getPeriod() >= CraftTask.NO_REPEATING) {
+            if (task.getPeriod() >= CraftTask.NO_REPEATING) {
                 this.pending.push(task);
                 this.runners.put(task.getTaskId(), task);
             } else {

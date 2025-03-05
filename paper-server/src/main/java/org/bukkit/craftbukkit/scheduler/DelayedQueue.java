@@ -23,7 +23,7 @@ final class DelayedQueue implements WorkQueue {
     }
 
     @Override
-    public boolean remove(CraftTask task) {
+    public boolean remove(final CraftTask task) {
         // todo: heapIndex for fast remove
         return this.pq.remove(task);
     }

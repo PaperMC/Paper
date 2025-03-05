@@ -4,15 +4,16 @@ import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-final class HdTlWorkQueue implements WorkQueue {
-    private volatile Node head = new Node(null);
-    private final AtomicReference<Node> tail = new AtomicReference<>(this.head);
+final class LinkedWorkQueue implements WorkQueue {
+    private final AtomicReference<Node> head = new AtomicReference<>();
 
     @Override
     public boolean tryPush(final CraftTask task) {
-        final Node node = new Node(task);
-        Node last = tail.getAndSet(node);
-        last.link(node);
+        final Node newNode = new Node(task);
+        head.updateAndGet(h -> {
+            newNode.link(h);
+            return newNode;
+        });
         return true;
     }
 
@@ -23,24 +24,16 @@ final class HdTlWorkQueue implements WorkQueue {
 
     @Override
     public void dropAll(final Consumer<CraftTask> action) {
-        Node head = this.head;
-        Node task = head.next;
-        Node lastTask = head;
-        for (; task != null; task = (lastTask = task).next) {
-            action.accept(task.task);
+        while (this.head.get() != null) {
+            for (Node x = this.head.getAndSet(null); x != null; x = x.next) {
+                action.accept(x.task);
+            }
         }
-        // We split this because of the way things are ordered for all of the async calls in CraftScheduler
-        // (it prevents race-conditions)
-        for (task = head; task != lastTask; task = head) {
-            head = task.next;
-            task.unlink();
-        }
-        this.head = lastTask;
     }
 
     @Override
     public Iterator<CraftTask> iterator() {
-        final Node start = head.next;
+        final Node start = head.get();
         return new Iterator<>() {
             private Node current = start;
             private CraftTask item = start == null ? null : start.task;
@@ -68,8 +61,8 @@ final class HdTlWorkQueue implements WorkQueue {
     }
 
     private static final class Node {
-        private CraftTask task;
-        private volatile Node next;
+        private final CraftTask task;
+        private Node next;
 
         public Node(CraftTask task) {
             this.task = task;
@@ -80,8 +73,7 @@ final class HdTlWorkQueue implements WorkQueue {
         }
 
         public void unlink() {
-            this.task = null;
-            this.next = null; // plain write
+            this.next = null;
         }
     }
 }

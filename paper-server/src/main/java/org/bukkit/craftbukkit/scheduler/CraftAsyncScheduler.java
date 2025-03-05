@@ -80,7 +80,6 @@ public class CraftAsyncScheduler extends CraftScheduler {
                     temp.add(task);
                 }
             }
-            parsePending();
         });
         temp.forEach(pending::push);
         temp.clear();
