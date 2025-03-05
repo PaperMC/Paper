@@ -4,6 +4,7 @@ import io.papermc.generator.types.GeneratedKeyType;
 import io.papermc.generator.types.GeneratedTagKeyType;
 import io.papermc.generator.types.SourceGenerator;
 import io.papermc.generator.types.goal.MobGoalGenerator;
+import io.papermc.paper.inventory.CreativeModeTab;
 import io.papermc.paper.registry.RegistryKey;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -52,6 +53,7 @@ public interface Generators {
         simpleKey("AttributeKeys", Attribute.class, Registries.ATTRIBUTE, RegistryKey.ATTRIBUTE, false),
         simpleKey("FluidKeys", Fluid.class, Registries.FLUID, RegistryKey.FLUID, false),
         simpleKey("SoundEventKeys", Sound.class, Registries.SOUND_EVENT, RegistryKey.SOUND_EVENT, false),
+        simpleKey("CreativeModeTabKeys", CreativeModeTab.class, Registries.CREATIVE_MODE_TAB, RegistryKey.CREATIVE_MODE_TAB, false),
 
         // data-driven
         simpleKey("BiomeKeys", Biome.class, Registries.BIOME, RegistryKey.BIOME, true),
