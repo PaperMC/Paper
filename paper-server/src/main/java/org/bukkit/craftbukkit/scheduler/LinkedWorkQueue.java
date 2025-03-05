@@ -10,7 +10,7 @@ final class LinkedWorkQueue implements WorkQueue {
     @Override
     public boolean tryPush(final CraftTask task) {
         final Node newNode = new Node(task);
-        head.updateAndGet(h -> {
+        this.head.updateAndGet(h -> {
             newNode.link(h);
             return newNode;
         });
@@ -33,27 +33,27 @@ final class LinkedWorkQueue implements WorkQueue {
 
     @Override
     public Iterator<CraftTask> iterator() {
-        final Node start = head.get();
+        final Node start = this.head.get();
         return new Iterator<>() {
             private Node current = start;
             private CraftTask item = start == null ? null : start.task;
 
             @Override
             public boolean hasNext() {
-                return item != null;
+                return this.item != null;
             }
 
             @Override
             public CraftTask next() {
                 try {
-                    return item;
+                    return this.item;
                 } finally {
-                    Node node = current.next;
+                    final Node node = this.current.next;
                     if (node == null) {
-                        item = null;
+                        this.item = null;
                     } else {
-                        item = node.task;
-                        current = node;
+                        this.item = node.task;
+                        this.current = node;
                     }
                 }
             }
@@ -64,7 +64,7 @@ final class LinkedWorkQueue implements WorkQueue {
         private final CraftTask task;
         private Node next;
 
-        public Node(CraftTask task) {
+        public Node(final CraftTask task) {
             this.task = task;
         }
 

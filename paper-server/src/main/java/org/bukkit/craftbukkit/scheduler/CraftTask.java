@@ -26,14 +26,6 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
     private final Plugin plugin;
     private final long id;
 
-    CraftTask(final Runnable task) {
-        this(null,
-            t -> task.run(),
-            CraftTask.NO_REPEATING,
-            CraftTask.NO_REPEATING
-        );
-    }
-
     CraftTask(final Plugin plugin,
               final Consumer<? super BukkitTask> task,
               final long id,
@@ -61,8 +53,8 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
 
     @Override
     public void run() {
-        if (task != null) {
-            task.accept(this);
+        if (this.task != null) {
+            this.task.accept(this);
         }
     }
 
@@ -70,7 +62,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
         return this.period;
     }
 
-    void setPeriod(long period) {
+    void setPeriod(final long period) {
         this.period = period;
     }
 
@@ -78,7 +70,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
         return this.nextRun;
     }
 
-    void setNextRun(long nextRun) {
+    void setNextRun(final long nextRun) {
         this.nextRun = nextRun;
     }
 
@@ -89,7 +81,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
 
     @Override
     public void cancel() {
-        Bukkit.getScheduler().cancelTask(getTaskId());
+        Bukkit.getScheduler().cancelTask(this.getTaskId());
     }
 
     /**
@@ -107,8 +99,8 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
         if (o == this) {
             return 0;
         }
-        int value = Long.compare(getNextRun(), o.getNextRun());
+        final int value = Long.compare(this.getNextRun(), o.getNextRun());
         // If the tasks should run on the same tick they should be run FIFO
-        return value != 0 ? value : Long.compare(id, o.id);
+        return value != 0 ? value : Long.compare(this.id, o.id);
     }
 }

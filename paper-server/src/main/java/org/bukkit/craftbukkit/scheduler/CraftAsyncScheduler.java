@@ -43,26 +43,10 @@ public class CraftAsyncScheduler extends CraftScheduler {
 
     CraftAsyncScheduler() {
         super(true);
-        executor.allowCoreThreadTimeOut(true);
-        executor.prestartAllCoreThreads();
+        this.executor.allowCoreThreadTimeOut(true);
+        this.executor.prestartAllCoreThreads();
     }
 
-    @Override
-    public void cancelTask(int taskId) {
-        this.management.execute(() -> this.removeTask(taskId));
-    }
-
-    private synchronized void removeTask(int taskId) {
-        parsePending();
-        for (Iterator<CraftTask> iterator = this.pending.iterator(); iterator.hasNext(); ) {
-            CraftTask task = iterator.next();
-            if (task.getTaskId() == taskId) {
-                task.cancel0();
-                iterator.remove();
-                break;
-            }
-        }
-    }
 
     @Override
     public void mainThreadHeartbeat() {
@@ -70,22 +54,20 @@ public class CraftAsyncScheduler extends CraftScheduler {
         this.management.execute(() -> this.runTasks(tick));
     }
 
-    private synchronized void runTasks(int currentTick) {
-        parsePending();
+    private void runTasks(final int currentTick) {
+        this.parsePending();
         this.pending.dropAll(task -> {
-            if (executeTask(task)) {
+            if (this.executeTask(task)) {
                 final long period = task.getPeriod();
                 if (period > 0) {
                     task.setNextRun(currentTick + period);
-                    temp.add(task);
+                    this.external.push(task);
                 }
             }
         });
-        temp.forEach(pending::push);
-        temp.clear();
     }
 
-    private boolean executeTask(CraftTask task) {
+    private boolean executeTask(final CraftTask task) {
         if (isValid(task)) {
             this.runners.put(task.getTaskId(), task);
             this.executor.execute(new ServerSchedulerReportingWrapper(task));
@@ -94,24 +76,12 @@ public class CraftAsyncScheduler extends CraftScheduler {
         return false;
     }
 
-    @Override
-    public synchronized void cancelTasks(Plugin plugin) {
-        parsePending();
-        for (Iterator<CraftTask> iterator = this.pending.iterator(); iterator.hasNext(); ) {
-            CraftTask task = iterator.next();
-            if (task.getTaskId() != -1 && (plugin == null || task.getOwner().equals(plugin))) {
-                task.cancel0();
-                iterator.remove();
-            }
-        }
-    }
-
     /**
      * Task is not cancelled
      * @param runningTask
      * @return
      */
-    static boolean isValid(CraftTask runningTask) {
+    static boolean isValid(final CraftTask runningTask) {
         return runningTask.getPeriod() >= CraftTask.NO_REPEATING;
     }
 }

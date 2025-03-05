@@ -47,11 +47,7 @@ public class CraftScheduler implements BukkitScheduler {
      */
     private final AtomicLong ids = new AtomicLong();
 
-    private final WorkQueue external = new LinkedWorkQueue();
-    /**
-     * Main thread logic only
-     */
-    final List<CraftTask> temp = new ArrayList<>();
+    final WorkQueue external = new LinkedWorkQueue();
 
     final WorkQueue pending = new DelayedQueue();
     /**
@@ -88,7 +84,7 @@ public class CraftScheduler implements BukkitScheduler {
         this(false);
     }
 
-    public CraftScheduler(boolean isAsync) {
+    public CraftScheduler(final boolean isAsync) {
         this.isAsyncScheduler = isAsync;
         if (isAsync) {
             this.asyncScheduler = this;
@@ -106,12 +102,12 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     @Override
-    public BukkitTask runTask(Plugin plugin, Runnable runnable) {
+    public BukkitTask runTask(final Plugin plugin, final Runnable runnable) {
         return this.runTaskLater(plugin, runnable, 0L);
     }
 
     @Override
-    public void runTask(Plugin plugin, Consumer<? super BukkitTask> task) throws IllegalArgumentException {
+    public void runTask(final Plugin plugin, final Consumer<? super BukkitTask> task) throws IllegalArgumentException {
         this.runTaskLater(plugin, task, 0L);
     }
 
@@ -122,12 +118,12 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     @Override
-    public BukkitTask runTaskAsynchronously(Plugin plugin, Runnable runnable) {
+    public BukkitTask runTaskAsynchronously(final Plugin plugin, final Runnable runnable) {
         return this.runTaskLaterAsynchronously(plugin, runnable, 0L);
     }
 
     @Override
-    public void runTaskAsynchronously(Plugin plugin, Consumer<? super BukkitTask> task) throws IllegalArgumentException {
+    public void runTaskAsynchronously(final Plugin plugin, final Consumer<? super BukkitTask> task) throws IllegalArgumentException {
         this.runTaskLaterAsynchronously(plugin, task, 0L);
     }
 
@@ -137,12 +133,12 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     @Override
-    public BukkitTask runTaskLater(Plugin plugin, Runnable runnable, long delay) {
+    public BukkitTask runTaskLater(final Plugin plugin, final Runnable runnable, final long delay) {
         return this.runTaskTimer(plugin, runnable, delay, CraftTask.NO_REPEATING);
     }
 
     @Override
-    public void runTaskLater(Plugin plugin, Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException {
+    public void runTaskLater(final Plugin plugin, final Consumer<? super BukkitTask> task, final long delay) throws IllegalArgumentException {
         this.runTaskTimer(plugin, task, delay, CraftTask.NO_REPEATING);
     }
 
@@ -153,57 +149,59 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     @Override
-    public BukkitTask runTaskLaterAsynchronously(Plugin plugin, Runnable runnable, long delay) {
+    public BukkitTask runTaskLaterAsynchronously(final Plugin plugin, final Runnable runnable, final long delay) {
         return this.runTaskTimerAsynchronously(plugin, runnable, delay, CraftTask.NO_REPEATING);
     }
 
     @Override
-    public void runTaskLaterAsynchronously(Plugin plugin, Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException {
+    public void runTaskLaterAsynchronously(final Plugin plugin, final Consumer<? super BukkitTask> task, final long delay) throws IllegalArgumentException {
         this.runTaskTimerAsynchronously(plugin, task, delay, CraftTask.NO_REPEATING);
     }
 
     @Override
-    public void runTaskTimerAsynchronously(Plugin plugin, Consumer<? super BukkitTask> task, long delay, long period) throws IllegalArgumentException {
+    public void runTaskTimerAsynchronously(final Plugin plugin, final Consumer<? super BukkitTask> task, final long delay, final long period) throws IllegalArgumentException {
         this.submit(plugin, task, delay, period, true); // Paper
     }
 
     @Override
-    public int scheduleSyncRepeatingTask(final Plugin plugin, final Runnable runnable, long delay, long period) {
+    public int scheduleSyncRepeatingTask(final Plugin plugin, final Runnable runnable, final long delay, final long period) {
         return this.runTaskTimer(plugin, runnable, delay, period).getTaskId();
     }
 
     @Override
-    public BukkitTask runTaskTimer(Plugin plugin, Runnable runnable, long delay, long period) {
+    public BukkitTask runTaskTimer(final Plugin plugin, final Runnable runnable, final long delay, final long period) {
         return this.submit(plugin, runnable, delay, period, false);
     }
 
     @Override
-    public void runTaskTimer(Plugin plugin, Consumer<? super BukkitTask> task, long delay, long period) throws IllegalArgumentException {
+    public void runTaskTimer(final Plugin plugin, final Consumer<? super BukkitTask> task, final long delay, final long period) throws IllegalArgumentException {
         this.submit(plugin, task, delay, period, false);
     }
 
     @Deprecated
     @Override
-    public int scheduleAsyncRepeatingTask(final Plugin plugin, final Runnable runnable, long delay, long period) {
+    public int scheduleAsyncRepeatingTask(final Plugin plugin, final Runnable runnable, final long delay, final long period) {
         return this.runTaskTimerAsynchronously(plugin, runnable, delay, period).getTaskId();
     }
 
     @Override
-    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, Runnable runnable, long delay, long period) {
+    public BukkitTask runTaskTimerAsynchronously(final Plugin plugin, final Runnable runnable, final long delay, final long period) {
         return this.submit(plugin, runnable, delay, period, true);
     }
 
-    private BukkitTask submit(Plugin plugin,
-                              Runnable runnable,
-                              long delay, long period,
-                              boolean async) {
+    private BukkitTask submit(
+        final Plugin plugin,
+        final Runnable runnable,
+        final long delay, final long period,
+        final boolean async) {
         return this.submit(plugin, task -> runnable.run(), delay, period, async);
     }
 
-    private BukkitTask submit(Plugin plugin,
-                              Consumer<? super BukkitTask> consumer,
-                              long delay, long period,
-                              boolean async) {
+    private BukkitTask submit(
+        final Plugin plugin,
+        final Consumer<? super BukkitTask> consumer,
+        long delay, long period,
+        final boolean async) {
         CraftScheduler.validate(plugin);
         if (delay < 0L) {
             delay = 0;
@@ -213,7 +211,7 @@ public class CraftScheduler implements BukkitScheduler {
         } else if (period < CraftTask.NO_REPEATING) {
             period = CraftTask.NO_REPEATING;
         }
-        final long id = nextId();
+        final long id = this.nextId();
         return this.handle(
             async
                 ? new CraftAsyncTask(this.asyncScheduler.runners, plugin, consumer, id, period)
@@ -229,7 +227,7 @@ public class CraftScheduler implements BukkitScheduler {
         return future;
     }
 
-    void cancelTask(CraftTask task) {
+    void cancelTask(final CraftTask task) {
         if (task.cancel0()) {
             this.external.push(task);
         }
@@ -245,13 +243,13 @@ public class CraftScheduler implements BukkitScheduler {
             this.asyncScheduler.cancelTask(taskId);
         }
         // Paper end
-        CraftTask task = this.runners.get(taskId);
+        final CraftTask task = this.runners.get(taskId);
         if (task != null) {
-            cancelTask(task);
+            this.cancelTask(task);
         } else {
-            for (CraftTask taskPending : this.external) {
+            for (final CraftTask taskPending : this.external) {
                 if (taskPending.getTaskId() == taskId) {
-                    cancelTask(taskPending);
+                    this.cancelTask(taskPending);
                 }
             }
         }
@@ -265,14 +263,14 @@ public class CraftScheduler implements BukkitScheduler {
             this.asyncScheduler.cancelTasks(plugin);
         }
         // Paper end
-        for (CraftTask taskPending : this.external) {
+        for (final CraftTask taskPending : this.external) {
             if (taskPending.getTaskId() != -1 && taskPending.getOwner().equals(plugin)) {
-                cancelTask(taskPending);
+                this.cancelTask(taskPending);
             }
         }
-        for (CraftTask runner : this.runners.values()) {
+        for (final CraftTask runner : this.runners.values()) {
             if (runner.getOwner().equals(plugin)) {
-                cancelTask(runner);
+                this.cancelTask(runner);
             }
         }
     }
@@ -309,19 +307,19 @@ public class CraftScheduler implements BukkitScheduler {
             return true;
         }
         // Paper end
-        for (CraftTask task : this.external) {
+        for (final CraftTask task : this.external) {
             if (task.getTaskId() == taskId) {
                 return task.getPeriod() >= CraftTask.NO_REPEATING; // The task will run
             }
         }
-        CraftTask task = this.runners.get(taskId);
+        final CraftTask task = this.runners.get(taskId);
         return task != null && task.getPeriod() >= CraftTask.NO_REPEATING;
     }
 
     @Override
     public List<BukkitWorker> getActiveWorkers() {
         // Paper start
-        if (!isAsyncScheduler) {
+        if (!this.isAsyncScheduler) {
             //noinspection TailRecursion
             return this.asyncScheduler.getActiveWorkers();
         }
@@ -344,7 +342,7 @@ public class CraftScheduler implements BukkitScheduler {
     @Override
     public List<BukkitTask> getPendingTasks() {
         final ArrayList<CraftTask> truePending = new ArrayList<CraftTask>();
-        for (CraftTask task : external) {
+        for (final CraftTask task : this.external) {
             if (task.getTaskId() != -1) {
                 // -1 is special code
                 truePending.add(task);
@@ -352,7 +350,7 @@ public class CraftScheduler implements BukkitScheduler {
         }
 
         final ArrayList<BukkitTask> pending = new ArrayList<BukkitTask>();
-        for (CraftTask task : this.runners.values()) {
+        for (final CraftTask task : this.runners.values()) {
             if (task.getPeriod() >= CraftTask.NO_REPEATING) {
                 pending.add(task);
             }
@@ -375,7 +373,7 @@ public class CraftScheduler implements BukkitScheduler {
      * This method is designed to never block or wait for locks; an immediate execution of all current tasks.
      */
     public void mainThreadHeartbeat() {
-        final int tick = ++currentTick;
+        currentTick++;
         // Paper start
         if (!this.isAsyncScheduler) {
             this.asyncScheduler.mainThreadHeartbeat();
@@ -419,14 +417,11 @@ public class CraftScheduler implements BukkitScheduler {
             }
             final long period = task.getPeriod(); // State consistency
             if (period > 0) {
-                task.setNextRun(tick + period);
-                this.temp.add(task);
+                this.handle(task, period);
             } else if (task.isSync()) {
                 this.runners.remove(task.getTaskId());
             }
         });
-        this.temp.forEach(pending::push);
-        this.temp.clear();
         //this.debugHead = this.debugHead.getNextHead(this.currentTick); // Paper
     }
 
@@ -459,12 +454,11 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     void parsePending() { // Paper
-        external.dropAll(task -> {
+        this.external.dropAll(task -> {
             if (task.getPeriod() >= CraftTask.NO_REPEATING) {
                 this.pending.push(task);
                 this.runners.put(task.getTaskId(), task);
             } else {
-                this.temp.remove(task);
                 this.pending.remove(task);
                 this.runners.remove(task.getTaskId());
             }
@@ -486,61 +480,61 @@ public class CraftScheduler implements BukkitScheduler {
 
     @Deprecated
     @Override
-    public int scheduleSyncDelayedTask(Plugin plugin, BukkitRunnable task, long delay) {
+    public int scheduleSyncDelayedTask(final Plugin plugin, final BukkitRunnable task, final long delay) {
         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskLater(Plugin, long)");
     }
 
     @Deprecated
     @Override
-    public int scheduleSyncDelayedTask(Plugin plugin, BukkitRunnable task) {
+    public int scheduleSyncDelayedTask(final Plugin plugin, final BukkitRunnable task) {
         throw new UnsupportedOperationException("Use BukkitRunnable#runTask(Plugin)");
     }
 
     @Deprecated
     @Override
-    public int scheduleSyncRepeatingTask(Plugin plugin, BukkitRunnable task, long delay, long period) {
+    public int scheduleSyncRepeatingTask(final Plugin plugin, final BukkitRunnable task, final long delay, final long period) {
         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskTimer(Plugin, long, long)");
     }
 
     @Deprecated
     @Override
-    public BukkitTask runTask(Plugin plugin, BukkitRunnable task) throws IllegalArgumentException {
+    public BukkitTask runTask(final Plugin plugin, final BukkitRunnable task) throws IllegalArgumentException {
         throw new UnsupportedOperationException("Use BukkitRunnable#runTask(Plugin)");
     }
 
     @Deprecated
     @Override
-    public BukkitTask runTaskAsynchronously(Plugin plugin, BukkitRunnable task) throws IllegalArgumentException {
+    public BukkitTask runTaskAsynchronously(final Plugin plugin, final BukkitRunnable task) throws IllegalArgumentException {
         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskAsynchronously(Plugin)");
     }
 
     @Deprecated
     @Override
-    public BukkitTask runTaskLater(Plugin plugin, BukkitRunnable task, long delay) throws IllegalArgumentException {
+    public BukkitTask runTaskLater(final Plugin plugin, final BukkitRunnable task, final long delay) throws IllegalArgumentException {
         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskLater(Plugin, long)");
     }
 
     @Deprecated
     @Override
-    public BukkitTask runTaskLaterAsynchronously(Plugin plugin, BukkitRunnable task, long delay) throws IllegalArgumentException {
+    public BukkitTask runTaskLaterAsynchronously(final Plugin plugin, final BukkitRunnable task, final long delay) throws IllegalArgumentException {
         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskLaterAsynchronously(Plugin, long)");
     }
 
     @Deprecated
     @Override
-    public BukkitTask runTaskTimer(Plugin plugin, BukkitRunnable task, long delay, long period) throws IllegalArgumentException {
+    public BukkitTask runTaskTimer(final Plugin plugin, final BukkitRunnable task, final long delay, final long period) throws IllegalArgumentException {
         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskTimer(Plugin, long, long)");
     }
 
     @Deprecated
     @Override
-    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, BukkitRunnable task, long delay, long period) throws IllegalArgumentException {
+    public BukkitTask runTaskTimerAsynchronously(final Plugin plugin, final BukkitRunnable task, final long delay, final long period) throws IllegalArgumentException {
         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskTimerAsynchronously(Plugin, long, long)");
     }
 
     // Paper start - add getMainThreadExecutor
     @Override
-    public Executor getMainThreadExecutor(Plugin plugin) {
+    public Executor getMainThreadExecutor(final Plugin plugin) {
         Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
         return command -> {
             Preconditions.checkArgument(command != null, "Command cannot be null");
