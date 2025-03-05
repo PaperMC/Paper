@@ -14,7 +14,7 @@ class CraftFuture<T> extends CraftTask implements Future<T> {
     private T value;
     private Exception exception = null;
 
-    CraftFuture(final Callable<T> callable, final Plugin plugin, final int id) {
+    CraftFuture(final Callable<T> callable, final Plugin plugin, final long id) {
         super(plugin, a -> {}, id, CraftTask.NO_REPEATING);
         this.callable = callable;
     }

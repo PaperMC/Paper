@@ -17,7 +17,7 @@ class CraftAsyncTask extends CraftTask {
     CraftAsyncTask(final Map<Integer, CraftTask> runners,
                    final Plugin plugin,
                    final Consumer<? super BukkitTask> task,
-                   final int id, final long delay) {
+                   final long id, final long delay) {
         super(plugin, task, id, delay);
         this.runners = runners;
     }

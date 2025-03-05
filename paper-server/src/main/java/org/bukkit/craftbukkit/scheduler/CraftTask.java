@@ -24,8 +24,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
     private long nextRun;
     private final Consumer<? super BukkitTask> task;
     private final Plugin plugin;
-    private final int id;
-    private final long createdAt = System.nanoTime();
+    private final long id;
 
     CraftTask(final Runnable task) {
         this(null,
@@ -37,7 +36,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
 
     CraftTask(final Plugin plugin,
               final Consumer<? super BukkitTask> task,
-              final int id,
+              final long id,
               final long period) {
         this.plugin = plugin;
         this.task = task;
@@ -47,7 +46,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
 
     @Override
     public final int getTaskId() {
-        return this.id;
+        return Math.floorMod(this.id, Integer.MAX_VALUE) + 1;
     }
 
     @Override
@@ -65,10 +64,6 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
         if (task != null) {
             task.accept(this);
         }
-    }
-
-    long getCreatedAt() {
-        return this.createdAt;
     }
 
     long getPeriod() {
@@ -94,7 +89,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
 
     @Override
     public void cancel() {
-        Bukkit.getScheduler().cancelTask(this.id);
+        Bukkit.getScheduler().cancelTask(getTaskId());
     }
 
     /**
@@ -114,6 +109,6 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
         }
         int value = Long.compare(getNextRun(), o.getNextRun());
         // If the tasks should run on the same tick they should be run FIFO
-        return value != 0 ? value : Long.compare(createdAt, o.createdAt);
+        return value != 0 ? value : Long.compare(id, o.id);
     }
 }

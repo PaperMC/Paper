@@ -19,7 +19,7 @@ final class StripedQueue implements WorkQueue {
     private boolean internal(final CraftTask task) {
         return task.getPeriod() > 0 &&
             Thread.currentThread() == leader &&
-            // because of the methods isQueue getPendingTasks...
+            // because of the methods isQueued getPendingTasks...
             scheduler.runners.containsKey(task.getTaskId());
     }
     @Override

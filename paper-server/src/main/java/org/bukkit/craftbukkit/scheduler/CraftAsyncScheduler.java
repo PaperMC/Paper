@@ -26,10 +26,7 @@ package org.bukkit.craftbukkit.scheduler;
 import com.destroystokyo.paper.ServerSchedulerReportingWrapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.bukkit.plugin.Plugin;
-
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
@@ -69,12 +66,12 @@ public class CraftAsyncScheduler extends CraftScheduler {
 
     @Override
     public void mainThreadHeartbeat() {
-        this.management.execute(() -> this.runTasks(now()));
+        final int tick = now();
+        this.management.execute(() -> this.runTasks(tick));
     }
 
     private synchronized void runTasks(int currentTick) {
         parsePending();
-        final List<CraftTask> temp = new ArrayList<>();
         this.pending.dropAll(task -> {
             if (executeTask(task)) {
                 final long period = task.getPeriod();
@@ -86,6 +83,7 @@ public class CraftAsyncScheduler extends CraftScheduler {
             parsePending();
         });
         temp.forEach(pending::push);
+        temp.clear();
     }
 
     private boolean executeTask(CraftTask task) {
