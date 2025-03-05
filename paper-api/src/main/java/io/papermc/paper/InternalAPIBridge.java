@@ -53,7 +53,7 @@ public interface InternalAPIBridge {
      
     /**
      * Creates a new combat entry.
-     * <br>
+     * <p>
      * The fall location and fall distance will be calculated from the entity's current state.
      *
      * @param entity entity
