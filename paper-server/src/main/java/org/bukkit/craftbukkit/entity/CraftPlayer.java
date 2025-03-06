@@ -2828,13 +2828,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void updateScaledHealth(boolean sendHealth) {
         AttributeMap attributemapserver = this.getHandle().getAttributes();
-        Collection<AttributeInstance> set = attributemapserver.getSyncableAttributes();
+        Collection<AttributeInstance> set = new HashSet<>(1);
 
         this.injectScaledMaxHealth(set, true);
 
         // SPIGOT-3813: Attributes before health
         if (this.getHandle().connection != null) {
-            this.getHandle().connection.send(new ClientboundUpdateAttributesPacket(this.getHandle().getId(), set));
+            if (!set.isEmpty()) {
+                this.getHandle().connection.send(new ClientboundUpdateAttributesPacket(this.getHandle().getId(), set));
+            }
             if (sendHealth) {
                 this.sendHealthUpdate();
             }
