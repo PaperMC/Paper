@@ -448,7 +448,10 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * Damage caused by a dragon breathing fire.
          * <p>
          * Damage: variable
+         *
+         * @deprecated never used without help of commands or plugins
          */
+        @Deprecated
         DRAGON_BREATH,
         /**
          * Custom damage.
