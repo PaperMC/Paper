@@ -16,11 +16,13 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
     private final boolean critical; // Paper
 
     @Deprecated(since = "1.20.4", forRemoval = true)
+    @ApiStatus.Internal
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
         this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), damage);
     }
 
     @Deprecated
+    @ApiStatus.Internal
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, final double damage) {
         super(damagee, cause, damageSource, damage);
         this.damager = damager;
@@ -28,11 +30,13 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
     }
 
     @Deprecated(since = "1.20.4", forRemoval = true)
+    @ApiStatus.Internal
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), modifiers, modifierFunctions);
     }
 
     @Deprecated
+    @ApiStatus.Internal
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         super(damagee, cause, damageSource, modifiers, modifierFunctions);
         this.damager = damager;
