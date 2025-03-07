@@ -53,29 +53,11 @@ public class CraftScheduler implements BukkitScheduler {
     /**
      * These are tasks that are currently active. It's provided for 'viewing' the current state.
      */
-    final ConcurrentHashMap<Integer, CraftTask> runners = new ConcurrentHashMap<Integer, CraftTask>(); // Paper
+    final ConcurrentHashMap<Integer, CraftTask> runners = new ConcurrentHashMap<>(); // Paper
     /**
      * The sync task that is currently running on the main thread.
      */
     private volatile CraftTask currentTask = null;
-    // Paper start - Improved Async Task Scheduler
-    /*
-    private final Executor executor = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %d").build());
-    private CraftAsyncDebugger debugHead = new CraftAsyncDebugger(-1, null, null) {
-        @Override
-        StringBuilder debugTo(StringBuilder string) {
-            return string;
-        }
-    };
-    private CraftAsyncDebugger debugTail = this.debugHead;
-
-    */ // Paper end
-    private static final int RECENT_TICKS;
-
-    static {
-        RECENT_TICKS = 30;
-    }
-
     // Paper start
     private final CraftScheduler asyncScheduler;
     private final boolean isAsyncScheduler;
@@ -264,7 +246,7 @@ public class CraftScheduler implements BukkitScheduler {
         }
         // Paper end
         for (final CraftTask taskPending : this.external) {
-            if (taskPending.getTaskId() != -1 && taskPending.getOwner().equals(plugin)) {
+            if (taskPending.getOwner().equals(plugin)) {
                 this.cancelTask(taskPending);
             }
         }
@@ -292,9 +274,7 @@ public class CraftScheduler implements BukkitScheduler {
             return (task == this.currentTask);
         }
         final CraftAsyncTask asyncTask = (CraftAsyncTask) task;
-        synchronized (asyncTask.getWorkers()) {
-            return !asyncTask.getWorkers().isEmpty();
-        }
+        return asyncTask.workers() > 0;
     }
 
     @Override
@@ -309,11 +289,11 @@ public class CraftScheduler implements BukkitScheduler {
         // Paper end
         for (final CraftTask task : this.external) {
             if (task.getTaskId() == taskId) {
-                return task.getPeriod() >= CraftTask.NO_REPEATING; // The task will run
+                return task.getState() >= CraftTask.NO_REPEATING; // The task will run
             }
         }
         final CraftTask task = this.runners.get(taskId);
-        return task != null && task.getPeriod() >= CraftTask.NO_REPEATING;
+        return task != null && task.getState() >= CraftTask.NO_REPEATING;
     }
 
     @Override
@@ -331,10 +311,7 @@ public class CraftScheduler implements BukkitScheduler {
                 continue;
             }
             final CraftAsyncTask task = (CraftAsyncTask) taskObj;
-            synchronized (task.getWorkers()) {
-                // This will never have an issue with stale threads; it's state-safe
-                workers.addAll(task.getWorkers());
-            }
+            task.forEach(workers::add);
         }
         return workers;
     }
@@ -343,21 +320,20 @@ public class CraftScheduler implements BukkitScheduler {
     public List<BukkitTask> getPendingTasks() {
         final ArrayList<CraftTask> truePending = new ArrayList<CraftTask>();
         for (final CraftTask task : this.external) {
-            if (task.getTaskId() != -1) {
-                // -1 is special code
+            if (!task.isCancelled()) {
                 truePending.add(task);
             }
         }
 
         final ArrayList<BukkitTask> pending = new ArrayList<BukkitTask>();
         for (final CraftTask task : this.runners.values()) {
-            if (task.getPeriod() >= CraftTask.NO_REPEATING) {
+            if (task.getState() >= CraftTask.NO_REPEATING) {
                 pending.add(task);
             }
         }
 
         for (final CraftTask task : truePending) {
-            if (task.getPeriod() >= CraftTask.NO_REPEATING && !pending.contains(task)) {
+            if (task.getState() >= CraftTask.NO_REPEATING && !pending.contains(task)) {
                 pending.add(task);
             }
         }
@@ -381,10 +357,8 @@ public class CraftScheduler implements BukkitScheduler {
         // Paper end
         this.parsePending();
         this.pending.dropAll(task -> {
-            if (task.getPeriod() < CraftTask.NO_REPEATING) {
-                if (task.isSync()) {
-                    this.runners.remove(task.getTaskId(), task);
-                }
+            if (task.getState() < CraftTask.COMPLETING) {
+                this.runners.remove(task.getTaskId(), task);
                 return;
             }
             if (task.isSync()) {
@@ -421,6 +395,7 @@ public class CraftScheduler implements BukkitScheduler {
             } else if (task.isSync()) {
                 this.runners.remove(task.getTaskId());
             }
+            this.parsePending();
         });
         //this.debugHead = this.debugHead.getNextHead(this.currentTick); // Paper
     }
@@ -455,12 +430,14 @@ public class CraftScheduler implements BukkitScheduler {
 
     void parsePending() { // Paper
         this.external.dropAll(task -> {
-            if (task.getPeriod() >= CraftTask.NO_REPEATING) {
+            if (task.getState() >= CraftTask.NO_REPEATING) {
                 this.pending.push(task);
                 this.runners.put(task.getTaskId(), task);
             } else {
                 this.pending.remove(task);
-                this.runners.remove(task.getTaskId());
+                if (task.isSync()) {
+                    this.runners.remove(task.getTaskId());
+                }
             }
         });
     }

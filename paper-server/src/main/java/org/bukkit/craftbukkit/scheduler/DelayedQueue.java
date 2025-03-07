@@ -32,6 +32,7 @@ final class DelayedQueue implements WorkQueue {
     public Iterator<CraftTask> iterator() {
         return this.pending.iterator();
     }
+
     @Override
     public String toString() {
         return this.pending.toString();

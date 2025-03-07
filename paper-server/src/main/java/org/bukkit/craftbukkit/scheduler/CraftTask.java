@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.scheduler;
 
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import org.bukkit.Bukkit;
@@ -7,24 +8,17 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
 public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { // Spigot
-    public static final int ERROR = 0;
-    public static final int NO_REPEATING = -1;
-    public static final int CANCEL = -2;
-    public static final int PROCESS_FOR_FUTURE = -3;
-    public static final int DONE_FOR_FUTURE = -4;
-    /**
-     * -1 means no repeating <br>
-     * -2 means cancel <br>
-     * -3 means processing for Future <br>
-     * -4 means done for Future <br>
-     * Never 0 <br>
-     * >0 means number of ticks to wait between each execution
-     */
-    private volatile long period;
-    private long nextRun;
+    public static final long ERROR = 0;
+    public static final long NO_REPEATING = -1;
+    public static final long COMPLETING = -2;
+    public static final long DONE = -3;
+    public static final long CANCEL = -4;
+
+    private final AtomicLong period;
     private final Consumer<? super BukkitTask> task;
     private final Plugin plugin;
     private final long id;
+    private long nextRun;
 
     CraftTask(final Plugin plugin,
               final Consumer<? super BukkitTask> task,
@@ -33,7 +27,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
         this.plugin = plugin;
         this.task = task;
         this.id = id;
-        this.period = period;
+        this.period = new AtomicLong(period);
     }
 
     @Override
@@ -53,17 +47,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
 
     @Override
     public void run() {
-        if (this.task != null) {
-            this.task.accept(this);
-        }
-    }
-
-    long getPeriod() {
-        return this.period;
-    }
-
-    void setPeriod(final long period) {
-        this.period = period;
+        this.task.accept(this);
     }
 
     long getNextRun() {
@@ -76,12 +60,28 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
 
     @Override
     public boolean isCancelled() {
-        return (this.period == CraftTask.CANCEL);
+        return (this.period.get() == CraftTask.CANCEL);
     }
 
     @Override
     public void cancel() {
         Bukkit.getScheduler().cancelTask(this.getTaskId());
+    }
+
+    boolean casState(long p, long x) {
+        return this.period.compareAndSet(p, x);
+    }
+
+    void setState(final long state) {
+        this.period.setRelease(state);
+    }
+
+    long getState() {
+        return this.period.get();
+    }
+
+    long getPeriod() {
+        return this.period.get();
     }
 
     /**
@@ -90,8 +90,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
      * @return false if it is a craft future task that has already begun execution, true otherwise
      */
     boolean cancel0() {
-        this.setPeriod(CraftTask.CANCEL);
-        return true;
+        return getState() != CANCEL && this.period.getAndSet(CANCEL) != CANCEL;
     }
 
     @Override

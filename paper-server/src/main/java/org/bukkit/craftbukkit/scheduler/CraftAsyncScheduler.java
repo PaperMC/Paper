@@ -25,8 +25,6 @@ package org.bukkit.craftbukkit.scheduler;
 
 import com.destroystokyo.paper.ServerSchedulerReportingWrapper;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.bukkit.plugin.Plugin;
-import java.util.Iterator;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
@@ -82,6 +80,6 @@ public class CraftAsyncScheduler extends CraftScheduler {
      * @return
      */
     static boolean isValid(final CraftTask runningTask) {
-        return runningTask.getPeriod() >= CraftTask.NO_REPEATING;
+        return runningTask.getState() >= CraftTask.NO_REPEATING;
     }
 }
