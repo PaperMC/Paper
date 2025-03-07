@@ -534,6 +534,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @deprecated method is for internal use only and will be removed
      */
     @Deprecated(since = "1.20.4", forRemoval = true)
+    @ApiStatus.Internal
     public void setLastDamageCause(@Nullable EntityDamageEvent event);
 
     /**
