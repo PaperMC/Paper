@@ -179,7 +179,9 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
             }
 
             final BlockEntity blockEntity = ((EntityBlock) result.getState().getBlock()).newBlockEntity(BlockPos.ZERO, result.getState());
-            blockEntity.loadWithComponents(result.tag, CraftRegistry.getMinecraftRegistry());
+            if (result != null) {
+                blockEntity.loadWithComponents(result.tag, CraftRegistry.getMinecraftRegistry());
+            }
             return CraftBlockStates.getBlockState(null, BlockPos.ZERO, result.getState(), blockEntity);
         });
     }
