@@ -3902,4 +3902,28 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @return the result of this method, holding leftovers and spawned items.
      */
     PlayerGiveResult give(Collection<ItemStack> items, boolean dropIfFull);
+
+    /**
+     * Get the score that shows in the death screen of the player.
+     * <p>This amount is added to when the player gains experience.</p>
+     *
+     * @return Death screen score of player
+     */
+    int getDeathScreenScore();
+
+    /**
+     * Get the score that shows in the death screen of the player.
+     * <p>This amount is added to when the player gains experience.</p>
+     *
+     * @param score New death screen score of player
+     */
+    void setDeathScreenScore(int score);
+
+    /**
+     * Increase the death screen score of the player.
+     * <p>This amount is added to when the player gains experience.</p>
+     *
+     * @param score Amount to add to death screen score of player
+     */
+    void increaseDeathScreenScore(int score);
 }
