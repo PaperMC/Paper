@@ -61,7 +61,7 @@ public final class CraftFuture<T> extends CraftTask implements Future<T> {
     }
 
     @Override
-    public boolean cancel0() {
+    public boolean tryCancel() {
         return cancel(true);
     }
 

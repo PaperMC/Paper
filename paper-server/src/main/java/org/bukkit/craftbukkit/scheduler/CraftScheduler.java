@@ -31,7 +31,7 @@ import org.bukkit.scheduler.BukkitWorker;
  * <li>Changing the period on a task is delicate.
  *     Any future task needs to notify waiting threads.
  *     Async tasks must be synchronized to make sure that any thread that's finishing will remove itself from {@link #runners}.
- *     Another utility method is provided for this, {@link #cancelTask(int)}</li>
+ *     Another utility method is provided for this, {@link ask(int)}</li>
  * <li>{@link #runners} provides a moderately up-to-date view of active tasks.
  *     If the linked head to tail set is read, all remaining tasks that were active at the time execution started will be located in runners.</li>
  * <li>Async tasks are responsible for removing themselves from runners</li>
@@ -171,24 +171,22 @@ public class CraftScheduler implements BukkitScheduler {
         return this.submit(plugin, runnable, delay, period, true);
     }
 
-    private BukkitTask submit(
-        final Plugin plugin,
-        final Runnable runnable,
-        final long delay, final long period,
-        final boolean async) {
+    private BukkitTask submit(final Plugin plugin,
+                              final Runnable runnable,
+                              final long delay, final long period,
+                              final boolean async) {
         return this.submit(plugin, task -> runnable.run(), delay, period, async);
     }
 
-    private BukkitTask submit(
-        final Plugin plugin,
-        final Consumer<? super BukkitTask> consumer,
-        long delay, long period,
-        final boolean async) {
+    private BukkitTask submit(final Plugin plugin,
+                              final Consumer<? super BukkitTask> consumer,
+                              long delay, long period,
+                              final boolean async) {
         CraftScheduler.validate(plugin);
         if (delay < 0L) {
             delay = 0;
         }
-        if (period == CraftTask.ERROR) {
+        if (period == 0) {
             period = 1L;
         } else if (period < CraftTask.NO_REPEATING) {
             period = CraftTask.NO_REPEATING;
@@ -210,7 +208,7 @@ public class CraftScheduler implements BukkitScheduler {
     }
 
     void cancelTask(final CraftTask task) {
-        if (task.cancel0()) {
+        if (task.tryCancel()) {
             this.external.push(task);
         }
     }
@@ -229,11 +227,25 @@ public class CraftScheduler implements BukkitScheduler {
         if (task != null) {
             this.cancelTask(task);
         } else {
-            for (final CraftTask taskPending : this.external) {
-                if (taskPending.getTaskId() == taskId) {
-                    this.cancelTask(taskPending);
+            for (CraftTask t : this.external) {
+                if (t.getTaskId() == taskId) {
+                    t.cancel();
+                    return;
                 }
             }
+            handle(
+                new CraftTask(
+                    t -> {
+                        parsePending();
+                        for (final CraftTask taskPending : this.pending) {
+                            if (taskPending.getTaskId() == taskId) {
+                                this.cancelTask(taskPending);
+                            }
+                        }
+                    }
+                ),
+                0
+            );
         }
     }
 
@@ -244,17 +256,20 @@ public class CraftScheduler implements BukkitScheduler {
         if (!this.isAsyncScheduler) {
             this.asyncScheduler.cancelTasks(plugin);
         }
+        handle(
+            new CraftTask(
+                t -> {
+                    parsePending();
+                    for (final CraftTask taskPending : this.pending) {
+                        if (taskPending.getOwner().equals(plugin)) {
+                            this.cancelTask(taskPending);
+                        }
+                    }
+                }
+            ),
+            0
+        );
         // Paper end
-        for (final CraftTask taskPending : this.external) {
-            if (taskPending.getOwner().equals(plugin)) {
-                this.cancelTask(taskPending);
-            }
-        }
-        for (final CraftTask runner : this.runners.values()) {
-            if (runner.getOwner().equals(plugin)) {
-                this.cancelTask(runner);
-            }
-        }
     }
 
     @Override
@@ -320,7 +335,7 @@ public class CraftScheduler implements BukkitScheduler {
     public List<BukkitTask> getPendingTasks() {
         final ArrayList<CraftTask> truePending = new ArrayList<CraftTask>();
         for (final CraftTask task : this.external) {
-            if (!task.isCancelled()) {
+            if (task.getTaskId() >= 0 && !task.isCancelled()) {
                 truePending.add(task);
             }
         }
@@ -421,10 +436,10 @@ public class CraftScheduler implements BukkitScheduler {
 
     private long nextId() {
         Preconditions.checkArgument(this.runners.size() < Integer.MAX_VALUE, "There are already %s tasks scheduled! Cannot schedule more", Integer.MAX_VALUE);
-        int id;
+        long id;
         do {
-            id = Math.floorMod(this.ids.getAndIncrement(), Integer.MAX_VALUE) + 1;
-        } while (this.runners.containsKey(id)); // Avoid generating duplicate IDs
+            id = this.ids.getAndIncrement();
+        } while (this.runners.containsKey(Math.floorMod(id, Integer.MAX_VALUE) + 1)); // Avoid generating duplicate IDs
         return id;
     }
 

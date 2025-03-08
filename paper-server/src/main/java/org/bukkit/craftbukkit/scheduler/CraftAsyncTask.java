@@ -104,10 +104,10 @@ class CraftAsyncTask extends CraftTask {
     }
 
     @Override
-    boolean cancel0() {
+    boolean tryCancel() {
         lock.lock();
         try {
-            if (super.cancel0()) {
+            if (super.tryCancel()) {
                 if (this.workers.isEmpty()) {
                     this.runners.remove(this.getTaskId());
                 }

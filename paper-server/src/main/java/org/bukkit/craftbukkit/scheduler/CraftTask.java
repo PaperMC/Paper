@@ -8,7 +8,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
 public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { // Spigot
-    public static final long ERROR = 0;
     public static final long NO_REPEATING = -1;
     public static final long COMPLETING = -2;
     public static final long DONE = -3;
@@ -19,6 +18,10 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
     private final Plugin plugin;
     private final long id;
     private long nextRun;
+
+    CraftTask(final Consumer<? super BukkitTask> task) {
+        this(null, task, -1, NO_REPEATING);
+    }
 
     CraftTask(final Plugin plugin,
               final Consumer<? super BukkitTask> task,
@@ -60,7 +63,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
 
     @Override
     public boolean isCancelled() {
-        return (this.period.get() == CraftTask.CANCEL);
+        return this.getState() == CraftTask.CANCEL;
     }
 
     @Override
@@ -89,7 +92,7 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
      *
      * @return false if it is a craft future task that has already begun execution, true otherwise
      */
-    boolean cancel0() {
+    boolean tryCancel() {
         return getState() != CANCEL && this.period.getAndSet(CANCEL) != CANCEL;
     }
 

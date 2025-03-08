@@ -66,20 +66,11 @@ public class CraftAsyncScheduler extends CraftScheduler {
     }
 
     private boolean executeTask(final CraftTask task) {
-        if (isValid(task)) {
+        if (task.getState() >= CraftTask.NO_REPEATING) {
             this.runners.put(task.getTaskId(), task);
             this.executor.execute(new ServerSchedulerReportingWrapper(task));
             return true;
         }
         return false;
-    }
-
-    /**
-     * Task is not cancelled
-     * @param runningTask
-     * @return
-     */
-    static boolean isValid(final CraftTask runningTask) {
-        return runningTask.getState() >= CraftTask.NO_REPEATING;
     }
 }
