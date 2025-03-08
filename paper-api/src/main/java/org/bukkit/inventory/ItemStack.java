@@ -683,7 +683,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * <p>If this ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
      *
-     * <p>Levels must be in range {@code [1, 30]}.</p>
+     * <p>Enchantment tables use levels in the range {@code [1, 30]}.</p>
      *
      * @param levels levels to use for enchanting
      * @param allowTreasure whether to allow enchantments where {@link org.bukkit.enchantments.Enchantment#isTreasure()} returns true
@@ -692,7 +692,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @throws IllegalArgumentException on bad arguments
      */
     @NotNull
-    public ItemStack enchantWithLevels(final @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, final boolean allowTreasure, final @NotNull java.util.Random random) {
+    public ItemStack enchantWithLevels(final int levels, final boolean allowTreasure, final @NotNull java.util.Random random) {
         return Bukkit.getServer().getItemFactory().enchantWithLevels(this, levels, allowTreasure, random);
     }
 
@@ -701,7 +701,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
      *
-     * <p>Levels must be in range {@code [1, 30]}.</p>
+     * <p>Enchantment tables use levels in the range {@code [1, 30]}.</p>
      *
      * @param levels levels to use for enchanting
      * @param keySet registry key set defining the set of possible enchantments, e.g. {@link io.papermc.paper.registry.keys.tags.EnchantmentTagKeys#IN_ENCHANTING_TABLE}.
@@ -709,7 +709,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @return enchanted copy of the provided ItemStack
      * @throws IllegalArgumentException on bad arguments
      */
-    public @NotNull ItemStack enchantWithLevels(final @org.jetbrains.annotations.Range(from = 1, to = 30) int levels, final @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, final @NotNull java.util.Random random) {
+    public @NotNull ItemStack enchantWithLevels(final int levels, final @NotNull io.papermc.paper.registry.set.RegistryKeySet<@NotNull Enchantment> keySet, final @NotNull java.util.Random random) {
         return Bukkit.getItemFactory().enchantWithLevels(this, levels, keySet, random);
     }
 
