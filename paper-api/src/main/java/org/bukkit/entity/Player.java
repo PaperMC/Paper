@@ -3912,7 +3912,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
     int getDeathScreenScore();
 
     /**
-     * Get the score that shows in the death screen of the player.
+     * Set the score that shows in the death screen of the player.
      * <p>This amount is added to when the player gains experience.</p>
      *
      * @param score New death screen score of player
