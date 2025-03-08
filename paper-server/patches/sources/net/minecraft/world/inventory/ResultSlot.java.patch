@@ -1,19 +1,5 @@
 --- a/net/minecraft/world/inventory/ResultSlot.java
 +++ b/net/minecraft/world/inventory/ResultSlot.java
-@@ -39,6 +_,13 @@
-     protected void onQuickCraft(ItemStack stack, int amount) {
-         this.removeCount += amount;
-         this.checkTakeAchievements(stack);
-+        //Paper start - Trigger ItemCraftedEvent
-+        if (!stack.isEmpty()) {
-+            org.bukkit.entity.Player bukkitPlayer = (org.bukkit.entity.Player) this.player.getBukkitEntity();
-+            io.papermc.paper.event.inventory.ItemCraftedEvent event = new io.papermc.paper.event.inventory.ItemCraftedEvent(bukkitPlayer, org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(stack));
-+            org.bukkit.Bukkit.getPluginManager().callEvent(event);
-+        }
-+        //Paper end
-     }
- 
-     @Override
 @@ -72,7 +_,7 @@
      private NonNullList<ItemStack> getRemainingItems(CraftingInput input, Level level) {
          return level instanceof ServerLevel serverLevel
@@ -27,11 +13,11 @@
  
      @Override
      public void onTake(Player player, ItemStack stack) {
-+        //Paper start - Trigger ItemCraftedEvent
-+        if (!stack.isEmpty()) {
-+            player.containerMenu.broadcastChanges();
-+            io.papermc.paper.event.inventory.ItemCraftedEvent event = new io.papermc.paper.event.inventory.ItemCraftedEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(stack));
-+            org.bukkit.Bukkit.getPluginManager().callEvent(event);
++        //Paper start
++        org.bukkit.event.inventory.ItemCraftedEvent event = new org.bukkit.event.inventory.ItemCraftedEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asBukkitCopy(stack));
++        org.bukkit.Bukkit.getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            return; // Stop crafting if event is cancelled
 +        }
 +        //Paper end
          this.checkTakeAchievements(stack);
