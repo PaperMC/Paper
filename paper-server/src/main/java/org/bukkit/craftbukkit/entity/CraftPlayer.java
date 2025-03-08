@@ -3599,4 +3599,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         return forwardMovement == backwardMovement ? 0 : forwardMovement ? 1 : -1;
     }
+
+    @Override
+    public int getDeathScreenScore() {
+        return getHandle().getScore();
+    }
+
+    @Override
+    public void setDeathScreenScore(final int score) {
+        getHandle().setScore(score);
+    }
 }
