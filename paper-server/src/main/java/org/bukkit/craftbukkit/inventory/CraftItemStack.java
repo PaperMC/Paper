@@ -665,7 +665,7 @@ public final class CraftItemStack extends ItemStack {
 
         final DataComponentPatch.SplitResult split = sourceNmsStack.getComponentsPatch().split();
         this.handle.applyComponents(split.added().filter(nmsFilter));
-        split.removed().stream().filter(nmsFilter).forEach(sourceNmsStack::remove);
+        split.removed().stream().filter(nmsFilter).forEach(this.handle::remove);
     }
 
     @Override
