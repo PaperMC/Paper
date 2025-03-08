@@ -329,8 +329,6 @@ public interface ItemFactory {
      *
      * <p>Enchantment tables use levels in the range {@code [1, 30]}.</p>
      *
-     * <p>Non-positive or too high values of {@code levels} will result in no enchantments being applied.</p>
-     *
      * @param itemStack ItemStack to enchant
      * @param levels levels to use for enchanting
      * @param allowTreasure whether to allow enchantments where {@link org.bukkit.enchantments.Enchantment#isTreasure()} returns true
@@ -347,8 +345,6 @@ public interface ItemFactory {
      * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
      *
      * <p>Enchantment tables use levels in the range {@code [1, 30]}.</p>
-     *
-     * <p>Non-positive or too high values of {@code levels} will result in no enchantments being applied.</p>
      *
      * @param itemStack ItemStack to enchant
      * @param levels levels to use for enchanting
