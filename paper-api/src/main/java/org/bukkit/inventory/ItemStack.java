@@ -685,8 +685,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      *
      * <p>Enchantment tables use levels in the range {@code [1, 30]}.</p>
      *
-     * <p>Non-positive or too high values of {@code levels} will result in no enchantments being applied.</p>
-     *
      * @param levels levels to use for enchanting
      * @param allowTreasure whether to allow enchantments where {@link org.bukkit.enchantments.Enchantment#isTreasure()} returns true
      * @param random {@link java.util.Random} instance to use for enchanting
@@ -704,8 +702,6 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * <p>If the provided ItemStack is already enchanted, the existing enchants will be removed before enchanting.</p>
      *
      * <p>Enchantment tables use levels in the range {@code [1, 30]}.</p>
-     *
-     * <p>Non-positive or too high values of {@code levels} will result in no enchantments being applied.</p>
      *
      * @param levels levels to use for enchanting
      * @param keySet registry key set defining the set of possible enchantments, e.g. {@link io.papermc.paper.registry.keys.tags.EnchantmentTagKeys#IN_ENCHANTING_TABLE}.
