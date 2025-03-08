@@ -1314,7 +1314,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
     public void copyDataFrom(final @NotNull ItemStack source) {
-        this.copyDataFrom(source, null);
+        this.copyDataFrom(source, $ -> true);
     }
 
     /**
@@ -1339,7 +1339,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param filter predicate for which components to copy
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
-    public void copyDataFrom(final @NotNull ItemStack source, final java.util.function.@Nullable Predicate<io.papermc.paper.datacomponent.@NotNull DataComponentType> filter) {
+    public void copyDataFrom(final @NotNull ItemStack source, final java.util.function.@NotNull Predicate<io.papermc.paper.datacomponent.@NotNull DataComponentType> filter) {
         this.craftDelegate.copyDataFrom(source, filter);
     }
 

@@ -1,12 +1,14 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
@@ -15,6 +17,7 @@ import net.minecraft.core.HolderSet;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentPredicate;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.nbt.CompoundTag;
@@ -654,17 +657,15 @@ public final class CraftItemStack extends ItemStack {
             return;
         }
 
-        CraftItemStack nmsStack = getCraftStack(source);
+        final Predicate<DataComponentType<?>> nmsFilter = filter == null ? Predicates.alwaysTrue() : nms -> filter.test(io.papermc.paper.datacomponent.PaperDataComponentType.minecraftToBukkit(nms));
+        net.minecraft.world.item.ItemStack sourceNmsStack = getCraftStack(source).handle;
+        this.handle.applyComponents(sourceNmsStack.getPrototype().filter(nmsType -> {
+            return !sourceNmsStack.hasNonDefault(nmsType) && nmsFilter.test(nmsType);
+        }));
 
-        DataComponentMap components = nmsStack.handle.getComponents();
-        if (filter != null) {
-            components = components.filter(nms -> {
-                io.papermc.paper.datacomponent.DataComponentType api = io.papermc.paper.datacomponent.PaperDataComponentType.minecraftToBukkit(nms);
-                return filter.test(api);
-            });
-        }
-
-        this.handle.applyComponents(components);
+        final DataComponentPatch.SplitResult split = sourceNmsStack.getComponentsPatch().split();
+        this.handle.applyComponents(split.added().filter(nmsFilter));
+        split.removed().stream().filter(nmsFilter).forEach(sourceNmsStack::remove);
     }
 
     @Override
@@ -673,8 +674,7 @@ public final class CraftItemStack extends ItemStack {
             return false;
         }
         final net.minecraft.core.component.DataComponentType<?> nms = io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type);
-        // maybe a more efficient way is to expose the "patch" map in PatchedDataComponentMap and just check if the type exists as a key
-        return !java.util.Objects.equals(this.handle.get(nms), this.handle.getPrototype().get(nms));
+        return this.handle.hasNonDefault(nms);
     }
 
     @Override
