@@ -5,8 +5,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.support.environment.AllFeatures;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -24,20 +24,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @AllFeatures
 public class SchedulerTest {
-    private static final AtomicBoolean active = new AtomicBoolean(false);
-    private static final Plugin plugin = new PaperTestPlugin("foo/bar");
+    private static final Plugin PLUGIN = new PaperTestPlugin("foo/bar");
 
-    @BeforeAll
-    public static void start() {
+    private final AtomicBoolean active = new AtomicBoolean(false);
+    private Thread leader;
+
+    @BeforeEach
+    public void start() {
         final CraftScheduler scheduler = (CraftScheduler) Bukkit.getServer().getScheduler();
         active.set(true);
-        new Thread(() -> {
+        leader = new Thread(() -> {
             while (active.get()) {
                 scheduler.mainThreadHeartbeat();
                 try {
@@ -46,12 +47,14 @@ public class SchedulerTest {
                     throw new RuntimeException(e);
                 }
             }
-        }, "main").start();
+        }, "main");
+        leader.start();
     }
 
-    @AfterAll
-    public static void stop() {
+    @AfterEach
+    public void stop() throws InterruptedException {
         active.set(false);
+        leader.join();
     }
 
     @ParameterizedTest
@@ -61,9 +64,9 @@ public class SchedulerTest {
         final CraftScheduler scheduler = (CraftScheduler) Bukkit.getServer().getScheduler();
         final Runnable action = () -> d.complete(1);
         if (async) {
-            scheduler.runTaskLaterAsynchronously(plugin, action, 20);
+            scheduler.runTaskLaterAsynchronously(PLUGIN, action, 20);
         } else {
-            scheduler.runTaskLater(plugin, action, 20);
+            scheduler.runTaskLater(PLUGIN, action, 20);
         }
         assertEquals(1,
             (int) d.completeOnTimeout(0, 3, TimeUnit.SECONDS).get(),
@@ -81,13 +84,14 @@ public class SchedulerTest {
             for (int i = 0; i < tasks; ++i) {
                 executor.execute(() -> {
                     final BukkitTask task = async
-                        ? scheduler.runTaskLaterAsynchronously(plugin, () -> { }, 20)
-                        : scheduler.runTaskLater(plugin, () -> {}, 20);
+                        ? scheduler.runTaskLaterAsynchronously(PLUGIN, () -> { }, 20)
+                        : scheduler.runTaskLater(PLUGIN, () -> {}, 20);
                     executor.execute(task::cancel);
                     submitted.add(task);
                 });
             }
         }
+        stop();
         for (final BukkitTask task : submitted) {
             assertTrue(
                 task.isCancelled(),
@@ -105,7 +109,7 @@ public class SchedulerTest {
         final ReentrantLock lock = new ReentrantLock();
         final Condition condition = lock.newCondition();
         final AtomicInteger result = new AtomicInteger();
-        final Future<Integer> future = Bukkit.getScheduler().callSyncMethod(plugin, () -> {
+        final Future<Integer> future = Bukkit.getScheduler().callSyncMethod(PLUGIN, () -> {
             lock.lock();
             try {
                 while (result.get() < 1) {
@@ -116,7 +120,7 @@ public class SchedulerTest {
             }
             return result.get();
         });
-        Bukkit.getScheduler().runTaskLaterAsynchronously(plugin, () -> {
+        Bukkit.getScheduler().runTaskLaterAsynchronously(PLUGIN, () -> {
             lock.lock();
             try {
                 result.set(1);

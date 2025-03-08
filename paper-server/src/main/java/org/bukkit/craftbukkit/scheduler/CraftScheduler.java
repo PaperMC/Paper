@@ -194,23 +194,22 @@ public class CraftScheduler implements BukkitScheduler {
         final long id = this.nextId();
         return this.handle(
             async
-                ? new CraftAsyncTask(this.asyncScheduler.runners, plugin, consumer, id, period)
-                : new CraftTask(plugin, consumer, id, period),
+                ? new CraftAsyncTask(this.asyncScheduler, this.asyncScheduler.runners, plugin, consumer, id, period)
+                : new CraftTask(this, plugin, consumer, id, period),
             delay);
     }
 
     @Override
     public <T> Future<T> callSyncMethod(final Plugin plugin, final Callable<T> task) {
         CraftScheduler.validate(plugin);
-        final CraftFuture<T> future = new CraftFuture<>(task, plugin, this.nextId());
+        final CraftFuture<T> future = new CraftFuture<>(this, task, plugin, this.nextId());
         this.handle(future, 0L);
         return future;
     }
 
-    void cancelTask(final CraftTask task) {
-        if (task.tryCancel()) {
-            this.external.push(task);
-        }
+
+    private CraftScheduler scheduler() {
+        return isAsyncScheduler ? asyncScheduler : this;
     }
 
     @Override
@@ -225,7 +224,7 @@ public class CraftScheduler implements BukkitScheduler {
         // Paper end
         final CraftTask task = this.runners.get(taskId);
         if (task != null) {
-            this.cancelTask(task);
+            task.cancel();
         } else {
             for (CraftTask t : this.external) {
                 if (t.getTaskId() == taskId) {
@@ -235,11 +234,12 @@ public class CraftScheduler implements BukkitScheduler {
             }
             handle(
                 new CraftTask(
+                    scheduler(),
                     t -> {
-                        parsePending();
-                        for (final CraftTask taskPending : this.pending) {
-                            if (taskPending.getTaskId() == taskId) {
-                                this.cancelTask(taskPending);
+                        for (final CraftTask pend : this.pending) {
+                            if (pend.getTaskId() == taskId) {
+                                pend.cancel();
+                                return;
                             }
                         }
                     }
@@ -258,11 +258,11 @@ public class CraftScheduler implements BukkitScheduler {
         }
         handle(
             new CraftTask(
+                scheduler(),
                 t -> {
-                    parsePending();
-                    for (final CraftTask taskPending : this.pending) {
-                        if (taskPending.getOwner().equals(plugin)) {
-                            this.cancelTask(taskPending);
+                    for (final CraftTask pend : this.pending) {
+                        if (!pend.isInternal() && pend.getOwner().equals(plugin)) {
+                            pend.cancel();
                         }
                     }
                 }
@@ -335,7 +335,7 @@ public class CraftScheduler implements BukkitScheduler {
     public List<BukkitTask> getPendingTasks() {
         final ArrayList<CraftTask> truePending = new ArrayList<CraftTask>();
         for (final CraftTask task : this.external) {
-            if (task.getTaskId() >= 0 && !task.isCancelled()) {
+            if (!task.isInternal() && !task.isCancelled()) {
                 truePending.add(task);
             }
         }
@@ -447,7 +447,10 @@ public class CraftScheduler implements BukkitScheduler {
         this.external.dropAll(task -> {
             if (task.getState() >= CraftTask.NO_REPEATING) {
                 this.pending.push(task);
-                this.runners.put(task.getTaskId(), task);
+                // todo:
+                if (!task.isInternal()) {
+                    this.runners.put(task.getTaskId(), task);
+                }
             } else {
                 this.pending.remove(task);
                 if (task.isSync()) {

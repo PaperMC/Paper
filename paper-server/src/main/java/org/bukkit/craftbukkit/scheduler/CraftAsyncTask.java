@@ -16,11 +16,12 @@ class CraftAsyncTask extends CraftTask {
     private final Map<Long, BukkitWorker> workers = new HashMap<>();
     private final Map<Integer, CraftTask> runners;
 
-    CraftAsyncTask(final Map<Integer, CraftTask> runners,
+    CraftAsyncTask(final CraftScheduler scheduler,
+                   final Map<Integer, CraftTask> runners,
                    final Plugin plugin,
                    final Consumer<? super BukkitTask> task,
                    final long id, final long delay) {
-        super(plugin, task, id, delay);
+        super(scheduler, plugin, task, id, delay);
         this.runners = runners;
     }
 

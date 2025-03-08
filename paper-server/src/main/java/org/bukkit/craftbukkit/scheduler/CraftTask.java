@@ -13,20 +13,23 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
     public static final long DONE = -3;
     public static final long CANCEL = -4;
 
+    private final CraftScheduler scheduler;
     private final AtomicLong period;
     private final Consumer<? super BukkitTask> task;
     private final Plugin plugin;
     private final long id;
     private long nextRun;
 
-    CraftTask(final Consumer<? super BukkitTask> task) {
-        this(null, task, -1, NO_REPEATING);
+    CraftTask(final CraftScheduler scheduler, final Consumer<? super BukkitTask> task) {
+        this(scheduler, null, task, -1, NO_REPEATING);
     }
 
-    CraftTask(final Plugin plugin,
+    CraftTask(final CraftScheduler scheduler,
+              final Plugin plugin,
               final Consumer<? super BukkitTask> task,
               final long id,
               final long period) {
+        this.scheduler = scheduler;
         this.plugin = plugin;
         this.task = task;
         this.id = id;
@@ -68,7 +71,9 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
 
     @Override
     public void cancel() {
-        Bukkit.getScheduler().cancelTask(this.getTaskId());
+        if (this.tryCancel() && getPeriod() > 0) {
+            this.scheduler.handle(this, 0);
+        }
     }
 
     boolean casState(long p, long x) {
@@ -85,6 +90,10 @@ public class CraftTask implements BukkitTask, Runnable, Comparable<CraftTask> { 
 
     long getPeriod() {
         return this.period.get();
+    }
+
+    boolean isInternal() {
+        return this.id < 0;
     }
 
     /**

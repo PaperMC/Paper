@@ -66,8 +66,9 @@ public class CraftAsyncScheduler extends CraftScheduler {
     }
 
     private boolean executeTask(final CraftTask task) {
-        if (task.getState() >= CraftTask.NO_REPEATING) {
-            this.runners.put(task.getTaskId(), task);
+        if (task.isInternal()) {
+            task.run();
+        } else if (task.getState() >= CraftTask.NO_REPEATING) {
             this.executor.execute(new ServerSchedulerReportingWrapper(task));
             return true;
         }

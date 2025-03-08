@@ -21,8 +21,11 @@ public final class CraftFuture<T> extends CraftTask implements Future<T> {
     private T value;
     private Exception exception = null;
 
-    CraftFuture(final Callable<T> callable, final Plugin plugin, final long id) {
-        super(plugin, a -> {}, id, NO_REPEATING);
+    CraftFuture(final CraftScheduler scheduler,
+                final Callable<T> callable,
+                final Plugin plugin,
+                final long id) {
+        super(scheduler, plugin, a -> {}, id, NO_REPEATING);
         this.callable = callable;
     }
 
