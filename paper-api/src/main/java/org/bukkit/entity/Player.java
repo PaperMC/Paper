@@ -3918,12 +3918,4 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * @param score New death screen score of player
      */
     void setDeathScreenScore(int score);
-
-    /**
-     * Increase the death screen score of the player.
-     * <p>This amount is added to when the player gains experience.</p>
-     *
-     * @param score Amount to add to death screen score of player
-     */
-    void increaseDeathScreenScore(int score);
 }

@@ -3609,9 +3609,4 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void setDeathScreenScore(final int score) {
         getHandle().setScore(score);
     }
-
-    @Override
-    public void increaseDeathScreenScore(int score) {
-        getHandle().increaseScore(score);
-    }
 }
