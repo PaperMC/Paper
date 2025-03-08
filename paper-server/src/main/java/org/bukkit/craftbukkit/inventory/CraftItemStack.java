@@ -653,11 +653,13 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public void copyDataFrom(final ItemStack source, final java.util.function.Predicate<io.papermc.paper.datacomponent.DataComponentType> filter) {
+        Preconditions.checkArgument(source != null, "source cannot be null");
+        Preconditions.checkArgument(filter != null, "filter cannot be null");
         if (this.isEmpty() || source.isEmpty()) {
             return;
         }
 
-        final Predicate<DataComponentType<?>> nmsFilter = filter == null ? Predicates.alwaysTrue() : nms -> filter.test(io.papermc.paper.datacomponent.PaperDataComponentType.minecraftToBukkit(nms));
+        final Predicate<DataComponentType<?>> nmsFilter = nms -> filter.test(io.papermc.paper.datacomponent.PaperDataComponentType.minecraftToBukkit(nms));
         net.minecraft.world.item.ItemStack sourceNmsStack = getCraftStack(source).handle;
         this.handle.applyComponents(sourceNmsStack.getPrototype().filter(nmsType -> {
             return !sourceNmsStack.hasNonDefault(nmsType) && nmsFilter.test(nmsType);
