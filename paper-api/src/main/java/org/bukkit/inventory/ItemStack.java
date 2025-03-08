@@ -1307,19 +1307,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
-     * Copies the values of components from the provided ItemStack. Will only copy the value of components from the
-     * source ItemStack that are set or overridden.
-     *
-     * @param source the item stack to copy from
-     */
-    @org.jetbrains.annotations.ApiStatus.Experimental
-    public void copyDataFrom(final @NotNull ItemStack source) {
-        this.copyDataFrom(source, $ -> true);
-    }
-
-    /**
-     * Copies the values of components from the provided ItemStack. Will only copy the value of components from the
-     * source ItemStack that are set or overridden.
+     * Copies component values and component removals from the provided ItemStack.
      * <p>
      * Example:
      * <pre>{@code
