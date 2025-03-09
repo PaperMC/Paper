@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 
@@ -16,7 +17,8 @@ public class ItemCraftedEvent extends Event{
     private final Player player;
     private final ItemStack craftedItemStack;
 
-    public ItemCraftedEvent(Player player,ItemStack craftedItemStack) {
+    @ApiStatus.Internal
+    public ItemCraftedEvent(Player player, ItemStack craftedItemStack) {
         this.player = player;
         this.craftedItemStack = craftedItemStack;
     }
