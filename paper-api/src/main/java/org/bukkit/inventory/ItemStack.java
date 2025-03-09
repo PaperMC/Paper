@@ -1307,6 +1307,31 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     }
 
     /**
+     * Copies component values and component removals from the provided ItemStack.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * Set<DataComponentType> types = Set.of(
+     *     DataComponentTypes.CONSUMABLE,
+     *     DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE,
+     *     DataComponentTypes.RARITY
+     * );
+     *
+     * ItemStack source = ItemStack.of(Material.ENCHANTED_GOLDEN_APPLE);
+     * ItemStack target = ItemStack.of(Material.GOLDEN_CARROT);
+     *
+     * target.copyDataFrom(source, types::contains);
+     * }</pre>
+     *
+     * @param source the item stack to copy from
+     * @param filter predicate for which components to copy
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public void copyDataFrom(final @NotNull ItemStack source, final java.util.function.@NotNull Predicate<io.papermc.paper.datacomponent.@NotNull DataComponentType> filter) {
+        this.craftDelegate.copyDataFrom(source, filter);
+    }
+
+    /**
      * Checks if the data component type is overridden from the default for the
      * item type.
      *
