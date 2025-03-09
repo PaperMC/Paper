@@ -319,7 +319,11 @@ public interface InventoryView {
     public void setTitle(@NotNull String title);
 
     /**
-     * Gets the menu type of the inventory view.
+     * Gets the menu type of the inventory view if applicable.
+     * <p>
+     * Some inventory types do not support a menu type. In such cases, this method
+     * returns null. This typically applies to inventories belonging to entities
+     * like players or animals (e.g., a horse).
      *
      * @return the menu type of the inventory view or null if not applicable
      */
