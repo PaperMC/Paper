@@ -33,9 +33,11 @@ public class BlockFadeEvent extends BlockEvent implements Cancellable {
     }
 
     /**
-     * Gets the state of the new block that will replace the block fading, melting or disappearing.
+     * Gets the state of the new block that will replace the block
+     * fading, melting or disappearing.
      *
-     * @return The block state of the new block that replaces the block fading, melting or disappearing.
+     * @return The block state of the new block that replaces the block
+     *     fading, melting or disappearing
      */
     @NotNull
     public BlockState getNewState() {
