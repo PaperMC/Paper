@@ -167,7 +167,25 @@
                  if (!blockState.isAir() && f >= 1.0F) {
                      this.destroyAndAck(pos, sequence, "insta mine");
                  } else {
-@@ -212,14 +_,22 @@
+@@ -188,7 +_,7 @@
+                     this.lastSentState = i;
+                 }
+             } else if (action == ServerboundPlayerActionPacket.Action.STOP_DESTROY_BLOCK) {
+-                if (pos.equals(this.destroyPos)) {
++                if (this.isDestroyingBlock && pos.equals(this.destroyPos)) { // Paper - require isDestroyingBlock to be true (special condition for when destroy pos is 0,0,0 and the event is cancelled)
+                     int i1 = this.gameTicks - this.destroyProgressStart;
+                     BlockState blockStatex = this.level.getBlockState(pos);
+                     if (!blockStatex.isAir()) {
+@@ -196,7 +_,7 @@
+                         if (f1 >= 0.7F) {
+                             this.isDestroyingBlock = false;
+                             this.level.destroyBlockProgress(this.player.getId(), pos, -1);
+-                            this.destroyAndAck(pos, sequence, "destroyed");
++                            this.isDestroyingBlock = !this.destroyAndAck(pos, sequence, "destroyed"); // Paper - block break event - correctly restore isDestroyingBlock if destroyBlock fails
+                             return;
+                         }
+ 
+@@ -212,59 +_,141 @@
                  this.debugLogging(pos, true, sequence, "stopped destroying");
              } else if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
                  this.isDestroyingBlock = false;
@@ -192,7 +210,18 @@
              }
          }
      }
-@@ -235,36 +_,108 @@
+ 
+-    public void destroyAndAck(BlockPos pos, int sequence, String message) {
++    public boolean destroyAndAck(BlockPos pos, int sequence, String message) { // Paper - block break event - correctly restore isDestroyingBlock if destroyBlock fails
+         if (this.destroyBlock(pos)) {
+             this.debugLogging(pos, true, sequence, message);
++            return true; // Paper - block break event - correctly restore isDestroyingBlock if destroyBlock fails
+         } else {
+             this.player.connection.send(new ClientboundBlockUpdatePacket(pos, this.level.getBlockState(pos)));
+             this.debugLogging(pos, false, sequence, message);
++            return false; // Paper - block break event - correctly restore isDestroyingBlock if destroyBlock fails
+         }
+     }
  
      public boolean destroyBlock(BlockPos pos) {
          BlockState blockState = this.level.getBlockState(pos);
