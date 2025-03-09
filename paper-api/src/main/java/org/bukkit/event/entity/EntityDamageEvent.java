@@ -8,6 +8,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.WorldBorder;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
@@ -15,6 +16,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -32,19 +34,24 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     private final DamageSource damageSource;
 
     @Deprecated(since = "1.20.4", forRemoval = true)
+    @ApiStatus.Internal
     public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
         this(damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), damage);
     }
 
+    @Deprecated
+    @ApiStatus.Internal
     public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, final double damage) {
-        this(damagee, cause, damageSource, new EnumMap<DamageModifier, Double>(ImmutableMap.of(DamageModifier.BASE, damage)), new EnumMap<DamageModifier, Function<? super Double, Double>>(ImmutableMap.of(DamageModifier.BASE, ZERO)));
+        this(damagee, cause, damageSource, new EnumMap<>(ImmutableMap.of(DamageModifier.BASE, damage)), new EnumMap<DamageModifier, Function<? super Double, Double>>(ImmutableMap.of(DamageModifier.BASE, ZERO)));
     }
 
     @Deprecated(since = "1.20.4", forRemoval = true)
+    @ApiStatus.Internal
     public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         this(damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), modifiers, modifierFunctions);
     }
 
+    @ApiStatus.Internal
     public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         super(damagee);
         Preconditions.checkArgument(modifiers.containsKey(DamageModifier.BASE), "BASE DamageModifier missing");
@@ -52,7 +59,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         Preconditions.checkArgument(modifiers.values().stream().allMatch(Objects::nonNull), "Cannot have null modifier values");
         Preconditions.checkArgument(modifiers.keySet().equals(modifierFunctions.keySet()), "Must have a modifier function for each DamageModifier");
         Preconditions.checkArgument(modifierFunctions.values().stream().allMatch(Objects::nonNull), "Cannot have null modifier function");
-        this.originals = new EnumMap<DamageModifier, Double>(modifiers);
+        this.originals = new EnumMap<>(modifiers);
         this.cause = cause;
         this.modifiers = modifiers;
         this.modifierFunctions = modifierFunctions;
@@ -295,15 +302,15 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     public enum DamageCause {
 
         /**
-         * Damage caused by /kill command
+         * Damage caused by /kill command.
          * <p>
          * Damage: {@link Float#MAX_VALUE}
          */
         KILL,
         /**
-         * Damage caused by the World Border
+         * Damage caused by the World Border.
          * <p>
-         * Damage: {@link WorldBorder#getDamageAmount()}
+         * Damage: {@link WorldBorder#getDamageAmount()} <!-- todo not accurate -->
          */
         WORLD_BORDER,
         /**
@@ -332,47 +339,47 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         PROJECTILE,
         /**
-         * Damage caused by being put in a block
+         * Damage caused by being put in a block.
          * <p>
          * Damage: 1
          */
         SUFFOCATION,
         /**
-         * Damage caused when an entity falls a distance greater than 3 blocks
+         * Damage caused when an entity falls a distance greater than the {@link org.bukkit.attribute.Attribute#SAFE_FALL_DISTANCE safe fall distance}.
          * <p>
-         * Damage: fall height - 3.0
+         * Damage: fall height - {@link org.bukkit.attribute.Attribute#SAFE_FALL_DISTANCE safe fall distance} <!-- todo not accurate -->
          */
         FALL,
         /**
-         * Damage caused by direct exposure to fire
+         * Damage caused by direct exposure to fire.
          * <p>
-         * Damage: 1
+         * Damage: 1 or 2 (for soul fire)
          */
         FIRE,
         /**
-         * Damage caused due to burns caused by fire
+         * Damage caused due to burns caused by fire.
          * <p>
          * Damage: 1
          */
         FIRE_TICK,
         /**
-         * Damage caused due to a snowman melting
+         * Damage caused due to a snowman melting.
          * <p>
          * Damage: 1
          */
         MELTING,
         /**
-         * Damage caused by direct exposure to lava
+         * Damage caused by direct exposure to lava.
          * <p>
          * Damage: 4
          */
         LAVA,
         /**
-         * Damage caused by running out of air while in water
+         * Damage caused by running out of air while in water.
          * <p>
-         * Damage: 2
+         * Damage: 1 or 2
          */
-        DROWNING,
+        DROWNING, // todo called sometimes instead of dry out
         /**
          * Damage caused by being in the area when a block explodes.
          * <p>
@@ -387,15 +394,15 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         ENTITY_EXPLOSION,
         /**
-         * Damage caused by falling into the void
+         * Damage caused by falling into the void.
          * <p>
-         * Damage: 4 for players
+         * Damage: {@link World#getVoidDamageAmount()}
          */
         VOID,
         /**
-         * Damage caused by being struck by lightning
+         * Damage caused by being struck by lightning.
          * <p>
-         * Damage: 5
+         * Damage: 5 or {@link Float#MAX_VALUE} for turtle
          */
         LIGHTNING,
         /**
@@ -408,19 +415,19 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         SUICIDE,
         /**
-         * Damage caused by starving due to having an empty hunger bar
+         * Damage caused by starving due to having an empty hunger bar.
          * <p>
          * Damage: 1
          */
         STARVATION,
         /**
-         * Damage caused due to an ongoing poison effect
+         * Damage caused due to an ongoing poison effect.
          * <p>
          * Damage: 1
          */
         POISON,
         /**
-         * Damage caused by being hit by a damage potion or spell
+         * Damage caused by being hit by a damage potion or spell.
          * <p>
          * Damage: variable
          */
@@ -430,7 +437,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         WITHER,
         /**
-         * Damage caused by being hit by a falling block which deals damage
+         * Damage caused by being hit by a falling block which deals damage.
          * <p>
          * <b>Note:</b> Not every block deals damage
          * <p>
@@ -438,24 +445,22 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          */
         FALLING_BLOCK,
         /**
-         * Damage caused in retaliation to another attack by the Thorns
-         * enchantment.
+         * Damage caused in retaliation to another attack by the {@link org.bukkit.enchantments.Enchantment#THORNS}
+         * enchantment or guardian.
          * <p>
-         * Damage: 1-4 (Thorns)
+         * Damage: 1-5 (thorns) or 2 (guardian)
          */
         THORNS,
         /**
          * Damage caused by a dragon breathing fire.
          * <p>
          * Damage: variable
+         *
+         * @deprecated never used without help of commands or plugins,
+         * {@link #ENTITY_ATTACK} will be used instead
          */
+        @Deprecated
         DRAGON_BREATH,
-        /**
-         * Custom damage.
-         * <p>
-         * Damage: variable
-         */
-        CUSTOM,
         /**
          * Damage caused when an entity runs into a wall.
          * <p>
@@ -471,12 +476,12 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         /**
          * Damage caused when an entity steps on {@link Material#CAMPFIRE} or {@link Material#SOUL_CAMPFIRE}.
          * <p>
-         * Damage: 1
+         * Damage: 1 or 2 (for soul fire)
          */
         CAMPFIRE,
         /**
          * Damage caused when an entity is colliding with too many entities due
-         * to the maxEntityCramming game rule.
+         * to the {@link org.bukkit.GameRule#MAX_ENTITY_CRAMMING}.
          * <p>
          * Damage: 6
          */
@@ -484,20 +489,26 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         /**
          * Damage caused when an entity that should be in water is not.
          * <p>
-         * Damage: 1
+         * Damage: 1 or 2
          */
         DRYOUT,
         /**
          * Damage caused from freezing.
          * <p>
-         * Damage: 1 or 5
+         * Damage: 1 or 5 (for {@link org.bukkit.Tag#ENTITY_TYPES_FREEZE_HURTS_EXTRA_TYPES sensitive} entities)
          */
         FREEZE,
         /**
-         * Damage caused by the Sonic Boom attack from {@link org.bukkit.entity.Warden}
+         * Damage caused by the Sonic Boom attack from {@link org.bukkit.entity.Warden}.
          * <p>
          * Damage: 10
          */
-        SONIC_BOOM;
+        SONIC_BOOM,
+        /**
+         * Custom damage.
+         * <p>
+         * Damage: variable
+         */
+        CUSTOM;
     }
 }
