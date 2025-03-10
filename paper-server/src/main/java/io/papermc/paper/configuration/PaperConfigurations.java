@@ -9,17 +9,18 @@ import io.papermc.paper.configuration.mapping.InnerClassFieldDiscoverer;
 import io.papermc.paper.configuration.serializer.ComponentSerializer;
 import io.papermc.paper.configuration.serializer.EnumValueSerializer;
 import io.papermc.paper.configuration.serializer.NbtPathSerializer;
-import io.papermc.paper.configuration.serializer.PacketClassSerializer;
+import io.papermc.paper.configuration.serializer.ServerboundPacketClassSerializer;
 import io.papermc.paper.configuration.serializer.ResourceLocationSerializer;
 import io.papermc.paper.configuration.serializer.StringRepresentableSerializer;
-import io.papermc.paper.configuration.serializer.collections.FastutilMapSerializer;
-import io.papermc.paper.configuration.serializer.collections.MapSerializer;
-import io.papermc.paper.configuration.serializer.collections.TableSerializer;
+import io.papermc.paper.configuration.serializer.collection.TableSerializer;
+import io.papermc.paper.configuration.serializer.collection.map.FastutilMapSerializer;
+import io.papermc.paper.configuration.serializer.collection.map.MapSerializer;
 import io.papermc.paper.configuration.serializer.registry.RegistryHolderSerializer;
 import io.papermc.paper.configuration.serializer.registry.RegistryValueSerializer;
 import io.papermc.paper.configuration.transformation.Transformations;
 import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
 import io.papermc.paper.configuration.transformation.global.versioned.V29_LogIPs;
+import io.papermc.paper.configuration.transformation.global.versioned.V30_PacketIds;
 import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
 import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
 import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
@@ -209,7 +210,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
         return options
             .header(GLOBAL_HEADER)
             .serializers(builder -> builder
-                .register(new PacketClassSerializer())
+                .register(new ServerboundPacketClassSerializer())
                 .register(new RegistryValueSerializer<>(new TypeToken<DataComponentType<?>>() {}, registryAccess, Registries.DATA_COMPONENT_TYPE, false))
             );
     }
@@ -291,6 +292,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
 
         final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
         V29_LogIPs.apply(versionedBuilder);
+        V30_PacketIds.apply(versionedBuilder);
         // ADD FUTURE VERSIONED TRANSFORMS TO versionedBuilder HERE
         versionedBuilder.build().apply(node);
     }
