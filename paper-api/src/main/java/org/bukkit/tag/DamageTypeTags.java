@@ -153,7 +153,14 @@ public final class DamageTypeTags {
     /**
      * Vanilla tag representing damage types which originate from mace smashes.
      */
-    public static final Tag<DamageType> IS_MACE_SMASH = getTag("mace_smash");
+    public static final Tag<DamageType> MACE_SMASH = getTag("mace_smash");
+    /**
+     * Vanilla tag representing damage types which originate from mace smashes.
+     *
+     * @deprecated use {@link #MACE_SMASH}
+     */
+    @Deprecated(since = "1.21.4", forRemoval = true)
+    public static final Tag<DamageType> IS_MACE_SMASH = MACE_SMASH;
     /**
      * Internal use only.
      */
