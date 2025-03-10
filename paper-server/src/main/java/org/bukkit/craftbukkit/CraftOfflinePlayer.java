@@ -13,6 +13,8 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.world.level.storage.PlayerDataStorage;
@@ -28,12 +30,11 @@ import org.bukkit.ban.ProfileBanList;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
-import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.profile.PlayerProfile;
 
 @SerializableAs("Player")
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
@@ -392,25 +393,35 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     @Override
-    public Location getRespawnLocation() {
+    public Location getRespawnLocation(boolean load) {
         CompoundTag data = this.getData();
         if (data == null) return null;
 
-        if (data.contains("SpawnX") && data.contains("SpawnY") && data.contains("SpawnZ")) {
-            // Paper start - fix wrong world
-            final float respawnAngle = data.getFloat("SpawnAngle");
-            org.bukkit.World spawnWorld = this.server.getWorld(data.getString("SpawnWorld")); // legacy
+        if (data.contains("SpawnX", Tag.TAG_ANY_NUMERIC) && data.contains("SpawnY", Tag.TAG_ANY_NUMERIC) && data.contains("SpawnZ", Tag.TAG_ANY_NUMERIC)) {
+            org.bukkit.World spawnWorld = null;
             if (data.contains("SpawnDimension")) {
                 com.mojang.serialization.DataResult<net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level>> result = net.minecraft.world.level.Level.RESOURCE_KEY_CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, data.get("SpawnDimension"));
                 net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> levelKey = result.resultOrPartial(LOGGER::error).orElse(net.minecraft.world.level.Level.OVERWORLD);
                 net.minecraft.server.level.ServerLevel level = this.server.console.getLevel(levelKey);
-                spawnWorld = level != null ? level.getWorld() : spawnWorld;
+                spawnWorld = level != null ? level.getWorld() : null;
+            }
+            if (spawnWorld == null && data.contains("SpawnWorld")) { // legacy
+                spawnWorld = this.server.getWorld(data.getString("SpawnWorld"));
             }
             if (spawnWorld == null) {
                 return null;
             }
-            return new Location(spawnWorld, data.getInt("SpawnX"), data.getInt("SpawnY"), data.getInt("SpawnZ"), respawnAngle, 0);
-            // Paper end
+
+            final float respawnAngle = data.getFloat("SpawnAngle");
+            net.minecraft.core.BlockPos respawnPos = new net.minecraft.core.BlockPos(data.getInt("SpawnX"), data.getInt("SpawnY"), data.getInt("SpawnZ"));
+            if (!load) {
+                return CraftLocation.toBukkit(respawnPos, spawnWorld, respawnAngle, 0);
+            }
+
+            final org.bukkit.World finalSpawnWorld = spawnWorld;
+            return ServerPlayer.findRespawnAndUseSpawnBlock(((CraftWorld) spawnWorld).getHandle(), respawnPos, respawnAngle, data.getBoolean("SpawnForced"), false)
+                .map(resolvedPos -> CraftLocation.toBukkit(resolvedPos.position(), finalSpawnWorld, resolvedPos.yaw(), 0))
+                .orElse(null);
         }
         return null;
     }
