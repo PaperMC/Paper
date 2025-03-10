@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -1327,7 +1328,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * @param filter predicate for which components to copy
      */
     @org.jetbrains.annotations.ApiStatus.Experimental
-    public void copyDataFrom(final @NotNull ItemStack source, final java.util.function.@NotNull Predicate<io.papermc.paper.datacomponent.@NotNull DataComponentType> filter) {
+    public void copyDataFrom(final @NotNull ItemStack source, final @NotNull Predicate<io.papermc.paper.datacomponent.@NotNull DataComponentType> filter) {
         this.craftDelegate.copyDataFrom(source, filter);
     }
 

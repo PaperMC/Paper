@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
 import io.papermc.paper.adventure.PaperAdventure;
 import java.util.Collections;
@@ -57,7 +56,7 @@ public final class CraftItemStack extends ItemStack {
         if (bukkit instanceof final CraftItemStack craftItemStack) {
             return craftItemStack;
         } else {
-            return  (CraftItemStack) API_ITEM_STACK_CRAFT_DELEGATE_FIELD.get(bukkit);
+            return (CraftItemStack) API_ITEM_STACK_CRAFT_DELEGATE_FIELD.get(bukkit);
         }
     }
 
@@ -74,12 +73,12 @@ public final class CraftItemStack extends ItemStack {
 
     @Override
     public boolean equals(final Object obj) {
-        if (!(obj instanceof final org.bukkit.inventory.ItemStack bukkit)) return false;
+        if (!(obj instanceof final ItemStack bukkit)) return false;
         final CraftItemStack craftStack = getCraftStack(bukkit);
         if (this.handle == craftStack.handle) return true;
-        else if (this.handle == null || craftStack.handle == null) return false;
-        else if (this.handle.isEmpty() && craftStack.handle.isEmpty()) return true;
-        else return net.minecraft.world.item.ItemStack.matches(this.handle, craftStack.handle);
+        if (this.handle == null || craftStack.handle == null) return false;
+        if (this.handle.isEmpty() && craftStack.handle.isEmpty()) return true;
+        return net.minecraft.world.item.ItemStack.matches(this.handle, craftStack.handle);
     }
     // Paper end
 
@@ -652,7 +651,7 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
-    public void copyDataFrom(final ItemStack source, final java.util.function.Predicate<io.papermc.paper.datacomponent.DataComponentType> filter) {
+    public void copyDataFrom(final ItemStack source, final Predicate<io.papermc.paper.datacomponent.DataComponentType> filter) {
         Preconditions.checkArgument(source != null, "source cannot be null");
         Preconditions.checkArgument(filter != null, "filter cannot be null");
         if (this.isEmpty() || source.isEmpty()) {
