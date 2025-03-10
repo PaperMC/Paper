@@ -20,7 +20,6 @@ import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.support.RegistryHelper;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @AllFeatures
@@ -70,15 +69,6 @@ public class TranslationKeyTest {
             Assertions.assertTrue(nmsType.getName().getContents() instanceof TranslatableContents, "contents aren't translatable");
             Assertions.assertEquals(((TranslatableContents) nmsType.getName().getContents()).getKey(), type.translationKey(), "translation key mismatch for " + type);
         }
-    }
-
-    @Test
-    @Disabled // TODO fix
-    public void testCreativeCategory() {
-        // for (CreativeModeTab tab : CreativeModeTabs.tabs()) {
-        //     CreativeCategory category = Objects.requireNonNull(CraftCreativeCategory.fromNMS(tab));
-        //     Assertions.assertEquals("translation key mismatch for " + category, ((TranslatableContents) tab.getDisplayName().getContents()).getKey(), category.translationKey());
-        // }
     }
 
     @Test
