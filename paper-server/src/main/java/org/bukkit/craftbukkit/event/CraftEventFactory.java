@@ -1099,7 +1099,7 @@ public class CraftEventFactory {
 
             if (source.knownCause() != null) {
                 cause = source.knownCause();
-            } else if (source.is(DamageTypeTags.IS_EXPLOSION)) {
+            } else if (source.is(DamageTypes.FIREWORKS) || source.is(DamageTypes.EXPLOSION) || source.is(DamageTypes.PLAYER_EXPLOSION)) { // look at relevant items in #is_explosion tag
                 cause = damager instanceof PrimedTnt ? DamageCause.BLOCK_EXPLOSION : DamageCause.ENTITY_EXPLOSION;
             } else if (damager instanceof net.minecraft.world.entity.projectile.Projectile) {
                 if (damager.getBukkitEntity() instanceof ThrownPotion) {

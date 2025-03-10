@@ -379,7 +379,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          * <p>
          * Damage: 1 or 2
          */
-        DROWNING, // todo called sometimes instead of dry out
+        DROWNING,
         /**
          * Damage caused by being in the area when a block explodes.
          * <p>
