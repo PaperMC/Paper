@@ -931,13 +931,17 @@
          }
  
          player.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.LEVEL_CHUNKS_LOAD_START, 0.0F));
-@@ -671,8 +_,16 @@
+@@ -671,8 +_,20 @@
  
      public void sendAllPlayerInfo(ServerPlayer player) {
          player.inventoryMenu.sendAllDataToRemote();
 -        player.resetSentInfo();
 +        // entityplayer.resetSentInfo();
-+        player.getBukkitEntity().updateScaledHealth(); // CraftBukkit - Update scaled health on respawn and worldchange
++        // Paper start - send all attributes
++        java.util.Collection<net.minecraft.world.entity.ai.attributes.AttributeInstance> syncableAttributes = player.getAttributes().getSyncableAttributes();
++        player.getBukkitEntity().injectScaledMaxHealth(syncableAttributes, true);
++        player.connection.send(new net.minecraft.network.protocol.game.ClientboundUpdateAttributesPacket(player.getId(), syncableAttributes));
++        // Paper end - send all attributes
 +        player.refreshEntityData(player); // CraftBukkit - SPIGOT-7218: sync metadata
          player.connection.send(new ClientboundSetHeldSlotPacket(player.getInventory().selected));
 +        // CraftBukkit start - from GameRules
