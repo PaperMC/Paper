@@ -18,7 +18,7 @@ dependencies {
 
 paperweight {
     minecraftVersion = providers.gradleProperty("mcVersion")
-    gitFilePatches = true
+    gitFilePatches = false
 
     updatingMinecraft {
         oldPaperCommit = "f4f275519f7c1fbe9db173b7144a4fe81440e365"
