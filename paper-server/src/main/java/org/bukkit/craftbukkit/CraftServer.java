@@ -13,6 +13,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.Lifecycle;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -260,6 +261,7 @@ import org.bukkit.structure.StructureManager;
 import org.bukkit.util.StringUtil;
 import org.bukkit.util.permissions.DefaultPermissions;
 import org.jetbrains.annotations.NotNull;
+import org.spigotmc.SpigotConfig;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -1912,6 +1914,31 @@ public final class CraftServer implements Server {
     @Override
     public boolean getOnlineMode() {
         return this.console.usesAuthentication();
+    }
+
+    @Override
+    public boolean isProxyOnlineMode() {
+        return GlobalConfiguration.get().proxies.isProxyOnlineMode();
+    }
+
+    @Override
+    public boolean isVelocityOnlineMode() {
+        return GlobalConfiguration.get().proxies.velocity.onlineMode;
+    }
+
+    @Override
+    public boolean isBungeeCordOnlineMode() {
+        return GlobalConfiguration.get().proxies.bungeeCord.onlineMode;
+    }
+
+    @Override
+    public boolean isVelocityEnabled() {
+        return GlobalConfiguration.get().proxies.velocity.enabled;
+    }
+
+    @Override
+    public boolean isBungeeCordEnabled() {
+        return SpigotConfig.bungee;
     }
 
     @Override

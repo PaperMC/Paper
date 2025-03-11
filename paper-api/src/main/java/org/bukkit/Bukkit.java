@@ -1432,6 +1432,26 @@ public final class Bukkit {
         return server.getOnlineMode();
     }
 
+    public static boolean isProxyOnlineMode() {
+        return server.isProxyOnlineMode();
+    }
+
+    public static boolean isVelocityOnlineMode() {
+        return server.isVelocityOnlineMode();
+    }
+
+    public static boolean isBungeeCordOnlineMode() {
+        return server.isBungeeCordOnlineMode();
+    }
+
+    public static boolean isVelocityEnabled() {
+        return server.isVelocityEnabled();
+    }
+
+    public static boolean isBungeeCordEnabled() {
+        return server.isBungeeCordEnabled();
+    }
+
     /**
      * Gets whether this server allows flying or not.
      *

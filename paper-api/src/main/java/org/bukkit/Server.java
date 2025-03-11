@@ -1266,6 +1266,16 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      */
     public boolean getOnlineMode();
 
+    boolean isProxyOnlineMode();
+
+    boolean isVelocityOnlineMode();
+
+    boolean isBungeeCordOnlineMode();
+
+    boolean isVelocityEnabled();
+
+    boolean isBungeeCordEnabled();
+
     /**
      * Gets whether this server allows flying or not.
      *
