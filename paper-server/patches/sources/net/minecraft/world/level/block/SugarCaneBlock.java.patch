@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/SugarCaneBlock.java
 +++ b/net/minecraft/world/level/block/SugarCaneBlock.java
-@@ -56,12 +_,13 @@
+@@ -56,13 +_,22 @@
                  i++;
              }
  
@@ -9,12 +9,22 @@
                  int ageValue = state.getValue(AGE);
 -                if (ageValue == 15) {
 -                    level.setBlockAndUpdate(pos.above(), this.defaultBlockState());
-+                int modifier = level.spigotConfig.caneModifier; // Spigot - SPIGOT-7159: Better modifier resolution
-+                if (ageValue >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier resolution
++                // Paper start - Properly grow plants with growth modifier
++                final int ageToProgress = level.spigotConfig.computeBlockGrowingAgeProgression(
++                    random,
++                    level.spigotConfig.caneModifier);
++
++                if (ageToProgress > 0 && ageValue < 15) {
++                    // Moved up from below's if, now deleted, else.
++                    level.setBlock(pos, state.setValue(AGE, Math.min(15, ageValue + ageToProgress)), 4);
++                }
++
++                if (ageValue + ageToProgress > 15) {
++                    // Paper end - Properly grow plants with growth modifier
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos.above(), this.defaultBlockState()); // CraftBukkit
                      level.setBlock(pos, state.setValue(AGE, Integer.valueOf(0)), 4);
 -                } else {
-+                } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
-                     level.setBlock(pos, state.setValue(AGE, Integer.valueOf(ageValue + 1)), 4);
+-                    level.setBlock(pos, state.setValue(AGE, Integer.valueOf(ageValue + 1)), 4);
                  }
              }
+         }

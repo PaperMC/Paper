@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/CactusBlock.java
 +++ b/net/minecraft/world/level/block/CactusBlock.java
-@@ -56,14 +_,16 @@
+@@ -56,15 +_,24 @@
                  i++;
              }
  
@@ -9,18 +9,27 @@
                  int ageValue = state.getValue(AGE);
 -                if (ageValue == 15) {
 -                    level.setBlockAndUpdate(blockPos, this.defaultBlockState());
++                // Paper start - Properly grow plants with growth modifier
++                final int ageToProgress = level.spigotConfig.computeBlockGrowingAgeProgression(
++                    random,
++                    level.spigotConfig.cactusModifier);
 +
-+                int modifier = level.spigotConfig.cactusModifier; // Spigot - SPIGOT-7159: Better modifier resolution
-+                if (ageValue >= 15 || (modifier != 100 && random.nextFloat() < (modifier / (100.0f * 16)))) { // Spigot - SPIGOT-7159: Better modifier
++                if (ageToProgress > 0 && ageValue < CactusBlock.MAX_AGE) {
++                    // Moved up from below's if, now deleted, else.
++                    level.setBlock(pos, state.setValue(CactusBlock.AGE, Math.min(CactusBlock.MAX_AGE, ageValue + ageToProgress)), 4);
++                }
++
++                if (ageValue + ageToProgress > 15) {
++                    // Paper end - Properly grow plants with growth modifier
 +                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, blockPos, this.defaultBlockState()); // CraftBukkit
                      BlockState blockState = state.setValue(AGE, Integer.valueOf(0));
                      level.setBlock(pos, blockState, 4);
                      level.neighborChanged(blockState, blockPos, this, null, false);
 -                } else {
-+                } else if (modifier == 100 || random.nextFloat() < (modifier / (100.0f * 16))) { // Spigot - SPIGOT-7159: Better modifier resolution
-                     level.setBlock(pos, state.setValue(AGE, Integer.valueOf(ageValue + 1)), 4);
+-                    level.setBlock(pos, state.setValue(AGE, Integer.valueOf(ageValue + 1)), 4);
                  }
              }
+         }
 @@ -113,7 +_,8 @@
  
      @Override
