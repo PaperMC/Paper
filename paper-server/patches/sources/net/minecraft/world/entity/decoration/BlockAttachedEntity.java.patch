@@ -1,6 +1,14 @@
+From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/entity/decoration/BlockAttachedEntity.java b/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
+index c34d15c4045bf74f78210ea4eda0ccd944baa076..1fb2b16a03106826280c09ac1689c646b7bca9f4 100644
 --- a/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
 +++ b/net/minecraft/world/entity/decoration/BlockAttachedEntity.java
-@@ -20,7 +_,7 @@
+@@ -20,7 +20,7 @@ import org.slf4j.Logger;
  
  public abstract class BlockAttachedEntity extends Entity {
      private static final Logger LOGGER = LogUtils.getLogger();
@@ -9,7 +17,7 @@
      protected BlockPos pos;
  
      protected BlockAttachedEntity(EntityType<? extends BlockAttachedEntity> entityType, Level level) {
-@@ -38,10 +_,26 @@
+@@ -38,10 +38,26 @@ public abstract class BlockAttachedEntity extends Entity {
      public void tick() {
          if (this.level() instanceof ServerLevel serverLevel) {
              this.checkBelowWorld();
@@ -38,7 +46,7 @@
                      this.dropItem(serverLevel, null);
                  }
              }
-@@ -74,6 +_,21 @@
+@@ -74,6 +90,21 @@ public abstract class BlockAttachedEntity extends Entity {
              return false;
          } else {
              if (!this.isRemoved()) {
@@ -60,22 +68,10 @@
                  this.kill(level);
                  this.markHurt();
                  this.dropItem(level, damageSource.getEntity());
-@@ -91,18 +_,36 @@
+@@ -91,19 +122,37 @@ public abstract class BlockAttachedEntity extends Entity {
      @Override
      public void move(MoverType type, Vec3 movement) {
          if (this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && movement.lengthSqr() > 0.0) {
--            this.kill(serverLevel);
--            this.dropItem(serverLevel, null);
--        }
--    }
--
--    @Override
--    public void push(double x, double y, double z) {
--        if (this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && x * x + y * y + z * z > 0.0) {
--            this.kill(serverLevel);
--            this.dropItem(serverLevel, null);
--        }
--    }
 +            // CraftBukkit start - fire break events
 +            // TODO - Does this need its own cause? Seems to only be triggered by pistons
 +            org.bukkit.event.hanging.HangingBreakEvent event = new org.bukkit.event.hanging.HangingBreakEvent((org.bukkit.entity.Hanging) this.getBukkitEntity(), org.bukkit.event.hanging.HangingBreakEvent.RemoveCause.PHYSICS);
@@ -85,19 +81,21 @@
 +                return;
 +            }
 +            // CraftBukkit end
-+            this.kill(serverLevel);
-+            this.dropItem(serverLevel, null);
-+        }
-+    }
-+
-+    @Override
+             this.kill(serverLevel);
+             this.dropItem(serverLevel, null);
+         }
+     }
+ 
+     @Override
+-    public void push(double x, double y, double z) {
+-        if (this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && x * x + y * y + z * z > 0.0) {
 +    public void push(double x, double y, double z, @Nullable Entity pushingEntity) { // Paper - override correct overload
 +        if (false && this.level() instanceof ServerLevel serverLevel && !this.isRemoved() && x * x + y * y + z * z > 0.0) { // CraftBukkit - not needed
-+            this.kill(serverLevel);
-+            this.dropItem(serverLevel, null);
-+        }
-+    }
-+
+             this.kill(serverLevel);
+             this.dropItem(serverLevel, null);
+         }
+     }
+ 
 +    // CraftBukkit start - selectively save tile position
 +    @Override
 +    public void addAdditionalSaveData(CompoundTag nbt, boolean includeAll) {
@@ -106,6 +104,7 @@
 +        }
 +    }
 +    // CraftBukkit end
- 
++
      @Override
      public void addAdditionalSaveData(CompoundTag tag) {
+         BlockPos pos = this.getPos();

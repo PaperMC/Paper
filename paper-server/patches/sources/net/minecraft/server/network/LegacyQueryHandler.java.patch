@@ -1,6 +1,14 @@
+From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/server/network/LegacyQueryHandler.java b/net/minecraft/server/network/LegacyQueryHandler.java
+index 31010a0abb0d9542a8a715d0211a09f4f4db4663..c7c7c3842bb62e70d597bb135752d6abbf84e9f8 100644
 --- a/net/minecraft/server/network/LegacyQueryHandler.java
 +++ b/net/minecraft/server/network/LegacyQueryHandler.java
-@@ -14,6 +_,7 @@
+@@ -14,6 +14,7 @@ import org.slf4j.Logger;
  public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
      private static final Logger LOGGER = LogUtils.getLogger();
      private final ServerInfo server;
@@ -8,7 +16,7 @@
  
      public LegacyQueryHandler(ServerInfo server) {
          this.server = server;
-@@ -22,6 +_,17 @@
+@@ -22,6 +23,17 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
      @Override
      public void channelRead(ChannelHandlerContext context, Object message) {
          ByteBuf byteBuf = (ByteBuf)message;
@@ -26,7 +34,7 @@
          byteBuf.markReaderIndex();
          boolean flag = true;
  
-@@ -33,9 +_,19 @@
+@@ -33,9 +45,19 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
  
                  SocketAddress socketAddress = context.channel().remoteAddress();
                  int i = byteBuf.readableBytes();
@@ -48,23 +56,28 @@
                      sendFlushAndClose(context, createLegacyDisconnectPacket(context.alloc(), string));
                  } else {
                      if (byteBuf.readUnsignedByte() != 1) {
-@@ -43,16 +_,39 @@
+@@ -43,16 +65,39 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
                      }
  
                      if (byteBuf.isReadable()) {
 -                        if (!readCustomPayloadPacket(byteBuf)) {
+-                            return;
 +                        // Paper start - Replace below
 +                        if (byteBuf.readUnsignedByte() != LegacyProtocolUtils.CUSTOM_PAYLOAD_PACKET_ID) {
 +                            string = this.readLegacy1_6(context, byteBuf);
 +                            if (string == null) {
 +                                return;
 +                            }
-+                        }
+                         }
+-
+-                        LOGGER.debug("Ping: (1.6) from {}", socketAddress);
 +                        // Paper end - Replace below
-+                    } else {
+                     } else {
+-                        LOGGER.debug("Ping: (1.4-1.5.x) from {}", socketAddress);
 +                        LOGGER.debug("Ping: (1.4-1.5.x) from {}", net.minecraft.server.MinecraftServer.getServer().logIPs() ? socketAddress : "<ip address withheld>"); // Paper - Respect logIPs option
-+                    }
-+
+                     }
+ 
+-                    String string = createVersion1Response(this.server);
 +                    // Paper start - Call PaperServerListPingEvent and use results
 +                    if (string == null) {
 +                        com.destroystokyo.paper.event.server.PaperServerListPingEvent event = com.destroystokyo.paper.network.PaperLegacyStatusClient.processRequest(net.minecraft.server.MinecraftServer.getServer(), (java.net.InetSocketAddress) socketAddress, 127, null); // Paper
@@ -72,12 +85,9 @@
 +                            context.close();
 +                            byteBuf.release();
 +                            flag = false;
-                             return;
-                         }
- 
--                        LOGGER.debug("Ping: (1.6) from {}", socketAddress);
--                    } else {
--                        LOGGER.debug("Ping: (1.4-1.5.x) from {}", socketAddress);
++                            return;
++                        }
++
 +                        // See createVersion1Response
 +                        string = String.format(
 +                            Locale.ROOT,
@@ -88,17 +98,14 @@
 +                            event.getMaxPlayers()
 +                        );
 +                        // Paper end - Call PaperServerListPingEvent and use results
-                     }
--
--                    String string = createVersion1Response(this.server);
++                    }
                      sendFlushAndClose(context, createLegacyDisconnectPacket(context.alloc(), string));
                  }
  
-@@ -110,6 +_,98 @@
-             server.getMaxPlayers()
+@@ -111,6 +156,98 @@ public class LegacyQueryHandler extends ChannelInboundHandlerAdapter {
          );
      }
-+
+ 
 +    // Paper start
 +    private static String readLegacyString(ByteBuf buf) {
 +        int size = buf.readShort() * Character.BYTES;
@@ -190,6 +197,7 @@
 +        }
 +    }
 +    // Paper end
- 
++
      private static void sendFlushAndClose(ChannelHandlerContext context, ByteBuf buffer) {
          context.pipeline().firstContext().writeAndFlush(buffer).addListener(ChannelFutureListener.CLOSE);
+     }

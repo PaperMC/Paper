@@ -1,6 +1,14 @@
+From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 3f09a4cc7349a96b3efc8909b5ed760789a987d7..32f184288f6065259c921293922c1b0163df4dc4 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -24,8 +_,10 @@
+@@ -24,8 +24,10 @@ import net.minecraft.core.registries.Registries;
  import net.minecraft.network.protocol.Packet;
  import net.minecraft.resources.ResourceKey;
  import net.minecraft.resources.ResourceLocation;
@@ -11,7 +19,7 @@
  import net.minecraft.sounds.SoundEvent;
  import net.minecraft.sounds.SoundEvents;
  import net.minecraft.sounds.SoundSource;
-@@ -79,6 +_,27 @@
+@@ -79,6 +81,27 @@ import net.minecraft.world.phys.AABB;
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.Scoreboard;
  
@@ -39,7 +47,7 @@
  public abstract class Level implements LevelAccessor, AutoCloseable {
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
-@@ -91,7 +_,7 @@
+@@ -91,7 +114,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public static final int TICKS_PER_DAY = 24000;
      public static final int MAX_ENTITY_SPAWN_Y = 20000000;
      public static final int MIN_ENTITY_SPAWN_Y = -20000000;
@@ -48,7 +56,7 @@
      protected final NeighborUpdater neighborUpdater;
      private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
      private boolean tickingBlockEntities;
-@@ -117,6 +_,61 @@
+@@ -117,6 +140,61 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      private final DamageSources damageSources;
      private long subTickCount;
  
@@ -110,7 +118,7 @@
      protected Level(
          WritableLevelData levelData,
          ResourceKey<Level> dimension,
-@@ -125,8 +_,26 @@
+@@ -125,8 +203,26 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          boolean isClientSide,
          boolean isDebug,
          long biomeZoomSeed,
@@ -138,7 +146,7 @@
          this.levelData = levelData;
          this.dimensionTypeRegistration = dimensionTypeRegistration;
          final DimensionType dimensionType = dimensionTypeRegistration.value();
-@@ -136,12 +_,12 @@
+@@ -136,12 +232,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              this.worldBorder = new WorldBorder() {
                  @Override
                  public double getCenterX() {
@@ -153,11 +161,10 @@
                  }
              };
          } else {
-@@ -154,7 +_,86 @@
+@@ -154,7 +250,86 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          this.neighborUpdater = new CollectingNeighborUpdater(this, maxChainedNeighborUpdates);
          this.registryAccess = registryAccess;
          this.damageSources = new DamageSources(registryAccess);
--    }
 +
 +        // CraftBukkit start
 +        this.getWorldBorder().world = (ServerLevel) this;
@@ -236,12 +243,12 @@
 +        }
 +
 +        return true;
-+    }
+     }
 +    // Paper end - Cancel hit for vanished players
  
      @Override
      public boolean isClientSide() {
-@@ -167,8 +_,15 @@
+@@ -167,8 +342,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return null;
      }
  
@@ -258,7 +265,7 @@
      }
  
      public static boolean isInSpawnableBounds(BlockPos pos) {
-@@ -176,21 +_,84 @@
+@@ -176,22 +358,85 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      }
  
      private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
@@ -278,7 +285,6 @@
      @Override
 -    public LevelChunk getChunk(int chunkX, int chunkZ) {
 -        return (LevelChunk)this.getChunk(chunkX, chunkZ, ChunkStatus.FULL);
--    }
 +    public final LevelChunk getChunk(int chunkX, int chunkZ) { // Paper - final to help inline
 +        // Paper start - Perf: make sure loaded chunks get the inlined variant of this function
 +        net.minecraft.server.level.ServerChunkCache cps = ((ServerLevel)this).getChunkSource();
@@ -338,17 +344,18 @@
 +    }
 +    public final @Nullable LevelChunk getChunkIfLoaded(BlockPos blockposition) {
 +        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
-+    }
-+
+     }
+ 
 +    //  reduces need to do isLoaded before getType
 +    public final @Nullable BlockState getBlockStateIfLoadedAndInBounds(BlockPos blockposition) {
 +        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
 +    }
 +    // Paper end
- 
++
      @Nullable
      @Override
-@@ -210,6 +_,22 @@
+     public ChunkAccess getChunk(int x, int z, ChunkStatus chunkStatus, boolean requireChunk) {
+@@ -210,6 +455,22 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      @Override
      public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
@@ -371,7 +378,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -217,11 +_,28 @@
+@@ -217,11 +478,28 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          } else {
              LevelChunk chunkAt = this.getChunkAt(pos);
              Block block = state.getBlock();
@@ -401,7 +408,7 @@
                  if (blockState1 == state) {
                      if (blockState != blockState1) {
                          this.setBlocksDirty(pos, blockState, blockState1);
-@@ -249,12 +_,76 @@
+@@ -249,12 +527,76 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
                      this.onBlockStateChange(pos, blockState, blockState1);
                  }
@@ -478,7 +485,7 @@
      public void onBlockStateChange(BlockPos pos, BlockState blockState, BlockState newState) {
      }
  
-@@ -271,13 +_,31 @@
+@@ -271,13 +613,31 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              return false;
          } else {
              FluidState fluidState = this.getFluidState(pos);
@@ -513,7 +520,7 @@
              }
  
              boolean flag = this.setBlock(pos, fluidState.createLegacyBlock(), 3, recursionLeft);
-@@ -344,10 +_,18 @@
+@@ -344,10 +704,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      @Override
      public BlockState getBlockState(BlockPos pos) {
@@ -533,7 +540,7 @@
              return chunk.getBlockState(pos);
          }
      }
-@@ -454,32 +_,49 @@
+@@ -454,33 +822,50 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -579,7 +586,7 @@
 +            // Paper end - Prevent block entity and entity crashes
          }
      }
-+
+ 
 +    // Paper start - Option to prevent armor stands from doing entity lookups
 +    @Override
 +    public boolean noCollision(@Nullable Entity entity, AABB box) {
@@ -588,10 +595,11 @@
 +        return LevelAccessor.super.noCollision(entity, box);
 +    }
 +    // Paper end - Option to prevent armor stands from doing entity lookups
- 
++
      public boolean shouldTickDeath(Entity entity) {
          return true;
-@@ -599,6 +_,19 @@
+     }
+@@ -599,6 +984,19 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      @Nullable
      @Override
      public BlockEntity getBlockEntity(BlockPos pos) {
@@ -611,7 +619,7 @@
          if (this.isOutsideBuildHeight(pos)) {
              return null;
          } else {
-@@ -611,6 +_,12 @@
+@@ -611,6 +1009,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public void setBlockEntity(BlockEntity blockEntity) {
          BlockPos blockPos = blockEntity.getBlockPos();
          if (!this.isOutsideBuildHeight(blockPos)) {
@@ -624,7 +632,7 @@
              this.getChunkAt(blockPos).addAndRegisterBlockEntity(blockEntity);
          }
      }
-@@ -987,7 +_,8 @@
+@@ -987,7 +1391,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          BLOCK("block"),
          MOB("mob"),
          TNT("tnt"),

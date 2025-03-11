@@ -1,6 +1,14 @@
+From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/world/level/chunk/ChunkGenerator.java b/net/minecraft/world/level/chunk/ChunkGenerator.java
+index 675459707d701bf284823093bef5d8684d32942d..b320519578f7e2c52b2116afb247e071b322696e 100644
 --- a/net/minecraft/world/level/chunk/ChunkGenerator.java
 +++ b/net/minecraft/world/level/chunk/ChunkGenerator.java
-@@ -104,8 +_,8 @@
+@@ -104,8 +104,8 @@ public abstract class ChunkGenerator {
  
      protected abstract MapCodec<? extends ChunkGenerator> codec();
  
@@ -11,7 +19,7 @@
      }
  
      public Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> getTypeNameForDataFixer() {
-@@ -127,6 +_,24 @@
+@@ -127,6 +127,24 @@ public abstract class ChunkGenerator {
      public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(
          ServerLevel level, HolderSet<Structure> structure, BlockPos pos, int searchRadius, boolean skipKnownStructures
      ) {
@@ -36,7 +44,7 @@
          ChunkGeneratorStructureState generatorState = level.getChunkSource().getGeneratorState();
          Map<StructurePlacement, Set<Holder<Structure>>> map = new Object2ObjectArrayMap<>();
  
-@@ -222,6 +_,7 @@
+@@ -222,6 +240,7 @@ public abstract class ChunkGenerator {
              BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
  
              for (ChunkPos chunkPos : ringPositionsFor) {
@@ -44,18 +52,19 @@
                  mutableBlockPos.set(SectionPos.sectionToBlockCoord(chunkPos.x, 8), 32, SectionPos.sectionToBlockCoord(chunkPos.z, 8));
                  double d1 = mutableBlockPos.distSqr(pos);
                  boolean flag = pair == null || d1 < d;
-@@ -255,11 +_,15 @@
+@@ -255,11 +274,15 @@ public abstract class ChunkGenerator {
          int spacing = spreadPlacement.spacing();
  
          for (int i = -z; i <= z; i++) {
 -            boolean flag = i == -z || i == z;
-+            // Paper start - Perf: iterate over border chunks instead of entire square chunk area
-+            final int radius = z;
-+            boolean flag = i == -z || i == z; final boolean onBorderAlongZAxis = flag; // Paper - OBFHELPER
- 
+-
 -            for (int i1 = -z; i1 <= z; i1++) {
 -                boolean flag1 = i1 == -z || i1 == z;
 -                if (flag || flag1) {
++            // Paper start - Perf: iterate over border chunks instead of entire square chunk area
++            final int radius = z;
++            boolean flag = i == -z || i == z; final boolean onBorderAlongZAxis = flag; // Paper - OBFHELPER
++
 +            for (int i1 = -radius; i1 <= radius; i1 += onBorderAlongZAxis ? 1 : radius * 2) {
 +                // boolean flag1 = i1 == -z || i1 == z;
 +                // if (flag || flag1) {
@@ -64,7 +73,7 @@
                      int i2 = x + spacing * i;
                      int i3 = y + spacing * i1;
                      ChunkPos potentialStructureChunk = spreadPlacement.getPotentialStructureChunk(seed, i2, i3);
-@@ -312,7 +_,7 @@
+@@ -312,7 +335,7 @@ public abstract class ChunkGenerator {
          }
      }
  
@@ -73,7 +82,7 @@
          ChunkPos pos = chunk.getPos();
          if (!SharedConstants.debugVoidTerrain(pos)) {
              SectionPos sectionPos = SectionPos.of(pos, level.getMinSectionY());
-@@ -385,7 +_,14 @@
+@@ -385,7 +408,14 @@ public abstract class ChunkGenerator {
                              int i3 = ints[i2];
                              PlacedFeature placedFeature = stepFeatureData1.features().get(i3);
                              Supplier<String> supplier1 = () -> registry1.getResourceKey(placedFeature).map(Object::toString).orElseGet(placedFeature::toString);
@@ -89,7 +98,7 @@
  
                              try {
                                  level.setCurrentlyGenerating(supplier1);
-@@ -407,6 +_,32 @@
+@@ -407,6 +437,32 @@ public abstract class ChunkGenerator {
              }
          }
      }
@@ -122,7 +131,7 @@
  
      private static BoundingBox getWritableArea(ChunkAccess chunk) {
          ChunkPos pos = chunk.getPos();
-@@ -483,7 +_,7 @@
+@@ -483,7 +539,7 @@ public abstract class ChunkGenerator {
                          }
                      }
  
@@ -131,7 +140,7 @@
                          if (list.size() == 1) {
                              this.tryGenerateStructure(
                                  list.get(0),
-@@ -577,6 +_,14 @@
+@@ -577,6 +633,14 @@ public abstract class ChunkGenerator {
              predicate
          );
          if (structureStart.isValid()) {

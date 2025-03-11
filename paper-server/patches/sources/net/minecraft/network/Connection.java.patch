@@ -1,6 +1,14 @@
+From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
+From: File <noreply+automated@papermc.io>
+Date: Sun, 20 Apr 1997 14:37:42 +0100
+Subject: [PATCH] paper File Patches
+
+
+diff --git a/net/minecraft/network/Connection.java b/net/minecraft/network/Connection.java
+index 8a74818ed7d998ddd2ac653a45a3cecfad308967..42f44c7cb0bd55ddfacd18acb0e596e7a953870e 100644
 --- a/net/minecraft/network/Connection.java
 +++ b/net/minecraft/network/Connection.java
-@@ -74,13 +_,13 @@
+@@ -74,13 +74,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      public static final Marker PACKET_RECEIVED_MARKER = Util.make(MarkerFactory.getMarker("PACKET_RECEIVED"), marker -> marker.add(PACKET_MARKER));
      public static final Marker PACKET_SENT_MARKER = Util.make(MarkerFactory.getMarker("PACKET_SENT"), marker -> marker.add(PACKET_MARKER));
      public static final Supplier<NioEventLoopGroup> NETWORK_WORKER_GROUP = Suppliers.memoize(
@@ -17,7 +25,7 @@
      );
      private static final ProtocolInfo<ServerHandshakePacketListener> INITIAL_PROTOCOL = HandshakeProtocols.SERVERBOUND;
      private final PacketFlow receiving;
-@@ -88,6 +_,11 @@
+@@ -88,6 +88,11 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      private final Queue<Consumer<Connection>> pendingActions = Queues.newConcurrentLinkedQueue();
      public Channel channel;
      public SocketAddress address;
@@ -29,7 +37,7 @@
      @Nullable
      private volatile PacketListener disconnectListener;
      @Nullable
-@@ -106,6 +_,40 @@
+@@ -106,6 +111,40 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      private volatile DisconnectionDetails delayedDisconnect;
      @Nullable
      BandwidthDebugMonitor bandwidthDebugMonitor;
@@ -70,7 +78,7 @@
  
      public Connection(PacketFlow receiving) {
          this.receiving = receiving;
-@@ -116,6 +_,7 @@
+@@ -116,6 +155,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          super.channelActive(context);
          this.channel = context.channel();
          this.address = this.channel.remoteAddress();
@@ -78,7 +86,7 @@
          if (this.delayedDisconnect != null) {
              this.disconnect(this.delayedDisconnect);
          }
-@@ -128,14 +_,31 @@
+@@ -128,14 +168,31 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
  
      @Override
      public void exceptionCaught(ChannelHandlerContext context, Throwable exception) {
@@ -110,7 +118,7 @@
                      this.disconnect(Component.translatable("disconnect.timeout"));
                  } else {
                      Component component = Component.translatable("disconnect.genericReason", "Internal Exception: " + exception);
-@@ -147,9 +_,11 @@
+@@ -147,9 +204,11 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                          disconnectionDetails = new DisconnectionDetails(component);
                      }
  
@@ -123,7 +131,7 @@
                              Packet<?> packet = (Packet<?>)(this.sendLoginDisconnect
                                  ? new ClientboundLoginDisconnectPacket(component)
                                  : new ClientboundDisconnectPacket(component));
-@@ -166,6 +_,7 @@
+@@ -166,6 +225,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                  }
              }
          }
@@ -131,7 +139,7 @@
      }
  
      @Override
-@@ -175,10 +_,60 @@
+@@ -175,10 +235,60 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              if (packetListener == null) {
                  throw new IllegalStateException("Received a packet before the packet listener was initialized");
              } else {
@@ -192,7 +200,7 @@
                      } catch (RejectedExecutionException var6) {
                          this.disconnect(Component.translatable("multiplayer.disconnect.server_shutdown"));
                      } catch (ClassCastException var7) {
-@@ -385,10 +_,30 @@
+@@ -385,10 +495,30 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          }
      }
  
@@ -223,7 +231,7 @@
          }
  
          if (!this.isConnected() && !this.disconnectionHandled) {
-@@ -396,7 +_,7 @@
+@@ -396,7 +526,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          }
  
          if (this.channel != null) {
@@ -232,7 +240,7 @@
          }
  
          if (this.tickCount++ % 20 == 0) {
-@@ -432,12 +_,13 @@
+@@ -432,12 +562,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      }
  
      public void disconnect(DisconnectionDetails disconnectionDetails) {
@@ -247,7 +255,7 @@
              this.disconnectionDetails = disconnectionDetails;
          }
      }
-@@ -584,6 +_,13 @@
+@@ -584,6 +715,13 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
          }
      }
  
@@ -261,7 +269,7 @@
      public void setupCompression(int threshold, boolean validateDecompressed) {
          if (threshold >= 0) {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder compressionDecoder) {
-@@ -597,6 +_,7 @@
+@@ -597,6 +735,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              } else {
                  this.channel.pipeline().addAfter("prepender", "compress", new CompressionEncoder(threshold));
              }
@@ -269,7 +277,7 @@
          } else {
              if (this.channel.pipeline().get("decompress") instanceof CompressionDecoder) {
                  this.channel.pipeline().remove("decompress");
-@@ -605,6 +_,7 @@
+@@ -605,6 +744,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
              if (this.channel.pipeline().get("compress") instanceof CompressionEncoder) {
                  this.channel.pipeline().remove("compress");
              }
@@ -277,7 +285,7 @@
          }
      }
  
-@@ -622,6 +_,26 @@
+@@ -622,6 +762,26 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
                      );
                      packetListener1.onDisconnect(disconnectionDetails);
                  }

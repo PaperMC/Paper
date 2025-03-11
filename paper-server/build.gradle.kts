@@ -18,7 +18,7 @@ dependencies {
 
 paperweight {
     minecraftVersion = providers.gradleProperty("mcVersion")
-    // gitFilePatches = true
+    gitFilePatches = true
 
     spigot {
         buildDataRef = "3edaf46ec1eed4115ce1b18d2846cded42577e42"
