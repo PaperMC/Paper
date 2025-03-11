@@ -1765,6 +1765,9 @@ public class CraftEventFactory {
     public static FireworkExplodeEvent callFireworkExplodeEvent(FireworkRocketEntity firework) {
         FireworkExplodeEvent event = new FireworkExplodeEvent((Firework) firework.getBukkitEntity());
         firework.level().getCraftServer().getPluginManager().callEvent(event);
+        if (event.isCancelled()) {
+            firework.discard();
+        }
         return event;
     }
 
