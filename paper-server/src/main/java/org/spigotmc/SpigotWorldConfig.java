@@ -133,6 +133,16 @@ public class SpigotWorldConfig {
         this.pitcherPlantModifier = this.getAndValidateGrowth("PitcherPlant"); // Paper
     }
 
+    // Paper start - Properly grow plants with growth modifier
+    public int computeBlockGrowingAgeProgression(final net.minecraft.util.RandomSource random, final int modifier) {
+        final double modifierScaled = modifier / 100.0D;
+        final int baseGrowth = (int) modifierScaled;
+        final double chanceOfDoubleGrowth = modifierScaled - baseGrowth;
+
+        return baseGrowth + (random.nextFloat() < chanceOfDoubleGrowth ? 1 : 0);
+    }
+    // Paper end - Properly grow plants with growth modifier
+
     public double itemMerge;
     private void itemMerge() {
         this.itemMerge = this.getDouble("merge-radius.item", 0.5);
