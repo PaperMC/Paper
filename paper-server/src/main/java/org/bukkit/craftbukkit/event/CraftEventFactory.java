@@ -1762,13 +1762,13 @@ public class CraftEventFactory {
         return (Cancellable) event;
     }
 
-    public static FireworkExplodeEvent callFireworkExplodeEvent(FireworkRocketEntity firework) {
+    public static boolean callFireworkExplodeEvent(FireworkRocketEntity firework) {
         FireworkExplodeEvent event = new FireworkExplodeEvent((Firework) firework.getBukkitEntity());
-        firework.level().getCraftServer().getPluginManager().callEvent(event);
-        if (event.isCancelled()) {
+        if (!event.callEvent()) {
             firework.discard(null);
+            return false;
         }
-        return event;
+        return true;
     }
 
     public static PrepareAnvilEvent callPrepareAnvilEvent(AnvilView view, ItemStack item) {
