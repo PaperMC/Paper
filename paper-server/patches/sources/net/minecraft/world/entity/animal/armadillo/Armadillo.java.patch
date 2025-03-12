@@ -1,5 +1,26 @@
 --- a/net/minecraft/world/entity/animal/armadillo/Armadillo.java
 +++ b/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+@@ -109,7 +_,19 @@
+     }
+ 
+     public void switchToState(Armadillo.ArmadilloState state) {
+-        this.entityData.set(ARMADILLO_STATE, state);
++         //Paper start - add ArmadilloStateChangeEvent
++         ArmadilloState oldState = this.getState();
++         if (oldState == state) {
++             return;
++         }
++        io.papermc.paper.event.entity.ArmadilloStateChangeEvent event = new io.papermc.paper.event.entity.ArmadilloStateChangeEvent((org.bukkit.entity.Armadillo) this.getBukkitEntity(), org.bukkit.craftbukkit.entity.CraftArmadillo.stateToBukkit(oldState),org.bukkit.craftbukkit.entity.CraftArmadillo.stateToBukkit(state));
++        org.bukkit.Bukkit.getPluginManager().callEvent(event);
++        if (event.isCancelled()) {
++            return;
++        }
++        Armadillo.ArmadilloState finalState = org.bukkit.craftbukkit.entity.CraftArmadillo.stateToNMS(event.getNewState());
++        this.entityData.set(ARMADILLO_STATE, finalState);
++        //Paper end
+     }
+ 
+     @Override
 @@ -141,10 +_,12 @@
          ArmadilloAi.updateActivity(this);
          profilerFiller.pop();
