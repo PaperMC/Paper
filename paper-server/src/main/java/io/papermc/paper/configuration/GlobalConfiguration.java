@@ -186,6 +186,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
         @Comment("This setting controls if equipment should be updated when handling certain player actions.")
         public boolean updateEquipmentOnPlayerActions = true;
+        @Comment("Only checks an item's amount and type instead of its full data during inventory desync checks.")
+        public boolean simplifyRemoteItemMatching = false;
 
         public enum CompressionFormat {
             GZIP,
