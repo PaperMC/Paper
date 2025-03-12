@@ -1,23 +1,6 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/animal/Fox.java b/net/minecraft/world/entity/animal/Fox.java
-index 48cc89d950c07987886906d10f8f019d52cfb9af..b4f3bc7938060cf55b6b242759606bf5100a1f56 100644
 --- a/net/minecraft/world/entity/animal/Fox.java
 +++ b/net/minecraft/world/entity/animal/Fox.java
-@@ -413,7 +413,7 @@ public class Fox extends Animal implements VariantHolder<Fox.Variant> {
- 
-         this.setSleeping(compound.getBoolean("Sleeping"));
-         this.setVariant(Fox.Variant.byName(compound.getString("Type")));
--        this.setSitting(compound.getBoolean("Sitting"));
-+        this.setSitting(compound.getBoolean("Sitting"), false); // Paper - Add EntityToggleSitEvent
-         this.setIsCrouching(compound.getBoolean("Crouching"));
-         if (this.level() instanceof ServerLevel) {
-             this.setTargetGoals();
-@@ -425,6 +425,12 @@ public class Fox extends Animal implements VariantHolder<Fox.Variant> {
+@@ -446,6 +_,12 @@
      }
  
      public void setSitting(boolean sitting) {
@@ -30,7 +13,7 @@ index 48cc89d950c07987886906d10f8f019d52cfb9af..b4f3bc7938060cf55b6b242759606bf5
          this.setFlag(1, sitting);
      }
  
-@@ -484,19 +490,20 @@ public class Fox extends Animal implements VariantHolder<Fox.Variant> {
+@@ -505,19 +_,20 @@
              itemEntity.setPickUpDelay(40);
              itemEntity.setThrower(this);
              this.playSound(SoundEvents.FOX_SPIT, 1.0F, 1.0F);
@@ -54,7 +37,7 @@ index 48cc89d950c07987886906d10f8f019d52cfb9af..b4f3bc7938060cf55b6b242759606bf5
              int count = item.getCount();
              if (count > 1) {
                  this.dropItemStack(item.split(count - 1));
-@@ -507,7 +514,7 @@ public class Fox extends Animal implements VariantHolder<Fox.Variant> {
+@@ -528,7 +_,7 @@
              this.setItemSlot(EquipmentSlot.MAINHAND, item.split(1));
              this.setGuaranteedDrop(EquipmentSlot.MAINHAND);
              this.take(entity, item.getCount());
@@ -63,10 +46,12 @@ index 48cc89d950c07987886906d10f8f019d52cfb9af..b4f3bc7938060cf55b6b242759606bf5
              this.ticksSinceEaten = 0;
          }
      }
-@@ -671,15 +678,33 @@ public class Fox extends Animal implements VariantHolder<Fox.Variant> {
-         return this.getTrustedUUIDs().contains(uuid);
+@@ -692,15 +_,33 @@
+         return this.getTrustedEntities().anyMatch(entityReference -> entityReference.matches(entity));
      }
  
+-    @Override
+-    protected void dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
 +    // Paper start - handle the bitten item separately like vanilla
 +    @Override
 +    protected boolean shouldSkipLoot(EquipmentSlot slot) {
@@ -74,8 +59,7 @@ index 48cc89d950c07987886906d10f8f019d52cfb9af..b4f3bc7938060cf55b6b242759606bf5
 +    }
 +    // Paper end
 +
-     @Override
--    protected void dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
++    @Override
 +    // Paper start - Cancellable death event
 +    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
          ItemStack itemBySlot = this.getItemBySlot(EquipmentSlot.MAINHAND);
@@ -100,10 +84,10 @@ index 48cc89d950c07987886906d10f8f019d52cfb9af..b4f3bc7938060cf55b6b242759606bf5
      }
  
      public static boolean isPathClear(Fox fox, LivingEntity livingEntity) {
-@@ -853,6 +878,18 @@ public class Fox extends Animal implements VariantHolder<Fox.Variant> {
-                 if (loveCause1 != null && loveCause != loveCause1) {
-                     fox.addTrustedUUID(loveCause1.getUUID());
+@@ -876,6 +_,19 @@
+                     fox.addTrustedEntity(loveCause1);
                  }
+ 
 +                // CraftBukkit start - call EntityBreedEvent
 +                fox.setAge(-24000);
 +                fox.moveTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
@@ -116,15 +100,16 @@ index 48cc89d950c07987886906d10f8f019d52cfb9af..b4f3bc7938060cf55b6b242759606bf5
 +                }
 +                experience = entityBreedEvent.getExperience();
 +                // CraftBukkit end - call EntityBreedEvent
- 
++
                  if (serverPlayer != null) {
                      serverPlayer.awardStat(Stats.ANIMALS_BRED);
-@@ -863,14 +900,12 @@ public class Fox extends Animal implements VariantHolder<Fox.Variant> {
+                     CriteriaTriggers.BRED_ANIMALS.trigger(serverPlayer, this.animal, this.partner, fox);
+@@ -885,14 +_,12 @@
                  this.partner.setAge(6000);
                  this.animal.resetLove();
                  this.partner.resetLove();
 -                fox.setAge(-24000);
--                fox.moveTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
+-                fox.snapTo(this.animal.getX(), this.animal.getY(), this.animal.getZ(), 0.0F, 0.0F);
 -                serverLevel.addFreshEntityWithPassengers(fox);
 +                serverLevel.addFreshEntityWithPassengers(fox, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.BREEDING); // CraftBukkit - added SpawnReason
                  this.level.broadcastEntityEvent(this.animal, (byte)18);
@@ -137,10 +122,10 @@ index 48cc89d950c07987886906d10f8f019d52cfb9af..b4f3bc7938060cf55b6b242759606bf5
                          );
                  }
              }
-@@ -934,6 +969,7 @@ public class Fox extends Animal implements VariantHolder<Fox.Variant> {
+@@ -956,6 +_,7 @@
          private void pickSweetBerries(BlockState state) {
              int ageValue = state.getValue(SweetBerryBushBlock.AGE);
-             state.setValue(SweetBerryBushBlock.AGE, Integer.valueOf(1));
+             state.setValue(SweetBerryBushBlock.AGE, 1);
 +            if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(Fox.this, this.blockPos, state.setValue(SweetBerryBushBlock.AGE, 1))) return; // CraftBukkit - call EntityChangeBlockEvent
              int i = 1 + Fox.this.level().random.nextInt(2) + (ageValue == 3 ? 1 : 0);
              ItemStack itemBySlot = Fox.this.getItemBySlot(EquipmentSlot.MAINHAND);
