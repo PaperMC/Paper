@@ -45,6 +45,11 @@ public class PaperPoiType implements PoiType, Handleable<net.minecraft.world.ent
     }
 
     @Override
+    public boolean isMarker() {
+        return this.handle.maxTickets() == 0;
+    }
+
+    @Override
     public @NotNull NamespacedKey getKey() {
         return this.key;
     }
