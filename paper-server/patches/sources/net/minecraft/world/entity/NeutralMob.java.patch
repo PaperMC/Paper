@@ -1,0 +1,51 @@
+--- a/net/minecraft/world/entity/NeutralMob.java
++++ b/net/minecraft/world/entity/NeutralMob.java
+@@ -35,9 +_,11 @@
+         if (level instanceof ServerLevel serverLevel) {
+             UUID uuid = tag.read("AngryAt", UUIDUtil.CODEC).orElse(null);
+             this.setPersistentAngerTarget(uuid);
+-            if ((uuid != null ? serverLevel.getEntity(uuid) : null) instanceof LivingEntity livingEntity) {
+-                this.setTarget(livingEntity);
+-            }
++            // Paper - Prevent entity loading causing async lookups; Moved diff to separate method
++            // If this entity already survived its first tick, e.g. is loaded and ticked in sync, actively
++            // tick the initial persistent anger.
++            // If not, let the first tick on the baseTick call the method later down the line.
++            if (this instanceof Entity entity && !entity.firstTick) this.tickInitialPersistentAnger(level);
+         }
+     }
+ 
+@@ -90,7 +_,7 @@
+     default void stopBeingAngry() {
+         this.setLastHurtByMob(null);
+         this.setPersistentAngerTarget(null);
+-        this.setTarget(null);
++        this.setTarget(null, org.bukkit.event.entity.EntityTargetEvent.TargetReason.FORGOT_TARGET, true); // CraftBukkit
+         this.setRemainingPersistentAngerTime(0);
+     }
+ 
+@@ -101,8 +_,24 @@
+ 
+     void setTarget(@Nullable LivingEntity livingEntity);
+ 
++    boolean setTarget(@Nullable LivingEntity entityliving, org.bukkit.event.entity.EntityTargetEvent.TargetReason reason, boolean fireEvent); // CraftBukkit
++
+     boolean canAttack(LivingEntity entity);
+ 
+     @Nullable
+     LivingEntity getTarget();
++
++    // Paper start - Prevent entity loading causing async lookups
++    // Update last hurt when ticking
++    default void tickInitialPersistentAnger(Level level) {
++        UUID uuid = getPersistentAngerTarget();
++        if (uuid == null) {
++            return;
++        }
++
++        if ((uuid != null ? level.getEntity(uuid) : null) instanceof LivingEntity livingEntity) {
++            this.setTarget(livingEntity);
++        }
++    }
++    // Paper end - Prevent entity loading causing async lookups
+ }

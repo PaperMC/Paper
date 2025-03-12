@@ -1,23 +1,15 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/TamableAnimal.java b/net/minecraft/world/entity/TamableAnimal.java
-index 89926c3c8974670687964ad41691ac1a80bf6833..fc3ba135ae502aaa5c3a9fa3297bf7b12c1ab063 100644
 --- a/net/minecraft/world/entity/TamableAnimal.java
 +++ b/net/minecraft/world/entity/TamableAnimal.java
-@@ -84,7 +84,7 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+@@ -77,7 +_,7 @@
          }
  
-         this.orderedToSit = compound.getBoolean("Sitting");
+         this.orderedToSit = compound.getBooleanOr("Sitting", false);
 -        this.setInSittingPose(this.orderedToSit);
 +        this.setInSittingPose(this.orderedToSit, false); // Paper - Add EntityToggleSitEvent
      }
  
      @Override
-@@ -95,8 +95,16 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+@@ -88,8 +_,16 @@
      @Override
      public boolean handleLeashAtDistance(Entity leashHolder, float distance) {
          if (this.isInSittingPose()) {
@@ -36,7 +28,7 @@ index 89926c3c8974670687964ad41691ac1a80bf6833..fc3ba135ae502aaa5c3a9fa3297bf7b1
              }
  
              return false;
-@@ -155,6 +163,12 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+@@ -148,6 +_,12 @@
      }
  
      public void setInSittingPose(boolean sitting) {
@@ -49,7 +41,7 @@ index 89926c3c8974670687964ad41691ac1a80bf6833..fc3ba135ae502aaa5c3a9fa3297bf7b1
          byte b = this.entityData.get(DATA_FLAGS_ID);
          if (sitting) {
              this.entityData.set(DATA_FLAGS_ID, (byte)(b | 1));
-@@ -227,7 +241,12 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+@@ -230,7 +_,12 @@
          if (this.level() instanceof ServerLevel serverLevel
              && serverLevel.getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES)
              && this.getOwner() instanceof ServerPlayer serverPlayer) {
@@ -63,18 +55,18 @@ index 89926c3c8974670687964ad41691ac1a80bf6833..fc3ba135ae502aaa5c3a9fa3297bf7b1
          }
  
          super.die(cause);
-@@ -270,7 +289,14 @@ public abstract class TamableAnimal extends Animal implements OwnableEntity {
+@@ -273,7 +_,14 @@
          if (!this.canTeleportTo(new BlockPos(x, y, z))) {
              return false;
          } else {
--            this.moveTo(x + 0.5, y, z + 0.5, this.getYRot(), this.getXRot());
+-            this.snapTo(x + 0.5, y, z + 0.5, this.getYRot(), this.getXRot());
 +            // CraftBukkit start
 +            org.bukkit.event.entity.EntityTeleportEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTeleportEvent(this, x + 0.5, y, z + 0.5);
 +            if (event.isCancelled() || event.getTo() == null) { // Paper - prevent NP on null event to location
 +                return false;
 +            }
 +            org.bukkit.Location to = event.getTo();
-+            this.moveTo(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch());
++            this.snapTo(to.getX(), to.getY(), to.getZ(), to.getYaw(), to.getPitch());
 +            // CraftBukkit end
              this.navigation.stop();
              return true;

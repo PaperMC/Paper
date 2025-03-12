@@ -1,32 +1,24 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/AreaEffectCloud.java b/net/minecraft/world/entity/AreaEffectCloud.java
-index f1a2cf19a7c7d4fe81eaf207f4ab640ae2322d8b..24735284fda151414d99faad401d25ba60995f9a 100644
 --- a/net/minecraft/world/entity/AreaEffectCloud.java
 +++ b/net/minecraft/world/entity/AreaEffectCloud.java
-@@ -47,7 +47,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
-     public float radiusOnUse;
-     public float radiusPerTick;
+@@ -59,7 +_,7 @@
+     public float radiusOnUse = 0.0F;
+     public float radiusPerTick = 0.0F;
      @Nullable
 -    private LivingEntity owner;
 +    private net.minecraft.world.entity.LivingEntity owner;
      @Nullable
      public UUID ownerUUID;
  
-@@ -177,7 +177,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+@@ -193,7 +_,7 @@
  
      private void serverTick(ServerLevel level) {
-         if (this.tickCount >= this.waitTime + this.duration) {
+         if (this.duration != -1 && this.tickCount >= this.waitTime + this.duration) {
 -            this.discard();
 +            this.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
          } else {
              boolean isWaiting = this.isWaiting();
              boolean flag = this.tickCount < this.waitTime;
-@@ -190,7 +190,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+@@ -206,7 +_,7 @@
                  if (this.radiusPerTick != 0.0F) {
                      radius += this.radiusPerTick;
                      if (radius < 0.5F) {
@@ -35,15 +27,15 @@ index f1a2cf19a7c7d4fe81eaf207f4ab640ae2322d8b..24735284fda151414d99faad401d25ba
                          return;
                      }
  
-@@ -220,6 +220,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
-                         list.addAll(this.potionContents.customEffects());
+@@ -222,6 +_,7 @@
+                         this.potionContents.forEachEffect(list::add, this.potionDurationScale);
                          List<LivingEntity> entitiesOfClass = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox());
                          if (!entitiesOfClass.isEmpty()) {
 +                            List<org.bukkit.entity.LivingEntity> entities = new java.util.ArrayList<>(); // CraftBukkit
                              for (LivingEntity livingEntity : entitiesOfClass) {
                                  if (!this.victims.containsKey(livingEntity)
                                      && livingEntity.isAffectedByPotions()
-@@ -228,6 +229,17 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+@@ -230,6 +_,17 @@
                                      double d1 = livingEntity.getZ() - this.getZ();
                                      double d2 = d * d + d1 * d1;
                                      if (d2 <= radius * radius) {
@@ -60,13 +52,13 @@ index f1a2cf19a7c7d4fe81eaf207f4ab640ae2322d8b..24735284fda151414d99faad401d25ba
 +                                        // CraftBukkit end
                                          this.victims.put(livingEntity, this.tickCount + this.reapplicationDelay);
  
-                                         for (MobEffectInstance mobEffectInstance1 : list) {
-@@ -236,14 +248,14 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
+                                         for (MobEffectInstance mobEffectInstance : list) {
+@@ -238,14 +_,14 @@
                                                      .value()
-                                                     .applyInstantenousEffect(level, this, this.getOwner(), livingEntity, mobEffectInstance1.getAmplifier(), 0.5);
+                                                     .applyInstantenousEffect(level, this, this.getOwner(), livingEntity, mobEffectInstance.getAmplifier(), 0.5);
                                              } else {
--                                                livingEntity.addEffect(new MobEffectInstance(mobEffectInstance1), this);
-+                                                livingEntity.addEffect(new MobEffectInstance(mobEffectInstance1), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AREA_EFFECT_CLOUD); // CraftBukkit
+-                                                livingEntity.addEffect(new MobEffectInstance(mobEffectInstance), this);
++                                                livingEntity.addEffect(new MobEffectInstance(mobEffectInstance), this, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.AREA_EFFECT_CLOUD); // CraftBukkit
                                              }
                                          }
  
@@ -78,8 +70,8 @@ index f1a2cf19a7c7d4fe81eaf207f4ab640ae2322d8b..24735284fda151414d99faad401d25ba
                                                  return;
                                              }
  
-@@ -253,7 +265,7 @@ public class AreaEffectCloud extends Entity implements TraceableEntity {
-                                         if (this.durationOnUse != 0) {
+@@ -255,7 +_,7 @@
+                                         if (this.durationOnUse != 0 && this.duration != -1) {
                                              this.duration = this.duration + this.durationOnUse;
                                              if (this.duration <= 0) {
 -                                                this.discard();

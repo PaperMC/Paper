@@ -1,24 +1,16 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb94044128c33c 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -42,6 +42,8 @@ import net.minecraft.core.particles.ItemParticleOption;
+@@ -41,6 +_,8 @@
  import net.minecraft.core.particles.ParticleOptions;
  import net.minecraft.core.particles.ParticleTypes;
  import net.minecraft.nbt.CompoundTag;
 +import net.minecraft.nbt.FloatTag;
 +import net.minecraft.nbt.IntTag;
- import net.minecraft.nbt.ListTag;
  import net.minecraft.nbt.NbtOps;
  import net.minecraft.nbt.Tag;
-@@ -136,6 +138,29 @@ import net.minecraft.world.scores.PlayerTeam;
- import net.minecraft.world.scores.Scoreboard;
+ import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
+@@ -135,6 +_,29 @@
+ import org.jetbrains.annotations.Contract;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
@@ -47,10 +39,10 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
  public abstract class LivingEntity extends Entity implements Attackable {
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final String TAG_ACTIVE_EFFECTS = "active_effects";
-@@ -266,11 +291,29 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -251,11 +_,29 @@
          EquipmentSlot.class
      );
-     protected float appliedScale = 1.0F;
+     protected final EntityEquipment equipment;
 +    // CraftBukkit start
 +    public int expToDrop;
 +    public ArrayList<DefaultDrop> drops = new ArrayList<>(); // Paper - Restore vanilla drops behavior
@@ -75,13 +67,13 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +        this.craftAttributes = new CraftAttributeMap(this.attributes); // CraftBukkit
 +        // CraftBukkit - this.setHealth(this.getMaxHealth()) inlined and simplified to skip the instanceof check for Player, as getBukkitEntity() is not initialized in constructor
 +        this.entityData.set(LivingEntity.DATA_HEALTH_ID, this.getMaxHealth());
+         this.equipment = this.createEquipment();
          this.blocksBuilding = true;
-         this.rotA = (float)((Math.random() + 1.0) * 0.01F);
          this.reapplyPosition();
-@@ -360,7 +403,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
-                 float f = Mth.ceil(this.fallDistance - attributeValue);
-                 double min = Math.min((double)(0.2F + f / 15.0F), 2.5);
-                 int i = (int)(150.0 * min);
+@@ -350,7 +_,13 @@
+ 
+                 double d1 = Math.min(0.2F + d / 15.0, 2.5);
+                 int i = (int)(150.0 * d1);
 -                serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state), x, y1, z, i, 0.0, 0.0, 0.0, 0.15F);
 +                // CraftBukkit start - visiblity api
 +                if (this instanceof ServerPlayer) {
@@ -93,7 +85,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              }
          }
  
-@@ -566,7 +615,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -535,7 +_,7 @@
          this.deathTime++;
          if (this.deathTime >= 20 && !this.level().isClientSide() && !this.isRemoved()) {
              this.level().broadcastEntityEvent(this, (byte)60);
@@ -102,7 +94,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          }
      }
  
-@@ -658,7 +707,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -640,7 +_,7 @@
      }
  
      public boolean shouldDiscardFriction() {
@@ -111,7 +103,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      }
  
      public void setDiscardFriction(boolean discardFriction) {
-@@ -670,11 +719,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -652,10 +_,15 @@
      }
  
      public void onEquipItem(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem) {
@@ -121,15 +113,14 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +    public void onEquipItem(EquipmentSlot slot, ItemStack oldItem, ItemStack newItem, boolean silent) {
 +        // CraftBukkit end
          if (!this.level().isClientSide() && !this.isSpectator()) {
-             boolean flag = newItem.isEmpty() && oldItem.isEmpty();
-             if (!flag && !ItemStack.isSameItemSameComponents(oldItem, newItem) && !this.firstTick) {
+             if (!ItemStack.isSameItemSameComponents(oldItem, newItem) && !this.firstTick) {
                  Equippable equippable = newItem.get(DataComponents.EQUIPPABLE);
 -                if (!this.isSilent() && equippable != null && slot == equippable.slot()) {
 +                if (!this.isSilent() && equippable != null && slot == equippable.slot() && !silent) { // CraftBukkit
                      this.level()
                          .playSeededSound(
-                             null, this.getX(), this.getY(), this.getZ(), equippable.equipSound(), this.getSoundSource(), 1.0F, 1.0F, this.random.nextLong()
-@@ -690,11 +744,18 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                             null,
+@@ -683,11 +_,18 @@
  
      @Override
      public void remove(Entity.RemovalReason reason) {
@@ -149,7 +140,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          this.brain.clearMemories();
      }
  
-@@ -703,11 +764,17 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -696,11 +_,17 @@
              mobEffectInstance.onMobRemoved(level, this, removalReason);
          }
  
@@ -167,13 +158,13 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          compound.putFloat("Health", this.getHealth());
          compound.putShort("HurtTime", (short)this.hurtTime);
          compound.putInt("HurtByTimestamp", this.lastHurtByMobTimestamp);
-@@ -736,7 +803,23 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -750,7 +_,23 @@
  
      @Override
      public void readAdditionalSaveData(CompoundTag compound) {
--        this.internalSetAbsorptionAmount(compound.getFloat("AbsorptionAmount"));
+-        this.internalSetAbsorptionAmount(compound.getFloatOr("AbsorptionAmount", 0.0F));
 +        // Paper start - Check for NaN
-+        float absorptionAmount = compound.getFloat("AbsorptionAmount");
++        float absorptionAmount = compound.getFloatOr("AbsorptionAmount", 0.0F);
 +        if (Float.isNaN(absorptionAmount)) {
 +            absorptionAmount = 0;
 +        }
@@ -181,7 +172,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +        // Paper end - Check for NaN
 +        // Paper start - Friction API
 +        if (compound.contains("Paper.FrictionState")) {
-+            String frictionState = compound.getString("Paper.FrictionState");
++            String frictionState = compound.getStringOr("Paper.FrictionState", "");
 +            try {
 +                this.frictionState = net.kyori.adventure.util.TriState.valueOf(frictionState);
 +            } catch (Exception ignored) {
@@ -189,11 +180,11 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +            }
 +        }
 +        // Paper end - Friction API
-         if (compound.contains("attributes", 9) && this.level() != null && !this.level().isClientSide) {
-             this.getAttributes().load(compound.getList("attributes", 10));
+         if (this.level() != null && !this.level().isClientSide) {
+             compound.getList("attributes").ifPresent(this.getAttributes()::load);
          }
-@@ -753,6 +836,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
-             }
+@@ -763,6 +_,16 @@
+             this.activeEffects.put(mobEffectInstance.getEffect(), mobEffectInstance);
          }
  
 +        // CraftBukkit start
@@ -206,21 +197,21 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +            }
 +        }
 +        // CraftBukkit end
-         if (compound.contains("Health", 99)) {
-             this.setHealth(compound.getFloat("Health"));
-         }
-@@ -764,6 +857,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
-             String string = compound.getString("Team");
+         this.setHealth(compound.getFloatOr("Health", this.getMaxHealth()));
+         this.hurtTime = compound.getShortOr("HurtTime", (short)0);
+         this.deathTime = compound.getShortOr("DeathTime", (short)0);
+@@ -770,6 +_,7 @@
+         compound.getString("Team").ifPresent(string -> {
              Scoreboard scoreboard = this.level().getScoreboard();
              PlayerTeam playerTeam = scoreboard.getPlayerTeam(string);
 +            if (!this.level().paperConfig().scoreboards.allowNonPlayerEntitiesOnScoreboards && !(this instanceof net.minecraft.world.entity.player.Player)) { playerTeam = null; } // Paper - Perf: Disable Scoreboards for non players by default
              boolean flag = playerTeam != null && scoreboard.addPlayerToTeam(this.getStringUUID(), playerTeam);
              if (!flag) {
                  LOGGER.warn("Unable to add mob to team \"{}\" (that team probably doesn't exist)", string);
-@@ -776,11 +870,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
- 
-         if (compound.contains("SleepingX", 99) && compound.contains("SleepingY", 99) && compound.contains("SleepingZ", 99)) {
-             BlockPos blockPos = new BlockPos(compound.getInt("SleepingX"), compound.getInt("SleepingY"), compound.getInt("SleepingZ"));
+@@ -777,11 +_,13 @@
+         });
+         this.setSharedFlag(7, compound.getBooleanOr("FallFlying", false));
+         compound.read("sleeping_pos", BlockPos.CODEC).ifPresentOrElse(blockPos -> {
 +            if (this.position().distanceToSqr(blockPos.getX(), blockPos.getY(), blockPos.getZ()) < 16 * 16) { // Paper - The sleeping pos will always also set the actual pos, so a desync suggests something is wrong
              this.setSleepingPos(blockPos);
              this.entityData.set(DATA_POSE, Pose.SLEEPING);
@@ -228,11 +219,11 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                  this.setPosToBed(blockPos);
              }
 +            } // Paper - The sleeping pos will always also set the actual pos, so a desync suggests something is wrong
-         }
- 
-         if (compound.contains("Brain", 10)) {
-@@ -788,15 +884,44 @@ public abstract class LivingEntity extends Entity implements Attackable {
-         }
+         }, this::clearSleepingPos);
+         compound.getCompound("Brain").ifPresent(compoundTag -> this.brain = this.makeBrain(new Dynamic<>(NbtOps.INSTANCE, compoundTag)));
+         this.lastHurtByPlayer = EntityReference.read(compound, "last_hurt_by_player");
+@@ -791,15 +_,44 @@
+         this.equipment.setAll(compound.read("equipment", EntityEquipment.CODEC, registryOps).orElseGet(EntityEquipment::new));
      }
  
 +    // CraftBukkit start
@@ -258,15 +249,15 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +    // CraftBukkit end
 +
      protected void tickEffects() {
-         Iterator<Holder<MobEffect>> iterator = this.activeEffects.keySet().iterator();
+         if (this.level() instanceof ServerLevel serverLevel) {
+             Iterator<Holder<MobEffect>> iterator = this.activeEffects.keySet().iterator();
  
-+        this.isTickingEffects = true; // CraftBukkit
-         try {
-             while (iterator.hasNext()) {
-                 Holder<MobEffect> holder = iterator.next();
-                 MobEffectInstance mobEffectInstance = this.activeEffects.get(holder);
-                 if (!mobEffectInstance.tick(this, () -> this.onEffectUpdated(mobEffectInstance, true, null))) {
-                     if (!this.level().isClientSide) {
++            this.isTickingEffects = true; // CraftBukkit
+             try {
+                 while (iterator.hasNext()) {
+                     Holder<MobEffect> holder = iterator.next();
+                     MobEffectInstance mobEffectInstance = this.activeEffects.get(holder);
+                     if (!mobEffectInstance.tickServer(serverLevel, this, () -> this.onEffectUpdated(mobEffectInstance, true, null))) {
 +                        // CraftBukkit start
 +                        EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, mobEffectInstance, null, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.EXPIRATION);
 +                        if (event.isCancelled()) {
@@ -275,26 +266,26 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +                        // CraftBukkit end
                          iterator.remove();
                          this.onEffectsRemoved(List.of(mobEffectInstance));
-                     }
-@@ -807,6 +932,17 @@ public abstract class LivingEntity extends Entity implements Attackable {
-         } catch (ConcurrentModificationException var6) {
-         }
+                     } else if (mobEffectInstance.getDuration() % 600 == 0) {
+@@ -809,6 +_,17 @@
+             } catch (ConcurrentModificationException var6) {
+             }
  
-+        // CraftBukkit start
-+        this.isTickingEffects = false;
-+        for (ProcessableEffect effect : this.effectsToProcess) {
-+            if (effect.effect != null) {
-+                this.addEffect(effect.effect, effect.cause);
-+            } else {
-+                this.removeEffect(effect.type, effect.cause);
++            // CraftBukkit start
++            this.isTickingEffects = false;
++            for (ProcessableEffect effect : this.effectsToProcess) {
++                if (effect.effect != null) {
++                    this.addEffect(effect.effect, effect.cause);
++                } else {
++                    this.removeEffect(effect.type, effect.cause);
++                }
 +            }
-+        }
-+        this.effectsToProcess.clear();
-+        // CraftBukkit end
-         if (this.effectsDirty) {
-             if (!this.level().isClientSide) {
++            this.effectsToProcess.clear();
++            // CraftBukkit end
+             if (this.effectsDirty) {
                  this.updateInvisibilityStatus();
-@@ -912,15 +1048,33 @@ public abstract class LivingEntity extends Entity implements Attackable {
+                 this.updateGlowingStatus();
+@@ -916,15 +_,33 @@
      }
  
      public boolean removeAllEffects() {
@@ -332,7 +323,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          }
      }
  
-@@ -942,21 +1096,57 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -951,21 +_,57 @@
      }
  
      public final boolean addEffect(MobEffectInstance effectInstance) {
@@ -392,11 +383,11 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                  this.onEffectUpdated(mobEffectInstance, true, entity);
                  flag = true;
              }
-@@ -995,11 +1185,37 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1004,11 +_,37 @@
  
      @Nullable
-     public MobEffectInstance removeEffectNoUpdate(Holder<MobEffect> effect) {
-+        // CraftBukkit start
+     public final MobEffectInstance removeEffectNoUpdate(Holder<MobEffect> effect) {
++// CraftBukkit start
 +        return this.removeEffectNoUpdate(effect, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.UNKNOWN);
 +    }
 +
@@ -416,7 +407,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +        if (event.isCancelled()) {
 +            return null;
 +        }
-+
++// CraftBukkit end
          return this.activeEffects.remove(effect);
      }
  
@@ -431,7 +422,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          if (mobEffectInstance != null) {
              this.onEffectsRemoved(List.of(mobEffectInstance));
              return true;
-@@ -1080,17 +1296,62 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1092,17 +_,62 @@
      }
  
      public void heal(float healAmount) {
@@ -495,7 +486,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          this.entityData.set(DATA_HEALTH_ID, Mth.clamp(health, 0.0F, this.getMaxHealth()));
      }
  
-@@ -1102,7 +1363,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1114,7 +_,7 @@
      public boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
          if (this.isInvulnerableTo(level, damageSource)) {
              return false;
@@ -504,32 +495,17 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              return false;
          } else if (damageSource.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
              return false;
-@@ -1116,47 +1377,71 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1128,35 +_,59 @@
                  amount = 0.0F;
              }
  
--            float f = amount;
--            boolean flag = false;
-+            float f = amount; final float originalAmount = amount; // Paper - revert to vanilla #hurt - OBFHELPER
-+            boolean flag = amount > 0.0F && this.isDamageSourceBlocked(damageSource); // Copied from below;
-             float f1 = 0.0F;
--            if (amount > 0.0F && this.isDamageSourceBlocked(damageSource)) {
-+            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) for get f and actuallyHurt(DamageSource, float, EntityDamageEvent) for handle damage
-+            if (false && amount > 0.0F && this.isDamageSourceBlocked(damageSource)) {
-                 this.hurtCurrentlyUsedShield(amount);
-                 f1 = amount;
-                 amount = 0.0F;
--                if (!damageSource.is(DamageTypeTags.IS_PROJECTILE) && damageSource.getDirectEntity() instanceof LivingEntity livingEntity) {
-+                if (!damageSource.is(DamageTypeTags.IS_PROJECTILE) && damageSource.getDirectEntity() instanceof LivingEntity livingEntity && livingEntity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Check distance in entity interactions
-                     this.blockUsingShield(livingEntity);
-                 }
- 
-                 flag = true;
-             }
- 
--            if (damageSource.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
-+            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) for get f
-+            if (false && damageSource.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
+-            float f1 = this.applyItemBlocking(level, damageSource, amount);
++            final float originalAmount = amount; // Paper - revert to vanilla #hurt - OBFHELPER
++            float f1 = this.applyItemBlocking(level, damageSource, amount); // TODO: LOOK AT THE DAMAGE EVENTSTUFF
++            // Paper end
+             amount -= f1;
+             boolean flag = f1 > 0.0F;
+             if (damageSource.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
                  amount *= 5.0F;
              }
  
@@ -541,7 +517,6 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              }
  
 +            EntityDamageEvent event; // CraftBukkit // Paper - move this into the actual invuln check....
-             this.walkAnimation.setSpeed(1.5F);
              if (Float.isNaN(amount) || Float.isInfinite(amount)) {
                  amount = Float.MAX_VALUE;
              }
@@ -586,7 +561,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                  this.hurtDuration = 10;
                  this.hurtTime = this.hurtDuration;
              }
-@@ -1170,7 +1455,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1171,7 +_,7 @@
                      level.broadcastDamageEvent(this, damageSource);
                  }
  
@@ -595,7 +570,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                      this.markHurt();
                  }
  
-@@ -1185,8 +1470,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1186,8 +_,16 @@
                          d = damageSource.getSourcePosition().x() - this.getX();
                          d1 = damageSource.getSourcePosition().z() - this.getZ();
                      }
@@ -613,12 +588,13 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                      if (!flag) {
                          this.indicateDamage(d, d1);
                      }
-@@ -1195,17 +1488,18 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1196,19 +_,19 @@
  
              if (this.isDeadOrDying()) {
                  if (!this.checkTotemDeathProtection(damageSource)) {
 -                    if (flag1) {
 -                        this.makeSound(this.getDeathSound());
+-                        this.playSecondaryHurtSound(damageSource);
 -                    }
 +                    // Paper start - moved into CraftEventFactory event caller for cancellable death event
 +                    this.silentDeath = !flag1; // mark entity as dying silently
@@ -629,6 +605,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                  }
              } else if (flag1) {
                  this.playHurtSound(damageSource);
+                 this.playSecondaryHurtSound(damageSource);
              }
  
 -            boolean flag2 = !flag || amount > 0.0F;
@@ -636,8 +613,17 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              if (flag2) {
                  this.lastDamageSource = damageSource;
                  this.lastDamageStamp = this.level().getGameTime();
-@@ -1259,12 +1553,24 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1272,7 +_,7 @@
          }
+     }
+ 
+-    private void playSecondaryHurtSound(DamageSource damageSource) {
++    public void playSecondaryHurtSound(DamageSource damageSource) { // Paper - TODO AT
+         if (damageSource.is(DamageTypes.THORNS)) {
+             SoundSource soundSource = this instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
+             this.level().playSound(null, this.position().x, this.position().y, this.position().z, SoundEvents.THORNS_HIT, soundSource);
+@@ -1304,12 +_,24 @@
+         return EntityReference.get(this.lastHurtByPlayer, this.level(), Player.class);
      }
  
 +    // Paper start - only call damage event when actuallyHurt will be called - move out amount computation logic
@@ -652,17 +638,17 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +    }
 +    // Paper end - only call damage event when actuallyHurt will be called - move out amount computation logic
 +
-     protected void blockUsingShield(LivingEntity attacker) {
-         attacker.blockedByShield(this);
+     protected void blockUsingItem(ServerLevel level, LivingEntity entity) {
+         entity.blockedByItem(this);
      }
  
-     protected void blockedByShield(LivingEntity defender) {
--        defender.knockback(0.5, defender.getX() - this.getX(), defender.getZ() - this.getZ());
-+        defender.knockback(0.5, defender.getX() - this.getX(), defender.getZ() - this.getZ(), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SHIELD_BLOCK); // CraftBukkit // Paper - fix attacker & knockback events
+     protected void blockedByItem(LivingEntity entity) {
+-        entity.knockback(0.5, entity.getX() - this.getX(), entity.getZ() - this.getZ());
++        entity.knockback(0.5, entity.getX() - this.getX(), entity.getZ() - this.getZ(), this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SHIELD_BLOCK); // CraftBukkit // Paper - fix attacker & knockback events
      }
  
      private boolean checkTotemDeathProtection(DamageSource damageSource) {
-@@ -1274,18 +1580,39 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1319,18 +_,39 @@
              ItemStack itemStack = null;
              DeathProtection deathProtection = null;
  
@@ -676,14 +662,11 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                  if (deathProtection != null) {
 +                    hand = interactionHand; // CraftBukkit
                      itemStack = itemInHand.copy();
--                    itemInHand.shrink(1);
 +                    // itemInHand.shrink(1); // CraftBukkit
-                     break;
-                 }
-             }
- 
--            if (itemStack != null) {
--                if (this instanceof ServerPlayer serverPlayer) {
++                    break;
++                }
++            }
++
 +            final org.bukkit.inventory.EquipmentSlot handSlot = (hand != null) ? org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand) : null;
 +            final EntityResurrectEvent event = new EntityResurrectEvent((org.bukkit.entity.LivingEntity) this.getBukkitEntity(), handSlot);
 +            event.setCancelled(itemStack == null);
@@ -693,7 +676,13 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +                deathProtection = null;
 +            } else {
 +                if (!itemInHand.isEmpty() && itemStack != null) { // Paper - only reduce item if actual totem was found
-+                    itemInHand.shrink(1);
+                     itemInHand.shrink(1);
+-                    break;
+-                }
+-            }
+-
+-            if (itemStack != null) {
+-                if (this instanceof ServerPlayer serverPlayer) {
 +                }
 +                // Paper start - fix NPE when pre-cancelled EntityResurrectEvent is uncancelled
 +                // restore the previous behavior in that case by defaulting to vanillas totem of undying effect
@@ -706,7 +695,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                      serverPlayer.awardStat(Stats.ITEM_USED.get(itemStack.getItem()));
                      CriteriaTriggers.USED_TOTEM.trigger(serverPlayer, itemStack);
                      this.gameEvent(GameEvent.ITEM_INTERACT_FINISH);
-@@ -1364,6 +1691,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1389,6 +_,7 @@
          if (!this.isRemoved() && !this.dead) {
              Entity entity = damageSource.getEntity();
              LivingEntity killCredit = this.getKillCredit();
@@ -714,7 +703,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              if (killCredit != null) {
                  killCredit.awardKillScore(this, damageSource);
              }
-@@ -1373,68 +1701,142 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1398,68 +_,142 @@
              }
  
              if (!this.level().isClientSide && this.hasCustomName()) {
@@ -807,13 +796,12 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          }
      }
  
--    protected void dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
 +    // Paper start
 +    protected boolean clearEquipmentSlots = true;
 +    protected Set<EquipmentSlot> clearedEquipmentSlots = new java.util.HashSet<>();
-+    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
+     protected void dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
 +        // Paper end
-         boolean flag = this.lastHurtByPlayerTime > 0;
+         boolean flag = this.lastHurtByPlayerMemoryTime > 0;
 +        this.dropEquipment(level); // CraftBukkit - from below
          if (this.shouldDropLoot() && level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
              this.dropFromLootTable(level, damageSource, flag);
@@ -851,11 +839,12 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          if (!this.wasExperienceConsumed()
              && (
                  this.isAlwaysExperienceDropper()
-                     || this.lastHurtByPlayerTime > 0 && this.shouldDropExperience() && level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)
+                     || this.lastHurtByPlayerMemoryTime > 0 && this.shouldDropExperience() && level.getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)
              )) {
 -            ExperienceOrb.award(level, this.position(), this.getExperienceReward(level, entity));
+-        }
 +            return this.getExperienceReward(level, entity); // CraftBukkit
-         }
++        }
 +        return 0; // CraftBukkit
 +    }
 +
@@ -869,7 +858,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      }
  
      protected void dropCustomDeathLoot(ServerLevel level, DamageSource damageSource, boolean recentlyHit) {
-@@ -1513,9 +1915,14 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1539,9 +_,14 @@
      }
  
      public void knockback(double strength, double x, double z) {
@@ -886,7 +875,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              Vec3 deltaMovement = this.getDeltaMovement();
  
              while (x * x + z * z < 1.0E-5F) {
-@@ -1524,11 +1931,22 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1550,11 +_,22 @@
              }
  
              Vec3 vec3 = new Vec3(x, 0.0, z).normalize().scale(strength);
@@ -910,7 +899,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          }
      }
  
-@@ -1584,6 +2002,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1606,6 +_,20 @@
          return new LivingEntity.Fallsounds(SoundEvents.GENERIC_SMALL_FALL, SoundEvents.GENERIC_BIG_FALL);
      }
  
@@ -931,7 +920,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      public Optional<BlockPos> getLastClimbablePos() {
          return this.lastClimbablePos;
      }
-@@ -1617,7 +2049,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1639,7 +_,7 @@
  
      @Override
      public boolean isAlive() {
@@ -940,23 +929,23 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      }
  
      public boolean isLookingAtMe(LivingEntity entity, double tolerance, boolean scaleByDistance, boolean visual, double... yValues) {
-@@ -1651,9 +2083,14 @@ public abstract class LivingEntity extends Entity implements Attackable {
-         boolean flag = super.causeFallDamage(fallDistance, multiplier, source);
-         int i = this.calculateFallDamage(fallDistance, multiplier);
+@@ -1673,9 +_,14 @@
+         boolean flag = super.causeFallDamage(fallDistance, damageMultiplier, damageSource);
+         int i = this.calculateFallDamage(fallDistance, damageMultiplier);
          if (i > 0) {
 +            // CraftBukkit start
-+            if (!this.hurtServer((ServerLevel) this.level(), source, (float) i)) {
++            if (!this.hurtServer((ServerLevel) this.level(), damageSource, (float) i)) {
 +                return true;
 +            }
 +            // CraftBukkit end
              this.playSound(this.getFallDamageSound(i), 1.0F, 1.0F);
              this.playBlockFallSound();
--            this.hurt(source, i);
-+            // this.hurt(source, i); // CraftBukkit - moved up
+-            this.hurt(damageSource, i);
++            // this.hurt(damageSource, i); // CraftBukkit - moved up
              return true;
          } else {
              return flag;
-@@ -1718,7 +2155,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1740,7 +_,7 @@
  
      protected float getDamageAfterArmorAbsorb(DamageSource damageSource, float damageAmount) {
          if (!damageSource.is(DamageTypeTags.BYPASSES_ARMOR)) {
@@ -965,17 +954,17 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              damageAmount = CombatRules.getDamageAfterAbsorb(
                  this, damageAmount, damageSource, this.getArmorValue(), (float)this.getAttributeValue(Attributes.ARMOR_TOUGHNESS)
              );
-@@ -1731,7 +2168,8 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1753,7 +_,8 @@
          if (damageSource.is(DamageTypeTags.BYPASSES_EFFECTS)) {
              return damageAmount;
          } else {
--            if (this.hasEffect(MobEffects.DAMAGE_RESISTANCE) && !damageSource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
+-            if (this.hasEffect(MobEffects.RESISTANCE) && !damageSource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
 +            // CraftBukkit - Moved to handleEntityDamage(DamageSource, float)
-+            if (false && this.hasEffect(MobEffects.DAMAGE_RESISTANCE) && !damageSource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
-                 int i = (this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
++            if (false && this.hasEffect(MobEffects.RESISTANCE) && !damageSource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
+                 int i = (this.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
                  int i1 = 25 - i;
                  float f = damageAmount * i1;
-@@ -1768,24 +2206,219 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1790,24 +_,219 @@
          }
      }
  
@@ -1135,12 +1124,12 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +
 +            // Apply blocking code // PAIL: steal from above
 +            if (event.getDamage(DamageModifier.BLOCKING) < 0) {
-+                this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
-+                Entity entity = damageSource.getDirectEntity();
-+
-+                if (!damageSource.is(DamageTypeTags.IS_PROJECTILE) && entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
-+                    this.blockUsingShield((LivingEntity) entity);
-+                }
++//                this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
++//                Entity entity = damageSource.getDirectEntity();
++//
++//                if (!damageSource.is(DamageTypeTags.IS_PROJECTILE) && entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
++//                    this.blockUsingShield((LivingEntity) entity);
++//                }
 +            }
 +
 +            boolean human = this instanceof net.minecraft.world.entity.player.Player;
@@ -1205,7 +1194,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      }
  
      public CombatTracker getCombatTracker() {
-@@ -1814,7 +2447,17 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1836,7 +_,17 @@
      }
  
      public final void setArrowCount(int count) {
@@ -1224,7 +1213,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      }
  
      public final int getStingerCount() {
-@@ -1957,7 +2600,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1991,7 +_,7 @@
  
      @Override
      protected void onBelowWorld() {
@@ -1233,21 +1222,21 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      }
  
      protected void updateSwingTime() {
-@@ -2052,6 +2695,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
- 
-     public abstract ItemStack getItemBySlot(EquipmentSlot slot);
+@@ -2086,6 +_,12 @@
+         return this.equipment.get(slot);
+     }
  
 +    // CraftBukkit start
-+    public void setItemSlot(EquipmentSlot enumitemslot, ItemStack itemstack, boolean silent) {
-+        this.setItemSlot(enumitemslot, itemstack);
++    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) {
++        this.onEquipItem(slot, this.equipment.set(slot, stack), stack, silent);
 +    }
 +    // CraftBukkit end
 +
-     public abstract void setItemSlot(EquipmentSlot slot, ItemStack stack);
- 
-     public Iterable<ItemStack> getHandSlots() {
-@@ -2158,14 +2807,27 @@ public abstract class LivingEntity extends Entity implements Attackable {
-         return this.hasEffect(MobEffects.JUMP) ? 0.1F * (this.getEffect(MobEffects.JUMP).getAmplifier() + 1.0F) : 0.0F;
+     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
+         this.onEquipItem(slot, this.equipment.set(slot, stack), stack);
+     }
+@@ -2180,14 +_,27 @@
+         return this.hasEffect(MobEffects.JUMP_BOOST) ? 0.1F * (this.getEffect(MobEffects.JUMP_BOOST).getAmplifier() + 1.0F) : 0.0F;
      }
  
 +    protected long lastJumpTime = 0L; // Paper - Prevent excessive velocity through repeated crits
@@ -1274,7 +1263,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                  this.addDeltaMovement(new Vec3(-Mth.sin(f) * 0.2, 0.0, Mth.cos(f) * 0.2));
              }
  
-@@ -2425,7 +3087,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2454,7 +_,7 @@
      }
  
      protected float getFlyingSpeed() {
@@ -1283,7 +1272,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      }
  
      public float getSpeed() {
-@@ -2471,7 +3133,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2500,7 +_,7 @@
                  }
              }
  
@@ -1292,26 +1281,22 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              if (this.tickCount % 20 == 0) {
                  this.getCombatTracker().recheckStatus();
              }
-@@ -2519,37 +3181,14 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2538,37 +_,14 @@
          profilerFiller.pop();
          profilerFiller.push("rangeChecks");
  
 -        while (this.getYRot() - this.yRotO < -180.0F) {
 -            this.yRotO -= 360.0F;
 -        }
-+        // Paper start - stop large pitch and yaw changes from crashing the server
-+        this.yRotO += Math.round((this.getYRot() - this.yRotO) / 360.0F) * 360.0F;
- 
+-
 -        while (this.getYRot() - this.yRotO >= 180.0F) {
 -            this.yRotO += 360.0F;
 -        }
-+        this.yBodyRotO += Math.round((this.yBodyRot - this.yBodyRotO) / 360.0F) * 360.0F;
- 
+-
 -        while (this.yBodyRot - this.yBodyRotO < -180.0F) {
 -            this.yBodyRotO -= 360.0F;
 -        }
-+        this.xRotO += Math.round((this.getXRot() - this.xRotO) / 360.0F) * 360.0F;
- 
+-
 -        while (this.yBodyRot - this.yBodyRotO >= 180.0F) {
 -            this.yBodyRotO += 360.0F;
 -        }
@@ -1331,11 +1316,18 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 -        while (this.yHeadRot - this.yHeadRotO >= 180.0F) {
 -            this.yHeadRotO += 360.0F;
 -        }
++        // Paper start - stop large pitch and yaw changes from crashing the server
++        this.yRotO += Math.round((this.getYRot() - this.yRotO) / 360.0F) * 360.0F;
++
++        this.yBodyRotO += Math.round((this.yBodyRot - this.yBodyRotO) / 360.0F) * 360.0F;
++
++        this.xRotO += Math.round((this.getXRot() - this.xRotO) / 360.0F) * 360.0F;
++
 +        this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
  
          profilerFiller.pop();
-         this.animStep += f2;
-@@ -2573,7 +3212,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         if (this.isFallFlying()) {
+@@ -2585,7 +_,7 @@
          this.elytraAnimationState.tick();
      }
  
@@ -1344,7 +1336,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          Map<EquipmentSlot, ItemStack> map = this.collectEquipmentChanges();
          if (map != null) {
              this.handleHandSwap(map);
-@@ -2586,6 +3225,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2598,16 +_,39 @@
      @Nullable
      private Map<EquipmentSlot, ItemStack> collectEquipmentChanges() {
          Map<EquipmentSlot, ItemStack> map = null;
@@ -1364,9 +1356,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +        // Paper end - EntityEquipmentChangedEvent
  
          for (EquipmentSlot equipmentSlot : EquipmentSlot.VALUES) {
-             ItemStack itemStack = switch (equipmentSlot.getType()) {
-@@ -2595,11 +3248,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
-             };
+             ItemStack itemStack = this.lastEquipmentItems.get(equipmentSlot);
              ItemStack itemBySlot = this.getItemBySlot(equipmentSlot);
              if (this.equipmentHasChanged(itemStack, itemBySlot)) {
 +                // Paper start - EntityEquipmentChangedEvent, PlayerArmorChangeEvent
@@ -1386,7 +1376,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                  AttributeMap attributes = this.getAttributes();
                  if (!itemStack.isEmpty()) {
                      this.stopLocationBasedEffects(itemStack, equipmentSlot, attributes);
-@@ -2624,6 +3286,8 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2632,6 +_,8 @@
                      }
                  }
              }
@@ -1395,16 +1385,16 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          }
  
          return map;
-@@ -2664,7 +3328,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
-                     this.lastBodyItemStack = itemStack;
-             }
+@@ -2663,7 +_,7 @@
+             list.add(Pair.of(equipmentSlot, itemStack1));
+             this.lastEquipmentItems.put(equipmentSlot, itemStack1);
          });
 -        ((ServerLevel)this.level()).getChunkSource().broadcast(this, new ClientboundSetEquipmentPacket(this.getId(), list));
 +        ((ServerLevel)this.level()).getChunkSource().broadcast(this, new ClientboundSetEquipmentPacket(this.getId(), list, true)); // Paper - data sanitization
      }
  
-     private ItemStack getLastArmorItem(EquipmentSlot slot) {
-@@ -2765,8 +3429,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     protected void tickHeadTurn(float yBodyRot) {
+@@ -2749,8 +_,10 @@
              if (!flag || this.onGround() && !(fluidHeight > fluidJumpThreshold)) {
                  if (!this.isInLava() || this.onGround() && !(fluidHeight > fluidJumpThreshold)) {
                      if ((this.onGround() || flag && fluidHeight <= fluidJumpThreshold) && this.noJumpDelay == 0) {
@@ -1415,16 +1405,16 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                      }
                  } else {
                      this.jumpInLiquid(FluidTags.LAVA);
-@@ -2805,7 +3471,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
-         this.calculateEntityAnimation(this instanceof FlyingAnimal);
+@@ -2791,7 +_,7 @@
          profilerFiller.pop();
-         profilerFiller.push("freezing");
--        if (!this.level().isClientSide && !this.isDeadOrDying()) {
-+        if (!this.level().isClientSide && !this.isDeadOrDying() && !this.freezeLocked) { // Paper - Freeze Tick Lock API
-             int ticksFrozen = this.getTicksFrozen();
-             if (this.isInPowderSnow && this.canFreeze()) {
-                 this.setTicksFrozen(Math.min(this.getTicksRequiredToFreeze(), ticksFrozen + 1));
-@@ -2829,6 +3495,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         if (this.level() instanceof ServerLevel serverLevel) {
+             profilerFiller.push("freezing");
+-            if (!this.isInPowderSnow || !this.canFreeze()) {
++            if (!this.isInPowderSnow || !this.canFreeze() && !this.freezeLocked) { // Paper - Freeze Tick Lock API
+                 this.setTicksFrozen(Math.max(0, this.getTicksFrozen() - 2));
+             }
+ 
+@@ -2812,6 +_,20 @@
  
          this.pushEntities();
          profilerFiller.pop();
@@ -1442,10 +1432,10 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +            }
 +        }
 +        // Paper end - Add EntityMoveEvent
-         if (this.level() instanceof ServerLevel serverLevel && this.isSensitiveToWater() && this.isInWaterRainOrBubble()) {
+         if (this.level() instanceof ServerLevel serverLevel && this.isSensitiveToWater() && this.isInWaterOrRain()) {
              this.hurtServer(serverLevel, this.damageSources().drown(), 1.0F);
          }
-@@ -2842,6 +3522,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2830,6 +_,7 @@
          this.checkSlowFallDistance();
          if (!this.level().isClientSide) {
              if (!this.canGlide()) {
@@ -1453,51 +1443,51 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                  this.setSharedFlag(7, false);
                  return;
              }
-@@ -2881,9 +3562,24 @@ public abstract class LivingEntity extends Entity implements Attackable {
-         if (!(this.level() instanceof ServerLevel serverLevel)) {
-             this.level().getEntities(EntityTypeTest.forClass(Player.class), this.getBoundingBox(), EntitySelector.pushableBy(this)).forEach(this::doPush);
-         } else {
--            List<Entity> entities = this.level().getEntities(this, this.getBoundingBox(), EntitySelector.pushableBy(this));
-+            // Paper start - don't run getEntities if we're not going to use its result
-+            if (!this.isPushable()) {
-+                return;
-+            }
+@@ -2869,10 +_,25 @@
+     }
+ 
+     protected void pushEntities() {
++        // Paper start - don't run getEntities if we're not going to use its result
++        if (!this.isPushable()) {
++            return;
++        }
 +
-+            net.minecraft.world.scores.Team team = this.getTeam();
-+            if (team != null && team.getCollisionRule() == net.minecraft.world.scores.Team.CollisionRule.NEVER) {
-+                return;
-+            }
++        net.minecraft.world.scores.Team team = this.getTeam();
++        if (team != null && team.getCollisionRule() == net.minecraft.world.scores.Team.CollisionRule.NEVER) {
++            return;
++        }
 +
-+            int _int = serverLevel.getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
-+            if (_int <= 0 && this.level().paperConfig().collisions.maxEntityCollisions <= 0) {
-+                return;
-+            }
-+            // Paper end - don't run getEntities if we're not going to use its result
-+            List<Entity> entities = this.level().getEntities(this, this.getBoundingBox(), EntitySelector.pushable(this, this.level().paperConfig().collisions.fixClimbingBypassingCrammingRule)); // Paper - Climbing should not bypass cramming gamerule
-             if (!entities.isEmpty()) {
++        int _int = level().getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
++        if (_int <= 0 && this.level().paperConfig().collisions.maxEntityCollisions <= 0) {
++            return;
++        }
++        // Paper end - don't run getEntities if we're not going to use its result
+         List<Entity> pushableEntities = this.level().getPushableEntities(this, this.getBoundingBox());
+         if (!pushableEntities.isEmpty()) {
+             if (this.level() instanceof ServerLevel serverLevel) {
 -                int _int = serverLevel.getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
 +                // Paper - don't run getEntities if we're not going to use its result; moved up
-                 if (_int > 0 && entities.size() > _int - 1 && this.random.nextInt(4) == 0) {
+                 if (_int > 0 && pushableEntities.size() > _int - 1 && this.random.nextInt(4) == 0) {
                      int i = 0;
  
-@@ -2898,7 +3594,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
-                     }
-                 }
- 
-+                // Paper start - Cap entity collisions
-+                this.numCollisions = Math.max(0, this.numCollisions - this.level().paperConfig().collisions.maxEntityCollisions);
-                 for (Entity entity1 : entities) {
-+                    if (this.numCollisions >= this.level().paperConfig().collisions.maxEntityCollisions) {
-+                        break;
-+                    }
-+
-+                    entity1.numCollisions++;
-+                    this.numCollisions++;
-+                    // Paper end - Cap entity collisions
-                     this.doPush(entity1);
+@@ -2888,7 +_,16 @@
                  }
              }
-@@ -2941,9 +3646,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
+ 
++            // Paper start - Cap entity collisions
++            this.numCollisions = Math.max(0, this.numCollisions - this.level().paperConfig().collisions.maxEntityCollisions);
+             for (Entity entity1 : pushableEntities) {
++                if (this.numCollisions >= this.level().paperConfig().collisions.maxEntityCollisions) {
++                    break;
++                }
++
++                entity1.numCollisions++;
++                this.numCollisions++;
++                // Paper end - Cap entity collisions
+                 this.doPush(entity1);
+             }
+         }
+@@ -2930,9 +_,16 @@
  
      @Override
      public void stopRiding() {
@@ -1516,7 +1506,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              this.dismountVehicle(vehicle);
          }
      }
-@@ -3007,7 +3719,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2959,7 +_,7 @@
      }
  
      public void onItemPickup(ItemEntity itemEntity) {
@@ -1525,7 +1515,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          if (owner instanceof ServerPlayer) {
              CriteriaTriggers.THROWN_ITEM_PICKED_UP_BY_ENTITY.trigger((ServerPlayer)owner, itemEntity.getItem(), this);
          }
-@@ -3017,7 +3729,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2969,7 +_,7 @@
          if (!entity.isRemoved()
              && !this.level().isClientSide
              && (entity instanceof ItemEntity || entity instanceof AbstractArrow || entity instanceof ExperienceOrb)) {
@@ -1534,7 +1524,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          }
      }
  
-@@ -3031,7 +3743,8 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2983,7 +_,8 @@
          } else {
              Vec3 vec3 = new Vec3(this.getX(), this.getEyeY(), this.getZ());
              Vec3 vec31 = new Vec3(entity.getX(), y, entity.getZ());
@@ -1544,7 +1534,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          }
      }
  
-@@ -3051,14 +3764,28 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3003,13 +_,27 @@
  
      @Override
      public boolean isPickable() {
@@ -1556,9 +1546,10 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      @Override
      public boolean isPushable() {
 -        return this.isAlive() && !this.isSpectator() && !this.onClimbable();
+-    }
 +        return this.isCollidable(this.level().paperConfig().collisions.fixClimbingBypassingCrammingRule);
-     }
- 
++    }
++
 +    @Override
 +    public boolean isCollidable(boolean ignoreClimbing) {
 +        return this.isAlive() && !this.isSpectator() && (ignoreClimbing || !this.onClimbable()) && this.collides; // CraftBukkit
@@ -1571,11 +1562,10 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
 +        return this.isPushable() && this.collides != this.collidableExemptions.contains(entity.getUUID());
 +    }
 +    // CraftBukkit end
-+
+ 
      @Override
      public float getYHeadRot() {
-         return this.yHeadRot;
-@@ -3088,7 +3815,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3040,7 +_,7 @@
      }
  
      public final void setAbsorptionAmount(float absorptionAmount) {
@@ -1584,7 +1574,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      }
  
      protected void internalSetAbsorptionAmount(float absorptionAmount) {
-@@ -3115,6 +3842,15 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3067,6 +_,15 @@
          return (this.entityData.get(DATA_LIVING_ENTITY_FLAGS) & 2) > 0 ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
      }
  
@@ -1600,7 +1590,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      private void updatingUsingItem() {
          if (this.isUsingItem()) {
              if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
-@@ -3128,7 +3864,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3115,7 +_,12 @@
  
      protected void updateUsingItem(ItemStack usingItem) {
          usingItem.onUseTick(this.level(), this, this.getUseItemRemainingTicks());
@@ -1614,7 +1604,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              this.completeUsingItem();
          }
      }
-@@ -3154,10 +3895,18 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3141,10 +_,18 @@
      }
  
      public void startUsingItem(InteractionHand hand) {
@@ -1635,7 +1625,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              if (!this.level().isClientSide) {
                  this.setLivingEntityFlag(1, true);
                  this.setLivingEntityFlag(2, hand == InteractionHand.OFF_HAND);
-@@ -3181,7 +3930,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3168,7 +_,10 @@
                  }
              } else if (!this.isUsingItem() && !this.useItem.isEmpty()) {
                  this.useItem = ItemStack.EMPTY;
@@ -1647,7 +1637,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
              }
          }
      }
-@@ -3220,12 +3972,49 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3207,12 +_,49 @@
                  this.releaseUsingItem();
              } else {
                  if (!this.useItem.isEmpty() && this.isUsingItem()) {
@@ -1698,15 +1688,15 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
                  }
              }
          }
-@@ -3248,6 +4037,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
- 
-     public void releaseUsingItem() {
-         if (!this.useItem.isEmpty()) {
+@@ -3237,6 +_,7 @@
+         ItemStack itemInHand = this.getItemInHand(this.getUsedItemHand());
+         if (!this.useItem.isEmpty() && ItemStack.isSameItem(itemInHand, this.useItem)) {
+             this.useItem = itemInHand;
 +            if (this instanceof ServerPlayer) new io.papermc.paper.event.player.PlayerStopUsingItemEvent((org.bukkit.entity.Player) getBukkitEntity(), useItem.asBukkitMirror(), getTicksUsingItem()).callEvent(); // Paper - Add PlayerStopUsingItemEvent
              this.useItem.releaseUsing(this.level(), this, this.getUseItemRemainingTicks());
              if (this.useItem.useOnRelease()) {
                  this.updatingUsingItem();
-@@ -3267,7 +4057,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3256,7 +_,10 @@
          }
  
          this.useItem = ItemStack.EMPTY;
@@ -1718,15 +1708,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      }
  
      public boolean isBlocking() {
-@@ -3281,13 +4074,70 @@ public abstract class LivingEntity extends Entity implements Attackable {
-             if (item.getUseAnimation(this.useItem) != ItemUseAnimation.BLOCK) {
-                 return null;
-             } else {
--                return item.getUseDuration(this.useItem, this) - this.useItemRemaining < 5 ? null : this.useItem;
-+                return item.getUseDuration(this.useItem, this) - this.useItemRemaining < this.getShieldBlockingDelay() ? null : this.useItem; // Paper - Make shield blocking delay configurable
-             }
-         } else {
-             return null;
+@@ -3280,6 +_,63 @@
          }
      }
  
@@ -1790,7 +1772,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();
      }
-@@ -3306,6 +4156,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3298,6 +_,12 @@
      }
  
      public boolean randomTeleport(double x, double y, double z, boolean broadcastTeleport) {
@@ -1803,7 +1785,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          double x1 = this.getX();
          double y1 = this.getY();
          double z1 = this.getZ();
-@@ -3328,16 +4184,39 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3320,16 +_,39 @@
              }
  
              if (flag1) {
@@ -1846,7 +1828,7 @@ index 24442176f98e85d63e82dd96f93b9aa668be7ec0..e0c310d970a687945b6a771b4ecb9404
          } else {
              if (broadcastTeleport) {
                  level.broadcastEntityEvent(this, (byte)46);
-@@ -3347,7 +4226,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3339,7 +_,7 @@
                  pathfinderMob.getNavigation().stop();
              }
  

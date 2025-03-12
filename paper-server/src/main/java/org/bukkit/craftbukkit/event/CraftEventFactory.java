@@ -999,7 +999,7 @@ public class CraftEventFactory {
         if (event.isCancelled()) {
             return event;
         }
-        playDeathSound(victim, event);
+        playDeathSound(victim, event, damageSource);
         // Paper end
         victim.expToDrop = event.getDroppedExp();
         lootCheck.run(); // Paper - advancement triggers before destroying items
@@ -1065,7 +1065,7 @@ public class CraftEventFactory {
     }
 
     // Play death sound manually
-    private static void playDeathSound(net.minecraft.world.entity.LivingEntity victim, EntityDeathEvent event) {
+    private static void playDeathSound(net.minecraft.world.entity.LivingEntity victim, EntityDeathEvent event, DamageSource damageSource) {
         if (event.shouldPlayDeathSound() && event.getDeathSound() != null && event.getDeathSoundCategory() != null) {
             net.minecraft.world.entity.player.Player source = victim instanceof net.minecraft.world.entity.player.Player ? (net.minecraft.world.entity.player.Player) victim : null;
             double x = event.getEntity().getLocation().getX();
@@ -1074,6 +1074,7 @@ public class CraftEventFactory {
             net.minecraft.sounds.SoundEvent soundEffect = org.bukkit.craftbukkit.CraftSound.bukkitToMinecraft(event.getDeathSound());
             net.minecraft.sounds.SoundSource soundCategory = net.minecraft.sounds.SoundSource.valueOf(event.getDeathSoundCategory().name());
             victim.level().playSound(source, x, y, z, soundEffect, soundCategory, event.getDeathSoundVolume(), event.getDeathSoundPitch());
+            victim.playSecondaryHurtSound(damageSource);
         }
     }
     // Paper end
