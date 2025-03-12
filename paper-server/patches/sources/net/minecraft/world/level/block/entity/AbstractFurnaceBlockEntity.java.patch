@@ -1,14 +1,6 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java b/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-index b09f8d4398da1367603bcc2ebd93968b9b4c3314..cb4b8567c029e3a53aafda2755e3773ea8b95af7 100644
 --- a/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java
-@@ -99,12 +99,45 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -104,11 +_,44 @@
      };
      public final Reference2IntOpenHashMap<ResourceKey<Recipe<?>>> recipesUsed = new Reference2IntOpenHashMap<>();
      private final RecipeManager.CachedCheck<SingleRecipeInput, ? extends AbstractCookingRecipe> quickCheck;
@@ -18,9 +10,10 @@ index b09f8d4398da1367603bcc2ebd93968b9b4c3314..cb4b8567c029e3a53aafda2755e3773e
      protected AbstractFurnaceBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState, RecipeType<? extends AbstractCookingRecipe> recipeType) {
          super(type, pos, blockState);
          this.quickCheck = RecipeManager.createCheck(recipeType);
+-    }
 +        this.recipeType = recipeType; // Paper - cook speed multiplier API
-     }
- 
++    }
++
 +    // CraftBukkit start - add fields and methods
 +    private int maxStack = MAX_STACK;
 +    public List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
@@ -50,40 +43,26 @@ index b09f8d4398da1367603bcc2ebd93968b9b4c3314..cb4b8567c029e3a53aafda2755e3773e
 +        this.maxStack = size;
 +    }
 +    // CraftBukkit end
-+
+ 
      private boolean isLit() {
          return this.litTimeRemaining > 0;
-     }
-@@ -121,8 +154,19 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
-         CompoundTag compound = tag.getCompound("RecipesUsed");
- 
-         for (String string : compound.getAllKeys()) {
--            this.recipesUsed.put(ResourceKey.create(Registries.RECIPE, ResourceLocation.parse(string)), compound.getInt(string));
-+            // Paper start - Validate ResourceLocation
-+            final ResourceLocation resourceLocation = ResourceLocation.tryParse(string);
-+            if (resourceLocation != null) {
-+                this.recipesUsed.put(ResourceKey.create(Registries.RECIPE, resourceLocation), compound.getInt(string));
-+            }
-+            // Paper end - Validate ResourceLocation
-+        }
-+
-+        // Paper start - cook speed multiplier API
-+        if (tag.contains("Paper.CookSpeedMultiplier")) {
-+            this.cookSpeedMultiplier = tag.getDouble("Paper.CookSpeedMultiplier");
-         }
-+        // Paper end - cook speed multiplier API
+@@ -125,6 +_,7 @@
+         this.litTotalTime = tag.getShortOr("lit_total_time", (short)0);
+         this.recipesUsed.clear();
+         this.recipesUsed.putAll(tag.read("RecipesUsed", RECIPES_USED_CODEC).orElse(Map.of()));
++        this.cookSpeedMultiplier = tag.getDoubleOr("Paper.CookSpeedMultiplier", 1); // Paper - cook speed multiplier API
      }
  
      @Override
-@@ -132,6 +176,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -134,6 +_,7 @@
          tag.putShort("cooking_total_time", (short)this.cookingTotalTime);
          tag.putShort("lit_time_remaining", (short)this.litTimeRemaining);
          tag.putShort("lit_total_time", (short)this.litTotalTime);
 +        tag.putDouble("Paper.CookSpeedMultiplier", this.cookSpeedMultiplier); // Paper - cook speed multiplier API
          ContainerHelper.saveAllItems(tag, this.items, registries);
-         CompoundTag compoundTag = new CompoundTag();
-         this.recipesUsed.forEach((recipe, count) -> compoundTag.putInt(recipe.location().toString(), count));
-@@ -160,11 +205,22 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+         tag.store("RecipesUsed", RECIPES_USED_CODEC, this.recipesUsed);
+     }
+@@ -160,11 +_,22 @@
  
              int maxStackSize = furnace.getMaxStackSize();
              if (!furnace.isLit() && canBurn(level.registryAccess(), recipeHolder, singleRecipeInput, furnace.items, maxStackSize)) {
@@ -109,7 +88,7 @@ index b09f8d4398da1367603bcc2ebd93968b9b4c3314..cb4b8567c029e3a53aafda2755e3773e
                          Item item = itemStack.getItem();
                          itemStack.shrink(1);
                          if (itemStack.isEmpty()) {
-@@ -175,11 +231,28 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -175,11 +_,28 @@
              }
  
              if (furnace.isLit() && canBurn(level.registryAccess(), recipeHolder, singleRecipeInput, furnace.items, maxStackSize)) {
@@ -141,7 +120,7 @@ index b09f8d4398da1367603bcc2ebd93968b9b4c3314..cb4b8567c029e3a53aafda2755e3773e
                          furnace.setRecipeUsed(recipeHolder);
                      }
  
-@@ -233,17 +306,47 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -233,17 +_,47 @@
          @Nullable RecipeHolder<? extends AbstractCookingRecipe> recipe,
          SingleRecipeInput recipeInput,
          NonNullList<ItemStack> items,
@@ -193,26 +172,26 @@ index b09f8d4398da1367603bcc2ebd93968b9b4c3314..cb4b8567c029e3a53aafda2755e3773e
  
              if (itemStack.is(Blocks.WET_SPONGE.asItem()) && !items.get(1).isEmpty() && items.get(1).is(Items.BUCKET)) {
                  items.set(1, new ItemStack(Items.WATER_BUCKET));
-@@ -260,9 +363,16 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -260,9 +_,16 @@
          return fuelValues.burnDuration(stack);
      }
  
 -    public static int getTotalCookTime(ServerLevel level, AbstractFurnaceBlockEntity furnace) {
 +    public static int getTotalCookTime(@Nullable ServerLevel level, AbstractFurnaceBlockEntity furnace, RecipeType<? extends AbstractCookingRecipe> recipeType, double cookSpeedMultiplier) { // Paper - cook speed multiplier API
          SingleRecipeInput singleRecipeInput = new SingleRecipeInput(furnace.getItem(0));
--        return furnace.quickCheck.getRecipeFor(singleRecipeInput, level).map(recipe -> recipe.value().cookingTime()).orElse(200);
+-        return furnace.quickCheck.getRecipeFor(singleRecipeInput, level).map(recipeHolder -> recipeHolder.value().cookingTime()).orElse(200);
 +        // Paper start - cook speed multiplier API
 +        /* Scale the recipe's cooking time to the current cookSpeedMultiplier */
 +        int cookTime = level != null
-+            ? furnace.quickCheck.getRecipeFor(singleRecipeInput, level).map(holder -> holder.value().cookingTime()).orElse(200)
++            ? furnace.quickCheck.getRecipeFor(singleRecipeInput, level).map(recipeHolder -> recipeHolder.value().cookingTime()).orElse(200)
 +            /* passing a null level here is safe. world is only used for map extending recipes which won't happen here */
-+            : (net.minecraft.server.MinecraftServer.getServer().getRecipeManager().getRecipeFor(recipeType, singleRecipeInput, level).map(holder -> holder.value().cookingTime()).orElse(200));
++            : (net.minecraft.server.MinecraftServer.getServer().getRecipeManager().getRecipeFor(recipeType, singleRecipeInput, level).map(recipeHolder -> recipeHolder.value().cookingTime()).orElse(200));
 +        return (int) Math.ceil (cookTime / cookSpeedMultiplier);
 +        // Paper end - cook speed multiplier API
      }
  
      @Override
-@@ -306,7 +416,7 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -306,7 +_,7 @@
          this.items.set(index, stack);
          stack.limitSize(this.getMaxStackSize(stack));
          if (index == 0 && !flag && this.level instanceof ServerLevel serverLevel) {
@@ -221,7 +200,7 @@ index b09f8d4398da1367603bcc2ebd93968b9b4c3314..cb4b8567c029e3a53aafda2755e3773e
              this.cookingTimer = 0;
              this.setChanged();
          }
-@@ -342,8 +452,8 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -342,8 +_,8 @@
      public void awardUsedRecipes(Player player, List<ItemStack> items) {
      }
  
@@ -232,7 +211,7 @@ index b09f8d4398da1367603bcc2ebd93968b9b4c3314..cb4b8567c029e3a53aafda2755e3773e
          player.awardRecipes(recipesToAwardAndPopExperience);
  
          for (RecipeHolder<?> recipeHolder : recipesToAwardAndPopExperience) {
-@@ -356,30 +466,60 @@ public abstract class AbstractFurnaceBlockEntity extends BaseContainerBlockEntit
+@@ -356,10 +_,16 @@
      }
  
      public List<RecipeHolder<?>> getRecipesToAwardAndPopExperience(ServerLevel level, Vec3 popVec) {
@@ -244,14 +223,12 @@ index b09f8d4398da1367603bcc2ebd93968b9b4c3314..cb4b8567c029e3a53aafda2755e3773e
          List<RecipeHolder<?>> list = Lists.newArrayList();
  
          for (Entry<ResourceKey<Recipe<?>>> entry : this.recipesUsed.reference2IntEntrySet()) {
-             level.recipeAccess().byKey(entry.getKey()).ifPresent(recipe -> {
-+                if (!(recipe.value() instanceof AbstractCookingRecipe)) return; // Paper - don't process non-cooking recipes
-                 list.add((RecipeHolder<?>)recipe);
--                createExperience(level, popVec, entry.getIntValue(), ((AbstractCookingRecipe)recipe.value()).experience());
-+                createExperience(level, popVec, entry.getIntValue(), ((AbstractCookingRecipe)recipe.value()).experience(), blockPos, serverPlayer, itemStack, amount);
+             level.recipeAccess().byKey(entry.getKey()).ifPresent(recipeHolder -> {
++                if (!(recipeHolder.value() instanceof AbstractCookingRecipe)) return; // Paper - don't process non-cooking recipes
+                 list.add((RecipeHolder<?>)recipeHolder);
+                 createExperience(level, popVec, entry.getIntValue(), ((AbstractCookingRecipe)recipeHolder.value()).experience());
              });
-         }
- 
+@@ -368,18 +_,42 @@
          return list;
      }
  
