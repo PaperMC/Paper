@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundHorseScreenOpenPacket;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.resources.ResourceLocation;
@@ -24,6 +25,8 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.HorseInventoryMenu;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemCooldowns;
@@ -445,6 +448,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public void openInventory(InventoryView inventory) {
         Preconditions.checkArgument(this.equals(inventory.getPlayer()), "InventoryView must belong to the opening player");
+        Preconditions.checkArgument(!(inventory instanceof InventoryMenu), "Can not open player's InventoryView");
         if (!(this.getHandle() instanceof ServerPlayer)) return; // TODO: NPC support?
         if (((ServerPlayer) this.getHandle()).connection == null) return;
         if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
@@ -481,7 +485,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
         if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
         //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
-        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
+        if (!player.isImmobile()) {
+            if (container instanceof HorseInventoryMenu horse) {
+                player.connection.send(new ClientboundHorseScreenOpenPacket(horse.containerId, horse.horse.getInventoryColumns(), horse.horse.getId()));
+            } else {
+                player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
+            }
+        }
         player.containerMenu = container;
         player.initMenu(container);
     }

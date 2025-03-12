@@ -245,9 +245,7 @@ public interface InventoryView {
     /**
      * Opens the inventory view.
      */
-    default void open() {
-        getPlayer().openInventory(this);
-    }
+    void open();
 
     /**
      * Closes the inventory view.
