@@ -1,53 +1,46 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
-index 882ff72d4ae9ca3d12e6cadbf39d7e2f08ebecee..b393be76bead3c66ab0bd8a0e6fd9b9ef81d8e28 100644
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -136,18 +136,35 @@ public final class ItemStack implements DataComponentHolder {
-             } else {
-                 Holder<Item> holder = ITEM_STREAM_CODEC.decode(buffer);
-                 DataComponentPatch dataComponentPatch = DataComponentPatch.STREAM_CODEC.decode(buffer);
--                return new ItemStack(holder, varInt, dataComponentPatch);
-+                // CraftBukkit start
-+                ItemStack stack = new ItemStack(holder, varInt, dataComponentPatch);
-+                if (false && !dataComponentPatch.isEmpty()) { // Paper - This is no longer needed with raw NBT being handled in metadata
-+                    org.bukkit.craftbukkit.inventory.CraftItemStack.setItemMeta(stack, org.bukkit.craftbukkit.inventory.CraftItemStack.getItemMeta(stack));
-+                }
-+                return stack;
-+                // CraftBukkit end
+@@ -192,18 +_,35 @@
+                 } else {
+                     Holder<Item> holder = Item.STREAM_CODEC.decode(buffer);
+                     DataComponentPatch dataComponentPatch = streamCodec.decode(buffer);
+-                    return new ItemStack(holder, varInt, dataComponentPatch);
++                    // CraftBukkit start
++                    ItemStack stack = new ItemStack(holder, varInt, dataComponentPatch);
++                    if (false && !dataComponentPatch.isEmpty()) { // Paper - This is no longer needed with raw NBT being handled in metadata
++                        org.bukkit.craftbukkit.inventory.CraftItemStack.setItemMeta(stack, org.bukkit.craftbukkit.inventory.CraftItemStack.getItemMeta(stack));
++                    }
++                    return stack;
++                    // CraftBukkit end
+                 }
              }
-         }
  
-         @Override
-         public void encode(RegistryFriendlyByteBuf buffer, ItemStack value) {
--            if (value.isEmpty()) {
-+            if (value.isEmpty() || value.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
-                 buffer.writeVarInt(0);
-             } else {
--                buffer.writeVarInt(value.getCount());
-+                buffer.writeVarInt(io.papermc.paper.util.ItemComponentSanitizer.sanitizeCount(io.papermc.paper.util.ItemObfuscationSession.currentSession(), value, value.getCount())); // Paper - potentially sanitize count
-                 ITEM_STREAM_CODEC.encode(buffer, value.getItemHolder());
-+                // Spigot start - filter
-+                // value = value.copy();
-+                // CraftItemStack.setItemMeta(value, CraftItemStack.getItemMeta(value)); // Paper - This is no longer with raw NBT being handled in metadata
-+                // Paper start - adventure; conditionally render translatable components
-+                boolean prev = net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.get();
-+                try (final io.papermc.paper.util.SafeAutoClosable ignored = io.papermc.paper.util.ItemObfuscationSession.withContext(c -> c.itemStack(value))) { // pass the itemstack as context to the obfuscation session
-+                    net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(true);
-                 DataComponentPatch.STREAM_CODEC.encode(buffer, value.components.asPatch());
-+                } finally {
-+                    net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(prev);
-+                }
-+                // Paper end - adventure; conditionally render translatable components
+             @Override
+             public void encode(RegistryFriendlyByteBuf buffer, ItemStack value) {
+-                if (value.isEmpty()) {
++                if (value.isEmpty() || value.getItem() == null) { // CraftBukkit - NPE fix itemstack.getItem()
+                     buffer.writeVarInt(0);
+                 } else {
+-                    buffer.writeVarInt(value.getCount());
++                    buffer.writeVarInt(io.papermc.paper.util.ItemComponentSanitizer.sanitizeCount(io.papermc.paper.util.ItemObfuscationSession.currentSession(), value, value.getCount())); // Paper - potentially sanitize count
+                     Item.STREAM_CODEC.encode(buffer, value.getItemHolder());
+-                    streamCodec.encode(buffer, value.components.asPatch());
++                    // Spigot start - filter
++                    // value = value.copy();
++                    // CraftItemStack.setItemMeta(value, CraftItemStack.getItemMeta(value)); // Paper - This is no longer with raw NBT being handled in metadata
++                    // Paper start - adventure; conditionally render translatable components
++                    boolean prev = net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.get();
++                    try (final io.papermc.paper.util.SafeAutoClosable ignored = io.papermc.paper.util.ItemObfuscationSession.withContext(c -> c.itemStack(value))) { // pass the itemstack as context to the obfuscation session
++                        net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(true);
++                        DataComponentPatch.STREAM_CODEC.encode(buffer, value.components.asPatch());
++                    } finally {
++                        net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(prev);
++                    }
++                    // Paper end - adventure; conditionally render translatable components
+                 }
              }
-         }
-     };
-@@ -365,10 +382,171 @@ public final class ItemStack implements DataComponentHolder {
+         };
+@@ -373,10 +_,171 @@
              return InteractionResult.PASS;
          } else {
              Item item = this.getItem();
@@ -221,7 +214,7 @@ index 882ff72d4ae9ca3d12e6cadbf39d7e2f08ebecee..b393be76bead3c66ab0bd8a0e6fd9b9e
  
              return interactionResult;
          }
-@@ -469,31 +647,70 @@ public final class ItemStack implements DataComponentHolder {
+@@ -473,31 +_,70 @@
          return this.isDamageableItem() && this.getDamageValue() >= this.getMaxDamage() - 1;
      }
  
@@ -300,7 +293,7 @@ index 882ff72d4ae9ca3d12e6cadbf39d7e2f08ebecee..b393be76bead3c66ab0bd8a0e6fd9b9e
              this.shrink(1);
              onBreak.accept(item);
          }
-@@ -506,15 +723,39 @@ public final class ItemStack implements DataComponentHolder {
+@@ -510,15 +_,39 @@
                  return;
              }
  
@@ -342,7 +335,7 @@ index 882ff72d4ae9ca3d12e6cadbf39d7e2f08ebecee..b393be76bead3c66ab0bd8a0e6fd9b9e
              );
          }
      }
-@@ -715,6 +956,12 @@ public final class ItemStack implements DataComponentHolder {
+@@ -732,6 +_,12 @@
          return this.getItem().useOnRelease(this);
      }
  
@@ -353,9 +346,9 @@ index 882ff72d4ae9ca3d12e6cadbf39d7e2f08ebecee..b393be76bead3c66ab0bd8a0e6fd9b9e
 +    // CraftBukkit end
 +
      @Nullable
-     public <T> T set(DataComponentType<? super T> component, @Nullable T value) {
+     public <T> T set(DataComponentType<T> component, @Nullable T value) {
          return this.components.set(component, value);
-@@ -748,6 +995,25 @@ public final class ItemStack implements DataComponentHolder {
+@@ -769,6 +_,25 @@
          }
      }
  
@@ -381,7 +374,7 @@ index 882ff72d4ae9ca3d12e6cadbf39d7e2f08ebecee..b393be76bead3c66ab0bd8a0e6fd9b9e
      public void applyComponents(DataComponentPatch components) {
          this.components.applyPatch(components);
          this.getItem().verifyComponentsAfterLoad(this);
-@@ -1016,6 +1282,19 @@ public final class ItemStack implements DataComponentHolder {
+@@ -1054,6 +_,19 @@
          EnchantmentHelper.forEachModifier(this, equipmentSLot, action);
      }
  
@@ -401,7 +394,7 @@ index 882ff72d4ae9ca3d12e6cadbf39d7e2f08ebecee..b393be76bead3c66ab0bd8a0e6fd9b9e
      public Component getDisplayName() {
          MutableComponent mutableComponent = Component.empty().append(this.getHoverName());
          if (this.has(DataComponents.CUSTOM_NAME)) {
-@@ -1072,7 +1351,7 @@ public final class ItemStack implements DataComponentHolder {
+@@ -1109,7 +_,7 @@
      }
  
      public void consume(int amount, @Nullable LivingEntity entity) {
