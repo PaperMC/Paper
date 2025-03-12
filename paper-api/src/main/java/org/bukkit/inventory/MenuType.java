@@ -16,6 +16,7 @@ import org.bukkit.inventory.view.LoomView;
 import org.bukkit.inventory.view.MerchantView;
 import org.bukkit.inventory.view.StonecutterView;
 import org.bukkit.inventory.view.builder.InventoryViewBuilder;
+import org.bukkit.inventory.view.builder.LocationInventorySupportingInventoryViewBuilder;
 import org.bukkit.inventory.view.builder.LocationInventoryViewBuilder;
 import org.bukkit.inventory.view.builder.MerchantInventoryViewBuilder;
 import org.jetbrains.annotations.ApiStatus;
@@ -41,7 +42,7 @@ public interface MenuType extends Keyed, io.papermc.paper.world.flag.FeatureDepe
     /**
      * A MenuType which represents a chest with 3 rows.
      */
-    MenuType.Typed<InventoryView, LocationInventoryViewBuilder<InventoryView>> GENERIC_9X3 = get("generic_9x3");
+    MenuType.Typed<InventoryView, LocationInventorySupportingInventoryViewBuilder<InventoryView>> GENERIC_9X3 = get("generic_9x3");
     /**
      * A MenuType which represents a chest with 4 rows.
      */

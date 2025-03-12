@@ -31,6 +31,9 @@ import org.bukkit.craftbukkit.inventory.view.builder.CraftAccessLocationInventor
 import org.bukkit.craftbukkit.inventory.view.builder.CraftBlockEntityInventoryViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftDoubleChestInventoryViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftEnchantmentInventoryViewBuilder;
+import org.bukkit.craftbukkit.inventory.view.builder.CraftInventorySupportingBlockEntityInventoryViewBuilder;
+import org.bukkit.craftbukkit.inventory.view.builder.CraftInventoryViewBuilders;
+import org.bukkit.craftbukkit.inventory.view.builder.CraftInventoryViewBuilders.CraftInventoryMenuBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftMerchantInventoryViewBuilder;
 import org.bukkit.craftbukkit.inventory.view.builder.CraftStandardInventoryViewBuilder;
 import org.bukkit.inventory.InventoryView;
@@ -49,6 +52,8 @@ import org.bukkit.inventory.view.builder.InventoryViewBuilder;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.function.Supplier;
+
+import static org.bukkit.craftbukkit.inventory.view.builder.CraftInventoryViewBuilders.CraftInventoryMenuBuilder.GENERIC_9X3;
 
 @NullMarked
 public final class CraftMenus {
@@ -89,7 +94,7 @@ public final class CraftMenus {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftDoubleChestInventoryViewBuilder<>(handle)));
         }
         if (menuType == MenuType.GENERIC_9X3) {
-            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.CHEST, ChestBlockEntity::new, false)));
+            return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftInventorySupportingBlockEntityInventoryViewBuilder<>(handle, Blocks.CHEST, ChestBlockEntity::new, GENERIC_9X3, false)));
         }
         // this isn't ideal as both dispenser and dropper are 3x3, InventoryType can't currently handle generic 3x3s with size 9
         // this needs to be removed when inventory creation is overhauled
