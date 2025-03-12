@@ -1,14 +1,6 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/block/entity/BlockEntity.java b/net/minecraft/world/level/block/entity/BlockEntity.java
-index 0d94b7524c194e7d456e411a3065738a03f082f4..2ebdf1ad323bb53dfe9eed319e25856b35a1443c 100644
 --- a/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BlockEntity.java
-@@ -26,6 +26,10 @@ import net.minecraft.world.level.block.state.BlockState;
+@@ -33,6 +_,10 @@
  import org.slf4j.Logger;
  
  public abstract class BlockEntity {
@@ -16,10 +8,10 @@ index 0d94b7524c194e7d456e411a3065738a03f082f4..2ebdf1ad323bb53dfe9eed319e25856b
 +    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
 +    public org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer;
 +    // CraftBukkit end
+     private static final Codec<BlockEntityType<?>> TYPE_CODEC = BuiltInRegistries.BLOCK_ENTITY_TYPE.byNameCodec();
      private static final Logger LOGGER = LogUtils.getLogger();
      private final BlockEntityType<?> type;
-     @Nullable
-@@ -40,6 +44,7 @@ public abstract class BlockEntity {
+@@ -48,6 +_,7 @@
          this.worldPosition = pos.immutable();
          this.validateBlockState(blockState);
          this.blockState = blockState;
@@ -27,7 +19,7 @@ index 0d94b7524c194e7d456e411a3065738a03f082f4..2ebdf1ad323bb53dfe9eed319e25856b
      }
  
      private void validateBlockState(BlockState state) {
-@@ -70,6 +75,14 @@ public abstract class BlockEntity {
+@@ -89,6 +_,14 @@
      }
  
      protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
@@ -42,10 +34,10 @@ index 0d94b7524c194e7d456e411a3065738a03f082f4..2ebdf1ad323bb53dfe9eed319e25856b
      }
  
      public final void loadWithComponents(CompoundTag tag, HolderLookup.Provider registries) {
-@@ -106,12 +119,22 @@ public abstract class BlockEntity {
-             .encodeStart(registries.createSerializationContext(NbtOps.INSTANCE), this.components)
-             .resultOrPartial(string -> LOGGER.warn("Failed to save components: {}", string))
-             .ifPresent(tag -> compoundTag.merge((CompoundTag)tag));
+@@ -120,12 +_,22 @@
+         CompoundTag compoundTag = new CompoundTag();
+         this.saveAdditional(compoundTag, registries);
+         compoundTag.store(BlockEntity.ComponentHelper.COMPONENTS_CODEC, registries.createSerializationContext(NbtOps.INSTANCE), this.components);
 +        // CraftBukkit start - store container
 +        if (this.persistentDataContainer != null && !this.persistentDataContainer.isEmpty()) {
 +            compoundTag.put("PublicBukkitValues", this.persistentDataContainer.toTagCompound());
@@ -65,21 +57,7 @@ index 0d94b7524c194e7d456e411a3065738a03f082f4..2ebdf1ad323bb53dfe9eed319e25856b
          return compoundTag;
      }
  
-@@ -220,7 +243,12 @@ public abstract class BlockEntity {
-     public void fillCrashReportCategory(CrashReportCategory reportCategory) {
-         reportCategory.setDetail("Name", this::getNameForReporting);
-         if (this.level != null) {
--            CrashReportCategory.populateBlockDetails(reportCategory, this.level, this.worldPosition, this.getBlockState());
-+            // Paper start - Prevent block entity and entity crashes
-+            BlockState block = this.getBlockState();
-+            if (block != null) {
-+                CrashReportCategory.populateBlockDetails(reportCategory, this.level, this.worldPosition, block);
-+            }
-+            // Paper end - Prevent block entity and entity crashes
-             CrashReportCategory.populateBlockDetails(reportCategory, this.level, this.worldPosition, this.level.getBlockState(this.worldPosition));
-         }
-     }
-@@ -247,6 +275,12 @@ public abstract class BlockEntity {
+@@ -260,6 +_,12 @@
      }
  
      public final void applyComponents(DataComponentMap components, DataComponentPatch patch) {
@@ -92,7 +70,7 @@ index 0d94b7524c194e7d456e411a3065738a03f082f4..2ebdf1ad323bb53dfe9eed319e25856b
          final Set<DataComponentType<?>> set = new HashSet<>();
          set.add(DataComponents.BLOCK_ENTITY_DATA);
          set.add(DataComponents.BLOCK_STATE);
-@@ -267,6 +301,10 @@ public abstract class BlockEntity {
+@@ -280,6 +_,10 @@
          });
          DataComponentPatch dataComponentPatch = patch.forget(set::contains);
          this.components = dataComponentPatch.split().added();
@@ -103,10 +81,11 @@ index 0d94b7524c194e7d456e411a3065738a03f082f4..2ebdf1ad323bb53dfe9eed319e25856b
      }
  
      protected void collectImplicitComponents(DataComponentMap.Builder components) {
-@@ -301,6 +339,30 @@ public abstract class BlockEntity {
-         }
+@@ -313,6 +_,30 @@
+                 .resultOrPartial(string -> LOGGER.warn("Failed to parse custom name, discarding: {}", string))
+                 .orElse(null);
      }
- 
++
 +    // CraftBukkit start - add method
 +    public org.bukkit.inventory.InventoryHolder getOwner() {
 +        // Paper start
@@ -130,7 +109,6 @@ index 0d94b7524c194e7d456e411a3065738a03f082f4..2ebdf1ad323bb53dfe9eed319e25856b
 +    }
 +    // Paper end - Sanitize sent data
 +
-+
-     static class ComponentHelper {
-         public static final Codec<DataComponentMap> COMPONENTS_CODEC = DataComponentMap.CODEC.optionalFieldOf("components", DataComponentMap.EMPTY).codec();
  
+     static class ComponentHelper {
+         public static final MapCodec<DataComponentMap> COMPONENTS_CODEC = DataComponentMap.CODEC.optionalFieldOf("components", DataComponentMap.EMPTY);
