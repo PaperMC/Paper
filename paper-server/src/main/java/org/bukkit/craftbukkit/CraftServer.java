@@ -1725,6 +1725,7 @@ public final class CraftServer implements Server {
 
         if (recipe.isPresent()) {
             RecipeHolder<CraftingRecipe> recipeCrafting = recipe.get();
+            inventoryCrafting.setCurrentRecipe(recipeCrafting);
             if (craftResult.setRecipeUsed(craftPlayer.getHandle(), recipeCrafting)) {
                 itemstack = recipeCrafting.value().assemble(inventoryCrafting.asCraftInput(), craftWorld.getHandle().registryAccess());
             }
@@ -2479,7 +2480,7 @@ public final class CraftServer implements Server {
 
     @Override
     public @NotNull Merchant createMerchant() {
-        return new CraftMerchantCustom(net.kyori.adventure.text.Component.empty());
+        return new CraftMerchantCustom();
     }
 
     @Override
@@ -3053,7 +3054,7 @@ public final class CraftServer implements Server {
 
         @Override
         public void restart() {
-            org.spigotmc.RestartCommand.restart();
+            CraftServer.this.restart();
         }
 
         @Override
@@ -3076,6 +3077,11 @@ public final class CraftServer implements Server {
         return this.spigot;
     }
     // Spigot end
+
+    @Override
+    public void restart() {
+        org.spigotmc.RestartCommand.restart();
+    }
 
     @Override
     public double[] getTPS() {

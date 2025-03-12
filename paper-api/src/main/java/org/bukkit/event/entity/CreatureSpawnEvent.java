@@ -211,6 +211,10 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          * When an entity spawns from an ominous item spawner
          */
         OMINOUS_ITEM_SPAWNER,
+        /**
+         * When an entity spawns from a bucket
+         */
+        BUCKET,
         // Paper end - Fixes and additions to the SpawnReason API
         /**
          * When a creature is spawned by a potion effect, for example:

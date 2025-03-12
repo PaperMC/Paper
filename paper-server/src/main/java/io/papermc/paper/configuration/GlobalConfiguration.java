@@ -184,6 +184,8 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean skipVanillaDamageTickWhenShieldBlocked = false;
         @Comment("This setting controls what compression format is used for region files.")
         public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
+        @Comment("This setting controls if equipment should be updated when handling certain player actions.")
+        public boolean updateEquipmentOnPlayerActions = true;
 
         public enum CompressionFormat {
             GZIP,

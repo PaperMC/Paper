@@ -460,7 +460,7 @@
      }
  
      public void resetEmptyTime() {
-@@ -746,18 +_,45 @@
+@@ -746,18 +_,46 @@
          }
      }
  
@@ -487,6 +487,7 @@
          entity.setOldPosAndRot();
          ProfilerFiller profilerFiller = Profiler.get();
          entity.tickCount++;
++        entity.totalEntityAge++; // Paper - age-like counter for all entities
          profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
          profilerFiller.incrementCounter("tickNonPassenger");
          entity.tick();
@@ -506,7 +507,12 @@
      }
  
      private void tickPassenger(Entity ridingEntity, Entity passengerEntity) {
-@@ -770,6 +_,7 @@
+@@ -766,10 +_,12 @@
+         } else if (passengerEntity instanceof Player || this.entityTickList.contains(passengerEntity)) {
+             passengerEntity.setOldPosAndRot();
+             passengerEntity.tickCount++;
++            passengerEntity.totalEntityAge++; // Paper - age-like counter for all entities
+             ProfilerFiller profilerFiller = Profiler.get();
              profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(passengerEntity.getType()).toString());
              profilerFiller.incrementCounter("tickPassenger");
              passengerEntity.rideTick();
@@ -864,11 +870,11 @@
          double zOffset,
          double speed
      ) {
-+    // CraftBukkit start - visibility api support
++    // Paper start - visibility api support
 +        return this.sendParticlesSource(null, type, overrideLimiter, alwaysShow, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed);
 +    }
 +    public <T extends ParticleOptions> int sendParticlesSource(
-+        @javax.annotation.Nullable ServerPlayer sender,
++        @javax.annotation.Nullable Entity sender,
 +        T type,
 +        boolean overrideLimiter,
 +        boolean alwaysShow,
@@ -885,7 +891,7 @@
 +    }
 +    public <T extends ParticleOptions> int sendParticlesSource(
 +        List<ServerPlayer> receivers,
-+        @javax.annotation.Nullable ServerPlayer sender,
++        @javax.annotation.Nullable Entity sender,
 +        T type,
 +        boolean overrideLimiter,
 +        boolean alwaysShow,
@@ -898,7 +904,7 @@
 +        double zOffset,
 +        double speed
 +    ) {
-+    // CraftBukkit end - visibility api support
++    // Paper end - visibility api support
          ClientboundLevelParticlesPacket clientboundLevelParticlesPacket = new ClientboundLevelParticlesPacket(
              type, overrideLimiter, alwaysShow, posX, posY, posZ, (float)xOffset, (float)yOffset, (float)zOffset, (float)speed, particleCount
          );
@@ -1066,6 +1072,14 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashReportCategory = super.fillReportDetails(report);
+@@ -1714,6 +_,7 @@
+     final class EntityCallbacks implements LevelCallback<Entity> {
+         @Override
+         public void onCreated(Entity entity) {
++            entity.setOldPosAndRot(); // Paper - update old pos / rot for new entities as it will default to Vec3.ZERO
+         }
+ 
+         @Override
 @@ -1723,24 +_,32 @@
  
          @Override

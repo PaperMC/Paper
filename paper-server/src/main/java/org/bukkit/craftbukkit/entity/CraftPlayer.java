@@ -2827,14 +2827,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void updateScaledHealth(boolean sendHealth) {
-        AttributeMap attributemapserver = this.getHandle().getAttributes();
-        Collection<AttributeInstance> set = attributemapserver.getSyncableAttributes();
-
-        this.injectScaledMaxHealth(set, true);
-
         // SPIGOT-3813: Attributes before health
         if (this.getHandle().connection != null) {
-            this.getHandle().connection.send(new ClientboundUpdateAttributesPacket(this.getHandle().getId(), set));
+            this.getHandle().connection.send(new ClientboundUpdateAttributesPacket(this.getHandle().getId(), Set.of(this.getScaledMaxHealth())));
             if (sendHealth) {
                 this.sendHealthUpdate();
             }
@@ -2874,8 +2869,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
                 break;
             }
         }
+        collection.add(getScaledMaxHealth());
+    }
+
+    public AttributeInstance getScaledMaxHealth() {
         AttributeInstance dummy = new AttributeInstance(Attributes.MAX_HEALTH, (attribute) -> { });
-        // Spigot start
         double healthMod = this.scaledHealth ? this.healthScale : this.getMaxHealth();
         if ( healthMod >= Float.MAX_VALUE || healthMod <= 0 )
         {
@@ -2883,8 +2881,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             this.getServer().getLogger().warning( this.getName() + " tried to crash the server with a large health attribute" );
         }
         dummy.setBaseValue(healthMod);
-        // Spigot end
-        collection.add(dummy);
+        return dummy;
     }
 
     @Override
@@ -3582,5 +3579,31 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         handle.containerMenu.broadcastChanges();
         return new PaperPlayerGiveResult(leftovers.build(), drops.build());
+    }
+
+    @Override
+    public float getSidewaysMovement() {
+        final boolean leftMovement = this.getHandle().getLastClientInput().left();
+        final boolean rightMovement = this.getHandle().getLastClientInput().right();
+
+        return leftMovement == rightMovement ? 0 : leftMovement ? 1 : -1;
+    }
+
+    @Override
+    public float getForwardsMovement() {
+        final boolean forwardMovement = this.getHandle().getLastClientInput().forward();
+        final boolean backwardMovement = this.getHandle().getLastClientInput().backward();
+
+        return forwardMovement == backwardMovement ? 0 : forwardMovement ? 1 : -1;
+    }
+
+    @Override
+    public int getDeathScreenScore() {
+        return getHandle().getScore();
+    }
+
+    @Override
+    public void setDeathScreenScore(final int score) {
+        getHandle().setScore(score);
     }
 }

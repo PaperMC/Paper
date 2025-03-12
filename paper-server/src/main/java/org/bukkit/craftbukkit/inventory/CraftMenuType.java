@@ -38,7 +38,7 @@ public class CraftMenuType<V extends InventoryView, B extends InventoryViewBuild
     @Override
     public V create(final HumanEntity player, final String title) {
     // Paper start - adventure
-        return builder().title(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title)).build(player);
+        return builder().title(title != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title) : null).build(player);
     }
     @Override
     public V create(final HumanEntity player, final net.kyori.adventure.text.Component title) {
