@@ -1,0 +1,62 @@
+--- a/net/minecraft/world/level/TicketStorage.java
++++ b/net/minecraft/world/level/TicketStorage.java
+@@ -152,7 +_,7 @@
+             this.loadingChunkUpdatedListener.update(chunkPos, ticket.getTicketLevel(), true);
+         }
+ 
+-        if (ticket.getType().equals(TicketType.FORCED)) {
++        if (isForced(ticket.getType())) { // Paper
+             this.chunksWithForcedTickets.add(chunkPos);
+         }
+ 
+@@ -235,7 +_,7 @@
+                     this.loadingChunkUpdatedListener.update(chunkPos, getTicketLevelAt(list, false), false);
+                 }
+ 
+-                if (ticket.getType().equals(TicketType.FORCED)) {
++                if (isForced(ticket.getType())) { // Paper
+                     this.updateForcedChunks();
+                 }
+ 
+@@ -246,7 +_,7 @@
+     }
+ 
+     private void updateForcedChunks() {
+-        this.chunksWithForcedTickets = this.getAllChunksWithTicketThat(ticket -> ticket.getType().equals(TicketType.FORCED));
++        this.chunksWithForcedTickets = this.getAllChunksWithTicketThat(ticket -> isForced(ticket.getType())); // Paper
+     }
+ 
+     public String getTicketDebugString(long chunkPos, boolean requireSimulation) {
+@@ -294,7 +_,7 @@
+                         flag1 = true;
+                     }
+ 
+-                    if (ticket.getType().equals(TicketType.FORCED)) {
++                    if (isForced(ticket.getType())) { // Paper
+                         flag = true;
+                     }
+                 }
+@@ -369,4 +_,23 @@
+     public interface ChunkUpdated {
+         void update(long chunkPos, int i, boolean ticketLevel);
+     }
++    // Paper start
++    public boolean addPluginRegionTicket(final ChunkPos pos, final org.bukkit.plugin.Plugin value) {
++        // Keep inline with force loading
++        return addTicket(pos.toLong(), new Ticket(TicketType.PLUGIN_TICKET, ChunkMap.FORCED_TICKET_LEVEL));
++    }
++
++    public boolean removePluginRegionTicket(final ChunkPos pos, final org.bukkit.plugin.Plugin value) {
++        // Keep inline with force loading
++        return removeTicket(pos.toLong(), new Ticket(TicketType.PLUGIN_TICKET, ChunkMap.FORCED_TICKET_LEVEL));
++    }
++
++    public <T> void removeAllTicketsFor(TicketType ticketType, int ticketLevel, T ticketIdentifier) {
++        removeTicketIf(ticket -> ticket.getType() == ticketType && ticket.getTicketLevel() == ticketLevel, null);
++    }
++
++    private boolean isForced(TicketType type) {
++        return type == TicketType.FORCED || type == TicketType.PLUGIN_TICKET;
++    }
++    // Paper end
+ }

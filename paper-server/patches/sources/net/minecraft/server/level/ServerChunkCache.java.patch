@@ -1,14 +1,6 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b8975076d906b9 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
-@@ -73,6 +73,13 @@ public class ServerChunkCache extends ChunkSource {
+@@ -77,6 +_,13 @@
      @Nullable
      @VisibleForDebug
      private NaturalSpawner.SpawnState lastSpawnState;
@@ -22,7 +14,7 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
  
      public ServerChunkCache(
          ServerLevel level,
-@@ -121,6 +128,64 @@ public class ServerChunkCache extends ChunkSource {
+@@ -127,6 +_,64 @@
          this.clearCache();
      }
  
@@ -54,12 +46,12 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
 +        return holder.getLatestChunk();
 +    }
 +
-+    public <T> void addTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
-+        this.distanceManager.addTicket(ticketType, chunkPos, ticketLevel, identifier);
++    public <T> void addTicketAtLevel(TicketType ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
++        this.distanceManager.ticketStorage.addTicketWithRadius(ticketType, chunkPos, ticketLevel);
 +    }
 +
-+    public <T> void removeTicketAtLevel(TicketType<T> ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
-+        this.distanceManager.removeTicket(ticketType, chunkPos, ticketLevel, identifier);
++    public <T> void removeTicketAtLevel(TicketType ticketType, ChunkPos chunkPos, int ticketLevel, T identifier) {
++        this.distanceManager.ticketStorage.removeTicketWithRadius(ticketType, chunkPos, ticketLevel);
 +    }
 +
 +    // "real" get chunk if loaded
@@ -87,7 +79,7 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
      @Override
      public ThreadedLevelLightEngine getLightEngine() {
          return this.lightEngine;
-@@ -160,7 +225,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -166,7 +_,7 @@
              for (int i = 0; i < 4; i++) {
                  if (packedChunkPos == this.lastChunkPos[i] && chunkStatus == this.lastChunkStatus[i]) {
                      ChunkAccess chunkAccess = this.lastChunk[i];
@@ -96,7 +88,7 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
                          return chunkAccess;
                      }
                  }
-@@ -169,6 +234,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -175,6 +_,7 @@
              profilerFiller.incrementCounter("getChunkCacheMiss");
              CompletableFuture<ChunkResult<ChunkAccess>> chunkFutureMainThread = this.getChunkFutureMainThread(x, z, chunkStatus, requireChunk);
              this.mainThreadProcessor.managedBlock(chunkFutureMainThread::isDone);
@@ -104,7 +96,7 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
              ChunkResult<ChunkAccess> chunkResult = chunkFutureMainThread.join();
              ChunkAccess chunkAccess1 = chunkResult.orElse(null);
              if (chunkAccess1 == null && requireChunk) {
-@@ -240,7 +306,15 @@ public class ServerChunkCache extends ChunkSource {
+@@ -246,7 +_,15 @@
          long packedChunkPos = chunkPos.toLong();
          int i = ChunkLevel.byStatus(chunkStatus);
          ChunkHolder visibleChunkIfPresent = this.getVisibleChunkIfPresent(packedChunkPos);
@@ -117,11 +109,11 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
 +            currentlyUnloading = (oldChunkState.isOrAfter(FullChunkStatus.FULL) && !currentChunkState.isOrAfter(FullChunkStatus.FULL));
 +        }
 +        if (requireChunk && !currentlyUnloading) {
-+        // CraftBukkit end
-             this.distanceManager.addTicket(TicketType.UNKNOWN, chunkPos, i, chunkPos);
++            // CraftBukkit end
+             this.addTicket(new Ticket(TicketType.UNKNOWN, i), chunkPos);
              if (this.chunkAbsent(visibleChunkIfPresent, i)) {
                  ProfilerFiller profilerFiller = Profiler.get();
-@@ -260,7 +334,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -266,7 +_,7 @@
      }
  
      private boolean chunkAbsent(@Nullable ChunkHolder chunkHolder, int status) {
@@ -130,7 +122,7 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
      }
  
      @Override
-@@ -287,7 +361,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -293,7 +_,7 @@
          return this.mainThreadProcessor.pollTask();
      }
  
@@ -139,7 +131,7 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
          boolean flag = this.distanceManager.runAllUpdates(this.chunkMap);
          boolean flag1 = this.chunkMap.promoteChunkMap();
          this.chunkMap.runGenerationTasks();
-@@ -315,17 +389,39 @@ public class ServerChunkCache extends ChunkSource {
+@@ -321,17 +_,39 @@
  
      @Override
      public void close() throws IOException {
@@ -163,7 +155,7 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
 +        ProfilerFiller gameprofilerfiller = Profiler.get();
 +
 +        gameprofilerfiller.push("purge");
-+        this.distanceManager.purgeStaleTickets();
++        this.ticketStorage.purgeStaleTickets();
 +        this.runDistanceManagerUpdates();
 +        gameprofilerfiller.popPush("unload");
 +        this.chunkMap.tick(() -> true);
@@ -178,10 +170,10 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
          profilerFiller.push("purge");
 -        if (this.level.tickRateManager().runsNormally() || !tickChunks) {
 +        if (this.level.tickRateManager().runsNormally() || !tickChunks || this.level.spigotConfig.unloadFrozenChunks) { // Spigot
-             this.distanceManager.purgeStaleTickets();
+             this.ticketStorage.purgeStaleTickets();
          }
  
-@@ -400,12 +496,20 @@ public class ServerChunkCache extends ChunkSource {
+@@ -388,12 +_,20 @@
          );
          this.lastSpawnState = spawnState;
          profiler.popPush("spawnAndTick");
@@ -205,16 +197,7 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
          } else {
              filteredSpawningCategories = List.of();
          }
-@@ -413,7 +517,7 @@ public class ServerChunkCache extends ChunkSource {
-         for (LevelChunk levelChunk : chunks) {
-             ChunkPos pos = levelChunk.getPos();
-             levelChunk.incrementInhabitedTime(timeInhabited);
--            if (!filteredSpawningCategories.isEmpty() && this.level.getWorldBorder().isWithinBounds(pos)) {
-+            if (!filteredSpawningCategories.isEmpty() && this.level.getWorldBorder().isWithinBounds(pos) && this.chunkMap.anyPlayerCloseEnoughForSpawning(pos, true)) { // Spigot
-                 NaturalSpawner.spawnForChunk(this.level, levelChunk, spawnState, filteredSpawningCategories);
-             }
- 
-@@ -526,8 +630,13 @@ public class ServerChunkCache extends ChunkSource {
+@@ -544,8 +_,13 @@
  
      @Override
      public void setSpawnSettings(boolean spawnSettings) {
@@ -229,7 +212,7 @@ index f0d0ca60cc1d1db348f4562d0c4f2c3e5b5b9129..c3553385074108d686425a7637b89750
      }
  
      public String getChunkDebugData(ChunkPos chunkPos) {
-@@ -603,12 +712,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -618,12 +_,18 @@
  
          @Override
          public boolean pollTask() {
