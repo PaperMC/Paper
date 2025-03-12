@@ -1,14 +1,6 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/server/players/GameProfileCache.java b/net/minecraft/server/players/GameProfileCache.java
-index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67066f610e 100644
 --- a/net/minecraft/server/players/GameProfileCache.java
 +++ b/net/minecraft/server/players/GameProfileCache.java
-@@ -56,6 +56,10 @@ public class GameProfileCache {
+@@ -54,6 +_,10 @@
      private final AtomicLong operationCount = new AtomicLong();
      @Nullable
      private Executor executor;
@@ -19,7 +11,7 @@ index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67
  
      public GameProfileCache(GameProfileRepository profileRepository, File file) {
          this.profileRepository = profileRepository;
-@@ -64,10 +68,12 @@ public class GameProfileCache {
+@@ -62,17 +_,21 @@
      }
  
      private void safeAdd(GameProfileCache.GameProfileInfo profile) {
@@ -32,16 +24,17 @@ index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67
      }
  
      private static Optional<GameProfile> lookupGameProfile(GameProfileRepository profileRepo, String name) {
-@@ -86,6 +92,8 @@ public class GameProfileCache {
-                     atomicReference.set(null);
-                 }
-             };
-+            if (!org.apache.commons.lang3.StringUtils.isBlank(name) // Paper - Don't lookup a profile with a blank name
-+                && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()) // Paper - Add setting for proxy online mode status
-             profileRepo.findProfilesByNames(new String[]{name}, profileLookupCallback);
-             GameProfile gameProfile = atomicReference.get();
-             return gameProfile != null ? Optional.of(gameProfile) : createUnknownProfile(name);
-@@ -101,7 +109,7 @@ public class GameProfileCache {
+         if (!StringUtil.isValidPlayerName(name)) {
+             return createUnknownProfile(name);
+         } else {
+-            Optional<GameProfile> optional = profileRepo.findProfileByName(name);
++            final boolean shouldLookup = !org.apache.commons.lang3.StringUtils.isBlank(name)  // Paper - Don't lookup a profile with a blank name
++                && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode(); // Paper - Add setting for proxy online mode status
++            Optional<GameProfile> optional = shouldLookup ? profileRepo.findProfileByName(name) : Optional.empty(); // Paper - Don't lookup a profile with a blank name
+             return optional.isEmpty() ? createUnknownProfile(name) : optional;
+         }
+     }
+@@ -86,7 +_,7 @@
      }
  
      private static boolean usesAuthentication() {
@@ -50,7 +43,7 @@ index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67
      }
  
      public void add(GameProfile gameProfile) {
-@@ -111,15 +119,29 @@ public class GameProfileCache {
+@@ -96,15 +_,29 @@
          Date time = instance.getTime();
          GameProfileCache.GameProfileInfo gameProfileInfo = new GameProfileCache.GameProfileInfo(gameProfile, time);
          this.safeAdd(gameProfileInfo);
@@ -81,7 +74,7 @@ index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67
          GameProfileCache.GameProfileInfo gameProfileInfo = this.profilesByName.get(string);
          boolean flag = false;
          if (gameProfileInfo != null && new Date().getTime() >= gameProfileInfo.expirationDate.getTime()) {
-@@ -133,19 +155,24 @@ public class GameProfileCache {
+@@ -118,19 +_,24 @@
          if (gameProfileInfo != null) {
              gameProfileInfo.setLastAccess(this.getNextOperation());
              optional = Optional.of(gameProfileInfo.getProfile());
@@ -109,7 +102,7 @@ index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67
      }
  
      public CompletableFuture<Optional<GameProfile>> getAsync(String name) {
-@@ -157,7 +184,7 @@ public class GameProfileCache {
+@@ -142,7 +_,7 @@
                  return completableFuture;
              } else {
                  CompletableFuture<Optional<GameProfile>> completableFuture1 = CompletableFuture.<Optional<GameProfile>>supplyAsync(
@@ -118,7 +111,7 @@ index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67
                      )
                      .whenCompleteAsync((gameProfile, exception) -> this.requests.remove(name), this.executor);
                  this.requests.put(name, completableFuture1);
-@@ -167,6 +194,7 @@ public class GameProfileCache {
+@@ -152,6 +_,7 @@
      }
  
      public Optional<GameProfile> get(UUID uuid) {
@@ -126,7 +119,7 @@ index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67
          GameProfileCache.GameProfileInfo gameProfileInfo = this.profilesByUUID.get(uuid);
          if (gameProfileInfo == null) {
              return Optional.empty();
-@@ -174,6 +202,7 @@ public class GameProfileCache {
+@@ -159,6 +_,7 @@
              gameProfileInfo.setLastAccess(this.getNextOperation());
              return Optional.of(gameProfileInfo.getProfile());
          }
@@ -134,7 +127,7 @@ index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67
      }
  
      public void setExecutor(Executor exectutor) {
-@@ -206,6 +235,11 @@ public class GameProfileCache {
+@@ -191,6 +_,11 @@
  
              return (List<GameProfileCache.GameProfileInfo>)var9;
          } catch (FileNotFoundException var7) {
@@ -146,7 +139,7 @@ index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67
          } catch (JsonParseException | IOException var8) {
              LOGGER.warn("Failed to load profile cache {}", this.file, var8);
          }
-@@ -213,24 +247,45 @@ public class GameProfileCache {
+@@ -198,24 +_,45 @@
          return list;
      }
  
@@ -178,6 +171,7 @@ index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67
 -            .stream()
 -            .sorted(Comparator.comparing(GameProfileCache.GameProfileInfo::getLastAccess).reversed())
 -            .limit(limit);
+-    }
 +       // Paper start - Fix GameProfileCache concurrency
 +       return this.listTopMRUProfiles(limit).stream();
 +    }
@@ -193,7 +187,7 @@ index 68819baec8cf4e40dbc8712459e72bb4540d17b0..6fb3712f33a84a3612752dcfd9e97d67
 +        } finally {
 +            this.stateLock.unlock();
 +        }
-     }
++    }
 +    // Paper end - Fix GameProfileCache concurrency
  
      private static JsonElement writeGameProfile(GameProfileCache.GameProfileInfo profileInfo, DateFormat dateFormat) {
