@@ -243,6 +243,13 @@ public interface InventoryView {
     public InventoryType.SlotType getSlotType(int slot);
 
     /**
+     * Opens the inventory view.
+     */
+    default void open() {
+        getPlayer().openInventory(this);
+    }
+
+    /**
      * Closes the inventory view.
      */
     public void close();
