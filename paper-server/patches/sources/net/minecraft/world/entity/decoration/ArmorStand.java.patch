@@ -1,14 +1,6 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/decoration/ArmorStand.java b/net/minecraft/world/entity/decoration/ArmorStand.java
-index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42049afae3 100644
 --- a/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/net/minecraft/world/entity/decoration/ArmorStand.java
-@@ -86,9 +86,17 @@ public class ArmorStand extends LivingEntity {
+@@ -88,9 +_,17 @@
      public Rotations rightArmPose = DEFAULT_RIGHT_ARM_POSE;
      public Rotations leftLegPose = DEFAULT_LEFT_LEG_POSE;
      public Rotations rightLegPose = DEFAULT_RIGHT_LEG_POSE;
@@ -26,7 +18,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
      }
  
      public ArmorStand(Level level, double x, double y, double z) {
-@@ -100,6 +108,13 @@ public class ArmorStand extends LivingEntity {
+@@ -102,6 +_,13 @@
          return createLivingAttributes().add(Attributes.STEP_HEIGHT, 0.0);
      }
  
@@ -40,32 +32,28 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
      @Override
      public void refreshDimensions() {
          double x = this.getX();
-@@ -159,14 +174,22 @@ public class ArmorStand extends LivingEntity {
+@@ -137,6 +_,20 @@
+         return slot != EquipmentSlot.BODY && slot != EquipmentSlot.SADDLE && !this.isDisabled(slot);
+     }
  
-     @Override
-     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
-+        // CraftBukkit start
-+        this.setItemSlot(slot, stack, false);
++    // Paper - Allow ArmorStands not to tick; Still update equipment
++    @Override
++    public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
++        super.setItemSlot(slot, stack);
++        this.noTickEquipmentDirty = true;
 +    }
 +
 +    @Override
 +    public void setItemSlot(net.minecraft.world.entity.EquipmentSlot slot, ItemStack stack, boolean silent) {
-+        // CraftBukkit end
-         this.verifyEquippedItem(stack);
-         switch (slot.getType()) {
-             case HAND:
--                this.onEquipItem(slot, this.handItems.set(slot.getIndex(), stack), stack);
-+                this.onEquipItem(slot, this.handItems.set(slot.getIndex(), stack), stack, silent); // CraftBukkit
-                 break;
-             case HUMANOID_ARMOR:
--                this.onEquipItem(slot, this.armorItems.set(slot.getIndex(), stack), stack);
-+                this.onEquipItem(slot, this.armorItems.set(slot.getIndex(), stack), stack, silent); // CraftBukkit
-         }
-+        this.noTickEquipmentDirty = true; // Paper - Allow ArmorStands not to tick; Still update equipment
-     }
- 
++        super.setItemSlot(slot, stack, silent);
++        this.noTickEquipmentDirty = true;
++    }
++    // Paper - Allow ArmorStands not to tick; Still update equipment
++
      @Override
-@@ -196,6 +219,7 @@ public class ArmorStand extends LivingEntity {
+     public void addAdditionalSaveData(CompoundTag compound) {
+         super.addAdditionalSaveData(compound);
+@@ -150,6 +_,7 @@
          }
  
          compound.put("Pose", this.writePose());
@@ -73,20 +61,20 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
      }
  
      @Override
-@@ -226,6 +250,12 @@ public class ArmorStand extends LivingEntity {
-         this.setNoBasePlate(compound.getBoolean("NoBasePlate"));
-         this.setMarker(compound.getBoolean("Marker"));
+@@ -163,6 +_,12 @@
+         this.setMarker(compound.getBooleanOr("Marker", false));
          this.noPhysics = !this.hasPhysics();
+         this.readPose(compound.getCompoundOrEmpty("Pose"));
 +        // Paper start - Allow ArmorStands not to tick
-+        if (compound.contains("Paper.CanTickOverride")) {
-+            this.canTick = compound.getBoolean("Paper.CanTickOverride");
++        compound.getBoolean("Paper.CanTickOverride").ifPresent(readBoolean -> {
++            this.canTick = readBoolean;
 +            this.canTickSetByAPI = true;
-+        }
++        });
 +        // Paper end - Allow ArmorStands not to tick
-         CompoundTag compound2 = compound.getCompound("Pose");
-         this.readPose(compound2);
      }
-@@ -275,7 +305,7 @@ public class ArmorStand extends LivingEntity {
+ 
+     private void readPose(CompoundTag compound) {
+@@ -204,7 +_,7 @@
      }
  
      @Override
@@ -95,7 +83,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
          return false;
      }
  
-@@ -285,6 +315,7 @@ public class ArmorStand extends LivingEntity {
+@@ -214,6 +_,7 @@
  
      @Override
      protected void pushEntities() {
@@ -103,7 +91,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
          for (Entity entity : this.level().getEntities(this, this.getBoundingBox(), RIDABLE_MINECARTS)) {
              if (this.distanceToSqr(entity) <= 0.2) {
                  entity.push(this);
-@@ -357,7 +388,25 @@ public class ArmorStand extends LivingEntity {
+@@ -286,7 +_,25 @@
              return false;
          } else if (itemBySlot.isEmpty() && (this.disabledSlots & 1 << slot.getFilterBit(16)) != 0) {
              return false;
@@ -130,7 +118,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
              this.setItemSlot(slot, stack.copyWithCount(1));
              return true;
          } else if (stack.isEmpty() || stack.getCount() <= 1) {
-@@ -370,6 +419,7 @@ public class ArmorStand extends LivingEntity {
+@@ -299,6 +_,7 @@
              this.setItemSlot(slot, stack.split(1));
              return true;
          }
@@ -138,7 +126,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
      }
  
      @Override
-@@ -379,15 +429,32 @@ public class ArmorStand extends LivingEntity {
+@@ -308,15 +_,32 @@
          } else if (!level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING) && damageSource.getEntity() instanceof Mob) {
              return false;
          } else if (damageSource.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
@@ -175,7 +163,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
              if (this.isOnFire()) {
                  this.causeDamage(level, damageSource, 0.15F);
              } else {
-@@ -396,9 +463,19 @@ public class ArmorStand extends LivingEntity {
+@@ -325,9 +_,19 @@
  
              return false;
          } else if (damageSource.is(DamageTypeTags.BURNS_ARMOR_STANDS) && this.getHealth() > 0.5F) {
@@ -195,7 +183,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
              boolean isCanBreakArmorStand = damageSource.is(DamageTypeTags.CAN_BREAK_ARMOR_STAND);
              boolean isAlwaysKillsArmorStands = damageSource.is(DamageTypeTags.ALWAYS_KILLS_ARMOR_STANDS);
              if (!isCanBreakArmorStand && !isAlwaysKillsArmorStands) {
-@@ -408,7 +485,7 @@ public class ArmorStand extends LivingEntity {
+@@ -337,7 +_,7 @@
              } else if (damageSource.isCreativePlayer()) {
                  this.playBrokenSound();
                  this.showBreakingParticles();
@@ -204,7 +192,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
                  return true;
              } else {
                  long gameTime = level.getGameTime();
-@@ -417,9 +494,9 @@ public class ArmorStand extends LivingEntity {
+@@ -346,9 +_,9 @@
                      this.gameEvent(GameEvent.ENTITY_DAMAGE, damageSource.getEntity());
                      this.lastHit = gameTime;
                  } else {
@@ -216,7 +204,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
                  }
  
                  return true;
-@@ -472,28 +549,31 @@ public class ArmorStand extends LivingEntity {
+@@ -401,30 +_,34 @@
          health -= damageAmount;
          if (health <= 0.5F) {
              this.brokenByAnything(level, damageSource);
@@ -247,28 +235,18 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
 -        this.dropAllDeathLoot(level, damageSource);
 +        // this.dropAllDeathLoot(level, damageSource); // CraftBukkit - moved down
  
-         for (int i = 0; i < this.handItems.size(); i++) {
-             ItemStack itemStack = this.handItems.get(i);
+         for (EquipmentSlot equipmentSlot : EquipmentSlot.VALUES) {
+             ItemStack itemStack = this.equipment.set(equipmentSlot, ItemStack.EMPTY);
              if (!itemStack.isEmpty()) {
 -                Block.popResource(this.level(), this.blockPosition().above(), itemStack);
-+                this.drops.add(new DefaultDrop(itemStack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly
-                 this.handItems.set(i, ItemStack.EMPTY);
-             }
-         }
-@@ -501,10 +581,11 @@ public class ArmorStand extends LivingEntity {
-         for (int ix = 0; ix < this.armorItems.size(); ix++) {
-             ItemStack itemStack = this.armorItems.get(ix);
-             if (!itemStack.isEmpty()) {
--                Block.popResource(this.level(), this.blockPosition().above(), itemStack);
-+                this.drops.add(new DefaultDrop(itemStack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly
-                 this.armorItems.set(ix, ItemStack.EMPTY);
++                this.drops.add(new DefaultDrop(itemStack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly}
              }
          }
 +        return this.dropAllDeathLoot(level, damageSource); // CraftBukkit - moved from above // Paper
      }
  
      private void playBrokenSound() {
-@@ -539,7 +620,28 @@ public class ArmorStand extends LivingEntity {
+@@ -458,7 +_,28 @@
  
      @Override
      public void tick() {
@@ -297,7 +275,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
          Rotations rotations = this.entityData.get(DATA_HEAD_POSE);
          if (!this.headPose.equals(rotations)) {
              this.setHeadPose(rotations);
-@@ -587,9 +689,32 @@ public class ArmorStand extends LivingEntity {
+@@ -506,9 +_,32 @@
          return this.isSmall();
      }
  
@@ -331,7 +309,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
          this.gameEvent(GameEvent.ENTITY_DIE);
      }
  
-@@ -653,31 +778,37 @@ public class ArmorStand extends LivingEntity {
+@@ -572,31 +_,37 @@
      public void setHeadPose(Rotations headPose) {
          this.headPose = headPose;
          this.entityData.set(DATA_HEAD_POSE, headPose);
@@ -369,7 +347,7 @@ index 012d648e0c6c576133384a62cd9708352708d9e9..33f6d6862731d22d6d3eeb7cf39a4a42
      }
  
      public Rotations getHeadPose() {
-@@ -809,4 +940,13 @@ public class ArmorStand extends LivingEntity {
+@@ -728,4 +_,13 @@
      public boolean canBeSeenByAnyone() {
          return !this.isInvisible() && !this.isMarker();
      }
