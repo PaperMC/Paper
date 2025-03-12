@@ -1,14 +1,6 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/monster/Zombie.java b/net/minecraft/world/entity/monster/Zombie.java
-index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135ee0d7fa4 100644
 --- a/net/minecraft/world/entity/monster/Zombie.java
 +++ b/net/minecraft/world/entity/monster/Zombie.java
-@@ -68,9 +68,7 @@ import net.minecraft.world.level.block.state.BlockState;
+@@ -68,9 +_,7 @@
  
  public class Zombie extends Monster {
      private static final ResourceLocation SPEED_MODIFIER_BABY_ID = ResourceLocation.withDefaultNamespace("baby");
@@ -19,14 +11,14 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
      private static final ResourceLocation REINFORCEMENT_CALLER_CHARGE_ID = ResourceLocation.withDefaultNamespace("reinforcement_caller_charge");
      private static final AttributeModifier ZOMBIE_REINFORCEMENT_CALLEE_CHARGE = new AttributeModifier(
          ResourceLocation.withDefaultNamespace("reinforcement_callee_charge"), -0.05F, AttributeModifier.Operation.ADD_VALUE
-@@ -87,13 +85,15 @@ public class Zombie extends Monster {
-     private static final EntityDimensions BABY_DIMENSIONS = EntityType.ZOMBIE.getDimensions().scale(0.5F).withEyeHeight(0.93F);
-     private static final float BREAK_DOOR_CHANCE = 0.1F;
-     public static final Predicate<Difficulty> DOOR_BREAKING_PREDICATE = difficulty -> difficulty == Difficulty.HARD;
+@@ -91,13 +_,15 @@
+     private static final boolean DEFAULT_BABY = false;
+     private static final boolean DEFAULT_CAN_BREAK_DOORS = false;
+     private static final int DEFAULT_IN_WATER_TIME = 0;
 -    private final BreakDoorGoal breakDoorGoal = new BreakDoorGoal(this, DOOR_BREAKING_PREDICATE);
 +    private final BreakDoorGoal breakDoorGoal; // Paper - move down
-     private boolean canBreakDoors;
-     private int inWaterTime;
+     private boolean canBreakDoors = false;
+     private int inWaterTime = 0;
      public int conversionTime;
 +    private boolean shouldBurnInDay = true; // Paper - Add more Zombie API
  
@@ -36,7 +28,7 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
      }
  
      public Zombie(Level level) {
-@@ -102,7 +102,7 @@ public class Zombie extends Monster {
+@@ -106,7 +_,7 @@
  
      @Override
      protected void registerGoals() {
@@ -45,7 +37,7 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
          this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
          this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
          this.addBehaviourGoals();
-@@ -114,7 +114,7 @@ public class Zombie extends Monster {
+@@ -118,7 +_,7 @@
          this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0));
          this.targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers(ZombifiedPiglin.class));
          this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
@@ -54,7 +46,7 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
          this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
      }
-@@ -168,11 +168,16 @@ public class Zombie extends Monster {
+@@ -172,11 +_,16 @@
  
      @Override
      protected int getBaseExperienceReward(ServerLevel level) {
@@ -72,7 +64,7 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
      }
  
      @Override
-@@ -180,9 +185,9 @@ public class Zombie extends Monster {
+@@ -184,9 +_,9 @@
          this.getEntityData().set(DATA_BABY_ID, childZombie);
          if (this.level() != null && !this.level().isClientSide) {
              AttributeInstance attribute = this.getAttribute(Attributes.MOVEMENT_SPEED);
@@ -84,7 +76,7 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
              }
          }
      }
-@@ -251,7 +256,14 @@ public class Zombie extends Monster {
+@@ -255,6 +_,13 @@
          super.aiStep();
      }
  
@@ -94,12 +86,11 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
 +        this.getEntityData().set(Zombie.DATA_DROWNED_CONVERSION_ID, false);
 +    }
 +    // Paper end - Add more Zombie API
++
      public void startUnderWaterConversion(int conversionTime) {
-+        // this.lastTick = MinecraftServer.currentTick; // CraftBukkit // Paper - remove anti tick skipping measures / wall tim
          this.conversionTime = conversionTime;
          this.getEntityData().set(DATA_DROWNED_CONVERSION_ID, true);
-     }
-@@ -264,31 +276,49 @@ public class Zombie extends Monster {
+@@ -268,31 +_,50 @@
      }
  
      protected void convertToZombieType(EntityType<? extends Zombie> entityType) {
@@ -129,7 +120,7 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
          ZombieVillager zombieVillager = villager.convertTo(EntityType.ZOMBIE_VILLAGER, ConversionParams.single(villager, true, true), mob -> {
              mob.finalizeSpawn(level, level.getCurrentDifficultyAt(mob.blockPosition()), EntitySpawnReason.CONVERSION, new Zombie.ZombieGroupData(false, true));
              mob.setVillagerData(villager.getVillagerData());
-             mob.setGossips(villager.getGossips().store(NbtOps.INSTANCE));
+             mob.setGossips(villager.getGossips().copy());
              mob.setTradeOffers(villager.getOffers().copy());
              mob.setVillagerXp(villager.getVillagerXp());
 -            if (!this.isSilent()) {
@@ -147,17 +138,19 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
  
      public boolean isSunSensitive() {
 -        return true;
+-    }
 +        return this.shouldBurnInDay; // Paper - Add more Zombie API
 +    }
++
 +    // Paper start - Add more Zombie API
 +    public void setShouldBurnInDay(boolean shouldBurnInDay) {
 +        this.shouldBurnInDay = shouldBurnInDay;
-     }
++    }
 +    // Paper end - Add more Zombie API
  
      @Override
      public boolean hurtServer(ServerLevel level, DamageSource damageSource, float amount) {
-@@ -321,13 +351,13 @@ public class Zombie extends Monster {
+@@ -325,13 +_,13 @@
                      if (SpawnPlacements.isSpawnPositionOk(type, level, blockPos)
                          && SpawnPlacements.checkSpawnRules(type, level, EntitySpawnReason.REINFORCEMENT, blockPos, level.random)) {
                          zombie.setPos(i1, i2, i3);
@@ -174,23 +167,21 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
                              AttributeInstance attribute = this.getAttribute(Attributes.SPAWN_REINFORCEMENTS_CHANCE);
                              AttributeModifier modifier = attribute.getModifier(REINFORCEMENT_CALLER_CHARGE_ID);
                              double d = modifier != null ? modifier.amount() : 0.0;
-@@ -352,7 +382,14 @@ public class Zombie extends Monster {
+@@ -356,7 +_,12 @@
          if (flag) {
              float effectiveDifficulty = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
              if (this.getMainHandItem().isEmpty() && this.isOnFire() && this.random.nextFloat() < effectiveDifficulty * 0.3F) {
 -                source.igniteForSeconds(2 * (int)effectiveDifficulty);
 +                // CraftBukkit start
 +                org.bukkit.event.entity.EntityCombustByEntityEvent event = new org.bukkit.event.entity.EntityCombustByEntityEvent(this.getBukkitEntity(), source.getBukkitEntity(), (float) (2 * (int)effectiveDifficulty));
-+                this.level().getCraftServer().getPluginManager().callEvent(event);
-+
-+                if (!event.isCancelled()) {
++                if (event.callEvent()) {
 +                    source.igniteForSeconds(event.getDuration(), false);
 +                }
 +                // CraftBukkit end
              }
          }
  
-@@ -412,6 +449,7 @@ public class Zombie extends Monster {
+@@ -416,6 +_,7 @@
          compound.putBoolean("CanBreakDoors", this.canBreakDoors());
          compound.putInt("InWaterTime", this.isInWater() ? this.inWaterTime : -1);
          compound.putInt("DrownedConversionTime", this.isUnderWaterConverting() ? this.conversionTime : -1);
@@ -198,15 +189,11 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
      }
  
      @Override
-@@ -423,13 +461,19 @@ public class Zombie extends Monster {
-         if (compound.contains("DrownedConversionTime", 99) && compound.getInt("DrownedConversionTime") > -1) {
-             this.startUnderWaterConversion(compound.getInt("DrownedConversionTime"));
+@@ -430,13 +_,15 @@
+         } else {
+             this.getEntityData().set(DATA_DROWNED_CONVERSION_ID, false);
          }
-+        // Paper start - Add more Zombie API
-+        if (compound.contains("Paper.ShouldBurnInDay")) {
-+            this.shouldBurnInDay = compound.getBoolean("Paper.ShouldBurnInDay");
-+        }
-+        // Paper end - Add more Zombie API
++        this.shouldBurnInDay = compound.getBooleanOr("Paper.ShouldBurnInDay", true); // Paper - Add more Zombie API
      }
  
      @Override
@@ -220,7 +207,7 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
                  return flag;
              }
  
-@@ -465,7 +509,7 @@ public class Zombie extends Monster {
+@@ -472,7 +_,7 @@
          spawnGroupData = super.finalizeSpawn(level, difficulty, spawnReason, spawnGroupData);
          float specialMultiplier = difficulty.getSpecialMultiplier();
          if (spawnReason != EntitySpawnReason.CONVERSION) {
@@ -229,7 +216,7 @@ index 6a8fef7ad6765e4d815679e0f8fff73ca873f285..cf231380febd6d316eb902d43c636135
          }
  
          if (spawnGroupData == null) {
-@@ -492,7 +536,7 @@ public class Zombie extends Monster {
+@@ -499,7 +_,7 @@
                              chicken1.finalizeSpawn(level, difficulty, EntitySpawnReason.JOCKEY, null);
                              chicken1.setChickenJockey(true);
                              this.startRiding(chicken1);
