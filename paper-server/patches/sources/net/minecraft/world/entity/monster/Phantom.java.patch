@@ -1,16 +1,8 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/monster/Phantom.java b/net/minecraft/world/entity/monster/Phantom.java
-index fc23ef567095f7d0121a653336777e099c01f0b5..a91aba11ecda561d117c9d8db85c92cdcd81887e 100644
 --- a/net/minecraft/world/entity/monster/Phantom.java
 +++ b/net/minecraft/world/entity/monster/Phantom.java
-@@ -47,6 +47,11 @@ public class Phantom extends FlyingMob implements Enemy {
-     Vec3 moveTargetPoint = Vec3.ZERO;
-     public BlockPos anchorPoint = BlockPos.ZERO;
+@@ -48,6 +_,11 @@
+     @Nullable
+     public BlockPos anchorPoint;
      Phantom.AttackPhase attackPhase = Phantom.AttackPhase.CIRCLE;
 +    // Paper start
 +    @Nullable
@@ -20,7 +12,7 @@ index fc23ef567095f7d0121a653336777e099c01f0b5..a91aba11ecda561d117c9d8db85c92cd
  
      public Phantom(EntityType<? extends Phantom> entityType, Level level) {
          super(entityType, level);
-@@ -141,7 +146,7 @@ public class Phantom extends FlyingMob implements Enemy {
+@@ -142,7 +_,7 @@
  
      @Override
      public void aiStep() {
@@ -29,26 +21,23 @@ index fc23ef567095f7d0121a653336777e099c01f0b5..a91aba11ecda561d117c9d8db85c92cd
              this.igniteForSeconds(8.0F);
          }
  
-@@ -165,6 +170,15 @@ public class Phantom extends FlyingMob implements Enemy {
-         }
- 
-         this.setPhantomSize(compound.getInt("Size"));
-+
+@@ -163,6 +_,12 @@
+         super.readAdditionalSaveData(compound);
+         this.anchorPoint = compound.read("anchor_pos", BlockPos.CODEC).orElse(null);
+         this.setPhantomSize(compound.getIntOr("size", 0));
 +        // Paper start
 +        if (compound.hasUUID("Paper.SpawningEntity")) {
 +            this.spawningEntity = compound.getUUID("Paper.SpawningEntity");
 +        }
-+        if (compound.contains("Paper.ShouldBurnInDay")) {
-+            this.shouldBurnInDay = compound.getBoolean("Paper.ShouldBurnInDay");
-+        }
++        this.shouldBurnInDay = compound.getBooleanOr("Paper.ShouldBurnInDay", true);
 +        // Paper end
      }
  
      @Override
-@@ -174,6 +188,12 @@ public class Phantom extends FlyingMob implements Enemy {
-         compound.putInt("AY", this.anchorPoint.getY());
-         compound.putInt("AZ", this.anchorPoint.getZ());
-         compound.putInt("Size", this.getPhantomSize());
+@@ -170,6 +_,12 @@
+         super.addAdditionalSaveData(compound);
+         compound.storeNullable("anchor_pos", BlockPos.CODEC, this.anchorPoint);
+         compound.putInt("size", this.getPhantomSize());
 +        // Paper start
 +        if (this.spawningEntity != null) {
 +            compound.putUUID("Paper.SpawningEntity", this.spawningEntity);
@@ -58,7 +47,7 @@ index fc23ef567095f7d0121a653336777e099c01f0b5..a91aba11ecda561d117c9d8db85c92cd
      }
  
      @Override
-@@ -247,7 +267,8 @@ public class Phantom extends FlyingMob implements Enemy {
+@@ -243,7 +_,8 @@
  
                      for (Player player : nearbyPlayers) {
                          if (Phantom.this.canAttack(serverLevel, player, TargetingConditions.DEFAULT)) {

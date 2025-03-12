@@ -1,30 +1,14 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/monster/ZombieVillager.java b/net/minecraft/world/entity/monster/ZombieVillager.java
-index 81617c52828c8f999ad9af81f2b95649571b4f81..8403257d81367c7371fa94d458a59a4589dc0bd7 100644
 --- a/net/minecraft/world/entity/monster/ZombieVillager.java
 +++ b/net/minecraft/world/entity/monster/ZombieVillager.java
-@@ -33,6 +33,7 @@ import net.minecraft.world.entity.EquipmentSlot;
- import net.minecraft.world.entity.SlotAccess;
- import net.minecraft.world.entity.SpawnGroupData;
- import net.minecraft.world.entity.ai.village.ReputationEventType;
-+import net.minecraft.world.entity.npc.Villager;
- import net.minecraft.world.entity.npc.VillagerData;
- import net.minecraft.world.entity.npc.VillagerDataHolder;
- import net.minecraft.world.entity.npc.VillagerProfession;
-@@ -68,6 +69,7 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
+@@ -69,6 +_,7 @@
      @Nullable
      private MerchantOffers tradeOffers;
-     private int villagerXp;
+     private int villagerXp = 0;
 +    private int lastTick = net.minecraft.server.MinecraftServer.currentTick; // CraftBukkit - add field
  
      public ZombieVillager(EntityType<? extends ZombieVillager> entityType, Level level) {
          super(entityType, level);
-@@ -147,6 +149,7 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
+@@ -124,6 +_,7 @@
          }
  
          super.tick();
@@ -32,7 +16,7 @@ index 81617c52828c8f999ad9af81f2b95649571b4f81..8403257d81367c7371fa94d458a59a45
      }
  
      @Override
-@@ -183,12 +186,20 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
+@@ -160,12 +_,20 @@
      }
  
      public void startConverting(@Nullable UUID conversionStarter, int villagerConversionTime) {
@@ -46,41 +30,41 @@ index 81617c52828c8f999ad9af81f2b95649571b4f81..8403257d81367c7371fa94d458a59a45
          this.villagerConversionTime = villagerConversionTime;
          this.getEntityData().set(DATA_CONVERTING_ID, true);
 -        this.removeEffect(MobEffects.WEAKNESS);
--        this.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, villagerConversionTime, Math.min(this.level().getDifficulty().getId() - 1, 0)));
+-        this.addEffect(new MobEffectInstance(MobEffects.STRENGTH, villagerConversionTime, Math.min(this.level().getDifficulty().getId() - 1, 0)));
 -        this.level().broadcastEntityEvent(this, (byte)16);
 +        // CraftBukkit start
 +        this.removeEffect(MobEffects.WEAKNESS, org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
-+        this.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, villagerConversionTime, Math.min(this.level().getDifficulty().getId() - 1, 0)), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
++        this.addEffect(new MobEffectInstance(MobEffects.STRENGTH, villagerConversionTime, Math.min(this.level().getDifficulty().getId() - 1, 0)), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION);
 +        // CraftBukkit end
 +        if (broadcastEntityEvent) this.level().broadcastEntityEvent(this, (byte)16); // Paper - missing entity behaviour api - converting without entity event
      }
  
      @Override
-@@ -213,7 +224,7 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
+@@ -190,7 +_,7 @@
      }
  
-     private void finishConversion(ServerLevel serverLevel) {
+     private void finishConversion(ServerLevel level) {
 -        this.convertTo(
 +        Villager converted = this.convertTo( // CraftBukkit
              EntityType.VILLAGER,
              ConversionParams.single(this, false, false),
              villager -> {
-@@ -237,19 +248,24 @@ public class ZombieVillager extends Zombie implements VillagerDataHolder {
-                 villager.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(villager.blockPosition()), EntitySpawnReason.CONVERSION, null);
-                 villager.refreshBrain(serverLevel);
+@@ -214,19 +_,24 @@
+                 villager.finalizeSpawn(level, level.getCurrentDifficultyAt(villager.blockPosition()), EntitySpawnReason.CONVERSION, null);
+                 villager.refreshBrain(level);
                  if (this.conversionStarter != null) {
--                    Player playerByUuid = serverLevel.getPlayerByUUID(this.conversionStarter);
-+                    Player playerByUuid = serverLevel.getGlobalPlayerByUUID(this.conversionStarter); // Paper - check global player list where appropriate
+-                    Player playerByUuid = level.getPlayerByUUID(this.conversionStarter);
++                    Player playerByUuid = level.getGlobalPlayerByUUID(this.conversionStarter); // Paper - check global player list where appropriate
                      if (playerByUuid instanceof ServerPlayer) {
                          CriteriaTriggers.CURED_ZOMBIE_VILLAGER.trigger((ServerPlayer)playerByUuid, this, villager);
-                         serverLevel.onReputationEvent(ReputationEventType.ZOMBIE_VILLAGER_CURED, playerByUuid, villager);
+                         level.onReputationEvent(ReputationEventType.ZOMBIE_VILLAGER_CURED, playerByUuid, villager);
                      }
                  }
  
--                villager.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0));
-+                villager.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 200, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION); // CraftBukkit
+-                villager.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 200, 0));
++                villager.addEffect(new MobEffectInstance(MobEffects.NAUSEA, 200, 0), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.CONVERSION); // CraftBukkit
                  if (!this.isSilent()) {
-                     serverLevel.levelEvent(null, 1027, this.blockPosition(), 0);
+                     level.levelEvent(null, 1027, this.blockPosition(), 0);
                  }
 -            }
 +                // CraftBukkit start
