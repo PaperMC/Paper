@@ -15,7 +15,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class PaperPoiType implements PoiType, Handleable<net.minecraft.world.entity.ai.village.poi.PoiType> {
 
-    public static PaperPoiType minecraftToBukkit(net.minecraft.world.entity.ai.village.poi.PoiType minecraft) {
+    public static PoiType minecraftToBukkit(net.minecraft.world.entity.ai.village.poi.PoiType minecraft) {
         return CraftRegistry.minecraftToBukkit(minecraft, Registries.POINT_OF_INTEREST_TYPE);
     }
 
