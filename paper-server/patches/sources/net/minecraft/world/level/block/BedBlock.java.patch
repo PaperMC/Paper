@@ -1,0 +1,81 @@
+--- a/net/minecraft/world/level/block/BedBlock.java
++++ b/net/minecraft/world/level/block/BedBlock.java
+@@ -90,7 +_,7 @@
+                 }
+             }
+ 
+-            if (!canSetSpawn(level)) {
++            if (false && !canSetSpawn(level)) { // CraftBukkit - moved world and biome check into Player
+                 level.removeBlock(pos, false);
+                 BlockPos blockPos = pos.relative(state.getValue(FACING).getOpposite());
+                 if (level.getBlockState(blockPos).is(this)) {
+@@ -101,22 +_,56 @@
+                 level.explode(null, level.damageSources().badRespawnPointExplosion(center), null, center, 5.0F, true, Level.ExplosionInteraction.BLOCK);
+                 return InteractionResult.SUCCESS_SERVER;
+             } else if (state.getValue(OCCUPIED)) {
++                if (!BedBlock.canSetSpawn(level)) return this.explodeBed(state, level, pos); // Paper - check explode first
+                 if (!this.kickVillagerOutOfBed(level, pos)) {
+                     player.displayClientMessage(Component.translatable("block.minecraft.bed.occupied"), true);
+                 }
+ 
+                 return InteractionResult.SUCCESS_SERVER;
+             } else {
++                // CraftBukkit start
++                final BlockState finalBlockState = state;
++                final BlockPos finalBlockPos = pos;
++                // CraftBukkit end
+                 player.startSleepInBed(pos).ifLeft(bedSleepingProblem -> {
++                    // Paper start - PlayerBedFailEnterEvent
++                    if (bedSleepingProblem != null) {
++                        io.papermc.paper.event.player.PlayerBedFailEnterEvent event = new io.papermc.paper.event.player.PlayerBedFailEnterEvent((org.bukkit.entity.Player) player.getBukkitEntity(), io.papermc.paper.event.player.PlayerBedFailEnterEvent.FailReason.values()[bedSleepingProblem.ordinal()], org.bukkit.craftbukkit.block.CraftBlock.at(level, finalBlockPos), !level.dimensionType().bedWorks(), io.papermc.paper.adventure.PaperAdventure.asAdventure(bedSleepingProblem.getMessage()));
++                        if (!event.callEvent()) {
++                            return;
++                        }
++                        // Paper end - PlayerBedFailEnterEvent
++                    // CraftBukkit start - handling bed explosion from below here
++                    if (event.getWillExplode()) { // Paper - PlayerBedFailEnterEvent
++                        this.explodeBed(finalBlockState, level, finalBlockPos);
++                    } else
++                    // CraftBukkit end
+                     if (bedSleepingProblem.getMessage() != null) {
+-                        player.displayClientMessage(bedSleepingProblem.getMessage(), true);
++                        final net.kyori.adventure.text.Component message = event.getMessage(); // Paper - PlayerBedFailEnterEvent
++                        if (message != null) player.displayClientMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message), true); // Paper - PlayerBedFailEnterEvent
+                     }
++                    } // Paper - PlayerBedFailEnterEvent
+                 });
+                 return InteractionResult.SUCCESS_SERVER;
+             }
+         }
+     }
+ 
++    // CraftBukkit start - Copied from the above method
++    private InteractionResult explodeBed(BlockState state, Level level, BlockPos pos) {
++        org.bukkit.block.BlockState blockState = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos).getState(); // CraftBukkit - capture BlockState before remove block
++        level.removeBlock(pos, false);
++        BlockPos blockPos = pos.relative(state.getValue(FACING).getOpposite());
++        if (level.getBlockState(blockPos).is(this)) {
++            level.removeBlock(blockPos, false);
++        }
++
++        Vec3 center = pos.getCenter();
++        level.explode(null, level.damageSources().badRespawnPointExplosion(center).causingBlockSnapshot(blockState), null, center, 5.0F, true, Level.ExplosionInteraction.BLOCK); // CraftBukkit - add state
++        return InteractionResult.SUCCESS_SERVER;
++     }
++    // CraftBukkit end
++
+     public static boolean canSetSpawn(Level level) {
+         return level.dimensionType().bedWorks();
+     }
+@@ -299,6 +_,11 @@
+         if (!level.isClientSide) {
+             BlockPos blockPos = pos.relative(state.getValue(FACING));
+             level.setBlock(blockPos, state.setValue(PART, BedPart.HEAD), 3);
++            // CraftBukkit start - SPIGOT-7315: Don't updated if we capture block states
++            if (level.captureBlockStates) {
++                return;
++            }
++            // CraftBukkit end
+             level.updateNeighborsAt(pos, Blocks.AIR);
+             state.updateNeighbourShapes(level, pos, 3);
+         }

@@ -1,0 +1,25 @@
+--- a/net/minecraft/world/level/block/CampfireBlock.java
++++ b/net/minecraft/world/level/block/CampfireBlock.java
+@@ -107,8 +_,9 @@
+ 
+     @Override
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
++        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         if (state.getValue(LIT) && entity instanceof LivingEntity) {
+-            entity.hurt(level.damageSources().campfire(), this.fireDamage);
++            entity.hurt(level.damageSources().campfire().eventBlockDamager(level, pos), (float) this.fireDamage); // CraftBukkit
+         }
+ 
+         super.entityInside(state, level, pos, entity, effectApplier);
+@@ -220,6 +_,11 @@
+             && projectile.mayInteract(serverLevel, blockPos)
+             && !state.getValue(LIT)
+             && !state.getValue(WATERLOGGED)) {
++            // CraftBukkit start
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, blockPos, projectile).isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
+             level.setBlock(blockPos, state.setValue(BlockStateProperties.LIT, true), 11);
+         }
+     }

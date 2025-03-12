@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import java.util.Locale;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.monster.Zombie;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -254,6 +255,14 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
 
     public static class CraftProfession implements Profession, Handleable<VillagerProfession> {
         private static int count = 0;
+
+        public static Profession minecraftHolderToBukkit(Holder<VillagerProfession> minecraft) {
+            return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.VILLAGER_PROFESSION);
+        }
+
+        public static Holder<VillagerProfession> bukkitToMinecraftHolder(Profession bukkit) {
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.VILLAGER_PROFESSION);
+        }
 
         public static Profession minecraftToBukkit(VillagerProfession minecraft) {
             return CraftRegistry.minecraftToBukkit(minecraft, Registries.VILLAGER_PROFESSION);

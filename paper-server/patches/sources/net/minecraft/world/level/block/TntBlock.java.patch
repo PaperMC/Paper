@@ -1,0 +1,67 @@
+--- a/net/minecraft/world/level/block/TntBlock.java
++++ b/net/minecraft/world/level/block/TntBlock.java
+@@ -47,7 +_,7 @@
+     @Override
+     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+         if (!oldState.is(state.getBlock())) {
+-            if (level.hasNeighborSignal(pos) && prime(level, pos)) {
++            if (level.hasNeighborSignal(pos) && prime(level, pos, () -> org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, pos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.REDSTONE, null, null))) { // CraftBukkit - TNTPrimeEvent
+                 level.removeBlock(pos, false);
+             }
+         }
+@@ -55,7 +_,7 @@
+ 
+     @Override
+     protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, @Nullable Orientation orientation, boolean movedByPiston) {
+-        if (level.hasNeighborSignal(pos) && prime(level, pos)) {
++        if (level.hasNeighborSignal(pos) && prime(level, pos, () -> org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, pos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.REDSTONE, null, null))) { // CraftBukkit - TNTPrimeEvent
+             level.removeBlock(pos, false);
+         }
+     }
+@@ -63,7 +_,7 @@
+     @Override
+     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+         if (!level.isClientSide() && !player.getAbilities().instabuild && state.getValue(UNSTABLE)) {
+-            prime(level, pos);
++            prime(level, pos, () -> org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, pos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.BLOCK_BREAK, player, null)); // CraftBukkit - TNTPrimeEvent
+         }
+ 
+         return super.playerWillDestroy(level, pos, state, player);
+@@ -80,11 +_,16 @@
+     }
+ 
+     public static boolean prime(Level level, BlockPos pos) {
+-        return prime(level, pos, null);
++    // Paper start
++        return prime(level, pos, null, () -> true);
++    }
++    public static boolean prime(Level level, BlockPos pos, java.util.function.BooleanSupplier event) {
++        return prime(level, pos, null, event);
++    // Paper end
+     }
+ 
+-    private static boolean prime(Level level, BlockPos pos, @Nullable LivingEntity entity) {
+-        if (level instanceof ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_TNT_EXPLODES)) {
++    private static boolean prime(Level level, BlockPos pos, @Nullable LivingEntity entity, java.util.function.BooleanSupplier event) { // Paper
++        if (level instanceof ServerLevel serverLevel && serverLevel.getGameRules().getBoolean(GameRules.RULE_TNT_EXPLODES) && event.getAsBoolean()) { // Paper
+             PrimedTnt primedTnt = new PrimedTnt(level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, entity);
+             level.addFreshEntity(primedTnt);
+             level.playSound(null, primedTnt.getX(), primedTnt.getY(), primedTnt.getZ(), SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0F, 1.0F);
+@@ -102,7 +_,7 @@
+         if (!stack.is(Items.FLINT_AND_STEEL) && !stack.is(Items.FIRE_CHARGE)) {
+             return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
+         } else {
+-            if (prime(level, pos, player)) {
++            if (prime(level, pos, player, () -> org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, pos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.PLAYER, player, null))) { // Paper
+                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), 11);
+                 Item item = stack.getItem();
+                 if (stack.is(Items.FLINT_AND_STEEL)) {
+@@ -128,7 +_,7 @@
+             Entity owner = projectile.getOwner();
+             if (projectile.isOnFire()
+                 && projectile.mayInteract(serverLevel, blockPos)
+-                && prime(level, blockPos, owner instanceof LivingEntity ? (LivingEntity)owner : null)) {
++                && prime(level, blockPos, owner instanceof LivingEntity ? (LivingEntity)owner : null, () -> org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(projectile, blockPos, state.getFluidState().createLegacyBlock()) && org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, blockPos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.PROJECTILE, projectile, null))) { // Paper
+                 level.removeBlock(blockPos, false);
+             }
+         }

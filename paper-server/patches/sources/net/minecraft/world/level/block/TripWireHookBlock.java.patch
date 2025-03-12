@@ -1,0 +1,74 @@
+--- a/net/minecraft/world/level/block/TripWireHookBlock.java
++++ b/net/minecraft/world/level/block/TripWireHookBlock.java
+@@ -113,10 +_,10 @@
+         if (optionalValue.isPresent()) {
+             Direction direction = optionalValue.get();
+             boolean flag = hookState.getOptionalValue(ATTACHED).orElse(false);
+-            boolean flag1 = hookState.getOptionalValue(POWERED).orElse(false);
++            boolean flag1 = hookState.getOptionalValue(POWERED).orElse(false); // Paper - diff on change, for event below
+             Block block = hookState.getBlock();
+             boolean flag2 = !attaching;
+-            boolean flag3 = false;
++            boolean flag3 = false; // Paper - diff on change, for event below
+             int i = 0;
+             BlockState[] blockStates = new BlockState[42];
+ 
+@@ -152,21 +_,48 @@
+             flag2 &= i > 1;
+             flag3 &= flag2;
+             BlockState blockState1 = block.defaultBlockState().trySetValue(ATTACHED, flag2).trySetValue(POWERED, flag3);
++            boolean cancelledEmitterHook = false, cancelledReceiverHook = false; // Paper - Call BlockRedstoneEvent
++            boolean wasPowered = flag1, willBePowered = flag3; // Paper - OBFHELPER
+             if (i > 0) {
+                 BlockPos blockPosx = pos.relative(direction, i);
++                // Paper start - Call BlockRedstoneEvent
++                if (wasPowered != willBePowered) {
++                    int newCurrent = willBePowered ? 15 : 0;
++                    org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(
++                        org.bukkit.craftbukkit.block.CraftBlock.at(level, blockPosx), wasPowered ? 15 : 0, newCurrent
++                    );
++                    event.callEvent();
++                    cancelledReceiverHook = event.getNewCurrent() != newCurrent;
++                }
++                if (!cancelledReceiverHook) { // always trigger two events even when the first hook current change is cancelled
++                // Paper end - Call BlockRedstoneEvent
+                 Direction opposite = direction.getOpposite();
+                 level.setBlock(blockPosx, blockState1.setValue(FACING, opposite), 3);
+                 notifyNeighbors(block, level, blockPosx, opposite);
+                 emitState(level, blockPosx, flag2, flag3, flag, flag1);
+-            }
++                } // Paper - Call BlockRedstoneEvent
++            }
++            // Paper start - Call BlockRedstoneEvent
++            if (wasPowered != willBePowered) {
++                int newCurrent = willBePowered ? 15 : 0;
++                org.bukkit.event.block.BlockRedstoneEvent event = new org.bukkit.event.block.BlockRedstoneEvent(
++                    org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), wasPowered ? 15 : 0, newCurrent
++                );
++                event.callEvent();
++                cancelledEmitterHook = event.getNewCurrent() != newCurrent;
++            }
++            // Paper end - Call BlockRedstoneEvent
+ 
++            if (!cancelledEmitterHook) { // Paper - Call BlockRedstoneEvent
+             emitState(level, pos, flag2, flag3, flag, flag1);
+             if (!attaching) {
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.skipTripwireHookPlacementValidation || level.getBlockState(pos).is(Blocks.TRIPWIRE_HOOK)) // Paper - Validate tripwire hook placement before update
+                 level.setBlock(pos, blockState1.setValue(FACING, direction), 3);
+                 if (shouldNotifyNeighbours) {
+                     notifyNeighbors(block, level, pos, direction);
+                 }
+             }
++            } // Paper - Call BlockRedstoneEvent
+ 
+             if (flag != flag2) {
+                 for (int i2 = 1; i2 < i; i2++) {
+@@ -175,7 +_,7 @@
+                     if (blockState2 != null) {
+                         BlockState blockState3 = level.getBlockState(blockPos1);
+                         if (blockState3.is(Blocks.TRIPWIRE) || blockState3.is(Blocks.TRIPWIRE_HOOK)) {
+-                            level.setBlock(blockPos1, blockState2.trySetValue(ATTACHED, flag2), 3);
++                            if (!io.papermc.paper.configuration.GlobalConfiguration.get().blockUpdates.disableTripwireUpdates || !blockState3.is(Blocks.TRIPWIRE))  level.setBlock(blockPos1, blockState2.trySetValue(ATTACHED, flag2), 3); // Paper - prevent tripwire from updating
+                         }
+                     }
+                 }

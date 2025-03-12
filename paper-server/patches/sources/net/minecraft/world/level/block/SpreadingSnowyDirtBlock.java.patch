@@ -1,0 +1,25 @@
+--- a/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
++++ b/net/minecraft/world/level/block/SpreadingSnowyDirtBlock.java
+@@ -39,7 +_,13 @@
+ 
+     @Override
+     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
++        if (this instanceof GrassBlock && level.paperConfig().tickRates.grassSpread != 1 && (level.paperConfig().tickRates.grassSpread < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % level.paperConfig().tickRates.grassSpread != 0)) { return; } // Paper - Configurable random tick rates for blocks
+         if (!canBeGrass(state, level, pos)) {
++            // CraftBukkit start
++            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, Blocks.DIRT.defaultBlockState()).isCancelled()) {
++                return;
++            }
++            // CraftBukkit end
+             level.setBlockAndUpdate(pos, Blocks.DIRT.defaultBlockState());
+         } else {
+             if (level.getMaxLocalRawBrightness(pos.above()) >= 9) {
+@@ -48,7 +_,7 @@
+                 for (int i = 0; i < 4; i++) {
+                     BlockPos blockPos = pos.offset(random.nextInt(3) - 1, random.nextInt(5) - 3, random.nextInt(3) - 1);
+                     if (level.getBlockState(blockPos).is(Blocks.DIRT) && canPropagate(blockState, level, blockPos)) {
+-                        level.setBlockAndUpdate(blockPos, blockState.setValue(SNOWY, isSnowySetting(level.getBlockState(blockPos.above()))));
++                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, blockPos, blockState.setValue(SNOWY, isSnowySetting(level.getBlockState(blockPos.above()))), 3); // CraftBukkit
+                     }
+                 }
+             }

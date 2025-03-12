@@ -1326,11 +1326,10 @@ public class CraftEventFactory {
     }
 
     public static boolean handleBlockGrowEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState newData, int flag) {
-        Block block = world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
-        CraftBlockState state = (CraftBlockState) block.getState();
+        CraftBlockState state = CraftBlockStates.getBlockState(world, pos, flag);
         state.setData(newData);
 
-        BlockGrowEvent event = new BlockGrowEvent(block, state);
+        BlockGrowEvent event = new BlockGrowEvent(state.getBlock(), state);
         Bukkit.getPluginManager().callEvent(event);
 
         if (!event.isCancelled()) {
