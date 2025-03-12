@@ -74,8 +74,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.EntityBlock;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.Vec2;
 import net.minecraft.world.phys.Vec3;
 import org.bukkit.GameMode;
@@ -88,6 +86,7 @@ import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
 import org.bukkit.craftbukkit.CraftHeightMap;
 import org.bukkit.craftbukkit.CraftRegistry;
+import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.scoreboard.CraftCriteria;
@@ -174,15 +173,11 @@ public class VanillaArgumentProviderImpl implements VanillaArgumentProvider {
     @Override
     public ArgumentType<BlockState> blockState() {
         return this.wrap(BlockStateArgument.block(PaperCommands.INSTANCE.getBuildContext()), (result) -> {
-            if (!result.getState().hasBlockEntity()) {
-                return CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), BlockPos.ZERO, result.getState(), null);
+            final BlockState snapshot = CraftBlockStates.getBlockState(CraftRegistry.getMinecraftRegistry(), BlockPos.ZERO, result.getState(), null);
+            if (result.tag != null && snapshot instanceof final CraftBlockEntityState<?> blockEntitySnapshot) {
+                blockEntitySnapshot.loadData(result.tag);
             }
-
-            final BlockEntity blockEntity = ((EntityBlock) result.getState().getBlock()).newBlockEntity(BlockPos.ZERO, result.getState());
-            if (result != null) {
-                blockEntity.loadWithComponents(result.tag, CraftRegistry.getMinecraftRegistry());
-            }
-            return CraftBlockStates.getBlockState(null, BlockPos.ZERO, result.getState(), blockEntity);
+            return snapshot;
         });
     }
 
