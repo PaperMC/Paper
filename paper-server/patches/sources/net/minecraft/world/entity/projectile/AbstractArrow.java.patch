@@ -1,27 +1,11 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/projectile/AbstractArrow.java b/net/minecraft/world/entity/projectile/AbstractArrow.java
-index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056bac29c8f8 100644
 --- a/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/net/minecraft/world/entity/projectile/AbstractArrow.java
-@@ -33,6 +33,7 @@ import net.minecraft.world.entity.MoverType;
- import net.minecraft.world.entity.OminousItemSpawner;
- import net.minecraft.world.entity.SlotAccess;
- import net.minecraft.world.entity.ai.attributes.Attributes;
-+import net.minecraft.world.entity.item.ItemEntity;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
-@@ -63,16 +64,16 @@ public abstract class AbstractArrow extends Projectile {
+@@ -69,16 +_,16 @@
      protected int inGroundTime;
      public AbstractArrow.Pickup pickup = AbstractArrow.Pickup.DISALLOWED;
-     public int shakeTime;
--    private int life;
-+    public int life; // Paper - private -> public
+     public int shakeTime = 0;
+-    private int life = 0;
++    public int life = 0; // Paper - private -> public
      private double baseDamage = 2.0;
 -    private SoundEvent soundEvent = this.getDefaultHitGroundSoundEvent();
 +    public SoundEvent soundEvent = this.getDefaultHitGroundSoundEvent(); // Paper - private -> public
@@ -37,21 +21,22 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
  
      protected AbstractArrow(EntityType<? extends AbstractArrow> entityType, Level level) {
          super(entityType, level);
-@@ -87,7 +88,13 @@ public abstract class AbstractArrow extends Projectile {
+@@ -93,7 +_,14 @@
          ItemStack pickupItemStack,
          @Nullable ItemStack firedFromWeapon
      ) {
 +        // CraftBukkit start - handle the owner before the rest of things
 +        this(entityType, x, y, z, level, pickupItemStack, firedFromWeapon, null);
 +    }
++
 +    protected AbstractArrow(EntityType<? extends AbstractArrow> entityType, double x, double y, double z, Level level, ItemStack pickupItemStack, @Nullable ItemStack firedFromWeapon, @Nullable LivingEntity ownerEntity) {
          this(entityType, level);
 +        this.setOwner(ownerEntity);
 +        // CraftBukkit end
          this.pickupItemStack = pickupItemStack.copy();
-         this.setCustomName(pickupItemStack.get(DataComponents.CUSTOM_NAME));
+         this.applyComponentsFromItemStack(pickupItemStack);
          Unit unit = pickupItemStack.remove(DataComponents.INTANGIBLE_PROJECTILE);
-@@ -112,8 +119,8 @@ public abstract class AbstractArrow extends Projectile {
+@@ -118,8 +_,8 @@
      protected AbstractArrow(
          EntityType<? extends AbstractArrow> entityType, LivingEntity owner, Level level, ItemStack pickupItemStack, @Nullable ItemStack firedFromWeapon
      ) {
@@ -62,15 +47,15 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
      }
  
      public void setSoundEvent(SoundEvent soundEvent) {
-@@ -209,6 +216,7 @@ public abstract class AbstractArrow extends Projectile {
-                 this.applyEffectsFromBlocks();
+@@ -214,6 +_,7 @@
+                 this.setSharedFlagOnFire(this.getRemainingFireTicks() > 0);
              }
          } else {
 +            if (this.tickCount > 200) this.tickDespawn(); // Paper - tick despawnCounter regardless after 10 seconds
              this.inGroundTime = 0;
              Vec3 vec31 = this.position();
              if (this.isInWater()) {
-@@ -275,12 +283,12 @@ public abstract class AbstractArrow extends Projectile {
+@@ -280,12 +_,12 @@
  
              if (entityHitResult == null) {
                  if (this.isAlive() && hitResult.getType() != HitResult.Type.MISS) {
@@ -85,7 +70,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
                  this.hasImpulse = true;
                  if (this.getPierceLevel() > 0 && projectileDeflection == ProjectileDeflection.NONE) {
                      continue;
-@@ -313,13 +321,26 @@ public abstract class AbstractArrow extends Projectile {
+@@ -318,13 +_,26 @@
          }
      }
  
@@ -113,7 +98,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
      }
  
      private void startFalling() {
-@@ -329,7 +350,7 @@ public abstract class AbstractArrow extends Projectile {
+@@ -334,7 +_,7 @@
          this.life = 0;
      }
  
@@ -122,7 +107,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
          return this.entityData.get(IN_GROUND);
      }
  
-@@ -347,8 +368,8 @@ public abstract class AbstractArrow extends Projectile {
+@@ -357,8 +_,8 @@
  
      protected void tickDespawn() {
          this.life++;
@@ -133,7 +118,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
          }
      }
  
-@@ -375,9 +396,9 @@ public abstract class AbstractArrow extends Projectile {
+@@ -392,9 +_,9 @@
      }
  
      @Override
@@ -145,7 +130,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
          }
      }
  
-@@ -404,7 +425,7 @@ public abstract class AbstractArrow extends Projectile {
+@@ -421,7 +_,7 @@
              }
  
              if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
@@ -154,7 +139,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
                  return;
              }
  
-@@ -420,10 +441,17 @@ public abstract class AbstractArrow extends Projectile {
+@@ -437,10 +_,16 @@
              livingEntity.setLastHurtMob(entity);
          }
  
@@ -165,15 +150,14 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
 -            entity.igniteForSeconds(5.0F);
 +            // CraftBukkit start
 +            org.bukkit.event.entity.EntityCombustByEntityEvent combustEvent = new org.bukkit.event.entity.EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5.0F);
-+            org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
-+            if (!combustEvent.isCancelled()) {
++            if (combustEvent.callEvent()) {
 +                entity.igniteForSeconds(combustEvent.getDuration(), false);
 +            }
 +            // CraftBukkit end
          }
  
          if (entity.hurtOrSimulate(damageSource, ceil)) {
-@@ -461,7 +489,7 @@ public abstract class AbstractArrow extends Projectile {
+@@ -478,7 +_,7 @@
  
              this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
              if (this.getPierceLevel() <= 0) {
@@ -182,7 +166,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
              }
          } else {
              entity.setRemainingFireTicks(remainingFireTicks);
-@@ -472,7 +500,7 @@ public abstract class AbstractArrow extends Projectile {
+@@ -489,7 +_,7 @@
                      this.spawnAtLocation(serverLevel2, this.getPickupItem(), 0.1F);
                  }
  
@@ -191,7 +175,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
              }
          }
      }
-@@ -485,7 +513,7 @@ public abstract class AbstractArrow extends Projectile {
+@@ -502,7 +_,7 @@
              double max = Math.max(0.0, 1.0 - entity.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
              Vec3 vec3 = this.getDeltaMovement().multiply(1.0, 0.0, 1.0).normalize().scale(d * 0.6 * max);
              if (vec3.lengthSqr() > 0.0) {
@@ -200,16 +184,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
              }
          }
      }
-@@ -597,7 +625,7 @@ public abstract class AbstractArrow extends Projectile {
-         this.setPierceLevel(compound.getByte("PierceLevel"));
-         if (compound.contains("SoundEvent", 8)) {
-             this.soundEvent = BuiltInRegistries.SOUND_EVENT
--                .getOptional(ResourceLocation.parse(compound.getString("SoundEvent")))
-+                .getOptional(ResourceLocation.tryParse(compound.getString("SoundEvent"))) // Paper - Validate resource location
-                 .orElse(this.getDefaultHitGroundSoundEvent());
-         }
- 
-@@ -616,7 +644,14 @@ public abstract class AbstractArrow extends Projectile {
+@@ -610,7 +_,14 @@
  
      @Override
      public void setOwner(@Nullable Entity entity) {
@@ -224,7 +199,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
  
          this.pickup = switch (entity) {
              case Player player when this.pickup == AbstractArrow.Pickup.DISALLOWED -> AbstractArrow.Pickup.ALLOWED;
-@@ -628,9 +663,24 @@ public abstract class AbstractArrow extends Projectile {
+@@ -622,9 +_,22 @@
      @Override
      public void playerTouch(Player entity) {
          if (!this.level().isClientSide && (this.isInGround() || this.isNoPhysics()) && this.shakeTime <= 0) {
@@ -232,12 +207,10 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
 +            // CraftBukkit start
 +            ItemStack itemstack = this.getPickupItem();
 +            if (this.pickup == Pickup.ALLOWED && !itemstack.isEmpty() && entity.getInventory().canHold(itemstack) > 0) {
-+                ItemEntity item = new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemstack);
++                net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemstack);
 +                org.bukkit.event.player.PlayerPickupArrowEvent event = new org.bukkit.event.player.PlayerPickupArrowEvent((org.bukkit.entity.Player) entity.getBukkitEntity(), (org.bukkit.entity.Item) item.getBukkitEntity(), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
 +                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
-+                this.level().getCraftServer().getPluginManager().callEvent(event);
-+
-+                if (event.isCancelled()) {
++                if (!event.callEvent()) {
 +                    return;
 +                }
 +                itemstack = item.getItem();
@@ -251,7 +224,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
              }
          }
      }
-@@ -643,7 +693,7 @@ public abstract class AbstractArrow extends Projectile {
+@@ -637,7 +_,7 @@
          };
      }
  
@@ -260,7 +233,7 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
          return this.pickupItemStack.copy();
      }
  
-@@ -675,7 +725,7 @@ public abstract class AbstractArrow extends Projectile {
+@@ -665,7 +_,7 @@
          this.setFlag(1, critArrow);
      }
  
@@ -269,16 +242,16 @@ index b1d9b0de4864a4ac8345f880b67cff78ca12c692..23a795eb4c7ad968448dd1405272056b
          this.entityData.set(PIERCE_LEVEL, pierceLevel);
      }
  
-@@ -688,6 +738,12 @@ public abstract class AbstractArrow extends Projectile {
+@@ -677,6 +_,12 @@
+             this.entityData.set(ID_FLAGS, (byte)(b & ~id));
          }
      }
- 
++
 +    // Paper start
 +    public void setPickupItemStackPublic(final ItemStack pickupItemStack) {
 +        this.setPickupItemStack(pickupItemStack);
 +    }
 +    // Paper end
-+
+ 
      protected void setPickupItemStack(ItemStack pickupItemStack) {
          if (!pickupItemStack.isEmpty()) {
-             this.pickupItemStack = pickupItemStack;
