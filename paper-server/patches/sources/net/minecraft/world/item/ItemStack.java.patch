@@ -24,7 +24,6 @@
 -                    buffer.writeVarInt(value.getCount());
 +                    buffer.writeVarInt(io.papermc.paper.util.ItemComponentSanitizer.sanitizeCount(io.papermc.paper.util.ItemObfuscationSession.currentSession(), value, value.getCount())); // Paper - potentially sanitize count
                      Item.STREAM_CODEC.encode(buffer, value.getItemHolder());
--                    streamCodec.encode(buffer, value.components.asPatch());
 +                    // Spigot start - filter
 +                    // value = value.copy();
 +                    // CraftItemStack.setItemMeta(value, CraftItemStack.getItemMeta(value)); // Paper - This is no longer with raw NBT being handled in metadata
@@ -32,7 +31,7 @@
 +                    boolean prev = net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.get();
 +                    try (final io.papermc.paper.util.SafeAutoClosable ignored = io.papermc.paper.util.ItemObfuscationSession.withContext(c -> c.itemStack(value))) { // pass the itemstack as context to the obfuscation session
 +                        net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(true);
-+                        DataComponentPatch.STREAM_CODEC.encode(buffer, value.components.asPatch());
+                     streamCodec.encode(buffer, value.components.asPatch());
 +                    } finally {
 +                        net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(prev);
 +                    }
