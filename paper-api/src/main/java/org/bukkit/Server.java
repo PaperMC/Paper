@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import io.papermc.paper.configuration.ServerConfiguration;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
@@ -1267,39 +1268,11 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public boolean getOnlineMode();
 
     /**
-     * Gets whether the Server is behind a proxy that uses online mode.
+     * Retrieves the server configuration.
      *
-     * @return true if the server is in proxied online mode, false otherwise
+     * @return the instance of ServerConfiguration containing the server's configuration details
      */
-    boolean isProxyOnlineMode();
-
-    /**
-     * Gets whether the Server is configured for Velocity online mode
-     *
-     * @return true if the server is in Velocity online mode; false otherwise.
-     */
-    boolean isVelocityOnlineMode();
-
-    /**
-     * Gets whether the Server is configured for BungeeCord online mode
-     *
-     * @return true if the server is in BungeeCord online mode; false otherwise.
-     */
-    boolean isBungeeCordOnlineMode();
-
-    /**
-     * Gets whether the Server is configured for a Velocity proxy
-     *
-     * @return true if the server has Velocity enabled; false otherwise.
-     */
-    boolean isVelocityEnabled();
-
-    /**
-     * Gets whether the Server is configured for a BungeeCord proxy
-     *
-     * @return true if the server has BungeeCord enabled; false otherwise.
-     */
-    boolean isBungeeCordEnabled();
+    @NotNull ServerConfiguration getServerConfig();
 
     /**
      * Gets whether this server allows flying or not.

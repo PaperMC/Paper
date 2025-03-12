@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import io.papermc.paper.configuration.ServerConfiguration;
 import org.bukkit.Warning.WarningState;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.data.BlockData;
@@ -1433,48 +1434,12 @@ public final class Bukkit {
     }
 
     /**
-     * Gets whether the Server is behind a proxy that uses online mode.
+     * Retrieves the server configuration.
      *
-     * @return true if the server is in proxied online mode, false otherwise
+     * @return the instance of ServerConfiguration containing the server's configuration details
      */
-    public static boolean isProxyOnlineMode() {
-        return server.isProxyOnlineMode();
-    }
-
-    /**
-     * Gets whether the Server is configured for Velocity online mode
-     *
-     * @return true if the server is in Velocity online mode; false otherwise.
-     */
-    public static boolean isVelocityOnlineMode() {
-        return server.isVelocityOnlineMode();
-    }
-
-    /**
-     * Gets whether the Server is configured for BungeeCord online mode
-     *
-     * @return true if the server is in BungeeCord online mode; false otherwise.
-     */
-    public static boolean isBungeeCordOnlineMode() {
-        return server.isBungeeCordOnlineMode();
-    }
-
-    /**
-     * Gets whether the Server is configured for a Velocity proxy
-     *
-     * @return true if the server has Velocity enabled; false otherwise.
-     */
-    public static boolean isVelocityEnabled() {
-        return server.isVelocityEnabled();
-    }
-
-    /**
-     * Gets whether the Server is configured for a BungeeCord proxy
-     *
-     * @return true if the server has BungeeCord enabled; false otherwise.
-     */
-    public static boolean isBungeeCordEnabled() {
-        return server.isBungeeCordEnabled();
+    public static @NotNull ServerConfiguration getServerConfig() {
+        return server.getServerConfig();
     }
 
     /**
