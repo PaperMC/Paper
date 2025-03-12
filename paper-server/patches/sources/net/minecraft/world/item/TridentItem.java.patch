@@ -1,23 +1,17 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/item/TridentItem.java b/net/minecraft/world/item/TridentItem.java
-index a122813750081d752877c1071d0a0fbd8226dafb..23284dbeff327d1b8dc89f3a0dc0ee549cec2daa 100644
 --- a/net/minecraft/world/item/TridentItem.java
 +++ b/net/minecraft/world/item/TridentItem.java
-@@ -87,19 +87,35 @@ public class TridentItem extends Item implements ProjectileItem {
+@@ -79,18 +_,37 @@
                          .orElse(SoundEvents.TRIDENT_THROW);
                      player.awardStat(Stats.ITEM_USED.get(this));
                      if (level instanceof ServerLevel serverLevel) {
 -                        stack.hurtWithoutBreaking(1, player);
 +                        // stack.hurtWithoutBreaking(1, player); // CraftBukkit - moved down
                          if (tridentSpinAttackStrength == 0.0F) {
+-                            ItemStack itemStack = stack.consumeAndReturn(1, player);
 -                            ThrownTrident thrownTrident = Projectile.spawnProjectileFromRotation(
-+                            Projectile.Delayed<ThrownTrident> tridentDelayed = Projectile.spawnProjectileFromRotationDelayed( // Paper - PlayerLaunchProjectileEvent
-                                 ThrownTrident::new, serverLevel, stack, player, 0.0F, 2.5F, 1.0F
++                            ItemStack itemStack = stack.copyWithCount(1); // Paper
++                            Projectile.Delayed<ThrownTrident> tridentDelayed = Projectile.spawnProjectileFromRotationDelayed( // Paper - PlayerLaunchProjectileEvent(
+                                 ThrownTrident::new, serverLevel, itemStack, player, 0.0F, 2.5F, 1.0F
                              );
 +                            // Paper start - PlayerLaunchProjectileEvent
 +                            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack), (org.bukkit.entity.Projectile) tridentDelayed.projectile().getBukkitEntity());
@@ -28,14 +22,14 @@ index a122813750081d752877c1071d0a0fbd8226dafb..23284dbeff327d1b8dc89f3a0dc0ee54
 +                                return false;
 +                            }
 +                            ThrownTrident thrownTrident = tridentDelayed.projectile(); // Paper - PlayerLaunchProjectileEvent
-+                            if (event.shouldConsume()) stack.hurtWithoutBreaking(1, player); // Paper - PlayerLaunchProjectileEvent
++                            if (event.shouldConsume()) {
++                                stack.consume(1, player);
++                                stack.hurtWithoutBreaking(1, player); // Paper - PlayerLaunchProjectileEvent
++                            }
 +                            thrownTrident.pickupItemStack = stack.copy(); // SPIGOT-4511 update since damage call moved
 +                            // CraftBukkit end
                              if (player.hasInfiniteMaterials()) {
                                  thrownTrident.pickup = AbstractArrow.Pickup.CREATIVE_ONLY;
--                            } else {
-+                            } else if (event.shouldConsume()) { // Paper - PlayerLaunchProjectileEvent
-                                 player.getInventory().removeItem(stack);
                              }
  
                              level.playSound(null, thrownTrident, holder.value(), SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -47,7 +41,7 @@ index a122813750081d752877c1071d0a0fbd8226dafb..23284dbeff327d1b8dc89f3a0dc0ee54
                          }
                      }
  
-@@ -113,6 +129,7 @@ public class TridentItem extends Item implements ProjectileItem {
+@@ -104,6 +_,7 @@
                          f *= tridentSpinAttackStrength / squareRoot;
                          f1 *= tridentSpinAttackStrength / squareRoot;
                          f2 *= tridentSpinAttackStrength / squareRoot;

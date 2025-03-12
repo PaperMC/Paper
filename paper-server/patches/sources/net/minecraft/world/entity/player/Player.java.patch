@@ -1,23 +1,15 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/player/Player.java b/net/minecraft/world/entity/player/Player.java
-index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc34cc867fe 100644
 --- a/net/minecraft/world/entity/player/Player.java
 +++ b/net/minecraft/world/entity/player/Player.java
-@@ -159,7 +159,7 @@ public abstract class Player extends LivingEntity {
-     public static final int CLIENT_LOADED_TIMEOUT_TIME = 60;
+@@ -168,7 +_,7 @@
+     private static final int DEFAULT_CURRENT_IMPULSE_CONTEXT_RESET_GRACE_TIME = 0;
      private long timeEntitySatOnShoulder;
-     final Inventory inventory = new Inventory(this);
+     final Inventory inventory;
 -    protected PlayerEnderChestContainer enderChestInventory = new PlayerEnderChestContainer();
 +    protected PlayerEnderChestContainer enderChestInventory = new PlayerEnderChestContainer(this); // CraftBukkit - add "this" to constructor
      public final InventoryMenu inventoryMenu;
      public AbstractContainerMenu containerMenu;
      protected FoodData foodData = new FoodData();
-@@ -191,13 +191,25 @@ public abstract class Player extends LivingEntity {
+@@ -200,13 +_,25 @@
      private Optional<GlobalPos> lastDeathLocation = Optional.empty();
      @Nullable
      public FishingHook fishing;
@@ -27,8 +19,8 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
      public Vec3 currentImpulseImpactPos;
      @Nullable
      public Entity currentExplosionCause;
-     private boolean ignoreFallDamageFromCurrentImpulse;
-     private int currentImpulseContextResetGraceTime;
+     private boolean ignoreFallDamageFromCurrentImpulse = false;
+     private int currentImpulseContextResetGraceTime = 0;
 +    public boolean affectsSpawning = true; // Paper - Affects Spawning API
 +    public net.kyori.adventure.util.TriState flyingFallDamage = net.kyori.adventure.util.TriState.NOT_SET; // Paper - flying fall damage
 +
@@ -44,7 +36,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
  
      public Player(Level level, BlockPos pos, float yRot, GameProfile gameProfile) {
          super(EntityType.PLAYER, level);
-@@ -261,6 +273,13 @@ public abstract class Player extends LivingEntity {
+@@ -275,6 +_,13 @@
  
          if (this.isSleeping()) {
              this.sleepCounter++;
@@ -58,7 +50,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
              if (this.sleepCounter > 100) {
                  this.sleepCounter = 100;
              }
-@@ -278,7 +297,7 @@ public abstract class Player extends LivingEntity {
+@@ -292,7 +_,7 @@
          this.updateIsUnderwater();
          super.tick();
          if (!this.level().isClientSide && this.containerMenu != null && !this.containerMenu.stillValid(this)) {
@@ -67,7 +59,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
              this.containerMenu = this.inventoryMenu;
          }
  
-@@ -365,7 +384,7 @@ public abstract class Player extends LivingEntity {
+@@ -379,7 +_,7 @@
      }
  
      private void turtleHelmetTick() {
@@ -76,7 +68,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
      }
  
      private boolean isEquipped(Item item) {
-@@ -512,6 +531,18 @@ public abstract class Player extends LivingEntity {
+@@ -526,6 +_,18 @@
          }
      }
  
@@ -95,7 +87,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
      public void closeContainer() {
          this.containerMenu = this.inventoryMenu;
      }
-@@ -523,8 +554,14 @@ public abstract class Player extends LivingEntity {
+@@ -537,8 +_,14 @@
      public void rideTick() {
          if (!this.level().isClientSide && this.wantsToStopRiding() && this.isPassenger()) {
              this.stopRiding();
@@ -112,34 +104,15 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
              super.rideTick();
              this.oBob = this.bob;
              this.bob = 0.0F;
-@@ -588,6 +625,7 @@ public abstract class Player extends LivingEntity {
+@@ -597,6 +_,7 @@
          this.playShoulderEntityAmbientSound(this.getShoulderEntityLeft());
          this.playShoulderEntityAmbientSound(this.getShoulderEntityRight());
-         if (!this.level().isClientSide && (this.fallDistance > 0.5F || this.isInWater()) || this.abilities.flying || this.isSleeping() || this.isInPowderSnow) {
+         if (!this.level().isClientSide && (this.fallDistance > 0.5 || this.isInWater()) || this.abilities.flying || this.isSleeping() || this.isInPowderSnow) {
 +            if (!this.level().paperConfig().entities.behavior.parrotsAreUnaffectedByPlayerMovement) // Paper - Add option to make parrots stay
              this.removeEntitiesOnShoulder();
          }
      }
-@@ -717,6 +755,18 @@ public abstract class Player extends LivingEntity {
- 
-     @Nullable
-     public ItemEntity drop(ItemStack droppedItem, boolean dropAround, boolean includeThrowerName) {
-+        // CraftBukkit start - SPIGOT-2942: Add boolean to call event
-+        return this.drop(droppedItem, dropAround, includeThrowerName, true, null);
-+    }
-+
-+    @Nullable
-+    public ItemEntity drop(ItemStack droppedItem, boolean dropAround, boolean includeThrowerName, boolean callEvent) {
-+        return this.drop(droppedItem, dropAround, includeThrowerName, callEvent, null);
-+    }
-+
-+    @Nullable
-+    public ItemEntity drop(ItemStack droppedItem, boolean dropAround, boolean includeThrowerName, boolean callEvent, @Nullable java.util.function.Consumer<org.bukkit.entity.Item> entityOperation) {
-+        // CraftBukkit end
-         if (!droppedItem.isEmpty() && this.level().isClientSide) {
-             this.swing(InteractionHand.MAIN_HAND);
-         }
-@@ -867,10 +917,10 @@ public abstract class Player extends LivingEntity {
+@@ -840,10 +_,10 @@
              if (this.isDeadOrDying()) {
                  return false;
              } else {
@@ -152,7 +125,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
                      }
  
                      if (level.getDifficulty() == Difficulty.EASY) {
-@@ -882,7 +932,14 @@ public abstract class Player extends LivingEntity {
+@@ -855,7 +_,14 @@
                      }
                  }
  
@@ -168,16 +141,16 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
              }
          }
      }
-@@ -892,7 +949,7 @@ public abstract class Player extends LivingEntity {
-         super.blockUsingShield(entity);
-         ItemStack itemBlockingWith = this.getItemBlockingWith();
-         if (entity.canDisableShield() && itemBlockingWith != null) {
--            this.disableShield(itemBlockingWith);
-+            this.disableShield(itemBlockingWith, entity); // Paper - Add PlayerShieldDisableEvent
+@@ -867,7 +_,7 @@
+         BlocksAttacks blocksAttacks = itemBlockingWith != null ? itemBlockingWith.get(DataComponents.BLOCKS_ATTACKS) : null;
+         float secondsToDisableBlocking = entity.getSecondsToDisableBlocking();
+         if (secondsToDisableBlocking > 0.0F && blocksAttacks != null) {
+-            blocksAttacks.disable(level, this, secondsToDisableBlocking, itemBlockingWith);
++            blocksAttacks.disable(level, this, secondsToDisableBlocking, itemBlockingWith, entity); // Paper - Add PlayerShieldDisableEvent
          }
      }
  
-@@ -902,9 +959,29 @@ public abstract class Player extends LivingEntity {
+@@ -877,9 +_,29 @@
      }
  
      public boolean canHarmPlayer(Player other) {
@@ -210,7 +183,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
      }
  
      @Override
-@@ -943,7 +1020,12 @@ public abstract class Player extends LivingEntity {
+@@ -893,7 +_,12 @@
      }
  
      @Override
@@ -224,7 +197,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
          if (!this.isInvulnerableTo(level, damageSource)) {
              amount = this.getDamageAfterArmorAbsorb(damageSource, amount);
              amount = this.getDamageAfterMagicAbsorb(damageSource, amount);
-@@ -955,7 +1037,7 @@ public abstract class Player extends LivingEntity {
+@@ -905,7 +_,7 @@
              }
  
              if (var8 != 0.0F) {
@@ -233,7 +206,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
                  this.getCombatTracker().recordDamage(damageSource, var8);
                  this.setHealth(this.getHealth() - var8);
                  if (var8 < 3.4028235E37F) {
-@@ -965,6 +1047,7 @@ public abstract class Player extends LivingEntity {
+@@ -915,6 +_,7 @@
                  this.gameEvent(GameEvent.ENTITY_DAMAGE);
              }
          }
@@ -241,7 +214,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
      }
  
      public boolean isTextFilteringEnabled() {
-@@ -1040,13 +1123,19 @@ public abstract class Player extends LivingEntity {
+@@ -996,13 +_,19 @@
  
      @Override
      public void removeVehicle() {
@@ -263,7 +236,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
      }
  
      @Override
-@@ -1125,8 +1214,17 @@ public abstract class Player extends LivingEntity {
+@@ -1081,8 +_,17 @@
      }
  
      public void attack(Entity target) {
@@ -283,7 +256,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
                  float f = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
                  ItemStack weaponItem = this.getWeaponItem();
                  DamageSource damageSource = Optional.ofNullable(weaponItem.getItem().getDamageSource(this)).orElse(this.damageSources().playerAttack(this));
-@@ -1134,18 +1232,25 @@ public abstract class Player extends LivingEntity {
+@@ -1090,18 +_,25 @@
                  float attackStrengthScale = this.getAttackStrengthScale(0.5F);
                  f *= 0.2F + attackStrengthScale * attackStrengthScale * 0.8F;
                  f1 *= attackStrengthScale;
@@ -316,7 +289,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
                              flag1 = true;
                          } else {
                              flag1 = false;
-@@ -1161,7 +1266,9 @@ public abstract class Player extends LivingEntity {
+@@ -1117,7 +_,9 @@
                              && !this.isPassenger()
                              && target instanceof LivingEntity
                              && !this.isSprinting();
@@ -326,7 +299,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
                              f *= 1.5F;
                          }
  
-@@ -1188,17 +1295,23 @@ public abstract class Player extends LivingEntity {
+@@ -1144,17 +_,23 @@
                                  if (target instanceof LivingEntity livingEntity1) {
                                      livingEntity1.knockback(
                                          f4 * 0.5F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
@@ -350,26 +323,19 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
                              }
  
                              if (flag3) {
-@@ -1212,43 +1325,64 @@ public abstract class Player extends LivingEntity {
-                                         && (!(livingEntity2 instanceof ArmorStand) || !((ArmorStand)livingEntity2).isMarker())
+@@ -1168,7 +_,10 @@
+                                         && !(livingEntity2 instanceof ArmorStand armorStand && armorStand.isMarker())
                                          && this.distanceToSqr(livingEntity2) < 9.0) {
                                          float f6 = this.getEnchantedDamage(livingEntity2, f5, damageSource) * attackStrengthScale;
-+                                        // CraftBukkit start - Only apply knockback if the event is not cancelled
+-                                        if (this.level() instanceof ServerLevel serverLevel && livingEntity2.hurtServer(serverLevel, damageSource, f6)) {
++                                        // Paper start - Only apply knockback if the event is not cancelled
 +                                        livingEntity2.lastDamageCancelled = false;
-+                                        livingEntity2.hurtServer((ServerLevel) this.level(), damageSource.knownCause(org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK), f6);
-+                                        if (livingEntity2.lastDamageCancelled) {
-+                                            continue;
-+                                        }
-+                                        // CraftBukkit end
-                                         livingEntity2.knockback(
-                                             0.4F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
-+                                            , this, io.papermc.paper.event.entity.EntityKnockbackEvent.Cause.SWEEP_ATTACK // CraftBukkit // Paper - knockback events
-                                         );
--                                        livingEntity2.hurt(damageSource, f6);
-+                                        // CraftBukkit - moved up
-                                         if (this.level() instanceof ServerLevel serverLevel) {
-                                             EnchantmentHelper.doPostAttackEffects(serverLevel, livingEntity2, damageSource);
-                                         }
++                                        if (this.level() instanceof ServerLevel serverLevel && livingEntity2.hurtServer(serverLevel, damageSource.knownCause(org.bukkit.event.entity.EntityDamageEvent.DamageCause.ENTITY_SWEEP_ATTACK), f6) && !livingEntity2.lastDamageCancelled) {
++                                        // Paper end - Only apply knockback if the event is not cancelled
+                                             livingEntity2.knockback(
+                                                 0.4F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
+                                             );
+@@ -1177,33 +_,46 @@
                                      }
                                  }
  
@@ -426,7 +392,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
                                          );
                                  }
                              }
-@@ -1296,10 +1430,14 @@ public abstract class Player extends LivingEntity {
+@@ -1251,10 +_,14 @@
                                  }
                              }
  
@@ -444,30 +410,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
                          }
                      }
                  }
-@@ -1316,8 +1454,21 @@ public abstract class Player extends LivingEntity {
-         this.attack(target);
-     }
- 
-+    @io.papermc.paper.annotation.DoNotUse @Deprecated // Paper - Add PlayerShieldDisableEvent
-     public void disableShield(ItemStack stack) {
--        this.getCooldowns().addCooldown(stack, 100);
-+        // Paper start - Add PlayerShieldDisableEvent
-+        this.disableShield(stack, null);
-+    }
-+    public void disableShield(ItemStack stack, @Nullable LivingEntity attacker) {
-+        final org.bukkit.entity.Entity finalAttacker = attacker != null ? attacker.getBukkitEntity() : null;
-+        if (finalAttacker != null) {
-+            final io.papermc.paper.event.player.PlayerShieldDisableEvent shieldDisableEvent = new io.papermc.paper.event.player.PlayerShieldDisableEvent((org.bukkit.entity.Player) getBukkitEntity(), finalAttacker, 100);
-+            if (!shieldDisableEvent.callEvent()) return;
-+            this.getCooldowns().addCooldown(stack, shieldDisableEvent.getCooldown());
-+        } else {
-+            this.getCooldowns().addCooldown(stack, 100);
-+        }
-+        // Paper end - Add PlayerShieldDisableEvent
-         this.stopUsingItem();
-         this.level().broadcastEntityEvent(this, (byte)30);
-     }
-@@ -1341,7 +1492,14 @@ public abstract class Player extends LivingEntity {
+@@ -1290,7 +_,14 @@
  
      @Override
      public void remove(Entity.RemovalReason reason) {
@@ -483,7 +426,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
          this.inventoryMenu.removed(this);
          if (this.containerMenu != null && this.hasContainerOpen()) {
              this.doCloseContainer();
-@@ -1381,6 +1539,12 @@ public abstract class Player extends LivingEntity {
+@@ -1354,6 +_,12 @@
      }
  
      public Either<Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos bedPos) {
@@ -496,16 +439,16 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
          this.startSleeping(bedPos);
          this.sleepCounter = 0;
          return Either.right(Unit.INSTANCE);
-@@ -1492,7 +1656,7 @@ public abstract class Player extends LivingEntity {
+@@ -1465,7 +_,7 @@
  
      @Override
-     public boolean causeFallDamage(float fallDistance, float multiplier, DamageSource source) {
+     public boolean causeFallDamage(double fallDistance, float damageMultiplier, DamageSource damageSource) {
 -        if (this.abilities.mayfly) {
 +        if (this.abilities.mayfly && !this.flyingFallDamage.toBooleanOrElse(false)) { // Paper - flying fall damage
              return false;
          } else {
-             if (fallDistance >= 2.0F) {
-@@ -1532,12 +1696,24 @@ public abstract class Player extends LivingEntity {
+             if (fallDistance >= 2.0) {
+@@ -1506,7 +_,15 @@
      }
  
      public void startFallFlying() {
@@ -521,17 +464,8 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
 +        // CraftBukkit end
      }
  
-     public void stopFallFlying() {
-+        // CraftBukkit start
-+        if (!org.bukkit.craftbukkit.event.CraftEventFactory.callToggleGlideEvent(this, false).isCancelled()) {
-         this.setSharedFlag(7, true);
-         this.setSharedFlag(7, false);
-+        }
-+        // CraftBukkit end
-     }
- 
      @Override
-@@ -1643,15 +1819,35 @@ public abstract class Player extends LivingEntity {
+@@ -1612,15 +_,35 @@
      public int getXpNeededForNextLevel() {
          if (this.experienceLevel >= 30) {
              return 112 + (this.experienceLevel - 30) * 9;
@@ -569,31 +503,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
              }
          }
      }
-@@ -1736,13 +1932,20 @@ public abstract class Player extends LivingEntity {
- 
-     @Override
-     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
-+        // CraftBukkit start
-+        this.setItemSlot(slot, stack, false);
-+    }
-+
-+    @Override
-+    public void setItemSlot(EquipmentSlot slot, ItemStack stack, boolean silent) {
-+        // CraftBukkit end
-         this.verifyEquippedItem(stack);
-         if (slot == EquipmentSlot.MAINHAND) {
--            this.onEquipItem(slot, this.inventory.items.set(this.inventory.selected, stack), stack);
-+            this.onEquipItem(slot, this.inventory.items.set(this.inventory.selected, stack), stack, silent); // CraftBukkit
-         } else if (slot == EquipmentSlot.OFFHAND) {
--            this.onEquipItem(slot, this.inventory.offhand.set(0, stack), stack);
-+            this.onEquipItem(slot, this.inventory.offhand.set(0, stack), stack, silent); // CraftBukkit
-         } else if (slot.getType() == EquipmentSlot.Type.HUMANOID_ARMOR) {
--            this.onEquipItem(slot, this.inventory.armor.set(slot.getIndex(), stack), stack);
-+            this.onEquipItem(slot, this.inventory.armor.set(slot.getIndex(), stack), stack, silent); // CraftBukkit
-         }
-     }
- 
-@@ -1783,24 +1986,53 @@ public abstract class Player extends LivingEntity {
+@@ -1714,24 +_,53 @@
  
      public void removeEntitiesOnShoulder() {
          if (this.timeEntitySatOnShoulder + 20L < this.level().getGameTime()) {
@@ -639,8 +549,8 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
          if (!this.level().isClientSide && !entityCompound.isEmpty()) {
 -            EntityType.create(entityCompound, this.level(), EntitySpawnReason.LOAD).ifPresent(entity -> {
 +            return EntityType.create(entityCompound, this.level(), EntitySpawnReason.LOAD).map((entity) -> { // CraftBukkit
-                 if (entity instanceof TamableAnimal) {
-                     ((TamableAnimal)entity).setOwnerUUID(this.uuid);
+                 if (entity instanceof TamableAnimal tamableAnimal) {
+                     tamableAnimal.setOwner(this);
                  }
  
                  entity.setPos(this.getX(), this.getY() + 0.7F, this.getZ());
@@ -653,7 +563,7 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
      }
  
      @Override
-@@ -1988,17 +2220,32 @@ public abstract class Player extends LivingEntity {
+@@ -1918,17 +_,32 @@
          return ImmutableList.of(Pose.STANDING, Pose.CROUCHING, Pose.SWIMMING);
      }
  
@@ -688,15 +598,15 @@ index 871f534b4e4949bd592b1e7b8c8d0da1ff6ac265..a0813aa9ebf5b32375b1bc9f294d8fc3
  
                  for (int i = 0; i < this.inventory.getContainerSize(); i++) {
                      ItemStack item = this.inventory.getItem(i);
-@@ -2007,6 +2254,7 @@ public abstract class Player extends LivingEntity {
+@@ -1937,6 +_,7 @@
                      }
                  }
  
 +                if (anyEventCancelled.booleanValue() && !this.abilities.instabuild && this instanceof final ServerPlayer player) this.resyncUsingItem(player); // Paper - resync if no item matched the Predicate
-                 return this.abilities.instabuild ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
+                 return this.hasInfiniteMaterials() ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
              }
          }
-@@ -2089,12 +2337,20 @@ public abstract class Player extends LivingEntity {
+@@ -2019,12 +_,20 @@
      }
  
      public boolean hasClientLoaded() {

@@ -533,7 +533,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         }
 
         if (chunk instanceof net.minecraft.world.level.chunk.LevelChunk) {
-            this.world.getChunkSource().addRegionTicket(TicketType.PLUGIN, new ChunkPos(x, z), 1, Unit.INSTANCE);
+            this.world.getChunkSource().addTicketAtLevel(TicketType.PLUGIN, new ChunkPos(x, z), 1, Unit.INSTANCE);
             return true;
         }
 
@@ -561,7 +561,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(plugin.isEnabled(), "plugin is not enabled");
 
         final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-        if (distanceManager.addPluginRegionTicket(new ChunkPos(x, z), plugin)) {
+        if (distanceManager.ticketStorage.addPluginRegionTicket(new ChunkPos(x, z), plugin)) {
             this.getChunkAt(x, z); // ensure it's loaded
             return true;
         }
@@ -574,7 +574,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkNotNull(plugin, "null plugin");
 
         final DistanceManager distanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-        return distanceManager.removePluginRegionTicket(new ChunkPos(x, z), plugin);
+        return distanceManager.ticketStorage.removePluginRegionTicket(new ChunkPos(x, z), plugin);
     }
 
     @Override
@@ -582,7 +582,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkNotNull(plugin, "null plugin");
 
         DistanceManager chunkDistanceManager = this.world.getChunkSource().chunkMap.distanceManager;
-        chunkDistanceManager.removeAllTicketsFor(TicketType.PLUGIN_TICKET, 31, plugin); // keep in-line with force loading, remove at level 31
+        chunkDistanceManager.ticketStorage.removeAllTicketsFor(TicketType.PLUGIN_TICKET, ChunkMap.FORCED_TICKET_LEVEL, plugin);
     }
 
     @Override

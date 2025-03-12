@@ -1,20 +1,12 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/item/ThrowablePotionItem.java b/net/minecraft/world/item/ThrowablePotionItem.java
-index 1ea47a2f45f21f84f026bc8d8960649b2dc0e094..2a72ad6686f28127a85faf02024cc6119fa76c58 100644
 --- a/net/minecraft/world/item/ThrowablePotionItem.java
 +++ b/net/minecraft/world/item/ThrowablePotionItem.java
-@@ -22,11 +22,25 @@ public class ThrowablePotionItem extends PotionItem implements ProjectileItem {
+@@ -23,11 +_,24 @@
      public InteractionResult use(Level level, Player player, InteractionHand hand) {
          ItemStack itemInHand = player.getItemInHand(hand);
          if (level instanceof ServerLevel serverLevel) {
--            Projectile.spawnProjectileFromRotation(ThrownPotion::new, serverLevel, itemInHand, player, -20.0F, PROJECTILE_SHOOT_POWER, 1.0F);
+-            Projectile.spawnProjectileFromRotation(this::createPotion, serverLevel, itemInHand, player, -20.0F, PROJECTILE_SHOOT_POWER, 1.0F);
 +            // Paper start - PlayerLaunchProjectileEvent
-+            final Projectile.Delayed<ThrownPotion> thrownPotion = Projectile.spawnProjectileFromRotationDelayed(ThrownPotion::new, serverLevel, itemInHand, player, -20.0F, PROJECTILE_SHOOT_POWER, 1.0F);
++            final Projectile.Delayed<AbstractThrownPotion> thrownPotion = Projectile.spawnProjectileFromRotationDelayed(this::createPotion, serverLevel, itemInHand, player, -20.0F, PROJECTILE_SHOOT_POWER, 1.0F);
 +            com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent((org.bukkit.entity.Player) player.getBukkitEntity(), org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemInHand), (org.bukkit.entity.Projectile) thrownPotion.projectile().getBukkitEntity());
 +            if (event.callEvent() && thrownPotion.attemptSpawn()) {
 +                if (event.shouldConsume()) {
@@ -22,8 +14,6 @@ index 1ea47a2f45f21f84f026bc8d8960649b2dc0e094..2a72ad6686f28127a85faf02024cc611
 +                } else {
 +                    player.containerMenu.sendAllDataToRemote();
 +                }
-+
-+                player.awardStat(Stats.ITEM_USED.get(this));
 +            } else {
 +                player.containerMenu.sendAllDataToRemote();
 +                return InteractionResult.FAIL;
@@ -31,7 +21,7 @@ index 1ea47a2f45f21f84f026bc8d8960649b2dc0e094..2a72ad6686f28127a85faf02024cc611
 +            // Paper end - PlayerLaunchProjectileEvent
          }
  
--        player.awardStat(Stats.ITEM_USED.get(this));
+         player.awardStat(Stats.ITEM_USED.get(this));
 -        itemInHand.consume(1, player);
 +        // Paper - PlayerLaunchProjectileEvent - move up
          return InteractionResult.SUCCESS;

@@ -1,31 +1,23 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/entity/player/Inventory.java b/net/minecraft/world/entity/player/Inventory.java
-index 3aa1356bcf10ce5da9da303d229eb81520233f71..8a29d771046667db22fba166fa5337de1896cd0d 100644
 --- a/net/minecraft/world/entity/player/Inventory.java
 +++ b/net/minecraft/world/entity/player/Inventory.java
-@@ -36,6 +36,54 @@ public class Inventory implements Container, Nameable {
+@@ -49,6 +_,53 @@
      public final Player player;
+     private final EntityEquipment equipment;
      private int timesChanged;
- 
 +    // CraftBukkit start - add fields and methods
-+    public List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
++    public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
 +    private int maxStack = MAX_STACK;
 +
-+    public List<ItemStack> getContents() {
-+        List<ItemStack> combined = new java.util.ArrayList<>(this.items.size() + this.armor.size() + this.offhand.size());
-+        for (List<ItemStack> sub : this.compartments) {
++    public java.util.List<ItemStack> getContents() {
++        java.util.List<ItemStack> combined = new java.util.ArrayList<>(this.items.size() + this.armor.size() + this.offhand.size());
++        for (java.util.List<ItemStack> sub : this.compartments) {
 +            combined.addAll(sub);
 +        }
 +
 +        return combined;
 +    }
 +
-+    public List<ItemStack> getArmorContents() {
++    public java.util.List<ItemStack> getArmorContents() {
 +        return this.armor;
 +    }
 +
@@ -37,7 +29,7 @@ index 3aa1356bcf10ce5da9da303d229eb81520233f71..8a29d771046667db22fba166fa5337de
 +        this.transaction.remove(player);
 +    }
 +
-+    public List<org.bukkit.entity.HumanEntity> getViewers() {
++    public java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
 +        return this.transaction;
 +    }
 +
@@ -59,17 +51,17 @@ index 3aa1356bcf10ce5da9da303d229eb81520233f71..8a29d771046667db22fba166fa5337de
 +        return this.player.getBukkitEntity().getLocation();
 +    }
 +    // CraftBukkit end
-+
-     public Inventory(Player player) {
+ 
+     public Inventory(Player player, EntityEquipment equipment) {
          this.player = player;
-     }
-@@ -50,10 +98,39 @@ public class Inventory implements Container, Nameable {
+@@ -85,10 +_,39 @@
  
      private boolean hasRemainingSpaceForItem(ItemStack destination, ItemStack origin) {
          return !destination.isEmpty()
 -            && ItemStack.isSameItemSameComponents(destination, origin)
              && destination.isStackable()
 -            && destination.getCount() < this.getMaxStackSize(destination);
+-    }
 +            && destination.getCount() < this.getMaxStackSize(destination)
 +            && ItemStack.isSameItemSameComponents(destination, origin); // Paper - check if itemstack is stackable first
 +    }
@@ -100,32 +92,34 @@ index 3aa1356bcf10ce5da9da303d229eb81520233f71..8a29d771046667db22fba166fa5337de
 +        }
 +
 +        return itemStack.getCount() - remains;
-     }
++    }
 +    // CraftBukkit end
  
      public int getFreeSlot() {
          for (int i = 0; i < this.items.size(); i++) {
-@@ -65,7 +142,10 @@ public class Inventory implements Container, Nameable {
+@@ -100,8 +_,10 @@
          return -1;
      }
  
 -    public void addAndPickItem(ItemStack stack) {
+-        this.setSelectedSlot(this.getSuitableHotbarSlot());
 +    // Paper start - Add PlayerPickItemEvent
 +    public void addAndPickItem(ItemStack stack, final int targetSlot) {
-+        this.selected = targetSlot;
++        this.setSelectedSlot(targetSlot);
 +        // Paper end - Add PlayerPickItemEvent
-         this.selected = this.getSuitableHotbarSlot();
          if (!this.items.get(this.selected).isEmpty()) {
              int freeSlot = this.getFreeSlot();
-@@ -77,7 +157,10 @@ public class Inventory implements Container, Nameable {
+             if (freeSlot != -1) {
+@@ -112,8 +_,10 @@
          this.items.set(this.selected, stack);
      }
  
 -    public void pickSlot(int index) {
+-        this.setSelectedSlot(this.getSuitableHotbarSlot());
 +    // Paper start - Add PlayerPickItemEvent
 +    public void pickSlot(int index, final int targetSlot) {
-+        this.selected = targetSlot;
-+        // Paper end - Add PlayerPickItemEvent
-         this.selected = this.getSuitableHotbarSlot();
++        this.setSelectedSlot(targetSlot);
++    // Paper end - Add PlayerPickItemEvent
          ItemStack itemStack = this.items.get(this.selected);
          this.items.set(this.selected, this.items.get(index));
+         this.items.set(index, itemStack);
