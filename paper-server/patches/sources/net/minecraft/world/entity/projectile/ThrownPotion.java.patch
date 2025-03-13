@@ -1,6 +1,17 @@
 --- a/net/minecraft/world/entity/projectile/ThrownPotion.java
 +++ b/net/minecraft/world/entity/projectile/ThrownPotion.java
-@@ -82,51 +_,86 @@
+@@ -59,9 +_,7 @@
+         return 0.05;
+     }
+ 
+-    @Override
+-    protected void onHitBlock(BlockHitResult result) {
+-        super.onHitBlock(result);
++    protected void extinguishFires(BlockHitResult result) { // Paper - move after PotionSplashEvent call to prevent putting out fires for cancelled events
+         if (!this.level().isClientSide) {
+             ItemStack item = this.getItem();
+             Direction direction = result.getDirection();
+@@ -82,51 +_,90 @@
      @Override
      protected void onHit(HitResult result) {
          super.onHit(result);
@@ -64,18 +75,27 @@
  
                  if (livingEntity.isOnFire() && livingEntity.isAlive()) {
 -                    livingEntity.extinguishFire();
-+                    extinguish.add(livingEntity.getBukkitLivingEntity()); // Paper - Fix potions splash events
-                 }
-             }
-         }
- 
+-                }
+-            }
+-        }
+-
 -        for (Axolotl axolotl : this.level().getEntitiesOfClass(Axolotl.class, aabb)) {
 -            axolotl.rehydrate();
+-        }
++                    extinguish.add(livingEntity.getBukkitLivingEntity()); // Paper - Fix potions splash events
++                }
++            }
++        }
++
 +        // Paper start - Fix potions splash events
 +        io.papermc.paper.event.entity.WaterBottleSplashEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callWaterBottleSplashEvent(
 +            this, result, affected, rehydrate, extinguish
 +        );
 +        if (!event.isCancelled()) {
++            if (result != null && result.getType() == HitResult.Type.BLOCK) {
++                this.extinguishFires((BlockHitResult) result);
++            }
++
 +            for (org.bukkit.entity.LivingEntity affectedEntity : event.getToDamage()) {
 +                ((org.bukkit.craftbukkit.entity.CraftLivingEntity) affectedEntity).getHandle().hurtServer(level, this.damageSources().indirectMagic(this, this.getOwner()), 1.0F);
 +            }
@@ -88,7 +108,7 @@
 +                }
 +            }
 +            // Paper end - Fix potions splash events
-         }
++        }
 +        return !event.isCancelled(); // Paper - Fix potions splash events
      }
  
