@@ -114,6 +114,6 @@ public class CraftInventoryView<T extends AbstractContainerMenu, I extends Inven
         final int containerId = entityPlayer.containerMenu.containerId;
         final MenuType<?> windowType = CraftContainer.getNotchInventoryType(view.getTopInventory());
         entityPlayer.connection.send(new ClientboundOpenScreenPacket(containerId, windowType, CraftChatMessage.fromString(title)[0]));
-        ((Player) view.getPlayer()).updateInventory();
+        entityPlayer.containerMenu.sendAllDataToRemote();
     }
 }

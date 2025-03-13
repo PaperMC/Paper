@@ -1,15 +1,13 @@
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -135,6 +_,29 @@
+@@ -135,6 +_,26 @@
  import org.jetbrains.annotations.Contract;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
 +import java.util.ArrayList;
 +import java.util.HashSet;
-+import java.util.Set;
 +import java.util.LinkedList;
-+import java.util.UUID;
 +import net.minecraft.world.item.component.Consumable;
 +import org.bukkit.Location;
 +import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
@@ -18,7 +16,6 @@
 +import org.bukkit.event.entity.ArrowBodyCountChangeEvent;
 +import org.bukkit.event.entity.EntityDamageEvent;
 +import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
-+import org.bukkit.event.entity.EntityKnockbackEvent;
 +import org.bukkit.event.entity.EntityPotionEffectEvent;
 +import org.bukkit.event.entity.EntityRegainHealthEvent;
 +import org.bukkit.event.entity.EntityRemoveEvent;
@@ -1021,8 +1018,8 @@
 +        com.google.common.base.Function<Double, Double> resistance = new com.google.common.base.Function<Double, Double>() {
 +            @Override
 +            public Double apply(Double f) {
-+                if (!damagesource.is(DamageTypeTags.BYPASSES_EFFECTS) && LivingEntity.this.hasEffect(MobEffects.DAMAGE_RESISTANCE) && !damagesource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
-+                    int i = (LivingEntity.this.getEffect(MobEffects.DAMAGE_RESISTANCE).getAmplifier() + 1) * 5;
++                if (!damagesource.is(DamageTypeTags.BYPASSES_EFFECTS) && LivingEntity.this.hasEffect(MobEffects.RESISTANCE) && !damagesource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
++                    int i = (LivingEntity.this.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
 +                    int j = 25 - i;
 +                    float f1 = f.floatValue() * (float) j;
 +
@@ -1430,9 +1427,9 @@
 +                Location to = new Location(this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
 +                io.papermc.paper.event.entity.EntityMoveEvent event = new io.papermc.paper.event.entity.EntityMoveEvent(this.getBukkitLivingEntity(), from, to.clone());
 +                if (!event.callEvent()) {
-+                    this.absMoveTo(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch());
++                    this.absSnapTo(from.getX(), from.getY(), from.getZ(), from.getYaw(), from.getPitch());
 +                } else if (!to.equals(event.getTo())) {
-+                    this.absMoveTo(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ(), event.getTo().getYaw(), event.getTo().getPitch());
++                    this.absSnapTo(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ(), event.getTo().getYaw(), event.getTo().getPitch());
 +                }
 +            }
 +        }
@@ -1462,7 +1459,7 @@
 +            return;
 +        }
 +
-+        int _int = level().getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
++        int _int = this.level().getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
 +        if (_int <= 0 && this.level().paperConfig().collisions.maxEntityCollisions <= 0) {
 +            return;
 +        }
@@ -1663,7 +1660,7 @@
 +                            if (consumable != null) {
 +                                consumable.cancelUsingItem(serverPlayer, this.useItem);
 +                            }
-+                            serverPlayer.getBukkitEntity().updateInventory();
++                            serverPlayer.containerMenu.sendAllDataToRemote();
 +                            serverPlayer.getBukkitEntity().updateScaledHealth();
 +                            this.stopUsingItem(); // Paper - event is using an item, clear active item to reset its use
 +                            return;
@@ -1686,8 +1683,8 @@
  
                      this.stopUsingItem();
 +                    // Paper start
-+                    if (this instanceof ServerPlayer) {
-+                        ((ServerPlayer) this).getBukkitEntity().updateInventory();
++                    if (this instanceof Player player) {
++                        player.containerMenu.sendAllDataToRemote();
 +                    }
 +                    // Paper end
                  }

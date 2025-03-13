@@ -8,7 +8,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.component.CustomData;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Axolotl;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
 

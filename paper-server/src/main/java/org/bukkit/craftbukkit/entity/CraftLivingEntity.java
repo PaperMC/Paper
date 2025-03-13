@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import net.minecraft.Optionull;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ClientboundHurtAnimationPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -20,9 +21,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.boss.wither.WitherBoss;
 import net.minecraft.world.entity.decoration.ArmorStand;
-import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.entity.projectile.FishingHook;
 import net.minecraft.world.entity.projectile.LargeFireball;
@@ -514,16 +513,26 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public Player getKiller() {
-        return this.getHandle().lastHurtByPlayer == null ? null : (Player) this.getHandle().lastHurtByPlayer.getBukkitEntity();
+        if (this.getHandle().lastHurtByPlayer == null) {
+            return null;
+        }
+
+        return Optionull.map(this.getHandle().lastHurtByPlayer.getEntity(
+            this.getHandle().level(), net.minecraft.world.entity.player.Player.class
+        ), player -> (Player) player.getBukkitEntity());
     }
 
     // Paper start
     @Override
     public void setKiller(Player killer) {
-        net.minecraft.server.level.ServerPlayer entityPlayer = killer == null ? null : ((CraftPlayer) killer).getHandle();
-        getHandle().lastHurtByPlayer = entityPlayer;
-        getHandle().lastHurtByMob = entityPlayer;
-        getHandle().lastHurtByPlayerTime = entityPlayer == null ? 0 : 100; // 100 value taken from EntityLiving#damageEntity
+        net.minecraft.server.level.ServerPlayer nmsKiller = killer == null ? null : ((CraftPlayer) killer).getHandle();
+        this.getHandle().setLastHurtByMob(nmsKiller);
+        if (nmsKiller != null) {
+            this.getHandle().setLastHurtByPlayer(nmsKiller,  100); // value taken from LivingEntity#resolvePlayerResponsibleForDamage
+        } else {
+            this.getHandle().lastHurtByPlayer = null;
+            this.getHandle().lastHurtByPlayerMemoryTime = 0;
+        }
     }
     // Paper end
 
@@ -566,7 +575,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public Collection<PotionEffect> getActivePotionEffects() {
-        List<PotionEffect> effects = new ArrayList<PotionEffect>();
+        List<PotionEffect> effects = new ArrayList<>();
         for (MobEffectInstance handle : this.getHandle().activeEffects.values()) {
             effects.add(org.bukkit.craftbukkit.potion.CraftPotionUtil.toBukkit(handle)); // Paper
         }
@@ -623,9 +632,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             ((net.minecraft.world.entity.projectile.AbstractArrow) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), 0.0F, Trident.class.isAssignableFrom(projectile) ? net.minecraft.world.item.TridentItem.PROJECTILE_SHOOT_POWER : 3.0F, 1.0F); // ItemBow // Paper - see TridentItem
         } else if (ThrownPotion.class.isAssignableFrom(projectile)) {
             if (LingeringPotion.class.isAssignableFrom(projectile)) {
-                launch = new net.minecraft.world.entity.projectile.ThrownPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.LINGERING_POTION));
+                launch = new net.minecraft.world.entity.projectile.ThrownLingeringPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.LINGERING_POTION));
             } else {
-                launch = new net.minecraft.world.entity.projectile.ThrownPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.SPLASH_POTION));
+                launch = new net.minecraft.world.entity.projectile.ThrownSplashPotion(world, this.getHandle(), new net.minecraft.world.item.ItemStack(Items.SPLASH_POTION));
             }
             ((ThrowableProjectile) launch).shootFromRotation(this.getHandle(), this.getHandle().getXRot(), this.getHandle().getYRot(), -20.0F, 0.5F, 1.0F); // ItemSplashPotion
         } else if (ThrownExpBottle.class.isAssignableFrom(projectile)) {
@@ -657,9 +666,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
                 launch = new LargeFireball(world, this.getHandle(), vec, 1);
             }
 
-            ((AbstractHurtingProjectile) launch).projectileSource = this;
+            launch.projectileSource = this;
             launch.preserveMotion = true; // Paper - Fix Entity Teleportation and cancel velocity if teleported
-            launch.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+            launch.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         } else if (LlamaSpit.class.isAssignableFrom(projectile)) {
             Location location = this.getEyeLocation();
             Vector direction = location.getDirection();
@@ -668,12 +677,12 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
             ((net.minecraft.world.entity.projectile.LlamaSpit) launch).setOwner(this.getHandle());
             ((net.minecraft.world.entity.projectile.LlamaSpit) launch).shoot(direction.getX(), direction.getY(), direction.getZ(), 1.5F, 10.0F); // EntityLlama
-            launch.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+            launch.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         } else if (ShulkerBullet.class.isAssignableFrom(projectile)) {
             Location location = this.getEyeLocation();
 
             launch = new net.minecraft.world.entity.projectile.ShulkerBullet(world, this.getHandle(), null, null);
-            launch.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
+            launch.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         } else if (Firework.class.isAssignableFrom(projectile)) {
             Location location = this.getEyeLocation();
 
