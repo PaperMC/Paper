@@ -1,14 +1,6 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/RandomizableContainer.java b/net/minecraft/world/RandomizableContainer.java
-index 7826bebb44f92f6d001be597b2858781fa197943..adfe9de82c3e2ac6b98bf660e3c7f09fda747268 100644
 --- a/net/minecraft/world/RandomizableContainer.java
 +++ b/net/minecraft/world/RandomizableContainer.java
-@@ -28,7 +28,7 @@ public interface RandomizableContainer extends Container {
+@@ -26,7 +_,7 @@
  
      void setLootTable(@Nullable ResourceKey<LootTable> lootTable);
  
@@ -17,30 +9,21 @@ index 7826bebb44f92f6d001be597b2858781fa197943..adfe9de82c3e2ac6b98bf660e3c7f09f
          this.setLootTable(lootTable);
          this.setLootTableSeed(seed);
      }
-@@ -50,15 +50,17 @@ public interface RandomizableContainer extends Container {
- 
+@@ -49,8 +_,9 @@
      default boolean tryLoadLootTable(CompoundTag tag) {
-         if (tag.contains("LootTable", 8)) {
--            this.setLootTable(ResourceKey.create(Registries.LOOT_TABLE, ResourceLocation.parse(tag.getString("LootTable"))));
-+            this.setLootTable(net.minecraft.Optionull.map(ResourceLocation.tryParse(tag.getString("LootTable")), rl -> ResourceKey.create(Registries.LOOT_TABLE, rl))); // Paper - Validate ResourceLocation
-+            if (this.lootableData() != null && this.getLootTable() != null) this.lootableData().loadNbt(tag); // Paper - LootTable API
-             if (tag.contains("LootTableSeed", 4)) {
-                 this.setLootTableSeed(tag.getLong("LootTableSeed"));
-             } else {
-                 this.setLootTableSeed(0L);
-             }
- 
--            return true;
-+            return this.lootableData() == null; // Paper - only track the loot table if there is chance for replenish
-         } else {
-+            setLootTable(null); // Paper - Fix removing loottable from nbt not updating block entity, MC-279196
-             return false;
-         }
+         ResourceKey<LootTable> resourceKey = tag.read("LootTable", LootTable.KEY_CODEC).orElse(null);
+         this.setLootTable(resourceKey);
++        if (this.lootableData() != null && resourceKey != null) this.lootableData().loadNbt(tag); // Paper - LootTable API
+         this.setLootTableSeed(tag.getLongOr("LootTableSeed", 0L));
+-        return resourceKey != null;
++        return resourceKey != null && this.lootableData() == null; // Paper - only track the loot table if there is chance for replenish
      }
-@@ -69,26 +71,42 @@ public interface RandomizableContainer extends Container {
+ 
+     default boolean trySaveLootTable(CompoundTag tag) {
+@@ -59,26 +_,42 @@
              return false;
          } else {
-             tag.putString("LootTable", lootTable.location().toString());
+             tag.store("LootTable", LootTable.KEY_CODEC, lootTable);
 +            if (this.lootableData() != null) this.lootableData().saveNbt(tag); // Paper - LootTable API
              long lootTableSeed = this.getLootTableSeed();
              if (lootTableSeed != 0L) {
@@ -82,7 +65,7 @@ index 7826bebb44f92f6d001be597b2858781fa197943..adfe9de82c3e2ac6b98bf660e3c7f09f
              LootParams.Builder builder = new LootParams.Builder((ServerLevel)level).withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(blockPos));
              if (player != null) {
                  builder.withLuck(player.getLuck()).withParameter(LootContextParams.THIS_ENTITY, player);
-@@ -97,4 +115,17 @@ public interface RandomizableContainer extends Container {
+@@ -87,4 +_,17 @@
              lootTable1.fill(this, builder.create(LootContextParamSets.CHEST), this.getLootTableSeed());
          }
      }
