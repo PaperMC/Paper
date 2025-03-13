@@ -1,6 +1,8 @@
 package org.bukkit.support.provider;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.entity.PaperPoiType;
+import io.papermc.paper.entity.PoiType;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.List;
 import java.util.stream.Stream;
@@ -101,6 +103,7 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
         register(RegistryKey.BANNER_PATTERN, PatternType.class, Registries.BANNER_PATTERN, CraftPatternType.class, BannerPattern.class);
         register(RegistryKey.MENU, MenuType.class, Registries.MENU, CraftMenuType.class, net.minecraft.world.inventory.MenuType.class);
         register(RegistryKey.DATA_COMPONENT_TYPE, io.papermc.paper.datacomponent.DataComponentType.class, Registries.DATA_COMPONENT_TYPE, io.papermc.paper.datacomponent.PaperDataComponentType.class, net.minecraft.core.component.DataComponentType.class);
+        register(RegistryKey.POINT_OF_INTEREST_TYPE, PoiType.class, Registries.POINT_OF_INTEREST_TYPE, PaperPoiType.class, net.minecraft.world.entity.ai.village.poi.PoiType.class);
     }
 
     private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft) { // Paper

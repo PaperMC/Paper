@@ -1,7 +1,10 @@
 package org.bukkit;
 
 import java.io.File;
+
+import io.papermc.paper.entity.PoiType;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
+import io.papermc.paper.util.PoiSearchResult;
 import org.bukkit.generator.ChunkGenerator;
 
 import java.util.ArrayList;
@@ -47,6 +50,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 /**
  * Represents a world, which may contain entities, chunks and blocks
@@ -4105,6 +4109,36 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     default Location locateNearestBiome(@NotNull Location origin, @NotNull Biome biome, int radius, int step) {
         return java.util.Optional.ofNullable(this.locateNearestBiome(origin, radius, step, step, biome)).map(BiomeSearchResult::getLocation).orElse(null);
     }
+
+    /**
+     * Finds the nearest point of interest closest to the given location
+     * <p>
+     * Note when presenting any occupancy other than
+     * {@link PoiType.Occupancy#ANY} for the {@link PoiType#BEEHIVE} or
+     * {@link PoiType#BEE_NEST} all other occupancy values will return null
+     *
+     * @param origin where to start looking for a new point of interest at
+     * @param poiType the poi type to find
+     * @param radius the radius
+     * @param occupancy the current required occupancy of the point of interest
+     * @return a location at the nearest PoiType or null if no poi was found
+     */
+    @Nullable
+    Location locateNearestPoi(@NotNull Location origin, @NotNull PoiType poiType, @Range(from = 1, to = Integer.MAX_VALUE) int radius, @NotNull PoiType.Occupancy occupancy);
+
+    /**
+     * Finds all valid {@link PoiType} in the provided radius and returns them
+     * in a list format
+     *
+     * @param origin the center point of the radius
+     * @param poiTypePredicate the predicate to test whether or not a PoiType
+     *                         can be collected into the result
+     * @param radius           the radius
+     * @param occupancy the current required occupancy of the point of interest
+     * @return a list of search results containing all found Poi's in the range
+     */
+    @NotNull
+    List<PoiSearchResult> locateAllPoiInRange(@NotNull Location origin, @NotNull Predicate<PoiType> poiTypePredicate, @Range(from = 1, to = Integer.MAX_VALUE) int radius, @NotNull PoiType.Occupancy occupancy);
 
     /**
      * Gets the coordinate scaling of this world.
