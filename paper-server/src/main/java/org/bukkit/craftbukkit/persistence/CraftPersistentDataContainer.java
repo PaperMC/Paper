@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.persistence;
 
 import com.google.common.base.Preconditions;
+import com.mojang.serialization.Codec;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -122,7 +123,7 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
     }
 
     public void putAll(CompoundTag compound) {
-        for (String key : compound.getAllKeys()) {
+        for (String key : compound.keySet()) {
             this.customDataTags.put(key, compound.get(key));
         }
     }
@@ -173,4 +174,12 @@ public class CraftPersistentDataContainer extends io.papermc.paper.persistence.P
         return tags;
     }
     // Paper end - deep clone tags
+
+    public static Codec<CraftPersistentDataContainer> createCodec(final CraftPersistentDataTypeRegistry registry) {
+        return CompoundTag.CODEC.xmap(tag -> {
+            final CraftPersistentDataContainer container = new CraftPersistentDataContainer(registry);
+            container.putAll(tag);
+            return container;
+        }, CraftPersistentDataContainer::toTagCompound);
+    }
 }
