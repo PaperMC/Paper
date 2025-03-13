@@ -1,6 +1,7 @@
 package io.papermc.paper.registry;
 
 import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.inventory.CreativeModeTab;
 import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.key.KeyPattern;
@@ -133,6 +134,12 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * <!-- @see io.papermc.paper.registry.keys.DataComponentTypeKeys -->
      */
     RegistryKey<DataComponentType> DATA_COMPONENT_TYPE = create("data_component_type");
+
+    /**
+     * Built-in registry for creative mode tabs.
+     * @see io.papermc.paper.registry.keys.CreativeModeTabKeys
+     */
+    RegistryKey<CreativeModeTab> CREATIVE_MODE_TAB = create("creative_mode_tab");
 
 
 

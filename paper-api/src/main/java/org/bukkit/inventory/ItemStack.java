@@ -1,7 +1,9 @@
 package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.inventory.CreativeModeTab;
 import io.papermc.paper.registry.RegistryKey;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -21,6 +23,7 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Represents a stack of items.
@@ -1345,4 +1348,20 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
         return this.craftDelegate.matchesWithoutData(item, excludeTypes, ignoreCount);
     }
     // Paper end - data component API
+
+    /**
+     * Gets the creative mode tabs to which this item stack belongs.
+     * <p>
+     * This method is different from {@link ItemType#getCreativeModeTabs()}, as data components
+     * on items can cause them to be put into different tabs, such as ominous banners.
+     *
+     * @return A collection of creative mode tabs to which this item stack belongs, which
+     * can be empty.
+     * @see ItemType#getCreativeModeTabs()
+     */
+    @Unmodifiable
+    @NotNull
+    public Collection<CreativeModeTab> getCreativeModeTabs() {
+        return this.craftDelegate.getCreativeModeTabs();
+    }
 }
