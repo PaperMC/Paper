@@ -1,47 +1,25 @@
 --- a/net/minecraft/core/Rotations.java
 +++ b/net/minecraft/core/Rotations.java
-@@ -6,7 +_,26 @@
- import net.minecraft.Util;
- import net.minecraft.network.codec.StreamCodec;
+@@ -26,11 +_,22 @@
+             buffer.writeFloat(value.z);
+         }
+     };
++    // Paper start - add internal method for skipping validation for plugins
++    private static boolean SKIP_VALIDATION = false;
++    public static Rotations createWithoutValidityChecks(float x, float y, float z) {
++        SKIP_VALIDATION = true;
++        Rotations rotations = new Rotations(x, y, z);
++        SKIP_VALIDATION = false;
++        return rotations;
++    }
++    // Paper end  - add internal method for skipping validation for plugins
  
--public record Rotations(float x, float y, float z) {
-+// Paper start - convert to class
-+public class Rotations {
-+
-+    public final float x;
-+    public final float y;
-+    public final float z;
-+
-+    public float x() {
-+        return x;
-+    }
-+
-+    public float y() {
-+        return y;
-+    }
-+
-+    public float z() {
-+        return z;
-+    }
-+// Paper end - convert to class
-+
-     public static final Codec<Rotations> CODEC = Codec.FLOAT
-         .listOf()
-         .comapFlatMap(
-@@ -35,4 +_,16 @@
+     public Rotations(float x, float y, float z) {
++        if (SKIP_VALIDATION) { // Paper - add internal method for skipping validation for plugins
+         x = !Float.isInfinite(x) && !Float.isNaN(x) ? x % 360.0F : 0.0F;
+         y = !Float.isInfinite(y) && !Float.isNaN(y) ? y % 360.0F : 0.0F;
+         z = !Float.isInfinite(z) && !Float.isNaN(z) ? z % 360.0F : 0.0F;
++        } // Paper - add internal method for skipping validation for plugins
+         this.x = x;
          this.y = y;
          this.z = z;
-     }
-+
-+    // Paper start - faster alternative constructor
-+    private Rotations(float x, float y, float z, Void dummy_var) {
-+        this.x = x;
-+        this.y = y;
-+        this.z = z;
-+    }
-+
-+    public static Rotations createWithoutValidityChecks(float x, float y, float z) {
-+        return new Rotations(x, y, z, null);
-+    }
-+    // Paper end - faster alternative constructor
- }
