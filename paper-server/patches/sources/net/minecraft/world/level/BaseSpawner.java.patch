@@ -102,38 +102,26 @@
                      }
                  }
  
-@@ -189,13 +_,27 @@
+@@ -189,12 +_,14 @@
      }
  
      public void load(@Nullable Level level, BlockPos pos, CompoundTag tag) {
 -        this.spawnDelay = tag.getShortOr("Delay", (short)20);
-+        // Paper start - use larger int if set
-+        if (tag.contains("Paper.Delay")) {
-+            this.spawnDelay = tag.getIntOr("Paper.Delay", 0);
-+        } else {
-+            this.spawnDelay = tag.getShortOr("Delay", (short) 0);
-+        }
-+        // Paper end
-+        this.spawnDelay = tag.getShortOr("Delay", (short) 20);
++        this.spawnDelay = tag.getIntOr("Paper.Delay", tag.getShortOr("Delay", (short) 20)); // Paper - use int if set
          tag.read("SpawnData", SpawnData.CODEC).ifPresent(spawnData -> this.setNextSpawnData(level, pos, spawnData));
          this.spawnPotentials = tag.read("SpawnPotentials", SpawnData.LIST_CODEC)
 -            .orElseGet(() -> WeightedList.of(this.nextSpawnData != null ? this.nextSpawnData : new SpawnData()));
 -        this.minSpawnDelay = tag.getIntOr("MinSpawnDelay", 200);
+-        this.maxSpawnDelay = tag.getIntOr("MaxSpawnDelay", 800);
 +                .orElseGet(() -> WeightedList.of(this.nextSpawnData != null ? this.nextSpawnData : new SpawnData()));
-+        // Paper start - use ints if set
-+        if (tag.contains("Paper.MinSpawnDelay")) {
-+            this.minSpawnDelay = tag.getIntOr("Paper.MinSpawnDelay", 0);
-+            this.maxSpawnDelay = tag.getIntOr("Paper.MaxSpawnDelay", 0);
-+            this.spawnCount = tag.getShortOr("SpawnCount", (short) 0);
-+        } else // Paper end
-+            this.minSpawnDelay = tag.getIntOr("MinSpawnDelay", 200);
-         this.maxSpawnDelay = tag.getIntOr("MaxSpawnDelay", 800);
++        // Paper start - use int if set
++        this.minSpawnDelay = tag.getIntOr("Paper.MinSpawnDelay", tag.getIntOr("MinSpawnDelay", 200));
++        this.maxSpawnDelay = tag.getIntOr("Paper.MaxSpawnDelay", tag.getIntOr("MaxSpawnDelay", 800));
++        // Paper end - use int if set
          this.spawnCount = tag.getIntOr("SpawnCount", 4);
-+    } // Paper end
          this.maxNearbyEntities = tag.getIntOr("MaxNearbyEntities", 6);
          this.requiredPlayerRange = tag.getIntOr("RequiredPlayerRange", 16);
-         this.spawnRange = tag.getIntOr("SpawnRange", 4);
-@@ -203,9 +_,20 @@
+@@ -203,9 +_,19 @@
      }
  
      public CompoundTag save(CompoundTag tag) {
@@ -141,16 +129,15 @@
 -        tag.putShort("MinSpawnDelay", (short)this.minSpawnDelay);
 -        tag.putShort("MaxSpawnDelay", (short)this.maxSpawnDelay);
 +        // Paper start
-+        if (spawnDelay > Short.MAX_VALUE) {
++        if (this.spawnDelay > Short.MAX_VALUE) {
 +            tag.putInt("Paper.Delay", this.spawnDelay);
 +        }
 +        tag.putShort("Delay", (short) Math.min(Short.MAX_VALUE, this.spawnDelay));
 +
-+        if (minSpawnDelay > Short.MAX_VALUE || maxSpawnDelay > Short.MAX_VALUE) {
++        if (this.minSpawnDelay > Short.MAX_VALUE || this.maxSpawnDelay > Short.MAX_VALUE) {
 +            tag.putInt("Paper.MinSpawnDelay", this.minSpawnDelay);
 +            tag.putInt("Paper.MaxSpawnDelay", this.maxSpawnDelay);
 +        }
-+
 +        tag.putShort("MinSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.minSpawnDelay));
 +        tag.putShort("MaxSpawnDelay", (short) Math.min(Short.MAX_VALUE, this.maxSpawnDelay));
 +        // Paper end

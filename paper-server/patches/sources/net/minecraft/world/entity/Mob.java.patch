@@ -102,7 +102,7 @@
      @Override
      public void addAdditionalSaveData(CompoundTag compound) {
          super.addAdditionalSaveData(compound);
-@@ -358,13 +_,25 @@
+@@ -358,13 +_,22 @@
          if (this.isNoAi()) {
              compound.putBoolean("NoAI", this.isNoAi());
          }
@@ -115,30 +115,23 @@
 -        this.setCanPickUpLoot(compound.getBooleanOr("CanPickUpLoot", false));
 -        this.persistenceRequired = compound.getBooleanOr("PersistenceRequired", false);
 +        // CraftBukkit start - If looting or persistence is false only use it if it was set after we started using it
-+        if (compound.contains("CanPickUpLoot") && compound.get("CanPickUpLoot").getId() == 99) {
-+            boolean data = compound.getBooleanOr("CanPickUpLoot", false);
-+            if (isLevelAtLeast(compound, 1) || data) {
-+                this.setCanPickUpLoot(data);
-+            }
++        boolean canPickUpLoot = compound.getBooleanOr("CanPickUpLoot", false);
++        if (isLevelAtLeast(compound, 1) || canPickUpLoot) {
++            this.setCanPickUpLoot(canPickUpLoot);
 +        }
-+
-+        boolean data = compound.getBooleanOr("PersistenceRequired", false);
-+        if (isLevelAtLeast(compound, 1) || data) {
-+            this.persistenceRequired = data;
++        boolean persistenceRequired = compound.getBooleanOr("PersistenceRequired", false);
++        if (isLevelAtLeast(compound, 1) || persistenceRequired) {
++            this.persistenceRequired = persistenceRequired;
 +        }
 +        // CraftBukkit end
          RegistryOps<Tag> registryOps = this.registryAccess().createSerializationContext(NbtOps.INSTANCE);
          this.dropChances = compound.read("drop_chances", DropChances.CODEC, registryOps).orElse(DropChances.DEFAULT);
          this.readLeashData(compound);
-@@ -372,6 +_,11 @@
+@@ -372,6 +_,7 @@
          this.lootTable = compound.read("DeathLootTable", LootTable.KEY_CODEC);
          this.lootTableSeed = compound.getLongOr("DeathLootTableSeed", 0L);
          this.setNoAi(compound.getBooleanOr("NoAI", false));
-+        // CraftBukkit start
-+        if (compound.contains("Bukkit.Aware")) {
-+            this.aware = compound.getBooleanOr("Bukkit.Aware", false);
-+        }
-+        // CraftBukkit end
++        this.aware = compound.getBooleanOr("Bukkit.Aware", true); // CraftBukkit
      }
  
      @Override
@@ -176,7 +169,7 @@
 +        return this.equipItemIfPossible(level, stack, null);
 +    }
 +
-+    public ItemStack equipItemIfPossible(ServerLevel level, ItemStack stack, ItemEntity entity) {
++    public ItemStack equipItemIfPossible(ServerLevel level, ItemStack stack, @Nullable ItemEntity entity) {
 +        // CraftBukkit end
          EquipmentSlot equipmentSlotForItem = this.getEquipmentSlotForItem(stack);
          if (!this.isEquippableInSlot(stack, equipmentSlotForItem)) {
@@ -221,9 +214,9 @@
 +                final io.papermc.paper.configuration.WorldConfiguration.Entities.Spawning.DespawnRangePair despawnRangePair = this.level().paperConfig().entities.spawning.despawnRanges.get(this.getType().getCategory());
 +                final io.papermc.paper.configuration.type.DespawnRange.Shape shape = this.level().paperConfig().entities.spawning.despawnRangeShape;
 +                final double dy = Math.abs(nearestPlayer.getY() - this.getY());
-+                final double dySqr = Math.pow(dy, 2);
-+                final double dxSqr = Math.pow(nearestPlayer.getX() - this.getX(), 2);
-+                final double dzSqr = Math.pow(nearestPlayer.getZ() - this.getZ(), 2);
++                final double dySqr = Mth.square(dy);
++                final double dxSqr = Mth.square(nearestPlayer.getX() - this.getX());
++                final double dzSqr = Mth.square(nearestPlayer.getZ() - this.getZ());
 +                final double distanceSquared = dxSqr + dzSqr + dySqr;
 +                // Despawn if hard/soft limit is exceeded
 +                if (despawnRangePair.hard().shouldDespawn(shape, dxSqr, dySqr, dzSqr, dy) && this.removeWhenFarAway(distanceSquared)) {

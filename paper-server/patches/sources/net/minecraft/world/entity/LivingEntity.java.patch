@@ -1,14 +1,5 @@
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -41,6 +_,8 @@
- import net.minecraft.core.particles.ParticleOptions;
- import net.minecraft.core.particles.ParticleTypes;
- import net.minecraft.nbt.CompoundTag;
-+import net.minecraft.nbt.FloatTag;
-+import net.minecraft.nbt.IntTag;
- import net.minecraft.nbt.NbtOps;
- import net.minecraft.nbt.Tag;
- import net.minecraft.network.protocol.game.ClientboundAddEntityPacket;
 @@ -135,6 +_,29 @@
  import org.jetbrains.annotations.Contract;
  import org.slf4j.Logger;
@@ -158,7 +149,7 @@
          compound.putFloat("Health", this.getHealth());
          compound.putShort("HurtTime", (short)this.hurtTime);
          compound.putInt("HurtByTimestamp", this.lastHurtByMobTimestamp);
-@@ -750,7 +_,23 @@
+@@ -750,7 +_,22 @@
  
      @Override
      public void readAdditionalSaveData(CompoundTag compound) {
@@ -171,31 +162,25 @@
 +        this.internalSetAbsorptionAmount(absorptionAmount);
 +        // Paper end - Check for NaN
 +        // Paper start - Friction API
-+        if (compound.contains("Paper.FrictionState")) {
-+            String frictionState = compound.getStringOr("Paper.FrictionState", "");
++        compound.getString("Paper.FrictionState").ifPresent(frictionState -> {
 +            try {
 +                this.frictionState = net.kyori.adventure.util.TriState.valueOf(frictionState);
 +            } catch (Exception ignored) {
-+                LOGGER.error("Unknown friction state " + frictionState + " for " + this);
++                LOGGER.error("Unknown friction state {} for {}", frictionState, this);
 +            }
-+        }
++        });
 +        // Paper end - Friction API
          if (this.level() != null && !this.level().isClientSide) {
              compound.getList("attributes").ifPresent(this.getAttributes()::load);
          }
-@@ -763,6 +_,16 @@
+@@ -763,6 +_,11 @@
              this.activeEffects.put(mobEffectInstance.getEffect(), mobEffectInstance);
          }
  
 +        // CraftBukkit start
-+        if (compound.contains("Bukkit.MaxHealth")) {
-+            Tag maxHealthTag = compound.get("Bukkit.MaxHealth");
-+            if (maxHealthTag.getId() == 5) {
-+                this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(((FloatTag) maxHealthTag).getAsDouble());
-+            } else if (maxHealthTag.getId() == 3) {
-+                this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(((IntTag) maxHealthTag).getAsDouble());
-+            }
-+        }
++        compound.getDouble("Bukkit.MaxHealth").ifPresent(maxHealth -> {
++            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(maxHealth);
++        });
 +        // CraftBukkit end
          this.setHealth(compound.getFloatOr("Health", this.getMaxHealth()));
          this.hurtTime = compound.getShortOr("HurtTime", (short)0);
@@ -212,7 +197,7 @@
          });
          this.setSharedFlag(7, compound.getBooleanOr("FallFlying", false));
          compound.read("sleeping_pos", BlockPos.CODEC).ifPresentOrElse(blockPos -> {
-+            if (this.position().distanceToSqr(blockPos.getX(), blockPos.getY(), blockPos.getZ()) < 16 * 16) { // Paper - The sleeping pos will always also set the actual pos, so a desync suggests something is wrong
++            if (this.position().distanceToSqr(blockPos.getX(), blockPos.getY(), blockPos.getZ()) < Mth.square(16)) { // Paper - The sleeping pos will always also set the actual pos, so a desync suggests something is wrong
              this.setSleepingPos(blockPos);
              this.entityData.set(DATA_POSE, Pose.SLEEPING);
              if (!this.firstTick) {
@@ -228,7 +213,7 @@
  
 +    // CraftBukkit start
 +    private boolean isTickingEffects = false;
-+    private List<ProcessableEffect> effectsToProcess = Lists.newArrayList();
++    private final List<ProcessableEffect> effectsToProcess = Lists.newArrayList();
 +
 +    private static class ProcessableEffect {
 +
@@ -495,7 +480,7 @@
              return false;
          } else if (damageSource.is(DamageTypeTags.IS_FIRE) && this.hasEffect(MobEffects.FIRE_RESISTANCE)) {
              return false;
-@@ -1128,35 +_,59 @@
+@@ -1128,35 +_,60 @@
                  amount = 0.0F;
              }
  
@@ -505,12 +490,14 @@
 +            // Paper end
              amount -= f1;
              boolean flag = f1 > 0.0F;
-             if (damageSource.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
+-            if (damageSource.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
++            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) to get amount
++            if (false && damageSource.is(DamageTypeTags.IS_FREEZING) && this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
                  amount *= 5.0F;
              }
  
 -            if (damageSource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
-+            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) for get f and actuallyHurt(DamageSource, float, EntityDamageEvent) for handle damage
++            // CraftBukkit - Moved into handleEntityDamage(DamageSource, float) to get amount and actuallyHurt(DamageSource, float, EntityDamageEvent) for handle damage
 +            if (false && damageSource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
                  this.hurtHelmet(damageSource, amount);
                  amount *= 0.75F;
@@ -796,10 +783,11 @@
          }
      }
  
+-    protected void dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
 +    // Paper start
 +    protected boolean clearEquipmentSlots = true;
 +    protected Set<EquipmentSlot> clearedEquipmentSlots = new java.util.HashSet<>();
-     protected void dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
++    protected org.bukkit.event.entity.EntityDeathEvent dropAllDeathLoot(ServerLevel level, DamageSource damageSource) {
 +        // Paper end
          boolean flag = this.lastHurtByPlayerMemoryTime > 0;
 +        this.dropEquipment(level); // CraftBukkit - from below
@@ -817,9 +805,9 @@
 -        this.dropEquipment(level);
 +        // CraftBukkit start - Call death event // Paper start - call advancement triggers with correct entity equipment
 +        org.bukkit.event.entity.EntityDeathEvent deathEvent = CraftEventFactory.callEntityDeathEvent(this, damageSource, this.drops, () -> {
-+            final LivingEntity entityliving = this.getKillCredit();
-+            if (entityliving != null) {
-+                entityliving.awardKillScore(this, damageSource);
++            final LivingEntity killer = this.getKillCredit();
++            if (killer != null) {
++                killer.awardKillScore(this, damageSource);
 +            }
 +        }); // Paper end
 +        this.postDeathDropItems(deathEvent); // Paper
@@ -1292,7 +1280,7 @@
              if (this.tickCount % 20 == 0) {
                  this.getCombatTracker().recheckStatus();
              }
-@@ -2538,37 +_,14 @@
+@@ -2538,37 +_,15 @@
          profilerFiller.pop();
          profilerFiller.push("rangeChecks");
  
@@ -1335,6 +1323,7 @@
 +        this.xRotO += Math.round((this.getXRot() - this.xRotO) / 360.0F) * 360.0F;
 +
 +        this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
++        // Paper end - stop large pitch and yaw changes from crashing the server
  
          profilerFiller.pop();
          if (this.isFallFlying()) {

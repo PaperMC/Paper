@@ -8,7 +8,7 @@
      private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbowStack) {
 -        List<ItemStack> list = draw(crossbowStack, shooter.getProjectile(crossbowStack), shooter);
 +        // Paper start - Add EntityLoadCrossbowEvent
-+        return CrossbowItem.tryLoadProjectiles(shooter, crossbowStack, true);
++        return tryLoadProjectiles(shooter, crossbowStack, true);
 +    }
 +    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbowStack, boolean consume) {
 +        List<ItemStack> list = draw(crossbowStack, shooter.getProjectile(crossbowStack), shooter, consume);
@@ -29,18 +29,19 @@
          } else {
              Projectile projectile = super.createProjectile(level, shooter, weapon, ammo, isCrit);
              if (projectile instanceof AbstractArrow abstractArrow) {
-@@ -211,6 +_,14 @@
+@@ -211,7 +_,14 @@
                      );
              }
  
-+
-+            // Paper start - Add EntityLoadCrossbowEvent
-+            final io.papermc.paper.event.entity.EntityLoadCrossbowEvent event = new io.papermc.paper.event.entity.EntityLoadCrossbowEvent(livingEntity.getBukkitLivingEntity(), stack.asBukkitMirror(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(livingEntity.getUsedItemHand()));
-+            if (!event.callEvent()) {
-+                if (livingEntity instanceof ServerPlayer player) player.containerMenu.sendAllDataToRemote();
-+                return;
-+            }
-+            // Paper end - Add EntityLoadCrossbowEvent
-             if (f >= 1.0F && !isCharged(stack) && tryLoadProjectiles(livingEntity, stack)) {
+-            if (f >= 1.0F && !isCharged(stack) && tryLoadProjectiles(livingEntity, stack)) {
++            if (f >= 1.0F && !isCharged(stack)) {
++                // Paper start - Add EntityLoadCrossbowEvent
++                final io.papermc.paper.event.entity.EntityLoadCrossbowEvent event = new io.papermc.paper.event.entity.EntityLoadCrossbowEvent(livingEntity.getBukkitLivingEntity(), stack.asBukkitMirror(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(livingEntity.getUsedItemHand()));
++                if (!event.callEvent() || !tryLoadProjectiles(livingEntity, stack, event.shouldConsumeItem()) || !event.shouldConsumeItem()) {
++                    if (livingEntity instanceof ServerPlayer player) player.containerMenu.sendAllDataToRemote();
++                    return;
++                }
++                // Paper end - Add EntityLoadCrossbowEvent
                  chargingSounds.end()
                      .ifPresent(
+                         sound -> level.playSound(

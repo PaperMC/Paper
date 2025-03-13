@@ -8,18 +8,17 @@
      public final Fluid content;
  
      public BucketItem(Fluid content, Item.Properties properties) {
-@@ -56,12 +_,23 @@
+@@ -56,12 +_,22 @@
              } else if (this.content == Fluids.EMPTY) {
                  BlockState blockState = level.getBlockState(blockPos);
                  if (blockState.getBlock() instanceof BucketPickup bucketPickup) {
 +                    // CraftBukkit start
 +                    ItemStack dummyFluid = bucketPickup.pickupBlock(player, org.bukkit.craftbukkit.util.DummyGeneratorAccess.INSTANCE, blockPos, blockState);
 +                    if (dummyFluid.isEmpty()) return InteractionResult.FAIL; // Don't fire event if the bucket won't be filled.
-+                    org.bukkit.event.player.PlayerBucketFillEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketFillEvent((net.minecraft.server.level.ServerLevel) level, player, blockPos, blockPos, playerPovHitResult.getDirection(), itemInHand, dummyFluid.getItem(), hand);
++                    org.bukkit.event.player.PlayerBucketFillEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketFillEvent(level, player, blockPos, blockPos, playerPovHitResult.getDirection(), itemInHand, dummyFluid.getItem(), hand);
 +
 +                    if (event.isCancelled()) {
-+                        // ((ServerPlayer) user).connection.send(new ClientboundBlockUpdatePacket(level, blockPos)); // SPIGOT-5163 (see PlayerInteractManager) // Paper - Don't resend blocks
-+                        ((ServerPlayer) player).getBukkitEntity().updateInventory(); // SPIGOT-4541
++                        player.containerMenu.sendAllDataToRemote(); // SPIGOT-4541
 +                        return InteractionResult.FAIL;
 +                    }
 +                    // CraftBukkit end
@@ -69,17 +68,16 @@
          if (!(this.content instanceof FlowingFluid flowingFluid)) {
              return false;
          } else {
-@@ -110,8 +_,20 @@
+@@ -110,8 +_,19 @@
                  || canBeReplaced
                  || block instanceof LiquidBlockContainer liquidBlockContainer
                      && liquidBlockContainer.canPlaceLiquid(entity, level, pos, blockState, this.content);
 +
 +            // CraftBukkit start
 +            if (flag && entity instanceof Player player) {
-+                org.bukkit.event.player.PlayerBucketEmptyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketEmptyEvent((net.minecraft.server.level.ServerLevel) level, player, pos, clicked, direction, itemstack, hand);
++                org.bukkit.event.player.PlayerBucketEmptyEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerBucketEmptyEvent(level, player, pos, clicked, direction, itemstack, hand);
 +                if (event.isCancelled()) {
-+                    // ((ServerPlayer) player).connection.send(new ClientboundBlockUpdatePacket(level, pos)); // SPIGOT-4238: needed when looking through entity // Paper - Don't resend blocks
-+                    ((ServerPlayer) player).getBukkitEntity().updateInventory(); // SPIGOT-4541
++                    player.containerMenu.sendAllDataToRemote(); // SPIGOT-4541
 +                    return false;
 +                }
 +                itemLeftInHandAfterPlayerBucketEmptyEvent = event.getItemStack() != null ? event.getItemStack().equals(org.bukkit.craftbukkit.inventory.CraftItemStack.asNewCraftStack(net.minecraft.world.item.Items.BUCKET)) ? null : org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItemStack()) : ItemStack.EMPTY; // Paper - Fix PlayerBucketEmptyEvent result itemstack

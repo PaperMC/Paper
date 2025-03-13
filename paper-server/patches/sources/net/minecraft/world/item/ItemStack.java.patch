@@ -1,19 +1,6 @@
 --- a/net/minecraft/world/item/ItemStack.java
 +++ b/net/minecraft/world/item/ItemStack.java
-@@ -192,18 +_,35 @@
-                 } else {
-                     Holder<Item> holder = Item.STREAM_CODEC.decode(buffer);
-                     DataComponentPatch dataComponentPatch = streamCodec.decode(buffer);
--                    return new ItemStack(holder, varInt, dataComponentPatch);
-+                    // CraftBukkit start
-+                    ItemStack stack = new ItemStack(holder, varInt, dataComponentPatch);
-+                    if (false && !dataComponentPatch.isEmpty()) { // Paper - This is no longer needed with raw NBT being handled in metadata
-+                        org.bukkit.craftbukkit.inventory.CraftItemStack.setItemMeta(stack, org.bukkit.craftbukkit.inventory.CraftItemStack.getItemMeta(stack));
-+                    }
-+                    return stack;
-+                    // CraftBukkit end
-                 }
-             }
+@@ -198,12 +_,20 @@
  
              @Override
              public void encode(RegistryFriendlyByteBuf buffer, ItemStack value) {
@@ -24,9 +11,6 @@
 -                    buffer.writeVarInt(value.getCount());
 +                    buffer.writeVarInt(io.papermc.paper.util.ItemComponentSanitizer.sanitizeCount(io.papermc.paper.util.ItemObfuscationSession.currentSession(), value, value.getCount())); // Paper - potentially sanitize count
                      Item.STREAM_CODEC.encode(buffer, value.getItemHolder());
-+                    // Spigot start - filter
-+                    // value = value.copy();
-+                    // CraftItemStack.setItemMeta(value, CraftItemStack.getItemMeta(value)); // Paper - This is no longer with raw NBT being handled in metadata
 +                    // Paper start - adventure; conditionally render translatable components
 +                    boolean prev = net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.get();
 +                    try (final io.papermc.paper.util.SafeAutoClosable ignored = io.papermc.paper.util.ItemObfuscationSession.withContext(c -> c.itemStack(value))) { // pass the itemstack as context to the obfuscation session
