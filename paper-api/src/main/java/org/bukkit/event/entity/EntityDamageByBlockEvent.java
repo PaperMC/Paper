@@ -7,6 +7,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,10 +23,13 @@ public class EntityDamageByBlockEvent extends EntityDamageEvent {
     private final BlockState damagerState;
 
     @Deprecated(since = "1.20.4", forRemoval = true)
+    @ApiStatus.Internal
     public EntityDamageByBlockEvent(@Nullable final Block damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
         this(damager, (damager != null) ? damager.getState() : null, damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), damage);
     }
 
+    @Deprecated
+    @ApiStatus.Internal
     public EntityDamageByBlockEvent(@Nullable final Block damager, @Nullable final BlockState damagerState, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, final double damage) {
         super(damagee, cause, damageSource, damage);
         this.damager = damager;
@@ -33,10 +37,12 @@ public class EntityDamageByBlockEvent extends EntityDamageEvent {
     }
 
     @Deprecated(since = "1.20.4", forRemoval = true)
+    @ApiStatus.Internal
     public EntityDamageByBlockEvent(@Nullable final Block damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         this(damager, (damager != null) ? damager.getState() : null, damagee, cause, (damager != null) ? DamageSource.builder(DamageType.GENERIC).withDamageLocation(damager.getLocation()).build() : DamageSource.builder(DamageType.GENERIC).build(), modifiers, modifierFunctions);
     }
 
+    @ApiStatus.Internal
     public EntityDamageByBlockEvent(@Nullable final Block damager, @Nullable final BlockState damagerState, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         super(damagee, cause, damageSource, modifiers, modifierFunctions);
         this.damager = damager;
