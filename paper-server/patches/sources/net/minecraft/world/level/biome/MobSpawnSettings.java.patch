@@ -1,0 +1,37 @@
+--- a/net/minecraft/world/level/biome/MobSpawnSettings.java
++++ b/net/minecraft/world/level/biome/MobSpawnSettings.java
+@@ -70,9 +_,33 @@
+     }
+ 
+     public static class Builder {
++        // Paper start - Perf: keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
++        public static class MobListBuilder<E> extends WeightedList.Builder<E> {
++            @Override
++            public WeightedList<E> build() {
++                return new WeightedSpawnerDataList<>(this.result.build());
++            }
++        }
++
++        public static class WeightedSpawnerDataList<E> extends WeightedList<E> {
++            private final java.util.Set<E> spawnerDataSet = new java.util.HashSet<>();
++
++            public WeightedSpawnerDataList(final java.util.List<? extends net.minecraft.util.random.Weighted<E>> items) {
++                super(items);
++                for (final net.minecraft.util.random.Weighted<E> item : items) {
++                    this.spawnerDataSet.add(item.value());
++                }
++            }
++
++            @Override
++            public boolean contains(final E element) {
++                return this.spawnerDataSet.contains(element);
++            }
++        }
+         private final Map<MobCategory, WeightedList.Builder<MobSpawnSettings.SpawnerData>> spawners = Util.makeEnumMap(
+-            MobCategory.class, mobCategory -> WeightedList.builder()
++            MobCategory.class, mobCategory -> new MobListBuilder<>()
+         );
++        // Paper end - Perf: keep track of data in a pair set to give O(1) contains calls
+         private final Map<EntityType<?>, MobSpawnSettings.MobSpawnCost> mobSpawnCosts = Maps.newLinkedHashMap();
+         private float creatureGenerationProbability = 0.1F;
+ 
