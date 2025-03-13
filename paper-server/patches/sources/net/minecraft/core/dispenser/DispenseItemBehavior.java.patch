@@ -1,14 +1,6 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/core/dispenser/DispenseItemBehavior.java b/net/minecraft/core/dispenser/DispenseItemBehavior.java
-index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf6669b6f0 100644
 --- a/net/minecraft/core/dispenser/DispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/DispenseItemBehavior.java
-@@ -82,16 +82,48 @@ public interface DispenseItemBehavior {
+@@ -83,16 +_,48 @@
                  Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
                  EntityType<?> type = ((SpawnEggItem)item.getItem()).getType(blockSource.level().registryAccess(), item);
  
@@ -59,7 +51,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                  blockSource.level().gameEvent(null, GameEvent.ENTITY_PLACE, blockSource.pos());
                  return item;
              }
-@@ -109,12 +141,40 @@ public interface DispenseItemBehavior {
+@@ -110,12 +_,40 @@
                      Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
                      BlockPos blockPos = blockSource.pos().relative(direction);
                      ServerLevel serverLevel = blockSource.level();
@@ -102,45 +94,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                      }
  
                      return item;
-@@ -134,7 +194,36 @@ public interface DispenseItemBehavior {
-                             livingEntity -> livingEntity instanceof Saddleable saddleable && !saddleable.isSaddled() && saddleable.isSaddleable()
-                         );
-                     if (!entitiesOfClass.isEmpty()) {
--                        ((Saddleable)entitiesOfClass.get(0)).equipSaddle(item.split(1), SoundSource.BLOCKS);
-+                        // CraftBukkit start
-+                        ItemStack singleItemStack = item.copyWithCount(1); // Paper - shrink below and single item in event
-+                        ServerLevel world = blockSource.level();
-+                        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(world, blockSource.pos());
-+                        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleItemStack);
-+
-+                        org.bukkit.event.block.BlockDispenseArmorEvent event = new org.bukkit.event.block.BlockDispenseArmorEvent(block, craftItem.clone(), entitiesOfClass.get(0).getBukkitLivingEntity());
-+                        if (!DispenserBlock.eventFired) {
-+                            world.getCraftServer().getPluginManager().callEvent(event);
-+                        }
-+
-+                        if (event.isCancelled()) {
-+                            // item.grow(1); // Paper - shrink below
-+                            return item;
-+                        }
-+
-+                        boolean shrink = true; // Paper
-+                        if (!event.getItem().equals(craftItem)) {
-+                            shrink = false; // Paper - shrink below
-+                            // Chain to handler for new item
-+                            ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
-+                            DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack); // Paper - Fix NPE with equippable and items without behavior
-+                            if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) { // Paper - fix possible StackOverflowError
-+                                dispenseBehavior.dispense(blockSource, eventStack);
-+                                return item;
-+                            }
-+                        }
-+                        ((Saddleable) entitiesOfClass.get(0)).equipSaddle(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()), SoundSource.BLOCKS); // Paper - track changed items in dispense event
-+                        // CraftBukkit end
-+                        if (shrink) item.shrink(1); // Paper - actually handle here
-                         this.setSuccess(true);
-                         return item;
-                     } else {
-@@ -156,8 +245,36 @@ public interface DispenseItemBehavior {
+@@ -135,8 +_,36 @@
                              new AABB(blockPos),
                              abstractChestedHorse1 -> abstractChestedHorse1.isAlive() && !abstractChestedHorse1.hasChest()
                          )) {
@@ -179,7 +133,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                              this.setSuccess(true);
                              return item;
                          }
-@@ -195,8 +312,50 @@ public interface DispenseItemBehavior {
+@@ -174,8 +_,50 @@
                  DispensibleContainerItem dispensibleContainerItem = (DispensibleContainerItem)item.getItem();
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                  Level level = blockSource.level();
@@ -231,7 +185,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                      return this.consumeWithRemainder(blockSource, item, new ItemStack(Items.BUCKET));
                  } else {
                      return this.defaultDispenseItemBehavior.dispense(blockSource, item);
-@@ -219,12 +378,37 @@ public interface DispenseItemBehavior {
+@@ -198,12 +_,37 @@
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                  BlockState blockState = levelAccessor.getBlockState(blockPos);
                  if (blockState.getBlock() instanceof BucketPickup bucketPickup) {
@@ -270,7 +224,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                          return this.consumeWithRemainder(blockSource, item, new ItemStack(item1));
                      }
                  } else {
-@@ -236,17 +420,44 @@ public interface DispenseItemBehavior {
+@@ -215,18 +_,45 @@
              @Override
              protected ItemStack execute(BlockSource blockSource, ItemStack item) {
                  ServerLevel serverLevel = blockSource.level();
@@ -311,14 +265,15 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
 +                    }
 +                    // CraftBukkit end
                  } else if (CampfireBlock.canLight(blockState) || CandleBlock.canLight(blockState) || CandleCakeBlock.canLight(blockState)) {
-                     serverLevel.setBlockAndUpdate(blockPos, blockState.setValue(BlockStateProperties.LIT, Boolean.valueOf(true)));
+                     serverLevel.setBlockAndUpdate(blockPos, blockState.setValue(BlockStateProperties.LIT, true));
                      serverLevel.gameEvent(null, GameEvent.BLOCK_CHANGE, blockPos);
--                } else if (blockState.getBlock() instanceof TntBlock) {
-+                } else if (blockState.getBlock() instanceof TntBlock && org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(serverLevel, blockPos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.DISPENSER, null, blockSource.pos())) { // CraftBukkit - TNTPrimeEvent
-                     TntBlock.explode(serverLevel, blockPos);
-                     serverLevel.removeBlock(blockPos, false);
-                 } else {
-@@ -266,11 +477,62 @@ public interface DispenseItemBehavior {
+                 } else if (blockState.getBlock() instanceof TntBlock) {
+-                    if (TntBlock.prime(serverLevel, blockPos)) {
++                    if (TntBlock.prime(serverLevel, blockPos, () -> org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(serverLevel, blockPos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.DISPENSER, null, blockSource.pos()))) { // CraftBukkit - TNTPrimeEvent
+                         serverLevel.removeBlock(blockPos, false);
+                     } else {
+                         this.setSuccess(false);
+@@ -248,11 +_,62 @@
                  this.setSuccess(true);
                  Level level = blockSource.level();
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
@@ -381,49 +336,50 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
  
                  return item;
              }
-@@ -280,11 +542,39 @@ public interface DispenseItemBehavior {
-             protected ItemStack execute(BlockSource blockSource, ItemStack item) {
-                 Level level = blockSource.level();
-                 BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
--                PrimedTnt primedTnt = new PrimedTnt(level, blockPos.getX() + 0.5, blockPos.getY(), blockPos.getZ() + 0.5, null);
-+                // CraftBukkit start
-+                ItemStack singleItemStack = item.copyWithCount(1); // Paper - shrink at end and single item in event
-+                org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, blockSource.pos());
-+                org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleItemStack);
+@@ -265,12 +_,39 @@
+                     this.setSuccess(false);
+                     return item;
+                 } else {
+-                    BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
+-                    PrimedTnt primedTnt = new PrimedTnt(serverLevel, blockPos.getX() + 0.5, blockPos.getY(), blockPos.getZ() + 0.5, null);
++                    // CraftBukkit start
++                    ItemStack singleItemStack = item.copyWithCount(1); // Paper - shrink at end and single item in event
++                    org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, blockSource.pos());
++                    org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(singleItemStack);
 +
-+                org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector((double) blockPos.getX() + 0.5D, (double) blockPos.getY(), (double) blockPos.getZ() + 0.5D));
-+                if (!DispenserBlock.eventFired) {
-+                    level.getCraftServer().getPluginManager().callEvent(event);
-+                }
++                    org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), new org.bukkit.util.Vector((double) blockPos.getX() + 0.5D, (double) blockPos.getY(), (double) blockPos.getZ() + 0.5D));
++                    if (!DispenserBlock.eventFired) {
++                        serverLevel.getCraftServer().getPluginManager().callEvent(event);
++                    }
 +
-+                if (event.isCancelled()) {
-+                    // item.grow(1); // Paper - shrink below
-+                    return item;
-+                }
-+
-+                boolean shrink = true; // Paper
-+                if (!event.getItem().equals(craftItem)) {
-+                    shrink = false; // Paper - shrink below
-+                    // Chain to handler for new item
-+                    ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
-+                    DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack); // Paper - Fix NPE with equippable and items without behavior
-+                    if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
-+                        dispenseBehavior.dispense(blockSource, eventStack);
++                    if (event.isCancelled()) {
++                        // item.grow(1); // Paper - shrink below
 +                        return item;
 +                    }
-+                }
 +
-+                PrimedTnt primedTnt = new PrimedTnt(level, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), null);
-+                // CraftBukkit end
-                 level.addFreshEntity(primedTnt);
-                 level.playSound(null, primedTnt.getX(), primedTnt.getY(), primedTnt.getZ(), SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0F, 1.0F);
-                 level.gameEvent(null, GameEvent.ENTITY_PLACE, blockPos);
--                item.shrink(1);
-+                if (shrink) item.shrink(1); // Paper - actually handle here
-                 return item;
-             }
-         });
-@@ -296,6 +586,29 @@ public interface DispenseItemBehavior {
++                    boolean shrink = true; // Paper
++                    if (!event.getItem().equals(craftItem)) {
++                        shrink = false; // Paper - shrink below
++                        // Chain to handler for new item
++                        ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
++                        DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack); // Paper - Fix NPE with equippable and items without behavior
++                        if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior != this) {
++                            dispenseBehavior.dispense(blockSource, eventStack);
++                            return item;
++                        }
++                    }
++
++                    PrimedTnt primedTnt = new PrimedTnt(serverLevel, event.getVelocity().getX(), event.getVelocity().getY(), event.getVelocity().getZ(), null);
++                    // CraftBukkit end
+                     serverLevel.addFreshEntity(primedTnt);
+                     serverLevel.playSound(null, primedTnt.getX(), primedTnt.getY(), primedTnt.getZ(), SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0F, 1.0F);
+                     serverLevel.gameEvent(null, GameEvent.ENTITY_PLACE, blockPos);
+-                    item.shrink(1);
++                    if (shrink) item.shrink(1); // Paper - actually handle here;
+                     this.setSuccess(true);
+                     return item;
+                 }
+@@ -284,6 +_,29 @@
                      Level level = blockSource.level();
                      Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
                      BlockPos blockPos = blockSource.pos().relative(direction);
@@ -453,7 +409,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                      if (level.isEmptyBlock(blockPos) && WitherSkullBlock.canSpawnMob(level, blockPos, item)) {
                          level.setBlock(
                              blockPos,
-@@ -313,7 +626,7 @@ public interface DispenseItemBehavior {
+@@ -299,7 +_,7 @@
                          item.shrink(1);
                          this.setSuccess(true);
                      } else {
@@ -462,7 +418,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                      }
  
                      return item;
-@@ -326,6 +639,29 @@ public interface DispenseItemBehavior {
+@@ -312,6 +_,29 @@
                  Level level = blockSource.level();
                  BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                  CarvedPumpkinBlock carvedPumpkinBlock = (CarvedPumpkinBlock)Blocks.CARVED_PUMPKIN;
@@ -492,7 +448,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                  if (level.isEmptyBlock(blockPos) && carvedPumpkinBlock.canSpawnGolem(level, blockPos)) {
                      if (!level.isClientSide) {
                          level.setBlock(blockPos, carvedPumpkinBlock.defaultBlockState(), 3);
-@@ -335,7 +671,7 @@ public interface DispenseItemBehavior {
+@@ -321,7 +_,7 @@
                      item.shrink(1);
                      this.setSuccess(true);
                  } else {
@@ -501,7 +457,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                  }
  
                  return item;
-@@ -361,6 +697,29 @@ public interface DispenseItemBehavior {
+@@ -347,6 +_,29 @@
                      ServerLevel serverLevel = blockSource.level();
                      BlockPos blockPos = blockSource.pos().relative(blockSource.state().getValue(DispenserBlock.FACING));
                      BlockState blockState = serverLevel.getBlockState(blockPos);
@@ -531,7 +487,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                      if (blockState.is(
                              BlockTags.BEEHIVES,
                              blockStateBase -> blockStateBase.hasProperty(BeehiveBlock.HONEY_LEVEL) && blockStateBase.getBlock() instanceof BeehiveBlock
-@@ -389,6 +748,13 @@ public interface DispenseItemBehavior {
+@@ -375,6 +_,13 @@
                  this.setSuccess(true);
                  if (blockState.is(Blocks.RESPAWN_ANCHOR)) {
                      if (blockState.getValue(RespawnAnchorBlock.CHARGE) != 4) {
@@ -545,7 +501,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                          RespawnAnchorBlock.charge(null, level, blockPos, blockState);
                          item.shrink(1);
                      } else {
-@@ -412,6 +778,29 @@ public interface DispenseItemBehavior {
+@@ -398,6 +_,29 @@
                      this.setSuccess(false);
                      return item;
                  } else {
@@ -575,7 +531,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                      for (Armadillo armadillo : entitiesOfClass) {
                          if (armadillo.brushOffScute()) {
                              item.hurtAndBreak(16, serverLevel, null, item1 -> {});
-@@ -432,6 +821,13 @@ public interface DispenseItemBehavior {
+@@ -418,6 +_,13 @@
                  BlockState blockState = level.getBlockState(blockPos);
                  Optional<BlockState> waxed = HoneycombItem.getWaxed(blockState);
                  if (waxed.isPresent()) {
@@ -589,7 +545,7 @@ index 638177fa156e26d5db7451f64892acfcf0c08ca1..717c84165d5e25cd384f56b7cb976abf
                      level.setBlockAndUpdate(blockPos, waxed.get());
                      level.levelEvent(3003, blockPos, 0);
                      item.shrink(1);
-@@ -459,6 +855,12 @@ public interface DispenseItemBehavior {
+@@ -445,6 +_,12 @@
                          if (!serverLevel.getBlockState(blockPos1).is(BlockTags.CONVERTABLE_TO_MUD)) {
                              return this.defaultDispenseItemBehavior.dispense(blockSource, item);
                          } else {
