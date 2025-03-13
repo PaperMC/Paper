@@ -988,26 +988,24 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
     public boolean dispatchCommand(@NotNull CommandSender sender, @NotNull String commandLine) throws CommandException;
 
     /**
-     * Adds a recipe to the crafting manager. Recipes added with
-     * this method won't be sent to the client automatically. Use
-     * {@link #updateRecipes()} or {@link #updateResources()} to
-     * update clients to new recipes added.
+     * Adds a recipe to the crafting manager.
+     * Recipes added with this method won't be sent to the client automatically.
      * <p>
      * Player's still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
      * before seeing them in their recipe book.
      *
      * @param recipe the recipe to add
-     * @return true if the recipe was added, false if it wasn't for some
-     *     reason
+     * @return true if the recipe was added, false if it wasn't for some reason
      * @see #addRecipe(Recipe, boolean)
      */
     @Contract("null -> false")
-    public boolean addRecipe(@Nullable Recipe recipe);
+    boolean addRecipe(@Nullable Recipe recipe);
 
     // Paper start - method to send recipes immediately
     /**
      * Adds a recipe to the crafting manager.
      *
+     * @apiNote resendRecipes is ignored for now for stability reasons, recipes will always be updated
      * @param recipe the recipe to add
      * @param resendRecipes true to update the client with the full set of recipes
      * @return true if the recipe was added, false if it wasn't for some reason
