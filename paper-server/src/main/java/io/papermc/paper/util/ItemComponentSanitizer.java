@@ -66,10 +66,20 @@ public final class ItemComponentSanitizer {
     public static int sanitizeCount(final ItemObfuscationSession obfuscationSession, final ItemStack itemStack, final int count) {
         if (obfuscationSession.obfuscationLevel() != ItemObfuscationSession.ObfuscationLevel.ALL) return count; // Ignore if we are not obfuscating
 
-        if (GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(itemStack).sanitizeCount()) {
-            return 1;
-        } else {
+        if (!GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(itemStack).sanitizeCount() || count <= 1) {
             return count;
+        }
+
+        // See https://minecraft.wiki/w/Item_(entity)#Appearance for reference, this returns the lowest possible count
+        // for the item to keep it looking the same.
+        if (count <= 16) { // 2 - 16
+            return 2;
+        } else if (count <= 32) { // 17 - 32
+            return 17;
+        } else if (count <= 48) { // 33 - 48
+            return 33;
+        } else { // 49+
+            return 49;
         }
     }
 
