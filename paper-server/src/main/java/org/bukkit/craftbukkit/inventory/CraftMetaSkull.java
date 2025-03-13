@@ -4,8 +4,10 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.mojang.authlib.GameProfile;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import net.minecraft.Util;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -79,23 +81,21 @@ class CraftMetaSkull extends CraftMetaItem implements SkullMeta {
     void deserializeInternal(CompoundTag tag, Object context) {
         super.deserializeInternal(tag, context);
 
-        if (tag.contains(CraftMetaSkull.SKULL_PROFILE.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
-            CompoundTag skullTag = tag.getCompound(CraftMetaSkull.SKULL_PROFILE.NBT);
+        tag.getCompound(CraftMetaSkull.SKULL_PROFILE.NBT).ifPresent(skullTag -> {
             // convert type of stored Id from String to UUID for backwards compatibility
-            if (skullTag.contains("Id", CraftMagicNumbers.NBT.TAG_STRING)) {
-                UUID uuid = UUID.fromString(skullTag.getString("Id"));
-                skullTag.putUUID("Id", uuid);
+            Optional<String> legacyId = skullTag.getString("Id");
+            if (legacyId.isPresent()) {
+                skullTag.store("Id", UUIDUtil.CODEC, UUID.fromString(legacyId.get()));
             }
 
             ResolvableProfile.CODEC.parse(NbtOps.INSTANCE, skullTag).result().ifPresent(this::setProfile);
-        }
+        });
 
-        if (tag.contains(CraftMetaSkull.BLOCK_ENTITY_TAG.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND)) {
-            CompoundTag nbtTagCompound = tag.getCompound(CraftMetaSkull.BLOCK_ENTITY_TAG.NBT).copy();
-            if (nbtTagCompound.contains(CraftMetaSkull.NOTE_BLOCK_SOUND.NBT, 8)) {
-                this.noteBlockSound = ResourceLocation.tryParse(nbtTagCompound.getString(CraftMetaSkull.NOTE_BLOCK_SOUND.NBT));
-            }
-        }
+        tag.getCompound(CraftMetaSkull.BLOCK_ENTITY_TAG.NBT)
+            .flatMap(blockEntityTag -> blockEntityTag.copy().getString(CraftMetaSkull.NOTE_BLOCK_SOUND.NBT))
+            .ifPresent(noteBlockSound -> {
+                this.noteBlockSound = ResourceLocation.tryParse(noteBlockSound);
+            });
     }
 
     private void setProfile(ResolvableProfile profile) {

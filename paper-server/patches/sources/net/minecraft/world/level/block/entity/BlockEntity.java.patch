@@ -6,7 +6,7 @@
  public abstract class BlockEntity {
 +    // CraftBukkit start - data containers
 +    private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
-+    public org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer;
++    public final org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer persistentDataContainer;
 +    // CraftBukkit end
      private static final Codec<BlockEntityType<?>> TYPE_CODEC = BuiltInRegistries.BLOCK_ENTITY_TYPE.byNameCodec();
      private static final Logger LOGGER = LogUtils.getLogger();
@@ -39,7 +39,7 @@
          this.saveAdditional(compoundTag, registries);
          compoundTag.store(BlockEntity.ComponentHelper.COMPONENTS_CODEC, registries.createSerializationContext(NbtOps.INSTANCE), this.components);
 +        // CraftBukkit start - store container
-+        if (this.persistentDataContainer != null && !this.persistentDataContainer.isEmpty()) {
++        if (!this.persistentDataContainer.isEmpty()) {
 +            compoundTag.put("PublicBukkitValues", this.persistentDataContainer.toTagCompound());
 +        }
 +        // CraftBukkit end
@@ -50,7 +50,7 @@
          CompoundTag compoundTag = new CompoundTag();
          this.saveAdditional(compoundTag, registries);
 +        // Paper start - store PDC here as well
-+        if (this.persistentDataContainer != null && !this.persistentDataContainer.isEmpty()) {
++        if (!this.persistentDataContainer.isEmpty()) {
 +            compoundTag.put("PublicBukkitValues", this.persistentDataContainer.toTagCompound());
 +        }
 +        // Paper end
@@ -81,21 +81,19 @@
      }
  
      protected void collectImplicitComponents(DataComponentMap.Builder components) {
-@@ -313,6 +_,30 @@
+@@ -313,6 +_,28 @@
                  .resultOrPartial(string -> LOGGER.warn("Failed to parse custom name, discarding: {}", string))
                  .orElse(null);
      }
 +
 +    // CraftBukkit start - add method
 +    public org.bukkit.inventory.InventoryHolder getOwner() {
-+        // Paper start
 +        return getOwner(true);
 +    }
++
 +    public org.bukkit.inventory.InventoryHolder getOwner(boolean useSnapshot) {
-+        // Paper end
 +        if (this.level == null) return null;
-+        org.bukkit.block.Block block = this.level.getWorld().getBlockAt(this.worldPosition.getX(), this.worldPosition.getY(), this.worldPosition.getZ());
-+        // if (block.getType() == org.bukkit.Material.AIR) return null; // Paper - actually get the tile entity if it still exists
++        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(this.level, this.worldPosition);
 +        org.bukkit.block.BlockState state = block.getState(useSnapshot); // Paper
 +        return state instanceof final org.bukkit.inventory.InventoryHolder inventoryHolder ? inventoryHolder : null;
 +    }

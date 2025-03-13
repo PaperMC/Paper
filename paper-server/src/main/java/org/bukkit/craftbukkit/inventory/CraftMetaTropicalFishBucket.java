@@ -10,7 +10,6 @@ import net.minecraft.world.item.component.CustomData;
 import org.bukkit.DyeColor;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.entity.CraftTropicalFish;
-import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 
@@ -43,17 +42,11 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
 
         getOrEmpty(tag, CraftMetaTropicalFishBucket.ENTITY_TAG).ifPresent((nbt) -> {
             this.entityTag = nbt.copyTag();
-
-            if (this.entityTag.contains(CraftMetaTropicalFishBucket.VARIANT.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
-                this.variant = this.entityTag.getInt(CraftMetaTropicalFishBucket.VARIANT.NBT);
-            }
+            this.entityTag.getInt(CraftMetaTropicalFishBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
         });
         getOrEmpty(tag, CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG).ifPresent((nbt) -> {
             this.bucketEntityTag = nbt.copyTag();
-
-            if (this.bucketEntityTag.contains(CraftMetaTropicalFishBucket.VARIANT.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
-                this.variant = this.bucketEntityTag.getInt(CraftMetaTropicalFishBucket.VARIANT.NBT);
-            }
+            this.bucketEntityTag.getInt(CraftMetaTropicalFishBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
         });
     }
 
@@ -70,12 +63,8 @@ class CraftMetaTropicalFishBucket extends CraftMetaItem implements TropicalFishB
     void deserializeInternal(CompoundTag tag, Object context) {
         super.deserializeInternal(tag, context);
 
-        if (tag.contains(CraftMetaTropicalFishBucket.ENTITY_TAG.NBT)) {
-            this.entityTag = tag.getCompound(CraftMetaTropicalFishBucket.ENTITY_TAG.NBT);
-        }
-        if (tag.contains(CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.NBT)) {
-            this.bucketEntityTag = tag.getCompound(CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.NBT);
-        }
+        this.entityTag = tag.getCompound(CraftMetaTropicalFishBucket.ENTITY_TAG.NBT).orElse(this.entityTag);
+        this.bucketEntityTag = tag.getCompound(CraftMetaTropicalFishBucket.BUCKET_ENTITY_TAG.NBT).orElse(this.bucketEntityTag);
     }
 
     @Override

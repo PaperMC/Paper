@@ -835,21 +835,16 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     void deserializeInternal(CompoundTag tag, Object context) {
         // SPIGOT-4576: Need to migrate from internal to proper data
-        if (tag.contains(CraftMetaItem.ATTRIBUTES.NBT, CraftMagicNumbers.NBT.TAG_LIST)) {
+        if (tag.getList(CraftMetaItem.ATTRIBUTES.NBT).isPresent()) {
             this.attributeModifiers = CraftMetaItem.buildModifiersLegacy(tag, CraftMetaItem.ATTRIBUTES);
         }
     }
 
     private static Multimap<Attribute, AttributeModifier> buildModifiersLegacy(CompoundTag tag, ItemMetaKey key) {
         Multimap<Attribute, AttributeModifier> modifiers = LinkedHashMultimap.create();
-        if (!tag.contains(key.NBT, CraftMagicNumbers.NBT.TAG_LIST)) {
-            return modifiers;
-        }
-        ListTag mods = tag.getList(key.NBT, CraftMagicNumbers.NBT.TAG_COMPOUND);
-        int size = mods.size();
-
-        for (int i = 0; i < size; i++) {
-            CompoundTag entry = mods.getCompound(i);
+        ListTag mods = tag.getListOrEmpty(key.NBT);
+        for (int i = 0, size = mods.size(); i < size; i++) {
+            CompoundTag entry = mods.getCompoundOrEmpty(i);
             if (entry.isEmpty()) {
                 // entry is not an actual NBTTagCompound. getCompound returns empty NBTTagCompound in that case
                 continue;
@@ -871,9 +866,10 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 continue;
             }
 
-            if (entry.contains(CraftMetaItem.ATTRIBUTES_SLOT.NBT, CraftMagicNumbers.NBT.TAG_STRING)) {
-                String slotName = entry.getString(CraftMetaItem.ATTRIBUTES_SLOT.NBT);
-                if (slotName == null || slotName.isEmpty()) {
+            Optional<String> attributeSlot = entry.getString(CraftMetaItem.ATTRIBUTES_SLOT.NBT);
+            if (attributeSlot.isPresent()) {
+                String slotName = attributeSlot.get();
+                if (slotName.isEmpty()) {
                     modifiers.put(attribute, attribMod);
                     continue;
                 }
@@ -922,10 +918,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         for (Object obj : mods.keySet()) {
-            if (!(obj instanceof String)) {
+            if (!(obj instanceof final String attributeName)) {
                 continue;
             }
-            String attributeName = (String) obj;
             if (Strings.isNullOrEmpty(attributeName)) {
                 continue;
             }
@@ -935,10 +930,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             }
 
             for (Object o : list) {
-                if (!(o instanceof AttributeModifier)) { // this catches null
+                if (!(o instanceof final AttributeModifier modifier)) { // this catches null
                     continue;
                 }
-                AttributeModifier modifier = (AttributeModifier) o;
                 Attribute attribute = CraftAttribute.stringToBukkit(attributeName);
                 if (attribute == null) {
                     continue;

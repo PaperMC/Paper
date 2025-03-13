@@ -41,17 +41,11 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
 
         getOrEmpty(tag, CraftMetaAxolotlBucket.ENTITY_TAG).ifPresent((nbt) -> {
             this.entityTag = nbt.copyTag();
-
-            if (this.entityTag.contains(CraftMetaAxolotlBucket.VARIANT.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
-                this.variant = this.entityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT);
-            }
+            this.entityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
         });
         getOrEmpty(tag, CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG).ifPresent((nbt) -> {
             this.bucketEntityTag = nbt.copyTag();
-
-            if (this.bucketEntityTag.contains(CraftMetaAxolotlBucket.VARIANT.NBT, CraftMagicNumbers.NBT.TAG_INT)) {
-                this.variant = this.bucketEntityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT);
-            }
+            this.bucketEntityTag.getInt(CraftMetaAxolotlBucket.VARIANT.NBT).ifPresent(variant -> this.variant = variant);
         });
     }
 
@@ -68,12 +62,8 @@ public class CraftMetaAxolotlBucket extends CraftMetaItem implements AxolotlBuck
     void deserializeInternal(CompoundTag tag, Object context) {
         super.deserializeInternal(tag, context);
 
-        if (tag.contains(CraftMetaAxolotlBucket.ENTITY_TAG.NBT)) {
-            this.entityTag = tag.getCompound(CraftMetaAxolotlBucket.ENTITY_TAG.NBT);
-        }
-        if (tag.contains(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.NBT)) {
-            this.bucketEntityTag = tag.getCompound(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.NBT);
-        }
+        this.entityTag = tag.getCompound(CraftMetaAxolotlBucket.ENTITY_TAG.NBT).orElse(this.entityTag);
+        this.bucketEntityTag = tag.getCompound(CraftMetaAxolotlBucket.BUCKET_ENTITY_TAG.NBT).orElse(this.bucketEntityTag);
     }
 
     @Override
