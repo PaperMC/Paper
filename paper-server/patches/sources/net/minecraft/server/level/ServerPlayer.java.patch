@@ -322,12 +322,19 @@
                  }
  
                  float saturationLevel = this.foodData.getSaturationLevel();
-@@ -840,15 +_,100 @@
+@@ -840,15 +_,53 @@
      }
  
      private void updateScoreForCriteria(ObjectiveCriteria criteria, int points) {
 -        this.getScoreboard().forAllObjectives(criteria, this, scoreAccess -> scoreAccess.set(points));
 -    }
+-
+-    @Override
+-    public void die(DamageSource cause) {
+-        this.gameEvent(GameEvent.ENTITY_DIE);
+-        boolean _boolean = this.serverLevel().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES);
+-        if (_boolean) {
+-            Component deathMessage = this.getCombatTracker().getDeathMessage();
 +        this.level().getCraftServer().getScoreboardManager().forAllObjectives(criteria, this, scoreAccess -> scoreAccess.set(points)); // CraftBukkit - Use our scores instead
 +    }
 +
@@ -370,13 +377,25 @@
 +        }
 +    }
 +    // Paper end - PlayerDeathEvent#getItemsToKeep
- 
-     @Override
-     public void die(DamageSource cause) {
--        this.gameEvent(GameEvent.ENTITY_DIE);
--        boolean _boolean = this.serverLevel().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES);
--        if (_boolean) {
--            Component deathMessage = this.getCombatTracker().getDeathMessage();
++
++    // Paper start - Expand PlayerDeathEvent API
++    private void sendClientboundPlayerCombatKillPacket(boolean displayMessage, Component deathMessage) {
++        if (displayMessage && deathMessage != CommonComponents.EMPTY) {
++            // Paper - moved from below die(DamageSource) method
+             this.connection
+                 .send(
+                     new ClientboundPlayerCombatKillPacket(this.getId(), deathMessage),
+@@ -865,6 +_,65 @@
+                         }
+                     )
+                 );
++        } else {
++            this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), CommonComponents.EMPTY));
++        }
++    }
++    // Paper end - Expand PlayerDeathEvent API
++    @Override
++    public void die(DamageSource cause) {
 +        // this.gameEvent(GameEvent.ENTITY_DIE); // Paper - move below event cancellation check
 +        boolean _boolean = this.serverLevel().getGameRules().getBoolean(GameRules.RULE_SHOWDEATHMESSAGES); final boolean showDeathMessage = _boolean; // Paper - OBFHELPER
 +        // CraftBukkit start - fire PlayerDeathEvent
@@ -404,7 +423,7 @@
 +
 +        String deathmessage = defaultMessage.getString();
 +        this.keepLevel = keepInventory; // SPIGOT-2222: pre-set keepLevel
-+        org.bukkit.event.entity.PlayerDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerDeathEvent(this, cause, loot, io.papermc.paper.adventure.PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure
++        org.bukkit.event.entity.PlayerDeathEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerDeathEvent(this, cause, loot, showDeathMessage, io.papermc.paper.adventure.PaperAdventure.asAdventure(defaultMessage), keepInventory); // Paper - Adventure; Expand PlayerDeathEvent API
 +        // Paper start - cancellable death event
 +        if (event.isCancelled()) {
 +            // make compatible with plugins that might have already set the health in an event listener
@@ -421,14 +440,26 @@
 +            this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.DEATH); // Paper - Inventory close reason
 +        }
 +
-+        net.kyori.adventure.text.Component apiDeathMessage = event.deathMessage() != null ? event.deathMessage() : net.kyori.adventure.text.Component.empty(); // Paper - Adventure
++        net.kyori.adventure.text.Component apiDeathMessage = event.deathChatMessage() != null ? event.deathChatMessage() : net.kyori.adventure.text.Component.empty(); // Paper - Adventure
++        Component deathScreenMessage = event.deathScreenMessage() != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(event.deathScreenMessage()) : CommonComponents.EMPTY; // Paper - Expand PlayerDeathEvent API
 +
-+        if (apiDeathMessage != null && apiDeathMessage != net.kyori.adventure.text.Component.empty() && showDeathMessage) { // Paper - Adventure // TODO: allow plugins to override?
++        if (apiDeathMessage != null && apiDeathMessage != net.kyori.adventure.text.Component.empty() && event.allowDisplayingDeathMessage()) { // Paper - Adventure; Expand PlayerDeathEvent API
 +            Component deathMessage = io.papermc.paper.adventure.PaperAdventure.asVanilla(apiDeathMessage); // Paper - Adventure
 +
-             this.connection
-                 .send(
-                     new ClientboundPlayerCombatKillPacket(this.getId(), deathMessage),
++            // Paper - moved up to sendClientboundPlayerCombatKillPacket()
++            sendClientboundPlayerCombatKillPacket(event.allowDisplayingDeathMessage(), deathScreenMessage); // Paper - Expand PlayerDeathEvent API
+             Team team = this.getTeam();
+             if (team == null || team.getDeathMessageVisibility() == Team.Visibility.ALWAYS) {
+                 this.server.getPlayerList().broadcastSystemMessage(deathMessage, false);
+@@ -874,7 +_,7 @@
+                 this.server.getPlayerList().broadcastSystemToAllExceptTeam(this, deathMessage);
+             }
+         } else {
+-            this.connection.send(new ClientboundPlayerCombatKillPacket(this.getId(), CommonComponents.EMPTY));
++            sendClientboundPlayerCombatKillPacket(event.allowDisplayingDeathMessage(), deathScreenMessage); // Paper - Expand PlayerDeathEvent API
+         }
+ 
+         this.removeEntitiesOnShoulder();
 @@ -882,11 +_,22 @@
              this.tellNeutralMobsThatIDied();
          }
