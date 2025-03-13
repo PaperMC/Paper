@@ -5,10 +5,17 @@ import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.function.Consumer;
+import io.papermc.paper.registry.RegistryBuilderFactory;
+import io.papermc.paper.registry.data.InlinedRegistryBuilderProvider;
+import io.papermc.paper.registry.data.InstrumentRegistryEntry;
+import net.kyori.adventure.text.Component;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import net.kyori.adventure.translation.Translatable;
 
-public abstract class MusicInstrument implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - translation keys
+public abstract class MusicInstrument implements Keyed, Translatable {
 
     public static final MusicInstrument PONDER_GOAT_HORN = getInstrument("ponder_goat_horn");
     public static final MusicInstrument SING_GOAT_HORN = getInstrument("sing_goat_horn");
@@ -18,6 +25,17 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     public static final MusicInstrument CALL_GOAT_HORN = getInstrument("call_goat_horn");
     public static final MusicInstrument YEARN_GOAT_HORN = getInstrument("yearn_goat_horn");
     public static final MusicInstrument DREAM_GOAT_HORN = getInstrument("dream_goat_horn");
+
+    /**
+     * Create an inlined music instrument.
+     *
+     * @param value a consumer for the builder factory
+     * @return the created instrument
+     */
+    @ApiStatus.Experimental
+    static @NotNull MusicInstrument create(final @NotNull Consumer<RegistryBuilderFactory<MusicInstrument, ? extends InstrumentRegistryEntry.Builder>> value) {
+        return InlinedRegistryBuilderProvider.instance().createInstrument(value);
+    }
 
     /**
      * Returns a {@link MusicInstrument} by a {@link NamespacedKey}.
@@ -49,7 +67,34 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
         return RegistryAccess.registryAccess().getRegistry(RegistryKey.INSTRUMENT).getOrThrow(NamespacedKey.minecraft(key));
     }
 
-    // Paper start - deprecate getKey
+    /**
+     * Gets for how long the use duration is for the instrument.
+     *
+     * @return the duration.
+     */
+    public abstract float getDuration();
+
+    /**
+     * Gets the range of the sound.
+     *
+     * @return the range of the sound.
+     */
+    public abstract float getRange();
+
+    /**
+     * Provides the description of this instrument as displayed to the client.
+     *
+     * @return the description component.
+     */
+    public abstract @NotNull Component description();
+
+    /**
+     * Gets the sound/sound-event for this instrument.
+     *
+     * @return a sound
+     */
+    public abstract @NotNull Sound getSoundEvent();
+
     /**
      * @deprecated use {@link Registry#getKey(Keyed)}, {@link io.papermc.paper.registry.RegistryAccess#getRegistry(io.papermc.paper.registry.RegistryKey)},
      * and {@link io.papermc.paper.registry.RegistryKey#INSTRUMENT}. MusicInstruments can exist without a key.
@@ -68,9 +113,6 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
         return Keyed.super.key();
     }
 
-    // Paper end - deprecate getKey
-
-    // Paper start - mark translation key as deprecated
     /**
      * @deprecated this method assumes that the instrument description
      * always be a translatable component which is not guaranteed.
@@ -78,5 +120,4 @@ public abstract class MusicInstrument implements Keyed, net.kyori.adventure.tran
     @Override
     @Deprecated(forRemoval = true)
     public abstract @NotNull String translationKey();
-    // Paper end - mark translation key as deprecated
 }
