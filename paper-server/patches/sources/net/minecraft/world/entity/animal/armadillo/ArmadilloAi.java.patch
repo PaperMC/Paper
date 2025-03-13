@@ -1,0 +1,72 @@
+--- a/net/minecraft/world/entity/animal/armadillo/ArmadilloAi.java
++++ b/net/minecraft/world/entity/animal/armadillo/ArmadilloAi.java
+@@ -175,37 +_,39 @@
+ 
+         @Override
+         protected void tick(ServerLevel level, Armadillo owner, long gameTime) {
+-            super.tick(level, owner, gameTime);
+-            if (this.nextPeekTimer > 0) {
+-                this.nextPeekTimer--;
+-            }
+-
+-            if (owner.shouldSwitchToScaredState()) {
+-                owner.switchToState(Armadillo.ArmadilloState.SCARED);
+-                if (owner.onGround()) {
+-                    owner.playSound(SoundEvents.ARMADILLO_LAND);
+-                }
+-            } else {
+-                Armadillo.ArmadilloState state = owner.getState();
+-                long timeUntilExpiry = owner.getBrain().getTimeUntilExpiry(MemoryModuleType.DANGER_DETECTED_RECENTLY);
+-                boolean flag = timeUntilExpiry > 75L;
+-                if (flag != this.dangerWasAround) {
+-                    this.nextPeekTimer = this.pickNextPeekTimer(owner);
+-                }
+-
+-                this.dangerWasAround = flag;
+-                if (state == Armadillo.ArmadilloState.SCARED) {
+-                    if (this.nextPeekTimer == 0 && owner.onGround() && flag) {
+-                        level.broadcastEntityEvent(owner, (byte)64);
+-                        this.nextPeekTimer = this.pickNextPeekTimer(owner);
+-                    }
+-
+-                    if (timeUntilExpiry < Armadillo.ArmadilloState.UNROLLING.animationDuration()) {
+-                        owner.playSound(SoundEvents.ARMADILLO_UNROLL_START);
+-                        owner.switchToState(Armadillo.ArmadilloState.UNROLLING);
+-                    }
+-                } else if (state == Armadillo.ArmadilloState.UNROLLING && timeUntilExpiry > Armadillo.ArmadilloState.UNROLLING.animationDuration()) {
++            if(owner.getFrozenState() == null) { // Paper - check if the state is frozen.
++                super.tick(level, owner, gameTime);
++                if (this.nextPeekTimer > 0) {
++                    this.nextPeekTimer--;
++                }
++
++                if (owner.shouldSwitchToScaredState()) {
+                     owner.switchToState(Armadillo.ArmadilloState.SCARED);
++                    if (owner.onGround()) {
++                        owner.playSound(SoundEvents.ARMADILLO_LAND);
++                    }
++                } else {
++                    Armadillo.ArmadilloState state = owner.getState();
++                    long timeUntilExpiry = owner.getBrain().getTimeUntilExpiry(MemoryModuleType.DANGER_DETECTED_RECENTLY);
++                    boolean flag = timeUntilExpiry > 75L;
++                    if (flag != this.dangerWasAround) {
++                        this.nextPeekTimer = this.pickNextPeekTimer(owner);
++                    }
++
++                    this.dangerWasAround = flag;
++                    if (state == Armadillo.ArmadilloState.SCARED) {
++                        if (this.nextPeekTimer == 0 && owner.onGround() && flag) {
++                            level.broadcastEntityEvent(owner, (byte) 64);
++                            this.nextPeekTimer = this.pickNextPeekTimer(owner);
++                        }
++
++                        if (timeUntilExpiry < Armadillo.ArmadilloState.UNROLLING.animationDuration()) {
++                            owner.playSound(SoundEvents.ARMADILLO_UNROLL_START);
++                            owner.switchToState(Armadillo.ArmadilloState.UNROLLING);
++                        }
++                    } else if (state == Armadillo.ArmadilloState.UNROLLING && timeUntilExpiry > Armadillo.ArmadilloState.UNROLLING.animationDuration()) {
++                        owner.switchToState(Armadillo.ArmadilloState.SCARED);
++                    }
+                 }
+             }
+         }

@@ -1,23 +1,40 @@
 --- a/net/minecraft/world/entity/animal/armadillo/Armadillo.java
 +++ b/net/minecraft/world/entity/animal/armadillo/Armadillo.java
-@@ -109,7 +_,19 @@
+@@ -63,6 +_,7 @@
+     public final AnimationState peekAnimationState = new AnimationState();
+     private int scuteTime;
+     private boolean peekReceivedClient = false;
++    private @Nullable ArmadilloState frozenState = null; // Paper - add frozen state.
+ 
+     public Armadillo(EntityType<? extends Animal> entityType, Level level) {
+         super(entityType, level);
+@@ -109,7 +_,28 @@
      }
  
      public void switchToState(Armadillo.ArmadilloState state) {
 -        this.entityData.set(ARMADILLO_STATE, state);
-+         //Paper start - add ArmadilloStateChangeEvent
-+         ArmadilloState oldState = this.getState();
-+         if (oldState == state) {
-+             return;
-+         }
-+        io.papermc.paper.event.entity.ArmadilloStateChangeEvent event = new io.papermc.paper.event.entity.ArmadilloStateChangeEvent((org.bukkit.entity.Armadillo) this.getBukkitEntity(), org.bukkit.craftbukkit.entity.CraftArmadillo.stateToBukkit(oldState),org.bukkit.craftbukkit.entity.CraftArmadillo.stateToBukkit(state));
-+        org.bukkit.Bukkit.getPluginManager().callEvent(event);
-+        if (event.isCancelled()) {
++        // Paper start - add ArmadilloStateChangeEvent
++        ArmadilloState oldState = this.getState();
++        if (oldState == state) {
 +            return;
 +        }
++
++        if (this.getFrozenState() != null && this.getFrozenState() != state) {
++            return;
++        }
++
++        io.papermc.paper.event.entity.ArmadilloStateChangeEvent event = new io.papermc.paper.event.entity.ArmadilloStateChangeEvent((org.bukkit.entity.Armadillo) this.getBukkitEntity(), org.bukkit.craftbukkit.entity.CraftArmadillo.stateToBukkit(oldState), org.bukkit.craftbukkit.entity.CraftArmadillo.stateToBukkit(state));
++        if (!event.callEvent()) {
++            this.setFrozenState(oldState);
++            return;
++        }
++
 +        Armadillo.ArmadilloState finalState = org.bukkit.craftbukkit.entity.CraftArmadillo.stateToNMS(event.getNewState());
++        if (finalState != state) {
++            this.setFrozenState(finalState);
++        }
 +        this.entityData.set(ARMADILLO_STATE, finalState);
-+        //Paper end
++        // Paper end - add ArmadilloStateChangeEvent
      }
  
      @Override
@@ -34,6 +51,41 @@
  
              this.scuteTime = this.pickNextScuteDropTime();
          }
+@@ -256,20 +_,24 @@
+     }
+ 
+     public void rollUp() {
+-        if (!this.isScared()) {
+-            this.stopInPlace();
+-            this.resetLove();
+-            this.gameEvent(GameEvent.ENTITY_ACTION);
+-            this.makeSound(SoundEvents.ARMADILLO_ROLL);
+-            this.switchToState(Armadillo.ArmadilloState.ROLLING);
++        if (this.getFrozenState() == null) { // Paper - check if the state is frozen.
++            if (!this.isScared()) {
++                this.stopInPlace();
++                this.resetLove();
++                this.gameEvent(GameEvent.ENTITY_ACTION);
++                this.makeSound(SoundEvents.ARMADILLO_ROLL);
++                this.switchToState(Armadillo.ArmadilloState.ROLLING);
++            }
+         }
+     }
+ 
+     public void rollOut() {
+-        if (this.isScared()) {
+-            this.gameEvent(GameEvent.ENTITY_ACTION);
+-            this.makeSound(SoundEvents.ARMADILLO_UNROLL_FINISH);
+-            this.switchToState(Armadillo.ArmadilloState.IDLE);
++        if (this.getFrozenState() == null) { // Paper - check if the state is frozen.
++            if (this.isScared()) {
++                this.gameEvent(GameEvent.ENTITY_ACTION);
++                this.makeSound(SoundEvents.ARMADILLO_UNROLL_FINISH);
++                this.switchToState(Armadillo.ArmadilloState.IDLE);
++            }
+         }
+     }
+ 
 @@ -283,8 +_,11 @@
      }
  
@@ -66,3 +118,22 @@
                  this.gameEvent(GameEvent.ENTITY_INTERACT);
                  this.playSound(SoundEvents.ARMADILLO_BRUSH);
              }
+@@ -439,4 +_,18 @@
+             return this.animationDuration;
+         }
+     }
++
++    // Paper start - add methods to get and set the frozen state of the armadillo.
++    public void setFrozenState(@Nullable ArmadilloState state) {
++        this.frozenState = state;
++        this.getBrain().eraseMemory(MemoryModuleType.DANGER_DETECTED_RECENTLY);
++        this.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
++        this.getBrain().eraseMemory(MemoryModuleType.PATH);
++        this.getBrain().eraseMemory(MemoryModuleType.LOOK_TARGET);
++    }
++
++    public @Nullable ArmadilloState getFrozenState() {
++        return this.frozenState;
++    }
++    // Paper end - add methods to get and set the frozen state of the armadillo.
+ }

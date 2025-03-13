@@ -37,7 +37,7 @@ public class ArmadilloStateChangeEvent extends EntityEvent implements Cancellabl
      * @param newState the new state to set, must not be null
      */
     public void setNewState(final Armadillo.State newState) {
-        Preconditions.checkNotNull(newState, "newState cannot be null");
+        Preconditions.checkArgument(newState != null, "newState cannot be null");
         this.newState = newState;
     }
 

@@ -26,6 +26,21 @@ public interface Armadillo extends Animals {
     void rollOut();
 
     /**
+     * Sets the frozen state of the armadillo.
+     */
+    void setFrozenState(Armadillo.State frozenState);
+
+    /**
+     * Gets the frozen state of the armadillo.
+     */
+    Armadillo.State getFrozenState();
+
+    /**
+     * Clears the frozen state of the armadillo.
+     */
+    void clearFrozenState();
+
+    /**
      * Represents the current state of the armadillo.
      */
     enum State {

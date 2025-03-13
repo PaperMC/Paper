@@ -1,9 +1,13 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.google.common.collect.ImmutableList;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState;
+import net.minecraft.world.entity.schedule.Activity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Armadillo;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 public class CraftArmadillo extends CraftAnimals implements Armadillo {
 
@@ -59,5 +63,19 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
             case State.SCARED -> ArmadilloState.SCARED;
             case State.UNROLLING -> ArmadilloState.UNROLLING;
         };
+    }
+
+    public void setFrozenState(Armadillo.@NonNull State frozenState) {
+        this.getHandle().setFrozenState(stateToNMS(frozenState));
+        this.getHandle().switchToState(stateToNMS(frozenState));
+    }
+
+    public void clearFrozenState() {
+        this.getHandle().setFrozenState(null);
+        this.getHandle().getBrain().setActiveActivityToFirstValid(ImmutableList.of(Activity.PANIC, Activity.IDLE));
+    }
+
+    public Armadillo.@Nullable State getFrozenState() {
+        return stateToBukkit(this.getHandle().getFrozenState());
     }
 }
