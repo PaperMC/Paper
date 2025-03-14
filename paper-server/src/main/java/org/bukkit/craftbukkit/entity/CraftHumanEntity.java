@@ -52,7 +52,6 @@ import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.inventory.CraftMerchantCustom;
 import org.bukkit.craftbukkit.inventory.CraftRecipe;
 import org.bukkit.craftbukkit.inventory.util.CraftMenus;
-import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.HumanEntity;
@@ -133,42 +132,36 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
     }
 
-    // Paper start
     @Override
     public void setHurtDirection(float hurtDirection) {
         this.getHandle().hurtDir = hurtDirection;
     }
-    // Paper end
 
-    // Paper start
     @Override
     public boolean isDeeplySleeping() {
         return getHandle().isSleepingLongEnough();
     }
-    // Paper end
 
     @Override
     public int getSleepTicks() {
         return this.getHandle().sleepCounter;
     }
 
-    // Paper start - Potential bed api
     @Override
     public Location getPotentialRespawnLocation() {
-        ServerPlayer handle = (ServerPlayer) getHandle();
-        BlockPos bed = handle.getRespawnPosition();
-        if (bed == null) {
+        ServerPlayer.RespawnConfig respawnConfig = ((ServerPlayer) this.getHandle()).getRespawnConfig();
+        if (respawnConfig == null) {
             return null;
         }
 
-        net.minecraft.server.level.ServerLevel worldServer = handle.server.getLevel(handle.getRespawnDimension());
+        net.minecraft.server.level.ServerLevel worldServer = ((ServerPlayer) this.getHandle()).server.getLevel(respawnConfig.dimension());
         if (worldServer == null) {
             return null;
         }
-        return new Location(worldServer.getWorld(), bed.getX(), bed.getY(), bed.getZ());
+
+        return CraftLocation.toBukkit(respawnConfig.pos(), worldServer.getWorld());
     }
-    // Paper end
-    // Paper start
+
     @Override
     public org.bukkit.entity.FishHook getFishHook() {
         if (getHandle().fishing == null) {
@@ -176,7 +169,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
         return (org.bukkit.entity.FishHook) getHandle().fishing.getBukkitEntity();
     }
-    // Paper end
+
     @Override
     public boolean sleep(Location location, boolean force) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
@@ -476,11 +469,10 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             return;
         }
 
-        //String title = inventory.getTitle(); // Paper - comment
         net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
         if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
-        //player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, CraftChatMessage.fromString(title)[0])); // Paper - comment
+
         if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
         player.containerMenu = container;
         player.initMenu(container);
@@ -511,7 +503,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             mcMerchant = ((CraftAbstractVillager) merchant).getHandle();
             name = ((CraftAbstractVillager) merchant).getHandle().getDisplayName();
             if (merchant instanceof CraftVillager) {
-                level = ((CraftVillager) merchant).getHandle().getVillagerData().getLevel();
+                level = ((CraftVillager) merchant).getHandle().getVillagerData().level();
             }
         } else if (merchant instanceof CraftMerchantCustom) {
             mcMerchant = ((CraftMerchantCustom) merchant).getMerchant();
@@ -808,8 +800,8 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         boolean success = player.drop(dropAll);
         if (!success) return false;
         final net.minecraft.world.entity.player.Inventory inv = player.getInventory();
-        final java.util.OptionalInt optionalSlot = player.containerMenu.findSlot(inv, inv.selected);
-        optionalSlot.ifPresent(slot -> player.containerSynchronizer.sendSlotChange(player.containerMenu, slot, inv.getSelected()));
+        final java.util.OptionalInt optionalSlot = player.containerMenu.findSlot(inv, inv.getSelectedSlot());
+        optionalSlot.ifPresent(slot -> player.containerSynchronizer.sendSlotChange(player.containerMenu, slot, inv.getSelectedItem()));
         return true;
         // Paper end - Fix HumanEntity#drop not updating the client inv
     }

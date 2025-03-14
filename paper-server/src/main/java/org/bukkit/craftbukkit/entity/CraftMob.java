@@ -92,7 +92,6 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
         return this.getHandle().lootTableSeed;
     }
 
-    // Paper start
     @Override
     public boolean isInDaylight() {
         return getHandle().isSunBurnTick();
@@ -155,9 +154,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public void setLeftHanded(boolean leftHanded) {
         getHandle().setLeftHanded(leftHanded);
     }
-    // Paper end
 
-    // Paper start
     @Override
     public boolean isAggressive() {
         return this.getHandle().isAggressive();
@@ -167,16 +164,12 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public void setAggressive(boolean aggressive) {
         this.getHandle().setAggressive(aggressive);
     }
-    // Paper end
 
-    // Paper start
     @Override
     public int getPossibleExperienceReward() {
         return getHandle().getExperienceReward((net.minecraft.server.level.ServerLevel) this.getHandle().level(), null);
     }
-    // Paper end
 
-    // Paper start - Leashable API
     @Override
     public boolean isLeashed() {
         return io.papermc.paper.entity.PaperLeashable.super.isLeashed();
@@ -191,5 +184,4 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
     public boolean setLeashHolder(final org.bukkit.entity.Entity holder) {
         return io.papermc.paper.entity.PaperLeashable.super.setLeashHolder(holder);
     }
-    // Paper end - Leashable API
 }

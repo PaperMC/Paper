@@ -192,9 +192,9 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
 
     private static EulerAngle fromNMS(Rotations old) {
         return new EulerAngle(
-            Math.toRadians(old.getX()),
-            Math.toRadians(old.getY()),
-            Math.toRadians(old.getZ())
+            Math.toRadians(old.x()),
+            Math.toRadians(old.y()),
+            Math.toRadians(old.z())
         );
     }
 
@@ -377,7 +377,7 @@ public class CraftArmorStand extends CraftLivingEntity implements ArmorStand {
     }
 
     private static io.papermc.paper.math.Rotations fromNMSRotations(Rotations old) {
-        return io.papermc.paper.math.Rotations.ofDegrees(old.getX(), old.getY(), old.getZ());
+        return io.papermc.paper.math.Rotations.ofDegrees(old.x(), old.y(), old.z());
     }
 
     private static Rotations toNMSRotations(io.papermc.paper.math.Rotations old) {

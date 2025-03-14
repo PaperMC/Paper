@@ -33,7 +33,7 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
     public BlockData getBlockData() {
         return CraftBlockData.fromData(this.getHandle().getBlockState());
     }
-    // Paper start - Expand FallingBlock API
+
     @Override
     public void setBlockData(final BlockData blockData) {
         Preconditions.checkArgument(blockData != null, "blockData");
@@ -57,7 +57,6 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
         this.setBlockData(blockState.getBlockData());
         if (blockState instanceof final org.bukkit.craftbukkit.block.CraftBlockEntityState<?> tileEntity) this.getHandle().blockData = tileEntity.getSnapshotNBT();
     }
-    // Paper end - Expand FallingBlock API
 
     @Override
     public boolean getDropItem() {
@@ -93,7 +92,7 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
     public void setTicksLived(int value) {
         super.setTicksLived(value);
 
-        // Second field for EntityFallingBlock
+        // Second field for FallingBlockEntity
         this.getHandle().time = value;
     }
 
@@ -126,7 +125,7 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
             this.setHurtEntities(true);
         }
     }
-    // Paper start - Expand FallingBlock API
+
     @Override
     public boolean doesAutoExpire() {
         return this.getHandle().autoExpire;
@@ -136,5 +135,4 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
     public void shouldAutoExpire(boolean autoExpires) {
         this.getHandle().autoExpire = autoExpires;
     }
-    // Paper end - Expand FallingBlock API
 }

@@ -322,7 +322,6 @@ public interface Villager extends AbstractVillager {
         // Paper end
     }
 
-    // Paper start - Add villager reputation API
     /**
      * Get the {@link com.destroystokyo.paper.entity.villager.Reputation reputation}
      * for a specific player by {@link UUID}.
@@ -366,5 +365,4 @@ public interface Villager extends AbstractVillager {
      * reputation regardless of its impact and the player associated.
      */
     public void clearReputations();
-    // Paper end
 }

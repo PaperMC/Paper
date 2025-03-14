@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Phantom;
 
 public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
@@ -29,7 +30,6 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
         return "CraftPhantom";
     }
 
-    // Paper start
     @Override
     public java.util.UUID getSpawningEntity() {
         return this.getHandle().spawningEntity;
@@ -47,14 +47,12 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
 
     @Override
     public org.bukkit.Location getAnchorLocation() {
-        net.minecraft.core.BlockPos pos = this.getHandle().anchorPoint;
-        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), pos);
+        return CraftLocation.toBukkit(this.getHandle().anchorPoint, this.getHandle().level()); // todo NPE?
     }
 
     @Override
     public void setAnchorLocation(org.bukkit.Location location) {
         com.google.common.base.Preconditions.checkArgument(location != null, "location cannot be null");
-        this.getHandle().anchorPoint = io.papermc.paper.util.MCUtil.toBlockPosition(location);
+        this.getHandle().anchorPoint = CraftLocation.toBlockPosition(location); // todo allow null?
     }
-    // Paper end
 }

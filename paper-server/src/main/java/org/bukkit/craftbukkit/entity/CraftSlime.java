@@ -29,15 +29,13 @@ public class CraftSlime extends CraftMob implements Slime, CraftEnemy {
         return "CraftSlime";
     }
 
-    // Paper start
     @Override
     public boolean canWander() {
-        return getHandle().canWander();
+        return this.getHandle().canWander();
     }
 
     @Override
     public void setWander(boolean canWander) {
-        getHandle().setWander(canWander);
+        this.getHandle().setWander(canWander);
     }
-    // Paper end
 }

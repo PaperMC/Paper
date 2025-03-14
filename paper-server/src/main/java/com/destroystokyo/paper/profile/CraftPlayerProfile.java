@@ -13,7 +13,6 @@ import net.minecraft.server.players.GameProfileCache;
 import net.minecraft.util.StringUtil;
 import net.minecraft.world.item.component.ResolvableProfile;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.configuration.ConfigSerializationUtil;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
@@ -47,7 +46,7 @@ public class CraftPlayerProfile implements PlayerProfile, SharedPlayerProfile {
     }
 
     public CraftPlayerProfile(GameProfile profile) {
-        Validate.notNull(profile, "GameProfile cannot be null!");
+        Preconditions.checkArgument(profile != null, "GameProfile cannot be null!");
         this.profile = profile;
     }
 

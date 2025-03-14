@@ -2,9 +2,10 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import java.util.UUID;
+import net.minecraft.Optionull;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.inventory.CraftInventoryAbstractHorse;
 import org.bukkit.craftbukkit.inventory.CraftSaddledInventory;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.AnimalTamer;
@@ -90,14 +91,15 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public UUID getOwnerUniqueId() {
-        return getOwnerUUID();
+        return this.getOwnerUUID();
     }
+
     public UUID getOwnerUUID() {
-        return this.getHandle().getOwnerUUID();
+        return Optionull.map(this.getHandle().getOwnerReference(), EntityReference::getUUID);
     }
 
     public void setOwnerUUID(UUID uuid) {
-        this.getHandle().setOwnerUUID(uuid);
+        this.getHandle().owner = uuid == null ? null : new EntityReference<>(uuid);
     }
 
     @Override
@@ -115,7 +117,6 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
         return new CraftSaddledInventory(getHandle().inventory, this.getHandle().getBodyArmorAccess()); // Paper - use both inventories
     }
 
-    // Paper start - Horse API
     @Override
     public boolean isEatingGrass() {
         return this.getHandle().isEating();
@@ -145,5 +146,4 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
     public void setEating(boolean eating) {
        this.getHandle().setMouthOpen(eating);
     }
-    // Paper end - Horse API
 }

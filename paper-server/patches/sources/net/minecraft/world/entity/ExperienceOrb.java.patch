@@ -15,50 +15,42 @@
  public class ExperienceOrb extends Entity {
      protected static final EntityDataAccessor<Integer> DATA_VALUE = SynchedEntityData.defineId(ExperienceOrb.class, EntityDataSerializers.INT);
      private static final int LIFETIME = 6000;
-@@ -41,9 +_,63 @@
+@@ -41,9 +_,55 @@
      @Nullable
      private Player followingPlayer;
      private final InterpolationHandler interpolation = new InterpolationHandler(this);
 -
 +    // Paper start
-+    @javax.annotation.Nullable
++    @Nullable
 +    public java.util.UUID sourceEntityId;
-+    @javax.annotation.Nullable
++    @Nullable
 +    public java.util.UUID triggerEntityId;
 +    public org.bukkit.entity.ExperienceOrb.SpawnReason spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN;
 +
 +    private void loadPaperNBT(CompoundTag tag) {
-+        if (!tag.contains("Paper.ExpData", net.minecraft.nbt.Tag.TAG_COMPOUND)) {
++        CompoundTag expData = tag.getCompoundOrEmpty("Paper.ExpData");
++        if (expData.isEmpty()) {
 +            return;
 +        }
-+        CompoundTag comp = tag.getCompound("Paper.ExpData");
-+        if (comp.hasUUID("source")) {
-+            this.sourceEntityId = comp.getUUID("source");
-+        }
-+        if (comp.hasUUID("trigger")) {
-+            this.triggerEntityId = comp.getUUID("trigger");
-+        }
-+        if (comp.contains("reason")) {
-+            String reason = comp.getString("reason");
++
++        this.sourceEntityId = expData.read("source", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
++        this.triggerEntityId = expData.read("trigger", net.minecraft.core.UUIDUtil.CODEC).orElse(null);
++        expData.getString("reason").ifPresent(reason -> {
 +            try {
 +                this.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.valueOf(reason);
 +            } catch (Exception e) {
 +                this.level().getCraftServer().getLogger().warning("Invalid spawnReason set for experience orb: " + e.getMessage() + " - " + reason);
 +            }
-+        }
++        });
 +    }
 +    private void savePaperNBT(CompoundTag tag) {
-+        CompoundTag comp = new CompoundTag();
-+        if (this.sourceEntityId != null) {
-+            comp.putUUID("source", this.sourceEntityId);
-+        }
-+        if (this.triggerEntityId != null) {
-+            comp.putUUID("trigger", triggerEntityId);
-+        }
++        CompoundTag expData = new CompoundTag();
++        expData.storeNullable("source", net.minecraft.core.UUIDUtil.CODEC, this.sourceEntityId);
++        expData.storeNullable("trigger", net.minecraft.core.UUIDUtil.CODEC, this.triggerEntityId);
 +        if (this.spawnReason != null && this.spawnReason != org.bukkit.entity.ExperienceOrb.SpawnReason.UNKNOWN) {
-+            comp.putString("reason", this.spawnReason.name());
++            expData.putString("reason", this.spawnReason.name());
 +        }
-+        tag.put("Paper.ExpData", comp);
++        tag.put("Paper.ExpData", expData);
 +    }
 +
 +    @io.papermc.paper.annotation.DoNotUse
@@ -67,11 +59,11 @@
 +        this(level, x, y, z, value, null, null);
 +    }
 +
-+    public ExperienceOrb(Level level, double x, double y, double z, int value, @javax.annotation.Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @javax.annotation.Nullable Entity triggerId) {
++    public ExperienceOrb(Level level, double x, double y, double z, int value, @Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @Nullable Entity triggerId) {
 +        this(level, x, y, z, value, reason, triggerId, null);
 +    }
 +
-+    public ExperienceOrb(Level level, double x, double y, double z, int value, @javax.annotation.Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @javax.annotation.Nullable Entity triggerId, @javax.annotation.Nullable Entity sourceId) {
++    public ExperienceOrb(Level level, double x, double y, double z, int value, @Nullable org.bukkit.entity.ExperienceOrb.SpawnReason reason, @Nullable Entity triggerId, @Nullable Entity sourceId) {
          this(EntityType.EXPERIENCE_ORB, level);
 +        this.sourceEntityId = sourceId != null ? sourceId.getUUID() : null;
 +        this.triggerEntityId = triggerId != null ? triggerId.getUUID() : null;

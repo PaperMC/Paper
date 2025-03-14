@@ -1176,12 +1176,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     // Paper start - entity liquid API
     @Override
     public boolean isUnderWater() {
-        return getHandle().isUnderWater();
+        return this.getHandle().isUnderWater();
     }
 
     @Override
     public boolean isInRain() {
-        return getHandle().isInRain();
+        return this.getHandle().isInRain();
     }
 
     @Override
@@ -1191,7 +1191,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isInWaterOrRain() {
-        return getHandle().isInWaterOrRain();
+        return this.getHandle().isInWaterOrRain();
     }
 
     @Override
@@ -1206,16 +1206,14 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public boolean isInLava() {
-        return getHandle().isInLava();
+        return this.getHandle().isInLava();
     }
     // Paper end - entity liquid API
 
-    // Paper start - isTicking API
     @Override
     public boolean isTicking() {
-        return getHandle().isTicking();
+        return this.getHandle().isTicking();
     }
-    // Paper end - isTicking API
 
     // Paper start - tracked players API
     @Override

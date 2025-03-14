@@ -18,6 +18,7 @@ public class CraftEquipmentSlot {
         set(EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.CHEST);
         set(EquipmentSlot.HEAD, net.minecraft.world.entity.EquipmentSlot.HEAD);
         set(EquipmentSlot.BODY, net.minecraft.world.entity.EquipmentSlot.BODY);
+        set(EquipmentSlot.SADDLE, net.minecraft.world.entity.EquipmentSlot.SADDLE);
     }
 
     private static void set(EquipmentSlot type, net.minecraft.world.entity.EquipmentSlot value) {

@@ -68,7 +68,6 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
         }
     }
 
-    // Paper start
     @Override
     public void setBlockData(org.bukkit.block.data.BlockData data) {
         com.google.common.base.Preconditions.checkArgument(data != null, "The visual block data of this tnt cannot be null. To reset it just set to the TNT default block data");
@@ -79,5 +78,4 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
     public org.bukkit.block.data.BlockData getBlockData() {
         return org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(this.getHandle().getBlockState());
     }
-    // Paper end
 }

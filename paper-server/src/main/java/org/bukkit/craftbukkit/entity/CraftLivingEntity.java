@@ -186,7 +186,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (maxDistance > 120) {
             maxDistance = 120;
         }
-        ArrayList<Block> blocks = new ArrayList<Block>();
+        ArrayList<Block> blocks = new ArrayList<>();
         Iterator<Block> itr = new BlockIterator(this, maxDistance);
         while (itr.hasNext()) {
             Block block = itr.next();
@@ -357,13 +357,11 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public void setArrowsInBody(final int count, final boolean fireEvent) { // Paper
         Preconditions.checkArgument(count >= 0, "New arrow amount must be >= 0");
-        if (!fireEvent) { // Paper
-        this.getHandle().getEntityData().set(net.minecraft.world.entity.LivingEntity.DATA_ARROW_COUNT_ID, count);
-        // Paper start
+        if (!fireEvent) {
+            this.getHandle().getEntityData().set(net.minecraft.world.entity.LivingEntity.DATA_ARROW_COUNT_ID, count);
         } else {
             this.getHandle().setArrowCount(count);
         }
-        // Paper end
     }
 
     // Paper start - Add methods for working with arrows stuck in living entities
@@ -580,12 +578,10 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return effects;
     }
 
-    // Paper start - LivingEntity#clearActivePotionEffects();
     @Override
     public boolean clearActivePotionEffects() {
         return this.getHandle().removeAllEffects(EntityPotionEffectEvent.Cause.PLUGIN);
     }
-    // Paper end
 
     @Override
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile) {
@@ -711,11 +707,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         if (velocity != null) {
             ((T) launch.getBukkitEntity()).setVelocity(velocity);
         }
-        // Paper start - launchProjectile consumer
         if (function != null) {
             function.accept((T) launch.getBukkitEntity());
         }
-        // Paper end - launchProjectile consumer
 
         world.addFreshEntity(launch);
         return (T) launch.getBukkitEntity();
@@ -728,7 +722,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return this.getHandle().hasLineOfSight(((CraftEntity) other).getHandle());
     }
 
-    // Paper start
     @Override
     public boolean hasLineOfSight(Location loc) {
         if (this.getHandle().level() != ((CraftWorld) loc.getWorld()).getHandle()) {
@@ -743,7 +736,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
         return this.getHandle().level().clipDirect(start, end, net.minecraft.world.phys.shapes.CollisionContext.of(this.getHandle())) == net.minecraft.world.phys.HitResult.Type.MISS;
     }
-    // Paper end
 
     @Override
     public boolean getRemoveWhenFarAway() {
@@ -774,7 +766,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public boolean getCanPickupItems() {
         if (this.getHandle() instanceof Mob) {
-            return ((Mob) this.getHandle()).canPickUpLoot();
+            return this.getHandle().canPickUpLoot();
         } else {
             return this.getHandle().bukkitPickUpLoot;
         }
@@ -854,7 +846,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     // Paper start - living entity allow attribute registration
     @Override
     public void registerAttribute(Attribute attribute) {
-        getHandle().craftAttributes.registerAttribute(attribute);
+        this.getHandle().craftAttributes.registerAttribute(attribute);
     }
     // Paper end - living entity allow attribute registration
 
@@ -979,7 +971,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
             if (this.getHandle() instanceof Consumable.OverrideConsumeSound consumable_b) {
                 soundeffect = consumable_b.getConsumeSound(nms);
             } else {
-                soundeffect = (SoundEvent) consumable.sound().value();
+                soundeffect = consumable.sound().value();
             }
         }
 
@@ -1005,7 +997,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void setInvisible(boolean invisible) {
         super.setInvisible(invisible); // Paper - move invisibility up to Entity
     }
-    // Paper start
+
     @Override
     public float getSidewaysMovement() {
         return this.getHandle().xxa;
@@ -1020,9 +1012,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public float getUpwardsMovement() {
         return this.getHandle().yya;
     }
-    // Paper end
 
-    // Paper start
     @Override
     public int getArrowsStuck() {
         return this.getHandle().getArrowCount();
@@ -1042,7 +1032,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void setShieldBlockingDelay(int delay) {
         getHandle().setShieldBlockingDelay(delay);
     }
-    // Paper end
 
     // Paper start - active item API
     @Override
@@ -1065,12 +1054,10 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return this.getHandle().getUseItem().asBukkitMirror();
     }
 
-    // Paper start
     @Override
     public void clearActiveItem() {
-        getHandle().stopUsingItem();
+        this.getHandle().stopUsingItem();
     }
-    // Paper end
 
     @Override
     public int getActiveItemRemainingTime() {
@@ -1186,7 +1173,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         nmsStack.hurtAndBreak(amount, this.getHandle(), slot, true);
     }
     // Paper end - ItemStack damage API
-    // Paper start - friction API
+
     @org.jetbrains.annotations.NotNull
     @Override
     public net.kyori.adventure.util.TriState getFrictionState() {
@@ -1195,10 +1182,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public void setFrictionState(@org.jetbrains.annotations.NotNull net.kyori.adventure.util.TriState state) {
-        java.util.Objects.requireNonNull(state, "state may not be null");
+        Preconditions.checkArgument(state != null, "state may not be null");
         this.getHandle().frictionState = state;
     }
-    // Paper end - friction API
 
     // Paper start - body yaw API
     @Override

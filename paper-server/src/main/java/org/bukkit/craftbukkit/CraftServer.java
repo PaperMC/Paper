@@ -2595,7 +2595,7 @@ public final class CraftServer implements Server {
             offers = this.tabCompleteChat(player, message);
         }
 
-        TabCompleteEvent tabEvent = new TabCompleteEvent(player, message, offers, message.startsWith("/") || forceCommand, pos != null ? io.papermc.paper.util.MCUtil.toLocation(((CraftWorld) player.getWorld()).getHandle(), BlockPos.containing(pos)) : null); // Paper - AsyncTabCompleteEvent
+        TabCompleteEvent tabEvent = new TabCompleteEvent(player, message, offers, message.startsWith("/") || forceCommand, pos != null ? CraftLocation.toBukkit(BlockPos.containing(pos), ((CraftWorld) player.getWorld()).getHandle()) : null); // Paper - AsyncTabCompleteEvent
         this.getPluginManager().callEvent(tabEvent);
 
         return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();

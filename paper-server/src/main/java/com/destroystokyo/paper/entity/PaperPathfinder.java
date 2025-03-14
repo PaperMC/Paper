@@ -1,6 +1,6 @@
 package com.destroystokyo.paper.entity;
 
-import org.apache.commons.lang.Validate;
+import com.google.common.base.Preconditions;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
 import org.bukkit.entity.LivingEntity;
@@ -49,7 +49,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
     @Nullable
     @Override
     public PathResult findPath(Location loc) {
-        Validate.notNull(loc, "Location can not be null");
+        Preconditions.checkArgument(loc != null, "Location can not be null");
         Path path = entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), 0);
         return path != null ? new PaperPathResult(path) : null;
     }
@@ -57,14 +57,14 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
     @Nullable
     @Override
     public PathResult findPath(LivingEntity target) {
-        Validate.notNull(target, "Target can not be null");
+        Preconditions.checkArgument(target != null, "Target can not be null");
         Path path = entity.getNavigation().createPath(((CraftLivingEntity) target).getHandle(), 0);
         return path != null ? new PaperPathResult(path) : null;
     }
 
     @Override
     public boolean moveTo(@Nonnull PathResult path, double speed) {
-        Validate.notNull(path, "PathResult can not be null");
+        Preconditions.checkArgument(path != null, "PathResult can not be null");
         Path pathEntity = ((PaperPathResult) path).path;
         return entity.getNavigation().moveTo(pathEntity, speed);
     }

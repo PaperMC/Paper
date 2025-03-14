@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.ExperienceOrb;
+import java.util.UUID;
 
 public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
     public CraftExperienceOrb(CraftServer server, net.minecraft.world.entity.ExperienceOrb entity) {
@@ -10,15 +11,14 @@ public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
 
     @Override
     public int getExperience() {
-        return this.getHandle().value;
+        return this.getHandle().getValue();
     }
 
     @Override
     public void setExperience(int value) {
-        this.getHandle().value = value;
+        this.getHandle().setValue(value);
     }
 
-    // Paper start - expose count
     @Override
     public int getCount() {
         return this.getHandle().count;
@@ -28,19 +28,21 @@ public class CraftExperienceOrb extends CraftEntity implements ExperienceOrb {
     public void setCount(final int count) {
         this.getHandle().count = count;
     }
-    // Paper end
 
-    // Paper start
-    public java.util.UUID getTriggerEntityId() {
-        return getHandle().triggerEntityId;
+    @Override
+    public UUID getTriggerEntityId() {
+        return this.getHandle().triggerEntityId;
     }
-    public java.util.UUID getSourceEntityId() {
-        return getHandle().sourceEntityId;
+
+    @Override
+    public UUID getSourceEntityId() {
+        return this.getHandle().sourceEntityId;
     }
+
+    @Override
     public SpawnReason getSpawnReason() {
-        return getHandle().spawnReason;
+        return this.getHandle().spawnReason;
     }
-    // Paper end
 
     @Override
     public net.minecraft.world.entity.ExperienceOrb getHandle() {

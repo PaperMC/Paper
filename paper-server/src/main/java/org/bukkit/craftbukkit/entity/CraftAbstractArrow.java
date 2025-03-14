@@ -33,7 +33,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
 
     @Override
     public double getDamage() {
-        return this.getHandle().getBaseDamage();
+        return this.getHandle().baseDamage;
     }
 
     @Override
@@ -174,7 +174,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
 
     @Override
     public org.bukkit.Sound getHitSound() {
-        return org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(this.getHandle().soundEvent);
+        return org.bukkit.craftbukkit.CraftSound.minecraftToBukkit(this.getHandle().getHitGroundSoundEvent());
     }
 
     @Override

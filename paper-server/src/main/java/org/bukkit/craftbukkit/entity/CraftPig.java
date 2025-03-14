@@ -3,7 +3,10 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.animal.PigVariant;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -26,7 +29,7 @@ public class CraftPig extends CraftAnimals implements Pig {
 
     @Override
     public void setSaddle(boolean saddled) {
-        this.getHandle().steering.setSaddle(saddled);
+        this.getHandle().setItemSlot(EquipmentSlot.SADDLE, saddled ? new ItemStack(Items.SADDLE) : ItemStack.EMPTY);
     }
 
     @Override

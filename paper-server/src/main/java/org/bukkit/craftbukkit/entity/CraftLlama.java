@@ -59,7 +59,6 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
         return "CraftLlama";
     }
 
-    // Paper start
     @Override
     public boolean inCaravan() {
         return this.getHandle().inCaravan();
@@ -89,5 +88,4 @@ public class CraftLlama extends CraftChestedHorse implements Llama, com.destroys
     public Llama getCaravanTail() {
         return this.getHandle().caravanTail == null ? null : (Llama) this.getHandle().caravanTail.getBukkitEntity();
     }
-    // Paper end
 }

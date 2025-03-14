@@ -140,18 +140,6 @@ public final class MCUtil {
         return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) + (z1 - z2) * (z1 - z2);
     }
 
-    public static Location toLocation(Level world, double x, double y, double z) {
-        return new Location(world.getWorld(), x, y, z);
-    }
-
-    public static Location toLocation(Level world, BlockPos pos) {
-        return new Location(world.getWorld(), pos.getX(), pos.getY(), pos.getZ());
-    }
-
-    public static BlockPos toBlockPosition(Location loc) {
-        return new BlockPos(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
-    }
-
     public static BlockPos toBlockPos(Position pos) {
         return new BlockPos(pos.blockX(), pos.blockY(), pos.blockZ());
     }

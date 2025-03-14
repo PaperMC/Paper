@@ -18,7 +18,7 @@ public class CraftRavager extends CraftRaider implements Ravager {
     public String toString() {
         return "CraftRavager";
     }
-    // Paper start - Missing Entity Behavior
+
     @Override
     public int getAttackTicks() {
         return this.getHandle().getAttackTick();
@@ -48,5 +48,4 @@ public class CraftRavager extends CraftRaider implements Ravager {
     public void setRoarTicks(int ticks) {
         this.getHandle().roarTick = ticks;
     }
-    // Paper end
 }
