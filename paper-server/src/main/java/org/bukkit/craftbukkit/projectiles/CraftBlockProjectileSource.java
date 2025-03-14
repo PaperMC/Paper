@@ -25,6 +25,7 @@ import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.TippedArrow;
 import org.bukkit.projectiles.BlockProjectileSource;
 import org.bukkit.util.Vector;
+import java.util.function.Consumer;
 
 public class CraftBlockProjectileSource implements BlockProjectileSource {
     private final DispenserBlockEntity dispenserBlock;
@@ -50,7 +51,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
     }
 
     @Override
-    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, java.util.function.Consumer<? super T> function) {
+    public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, Consumer<? super T> function) {
         // Paper end - launchProjectile consumer
         Preconditions.checkArgument(this.getBlock().getType() == Material.DISPENSER, "Block is no longer dispenser");
 
@@ -97,19 +98,17 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
         ProjectileItem projectileItem = (ProjectileItem) item;
         ProjectileItem.DispenseConfig dispenseConfig = projectileItem.createDispenseConfig();
 
-        Position iposition = dispenseConfig.positionFunction().getDispensePosition(blockSource, direction);
-        net.minecraft.world.entity.projectile.Projectile launch = projectileItem.asProjectile(world, iposition, itemstack, direction);
+        Position position = dispenseConfig.positionFunction().getDispensePosition(blockSource, direction);
+        net.minecraft.world.entity.projectile.Projectile launch = projectileItem.asProjectile(world, position, itemstack, direction);
         launch.projectileSource = this;
         projectileItem.shoot(launch, direction.getStepX(), direction.getStepY(), direction.getStepZ(), dispenseConfig.power(), dispenseConfig.uncertainty());
 
         if (velocity != null) {
             ((T) launch.getBukkitEntity()).setVelocity(velocity);
         }
-        // Paper start
         if (function != null) {
             function.accept((T) launch.getBukkitEntity());
         }
-        // Paper end
 
         world.addFreshEntity(launch);
         return (T) launch.getBukkitEntity();

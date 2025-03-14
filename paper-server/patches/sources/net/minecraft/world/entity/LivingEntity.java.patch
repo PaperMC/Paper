@@ -999,7 +999,7 @@
                  int i = (this.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
                  int i1 = 25 - i;
                  float f = damageAmount * i1;
-@@ -1790,24 +_,219 @@
+@@ -1790,24 +_,198 @@
          }
      }
  
@@ -1008,7 +1008,7 @@
 +    private EntityDamageEvent handleEntityDamage(final DamageSource damagesource, float amount, final float invulnerabilityRelatedLastDamage) { // Paper - fix invulnerability reduction in EntityDamageEvent
 +        float originalDamage = amount;
 +        // Paper start - fix invulnerability reduction in EntityDamageEvent
-+        final com.google.common.base.Function<Double, Double> invulnerabilityReductionEquation = d -> {
++        final com.google.common.base.Function<Double, Double> invulnerabilityReductionEquation = mod -> {
 +            if (invulnerabilityRelatedLastDamage == 0) return 0D; // no last damage, no reduction
 +            // last damage existed, this means the reduction *technically* is (new damage - last damage).
 +            // If the event damage was changed to something less than invul damage, hard lock it at 0.
@@ -1016,85 +1016,64 @@
 +            // Cast the passed in double down to a float as double -> float -> double is lossy.
 +            // If last damage is a (float) 3.2D (since the events use doubles), we cannot compare
 +            // the new damage value of this damage instance by upcasting it again to a double as 3.2D != (double) (float) 3.2D.
-+            if (d.floatValue() < invulnerabilityRelatedLastDamage) return 0D;
++            if (mod.floatValue() < invulnerabilityRelatedLastDamage) return 0D;
 +            return (double) -invulnerabilityRelatedLastDamage;
 +        };
 +        final float originalInvulnerabilityReduction = invulnerabilityReductionEquation.apply((double) amount).floatValue();
 +        amount += originalInvulnerabilityReduction;
 +        // Paper end - fix invulnerability reduction in EntityDamageEvent
 +
-+        com.google.common.base.Function<Double, Double> freezing = new com.google.common.base.Function<Double, Double>() {
-+            @Override
-+            public Double apply(Double f) {
-+                if (damagesource.is(DamageTypeTags.IS_FREEZING) && LivingEntity.this.getType().is(EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
-+                    return -(f - (f * 5.0F));
-+                }
-+                return -0.0;
++        com.google.common.base.Function<Double, Double> freezing = mod -> {
++            if (damagesource.is(net.minecraft.tags.DamageTypeTags.IS_FREEZING) && LivingEntity.this.getType().is(net.minecraft.tags.EntityTypeTags.FREEZE_HURTS_EXTRA_TYPES)) {
++                return -(mod - (mod * 5.0F));
 +            }
++            return -0.0;
 +        };
 +        float freezingModifier = freezing.apply((double) amount).floatValue();
 +        amount += freezingModifier;
 +
-+        com.google.common.base.Function<Double, Double> hardHat = new com.google.common.base.Function<Double, Double>() {
-+            @Override
-+            public Double apply(Double f) {
-+                if (damagesource.is(DamageTypeTags.DAMAGES_HELMET) && !LivingEntity.this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
-+                    return -(f - (f * 0.75F));
-+                }
-+                return -0.0;
++        com.google.common.base.Function<Double, Double> hardHat = mod -> {
++            if (damagesource.is(net.minecraft.tags.DamageTypeTags.DAMAGES_HELMET) && !LivingEntity.this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
++                return -(mod - (mod * 0.75F));
 +            }
++            return -0.0;
 +        };
 +        float hardHatModifier = hardHat.apply((double) amount).floatValue();
 +        amount += hardHatModifier;
 +
-+        com.google.common.base.Function<Double, Double> blocking = new com.google.common.base.Function<Double, Double>() {
-+            @Override
-+            public Double apply(Double f) {
-+                return -((LivingEntity.this.isDamageSourceBlocked(damagesource)) ? f : 0.0);
-+            }
++        com.google.common.base.Function<Double, Double> blocking = mod -> {
++            return -((net.minecraft.world.entity.LivingEntity.this.isDamageSourceBlocked(damagesource)) ? mod : 0.0);
 +        };
 +        float blockingModifier = blocking.apply((double) amount).floatValue();
 +        amount += blockingModifier;
 +
-+        com.google.common.base.Function<Double, Double> armor = new com.google.common.base.Function<Double, Double>() {
-+            @Override
-+            public Double apply(Double f) {
-+                return -(f - LivingEntity.this.getDamageAfterArmorAbsorb(damagesource, f.floatValue()));
-+            }
++        com.google.common.base.Function<Double, Double> armor = mod -> {
++            return -(mod - net.minecraft.world.entity.LivingEntity.this.getDamageAfterArmorAbsorb(damagesource, mod.floatValue()));
 +        };
 +        float armorModifier = armor.apply((double) amount).floatValue();
 +        amount += armorModifier;
 +
-+        com.google.common.base.Function<Double, Double> resistance = new com.google.common.base.Function<Double, Double>() {
-+            @Override
-+            public Double apply(Double f) {
-+                if (!damagesource.is(DamageTypeTags.BYPASSES_EFFECTS) && LivingEntity.this.hasEffect(MobEffects.RESISTANCE) && !damagesource.is(DamageTypeTags.BYPASSES_RESISTANCE)) {
-+                    int i = (LivingEntity.this.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
-+                    int j = 25 - i;
-+                    float f1 = f.floatValue() * (float) j;
++        com.google.common.base.Function<Double, Double> resistance = mod -> {
++            if (!damagesource.is(net.minecraft.tags.DamageTypeTags.BYPASSES_EFFECTS) && LivingEntity.this.hasEffect(net.minecraft.world.effect.MobEffects.RESISTANCE) && !damagesource.is(net.minecraft.tags.DamageTypeTags.BYPASSES_RESISTANCE)) {
++                int i = (LivingEntity.this.getEffect(net.minecraft.world.effect.MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
++                int j = 25 - i;
++                float f1 = mod.floatValue() * (float) j;
 +
-+                    return -(f - Math.max(f1 / 25.0F, 0.0F));
-+                }
-+                return -0.0;
++                return -(mod - Math.max(f1 / 25.0F, 0.0F));
 +            }
++            return -0.0;
 +        };
 +        float resistanceModifier = resistance.apply((double) amount).floatValue();
 +        amount += resistanceModifier;
 +
-+        com.google.common.base.Function<Double, Double> magic = new com.google.common.base.Function<Double, Double>() {
-+            @Override
-+            public Double apply(Double f) {
-+                return -(f - LivingEntity.this.getDamageAfterMagicAbsorb(damagesource, f.floatValue()));
-+            }
++        com.google.common.base.Function<Double, Double> magic = mod -> {
++            return -(mod - net.minecraft.world.entity.LivingEntity.this.getDamageAfterMagicAbsorb(damagesource, mod.floatValue()));
 +        };
 +        float magicModifier = magic.apply((double) amount).floatValue();
 +        amount += magicModifier;
 +
-+        com.google.common.base.Function<Double, Double> absorption = new com.google.common.base.Function<Double, Double>() {
-+            @Override
-+            public Double apply(Double f) {
-+                return -(Math.max(f - Math.max(f - LivingEntity.this.getAbsorptionAmount(), 0.0F), 0.0F));
-+            }
++        com.google.common.base.Function<Double, Double> absorption = mod -> {
++            return -(Math.max(mod - Math.max(mod - net.minecraft.world.entity.LivingEntity.this.getAbsorptionAmount(), 0.0F), 0.0F));
 +        };
 +        float absorptionModifier = absorption.apply((double) amount).floatValue();
 +
@@ -1509,7 +1488,7 @@
 +            return;
 +        }
 +
-+        int _int = this.level().getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
++        int _int = ((ServerLevel) this.level()).getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
 +        if (_int <= 0 && this.level().paperConfig().collisions.maxEntityCollisions <= 0) {
 +            return;
 +        }

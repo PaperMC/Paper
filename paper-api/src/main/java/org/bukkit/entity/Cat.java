@@ -93,7 +93,6 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
         }
     }
 
-    // Paper start - More cat api
     /**
      * Sets if the cat is lying down.
      * This is visual and does not affect the behaviour of the cat.
@@ -123,5 +122,4 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
      * @return head is up
      */
     public boolean isHeadUp();
-    // Paper end - More cat api
 }

@@ -35,7 +35,7 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
 
     @Override
     public void setCatType(Type type) {
-        Preconditions.checkArgument(type != null, "Cannot have null Type");
+        Preconditions.checkArgument(type != null, "type cannot be null");
 
         this.getHandle().setVariant(CraftType.bukkitToMinecraftHolder(type));
     }
@@ -139,7 +139,6 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
         }
     }
 
-    // Paper start - More cat api
     @Override
     public void setLyingDown(boolean lyingDown) {
         this.getHandle().setLying(lyingDown);
@@ -159,5 +158,4 @@ public class CraftCat extends CraftTameableAnimal implements Cat {
     public boolean isHeadUp() {
         return this.getHandle().isRelaxStateOne();
     }
-    // Paper end - More cat api
 }

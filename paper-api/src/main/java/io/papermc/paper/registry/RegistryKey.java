@@ -19,8 +19,11 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Cat;
+import org.bukkit.entity.Chicken;
+import org.bukkit.entity.Cow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
+import org.bukkit.entity.Pig;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.memory.MemoryKey;
@@ -194,6 +197,21 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * @see io.papermc.paper.registry.keys.InstrumentKeys
      */
     RegistryKey<MusicInstrument> INSTRUMENT = create("instrument");
+    /**
+     * Data-driven registry for chicken variants.
+     * <!-- @see io.papermc.paper.registry.keys.ChickenVariantKeys -->
+     */
+    RegistryKey<Chicken.Variant> CHICKEN_VARIANT = create("chicken_variant");
+    /**
+     * Data-driven registry for cow variants.
+     * <!-- @see io.papermc.paper.registry.keys.CowVariantKeys -->
+     */
+    RegistryKey<Cow.Variant> COW_VARIANT = create("cow_variant");
+    /**
+     * Data-driven registry for pig variants.
+     * <!-- @see io.papermc.paper.registry.keys.PigVariantKeys -->
+     */
+    RegistryKey<Pig.Variant> PIG_VARIANT = create("pig_variant");
 
 
     /* ******************* *

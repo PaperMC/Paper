@@ -20,12 +20,12 @@ class CraftMetaEnchantedBook extends CraftMetaItem implements EnchantmentStorage
     CraftMetaEnchantedBook(CraftMetaItem meta) {
         super(meta);
 
-        if (!(meta instanceof final CraftMetaEnchantedBook that)) {
+        if (!(meta instanceof final CraftMetaEnchantedBook enchantedBookMeta)) {
             return;
         }
 
-        if (that.hasEnchants()) {
-            this.enchantments = new LinkedHashMap<>(that.enchantments);
+        if (enchantedBookMeta.hasEnchants()) {
+            this.enchantments = new LinkedHashMap<>(enchantedBookMeta.enchantments);
         }
     }
 

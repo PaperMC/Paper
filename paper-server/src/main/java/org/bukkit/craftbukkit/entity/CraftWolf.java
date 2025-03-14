@@ -3,7 +3,7 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.entity.animal.WolfVariant;
+import net.minecraft.world.entity.animal.wolf.WolfVariant;
 import org.bukkit.DyeColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.craftbukkit.CraftRegistry;
@@ -12,7 +12,7 @@ import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Wolf;
 
 public class CraftWolf extends CraftTameableAnimal implements Wolf {
-    public CraftWolf(CraftServer server, net.minecraft.world.entity.animal.Wolf wolf) {
+    public CraftWolf(CraftServer server, net.minecraft.world.entity.animal.wolf.Wolf wolf) {
         super(server, wolf);
     }
 
@@ -31,8 +31,8 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
     }
 
     @Override
-    public net.minecraft.world.entity.animal.Wolf getHandle() {
-        return (net.minecraft.world.entity.animal.Wolf) this.entity;
+    public net.minecraft.world.entity.animal.wolf.Wolf getHandle() {
+        return (net.minecraft.world.entity.animal.wolf.Wolf) this.entity;
     }
 
     @Override
@@ -61,8 +61,8 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
     }
 
     @Override
-    public void setInterested(boolean flag) {
-        this.getHandle().setIsInterested(flag);
+    public void setInterested(boolean interested) {
+        this.getHandle().setIsInterested(interested);
     }
 
     @Override
@@ -72,7 +72,7 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
 
     @Override
     public void setVariant(Variant variant) {
-        Preconditions.checkArgument(variant != null, "variant");
+        Preconditions.checkArgument(variant != null, "variant cannot be null");
 
         this.getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }

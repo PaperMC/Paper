@@ -145,19 +145,19 @@ public class CraftBlock implements Block {
     }
 
     public void setData(final byte data) {
-        this.setData(data, 3);
+        this.setData(data, net.minecraft.world.level.block.Block.UPDATE_ALL);
     }
 
     public void setData(final byte data, boolean applyPhysics) {
         if (applyPhysics) {
-            this.setData(data, 3);
+            this.setData(data, net.minecraft.world.level.block.Block.UPDATE_ALL);
         } else {
-            this.setData(data, 2);
+            this.setData(data, net.minecraft.world.level.block.Block.UPDATE_CLIENTS);
         }
     }
 
-    private void setData(final byte data, int flag) {
-        this.world.setBlock(this.position, CraftMagicNumbers.getBlock(this.getType(), data), flag);
+    private void setData(final byte data, int flags) {
+        this.world.setBlock(this.position, CraftMagicNumbers.getBlock(this.getType(), data), flags);
     }
 
     @Override
@@ -209,12 +209,12 @@ public class CraftBlock implements Block {
         }
 
         if (applyPhysics) {
-            return world.setBlock(position, blockData, 3);
+            return world.setBlock(position, blockData, net.minecraft.world.level.block.Block.UPDATE_ALL);
         } else {
             boolean success = world.setBlock(position, blockData,
                 net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
-                    net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
-                    net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
+                net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
+                net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
             if (success && world instanceof net.minecraft.world.level.Level) {
                 world.getMinecraftWorld().sendBlockUpdated(
                         position,
