@@ -8,7 +8,7 @@
  ) {
      public static final Codec<PalettedContainer<BlockState>> BLOCK_STATE_CODEC = PalettedContainer.codecRW(
          Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState()
-@@ -109,12 +_,39 @@
+@@ -109,12 +_,38 @@
      public static final String BLOCK_LIGHT_TAG = "BlockLight";
      public static final String SKY_LIGHT_TAG = "SkyLight";
  
@@ -17,7 +17,7 @@
 +    public static ChunkPos getChunkCoordinate(final CompoundTag chunkData) {
 +        final int dataVersion = ChunkStorage.getVersion(chunkData);
 +        if (dataVersion < 2842) { // Level tag is removed after this version
-+            final CompoundTag levelData = chunkData.getCompound("Level").orElse(null);
++            final CompoundTag levelData = chunkData.getCompoundOrEmpty("Level");
 +            return new ChunkPos(levelData.getIntOr("xPos", 0), levelData.getIntOr("zPos", 0));
 +        } else {
 +            return new ChunkPos(chunkData.getIntOr("xPos", 0), chunkData.getIntOr("zPos", 0));
@@ -37,13 +37,12 @@
          } else {
 -            ChunkPos chunkPos = new ChunkPos(tag.getIntOr("xPos", 0), tag.getIntOr("zPos", 0));
 +            // Paper start - Do not let the server load chunks from newer versions
-+            if (tag.get("DataVersion") instanceof net.minecraft.nbt.NumericTag dataVersionTag) {
-+                final int dataVersion = dataVersionTag.intValue();
++            tag.getInt("DataVersion").ifPresent(dataVersion -> {
 +                if (!JUST_CORRUPT_IT && dataVersion > CURRENT_DATA_VERSION) {
 +                    new RuntimeException("Server attempted to load chunk saved with newer version of minecraft! " + dataVersion + " > " + CURRENT_DATA_VERSION).printStackTrace();
 +                    System.exit(1);
 +                }
-+            }
++            });
 +            // Paper end - Do not let the server load chunks from newer versions
 +            ChunkPos chunkPos = new ChunkPos(tag.getIntOr("xPos", 0), tag.getIntOr("zPos", 0)); // Paper - guard against serializing mismatching coordinates; diff on change, see ChunkSerializer#getChunkCoordinate
              long longOr = tag.getLongOr("LastUpdate", 0L);

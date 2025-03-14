@@ -211,7 +211,10 @@ public class CraftBlock implements Block {
         if (applyPhysics) {
             return world.setBlock(position, blockData, 3);
         } else {
-            boolean success = world.setBlock(position, blockData, 2 | 16 | 1024); // NOTIFY | NO_OBSERVER | NO_PLACE (custom)
+            boolean success = world.setBlock(position, blockData,
+                net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
+                    net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
+                    net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
             if (success && world instanceof net.minecraft.world.level.Level) {
                 world.getMinecraftWorld().sendBlockUpdated(
                         position,
