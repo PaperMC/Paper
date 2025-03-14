@@ -26,19 +26,30 @@ public interface Armadillo extends Animals {
     void rollOut();
 
     /**
-     * Sets the frozen state of the armadillo.
+     * Freeze the current state of the armadillo.
      */
-    void setFrozenState(Armadillo.State frozenState);
+    void freezeState();
 
     /**
-     * Gets the frozen state of the armadillo.
+     * Unfreezes the armadillo, allowing the AI to change states.
      */
-    Armadillo.State getFrozenState();
+    void unFreezeState();
 
     /**
-     * Clears the frozen state of the armadillo.
+     * Checks if the armadillo is frozen.
+     * @return {@code true} if the paper is frozen; {@code false} otherwise.
      */
-    void clearFrozenState();
+    boolean isFrozen();
+
+    /**
+     * Freezes the state of the armadillo after rolling up.
+     */
+    void freezeRollUp();
+
+    /**
+     * Freezes the state of the armadillo after rolling out.
+     */
+    void freezeRollOut();
 
     /**
      * Represents the current state of the armadillo.

@@ -19,25 +19,13 @@ public class ArmadilloStateChangeEvent extends EntityEvent implements Cancellabl
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Armadillo.State oldState;
-    private Armadillo.State newState;
+    private final Armadillo.State newState;
     private boolean cancelled;
 
     @ApiStatus.Internal
     public ArmadilloStateChangeEvent(final Armadillo armadillo, final Armadillo.State oldState, final Armadillo.State newState) {
         super(armadillo);
         this.oldState = oldState;
-        this.newState = newState;
-    }
-
-    /**
-     * Sets the new state for the armadillo.
-     * <p>
-     * You can modify the outcome of the state change by setting a different state.
-     *
-     * @param newState the new state to set, must not be null
-     */
-    public void setNewState(final Armadillo.State newState) {
-        Preconditions.checkArgument(newState != null, "newState cannot be null");
         this.newState = newState;
     }
 

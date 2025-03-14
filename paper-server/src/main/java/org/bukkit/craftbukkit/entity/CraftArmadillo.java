@@ -65,17 +65,31 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
         };
     }
 
-    public void setFrozenState(Armadillo.@NonNull State frozenState) {
-        this.getHandle().setFrozenState(stateToNMS(frozenState));
-        this.getHandle().switchToState(stateToNMS(frozenState));
+    public void freezeState(){
+        this.getHandle().freezeState();
     }
 
-    public void clearFrozenState() {
-        this.getHandle().setFrozenState(null);
-        this.getHandle().getBrain().setActiveActivityToFirstValid(ImmutableList.of(Activity.PANIC, Activity.IDLE));
+    public void unFreezeState() {
+        this.getHandle().unfreezeState();
     }
 
-    public Armadillo.@Nullable State getFrozenState() {
-        return stateToBukkit(this.getHandle().getFrozenState());
+    public boolean isFrozen(){
+        return this.getHandle().isFrozen();
+    }
+
+    public void freezeRollUp(){
+        if (isFrozen()){
+            unFreezeState();
+        }
+        rollUp();
+        freezeState();
+    }
+
+    public void freezeRollOut(){
+        if (isFrozen()){
+            unFreezeState();
+        }
+        rollOut();
+        freezeState();
     }
 }
