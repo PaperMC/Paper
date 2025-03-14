@@ -67,36 +67,12 @@
                      }
                  });
              }
-@@ -246,25 +_,25 @@
- 
+@@ -247,7 +_,7 @@
      public void flushDirty(ServerPlayer serverPlayer) {
          if (this.isFirstPacket || !this.rootsToUpdate.isEmpty() || !this.progressChanged.isEmpty()) {
--            Map<ResourceLocation, AdvancementProgress> map = new HashMap<>();
+             Map<ResourceLocation, AdvancementProgress> map = new HashMap<>();
 -            Set<AdvancementHolder> set = new HashSet<>();
--            Set<ResourceLocation> set1 = new HashSet<>();
-+            Map<ResourceLocation, AdvancementProgress> progress = new HashMap<>();
-+            Set<AdvancementHolder> added = new java.util.TreeSet<>(java.util.Comparator.comparing(AdvancementHolder::toString)); // Paper - Changed from HashSet to TreeSet ordered alphabetically.
-+            Set<ResourceLocation> removed = new HashSet<>();
++            Set<AdvancementHolder> set = new java.util.TreeSet<>(java.util.Comparator.comparing(adv -> adv.id().toString())); // Paper - Changed from HashSet to TreeSet ordered alphabetically.
+             Set<ResourceLocation> set1 = new HashSet<>();
  
              for (AdvancementNode advancementNode : this.rootsToUpdate) {
--                this.updateTreeVisibility(advancementNode, set, set1);
-+                this.updateTreeVisibility(advancementNode, added, removed);
-             }
- 
-             this.rootsToUpdate.clear();
- 
-             for (AdvancementHolder advancementHolder : this.progressChanged) {
-                 if (this.visible.contains(advancementHolder)) {
--                    map.put(advancementHolder.id(), this.progress.get(advancementHolder));
-+                    progress.put(advancementHolder.id(), this.progress.get(advancementHolder));
-                 }
-             }
- 
-             this.progressChanged.clear();
--            if (!map.isEmpty() || !set.isEmpty() || !set1.isEmpty()) {
--                serverPlayer.connection.send(new ClientboundUpdateAdvancementsPacket(this.isFirstPacket, set, set1, map));
-+            if (!progress.isEmpty() || !added.isEmpty() || !removed.isEmpty()) {
-+                serverPlayer.connection.send(new ClientboundUpdateAdvancementsPacket(this.isFirstPacket, added, removed, progress));
-             }
-         }
- 
