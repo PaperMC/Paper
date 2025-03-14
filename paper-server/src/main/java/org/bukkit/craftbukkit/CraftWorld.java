@@ -47,7 +47,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
@@ -61,6 +60,7 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.biome.Climate;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.storage.LevelResource;
@@ -448,7 +448,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public boolean unloadChunkRequest(int x, int z) {
         org.spigotmc.AsyncCatcher.catchOp("chunk unload"); // Spigot
         if (this.isChunkLoaded(x, z)) {
-            this.world.getChunkSource().removeRegionTicket(TicketType.PLUGIN, new ChunkPos(x, z), 1, Unit.INSTANCE);
+            this.world.getChunkSource().removeTicketWithRadius(TicketType.PLUGIN, new ChunkPos(x, z), 1);
         }
 
         return true;
@@ -532,8 +532,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             chunk = this.world.getChunkSource().getChunk(x, z, ChunkStatus.FULL, true);
         }
 
-        if (chunk instanceof net.minecraft.world.level.chunk.LevelChunk) {
-            this.world.getChunkSource().addTicketAtLevel(TicketType.PLUGIN, new ChunkPos(x, z), 1, Unit.INSTANCE);
+        if (chunk instanceof LevelChunk) {
+            this.world.getChunkSource().addTicketWithRadius(TicketType.PLUGIN, new ChunkPos(x, z), 1);
             return true;
         }
 
@@ -616,7 +616,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public boolean isChunkForceLoaded(int x, int z) {
-        return this.getHandle().getForcedChunks().contains(ChunkPos.asLong(x, z));
+        return this.getHandle().getForceLoadedChunks().contains(ChunkPos.asLong(x, z));
     }
 
     @Override
@@ -629,7 +629,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     public Collection<Chunk> getForceLoadedChunks() {
         Set<Chunk> chunks = new HashSet<>();
 
-        for (long coord : this.getHandle().getForcedChunks()) {
+        for (long coord : this.getHandle().getForceLoadedChunks()) {
             chunks.add(this.getChunkAt(ChunkPos.getX(coord), ChunkPos.getZ(coord)));
         }
 
@@ -700,7 +700,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             arrow = EntityType.ARROW.create(this.world, EntitySpawnReason.COMMAND);
         }
 
-        arrow.moveTo(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
+        arrow.snapTo(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
         arrow.shoot(velocity.getX(), velocity.getY(), velocity.getZ(), speed, spread);
         this.world.addFreshEntity(arrow);
         return (T) arrow.getBukkitEntity();
@@ -720,7 +720,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         Preconditions.checkArgument(loc != null, "Location cannot be null");
 
         LightningBolt lightning = EntityType.LIGHTNING_BOLT.create(this.world, EntitySpawnReason.COMMAND);
-        lightning.moveTo(loc.getX(), loc.getY(), loc.getZ());
+        lightning.snapTo(loc.getX(), loc.getY(), loc.getZ());
         lightning.isEffect = isVisual; // Paper - Properly handle lightning effects api
         this.world.strikeLightning(lightning, LightningStrikeEvent.Cause.CUSTOM);
         return (LightningStrike) lightning.getBukkitEntity();
@@ -834,7 +834,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start
     @Override
     public boolean isDayTime() {
-        return getHandle().isDay();
+        return getHandle().isBrightOutside();
     }
     // Paper end
 

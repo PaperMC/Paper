@@ -5,17 +5,22 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import io.papermc.paper.entity.TeleportFlag;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import io.papermc.paper.entity.LookAnchor;
+import java.util.concurrent.CompletableFuture;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.TicketType;
 import net.minecraft.server.network.ServerPlayerConnection;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
@@ -285,7 +290,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         // entity.setLocation() throws no event, and so cannot be cancelled
-        entity.moveTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
+        entity.snapTo(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch()); // Paper - use proper moveTo, as per vanilla teleporting
         // SPIGOT-619: Force sync head rotation also
         this.entity.setYHeadRot(location.getYaw());
 
@@ -494,7 +499,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     @Override
     public float getFallDistance() {
-        return this.getHandle().fallDistance;
+        return (float) this.getHandle().fallDistance;
     }
 
     @Override
@@ -964,7 +969,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             return null;
         }
 
-        return tag.getAsString();
+        return tag.toString();
     }
 
     @Override
@@ -1075,20 +1080,20 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
 
     // Paper start - more teleport API / async chunk API
     @Override
-    public java.util.concurrent.CompletableFuture<Boolean> teleportAsync(final Location location, final TeleportCause cause, final io.papermc.paper.entity.TeleportFlag... teleportFlags) {
+    public CompletableFuture<Boolean> teleportAsync(final Location location, final TeleportCause cause, final TeleportFlag... teleportFlags) {
         Preconditions.checkArgument(location != null, "location");
         location.checkFinite();
         Location locationClone = location.clone(); // clone so we don't need to worry about mutations after this call.
 
-        net.minecraft.server.level.ServerLevel world = ((CraftWorld)locationClone.getWorld()).getHandle();
-        java.util.concurrent.CompletableFuture<Boolean> ret = new java.util.concurrent.CompletableFuture<>();
+        ServerLevel world = ((CraftWorld)locationClone.getWorld()).getHandle();
+        CompletableFuture<Boolean> ret = new java.util.concurrent.CompletableFuture<>();
 
         world.loadChunksForMoveAsync(getHandle().getBoundingBoxAt(locationClone.getX(), locationClone.getY(), locationClone.getZ()),
             this instanceof CraftPlayer ? ca.spottedleaf.concurrentutil.util.Priority.HIGHER : ca.spottedleaf.concurrentutil.util.Priority.NORMAL, (list) -> {
-                net.minecraft.server.MinecraftServer.getServer().scheduleOnMain(() -> {
-                    final net.minecraft.server.level.ServerChunkCache chunkCache = world.getChunkSource();
+                MinecraftServer.getServer().scheduleOnMain(() -> {
+                    final ServerChunkCache chunkCache = world.getChunkSource();
                     for (final net.minecraft.world.level.chunk.ChunkAccess chunk : list) {
-                        chunkCache.addTicketAtLevel(net.minecraft.server.level.TicketType.POST_TELEPORT, chunk.getPos(), 33, CraftEntity.this.getEntityId());
+                        chunkCache.addTicketAtLevel(TicketType.POST_TELEPORT, chunk.getPos(), 33);
                     }
                     try {
                         ret.complete(CraftEntity.this.teleport(locationClone, cause, teleportFlags) ? Boolean.TRUE : Boolean.FALSE);
@@ -1096,7 +1101,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
                         if (throwable instanceof ThreadDeath) {
                             throw (ThreadDeath)throwable;
                         }
-                        net.minecraft.server.MinecraftServer.LOGGER.error("Failed to teleport entity " + CraftEntity.this, throwable);
+                        MinecraftServer.LOGGER.error("Failed to teleport entity " + CraftEntity.this, throwable);
                         ret.completeExceptionally(throwable);
                     }
                 });
