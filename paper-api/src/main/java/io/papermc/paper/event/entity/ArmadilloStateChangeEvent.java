@@ -1,6 +1,5 @@
 package io.papermc.paper.event.entity;
 
-import com.google.common.base.Preconditions;
 import org.bukkit.entity.Armadillo;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;

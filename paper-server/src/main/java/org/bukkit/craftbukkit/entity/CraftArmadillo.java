@@ -1,13 +1,9 @@
 package org.bukkit.craftbukkit.entity;
 
-import com.google.common.collect.ImmutableList;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState;
-import net.minecraft.world.entity.schedule.Activity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Armadillo;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 
 public class CraftArmadillo extends CraftAnimals implements Armadillo {
 
@@ -81,6 +77,7 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
         if (isFrozen()){
             unFreezeState();
         }
+
         rollUp();
         freezeState();
     }
@@ -89,6 +86,7 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
         if (isFrozen()){
             unFreezeState();
         }
+
         rollOut();
         freezeState();
     }
