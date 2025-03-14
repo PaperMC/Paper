@@ -146,6 +146,56 @@
          compound.putFloat("Health", this.getHealth());
          compound.putShort("HurtTime", (short)this.hurtTime);
          compound.putInt("HurtByTimestamp", this.lastHurtByMobTimestamp);
+@@ -731,8 +_,15 @@
+         }
+     }
+ 
+-    @Nullable
+-    public ItemEntity drop(ItemStack stack, boolean randomizeMotion, boolean includeThrower) {
++    // Paper start - Extend dropItem API
++    @Nullable
++    public final ItemEntity drop(ItemStack stack, boolean randomizeMotion, boolean includeThrower) {
++        return this.drop(stack, randomizeMotion, includeThrower, false, null);
++    }
++
++    @Nullable
++    public ItemEntity drop(ItemStack stack, boolean randomizeMotion, boolean includeThrower, boolean callEvent, @Nullable java.util.function.Consumer<org.bukkit.entity.Item> entityOperation) { // Paper start - Extend dropItem API
++        // Paper end - Extend dropItem API
+         if (stack.isEmpty()) {
+             return null;
+         } else if (this.level().isClientSide) {
+@@ -741,6 +_,31 @@
+         } else {
+             ItemEntity itemEntity = this.createItemStackToDrop(stack, randomizeMotion, includeThrower);
+             if (itemEntity != null) {
++                // CraftBukkit start - fire PlayerDropItemEvent
++                if (entityOperation != null) entityOperation.accept((org.bukkit.entity.Item) itemEntity.getBukkitEntity());
++                if (callEvent && this.getBukkitEntity() instanceof org.bukkit.entity.Player player) {
++                    org.bukkit.entity.Item drop = (org.bukkit.entity.Item) itemEntity.getBukkitEntity();
++
++                    org.bukkit.event.player.PlayerDropItemEvent event = new org.bukkit.event.player.PlayerDropItemEvent(player, drop);
++                    this.level().getCraftServer().getPluginManager().callEvent(event);
++
++                    if (event.isCancelled()) {
++                        org.bukkit.inventory.ItemStack cur = player.getInventory().getItemInHand();
++                        if (includeThrower && (cur == null || cur.getAmount() == 0)) {
++                            // The complete stack was dropped
++                            player.getInventory().setItemInHand(drop.getItemStack());
++                        } else if (includeThrower && cur.isSimilar(drop.getItemStack()) && cur.getAmount() < cur.getMaxStackSize() && drop.getItemStack().getAmount() == 1) {
++                            // Only one item is dropped
++                            cur.setAmount(cur.getAmount() + 1);
++                            player.getInventory().setItemInHand(cur);
++                        } else {
++                            // Fallback
++                            player.getInventory().addItem(drop.getItemStack());
++                        }
++                        return null;
++                    }
++                }
++                // CraftBukkit end
+                 this.level().addFreshEntity(itemEntity);
+             }
+ 
 @@ -750,7 +_,22 @@
  
      @Override
@@ -1592,6 +1642,18 @@
      private void updatingUsingItem() {
          if (this.isUsingItem()) {
              if (ItemStack.isSameItem(this.getItemInHand(this.getUsedItemHand()), this.useItem)) {
+@@ -3084,6 +_,11 @@
+             return null;
+         } else {
+             double d = this.getEyeY() - 0.3F;
++            // Paper start
++            final ItemStack tmp = stack.copy();
++            stack.setCount(0);
++            stack = tmp;
++            // Paper end
+             ItemEntity itemEntity = new ItemEntity(this.level(), this.getX(), d, this.getZ(), stack);
+             itemEntity.setPickUpDelay(40);
+             if (includeThrower) {
 @@ -3115,7 +_,12 @@
  
      protected void updateUsingItem(ItemStack usingItem) {

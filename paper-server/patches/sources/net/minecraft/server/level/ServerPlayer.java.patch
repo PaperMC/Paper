@@ -1,14 +1,6 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a04f5b55e2 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
-@@ -223,7 +223,8 @@ public class ServerPlayer extends Player {
+@@ -234,7 +_,8 @@
      private int levitationStartTime;
      private boolean disconnected;
      private int requestedViewDistance = 2;
@@ -18,7 +10,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
      @Nullable
      private Vec3 startingToFallPosition;
      @Nullable
-@@ -258,6 +259,13 @@ public class ServerPlayer extends Player {
+@@ -281,6 +_,13 @@
              }
          }
  
@@ -32,7 +24,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          @Override
          public void sendSlotChange(AbstractContainerMenu container, int slot, ItemStack itemStack) {
              ServerPlayer.this.connection.send(new ClientboundContainerSetSlotPacket(container.containerId, container.incrementStateId(), slot, itemStack));
-@@ -288,6 +296,32 @@ public class ServerPlayer extends Player {
+@@ -316,6 +_,32 @@
              }
          }
  
@@ -65,7 +57,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          @Override
          public void dataChanged(AbstractContainerMenu containerMenu, int dataSlotIndex, int value) {
          }
-@@ -316,9 +350,43 @@ public class ServerPlayer extends Player {
+@@ -344,9 +_,43 @@
          public void sendSystemMessage(Component component) {
              ServerPlayer.this.sendSystemMessage(component);
          }
@@ -109,13 +101,13 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
  
      public ServerPlayer(MinecraftServer server, ServerLevel level, GameProfile gameProfile, ClientInformation clientInformation) {
          super(level, level.getSharedSpawnPos(), level.getSharedSpawnAngle(), gameProfile);
-@@ -328,16 +396,22 @@ public class ServerPlayer extends Player {
+@@ -356,16 +_,22 @@
          this.server = server;
          this.stats = server.getPlayerList().getPlayerStats(this);
          this.advancements = server.getPlayerList().getPlayerAdvancements(this);
--        this.moveTo(this.adjustSpawnLocation(level, level.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F);
+-        this.snapTo(this.adjustSpawnLocation(level, level.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F);
 -        this.updateOptions(clientInformation);
-+        // this.moveTo(this.adjustSpawnLocation(level, level.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F); // Paper - Don't move existing players to world spawn
++        // this.snapTo(this.adjustSpawnLocation(level, level.getSharedSpawnPos()).getBottomCenter(), 0.0F, 0.0F); // Paper - Don't move existing players to world spawn
 +        this.updateOptionsNoEvents(clientInformation); // Paper - don't call options events on login
          this.object = null;
 +
@@ -135,36 +127,27 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              int max = Math.max(0, this.server.getSpawnRadius(level));
              int floor = Mth.floor(level.getWorldBorder().getDistanceToBorder(pos.getX(), pos.getZ()));
              if (floor < max) {
-@@ -420,11 +494,20 @@ public class ServerPlayer extends Player {
-         if (compound.contains("recipeBook", 10)) {
-             this.recipeBook.fromNbt(compound.getCompound("recipeBook"), key -> this.server.getRecipeManager().byKey(key).isPresent());
-         }
+@@ -436,6 +_,13 @@
+         this.enteredNetherPosition = compound.read("entered_nether_pos", Vec3.CODEC).orElse(null);
+         this.seenCredits = compound.getBooleanOr("seenCredits", false);
+         this.recipeBook.fromNbt(compound.getCompoundOrEmpty("recipeBook"), key -> this.server.getRecipeManager().byKey(key).isPresent());
 +        this.getBukkitEntity().readExtraData(compound); // CraftBukkit
- 
-         if (this.isSleeping()) {
-             this.stopSleeping();
-         }
- 
 +        // CraftBukkit start
-+        String spawnWorld = compound.getString("SpawnWorld");
-+        org.bukkit.craftbukkit.CraftWorld oldWorld = (org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(spawnWorld);
++        org.bukkit.craftbukkit.CraftWorld oldWorld = compound.getString("SpawnWorld").map(spawnWorld -> (org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(spawnWorld)).orElse(null);
 +        if (oldWorld != null) {
 +            this.respawnDimension = oldWorld.getHandle().dimension();
 +        }
 +        // CraftBukkit end
-+
-         if (compound.contains("SpawnX", 99) && compound.contains("SpawnY", 99) && compound.contains("SpawnZ", 99)) {
-             this.respawnPosition = new BlockPos(compound.getInt("SpawnX"), compound.getInt("SpawnY"), compound.getInt("SpawnZ"));
-             this.respawnForced = compound.getBoolean("SpawnForced");
-@@ -475,6 +558,7 @@ public class ServerPlayer extends Player {
-                 .resultOrPartial(LOGGER::error)
-                 .ifPresent(spawnDimension -> compound.put("SpawnDimension", spawnDimension));
+         if (this.isSleeping()) {
+             this.stopSleeping();
          }
-+        this.getBukkitEntity().setExtraData(compound); // CraftBukkit
- 
+@@ -459,12 +_,24 @@
          compound.putBoolean("spawn_extra_particles_on_fall", this.spawnExtraParticlesOnFall);
-         if (this.raidOmenPosition != null) {
-@@ -490,7 +574,18 @@ public class ServerPlayer extends Player {
+         compound.storeNullable("raid_omen_position", BlockPos.CODEC, this.raidOmenPosition);
+         this.saveEnderPearls(compound);
++        this.getBukkitEntity().setExtraData(compound); // CraftBukkit
+     }
+ 
      private void saveParentVehicle(CompoundTag tag) {
          Entity rootVehicle = this.getRootVehicle();
          Entity vehicle = this.getVehicle();
@@ -184,29 +167,29 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              CompoundTag compoundTag = new CompoundTag();
              CompoundTag compoundTag1 = new CompoundTag();
              rootVehicle.save(compoundTag1);
-@@ -504,7 +599,7 @@ public class ServerPlayer extends Player {
-         if (tag.isPresent() && tag.get().contains("RootVehicle", 10) && this.level() instanceof ServerLevel serverLevel) {
-             CompoundTag compound = tag.get().getCompound("RootVehicle");
+@@ -479,7 +_,7 @@
+         if (!compound.isEmpty()) {
+             ServerLevel serverLevel = this.serverLevel();
              Entity entity = EntityType.loadEntityRecursive(
--                compound.getCompound("Entity"), serverLevel, EntitySpawnReason.LOAD, entity2 -> !serverLevel.addWithUUID(entity2) ? null : entity2
-+                compound.getCompound("Entity"), serverLevel, EntitySpawnReason.LOAD, entity2 -> !serverLevel.addWithUUID(entity2, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity2 // Paper - Entity#getEntitySpawnReason
+-                compound.get().getCompoundOrEmpty("Entity"), serverLevel, EntitySpawnReason.LOAD, entity2 -> !serverLevel.addWithUUID(entity2) ? null : entity2
++                compound.get().getCompoundOrEmpty("Entity"), serverLevel, EntitySpawnReason.LOAD, entity2 -> !serverLevel.addWithUUID(entity2, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.MOUNT) ? null : entity2 // Paper - Entity#getEntitySpawnReason
              );
-             if (entity == null) {
-                 return;
-@@ -530,10 +625,10 @@ public class ServerPlayer extends Player {
+             if (entity != null) {
+                 UUID uuid = compound.get().read("Attach", UUIDUtil.CODEC).orElse(null);
+@@ -496,10 +_,10 @@
  
-             if (!this.isPassenger()) {
-                 LOGGER.warn("Couldn't reattach entity to player");
--                entity.discard();
-+                entity.discard(null); // CraftBukkit - add Bukkit remove cause
+                 if (!this.isPassenger()) {
+                     LOGGER.warn("Couldn't reattach entity to player");
+-                    entity.discard();
++                    entity.discard(null); // CraftBukkit - add Bukkit remove cause
  
-                 for (Entity entity1x : entity.getIndirectPassengers()) {
--                    entity1x.discard();
-+                    entity1x.discard(null); // CraftBukkit - add Bukkit remove cause
+                     for (Entity entity1x : entity.getIndirectPassengers()) {
+-                        entity1x.discard();
++                        entity1x.discard(null); // CraftBukkit - add Bukkit remove cause
+                     }
                  }
              }
-         }
-@@ -544,6 +639,7 @@ public class ServerPlayer extends Player {
+@@ -511,6 +_,7 @@
              ListTag listTag = new ListTag();
  
              for (ThrownEnderpearl thrownEnderpearl : this.enderPearls) {
@@ -214,7 +197,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
                  if (thrownEnderpearl.isRemoved()) {
                      LOGGER.warn("Trying to save removed ender pearl, skipping");
                  } else {
-@@ -593,6 +689,16 @@ public class ServerPlayer extends Player {
+@@ -546,6 +_,16 @@
          }
      }
  
@@ -231,7 +214,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
      public void setExperiencePoints(int experiencePoints) {
          float f = this.getXpNeededForNextLevel();
          float f1 = (f - 1.0F) / f;
-@@ -650,6 +756,11 @@ public class ServerPlayer extends Player {
+@@ -603,6 +_,11 @@
  
      @Override
      public void tick() {
@@ -243,7 +226,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          this.tickClientLoadTimeout();
          this.gameMode.tick();
          this.wardenSpawnTracker.tick();
-@@ -657,9 +768,14 @@ public class ServerPlayer extends Player {
+@@ -610,9 +_,14 @@
              this.invulnerableTime--;
          }
  
@@ -261,7 +244,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              this.containerMenu = this.inventoryMenu;
          }
  
-@@ -709,7 +825,7 @@ public class ServerPlayer extends Player {
+@@ -662,7 +_,7 @@
  
      public void doTick() {
          try {
@@ -270,7 +253,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
                  super.tick();
              }
  
-@@ -723,7 +839,7 @@ public class ServerPlayer extends Player {
+@@ -676,7 +_,7 @@
              if (this.getHealth() != this.lastSentHealth
                  || this.lastSentFood != this.foodData.getFoodLevel()
                  || this.foodData.getSaturationLevel() == 0.0F != this.lastFoodSaturationZero) {
@@ -279,7 +262,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
                  this.lastSentHealth = this.getHealth();
                  this.lastSentFood = this.foodData.getFoodLevel();
                  this.lastFoodSaturationZero = this.foodData.getSaturationLevel() == 0.0F;
-@@ -754,6 +870,12 @@ public class ServerPlayer extends Player {
+@@ -707,6 +_,12 @@
                  this.updateScoreForCriteria(ObjectiveCriteria.EXPERIENCE, Mth.ceil((float)this.lastRecordedExperience));
              }
  
@@ -292,7 +275,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              if (this.experienceLevel != this.lastRecordedLevel) {
                  this.lastRecordedLevel = this.experienceLevel;
                  this.updateScoreForCriteria(ObjectiveCriteria.LEVEL, Mth.ceil((float)this.lastRecordedLevel));
-@@ -767,6 +889,21 @@ public class ServerPlayer extends Player {
+@@ -720,6 +_,21 @@
              if (this.tickCount % 20 == 0) {
                  CriteriaTriggers.LOCATION.trigger(this);
              }
@@ -314,7 +297,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          } catch (Throwable var4) {
              CrashReport crashReport = CrashReport.forThrowable(var4, "Ticking player");
              CrashReportCategory crashReportCategory = crashReport.addCategory("Player being ticked");
-@@ -791,7 +928,7 @@ public class ServerPlayer extends Player {
+@@ -744,7 +_,7 @@
          if (this.level().getDifficulty() == Difficulty.PEACEFUL && this.serverLevel().getGameRules().getBoolean(GameRules.RULE_NATURAL_REGENERATION)) {
              if (this.tickCount % 20 == 0) {
                  if (this.getHealth() < this.getMaxHealth()) {
@@ -323,14 +306,15 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
                  }
  
                  float saturationLevel = this.foodData.getSaturationLevel();
-@@ -840,15 +977,100 @@ public class ServerPlayer extends Player {
+@@ -793,15 +_,100 @@
      }
  
      private void updateScoreForCriteria(ObjectiveCriteria criteria, int points) {
--        this.getScoreboard().forAllObjectives(criteria, this, scoreAccess -> scoreAccess.set(points));
-+        this.level().getCraftServer().getScoreboardManager().forAllObjectives(criteria, this, scoreAccess -> scoreAccess.set(points)); // CraftBukkit - Use our scores instead
-     }
- 
+-        this.getScoreboard().forAllObjectives(criteria, this, score -> score.set(points));
+-    }
++        this.level().getCraftServer().getScoreboardManager().forAllObjectives(criteria, this, score -> score.set(points)); // CraftBukkit - Use our scores instead
++    }
++
 +    // Paper start - PlayerDeathEvent#getItemsToKeep
 +    private static void processKeep(org.bukkit.event.entity.PlayerDeathEvent event, NonNullList<ItemStack> inv) {
 +        List<org.bukkit.inventory.ItemStack> itemsToKeep = event.getItemsToKeep();
@@ -370,7 +354,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
 +        }
 +    }
 +    // Paper end - PlayerDeathEvent#getItemsToKeep
-+
+ 
      @Override
      public void die(DamageSource cause) {
 -        this.gameEvent(GameEvent.ENTITY_DIE);
@@ -429,7 +413,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              this.connection
                  .send(
                      new ClientboundPlayerCombatKillPacket(this.getId(), deathMessage),
-@@ -882,11 +1104,22 @@ public class ServerPlayer extends Player {
+@@ -835,11 +_,22 @@
              this.tellNeutralMobsThatIDied();
          }
  
@@ -455,7 +439,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          LivingEntity killCredit = this.getKillCredit();
          if (killCredit != null) {
              this.awardStat(Stats.ENTITY_KILLED_BY.get(killCredit.getType()));
-@@ -919,10 +1152,10 @@ public class ServerPlayer extends Player {
+@@ -872,10 +_,10 @@
      public void awardKillScore(Entity entity, DamageSource damageSource) {
          if (entity != this) {
              super.awardKillScore(entity, damageSource);
@@ -468,7 +452,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              } else {
                  this.awardStat(Stats.MOB_KILLS);
              }
-@@ -938,7 +1171,7 @@ public class ServerPlayer extends Player {
+@@ -891,7 +_,7 @@
          if (playersTeam != null) {
              int id = playersTeam.getColor().getId();
              if (id >= 0 && id < crtieria.length) {
@@ -477,7 +461,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              }
          }
      }
-@@ -949,9 +1182,20 @@ public class ServerPlayer extends Player {
+@@ -902,9 +_,20 @@
              return false;
          } else {
              Entity entity = damageSource.getEntity();
@@ -500,7 +484,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          }
      }
  
-@@ -961,10 +1205,15 @@ public class ServerPlayer extends Player {
+@@ -914,23 +_,81 @@
      }
  
      private boolean isPvpAllowed() {
@@ -515,11 +499,10 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
 +        boolean isBedSpawn = false;
 +        boolean isAnchorSpawn = false;
 +        // CraftBukkit end
-         BlockPos respawnPosition = this.getRespawnPosition();
-         float respawnAngle = this.getRespawnAngle();
-         boolean isRespawnForced = this.isRespawnForced();
-@@ -973,13 +1222,66 @@ public class ServerPlayer extends Player {
-             Optional<ServerPlayer.RespawnPosAngle> optional = findRespawnAndUseSpawnBlock(level, respawnPosition, respawnAngle, isRespawnForced, useCharge);
+         ServerPlayer.RespawnConfig respawnConfig = this.getRespawnConfig();
+         ServerLevel level = this.server.getLevel(ServerPlayer.RespawnConfig.getDimensionOrDefault(respawnConfig));
+         if (level != null && respawnConfig != null) {
+             Optional<ServerPlayer.RespawnPosAngle> optional = findRespawnAndUseSpawnBlock(level, respawnConfig, useCharge);
              if (optional.isPresent()) {
                  ServerPlayer.RespawnPosAngle respawnPosAngle = optional.get();
 -                return new TeleportTransition(level, respawnPosAngle.position(), Vec3.ZERO, respawnPosAngle.yaw(), 0.0F, postTeleportTransition);
@@ -534,12 +517,13 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              }
          } else {
 -            return new TeleportTransition(this.server.overworld(), this, postTeleportTransition);
+-        }
 +            teleportTransition = new TeleportTransition(this.server.overworld(), this, postTeleportTransition); // CraftBukkit
 +        }
 +        // CraftBukkit start
 +        if (respawnReason == null) {
 +            return teleportTransition;
-         }
++        }
 +
 +        org.bukkit.entity.Player respawnPlayer = this.getBukkitEntity();
 +        org.bukkit.Location location = org.bukkit.craftbukkit.util.CraftLocation.toBukkit(
@@ -587,30 +571,30 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
 +        // CraftBukkit end
      }
  
-     public static Optional<ServerPlayer.RespawnPosAngle> findRespawnAndUseSpawnBlock(
-@@ -993,10 +1295,10 @@ public class ServerPlayer extends Player {
-                 level.setBlock(pos, blockState.setValue(RespawnAnchorBlock.CHARGE, Integer.valueOf(blockState.getValue(RespawnAnchorBlock.CHARGE) - 1)), 3);
+     private static Optional<ServerPlayer.RespawnPosAngle> findRespawnAndUseSpawnBlock(
+@@ -947,10 +_,10 @@
+                 level.setBlock(blockPos, blockState.setValue(RespawnAnchorBlock.CHARGE, blockState.getValue(RespawnAnchorBlock.CHARGE) - 1), 3);
              }
  
--            return optional.map(vec3 -> ServerPlayer.RespawnPosAngle.of(vec3, pos));
-+            return optional.map(vec3 -> ServerPlayer.RespawnPosAngle.of(vec3, pos, false, true)); // CraftBukkit
+-            return optional.map(pos -> ServerPlayer.RespawnPosAngle.of(pos, blockPos));
++            return optional.map(pos -> ServerPlayer.RespawnPosAngle.of(pos, blockPos, false, true)); // CraftBukkit
          } else if (block instanceof BedBlock && BedBlock.canSetSpawn(level)) {
-             return BedBlock.findStandUpPosition(EntityType.PLAYER, level, pos, blockState.getValue(BedBlock.FACING), angle)
--                .map(vec3 -> ServerPlayer.RespawnPosAngle.of(vec3, pos));
-+                .map(vec3 -> ServerPlayer.RespawnPosAngle.of(vec3, pos, true, false)); // CraftBukkit
-         } else if (!forced) {
+             return BedBlock.findStandUpPosition(EntityType.PLAYER, level, blockPos, blockState.getValue(BedBlock.FACING), f)
+-                .map(pos -> ServerPlayer.RespawnPosAngle.of(pos, blockPos));
++                .map(pos -> ServerPlayer.RespawnPosAngle.of(pos, blockPos, true, false)); // CraftBukkit
+         } else if (!flag) {
              return Optional.empty();
          } else {
-@@ -1004,7 +1306,7 @@ public class ServerPlayer extends Player {
-             BlockState blockState1 = level.getBlockState(pos.above());
+@@ -958,7 +_,7 @@
+             BlockState blockState1 = level.getBlockState(blockPos.above());
              boolean isPossibleToRespawnInThis1 = blockState1.getBlock().isPossibleToRespawnInThis(blockState1);
              return isPossibleToRespawnInThis && isPossibleToRespawnInThis1
--                ? Optional.of(new ServerPlayer.RespawnPosAngle(new Vec3(pos.getX() + 0.5, pos.getY() + 0.1, pos.getZ() + 0.5), angle))
-+                ? Optional.of(new ServerPlayer.RespawnPosAngle(new Vec3(pos.getX() + 0.5, pos.getY() + 0.1, pos.getZ() + 0.5), angle, false, false)) // CraftBukkit
+-                ? Optional.of(new ServerPlayer.RespawnPosAngle(new Vec3(blockPos.getX() + 0.5, blockPos.getY() + 0.1, blockPos.getZ() + 0.5), f))
++                ? Optional.of(new ServerPlayer.RespawnPosAngle(new Vec3(blockPos.getX() + 0.5, blockPos.getY() + 0.1, blockPos.getZ() + 0.5), f, false, false)) // CraftBukkit
                  : Optional.empty();
          }
      }
-@@ -1022,6 +1324,7 @@ public class ServerPlayer extends Player {
+@@ -976,6 +_,7 @@
      @Nullable
      @Override
      public ServerPlayer teleport(TeleportTransition teleportTransition) {
@@ -618,7 +602,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          if (this.isRemoved()) {
              return null;
          } else {
-@@ -1031,17 +1334,52 @@ public class ServerPlayer extends Player {
+@@ -985,17 +_,52 @@
  
              ServerLevel level = teleportTransition.newLevel();
              ServerLevel serverLevel = this.serverLevel();
@@ -656,7 +640,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
 +            }
 +            // CraftBukkit end
              if (!teleportTransition.asPassenger()) {
-                 this.stopRiding();
+                 this.removeVehicle();
              }
  
 -            if (level.dimension() == resourceKey) {
@@ -674,7 +658,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
                  this.isChangingDimension = true;
                  LevelData levelData = level.getLevelData();
                  this.connection.send(new ClientboundRespawnPacket(this.createCommonSpawnInfo(level), (byte)3));
-@@ -1050,16 +1388,30 @@ public class ServerPlayer extends Player {
+@@ -1004,16 +_,30 @@
                  playerList.sendPlayerPermissionLevel(this);
                  serverLevel.removePlayerImmediately(this, Entity.RemovalReason.CHANGED_DIMENSION);
                  this.unsetRemoved();
@@ -707,7 +691,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
                  this.connection.resetPosition();
                  level.addDuringTeleport(this);
                  profilerFiller.pop();
-@@ -1073,11 +1425,41 @@ public class ServerPlayer extends Player {
+@@ -1027,10 +_,40 @@
                  this.lastSentExp = -1;
                  this.lastSentHealth = -1.0F;
                  this.lastSentFood = -1;
@@ -726,7 +710,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              }
          }
      }
- 
++
 +    // CraftBukkit start
 +    @Override
 +    public org.bukkit.craftbukkit.event.CraftPortalEvent callPortalEvent(
@@ -745,11 +729,10 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
 +        return new org.bukkit.craftbukkit.event.CraftPortalEvent(event);
 +    }
 +    // CraftBukkit end
-+
+ 
      @Override
      public void forceSetRotation(float yRot, float xRot) {
-         this.connection.send(new ClientboundPlayerRotationPacket(yRot, xRot));
-@@ -1086,12 +1468,26 @@ public class ServerPlayer extends Player {
+@@ -1040,12 +_,26 @@
      public void triggerDimensionChangeTriggers(ServerLevel level) {
          ResourceKey<Level> resourceKey = level.dimension();
          ResourceKey<Level> resourceKey1 = this.level().dimension();
@@ -779,7 +762,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              this.enteredNetherPosition = null;
          }
      }
-@@ -1107,19 +1503,18 @@ public class ServerPlayer extends Player {
+@@ -1061,19 +_,18 @@
          this.containerMenu.broadcastChanges();
      }
  
@@ -798,12 +781,12 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          } else if (this.bedBlocked(at, direction)) {
              return Either.left(Player.BedSleepingProblem.OBSTRUCTED);
          } else {
--            this.setRespawnPosition(this.level().dimension(), at, this.getYRot(), false, true);
-+            this.setRespawnPosition(this.level().dimension(), at, this.getYRot(), false, true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.BED); // Paper - Add PlayerSetSpawnEvent
-             if (this.level().isDay()) {
+-            this.setRespawnPosition(new ServerPlayer.RespawnConfig(this.level().dimension(), at, this.getYRot(), false), true);
++            this.setRespawnPosition(new ServerPlayer.RespawnConfig(this.level().dimension(), at, this.getYRot(), false), true, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.BED); // Paper - Add PlayerSetSpawnEvent
+             if (this.level().isBrightOutside()) {
                  return Either.left(Player.BedSleepingProblem.NOT_POSSIBLE_NOW);
              } else {
-@@ -1138,7 +1533,34 @@ public class ServerPlayer extends Player {
+@@ -1092,7 +_,34 @@
                      }
                  }
  
@@ -839,7 +822,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
                      this.awardStat(Stats.SLEEP_IN_BED);
                      CriteriaTriggers.SLEPT_IN_BED.trigger(this);
                  });
-@@ -1174,13 +1596,31 @@ public class ServerPlayer extends Player {
+@@ -1128,21 +_,39 @@
  
      @Override
      public void stopSleepInBed(boolean wakeImmediately, boolean updateLevelForSleepingPlayers) {
@@ -872,8 +855,6 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          }
      }
  
-@@ -1192,9 +1632,9 @@ public class ServerPlayer extends Player {
- 
      @Override
      public boolean isInvulnerableTo(ServerLevel level, DamageSource damageSource) {
 -        return super.isInvulnerableTo(level, damageSource)
@@ -884,7 +865,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
      }
  
      @Override
-@@ -1237,8 +1677,9 @@ public class ServerPlayer extends Player {
+@@ -1185,8 +_,9 @@
          this.connection.send(new ClientboundOpenSignEditorPacket(signEntity.getBlockPos(), isFrontText));
      }
  
@@ -895,7 +876,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
      }
  
      @Override
-@@ -1246,12 +1687,43 @@ public class ServerPlayer extends Player {
+@@ -1194,12 +_,43 @@
          if (menu == null) {
              return OptionalInt.empty();
          } else {
@@ -939,7 +920,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              if (abstractContainerMenu == null) {
                  if (this.isSpectator()) {
                      this.displayClientMessage(Component.translatable("container.spectatorCantOpen").withStyle(ChatFormatting.RED), true);
-@@ -1259,10 +1731,14 @@ public class ServerPlayer extends Player {
+@@ -1207,10 +_,14 @@
  
                  return OptionalInt.empty();
              } else {
@@ -956,7 +937,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
                  return OptionalInt.of(this.containerCounter);
              }
          }
-@@ -1275,14 +1751,25 @@ public class ServerPlayer extends Player {
+@@ -1223,14 +_,25 @@
  
      @Override
      public void openHorseInventory(AbstractHorse horse, Container inventory) {
@@ -985,7 +966,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          this.initMenu(this.containerMenu);
      }
  
-@@ -1304,9 +1791,28 @@ public class ServerPlayer extends Player {
+@@ -1252,9 +_,28 @@
  
      @Override
      public void closeContainer() {
@@ -1014,7 +995,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
  
      @Override
      public void doCloseContainer() {
-@@ -1330,19 +1836,19 @@ public class ServerPlayer extends Player {
+@@ -1278,19 +_,19 @@
                  int rounded = Math.round((float)Math.sqrt(dx * dx + dy * dy + dz * dz) * 100.0F);
                  if (rounded > 0) {
                      this.awardStat(Stats.SWIM_ONE_CM, rounded);
@@ -1037,7 +1018,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
                  }
              } else if (this.onClimbable()) {
                  if (dy > 0.0) {
-@@ -1353,13 +1859,13 @@ public class ServerPlayer extends Player {
+@@ -1301,13 +_,13 @@
                  if (rounded > 0) {
                      if (this.isSprinting()) {
                          this.awardStat(Stats.SPRINT_ONE_CM, rounded);
@@ -1054,7 +1035,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
                      }
                  }
              } else if (this.isFallFlying()) {
-@@ -1399,13 +1905,13 @@ public class ServerPlayer extends Player {
+@@ -1347,13 +_,13 @@
      @Override
      public void awardStat(Stat<?> stat, int amount) {
          this.stats.increment(this, stat, amount);
@@ -1070,7 +1051,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
      }
  
      @Override
-@@ -1436,9 +1942,9 @@ public class ServerPlayer extends Player {
+@@ -1384,9 +_,9 @@
          super.jumpFromGround();
          this.awardStat(Stats.JUMP);
          if (this.isSprinting()) {
@@ -1082,7 +1063,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          }
      }
  
-@@ -1451,6 +1957,13 @@ public class ServerPlayer extends Player {
+@@ -1399,6 +_,13 @@
      public void disconnect() {
          this.disconnected = true;
          this.ejectPassengers();
@@ -1096,7 +1077,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          if (this.isSleeping()) {
              this.stopSleepInBed(true, false);
          }
-@@ -1462,6 +1975,7 @@ public class ServerPlayer extends Player {
+@@ -1410,6 +_,7 @@
  
      public void resetSentInfo() {
          this.lastSentHealth = -1.0E8F;
@@ -1104,7 +1085,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
      }
  
      @Override
-@@ -1496,12 +2010,12 @@ public class ServerPlayer extends Player {
+@@ -1444,12 +_,12 @@
          this.onUpdateAbilities();
          if (keepEverything) {
              this.getAttributes().assignBaseValues(that.getAttributes());
@@ -1119,7 +1100,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              }
  
              this.getInventory().replaceWith(that.getInventory());
-@@ -1512,7 +2026,7 @@ public class ServerPlayer extends Player {
+@@ -1460,7 +_,7 @@
              this.portalProcess = that.portalProcess;
          } else {
              this.getAttributes().assignBaseValues(that.getAttributes());
@@ -1128,7 +1109,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              if (this.serverLevel().getGameRules().getBoolean(GameRules.RULE_KEEPINVENTORY) || that.isSpectator()) {
                  this.getInventory().replaceWith(that.getInventory());
                  this.experienceLevel = that.experienceLevel;
-@@ -1528,7 +2042,7 @@ public class ServerPlayer extends Player {
+@@ -1476,7 +_,7 @@
          this.lastSentExp = -1;
          this.lastSentHealth = -1.0F;
          this.lastSentFood = -1;
@@ -1137,7 +1118,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          this.seenCredits = that.seenCredits;
          this.enteredNetherPosition = that.enteredNetherPosition;
          this.chunkTrackingView = that.chunkTrackingView;
-@@ -1581,7 +2095,7 @@ public class ServerPlayer extends Player {
+@@ -1529,7 +_,7 @@
      }
  
      @Override
@@ -1146,7 +1127,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          if (this.isSleeping()) {
              this.stopSleepInBed(true, true);
          }
-@@ -1590,7 +2104,7 @@ public class ServerPlayer extends Player {
+@@ -1538,7 +_,7 @@
              this.setCamera(this);
          }
  
@@ -1155,7 +1136,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          if (flag) {
              this.setYHeadRot(relativeMovements.contains(Relative.Y_ROT) ? this.getYHeadRot() + yaw : yaw);
          }
-@@ -1627,9 +2141,17 @@ public class ServerPlayer extends Player {
+@@ -1575,9 +_,17 @@
      }
  
      public boolean setGameMode(GameType gameMode) {
@@ -1175,7 +1156,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          } else {
              this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.CHANGE_GAME_MODE, gameMode.getId()));
              if (gameMode == GameType.SPECTATOR) {
-@@ -1645,7 +2167,7 @@ public class ServerPlayer extends Player {
+@@ -1593,7 +_,7 @@
  
              this.onUpdateAbilities();
              this.updateEffectVisibility();
@@ -1184,7 +1165,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          }
      }
  
-@@ -1705,8 +2227,13 @@ public class ServerPlayer extends Player {
+@@ -1653,8 +_,13 @@
      }
  
      public void sendChatMessage(OutgoingChatMessage message, boolean filtered, ChatType.Bound boundType) {
@@ -1199,7 +1180,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          }
      }
  
-@@ -1717,7 +2244,42 @@ public class ServerPlayer extends Player {
+@@ -1665,7 +_,42 @@
      }
  
      public void updateOptions(ClientInformation clientInformation) {
@@ -1242,7 +1223,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          this.requestedViewDistance = clientInformation.viewDistance();
          this.chatVisibility = clientInformation.chatVisibility();
          this.canChatColor = clientInformation.chatColors();
-@@ -1803,8 +2365,23 @@ public class ServerPlayer extends Player {
+@@ -1751,8 +_,23 @@
          Entity camera = this.getCamera();
          this.camera = (Entity)(entityToSpectate == null ? this : entityToSpectate);
          if (camera != this.camera) {
@@ -1267,7 +1248,7 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
              }
  
              if (entityToSpectate != null) {
-@@ -1838,11 +2415,11 @@ public class ServerPlayer extends Player {
+@@ -1786,11 +_,11 @@
  
      @Nullable
      public Component getTabListDisplayName() {
@@ -1281,27 +1262,18 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
      }
  
      @Override
-@@ -1884,11 +2461,56 @@ public class ServerPlayer extends Player {
-         this.setRespawnPosition(player.getRespawnDimension(), player.getRespawnPosition(), player.getRespawnAngle(), player.isRespawnForced(), false);
+@@ -1820,12 +_,72 @@
+         this.setRespawnPosition(player.respawnConfig, false);
      }
  
-+    @Deprecated // Paper - Add PlayerSetSpawnEvent
-     public void setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos position, float angle, boolean forced, boolean sendMessage) {
-+        // Paper start - Add PlayerSetSpawnEvent
-+        this.setRespawnPosition(dimension, position, angle, forced, sendMessage, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.UNKNOWN);
-+    }
-+    @Deprecated
-+    public boolean setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos position, float angle, boolean forced, boolean sendMessage, org.bukkit.event.player.PlayerSpawnChangeEvent.Cause cause) {
-+        return this.setRespawnPosition(dimension, position, angle, forced, sendMessage, cause == org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.RESET ?
-+            com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN : com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.valueOf(cause.name()));
-+    }
-+    public boolean setRespawnPosition(ResourceKey<Level> dimension, @Nullable BlockPos position, float angle, boolean forced, boolean sendMessage, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause cause) {
+-    public void setRespawnPosition(@Nullable ServerPlayer.RespawnConfig respawnConfig, boolean displayInChat) {
++    // Paper start - Add PlayerSetSpawnEvent
++    public boolean setRespawnPosition(@Nullable ServerPlayer.RespawnConfig respawnConfig, boolean displayInChat) {
++        //TODO
 +        org.bukkit.Location spawnLoc = null;
 +        boolean willNotify = false;
-         if (position != null) {
-             boolean flag = position.equals(this.respawnPosition) && dimension.equals(this.respawnDimension);
--            if (sendMessage && !flag) {
--                this.sendSystemMessage(Component.translatable("block.minecraft.set_spawn"));
++        if (position != null) {
++            boolean flag = position.equals(this.respawnPosition) && dimension.equals(this.respawnDimension);
 +            spawnLoc = io.papermc.paper.util.MCUtil.toLocation(this.getServer().getLevel(dimension), position);
 +            spawnLoc.setYaw(angle);
 +            willNotify = sendMessage && !flag;
@@ -1337,89 +1309,62 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
 +
 +            if (event.willNotifyPlayer() && event.getNotification() != null) { // Paper - Add PlayerSetSpawnEvent
 +                this.sendSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.getNotification())); // Paper - Add PlayerSetSpawnEvent
-             }
- 
-             this.respawnPosition = position;
-@@ -1901,6 +2523,8 @@ public class ServerPlayer extends Player {
-             this.respawnAngle = 0.0F;
-             this.respawnForced = false;
-         }
++            }
++
++            this.respawnPosition = position;
++            this.respawnDimension = dimension;
++            this.respawnAngle = angle;
++            this.respawnForced = forced;
++        } else {
++            this.respawnPosition = null;
++            this.respawnDimension = Level.OVERWORLD;
++            this.respawnAngle = 0.0F;
++            this.respawnForced = false;
++        }
 +
 +        return true; // Paper - Add PlayerSetSpawnEvent
++
++
++
+         if (displayInChat && respawnConfig != null && !respawnConfig.isSamePosition(this.respawnConfig)) {
+             this.sendSystemMessage(SPAWN_SET_MESSAGE);
+         }
+ 
+         this.respawnConfig = respawnConfig;
++        return true;
++        // Paper end - Add PlayerSetSpawnEvent
      }
  
      public SectionPos getLastSectionPos() {
-@@ -1930,21 +2554,55 @@ public class ServerPlayer extends Player {
+@@ -1855,16 +_,23 @@
      }
  
      @Override
 -    public ItemEntity drop(ItemStack droppedItem, boolean dropAround, boolean traceItem) {
-+    public ItemEntity drop(ItemStack droppedItem, boolean dropAround, boolean traceItem, boolean callEvent, @Nullable java.util.function.Consumer<org.bukkit.entity.Item> entityOperation) { // Paper start - Extend HumanEntity#dropItem API
-         ItemEntity itemEntity = this.createItemStackToDrop(droppedItem, dropAround, traceItem);
-         if (itemEntity == null) {
-             return null;
-         } else {
-+            // CraftBukkit start - fire PlayerDropItemEvent
-+            if (entityOperation != null) entityOperation.accept((org.bukkit.entity.Item) itemEntity.getBukkitEntity());
-+            if (callEvent) {
-+                org.bukkit.entity.Player player = this.getBukkitEntity();
-+                org.bukkit.entity.Item drop = (org.bukkit.entity.Item) itemEntity.getBukkitEntity();
-+
-+                org.bukkit.event.player.PlayerDropItemEvent event = new org.bukkit.event.player.PlayerDropItemEvent(player, drop);
-+                this.level().getCraftServer().getPluginManager().callEvent(event);
-+
-+                if (event.isCancelled()) {
-+                    org.bukkit.inventory.ItemStack cur = player.getInventory().getItemInHand();
-+                    if (traceItem && (cur == null || cur.getAmount() == 0)) {
-+                        // The complete stack was dropped
-+                        player.getInventory().setItemInHand(drop.getItemStack());
-+                    } else if (traceItem && cur.isSimilar(drop.getItemStack()) && cur.getAmount() < cur.getMaxStackSize() && drop.getItemStack().getAmount() == 1) {
-+                        // Only one item is dropped
-+                        cur.setAmount(cur.getAmount() + 1);
-+                        player.getInventory().setItemInHand(cur);
-+                    } else {
-+                        // Fallback
-+                        player.getInventory().addItem(drop.getItemStack());
-+                    }
-+                    return null;
-+                }
-+            }
-+            // CraftBukkit end
-             this.level().addFreshEntity(itemEntity);
-             ItemStack item = itemEntity.getItem();
-             if (traceItem) {
-                 if (!item.isEmpty()) {
--                    this.awardStat(Stats.ITEM_DROPPED.get(item.getItem()), droppedItem.getCount());
-+                    this.awardStat(Stats.ITEM_DROPPED.get(item.getItem()), item.getCount()); // Paper - Fix PlayerDropItemEvent using wrong item
-                 }
- 
+-        ItemEntity itemEntity = super.drop(droppedItem, dropAround, traceItem);
++    public ItemEntity drop(ItemStack droppedItem, boolean dropAround, boolean traceItem, boolean callEvent, @Nullable java.util.function.Consumer<org.bukkit.entity.Item> entityOperation) { // Paper - Extend dropItem API
++        ItemEntity itemEntity = super.drop(droppedItem, dropAround, traceItem, callEvent, entityOperation); // Paper - Extend dropItem API
++        ItemStack itemStack = itemEntity != null ? itemEntity.getItem() : ItemStack.EMPTY; // Paper - move up
+         if (traceItem) {
+-            ItemStack itemStack = itemEntity != null ? itemEntity.getItem() : ItemStack.EMPTY;
+             if (!itemStack.isEmpty()) {
+                 this.awardStat(Stats.ITEM_DROPPED.get(itemStack.getItem()), droppedItem.getCount());
                  this.awardStat(Stats.DROP);
              }
- 
-+            // Paper start - remove player from map on drop
-+            if (item.getItem() == net.minecraft.world.item.Items.FILLED_MAP) {
-+                final MapItemSavedData mapData = MapItem.getSavedData(item, this.level());
-+                if (mapData != null) {
-+                    mapData.tickCarriedBy(this, item);
-+                }
-+            }
-+            // Paper end - remove player from map on drop
-             return itemEntity;
          }
+-
++        // Paper start - remove player from map on drop
++        if (itemStack.getItem() == net.minecraft.world.item.Items.FILLED_MAP) {
++            final MapItemSavedData mapData = MapItem.getSavedData(itemStack, this.level());
++            if (mapData != null) {
++                mapData.tickCarriedBy(this, itemStack);
++            }
++        }
++        // Paper end - remove player from map on drop
+         return itemEntity;
      }
-@@ -1955,6 +2613,11 @@ public class ServerPlayer extends Player {
-             return null;
-         } else {
-             double d = this.getEyeY() - 0.3F;
-+            // Paper start
-+            ItemStack tmp = droppedItem.copy();
-+            droppedItem.setCount(0);
-+            droppedItem = tmp;
-+            // Paper end
-             ItemEntity itemEntity = new ItemEntity(this.level(), this.getX(), d, this.getZ(), droppedItem);
-             itemEntity.setPickUpDelay(40);
-             if (includeThrowerName) {
-@@ -2008,6 +2671,16 @@ public class ServerPlayer extends Player {
+ 
+@@ -1892,6 +_,16 @@
      }
  
      public void loadGameTypes(@Nullable CompoundTag tag) {
@@ -1436,29 +1381,38 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
          this.gameMode
              .setGameModeForPlayer(this.calculateGameModeForNewPlayer(readPlayerMode(tag, "playerGameType")), readPlayerMode(tag, "previousPlayerGameType"));
      }
-@@ -2108,8 +2781,14 @@ public class ServerPlayer extends Player {
+@@ -1993,8 +_,14 @@
  
      @Override
-     public void stopRiding() {
+     public void removeVehicle() {
 +        // Paper start - Force entity dismount during teleportation
-+        this.stopRiding(false);
++        this.removeVehicle(false);
 +    }
 +    @Override
-+    public void stopRiding(boolean suppressCancellation) {
++    public void removeVehicle(final boolean suppressCancellation) {
 +        // Paper end - Force entity dismount during teleportation
          Entity vehicle = this.getVehicle();
--        super.stopRiding();
+-        super.removeVehicle();
 +        super.stopRiding(suppressCancellation); // Paper - Force entity dismount during teleportation
          if (vehicle instanceof LivingEntity livingEntity) {
              for (MobEffectInstance mobEffectInstance : livingEntity.getActiveEffects()) {
                  this.connection.send(new ClientboundRemoveMobEffectPacket(vehicle.getId(), mobEffectInstance.getEffect()));
-@@ -2204,13 +2883,15 @@ public class ServerPlayer extends Player {
+@@ -2093,11 +_,11 @@
      }
  
      public static long placeEnderPearlTicket(ServerLevel level, ChunkPos pos) {
--        level.getChunkSource().addRegionTicket(TicketType.ENDER_PEARL, pos, 2, pos);
-+        if (!level.paperConfig().misc.legacyEnderPearlBehavior) level.getChunkSource().addRegionTicket(TicketType.ENDER_PEARL, pos, 2, pos); // Paper - Allow using old ender pearl behavior
+-        level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, pos, 2);
++        if (!level.paperConfig().misc.legacyEnderPearlBehavior) level.getChunkSource().addTicketWithRadius(TicketType.ENDER_PEARL, pos, 2); // Paper - Allow using old ender pearl behavior
          return TicketType.ENDER_PEARL.timeout();
+     }
+ 
+-    public record RespawnConfig(ResourceKey<Level> dimension, BlockPos pos, float angle, boolean forced) {
++    public record RespawnConfig(ResourceKey<Level> dimension, BlockPos pos, float angle, boolean forced, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause cause) {
+         public static final Codec<ServerPlayer.RespawnConfig> CODEC = RecordCodecBuilder.create(
+             instance -> instance.group(
+                     Level.RESOURCE_KEY_CODEC.optionalFieldOf("dimension", Level.OVERWORLD).forGetter(ServerPlayer.RespawnConfig::dimension),
+@@ -2117,9 +_,11 @@
+         }
      }
  
 -    public record RespawnPosAngle(Vec3 position, float yaw) {
@@ -1468,11 +1422,11 @@ index ae499e8589f51d910976c614f6c11ff19f7b69ff..f054ea710108e5017bc48fdda5f180a0
 +    public record RespawnPosAngle(Vec3 position, float yaw, boolean isBedSpawn, boolean isAnchorSpawn) {
 +        public static ServerPlayer.RespawnPosAngle of(Vec3 position, BlockPos towardsPos, boolean isBedSpawn, boolean isAnchorSpawn) {
 +            return new ServerPlayer.RespawnPosAngle(position, calculateLookAtYaw(position, towardsPos), isBedSpawn, isAnchorSpawn);
-+    // CraftBukkit end
++            // CraftBukkit end
          }
  
          private static float calculateLookAtYaw(Vec3 position, BlockPos towardsPos) {
-@@ -2218,4 +2899,147 @@ public class ServerPlayer extends Player {
+@@ -2127,4 +_,147 @@
              return (float)Mth.wrapDegrees(Mth.atan2(vec3.z, vec3.x) * 180.0F / (float)Math.PI - 90.0);
          }
      }
