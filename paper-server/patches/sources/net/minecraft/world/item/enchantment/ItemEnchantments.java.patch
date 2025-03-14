@@ -1,0 +1,41 @@
+--- a/net/minecraft/world/item/enchantment/ItemEnchantments.java
++++ b/net/minecraft/world/item/enchantment/ItemEnchantments.java
+@@ -28,21 +_,24 @@
+ import net.minecraft.world.item.component.TooltipProvider;
+ 
+ public class ItemEnchantments implements TooltipProvider {
+-    public static final ItemEnchantments EMPTY = new ItemEnchantments(new Object2IntOpenHashMap<>());
++    // Paper start - sort enchantments
++    private static final java.util.Comparator<Holder<Enchantment>> ENCHANTMENT_ORDER = java.util.Comparator.comparing(Holder::getRegisteredName);
++    public static final ItemEnchantments EMPTY = new ItemEnchantments(new it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER));
++    // Paper end - sort enchantments
+     private static final Codec<Integer> LEVEL_CODEC = Codec.intRange(1, 255);
+     public static final Codec<ItemEnchantments> CODEC = Codec.unboundedMap(Enchantment.CODEC, LEVEL_CODEC)
+         .xmap(
+-            map -> new ItemEnchantments(new Object2IntOpenHashMap<>((Map<? extends Holder<Enchantment>, ? extends Integer>)map)),
++            map -> new net.minecraft.world.item.enchantment.ItemEnchantments(net.minecraft.Util.make(new it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER), m -> m.putAll(map))), // Paper - sort enchantments
+             itemEnchantments -> itemEnchantments.enchantments
+         );
+     public static final StreamCodec<RegistryFriendlyByteBuf, ItemEnchantments> STREAM_CODEC = StreamCodec.composite(
+-        ByteBufCodecs.map(Object2IntOpenHashMap::new, Enchantment.STREAM_CODEC, ByteBufCodecs.VAR_INT),
++        ByteBufCodecs.map((v) -> new it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER), Enchantment.STREAM_CODEC, ByteBufCodecs.VAR_INT), // Paper
+         itemEnchantments -> itemEnchantments.enchantments,
+         ItemEnchantments::new
+     );
+-    final Object2IntOpenHashMap<Holder<Enchantment>> enchantments;
++    final it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<Holder<Enchantment>> enchantments; // Paper
+ 
+-    ItemEnchantments(Object2IntOpenHashMap<Holder<Enchantment>> enchantments) {
++    ItemEnchantments(it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<Holder<Enchantment>> enchantments) { // Paper
+         this.enchantments = enchantments;
+ 
+         for (Entry<Holder<Enchantment>> entry : enchantments.object2IntEntrySet()) {
+@@ -120,7 +_,7 @@
+     }
+ 
+     public static class Mutable {
+-        private final Object2IntOpenHashMap<Holder<Enchantment>> enchantments = new Object2IntOpenHashMap<>();
++        private final it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<Holder<Enchantment>> enchantments = new it.unimi.dsi.fastutil.objects.Object2IntAVLTreeMap<>(ENCHANTMENT_ORDER); // Paper
+ 
+         public Mutable(ItemEnchantments enchantments) {
+             this.enchantments.putAll(enchantments.enchantments);
