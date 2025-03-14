@@ -30,8 +30,11 @@ public enum ItemFlag {
     /**
      * Setting to show/hide potion effects, book and firework information, map
      * tooltips, patterns of banners.
+     *
      * @see #HIDE_STORED_ENCHANTS HIDE_STORED_ENCHANTS for hiding stored enchants (like on enchanted books)
+     * @deprecated each component can now be hidden individually in the {@code tooltip_display} component
      */
+    @Deprecated(since = "1.21.5", forRemoval = true)
     HIDE_ADDITIONAL_TOOLTIP,
     /**
      * Setting to show/hide dyes from colored leather armor.
@@ -65,9 +68,9 @@ public enum ItemFlag {
      *     <li>Shulker box contents</li>
      *     <li>Spawner descriptions</li>
      * </ul>
-     * @deprecated use {@link #HIDE_ADDITIONAL_TOOLTIP}
+     * @deprecated each component can now be hidden individually in the {@code tooltip_display} component
      */
-    @Deprecated(since = "1.20.5")
+    @Deprecated(since = "1.20.5", forRemoval = true)
     public static final ItemFlag HIDE_ITEM_SPECIFICS = HIDE_ADDITIONAL_TOOLTIP;
     // Paper end
 }

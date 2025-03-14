@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
 import ca.spottedleaf.moonrise.common.PlatformHooks;
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
@@ -15,6 +14,7 @@ import com.mojang.serialization.JsonOps;
 import io.papermc.paper.registry.RegistryKey;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -291,7 +291,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(stack);
 
         try {
-            nmsStack.applyComponents(new ItemParser(Commands.createValidationContext(MinecraftServer.getDefaultRegistryAccess())).parse(new StringReader(arguments)).components());
+            nmsStack.applyComponents(new ItemParser(Commands.createValidationContext(CraftRegistry.getMinecraftRegistry())).parse(new StringReader(arguments)).components());
         } catch (CommandSyntaxException ex) {
             com.mojang.logging.LogUtils.getClassLogger().error("Exception modifying ItemStack", new Throwable(ex)); // Paper - show stack trace
         }
@@ -342,7 +342,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 file.getParentFile().mkdirs();
 
                 try {
-                    Files.write(advancement, file, Charsets.UTF_8);
+                    Files.write(advancement, file, StandardCharsets.UTF_8);
                 } catch (IOException ex) {
                     Bukkit.getLogger().log(Level.SEVERE, "Error saving advancement " + key, ex);
                 }

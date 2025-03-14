@@ -124,7 +124,7 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
     }
 
     // Paper start - fixup upstream being dum
-    public static <T extends Keyed, M> Optional<T> unwrapAndConvertHolder(final RegistryKey<T> registryKey, final Holder<M> value) {
+    public static <T extends Keyed, M> Optional<T> unwrapAndConvertHolder(final RegistryKey<T> registryKey, final Holder<M> value) { // todo recheck usage with holderable support
         final Registry<T> registry = RegistryAccess.registryAccess().getRegistry(registryKey);
         if (registry instanceof final CraftRegistry<?,?> craftRegistry && craftRegistry.supportsDirectHolders() && value.kind() == Holder.Kind.DIRECT) {
             return Optional.of(((CraftRegistry<T, M>) registry).createBukkit(value));

@@ -269,8 +269,8 @@ public final class CraftItemStack extends ItemStack {
     // Paper end
 
     @Override
-    public void addUnsafeEnchantment(Enchantment ench, int level) {
-        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
+    public void addUnsafeEnchantment(Enchantment enchant, int level) {
+        Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
 
         // Paper start
         if (this.handle == null) {
@@ -278,7 +278,7 @@ public final class CraftItemStack extends ItemStack {
         }
 
         EnchantmentHelper.updateEnchantments(this.handle, mutable -> { // data component api doesn't really support mutable things once already set yet
-            mutable.set(CraftEnchantment.bukkitToMinecraftHolder(ench), level);
+            mutable.set(CraftEnchantment.bukkitToMinecraftHolder(enchant), level);
         });
         // Paper end
     }
@@ -292,22 +292,22 @@ public final class CraftItemStack extends ItemStack {
     }
 
     @Override
-    public boolean containsEnchantment(Enchantment ench) {
-        return this.getEnchantmentLevel(ench) > 0;
+    public boolean containsEnchantment(Enchantment enchant) {
+        return this.getEnchantmentLevel(enchant) > 0;
     }
 
     @Override
-    public int getEnchantmentLevel(Enchantment ench) {
-        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
+    public int getEnchantmentLevel(Enchantment enchant) {
+        Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
         if (this.handle == null) {
             return 0;
         }
-        return EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.bukkitToMinecraftHolder(ench), this.handle);
+        return EnchantmentHelper.getItemEnchantmentLevel(CraftEnchantment.bukkitToMinecraftHolder(enchant), this.handle);
     }
 
     @Override
-    public int removeEnchantment(Enchantment ench) {
-        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
+    public int removeEnchantment(Enchantment enchant) {
+        Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
 
         // Paper start
         if (this.handle == null) {
@@ -319,7 +319,7 @@ public final class CraftItemStack extends ItemStack {
             return 0;
         }
 
-        Holder<net.minecraft.world.item.enchantment.Enchantment> removedEnchantment = CraftEnchantment.bukkitToMinecraftHolder(ench);
+        Holder<net.minecraft.world.item.enchantment.Enchantment> removedEnchantment = CraftEnchantment.bukkitToMinecraftHolder(enchant);
         if (itemEnchantments.keySet().contains(removedEnchantment)) {
             int previousLevel = itemEnchantments.getLevel(removedEnchantment);
 

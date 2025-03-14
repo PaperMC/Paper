@@ -21,6 +21,7 @@ import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.server.MinecraftServer;
 import org.bukkit.ChatColor;
+import org.bukkit.craftbukkit.CraftRegistry;
 
 public final class CraftChatMessage {
 
@@ -220,7 +221,7 @@ public final class CraftChatMessage {
     }
 
     public static String toJSON(Component component) {
-        return Component.Serializer.toJson(component, MinecraftServer.getDefaultRegistryAccess());
+        return Component.Serializer.toJson(component, CraftRegistry.getMinecraftRegistry());
     }
 
     public static String toJSONOrNull(Component component) {
@@ -231,7 +232,7 @@ public final class CraftChatMessage {
     public static Component fromJSON(String jsonMessage) throws JsonParseException {
         // Note: This also parses plain Strings to text components.
         // Note: An empty message (empty, or only consisting of whitespace) results in null rather than a parse exception.
-        return Component.Serializer.fromJson(jsonMessage, MinecraftServer.getDefaultRegistryAccess());
+        return Component.Serializer.fromJson(jsonMessage, CraftRegistry.getMinecraftRegistry());
     }
 
     public static Component fromJSONOrNull(String jsonMessage) {

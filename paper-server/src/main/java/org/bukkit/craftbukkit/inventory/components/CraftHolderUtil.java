@@ -30,7 +30,7 @@ final class CraftHolderUtil {
             if (key != null) {
                 holderSet = registry.get(TagKey.create(registryKey, key)).orElse(null);
             }
-        } else if (parseObject instanceof List parseList) { // List
+        } else if (parseObject instanceof List<?> parseList) { // List
             List<Holder.Reference<T>> holderList = new ArrayList<>(parseList.size());
 
             for (Object entry : parseList) {

@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import net.minecraft.world.item.component.CustomModelData;
 import org.bukkit.Color;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -90,6 +89,13 @@ public final class CraftCustomModelDataComponent implements CustomModelDataCompo
     }
 
     @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 19 * hash + this.handle.hashCode();
+        return hash;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -99,13 +105,6 @@ public final class CraftCustomModelDataComponent implements CustomModelDataCompo
         }
         final CraftCustomModelDataComponent other = (CraftCustomModelDataComponent) obj;
         return this.handle.equals(other.handle);
-    }
-
-    @Override
-    public int hashCode() {
-        int hash = 7;
-        hash = 19 * hash + Objects.hashCode(this.handle);
-        return hash;
     }
 
     @Override

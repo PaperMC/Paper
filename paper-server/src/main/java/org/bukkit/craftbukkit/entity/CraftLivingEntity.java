@@ -522,19 +522,17 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         ), player -> (Player) player.getBukkitEntity());
     }
 
-    // Paper start
     @Override
     public void setKiller(Player killer) {
         net.minecraft.server.level.ServerPlayer nmsKiller = killer == null ? null : ((CraftPlayer) killer).getHandle();
         this.getHandle().setLastHurtByMob(nmsKiller);
         if (nmsKiller != null) {
-            this.getHandle().setLastHurtByPlayer(nmsKiller,  100); // value taken from LivingEntity#resolvePlayerResponsibleForDamage
+            this.getHandle().setLastHurtByPlayer(nmsKiller, 100); // value taken from LivingEntity#resolvePlayerResponsibleForDamage
         } else {
             this.getHandle().lastHurtByPlayer = null;
             this.getHandle().lastHurtByPlayerMemoryTime = 0;
         }
     }
-    // Paper end
 
     @Override
     public boolean addPotionEffect(PotionEffect effect) {

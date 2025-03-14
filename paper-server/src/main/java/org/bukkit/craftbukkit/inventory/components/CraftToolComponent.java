@@ -54,7 +54,7 @@ public final class CraftToolComponent implements ToolComponent {
             }
         }
 
-        this.handle = new Tool(rules.build().stream().map(CraftToolRule::new).map(CraftToolRule::getHandle).toList(), speed, damage);
+        this.handle = new Tool(rules.build().stream().map(CraftToolRule::new).map(CraftToolRule::getHandle).toList(), speed, damage, true);
     }
 
     @Override
@@ -77,7 +77,7 @@ public final class CraftToolComponent implements ToolComponent {
 
     @Override
     public void setDefaultMiningSpeed(float speed) {
-        this.handle = new Tool(this.handle.rules(), speed, this.handle.damagePerBlock());
+        this.handle = new Tool(this.handle.rules(), speed, this.handle.damagePerBlock(), this.handle.canDestroyBlocksInCreative());
     }
 
     @Override
@@ -88,7 +88,7 @@ public final class CraftToolComponent implements ToolComponent {
     @Override
     public void setDamagePerBlock(int damage) {
         Preconditions.checkArgument(damage >= 0, "damage must be >= 0, was %d", damage);
-        this.handle = new Tool(this.handle.rules(), this.handle.defaultMiningSpeed(), damage);
+        this.handle = new Tool(this.handle.rules(), this.handle.defaultMiningSpeed(), damage, this.handle.canDestroyBlocksInCreative());
     }
 
     @Override
@@ -99,7 +99,7 @@ public final class CraftToolComponent implements ToolComponent {
     @Override
     public void setRules(List<ToolRule> rules) {
         Preconditions.checkArgument(rules != null, "rules must not be null");
-        this.handle = new Tool(rules.stream().map(CraftToolRule::new).map(CraftToolRule::getHandle).toList(), this.handle.defaultMiningSpeed(), this.handle.damagePerBlock());
+        this.handle = new Tool(rules.stream().map(CraftToolRule::new).map(CraftToolRule::getHandle).toList(), this.handle.defaultMiningSpeed(), this.handle.damagePerBlock(), this.handle.canDestroyBlocksInCreative());
     }
 
     @Override
@@ -139,7 +139,7 @@ public final class CraftToolComponent implements ToolComponent {
         rules.addAll(this.handle.rules());
         rules.add(rule);
 
-        this.handle = new Tool(rules, this.handle.defaultMiningSpeed(), this.handle.damagePerBlock());
+        this.handle = new Tool(rules, this.handle.defaultMiningSpeed(), this.handle.damagePerBlock(), this.handle.canDestroyBlocksInCreative());
         return new CraftToolRule(rule);
     }
 
@@ -149,7 +149,7 @@ public final class CraftToolComponent implements ToolComponent {
 
         List<Tool.Rule> rules = new ArrayList<>(this.handle.rules());
         boolean removed = rules.remove(((CraftToolRule) rule).handle);
-        this.handle = new Tool(rules, this.handle.defaultMiningSpeed(), this.handle.damagePerBlock());
+        this.handle = new Tool(rules, this.handle.defaultMiningSpeed(), this.handle.damagePerBlock(), this.handle.canDestroyBlocksInCreative());
 
         return removed;
     }
@@ -157,7 +157,7 @@ public final class CraftToolComponent implements ToolComponent {
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 73 * hash + Objects.hashCode(this.handle);
+        hash = 73 * hash + this.handle.hashCode();
         return hash;
     }
 
@@ -166,14 +166,11 @@ public final class CraftToolComponent implements ToolComponent {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
-            return false;
-        }
-        if (this.getClass() != obj.getClass()) {
+        if (obj == null || this.getClass() != obj.getClass()) {
             return false;
         }
         final CraftToolComponent other = (CraftToolComponent) obj;
-        return Objects.equals(this.handle, other.handle);
+        return this.handle.equals(other.handle);
     }
 
     @Override
@@ -278,7 +275,7 @@ public final class CraftToolComponent implements ToolComponent {
         @Override
         public int hashCode() {
             int hash = 5;
-            hash = 97 * hash + Objects.hashCode(this.handle);
+            hash = 97 * hash + this.handle.hashCode();
             return hash;
         }
 
@@ -299,7 +296,7 @@ public final class CraftToolComponent implements ToolComponent {
 
         @Override
         public String toString() {
-            return "CraftToolRule{" + "handle=" + this.handle + '}';
+            return "CraftToolRule{rule=" + this.handle + '}';
         }
     }
 }

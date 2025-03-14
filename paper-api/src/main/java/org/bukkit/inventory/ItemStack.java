@@ -369,21 +369,21 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     /**
      * Checks if this ItemStack contains the given {@link Enchantment}
      *
-     * @param ench Enchantment to test
+     * @param enchant Enchantment to test
      * @return True if this has the given enchantment
      */
-    public boolean containsEnchantment(@NotNull Enchantment ench) {
-        return this.craftDelegate.containsEnchantment(ench); // Paper - delegate
+    public boolean containsEnchantment(@NotNull Enchantment enchant) {
+        return this.craftDelegate.containsEnchantment(enchant); // Paper - delegate
     }
 
     /**
      * Gets the level of the specified enchantment on this item stack
      *
-     * @param ench Enchantment to check
+     * @param enchant Enchantment to check
      * @return Level of the enchantment, or 0
      */
-    public int getEnchantmentLevel(@NotNull Enchantment ench) {
-        return this.craftDelegate.getEnchantmentLevel(ench); // Paper - delegate
+    public int getEnchantmentLevel(@NotNull Enchantment enchant) {
+        return this.craftDelegate.getEnchantmentLevel(enchant); // Paper - delegate
     }
 
     /**
@@ -423,21 +423,21 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * If this item stack already contained the given enchantment (at any
      * level), it will be replaced.
      *
-     * @param ench Enchantment to add
+     * @param enchant Enchantment to add
      * @param level Level of the enchantment
      * @throws IllegalArgumentException if enchantment null, or enchantment is
      *     not applicable
      */
     @Utility
-    public void addEnchantment(@NotNull Enchantment ench, int level) {
-        Preconditions.checkArgument(ench != null, "Enchantment cannot be null");
-        if ((level < ench.getStartLevel()) || (level > ench.getMaxLevel())) {
-            throw new IllegalArgumentException("Enchantment level is either too low or too high (given " + level + ", bounds are " + ench.getStartLevel() + " to " + ench.getMaxLevel() + ")");
-        } else if (!ench.canEnchantItem(this)) {
+    public void addEnchantment(@NotNull Enchantment enchant, int level) {
+        Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
+        if ((level < enchant.getStartLevel()) || (level > enchant.getMaxLevel())) {
+            throw new IllegalArgumentException("Enchantment level is either too low or too high (given " + level + ", bounds are " + enchant.getStartLevel() + " to " + enchant.getMaxLevel() + ")");
+        } else if (!enchant.canEnchantItem(this)) {
             throw new IllegalArgumentException("Specified enchantment cannot be applied to this itemstack");
         }
 
-        addUnsafeEnchantment(ench, level);
+        addUnsafeEnchantment(enchant, level);
     }
 
     /**
@@ -465,22 +465,22 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      * This method is unsafe and will ignore level restrictions or item type.
      * Use at your own discretion.
      *
-     * @param ench Enchantment to add
+     * @param enchant Enchantment to add
      * @param level Level of the enchantment
      */
-    public void addUnsafeEnchantment(@NotNull Enchantment ench, int level) {
-        this.craftDelegate.addUnsafeEnchantment(ench, level); // Paper - delegate
+    public void addUnsafeEnchantment(@NotNull Enchantment enchant, int level) {
+        this.craftDelegate.addUnsafeEnchantment(enchant, level); // Paper - delegate
     }
 
     /**
      * Removes the specified {@link Enchantment} if it exists on this
      * ItemStack
      *
-     * @param ench Enchantment to remove
+     * @param enchant Enchantment to remove
      * @return Previous level, or 0
      */
-    public int removeEnchantment(@NotNull Enchantment ench) {
-        return this.craftDelegate.removeEnchantment(ench); // Paper - delegate
+    public int removeEnchantment(@NotNull Enchantment enchant) {
+        return this.craftDelegate.removeEnchantment(enchant); // Paper - delegate
     }
 
     /**
@@ -494,7 +494,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     @NotNull
     @Utility
     public Map<String, Object> serialize() {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
 
         result.put("v", Bukkit.getUnsafe().getDataVersion()); // Include version to indicate we are using modern material names (or LEGACY prefix)
         result.put("type", getType().name());

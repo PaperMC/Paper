@@ -236,7 +236,7 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     @Override
     public boolean isEnabledByFeature(@NotNull World world) {
-        Preconditions.checkNotNull(world, "World cannot be null");
+        Preconditions.checkArgument(world != null, "World cannot be null");
         return this.getHandle().isEnabled(((CraftWorld) world).getHandle().enabledFeatures());
     }
 

@@ -1,7 +1,6 @@
 package com.destroystokyo.paper;
 
 import com.destroystokyo.paper.util.VersionFetcher;
-import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -15,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.StreamSupport;
@@ -87,7 +87,7 @@ public class PaperVersionFetcher implements VersionFetcher {
         try {
             try (final BufferedReader reader = Resources.asCharSource(
                 URI.create("https://api.papermc.io/v2/projects/paper/versions/" + build.minecraftVersionId()).toURL(),
-                Charsets.UTF_8
+                StandardCharsets.UTF_8
             ).openBufferedStream()) {
                 final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
                 final JsonArray builds = json.getAsJsonArray("builds");

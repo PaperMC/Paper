@@ -1,6 +1,6 @@
 package com.destroystokyo.paper.entity.ai;
 
-import com.google.common.base.Objects;
+import java.util.Objects;
 import java.util.StringJoiner;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Mob;
@@ -36,13 +36,13 @@ public final class GoalKey<T extends Mob> {
         if (this == o) return true;
         if (o == null || this.getClass() != o.getClass()) return false;
         GoalKey<?> goalKey = (GoalKey<?>) o;
-        return Objects.equal(this.entityClass, goalKey.entityClass) &&
-            Objects.equal(this.namespacedKey, goalKey.namespacedKey);
+        return Objects.equals(this.entityClass, goalKey.entityClass) &&
+            Objects.equals(this.namespacedKey, goalKey.namespacedKey);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(this.entityClass, this.namespacedKey);
+        return Objects.hash(this.entityClass, this.namespacedKey);
     }
 
     @Override
