@@ -12,7 +12,7 @@ import java.nio.file.Path
 import kotlin.random.Random
 
 plugins {
-    id("io.papermc.paperweight.core") version "2.0.0-SNAPSHOT" apply false
+    id("io.papermc.paperweight.core") version "2.0.0-beta.15" apply false
 }
 
 subprojects {
