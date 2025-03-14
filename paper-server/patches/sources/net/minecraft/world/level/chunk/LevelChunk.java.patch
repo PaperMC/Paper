@@ -1,14 +1,6 @@
-From 3aeeaf31b7a7f888f54e47826e8ec0ddbe65c4bf Mon Sep 17 00:00:00 2001
-From: File <noreply+automated@papermc.io>
-Date: Sun, 20 Apr 1997 14:37:42 +0100
-Subject: [PATCH] paper File Patches
-
-
-diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
-index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb041036f93a 100644
 --- a/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -76,7 +76,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -77,7 +_,7 @@
      };
      private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel = Maps.newHashMap();
      public boolean loaded;
@@ -17,7 +9,7 @@ index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb04
      @Nullable
      private Supplier<FullChunkStatus> fullStatus;
      @Nullable
-@@ -85,6 +85,14 @@ public class LevelChunk extends ChunkAccess {
+@@ -86,6 +_,14 @@
      private final LevelChunkTicks<Block> blockTicks;
      private final LevelChunkTicks<Fluid> fluidTicks;
      private LevelChunk.UnsavedListener unsavedListener = chunkPos -> {};
@@ -32,7 +24,7 @@ index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb04
  
      public LevelChunk(Level level, ChunkPos pos) {
          this(level, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, null, null, null);
-@@ -102,7 +110,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -103,7 +_,7 @@
          @Nullable BlendingData blendingData
      ) {
          super(pos, data, level, level.registryAccess().lookupOrThrow(Registries.BIOME), inhabitedTime, sections, blendingData);
@@ -41,7 +33,7 @@ index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb04
          this.gameEventListenerRegistrySections = new Int2ObjectOpenHashMap<>();
  
          for (Heightmap.Types types : Heightmap.Types.values()) {
-@@ -154,6 +162,10 @@ public class LevelChunk extends ChunkAccess {
+@@ -155,6 +_,10 @@
          this.skyLightSources = chunk.skyLightSources;
          this.setLightCorrect(chunk.isLightCorrect());
          this.markUnsaved();
@@ -52,7 +44,7 @@ index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb04
      }
  
      public void setUnsavedListener(LevelChunk.UnsavedListener unsavedListener) {
-@@ -162,6 +174,12 @@ public class LevelChunk extends ChunkAccess {
+@@ -163,6 +_,12 @@
              unsavedListener.setUnsaved(this.chunkPos);
          }
      }
@@ -65,7 +57,7 @@ index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb04
  
      @Override
      public void markUnsaved() {
-@@ -195,8 +213,25 @@ public class LevelChunk extends ChunkAccess {
+@@ -196,8 +_,25 @@
              : super.getListenerRegistry(sectionY);
      }
  
@@ -91,7 +83,7 @@ index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb04
          int x = pos.getX();
          int y = pos.getY();
          int z = pos.getZ();
-@@ -231,33 +266,54 @@ public class LevelChunk extends ChunkAccess {
+@@ -232,28 +_,42 @@
          }
      }
  
@@ -136,37 +128,33 @@ index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb04
      }
  
      @Nullable
-     @Override
-     public BlockState setBlockState(BlockPos pos, BlockState state, boolean isMoving) {
-+// CraftBukkit start
-+        return this.setBlockState(pos, state, isMoving, true);
-+    }
-+
-+    @Nullable
-+    public BlockState setBlockState(BlockPos pos, BlockState state, boolean isMoving, boolean doPlace) {
-+        // CraftBukkit end
-         int y = pos.getY();
-         LevelChunkSection section = this.getSection(this.getSectionIndex(y));
-         boolean hasOnlyAir = section.hasOnlyAir();
-@@ -292,7 +348,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -298,7 +_,7 @@
+                 if (flag && blockState.hasBlockEntity()) {
+                     if (!this.level.isClientSide && flag2) {
+                         BlockEntity blockEntity = this.level.getBlockEntity(pos);
+-                        if (blockEntity != null) {
++                        if (blockEntity != null && !this.level.isBlockPlaceCancelled) { // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
+                             blockEntity.preRemoveSideEffects(pos, blockState);
+                         }
+                     }
+@@ -306,14 +_,14 @@
+                     this.removeBlockEntity(pos);
                  }
  
-                 boolean hasBlockEntity = blockState.hasBlockEntity();
--                if (!this.level.isClientSide) {
-+                if (!this.level.isClientSide && !this.level.isBlockPlaceCancelled) { // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
-                     blockState.onRemove(this.level, pos, state, isMoving);
-                 } else if (!blockState.is(block) && hasBlockEntity) {
-                     this.removeBlockEntity(pos);
-@@ -301,7 +357,7 @@ public class LevelChunk extends ChunkAccess {
+-                if ((flag || block instanceof BaseRailBlock) && this.level instanceof ServerLevel serverLevel && ((flags & 1) != 0 || flag1)) {
++                if ((flag || block instanceof BaseRailBlock) && this.level instanceof ServerLevel serverLevel && ((flags & 1) != 0 || flag1) && !this.level.isBlockPlaceCancelled) { // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
+                     blockState.affectNeighborsAfterRemoval(serverLevel, pos, flag1);
+                 }
+ 
                  if (!section.getBlockState(i, i1, i2).is(block)) {
                      return null;
                  } else {
--                    if (!this.level.isClientSide) {
-+                    if (!this.level.isClientSide && doPlace && (!this.level.captureBlockStates || block instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
-                         state.onPlace(this.level, pos, blockState, isMoving);
+-                    if (!this.level.isClientSide && (flags & 512) == 0) {
++                    if (!this.level.isClientSide && (flags & 512) == 0 && (!this.level.captureBlockStates || block instanceof net.minecraft.world.level.block.BaseEntityBlock)) { // CraftBukkit - Don't place while processing the BlockPlaceEvent, unless it's a BlockContainer. Prevents blocks such as TNT from activating when cancelled.
+                         state.onPlace(this.level, pos, blockState, flag1);
                      }
  
-@@ -355,7 +411,12 @@ public class LevelChunk extends ChunkAccess {
+@@ -367,7 +_,12 @@
  
      @Nullable
      public BlockEntity getBlockEntity(BlockPos pos, LevelChunk.EntityCreationType creationType) {
@@ -180,7 +168,7 @@ index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb04
          if (blockEntity == null) {
              CompoundTag compoundTag = this.pendingBlockEntities.remove(pos);
              if (compoundTag != null) {
-@@ -409,7 +470,13 @@ public class LevelChunk extends ChunkAccess {
+@@ -421,7 +_,13 @@
          BlockPos blockPos = blockEntity.getBlockPos();
          BlockState blockState = this.getBlockState(blockPos);
          if (!blockState.hasBlockEntity()) {
@@ -195,7 +183,7 @@ index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb04
          } else {
              BlockState blockState1 = blockEntity.getBlockState();
              if (blockState != blockState1) {
-@@ -457,6 +524,11 @@ public class LevelChunk extends ChunkAccess {
+@@ -469,6 +_,11 @@
      public void removeBlockEntity(BlockPos pos) {
          if (this.isInLevel()) {
              BlockEntity blockEntity = this.blockEntities.remove(pos);
@@ -207,7 +195,7 @@ index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb04
              if (blockEntity != null) {
                  if (this.level instanceof ServerLevel serverLevel) {
                      this.removeGameEventListener(blockEntity, serverLevel);
-@@ -499,6 +571,65 @@ public class LevelChunk extends ChunkAccess {
+@@ -511,6 +_,65 @@
          }
      }
  
@@ -273,7 +261,7 @@ index fc3e691ebd28365ef6c13d576cb4122c1576b6ff..ce781ba2c8b3f9f051201d3809a9cb04
      public boolean isEmpty() {
          return false;
      }
-@@ -711,23 +842,24 @@ public class LevelChunk extends ChunkAccess {
+@@ -719,23 +_,24 @@
                          if (this.blockEntity.getType().isValid(blockState)) {
                              this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), blockState, this.blockEntity);
                              this.loggedInvalidBlockState = false;
