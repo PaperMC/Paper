@@ -13,6 +13,8 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.world.level.storage.PlayerDataStorage;
@@ -29,6 +31,7 @@ import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.MetadataValue;
@@ -396,21 +399,12 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         CompoundTag data = this.getData();
         if (data == null) return null;
 
-        if (data.contains("SpawnX") && data.contains("SpawnY") && data.contains("SpawnZ")) {
-            // Paper start - fix wrong world
-            final float respawnAngle = data.getFloat("SpawnAngle");
-            org.bukkit.World spawnWorld = this.server.getWorld(data.getString("SpawnWorld")); // legacy
-            if (data.contains("SpawnDimension")) {
-                com.mojang.serialization.DataResult<net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level>> result = net.minecraft.world.level.Level.RESOURCE_KEY_CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, data.get("SpawnDimension"));
-                net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> levelKey = result.resultOrPartial(LOGGER::error).orElse(net.minecraft.world.level.Level.OVERWORLD);
-                net.minecraft.server.level.ServerLevel level = this.server.console.getLevel(levelKey);
-                spawnWorld = level != null ? level.getWorld() : spawnWorld;
+        final ServerPlayer.RespawnConfig respawnConfig = data.read("respawn", ServerPlayer.RespawnConfig.CODEC).orElse(null);
+        if (respawnConfig != null) {
+            final ServerLevel level = this.server.console.getLevel(respawnConfig.dimension());
+            if (level != null) {
+                return CraftLocation.toBukkit(respawnConfig.pos(), level.getWorld(), respawnConfig.angle(), 0);
             }
-            if (spawnWorld == null) {
-                return null;
-            }
-            return new Location(spawnWorld, data.getInt("SpawnX"), data.getInt("SpawnY"), data.getInt("SpawnZ"), respawnAngle, 0);
-            // Paper end
         }
         return null;
     }

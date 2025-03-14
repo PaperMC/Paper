@@ -127,17 +127,11 @@
              int max = Math.max(0, this.server.getSpawnRadius(level));
              int floor = Mth.floor(level.getWorldBorder().getDistanceToBorder(pos.getX(), pos.getZ()));
              if (floor < max) {
-@@ -436,6 +_,13 @@
+@@ -436,6 +_,7 @@
          this.enteredNetherPosition = compound.read("entered_nether_pos", Vec3.CODEC).orElse(null);
          this.seenCredits = compound.getBooleanOr("seenCredits", false);
          this.recipeBook.fromNbt(compound.getCompoundOrEmpty("recipeBook"), key -> this.server.getRecipeManager().byKey(key).isPresent());
 +        this.getBukkitEntity().readExtraData(compound); // CraftBukkit
-+        // CraftBukkit start
-+        org.bukkit.craftbukkit.CraftWorld oldWorld = compound.getString("SpawnWorld").map(spawnWorld -> (org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(spawnWorld)).orElse(null);
-+        if (oldWorld != null) {
-+            this.respawnDimension = oldWorld.getHandle().dimension();
-+        }
-+        // CraftBukkit end
          if (this.isSleeping()) {
              this.stopSleeping();
          }
@@ -306,7 +300,7 @@
                  }
  
                  float saturationLevel = this.foodData.getSaturationLevel();
-@@ -793,15 +_,100 @@
+@@ -793,15 +_,89 @@
      }
  
      private void updateScoreForCriteria(ObjectiveCriteria criteria, int points) {
@@ -316,23 +310,12 @@
 +    }
 +
 +    // Paper start - PlayerDeathEvent#getItemsToKeep
-+    private static void processKeep(org.bukkit.event.entity.PlayerDeathEvent event, NonNullList<ItemStack> inv) {
++    private static void processKeep(org.bukkit.event.entity.PlayerDeathEvent event, List<ItemStack> items) {
 +        List<org.bukkit.inventory.ItemStack> itemsToKeep = event.getItemsToKeep();
-+        if (inv == null) {
-+            // remainder of items left in toKeep - plugin added stuff on death that wasn't in the initial loot?
-+            if (!itemsToKeep.isEmpty()) {
-+                for (org.bukkit.inventory.ItemStack itemStack : itemsToKeep) {
-+                    event.getEntity().getInventory().addItem(itemStack);
-+                }
-+            }
-+
-+            return;
-+        }
-+
-+        for (int i = 0; i < inv.size(); ++i) {
-+            ItemStack item = inv.get(i);
++        for (int i = 0; i < items.size(); ++i) {
++            ItemStack item = items.get(i);
 +            if (EnchantmentHelper.has(item, net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP) || itemsToKeep.isEmpty() || item.isEmpty()) {
-+                inv.set(i, ItemStack.EMPTY);
++                items.set(i, ItemStack.EMPTY);
 +                continue;
 +            }
 +
@@ -349,7 +332,7 @@
 +            }
 +
 +            if (!keep) {
-+                inv.set(i, ItemStack.EMPTY);
++                items.set(i, ItemStack.EMPTY);
 +            }
 +        }
 +    }
@@ -413,7 +396,7 @@
              this.connection
                  .send(
                      new ClientboundPlayerCombatKillPacket(this.getId(), deathMessage),
-@@ -835,11 +_,22 @@
+@@ -835,11 +_,26 @@
              this.tellNeutralMobsThatIDied();
          }
  
@@ -424,10 +407,14 @@
 +        // we clean the player's inventory after the EntityDeathEvent is called so plugins can get the exact state of the inventory.
 +        if (!event.getKeepInventory()) {
 +            // Paper start - PlayerDeathEvent#getItemsToKeep
-+            for (NonNullList<ItemStack> inv : this.getInventory().compartments) {
-+                processKeep(event, inv);
++            processKeep(event, this.getInventory().getContents());
++
++            // remainder of items left in toKeep - plugin added stuff on death that wasn't in the initial loot?
++            if (!event.getItemsToKeep().isEmpty()) {
++                for (org.bukkit.inventory.ItemStack itemStack : event.getItemsToKeep()) {
++                    event.getEntity().getInventory().addItem(itemStack);
++                }
 +            }
-+            processKeep(event, null);
 +            // Paper end - PlayerDeathEvent#getItemsToKeep
          }
  
@@ -1262,26 +1249,26 @@
      }
  
      @Override
-@@ -1820,12 +_,72 @@
+@@ -1820,12 +_,53 @@
          this.setRespawnPosition(player.respawnConfig, false);
      }
  
 -    public void setRespawnPosition(@Nullable ServerPlayer.RespawnConfig respawnConfig, boolean displayInChat) {
+-        if (displayInChat && respawnConfig != null && !respawnConfig.isSamePosition(this.respawnConfig)) {
+-            this.sendSystemMessage(SPAWN_SET_MESSAGE);
 +    // Paper start - Add PlayerSetSpawnEvent
-+    public boolean setRespawnPosition(@Nullable ServerPlayer.RespawnConfig respawnConfig, boolean displayInChat) {
-+        //TODO
++    public boolean setRespawnPosition(@Nullable ServerPlayer.RespawnConfig respawnConfig, boolean displayInChat, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause cause) {
 +        org.bukkit.Location spawnLoc = null;
-+        boolean willNotify = false;
-+        if (position != null) {
-+            boolean flag = position.equals(this.respawnPosition) && dimension.equals(this.respawnDimension);
-+            spawnLoc = io.papermc.paper.util.MCUtil.toLocation(this.getServer().getLevel(dimension), position);
-+            spawnLoc.setYaw(angle);
-+            willNotify = sendMessage && !flag;
++        boolean actuallyDisplayInChat = false;
++        if (respawnConfig != null) {
++            actuallyDisplayInChat = displayInChat && !respawnConfig.isSamePosition(this.respawnConfig);
++            spawnLoc = io.papermc.paper.util.MCUtil.toLocation(this.getServer().getLevel(respawnConfig.dimension()), respawnConfig.pos());
++            spawnLoc.setYaw(respawnConfig.angle());
 +        }
 +        org.bukkit.event.player.PlayerSpawnChangeEvent dumbEvent = new org.bukkit.event.player.PlayerSpawnChangeEvent(
 +            this.getBukkitEntity(),
 +            spawnLoc,
-+            forced,
++            respawnConfig != null && respawnConfig.forced(),
 +            cause == com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLAYER_RESPAWN
 +                ? org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.RESET
 +                : org.bukkit.event.player.PlayerSpawnChangeEvent.Cause.valueOf(cause.name())
@@ -1293,41 +1280,24 @@
 +            cause,
 +            dumbEvent.getNewSpawn(),
 +            dumbEvent.isForced(),
-+            willNotify,
-+            willNotify ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null
++            actuallyDisplayInChat,
++            actuallyDisplayInChat ? net.kyori.adventure.text.Component.translatable("block.minecraft.set_spawn") : null
 +        );
 +        event.setCancelled(dumbEvent.isCancelled());
 +        if (!event.callEvent()) {
 +            return false;
 +        }
++
 +        if (event.getLocation() != null) {
-+            dimension = event.getLocation().getWorld() != null ? ((org.bukkit.craftbukkit.CraftWorld) event.getLocation().getWorld()).getHandle().dimension() : dimension;
-+            position = io.papermc.paper.util.MCUtil.toBlockPosition(event.getLocation());
-+            angle = event.getLocation().getYaw();
-+            forced = event.isForced();
-+            // Paper end - Add PlayerSetSpawnEvent
-+
-+            if (event.willNotifyPlayer() && event.getNotification() != null) { // Paper - Add PlayerSetSpawnEvent
-+                this.sendSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(event.getNotification())); // Paper - Add PlayerSetSpawnEvent
++            respawnConfig = new ServerPlayer.RespawnConfig(
++                ((org.bukkit.craftbukkit.CraftWorld) event.getLocation().getWorld()).getHandle().dimension(),
++                io.papermc.paper.util.MCUtil.toBlockPos(event.getLocation()),
++                event.getLocation().getYaw(),
++                event.isForced()
++            );
++            if (displayInChat && !respawnConfig.isSamePosition(this.respawnConfig)) {
++                this.sendSystemMessage(SPAWN_SET_MESSAGE);
 +            }
-+
-+            this.respawnPosition = position;
-+            this.respawnDimension = dimension;
-+            this.respawnAngle = angle;
-+            this.respawnForced = forced;
-+        } else {
-+            this.respawnPosition = null;
-+            this.respawnDimension = Level.OVERWORLD;
-+            this.respawnAngle = 0.0F;
-+            this.respawnForced = false;
-+        }
-+
-+        return true; // Paper - Add PlayerSetSpawnEvent
-+
-+
-+
-         if (displayInChat && respawnConfig != null && !respawnConfig.isSamePosition(this.respawnConfig)) {
-             this.sendSystemMessage(SPAWN_SET_MESSAGE);
          }
  
          this.respawnConfig = respawnConfig;
@@ -1397,7 +1367,7 @@
          if (vehicle instanceof LivingEntity livingEntity) {
              for (MobEffectInstance mobEffectInstance : livingEntity.getActiveEffects()) {
                  this.connection.send(new ClientboundRemoveMobEffectPacket(vehicle.getId(), mobEffectInstance.getEffect()));
-@@ -2093,11 +_,11 @@
+@@ -2093,7 +_,7 @@
      }
  
      public static long placeEnderPearlTicket(ServerLevel level, ChunkPos pos) {
@@ -1406,11 +1376,6 @@
          return TicketType.ENDER_PEARL.timeout();
      }
  
--    public record RespawnConfig(ResourceKey<Level> dimension, BlockPos pos, float angle, boolean forced) {
-+    public record RespawnConfig(ResourceKey<Level> dimension, BlockPos pos, float angle, boolean forced, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause cause) {
-         public static final Codec<ServerPlayer.RespawnConfig> CODEC = RecordCodecBuilder.create(
-             instance -> instance.group(
-                     Level.RESOURCE_KEY_CODEC.optionalFieldOf("dimension", Level.OVERWORLD).forGetter(ServerPlayer.RespawnConfig::dimension),
 @@ -2117,9 +_,11 @@
          }
      }
@@ -1517,7 +1482,7 @@
 +
 +    // SPIGOT-1903, MC-98153
 +    public void forceSetPositionRotation(double x, double y, double z, float yaw, float pitch) {
-+        this.moveTo(x, y, z, yaw, pitch);
++        this.snapTo(x, y, z, yaw, pitch);
 +        this.connection.resetPosition();
 +    }
 +

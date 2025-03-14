@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/player/Inventory.java
 +++ b/net/minecraft/world/entity/player/Inventory.java
-@@ -49,6 +_,53 @@
+@@ -49,6 +_,66 @@
      public final Player player;
      private final EntityEquipment equipment;
      private int timesChanged;
@@ -8,31 +8,43 @@
 +    public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
 +    private int maxStack = MAX_STACK;
 +
++    @Override
 +    public java.util.List<ItemStack> getContents() {
-+        java.util.List<ItemStack> combined = new java.util.ArrayList<>(this.items.size() + this.armor.size() + this.offhand.size());
-+        for (java.util.List<ItemStack> sub : this.compartments) {
-+            combined.addAll(sub);
-+        }
-+
++        java.util.List<ItemStack> combined = new java.util.ArrayList<>(this.items.size() + EQUIPMENT_SLOT_MAPPING.size());
++        combined.addAll(this.items);
++        EQUIPMENT_SLOT_MAPPING.int2ObjectEntrySet().forEach(entry -> {
++            ItemStack itemStack = this.equipment.get(entry.getValue());
++            combined.add(itemStack); // Include empty items
++        });
 +        return combined;
 +    }
 +
 +    public java.util.List<ItemStack> getArmorContents() {
-+        return this.armor;
++        java.util.List<ItemStack> items = new java.util.ArrayList<>();
++        EQUIPMENT_SLOT_MAPPING.int2ObjectEntrySet().forEach(entry -> {
++            if (entry.getValue().isArmor()) {
++                items.add(this.equipment.get(entry.getValue()));
++            }
++        });
++        return items;
 +    }
 +
++    @Override
 +    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
 +        this.transaction.add(player);
 +    }
 +
++    @Override
 +    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
 +        this.transaction.remove(player);
 +    }
 +
++    @Override
 +    public java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
 +        return this.transaction;
 +    }
 +
++    @Override
 +    public org.bukkit.inventory.InventoryHolder getOwner() {
 +        return this.player.getBukkitEntity();
 +    }
@@ -42,6 +54,7 @@
 +        return this.maxStack;
 +    }
 +
++    @Override
 +    public void setMaxStackSize(int size) {
 +        this.maxStack = size;
 +    }
@@ -83,7 +96,7 @@
 +            }
 +        }
 +
-+        ItemStack itemInOffhand = this.getItem(this.items.size() + this.armor.size());
++        ItemStack itemInOffhand = this.equipment.get(EquipmentSlot.OFFHAND);
 +        if (this.hasRemainingSpaceForItem(itemInOffhand, itemStack)) {
 +            remains -= (itemInOffhand.getMaxStackSize() < this.getMaxStackSize() ? itemInOffhand.getMaxStackSize() : this.getMaxStackSize()) - itemInOffhand.getCount();
 +        }
