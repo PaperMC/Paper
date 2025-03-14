@@ -73,21 +73,27 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
         return this.getHandle().isFrozen();
     }
 
-    public void freezeRollUp(){
-        if (isFrozen()){
-            unFreezeState();
+    public void rollOut(boolean ignoreFrozen) {
+        if (ignoreFrozen) {
+            if (isFrozen()) {
+                unFreezeState();
+            }
+            rollOut();
+            freezeState();
+        } else {
+            rollOut();
         }
-
-        rollUp();
-        freezeState();
     }
 
-    public void freezeRollOut(){
-        if (isFrozen()){
-            unFreezeState();
+    public void rollUp(boolean ignoreFrozen) {
+        if (ignoreFrozen) {
+            if (isFrozen()) {
+                unFreezeState();
+            }
+            rollUp();
+            freezeState();
+        } else {
+            rollUp();
         }
-
-        rollOut();
-        freezeState();
     }
 }
