@@ -12,7 +12,7 @@ import org.bukkit.entity.Cow;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CraftCow extends CraftAnimals implements Cow {
+public class CraftCow extends CraftAbstractCow implements Cow {
 
     public CraftCow(CraftServer server, net.minecraft.world.entity.animal.Cow entity) {
         super(server, entity);

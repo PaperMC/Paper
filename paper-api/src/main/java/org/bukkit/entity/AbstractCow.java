@@ -1,9 +1,5 @@
 package org.bukkit.entity;
 
-import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryKey;
-import org.bukkit.Keyed;
-import org.bukkit.NamespacedKey;
 import org.jspecify.annotations.NullMarked;
 
 /**
