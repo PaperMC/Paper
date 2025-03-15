@@ -79,7 +79,7 @@ public final class ItemComponentSanitizer {
         final ItemStack targetItemstack = obfuscationSession.context().itemStack();
 
         // Only drop if configured to do so.
-        return GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE;
+        return GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE && (obfuscationSession.obfuscationAssertion == null || obfuscationSession.obfuscationAssertion.test(key));
     }
 
     public static Optional<?> override(final ItemObfuscationSession obfuscationSession, final DataComponentType<?> key, final Optional<?> value) {
@@ -91,6 +91,11 @@ public final class ItemComponentSanitizer {
         }
 
         final ItemStack targetItemstack = obfuscationSession.context().itemStack();
+
+        // used to let through certain DataComponents e.g. Custom Name for ItemFrames
+        if ((obfuscationSession.obfuscationAssertion != null && !obfuscationSession.obfuscationAssertion.test(key))) {
+            return value;
+        }
 
         return switch (GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key)) {
             case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop ignored -> Optional.empty();
