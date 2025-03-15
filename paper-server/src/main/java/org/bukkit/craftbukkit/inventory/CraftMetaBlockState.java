@@ -282,7 +282,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
         final Material stateMaterial = this.materialForBlockEntityType();
         if (!this.blockEntityTag.isEmpty()) {
             // Paper "id" field is always present now
-            pos = BlockEntity.getPosFromTag(this.blockEntityTag.getUnsafe()); // unsafe is fine here, just querying
+            pos = BlockEntity.getPosFromTag(null, this.blockEntityTag.getUnsafe()); // unsafe is fine here, just querying
         }
         final net.minecraft.world.level.block.entity.BlockEntityType<?> type = java.util.Objects.requireNonNull(CraftBlockStates.getBlockEntityType(stateMaterial));
         final net.minecraft.world.level.block.state.BlockState nmsBlockState = ((org.bukkit.craftbukkit.block.data.CraftBlockData) this.getBlockData(stateMaterial)).getState();
@@ -314,7 +314,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
                 blockEntityTag.putString("id", "minecraft:shulker_box");
             }
 
-            pos = BlockEntity.getPosFromTag(blockEntityTag);
+            pos = BlockEntity.getPosFromTag(null, blockEntityTag);
         }
 
         // This is expected to always return a CraftBlockEntityState for the passed material:

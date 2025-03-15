@@ -13,6 +13,7 @@ import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.entity.Minecart;
 import org.bukkit.material.MaterialData;
 import org.bukkit.util.Vector;
+import java.util.Optional;
 
 public abstract class CraftMinecart extends CraftVehicle implements Minecart {
     public CraftMinecart(CraftServer server, AbstractMinecart entity) {
@@ -87,11 +88,10 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
     public void setDisplayBlock(MaterialData material) {
         if (material != null) {
             BlockState block = CraftMagicNumbers.getBlock(material);
-            this.getHandle().setDisplayBlockState(block);
+            this.getHandle().setCustomDisplayBlockState(Optional.of(block));
         } else {
             // Set block to air (default) and set the flag to not have a display block.
-            this.getHandle().setDisplayBlockState(Blocks.AIR.defaultBlockState());
-            this.getHandle().setCustomDisplay(false);
+            this.getHandle().setCustomDisplayBlockState(Optional.empty());
         }
     }
 
@@ -99,11 +99,10 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
     public void setDisplayBlockData(BlockData blockData) {
         if (blockData != null) {
             BlockState block = ((CraftBlockData) blockData).getState();
-            this.getHandle().setDisplayBlockState(block);
+            this.getHandle().setCustomDisplayBlockState(Optional.of(block));
         } else {
             // Set block to air (default) and set the flag to not have a display block.
-            this.getHandle().setDisplayBlockState(Blocks.AIR.defaultBlockState());
-            this.getHandle().setCustomDisplay(false);
+            this.getHandle().setCustomDisplayBlockState(Optional.empty());
         }
     }
 
