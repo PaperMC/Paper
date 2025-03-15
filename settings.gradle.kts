@@ -2,7 +2,6 @@ import java.util.Locale
 
 pluginManagement {
     repositories {
-        mavenLocal() // First as we have a published 2.0.0-SNAPSHOT build of PW
         gradlePluginPortal()
         maven("https://repo.papermc.io/repository/maven-public/")
     }
