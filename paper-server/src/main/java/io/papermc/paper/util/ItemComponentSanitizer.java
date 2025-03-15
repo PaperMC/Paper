@@ -5,6 +5,7 @@ import io.papermc.paper.configuration.GlobalConfiguration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import net.minecraft.Util;
 import net.minecraft.core.component.DataComponentType;
@@ -17,6 +18,7 @@ import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.component.LodestoneTracker;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 @NullMarked
 public final class ItemComponentSanitizer {
@@ -73,13 +75,16 @@ public final class ItemComponentSanitizer {
         }
     }
 
+    @Nullable
+    public static Predicate<DataComponentType<?>> obfuscationAssertion;
+
     public static boolean shouldDrop(final ItemObfuscationSession obfuscationSession, final DataComponentType<?> key) {
         if (obfuscationSession.obfuscationLevel() != ItemObfuscationSession.ObfuscationLevel.ALL) return false; // Ignore if we are not obfuscating
 
         final ItemStack targetItemstack = obfuscationSession.context().itemStack();
 
         // Only drop if configured to do so.
-        return GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE;
+        return GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE && (obfuscationAssertion == null || obfuscationAssertion.test(key));
     }
 
     public static Optional<?> override(final ItemObfuscationSession obfuscationSession, final DataComponentType<?> key, final Optional<?> value) {
@@ -91,6 +96,11 @@ public final class ItemComponentSanitizer {
         }
 
         final ItemStack targetItemstack = obfuscationSession.context().itemStack();
+
+        // used to let through certain DataComponents e.g. Custom Name for ItemFrames
+        if ((obfuscationAssertion != null && !obfuscationAssertion.test(key))) {
+            return value;
+        }
 
         return switch (GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key)) {
             case final ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop ignored -> Optional.empty();
