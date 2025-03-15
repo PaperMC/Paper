@@ -1,4 +1,4 @@
-package io.papermc.paper.util;
+package io.papermc.paper.util.sanitizer;
 
 import com.google.common.collect.ImmutableMap;
 import io.papermc.paper.configuration.GlobalConfiguration;

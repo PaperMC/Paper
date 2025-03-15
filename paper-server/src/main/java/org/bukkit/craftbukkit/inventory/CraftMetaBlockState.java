@@ -107,7 +107,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             // Paper start - store data in a DataComponentMap to be used to construct CraftBlockEntityStates
             final DataComponentMap.Builder map = DataComponentMap.builder();
             final net.minecraft.world.level.block.entity.BlockEntity dummyBlockEntity = java.util.Objects.requireNonNull(
-                org.bukkit.craftbukkit.block.CraftBlockStates.createNewTileEntity(this.materialForBlockEntityType())
+                org.bukkit.craftbukkit.block.CraftBlockStates.createNewBlockEntity(this.materialForBlockEntityType())
             );
 
             // we don't care about what's in here, all

@@ -28,7 +28,7 @@ public interface TileState extends BlockState, PersistentDataHolder {
      * stored by the {@link BlockState}.
      *
      * When storing changes on the {@link PersistentDataHolder}, the updated
-     * content will only be applied to the actual tile entity after one of the
+     * content will only be applied to the actual block entity after one of the
      * {@link #update()} methods is called.
      *
      * @return the custom tag container
@@ -40,7 +40,7 @@ public interface TileState extends BlockState, PersistentDataHolder {
     // Paper start
     /**
      * Checks if this TileState is a snapshot or a live
-     * representation of the underlying tile entity.
+     * representation of the underlying block entity.
      * <p>
      * NOTE: You may still have to call {@link BlockState#update()} on
      * live representations to update any visuals on the block.

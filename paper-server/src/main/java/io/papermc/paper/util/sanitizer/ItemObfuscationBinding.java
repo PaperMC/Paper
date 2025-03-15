@@ -1,4 +1,4 @@
-package io.papermc.paper.util;
+package io.papermc.paper.util.sanitizer;
 
 import io.papermc.paper.configuration.GlobalConfiguration;
 import java.util.Collections;
@@ -97,8 +97,7 @@ public final class ItemObfuscationBinding {
         DataComponents.CAN_PLACE_ON,
         DataComponents.CAN_BREAK,
         DataComponents.ATTRIBUTE_MODIFIERS,
-        DataComponents.HIDE_ADDITIONAL_TOOLTIP,
-        DataComponents.HIDE_TOOLTIP,
+        DataComponents.TOOLTIP_DISPLAY,
         DataComponents.REPAIR_COST,
         DataComponents.USE_REMAINDER,
         DataComponents.FOOD,

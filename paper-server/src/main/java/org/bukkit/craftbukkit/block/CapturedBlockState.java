@@ -41,7 +41,7 @@ public final class CapturedBlockState extends CraftBlockState {
     private void updatedTree() {
         // SPIGOT-7248 - Manual update to avoid physics where appropriate
         // SPIGOT-7572 - Move SPIGOT-7248 fix from nms ItemStack to here, to allow bee generation in nests
-        this.world.getHandle().setBlock(CraftLocation.toBlockPosition(this.getLocation()), this.getHandle(), this.getFlag());
+        this.world.getHandle().setBlock(CraftLocation.toBlockPosition(this.getLocation()), this.getHandle(), this.getFlags());
 
         this.addBees();
     }

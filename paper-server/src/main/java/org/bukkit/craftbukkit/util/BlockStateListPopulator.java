@@ -74,7 +74,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
 
         // use 'this' to ensure that the block state is the correct TileState
         CraftBlockState state1 = (CraftBlockState) CraftBlock.at(this, pos).getState();
-        state1.setFlag(flags);
+        state1.setFlags(flags);
         // set world handle to ensure that updated calls are done to the world and not to this populator
         state1.setWorldHandle(this.world);
         this.list.put(pos, state1);

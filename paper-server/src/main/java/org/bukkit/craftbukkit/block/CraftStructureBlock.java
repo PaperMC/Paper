@@ -189,10 +189,10 @@ public class CraftStructureBlock extends CraftBlockEntityState<StructureBlockEnt
             blockEntity.setMode(blockEntity.getMode());
         } else if (access != null) {
             // Custom handle during world generation
-            // From TileEntityStructure#setUsageMode(BlockPropertyStructureMode)
-            net.minecraft.world.level.block.state.BlockState data = access.getBlockState(this.getPosition());
-            if (data.is(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK)) {
-                access.setBlock(this.getPosition(), data.setValue(net.minecraft.world.level.block.StructureBlock.MODE, blockEntity.getMode()), 2);
+            // From StructureBlockEntity#setMode(BlockPropertyStructureMode)
+            net.minecraft.world.level.block.state.BlockState state = access.getBlockState(this.getPosition());
+            if (state.is(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK)) {
+                access.setBlock(this.getPosition(), state.setValue(net.minecraft.world.level.block.StructureBlock.MODE, blockEntity.getMode()), 2);
             }
         }
     }

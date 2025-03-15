@@ -123,12 +123,12 @@ public final class CraftMenus {
         if (menuType == MenuType.GRINDSTONE) {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftAccessLocationInventoryViewBuilder<>(handle, Blocks.GRINDSTONE)));
         }
-        // We really don't need to be creating a tile entity for hopper but currently InventoryType doesn't have capacity
+        // We really don't need to be creating a block entity for hopper but currently InventoryType doesn't have capacity
         // to understand otherwise
         if (menuType == MenuType.HOPPER) {
             return asType(new MenuTypeData<>(InventoryView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.HOPPER, HopperBlockEntity::new)));
         }
-        // We also don't need to create a tile entity for lectern, but again InventoryType isn't smart enough to know any better
+        // We also don't need to create a block entity for lectern, but again InventoryType isn't smart enough to know any better
         if (menuType == MenuType.LECTERN) {
             return asType(new MenuTypeData<>(LecternView.class, () -> new CraftBlockEntityInventoryViewBuilder<>(handle, Blocks.LECTERN, LecternBlockEntity::new)));
         }

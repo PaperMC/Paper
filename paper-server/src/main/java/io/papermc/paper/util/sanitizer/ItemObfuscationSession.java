@@ -1,7 +1,8 @@
-package io.papermc.paper.util;
+package io.papermc.paper.util.sanitizer;
 
 import java.util.function.UnaryOperator;
 import com.google.common.base.Preconditions;
+import io.papermc.paper.util.SafeAutoClosable;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;

@@ -24,8 +24,8 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     private final CraftSignSide front;
     private final CraftSignSide back;
 
-    public CraftSign(World world, T tileEntity) {
-        super(world, tileEntity);
+    public CraftSign(World world, T blockEntity) {
+        super(world, blockEntity);
         this.front = new CraftSignSide(this.getSnapshot().getFrontText());
         this.back = new CraftSignSide(this.getSnapshot().getBackText());
     }
@@ -129,7 +129,7 @@ public class CraftSign<T extends SignBlockEntity> extends CraftBlockEntityState<
     public Player getAllowedEditor() {
         this.ensureNoWorldGeneration();
 
-        // getPlayerWhoMayEdit is always null for the snapshot, so we use the wrapped TileEntity
+        // getPlayerWhoMayEdit is always null for the snapshot, so we use the wrapped BlockEntity
         UUID id = this.getBlockEntity().getPlayerWhoMayEdit();
         return (id == null) ? null : Bukkit.getPlayer(id);
     }

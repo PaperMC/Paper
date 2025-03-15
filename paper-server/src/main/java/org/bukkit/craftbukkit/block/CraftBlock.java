@@ -198,8 +198,8 @@ public class CraftBlock implements Block {
     }
 
     public static boolean setTypeAndData(LevelAccessor world, BlockPos position, net.minecraft.world.level.block.state.BlockState old, net.minecraft.world.level.block.state.BlockState blockData, boolean applyPhysics) {
-        // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in tile entity cleanup
-        if (old.hasBlockEntity() && blockData.getBlock() != old.getBlock()) { // SPIGOT-3725 remove old tile entity if block changes
+        // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in block entity cleanup
+        if (old.hasBlockEntity() && blockData.getBlock() != old.getBlock()) { // SPIGOT-3725 remove old block entity if block changes
             // SPIGOT-4612: faster - just clear tile
             if (world instanceof net.minecraft.world.level.Level) {
                 ((net.minecraft.world.level.Level) world).removeBlockEntity(position);
@@ -510,7 +510,7 @@ public class CraftBlock implements Block {
         net.minecraft.world.item.ItemStack nmsItem = CraftItemStack.asNMSCopy(item);
         boolean result = false;
 
-        // Modelled off EntityHuman#hasBlock
+        // Modelled off Player#hasCorrectToolForDrops
         if (block != Blocks.AIR && (item == null || !iblockdata.requiresCorrectToolForDrops() || nmsItem.isCorrectToolForDrops(iblockdata))) {
             net.minecraft.world.level.block.Block.dropResources(iblockdata, this.world.getMinecraftWorld(), this.position, this.world.getBlockEntity(this.position), null, nmsItem, false); // Paper - Properly handle xp dropping
             // Paper start - improve Block#breanNaturally
@@ -598,7 +598,7 @@ public class CraftBlock implements Block {
         net.minecraft.world.level.block.state.BlockState iblockdata = this.getNMS();
         net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(item);
 
-        // Modelled off EntityHuman#hasBlock
+        // Modelled off Player#hasCorrectToolForDrops
         if (item == null || CraftBlockData.isPreferredTool(iblockdata, nms)) {
             return net.minecraft.world.level.block.Block.getDrops(iblockdata, (ServerLevel) this.world.getMinecraftWorld(), this.position, this.world.getBlockEntity(this.position), entity == null ? null : ((CraftEntity) entity).getHandle(), nms)
                     .stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());

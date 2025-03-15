@@ -1,5 +1,6 @@
-package io.papermc.paper.util;
+package io.papermc.paper.util.sanitizer;
 
+import io.papermc.paper.util.SafeAutoClosable;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
 import java.util.function.UnaryOperator;

@@ -213,7 +213,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
     @Override
     public int getTileEntityCount() {
-        // We don't use the full world tile entity list, so we must iterate chunks
+        // We don't use the full world block entity list, so we must iterate chunks
         int size = 0;
         for (ChunkHolder playerchunk : ca.spottedleaf.moonrise.common.PlatformHooks.get().getVisibleChunkHolders(this.world)) {
             net.minecraft.world.level.chunk.LevelChunk chunk = playerchunk.getTickingChunk();
@@ -759,10 +759,10 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             for (BlockState blockstate : this.world.capturedBlockStates.values()) {
                 BlockPos position = ((CraftBlockState) blockstate).getPosition();
                 net.minecraft.world.level.block.state.BlockState oldBlock = this.world.getBlockState(position);
-                int flag = ((CraftBlockState) blockstate).getFlag();
+                int flags = ((CraftBlockState) blockstate).getFlags();
                 delegate.setBlockData(blockstate.getX(), blockstate.getY(), blockstate.getZ(), blockstate.getBlockData());
                 net.minecraft.world.level.block.state.BlockState newBlock = this.world.getBlockState(position);
-                this.world.notifyAndUpdatePhysics(position, null, oldBlock, newBlock, newBlock, flag, 512);
+                this.world.notifyAndUpdatePhysics(position, null, oldBlock, newBlock, newBlock, flags, 512);
             }
             this.world.capturedBlockStates.clear();
             return true;

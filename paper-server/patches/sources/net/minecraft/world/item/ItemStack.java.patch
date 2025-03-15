@@ -9,11 +9,11 @@
                      buffer.writeVarInt(0);
                  } else {
 -                    buffer.writeVarInt(value.getCount());
-+                    buffer.writeVarInt(io.papermc.paper.util.ItemComponentSanitizer.sanitizeCount(io.papermc.paper.util.ItemObfuscationSession.currentSession(), value, value.getCount())); // Paper - potentially sanitize count
++                    buffer.writeVarInt(io.papermc.paper.util.sanitizer.ItemComponentSanitizer.sanitizeCount(io.papermc.paper.util.sanitizer.ItemObfuscationSession.currentSession(), value, value.getCount())); // Paper - potentially sanitize count
                      Item.STREAM_CODEC.encode(buffer, value.getItemHolder());
 +                    // Paper start - adventure; conditionally render translatable components
 +                    boolean prev = net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.get();
-+                    try (final io.papermc.paper.util.SafeAutoClosable ignored = io.papermc.paper.util.ItemObfuscationSession.withContext(c -> c.itemStack(value))) { // pass the itemstack as context to the obfuscation session
++                    try (final io.papermc.paper.util.SafeAutoClosable ignored = io.papermc.paper.util.sanitizer.ItemObfuscationSession.withContext(c -> c.itemStack(value))) { // pass the itemstack as context to the obfuscation session
 +                        net.minecraft.network.chat.ComponentSerialization.DONT_RENDER_TRANSLATABLES.set(true);
                      streamCodec.encode(buffer, value.components.asPatch());
 +                    } finally {
@@ -125,7 +125,7 @@
 +                    }
 +
 +                    for (org.bukkit.block.BlockState blockstate : blocks) {
-+                        int updateFlag = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getFlag();
++                        int updateFlags = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getFlags();
 +                        net.minecraft.world.level.block.state.BlockState oldBlock = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getHandle();
 +                        BlockPos newPos = ((org.bukkit.craftbukkit.block.CraftBlockState) blockstate).getPosition();
 +                        net.minecraft.world.level.block.state.BlockState block = serverLevel.getBlockState(newPos);
@@ -134,7 +134,7 @@
 +                            block.onPlace(serverLevel, newPos, oldBlock, true, context);
 +                        }
 +
-+                        serverLevel.notifyAndUpdatePhysics(newPos, null, oldBlock, block, serverLevel.getBlockState(newPos), updateFlag, net.minecraft.world.level.block.Block.UPDATE_LIMIT); // send null chunk as chunk.k() returns false by this point
++                        serverLevel.notifyAndUpdatePhysics(newPos, null, oldBlock, block, serverLevel.getBlockState(newPos), updateFlags, net.minecraft.world.level.block.Block.UPDATE_LIMIT); // send null chunk as chunk.k() returns false by this point
 +                    }
 +
 +                    if (this.item == Items.WITHER_SKELETON_SKULL) { // Special case skulls to allow wither spawns to be cancelled
