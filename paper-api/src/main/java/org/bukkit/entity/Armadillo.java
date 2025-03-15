@@ -17,16 +17,19 @@ public interface Armadillo extends Animals {
 
     /**
      * Attempt to roll up if the armadillo is {@link State#IDLE}
+     * If the armadillo's state is currently frozen, this operation will unfreeze it.
      */
     void rollUp();
 
     /**
      * Attempt to roll out if the armadillo is not {@link State#IDLE}
+     * If the armadillo's state is currently frozen, this operation will unfreeze it.
      */
     void rollOut();
 
     /**
-     * Freeze the current state of the armadillo.
+     * Freeze the current state of the armadillo and prevents the AI from changing the states.
+     * {@link #rollUp()} and {@link #rollOut()} can still change the state.
      */
     void freezeState();
 
@@ -37,7 +40,7 @@ public interface Armadillo extends Animals {
 
     /**
      * Checks if the armadillo is frozen.
-     * @return {@code true} if the paper is frozen; {@code false} otherwise.
+     * @return {@code true} if the state is frozen; {@code false} otherwise.
      */
     boolean isFrozen();
 
