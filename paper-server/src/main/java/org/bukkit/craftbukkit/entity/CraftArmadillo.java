@@ -33,13 +33,13 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
 
     @Override
     public void rollOut() {
+        if(this.getHandle().isFrozen()) {
+            this.getHandle().unfreezeState();
+        }
+
         if (this.getHandle().getBrain().getTimeUntilExpiry(MemoryModuleType.DANGER_DETECTED_RECENTLY) <= ArmadilloState.UNROLLING.animationDuration()) {
             // already unrolling or unrolled
             return;
-        }
-
-        if(this.getHandle().isFrozen()) {
-            this.getHandle().unfreezeState();
         }
 
         this.getHandle().lastHurtByMob = null; // Clear this memory to not have the sensor trigger rollUp instantly for damaged armadillo
@@ -75,6 +75,7 @@ public class CraftArmadillo extends CraftAnimals implements Armadillo {
 
     public void unFreezeState() {
         this.getHandle().unfreezeState();
+        this.getHandle().getBrain().setActiveActivityToFirstValid(com.google.common.collect.ImmutableList.of(net.minecraft.world.entity.schedule.Activity.PANIC, net.minecraft.world.entity.schedule.Activity.IDLE));
     }
 
     public boolean isFrozen(){
