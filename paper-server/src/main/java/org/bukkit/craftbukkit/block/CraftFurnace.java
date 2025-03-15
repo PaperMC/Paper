@@ -16,8 +16,8 @@ import org.bukkit.inventory.Recipe;
 
 public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends CraftContainer<T> implements Furnace {
 
-    public CraftFurnace(World world, T tileEntity) {
-        super(world, tileEntity);
+    public CraftFurnace(World world, T blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftFurnace(CraftFurnace<T> state, Location location) {
@@ -35,7 +35,7 @@ public abstract class CraftFurnace<T extends AbstractFurnaceBlockEntity> extends
             return this.getSnapshotInventory();
         }
 
-        return new CraftInventoryFurnace(this.getTileEntity());
+        return new CraftInventoryFurnace(this.getBlockEntity());
     }
 
     @Override

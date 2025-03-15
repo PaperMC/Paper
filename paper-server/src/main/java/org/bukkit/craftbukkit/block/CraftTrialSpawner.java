@@ -21,10 +21,10 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
     private final CraftTrialSpawnerConfiguration normalConfig;
     private final CraftTrialSpawnerConfiguration ominousConfig;
 
-    public CraftTrialSpawner(World world, TrialSpawnerBlockEntity tileEntity) {
-        super(world, tileEntity);
-        this.normalConfig = new CraftTrialSpawnerConfiguration(tileEntity.getTrialSpawner().getNormalConfig(), this.getSnapshot());
-        this.ominousConfig = new CraftTrialSpawnerConfiguration(tileEntity.getTrialSpawner().getOminousConfig(), this.getSnapshot());
+    public CraftTrialSpawner(World world, TrialSpawnerBlockEntity blockEntity) {
+        super(world, blockEntity);
+        this.normalConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().getNormalConfig(), this.getSnapshot());
+        this.ominousConfig = new CraftTrialSpawnerConfiguration(blockEntity.getTrialSpawner().getOminousConfig(), this.getSnapshot());
     }
 
     protected CraftTrialSpawner(CraftTrialSpawner state, Location location) {
@@ -169,11 +169,11 @@ public class CraftTrialSpawner extends CraftBlockEntityState<TrialSpawnerBlockEn
     }
 
     @Override
-    protected void applyTo(TrialSpawnerBlockEntity tileEntity) {
-        super.applyTo(tileEntity);
+    protected void applyTo(TrialSpawnerBlockEntity blockEntity) {
+        super.applyTo(blockEntity);
 
-        tileEntity.trialSpawner.normalConfig = Holder.direct(this.normalConfig.toMinecraft());
-        tileEntity.trialSpawner.ominousConfig = Holder.direct(this.ominousConfig.toMinecraft());
+        blockEntity.trialSpawner.normalConfig = Holder.direct(this.normalConfig.toMinecraft());
+        blockEntity.trialSpawner.ominousConfig = Holder.direct(this.ominousConfig.toMinecraft());
     }
 
     private TrialSpawnerData getTrialData() {

@@ -29,8 +29,8 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
     private static final int MAX_OWNER_LENGTH = 16;
     private ResolvableProfile profile;
 
-    public CraftSkull(World world, SkullBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftSkull(World world, SkullBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftSkull(CraftSkull state, Location location) {
@@ -38,10 +38,10 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
     }
 
     @Override
-    public void load(SkullBlockEntity skull) {
-        super.load(skull);
+    public void load(SkullBlockEntity blockEntity) {
+        super.load(blockEntity);
 
-        ResolvableProfile owner = skull.getOwnerProfile();
+        ResolvableProfile owner = blockEntity.getOwnerProfile();
         if (owner != null) {
             this.profile = owner;
         }
@@ -199,11 +199,11 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
     }
 
     @Override
-    public void applyTo(SkullBlockEntity skull) {
-        super.applyTo(skull);
+    public void applyTo(SkullBlockEntity blockEntity) {
+        super.applyTo(blockEntity);
 
         if (this.getSkullType() == SkullType.PLAYER) {
-            skull.setOwner(this.hasOwner() ? this.profile : null);
+            blockEntity.setOwner(this.hasOwner() ? this.profile : null);
         }
     }
 

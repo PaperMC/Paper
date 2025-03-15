@@ -19,8 +19,8 @@ import org.bukkit.inventory.ItemStack;
 
 public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends CraftBlockEntityState<T> implements Container {
 
-    public CraftContainer(World world, T tileEntity) {
-        super(world, tileEntity);
+    public CraftContainer(World world, T blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftContainer(CraftContainer<T> state, Location location) {
@@ -83,11 +83,11 @@ public abstract class CraftContainer<T extends BaseContainerBlockEntity> extends
     }
 
     @Override
-    public void applyTo(T container) {
-        super.applyTo(container);
+    public void applyTo(T blockEntity) {
+        super.applyTo(blockEntity);
 
         if (this.getSnapshot().name == null) {
-            container.name = null;
+            blockEntity.name = null;
         }
     }
 

@@ -171,6 +171,8 @@ public final class CraftBlockStates {
         register(BlockEntityType.SCULK_CATALYST, CraftSculkCatalyst.class, CraftSculkCatalyst::new);
         register(BlockEntityType.SCULK_SENSOR, CraftSculkSensor.class, CraftSculkSensor::new);
         register(BlockEntityType.SCULK_SHRIEKER, CraftSculkShrieker.class, CraftSculkShrieker::new);
+        register(BlockEntityType.TEST_BLOCK, CraftTestBlock.class, CraftTestBlock::new);
+        register(BlockEntityType.TEST_INSTANCE_BLOCK, CraftTestInstanceBlock.class, CraftTestInstanceBlock::new);
         register(BlockEntityType.CALIBRATED_SCULK_SENSOR, CraftCalibratedSculkSensor.class, CraftCalibratedSculkSensor::new);
         register(BlockEntityType.SMOKER, CraftSmoker.class, CraftSmoker::new);
         register(BlockEntityType.MOB_SPAWNER, CraftCreatureSpawner.class, CraftCreatureSpawner::new);

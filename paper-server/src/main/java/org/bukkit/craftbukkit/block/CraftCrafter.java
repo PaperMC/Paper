@@ -29,7 +29,7 @@ public class CraftCrafter extends CraftLootable<CrafterBlockEntity> implements C
             return this.getSnapshotInventory();
         }
 
-        return new CraftInventory(this.getTileEntity());
+        return new CraftInventory(this.getBlockEntity());
     }
 
     @Override

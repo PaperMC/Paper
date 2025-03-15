@@ -27,8 +27,8 @@ import org.bukkit.potion.PotionEffectType;
 
 public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implements Beacon {
 
-    public CraftBeacon(World world, BeaconBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftBeacon(World world, BeaconBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftBeacon(CraftBeacon state, Location location) {
@@ -39,9 +39,9 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
     public Collection<LivingEntity> getEntitiesInRange() {
         this.ensureNoWorldGeneration();
 
-        BlockEntity tileEntity = this.getTileEntityFromWorld();
-        if (tileEntity instanceof BeaconBlockEntity) {
-            BeaconBlockEntity beacon = (BeaconBlockEntity) tileEntity;
+        BlockEntity blockEntity = this.getBlockEntityFromWorld();
+        if (blockEntity instanceof BeaconBlockEntity) {
+            BeaconBlockEntity beacon = (BeaconBlockEntity) blockEntity;
 
             Collection<Player> nms = BeaconBlockEntity.getHumansInRange(beacon.getLevel(), beacon.getBlockPos(), beacon.levels, beacon); // Paper - Custom beacon ranges
             Collection<LivingEntity> bukkit = new ArrayList<LivingEntity>(nms.size());

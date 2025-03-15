@@ -7,8 +7,8 @@ import org.bukkit.block.CalibratedSculkSensor;
 
 public class CraftCalibratedSculkSensor extends CraftSculkSensor<CalibratedSculkSensorBlockEntity> implements CalibratedSculkSensor {
 
-    public CraftCalibratedSculkSensor(World world, CalibratedSculkSensorBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftCalibratedSculkSensor(World world, CalibratedSculkSensorBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftCalibratedSculkSensor(CraftCalibratedSculkSensor state, Location location) {

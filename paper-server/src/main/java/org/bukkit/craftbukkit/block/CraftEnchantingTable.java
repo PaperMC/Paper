@@ -8,8 +8,8 @@ import org.bukkit.craftbukkit.util.CraftChatMessage;
 
 public class CraftEnchantingTable extends CraftBlockEntityState<EnchantingTableBlockEntity> implements EnchantingTable {
 
-    public CraftEnchantingTable(World world, EnchantingTableBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftEnchantingTable(World world, EnchantingTableBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftEnchantingTable(CraftEnchantingTable state, Location location) {
@@ -41,11 +41,11 @@ public class CraftEnchantingTable extends CraftBlockEntityState<EnchantingTableB
     }
 
     @Override
-    public void applyTo(EnchantingTableBlockEntity enchantingTable) {
-        super.applyTo(enchantingTable);
+    public void applyTo(EnchantingTableBlockEntity blockEntity) {
+        super.applyTo(blockEntity);
 
         if (!this.getSnapshot().hasCustomName()) {
-            enchantingTable.setCustomName(null);
+            blockEntity.setCustomName(null);
         }
     }
 

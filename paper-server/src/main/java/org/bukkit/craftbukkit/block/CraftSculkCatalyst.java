@@ -10,8 +10,8 @@ import org.bukkit.block.SculkCatalyst;
 
 public class CraftSculkCatalyst extends CraftBlockEntityState<SculkCatalystBlockEntity> implements SculkCatalyst {
 
-    public CraftSculkCatalyst(World world, SculkCatalystBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftSculkCatalyst(World world, SculkCatalystBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftSculkCatalyst(CraftSculkCatalyst state, Location location) {
@@ -25,8 +25,8 @@ public class CraftSculkCatalyst extends CraftBlockEntityState<SculkCatalystBlock
         this.requirePlaced();
 
         // bloom() is for visual blooming effect, cursors are what changes the blocks.
-        this.getTileEntity().getListener().bloom(this.world.getHandle(), this.getPosition(), this.getHandle(), this.world.getHandle().getRandom());
-        this.getTileEntity().getListener().getSculkSpreader().addCursors(new BlockPos(block.getX(), block.getY(), block.getZ()), charge);
+        this.getBlockEntity().getListener().bloom(this.world.getHandle(), this.getPosition(), this.getHandle(), this.world.getHandle().getRandom());
+        this.getBlockEntity().getListener().getSculkSpreader().addCursors(new BlockPos(block.getX(), block.getY(), block.getZ()), charge);
     }
 
     @Override
@@ -45,13 +45,13 @@ public class CraftSculkCatalyst extends CraftBlockEntityState<SculkCatalystBlock
         com.google.common.base.Preconditions.checkNotNull(position);
         requirePlaced();
 
-        getTileEntity().getListener().bloom(
+        getBlockEntity().getListener().bloom(
             world.getHandle(),
-            getTileEntity().getBlockPos(),
-            getTileEntity().getBlockState(),
+            getBlockEntity().getBlockPos(),
+            getBlockEntity().getBlockState(),
             world.getHandle().getRandom()
         );
-        getTileEntity().getListener().getSculkSpreader().addCursors(io.papermc.paper.util.MCUtil.toBlockPos(position), charge);
+        getBlockEntity().getListener().getSculkSpreader().addCursors(io.papermc.paper.util.MCUtil.toBlockPos(position), charge);
     }
     // Paper end
 }

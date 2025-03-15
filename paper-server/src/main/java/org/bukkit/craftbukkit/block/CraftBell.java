@@ -15,8 +15,8 @@ import org.bukkit.entity.Entity;
 
 public class CraftBell extends CraftBlockEntityState<BellBlockEntity> implements Bell {
 
-    public CraftBell(World world, BellBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftBell(World world, BellBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftBell(CraftBell state, Location location) {
@@ -27,8 +27,8 @@ public class CraftBell extends CraftBlockEntityState<BellBlockEntity> implements
     public boolean ring(Entity entity, BlockFace direction) {
         Preconditions.checkArgument(direction == null || direction.isCartesian(), "direction must be cartesian, given %s", direction);
 
-        BlockEntity tileEntity = this.getTileEntityFromWorld();
-        if (tileEntity == null) {
+        BlockEntity blockEntity = this.getBlockEntityFromWorld();
+        if (blockEntity == null) {
             return false;
         }
 
