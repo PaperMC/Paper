@@ -15,17 +15,17 @@ public final class CraftCreakingHeart extends org.bukkit.craftbukkit.block.data.
 
     // org.bukkit.craftbukkit.block.data.type.CraftCreakingHeart
 
-    private static final net.minecraft.world.level.block.state.properties.BooleanProperty ACTIVE = getBoolean(net.minecraft.world.level.block.CreakingHeartBlock.class, "active");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> CREAKING_HEART_STATE = getEnum(net.minecraft.world.level.block.CreakingHeartBlock.class, "creaking_heart_state");
     private static final net.minecraft.world.level.block.state.properties.BooleanProperty NATURAL = getBoolean(net.minecraft.world.level.block.CreakingHeartBlock.class, "natural");
 
     @Override
-    public boolean isActive() {
-        return this.get(CraftCreakingHeart.ACTIVE);
+    public State getCreakingHeartState() {
+        return this.get(CraftCreakingHeart.CREAKING_HEART_STATE, org.bukkit.block.data.type.CreakingHeart.State.class);
     }
 
     @Override
-    public void setActive(boolean active) {
-        this.set(CraftCreakingHeart.ACTIVE, active);
+    public void setCreakingHeartState(State state) {
+        this.set(CraftCreakingHeart.CREAKING_HEART_STATE, state);
     }
 
     @Override

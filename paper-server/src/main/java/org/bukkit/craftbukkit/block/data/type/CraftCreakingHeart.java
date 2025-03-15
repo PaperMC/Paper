@@ -5,17 +5,17 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 public abstract class CraftCreakingHeart extends CraftBlockData implements CreakingHeart {
 
-    private static final net.minecraft.world.level.block.state.properties.BooleanProperty ACTIVE = getBoolean("active");
+    private static final net.minecraft.world.level.block.state.properties.EnumProperty<?> CREAKING_HEART_STATE = getEnum("creaking_heart_state");
     private static final net.minecraft.world.level.block.state.properties.BooleanProperty NATURAL = getBoolean("natural");
 
     @Override
-    public boolean isActive() {
-        return this.get(CraftCreakingHeart.ACTIVE);
+    public State getCreakingHeartState() {
+        return this.get(CraftCreakingHeart.CREAKING_HEART_STATE, CreakingHeart.State.class);
     }
 
     @Override
-    public void setActive(boolean active) {
-        this.set(CraftCreakingHeart.ACTIVE, active);
+    public void setCreakingHeartState(State state) {
+        this.set(CREAKING_HEART_STATE, state);
     }
 
     @Override
