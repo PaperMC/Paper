@@ -1,0 +1,42 @@
+--- a/net/minecraft/network/syncher/EntityDataSerializers.java
++++ b/net/minecraft/network/syncher/EntityDataSerializers.java
+@@ -53,6 +_,20 @@
+             return ItemStack.OPTIONAL_STREAM_CODEC;
+         }
+ 
++        // Paper start - let through custom name for item frames
++        @Override
++        public ItemStack copy(ItemStack value) {
++            return value.copy();
++        }
++    };
++    public static final EntityDataSerializer<ItemStack> ITEM_FRAME_STACK = new EntityDataSerializer<ItemStack>() {
++        @Override
++        public StreamCodec<? super RegistryFriendlyByteBuf, ItemStack> codec() {
++            io.papermc.paper.util.ItemComponentSanitizer.obfuscationAssertion = dataComponentType -> dataComponentType != net.minecraft.core.component.DataComponents.CUSTOM_NAME;
++            return ItemStack.OPTIONAL_STREAM_CODEC;
++        }
++        // Paper end - let through custom name for item frames
++
+         @Override
+         public ItemStack copy(ItemStack value) {
+             return value.copy();
+@@ -140,6 +_,11 @@
+     }
+ 
+     public static int getSerializedId(EntityDataSerializer<?> serializer) {
++        // Paper start - let through custom name for item frames
++        if (serializer == ITEM_FRAME_STACK) {
++            return SERIALIZERS.getId(ITEM_STACK);
++        }
++        // Paper end - let through custom name for item frames
+         return SERIALIZERS.getId(serializer);
+     }
+ 
+@@ -178,5 +_,6 @@
+         registerSerializer(ARMADILLO_STATE);
+         registerSerializer(VECTOR3);
+         registerSerializer(QUATERNION);
++        registerSerializer(ITEM_FRAME_STACK); // Paper - let through custom name for item frames
+     }
+ }
