@@ -28,7 +28,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public ItemStack getItemInMainHand() {
-        return CraftItemStack.asCraftMirror(this.getInventory().getSelected());
+        return CraftItemStack.asCraftMirror(this.getInventory().getSelectedItem());
     }
 
     @Override

@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.util;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.gson.JsonParseException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -147,7 +148,7 @@ public final class CraftChatMessage {
                         if (!(match.startsWith("http://") || match.startsWith("https://"))) {
                             match = "http://" + match;
                         }
-                        this.modifier = this.modifier.withClickEvent(new ClickEvent(Action.OPEN_URL, match));
+                        this.modifier = this.modifier.withClickEvent(new ClickEvent.OpenUrl(new URI(match)));
                         this.appendNewComponent(matcher.end(groupId));
                         this.modifier = this.modifier.withClickEvent((ClickEvent) null);
                     }

@@ -353,7 +353,7 @@ public final class CraftLegacy {
                     Optional<CompoundTag> propMap = blockTag.getElement("Properties").result();
                     if (propMap.isPresent()) {
                         CompoundTag properties = propMap.get();
-                        for (String dataKey : properties.getAllKeys()) {
+                        for (String dataKey : properties.keySet()) {
                             Property state = states.getProperty(dataKey);
 
                             if (state == null) {
