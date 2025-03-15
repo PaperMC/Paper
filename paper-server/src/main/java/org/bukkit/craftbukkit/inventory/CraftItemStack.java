@@ -8,13 +8,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import net.kyori.adventure.text.Component;
+import net.minecraft.advancements.critereon.DataComponentMatchers;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
+import net.minecraft.core.component.DataComponentExactPredicate;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
-import net.minecraft.core.component.DataComponentPredicate;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.component.PatchedDataComponentMap;
 import net.minecraft.nbt.CompoundTag;
@@ -158,9 +159,9 @@ public final class CraftItemStack extends ItemStack {
 
     public static ItemPredicate asCriterionConditionItem(ItemStack original) {
         net.minecraft.world.item.ItemStack nms = CraftItemStack.asNMSCopy(original);
-        DataComponentPredicate predicate = DataComponentPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, nms.getComponentsPatch()));
+        DataComponentExactPredicate predicate = DataComponentExactPredicate.allOf(PatchedDataComponentMap.fromPatch(DataComponentMap.EMPTY, nms.getComponentsPatch()));
 
-        return new ItemPredicate(Optional.of(HolderSet.direct(nms.getItemHolder())), MinMaxBounds.Ints.ANY, predicate, Collections.emptyMap());
+        return new ItemPredicate(Optional.of(HolderSet.direct(nms.getItemHolder())), MinMaxBounds.Ints.ANY, new DataComponentMatchers(predicate, Collections.emptyMap()));
     }
 
     public net.minecraft.world.item.ItemStack handle;
