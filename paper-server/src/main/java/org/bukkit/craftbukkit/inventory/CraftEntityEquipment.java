@@ -267,6 +267,6 @@ public class CraftEntityEquipment implements EntityEquipment {
             return 1;
         }
 
-        return ((Mob) this.entity.getHandle()).getEquipmentDropChance(slot); // Paper - use getter on Mob
+        return ((Mob) this.entity.getHandle()).getDropChances().byEquipment(slot); // Paper - use getter on Mob
     }
 }

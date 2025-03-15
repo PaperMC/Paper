@@ -515,9 +515,8 @@ public class CraftBlockData implements BlockData {
         register(net.minecraft.world.level.block.MangroveRootsBlock.class, org.bukkit.craftbukkit.block.impl.CraftMangroveRoots::new);
         register(net.minecraft.world.level.block.MossyCarpetBlock.class, org.bukkit.craftbukkit.block.impl.CraftMossyCarpet::new);
         register(net.minecraft.world.level.block.MultifaceBlock.class, org.bukkit.craftbukkit.block.impl.CraftMultiface::new);
-        register(net.minecraft.world.level.block.ParticleLeavesBlock.class, org.bukkit.craftbukkit.block.impl.CraftParticleLeaves::new);
         register(net.minecraft.world.level.block.PiglinWallSkullBlock.class, org.bukkit.craftbukkit.block.impl.CraftPiglinWallSkull::new);
-        register(net.minecraft.world.level.block.PinkPetalsBlock.class, org.bukkit.craftbukkit.block.impl.CraftPinkPetals::new);
+        register(net.minecraft.world.level.block.FlowerBedBlock.class, org.bukkit.craftbukkit.block.impl.CraftFlowerBed::new);
         register(net.minecraft.world.level.block.PitcherCropBlock.class, org.bukkit.craftbukkit.block.impl.CraftPitcherCrop::new);
         register(net.minecraft.world.level.block.PointedDripstoneBlock.class, org.bukkit.craftbukkit.block.impl.CraftPointedDripstone::new);
         register(net.minecraft.world.level.block.SculkCatalystBlock.class, org.bukkit.craftbukkit.block.impl.CraftSculkCatalyst::new);

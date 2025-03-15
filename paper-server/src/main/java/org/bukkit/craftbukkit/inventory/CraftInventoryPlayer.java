@@ -23,7 +23,7 @@ public class CraftInventoryPlayer extends CraftInventory implements org.bukkit.i
 
     @Override
     public ItemStack[] getStorageContents() {
-        return this.asCraftMirror(this.getInventory().items);
+        return this.asCraftMirror(this.getInventory().getNonEquipmentItems());
     }
 
     @Override

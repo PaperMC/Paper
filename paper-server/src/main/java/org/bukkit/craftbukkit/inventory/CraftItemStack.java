@@ -535,7 +535,7 @@ public final class CraftItemStack extends ItemStack {
         final net.minecraft.world.item.component.CustomData customData = this.handle.getOrDefault(DataComponents.CUSTOM_DATA, net.minecraft.world.item.component.CustomData.EMPTY);
         // getUnsafe is OK here because we are only ever *reading* the data so immutability is preserved
         //noinspection deprecation
-        return customData.getUnsafe().getCompound(PDC_CUSTOM_DATA_KEY);
+        return customData.getUnsafe().getCompoundOrEmpty(PDC_CUSTOM_DATA_KEY);
     }
 
     private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
@@ -563,7 +563,7 @@ public final class CraftItemStack extends ItemStack {
         final CraftPersistentDataContainer container = new CraftPersistentDataContainer(REGISTRY);
         CustomData customData = this.handle.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         //noinspection deprecation // we copy only the pdc tag
-        final CompoundTag pdcTag = customData.getUnsafe().getCompound(PDC_CUSTOM_DATA_KEY).copy();
+        final CompoundTag pdcTag = customData.getUnsafe().getCompoundOrEmpty(PDC_CUSTOM_DATA_KEY).copy();
         container.putAll(pdcTag);
         consumer.accept(container);
 

@@ -204,7 +204,7 @@ public class MobGoalHelper {
         bukkitMap.put(net.minecraft.world.entity.raid.Raider.class, Raider.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Ravager.class, Ravager.class);
         bukkitMap.put(net.minecraft.world.entity.animal.Salmon.class, Salmon.class);
-        bukkitMap.put(net.minecraft.world.entity.animal.Sheep.class, Sheep.class);
+        bukkitMap.put(net.minecraft.world.entity.animal.sheep.Sheep.class, Sheep.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Shulker.class, Shulker.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Silverfish.class, Silverfish.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Skeleton.class, Skeleton.class);
@@ -226,7 +226,7 @@ public class MobGoalHelper {
         bukkitMap.put(WaterAnimal.class, WaterMob.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Witch.class, Witch.class);
         bukkitMap.put(WitherBoss.class, Wither.class);
-        bukkitMap.put(net.minecraft.world.entity.animal.Wolf.class, Wolf.class);
+        bukkitMap.put(net.minecraft.world.entity.animal.wolf.Wolf.class, Wolf.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Zombie.class, Zombie.class);
         bukkitMap.put(net.minecraft.world.entity.monster.Husk.class, Husk.class);
         bukkitMap.put(net.minecraft.world.entity.monster.ZombieVillager.class, ZombieVillager.class);

@@ -183,8 +183,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void blockUpdated(BlockPos pos, Block block) {
-        this.handle.blockUpdated(pos, block);
+    public void updateNeighborsAt(BlockPos pos, Block block) {
+        this.handle.updateNeighborsAt(pos, block);
     }
 
     @Override
@@ -193,13 +193,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void playSound(Player except, BlockPos pos, SoundEvent sound, SoundSource category) {
-        this.handle.playSound(except, pos, sound, category);
-    }
-
-    @Override
-    public void playSound(Player source, BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch) {
-        this.handle.playSound(source, pos, sound, category, volume, pitch);
+    public void playSound(@Nullable final Entity entity, final BlockPos pos, final SoundEvent sound, final SoundSource source, final float volume, final float pitch) {
+        this.handle.playSound(entity, pos, sound, source, volume, pitch);
     }
 
     @Override
@@ -208,8 +203,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void levelEvent(Player player, int eventId, BlockPos pos, int data) {
-        this.handle.levelEvent(player, eventId, pos, data);
+    public void levelEvent(Entity entity, int eventId, BlockPos pos, int data) {
+        this.handle.levelEvent(entity, eventId, pos, data);
     }
 
     @Override

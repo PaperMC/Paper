@@ -10,7 +10,7 @@ import org.jspecify.annotations.NullMarked;
  * Represents a Cow.
  */
 @NullMarked
-public interface Cow extends Animals {
+public interface Cow extends AbstractCow {
 
     /**
      * Gets the variant of this cow.
