@@ -187,7 +187,7 @@ public class CraftTrialSpawnerConfiguration implements TrialSpawnerConfiguration
 
         CompoundTag compoundTag = ((CraftEntitySnapshot) snapshot).getData();
 
-        WeightedList.Builder<SpawnData> builder = WeightedList.builder(); // PAIL rename Builder
+        WeightedList.Builder<SpawnData> builder = WeightedList.builder();
         this.spawnPotentialsDefinition.unwrap().forEach(entry -> builder.add(entry.value(), entry.weight()));
         builder.add(new SpawnData(compoundTag, Optional.ofNullable(CraftCreatureSpawner.toMinecraftRule(spawnRule)), CraftCreatureSpawner.getEquipment(equipment)), weight);
         this.spawnPotentialsDefinition = builder.build();

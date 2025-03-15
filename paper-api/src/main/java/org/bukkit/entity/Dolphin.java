@@ -1,6 +1,7 @@
 package org.bukkit.entity;
 
 import org.bukkit.Location;
+import org.jetbrains.annotations.Nullable;
 
 public interface Dolphin extends Ageable, WaterMob {
 
@@ -37,7 +38,7 @@ public interface Dolphin extends Ageable, WaterMob {
      *
      *  @return calculated closest treasure location
      */
-    @org.jetbrains.annotations.NotNull
+    @Nullable
     Location getTreasureLocation();
 
     /**
@@ -48,5 +49,5 @@ public interface Dolphin extends Ageable, WaterMob {
      *
      *  @param location location to guide to
      */
-    void setTreasureLocation(@org.jetbrains.annotations.NotNull Location location);
+    void setTreasureLocation(@Nullable Location location);
 }

@@ -3024,31 +3024,26 @@ public final class CraftServer implements Server {
     // Paper end
 
     // Spigot start
-    private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot()
-    {
+    private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot() {
 
         @Deprecated
         @Override
-        public YamlConfiguration getConfig()
-        {
+        public YamlConfiguration getConfig() {
             return org.spigotmc.SpigotConfig.config;
         }
 
         @Override
-        public YamlConfiguration getBukkitConfig()
-        {
+        public YamlConfiguration getBukkitConfig() {
             return configuration;
         }
 
         @Override
-        public YamlConfiguration getSpigotConfig()
-        {
+        public YamlConfiguration getSpigotConfig() {
             return org.spigotmc.SpigotConfig.config;
         }
 
         @Override
-        public YamlConfiguration getPaperConfig()
-        {
+        public YamlConfiguration getPaperConfig() {
             return CraftServer.this.console.paperConfigurations.createLegacyObject(CraftServer.this.console);
         }
 
@@ -3072,8 +3067,7 @@ public final class CraftServer implements Server {
         }
     };
 
-    public org.bukkit.Server.Spigot spigot()
-    {
+    public org.bukkit.Server.Spigot spigot() {
         return this.spigot;
     }
     // Spigot end

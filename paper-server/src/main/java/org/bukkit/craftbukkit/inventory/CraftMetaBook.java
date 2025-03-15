@@ -495,7 +495,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
                 this.addPage(page);
             }
         }
-    };
+    }
 
     @Override
     public BookMeta.Spigot spigot() {

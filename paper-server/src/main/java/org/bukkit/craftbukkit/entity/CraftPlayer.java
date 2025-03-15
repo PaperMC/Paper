@@ -2814,7 +2814,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     public void setRealHealth(double health) {
-        if (Double.isNaN(health)) {return;} // Paper - Check for NaN
+        if (Double.isNaN(health)) return; // Paper - Check for NaN
         this.health = health;
     }
 
@@ -2871,10 +2871,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public AttributeInstance getScaledMaxHealth() {
         AttributeInstance dummy = new AttributeInstance(Attributes.MAX_HEALTH, (attribute) -> { });
         double healthMod = this.scaledHealth ? this.healthScale : this.getMaxHealth();
-        if ( healthMod >= Float.MAX_VALUE || healthMod <= 0 )
-        {
+        if (healthMod >= Float.MAX_VALUE || healthMod <= 0) {
             healthMod = 20; // Reset health
-            this.getServer().getLogger().warning( this.getName() + " tried to crash the server with a large health attribute" );
+            this.getServer().getLogger().warning(this.getName() + " tried to crash the server with a large health attribute");
         }
         dummy.setBaseValue(healthMod);
         return dummy;
@@ -3499,8 +3498,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
     // Paper end
 
-    public Player.Spigot spigot()
-    {
+    public Player.Spigot spigot() {
         return this.spigot;
     }
     // Spigot end

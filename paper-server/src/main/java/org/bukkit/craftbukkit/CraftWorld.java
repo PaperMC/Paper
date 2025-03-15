@@ -2025,7 +2025,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         // Paper end - Add WorldGameRuleChangeEvent
 
         GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule));
-        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
+        handle.deserializePublic(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
         handle.onChanged(this.getHandle());
         return true;
     }
@@ -2072,7 +2072,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         // Paper end - Add WorldGameRuleChangeEvent
 
         GameRules.Value<?> handle = this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule.getName()));
-        handle.deserialize(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
+        handle.deserializePublic(event.getValue()); // Paper - Add WorldGameRuleChangeEvent
         handle.onChanged(this.getHandle());
         return true;
     }
@@ -2390,24 +2390,20 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     // Spigot start
-    private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot()
-    {
+    private final org.bukkit.World.Spigot spigot = new org.bukkit.World.Spigot() {
 
         @Override
-        public LightningStrike strikeLightning(Location loc, boolean isSilent)
-        {
+        public LightningStrike strikeLightning(Location loc, boolean isSilent) {
             return CraftWorld.this.strikeLightning(loc);
         }
 
         @Override
-        public LightningStrike strikeLightningEffect(Location loc, boolean isSilent)
-        {
+        public LightningStrike strikeLightningEffect(Location loc, boolean isSilent) {
             return CraftWorld.this.strikeLightningEffect(loc);
         }
     };
 
-    public org.bukkit.World.Spigot spigot()
-    {
+    public org.bukkit.World.Spigot spigot() {
         return this.spigot;
     }
     // Spigot end
