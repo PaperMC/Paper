@@ -42,18 +42,6 @@ public interface Armadillo extends Animals {
     boolean isFrozen();
 
     /**
-     * Overloaded rollOut that allows state change even if the armadillo is frozen.
-     * @param ignoreFrozen if true, will unfreeze before rolling out and reapply the freeze afterward.
-     */
-    void rollOut(boolean ignoreFrozen);
-
-    /**
-     * Overloaded rollUp that allows state change even if the armadillo is frozen.
-     * @param ignoreFrozen if true, will unfreeze before rolling up and reapply the freeze afterward.
-     */
-    void rollUp(boolean ignoreFrozen);
-
-    /**
      * Represents the current state of the armadillo.
      */
     enum State {

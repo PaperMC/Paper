@@ -1,7 +1,6 @@
 package io.papermc.paper.event.entity;
 
 import org.bukkit.entity.Armadillo;
-import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityEvent;
 import org.jetbrains.annotations.ApiStatus;
@@ -13,13 +12,12 @@ import org.jspecify.annotations.NullMarked;
  * If the event is cancelled, the armadillo's state will not change.
  */
 @NullMarked
-public class ArmadilloStateChangeEvent extends EntityEvent implements Cancellable {
+public class ArmadilloStateChangeEvent extends EntityEvent {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Armadillo.State oldState;
     private final Armadillo.State newState;
-    private boolean cancelled;
 
     @ApiStatus.Internal
     public ArmadilloStateChangeEvent(final Armadillo armadillo, final Armadillo.State oldState, final Armadillo.State newState) {
@@ -49,16 +47,6 @@ public class ArmadilloStateChangeEvent extends EntityEvent implements Cancellabl
     @Override
     public Armadillo getEntity() {
         return (Armadillo) super.getEntity();
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return this.cancelled;
-    }
-
-    @Override
-    public void setCancelled(final boolean cancel) {
-        this.cancelled = cancel;
     }
 
     @Override
