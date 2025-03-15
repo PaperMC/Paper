@@ -1766,13 +1766,13 @@
 +            return entity != this.player.getBukkitEntity() && this.player.getBukkitEntity().canSee(entity) && !handle.isSpectator() && handle.isPickable() && !handle.isPassengerOfSameVehicle(this.player);
 +        });
 +        if (result == null) {
-+            CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
++            CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelectedItem(), InteractionHand.MAIN_HAND);
 +        } else { // Paper start - Call interact event
 +            GameType gameType = this.player.gameMode.getGameModeForPlayer();
 +            if (gameType == GameType.ADVENTURE && result.getHitBlock() != null) {
-+                CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, ((org.bukkit.craftbukkit.block.CraftBlock) result.getHitBlock()).getPosition(), org.bukkit.craftbukkit.block.CraftBlock.blockFaceToNotch(result.getHitBlockFace()), this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
++                CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_BLOCK, ((org.bukkit.craftbukkit.block.CraftBlock) result.getHitBlock()).getPosition(), org.bukkit.craftbukkit.block.CraftBlock.blockFaceToNotch(result.getHitBlockFace()), this.player.getInventory().getSelectedItem(), InteractionHand.MAIN_HAND);
 +            } else if (gameType != GameType.CREATIVE && result.getHitEntity() != null && origin.toVector().distanceSquared(result.getHitPosition()) > this.player.entityInteractionRange() * this.player.entityInteractionRange()) {
-+                CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelected(), InteractionHand.MAIN_HAND);
++                CraftEventFactory.callPlayerInteractEvent(this.player, Action.LEFT_CLICK_AIR, this.player.getInventory().getSelectedItem(), InteractionHand.MAIN_HAND);
 +            }
 +        } // Paper end - Call interact event
 +
@@ -1908,22 +1908,22 @@
 -                                     {
 +                                    // CraftBukkit start
 +                                    boolean triggerLeashUpdate = itemInHand != null && itemInHand.getItem() == Items.LEAD && target instanceof net.minecraft.world.entity.Mob;
-+                                    Item origItem = ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null ? null : ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem();
++                                    Item origItem = ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() ? null : ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().getItem();
 +
 +                                    ServerGamePacketListenerImpl.this.cserver.getPluginManager().callEvent(event);
 +
 +                                    // Entity in bucket - SPIGOT-4048 and SPIGOT-6859a
-+                                    if ((target instanceof Bucketable && target instanceof LivingEntity && origItem != null && origItem.asItem() == Items.WATER_BUCKET) && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem)) {
++                                    if ((target instanceof Bucketable && target instanceof LivingEntity && origItem != null && origItem.asItem() == Items.WATER_BUCKET) && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().getItem() != origItem)) {
 +                                        target.resendPossiblyDesyncedEntityData(ServerGamePacketListenerImpl.this.player); // Paper - The entire mob gets deleted, so resend it
 +                                        ServerGamePacketListenerImpl.this.player.containerMenu.sendAllDataToRemote();
 +                                    }
 +
-+                                    if (triggerLeashUpdate && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem)) {
++                                    if (triggerLeashUpdate && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().getItem() != origItem)) {
 +                                        // Refresh the current leash state
 +                                        ServerGamePacketListenerImpl.this.send(new net.minecraft.network.protocol.game.ClientboundSetEntityLinkPacket(target, ((net.minecraft.world.entity.Mob) target).getLeashHolder()));
 +                                    }
 +
-+                                    if (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem) {
++                                    if (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().isEmpty() || ServerGamePacketListenerImpl.this.player.getInventory().getSelectedItem().getItem() != origItem) {
 +                                        // Refresh the current entity metadata
 +                                        target.refreshEntityData(ServerGamePacketListenerImpl.this.player);
 +                                        // SPIGOT-7136 - Allays
@@ -2276,13 +2276,13 @@
 +                                    if (this.player.containerMenu.quickcraftSlots.size() == 1) {
 +                                        int index = containerMenu.quickcraftSlots.iterator().next().index;
 +                                        containerMenu.resetQuickCraft();
-+                                        this.handleContainerClick(new ServerboundContainerClickPacket(packet.getContainerId(), packet.getStateId(), index, containerMenu.quickcraftType, net.minecraft.world.inventory.ClickType.PICKUP, packet.getCarriedItem(), packet.getChangedSlots()));
++                                        this.handleContainerClick(new ServerboundContainerClickPacket(packet.containerId(), packet.stateId(), (short) index, (byte) containerMenu.quickcraftType, net.minecraft.world.inventory.ClickType.PICKUP, packet.changedSlots(), packet.carriedItem()));
 +                                        return;
 +                                    }
 +                                }
 +                            }
 +                            // Paper end - Fix CraftBukkit drag system
-+                            this.player.containerMenu.clicked(slotNum, packet.buttonNum(), packet.getClickType(), this.player);
++                            this.player.containerMenu.clicked(slotNum, packet.buttonNum(), packet.clickType(), this.player);
 +                            break;
 +                        case PICKUP_ALL:
 +                            click = ClickType.DOUBLE_CLICK;
@@ -2353,7 +2353,7 @@
 +                        switch (event.getResult()) {
 +                            case ALLOW:
 +                            case DEFAULT:
-+                                this.player.containerMenu.clicked(slotNum, packet.buttonNum(), packet.getClickType(), this.player);
++                                this.player.containerMenu.clicked(slotNum, packet.buttonNum(), packet.clickType(), this.player);
 +                                break;
 +                            case DENY:
 +                                /* Needs enum constructor in InventoryAction
