@@ -18,6 +18,8 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.UserWhiteListEntry;
 import net.minecraft.stats.ServerStatsCounter;
 import net.minecraft.world.level.storage.PlayerDataStorage;
+import net.minecraft.world.phys.Vec2;
+import net.minecraft.world.phys.Vec3;
 import org.bukkit.BanEntry;
 import org.bukkit.BanList;
 import org.bukkit.Bukkit;
@@ -26,6 +28,7 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
 import org.bukkit.Statistic;
+import org.bukkit.World;
 import org.bukkit.ban.ProfileBanList;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -79,9 +82,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         CompoundTag data = this.getBukkitData();
 
         if (data != null) {
-            if (data.contains("lastKnownName")) {
-                return data.getString("lastKnownName");
-            }
+            return data.getString("lastKnownName").orElse(null);
         }
 
         return null;
@@ -217,10 +218,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         CompoundTag result = this.getData();
 
         if (result != null) {
-            if (!result.contains("bukkit")) {
-                result.put("bukkit", new CompoundTag());
-            }
-            result = result.getCompound("bukkit");
+            result = result.getCompound("bukkit").orElse(null);
         }
 
         return result;
@@ -238,12 +236,10 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         CompoundTag data = this.getBukkitData();
 
         if (data != null) {
-            if (data.contains("firstPlayed")) {
-                return data.getLong("firstPlayed");
-            } else {
+            return data.getLong("firstPlayed").orElseGet(() -> {
                 File file = this.getDataFile();
                 return file.lastModified();
-            }
+            });
         } else {
             return 0;
         }
@@ -257,12 +253,10 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         CompoundTag data = this.getBukkitData();
 
         if (data != null) {
-            if (data.contains("lastPlayed")) {
-                return data.getLong("lastPlayed");
-            } else {
+            return data.getLong("lastPlayed").orElseGet(() -> {
                 File file = this.getDataFile();
                 return file.lastModified();
-            }
+            });
         } else {
             return 0;
         }
@@ -282,13 +276,11 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         CompoundTag data = getPaperData();
 
         if (data != null) {
-            if (data.contains("LastLogin")) {
-                return data.getLong("LastLogin");
-            } else {
+            return data.getLong("LastLogin").orElseGet(() -> {
                 // if the player file cannot provide accurate data, this is probably the closest we can approximate
                 File file = getDataFile();
                 return file.lastModified();
-            }
+            });
         } else {
             return 0;
         }
@@ -302,13 +294,11 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         CompoundTag data = getPaperData();
 
         if (data != null) {
-            if (data.contains("LastSeen")) {
-                return data.getLong("LastSeen");
-            } else {
+            return data.getLong("LastSeen").orElseGet(() -> {
                 // if the player file cannot provide accurate data, this is probably the closest we can approximate
                 File file = getDataFile();
                 return file.lastModified();
-            }
+            });
         } else {
             return 0;
         }
@@ -318,10 +308,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         CompoundTag result = getData();
 
         if (result != null) {
-            if (!result.contains("Paper")) {
-                result.put("Paper", new CompoundTag());
-            }
-            result = result.getCompound("Paper");
+            result = result.getCompound("Paper").orElse(null);
         }
 
         return result;
@@ -338,7 +325,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             this.persistentDataContainerView = new io.papermc.paper.persistence.PaperPersistentDataContainerView(DATA_TYPE_REGISTRY) {
 
                 private CompoundTag getPersistentTag() {
-                    return net.minecraft.Optionull.map(CraftOfflinePlayer.this.getData(), data -> data.getCompound("BukkitValues"));
+                    return net.minecraft.Optionull.map(CraftOfflinePlayer.this.getData(), data -> data.getCompound("BukkitValues").orElse(null));
                 }
 
                 @Override
@@ -358,10 +345,12 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public Location getLastDeathLocation() {
-        if (this.getData().contains("LastDeathLocation", 10)) {
-            return GlobalPos.CODEC.parse(NbtOps.INSTANCE, this.getData().get("LastDeathLocation")).result().map(CraftLocation::fromGlobalPos).orElse(null);
+        CompoundTag data = this.getData();
+        if (data == null) {
+            return null;
         }
-        return null;
+
+        return data.read("LastDeathLocation", GlobalPos.CODEC).map(CraftLocation::fromGlobalPos).orElse(null);
     }
 
     @Override
@@ -371,18 +360,17 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             return null;
         }
 
-        if (data.contains("Pos") && data.contains("Rotation")) {
-            ListTag position = (ListTag) data.get("Pos");
-            ListTag rotation = (ListTag) data.get("Rotation");
+        Vec3 pos = data.read("Pos", Vec3.CODEC).orElse(null);
+        Vec2 rot = data.read("Rotation", Vec2.CODEC).orElse(null);
+        if (pos != null && rot != null) {
+            Long msb = data.getLong("WorldUUIDMost").orElse(null);
+            Long lsb = data.getLong("WorldUUIDLeast").orElse(null);
+            World world = msb != null && lsb != null ? this.server.getWorld(new UUID(msb, lsb)) : null;
 
-            UUID uuid = new UUID(data.getLong("WorldUUIDMost"), data.getLong("WorldUUIDLeast"));
-
-            return new Location(this.server.getWorld(uuid),
-                position.getDouble(0),
-                position.getDouble(1),
-                position.getDouble(2),
-                rotation.getFloat(0),
-                rotation.getFloat(1)
+            return new Location(
+                world,
+                pos.x(), pos.y(), pos.z(),
+                rot.x, rot.y
             );
         }
 
