@@ -83,19 +83,10 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     /**
      * @apiNote use preferably only in the context of registry entries.
      * @see io.papermc.paper.registry.data
+     * @see io.papermc.paper.registry.keys.ItemTypeKeys
      */
     @ApiStatus.Experimental // Paper - already required for registry builders
     RegistryKey<ItemType> ITEM = create("item");
-    /**
-     * Built-in registry for cat variants.
-     * @see io.papermc.paper.registry.keys.CatVariantKeys
-     */
-    RegistryKey<Cat.Type> CAT_VARIANT = create("cat_variant");
-    /**
-     * Built-in registry for frog variants.
-     * @see io.papermc.paper.registry.keys.FrogVariantKeys
-     */
-    RegistryKey<Frog.Variant> FROG_VARIANT = create("frog_variant");
     /**
      * Built-in registry for villager professions.
      * @see io.papermc.paper.registry.keys.VillagerProfessionKeys
@@ -198,6 +189,16 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<MusicInstrument> INSTRUMENT = create("instrument");
     /**
+     * Data-driven registry for cat variants.
+     * @see io.papermc.paper.registry.keys.CatVariantKeys
+     */
+    RegistryKey<Cat.Type> CAT_VARIANT = create("cat_variant");
+    /**
+     * Data-driven registry for frog variants.
+     * @see io.papermc.paper.registry.keys.FrogVariantKeys
+     */
+    RegistryKey<Frog.Variant> FROG_VARIANT = create("frog_variant");
+    /**
      * Data-driven registry for chicken variants.
      * <!-- @see io.papermc.paper.registry.keys.ChickenVariantKeys -->
      */
@@ -212,6 +213,7 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      * <!-- @see io.papermc.paper.registry.keys.PigVariantKeys -->
      */
     RegistryKey<Pig.Variant> PIG_VARIANT = create("pig_variant");
+
 
 
     /* ******************* *

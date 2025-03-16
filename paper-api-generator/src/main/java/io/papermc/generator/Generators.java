@@ -43,8 +43,6 @@ public interface Generators {
         simpleKey("MobEffectKeys", PotionEffectType.class, Registries.MOB_EFFECT, RegistryKey.MOB_EFFECT, false),
         simpleKey("BlockTypeKeys", BlockType.class, Registries.BLOCK, RegistryKey.BLOCK, false),
         simpleKey("ItemTypeKeys", ItemType.class, Registries.ITEM, RegistryKey.ITEM, false),
-        simpleKey("CatVariantKeys", Cat.Type.class, Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT, false),
-        simpleKey("FrogVariantKeys", Frog.Variant.class, Registries.FROG_VARIANT, RegistryKey.FROG_VARIANT, false),
         simpleKey("VillagerProfessionKeys", Villager.Profession.class, Registries.VILLAGER_PROFESSION, RegistryKey.VILLAGER_PROFESSION, false),
         simpleKey("VillagerTypeKeys", Villager.Type.class, Registries.VILLAGER_TYPE, RegistryKey.VILLAGER_TYPE, false),
         simpleKey("MapDecorationTypeKeys", MapCursor.Type.class, Registries.MAP_DECORATION_TYPE, RegistryKey.MAP_DECORATION_TYPE, false),
@@ -65,6 +63,8 @@ public interface Generators {
         simpleKey("BannerPatternKeys", PatternType.class, Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN, true),
         simpleKey("PaintingVariantKeys", Art.class, Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT, true),
         simpleKey("InstrumentKeys", MusicInstrument.class, Registries.INSTRUMENT, RegistryKey.INSTRUMENT, true),
+        simpleKey("CatVariantKeys", Cat.Type.class, Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT, true),
+        simpleKey("FrogVariantKeys", Frog.Variant.class, Registries.FROG_VARIANT, RegistryKey.FROG_VARIANT, true),
 
         // tags
         simpleTagKey("GameEventTagKeys", GameEvent.class, Registries.GAME_EVENT, RegistryKey.GAME_EVENT),
