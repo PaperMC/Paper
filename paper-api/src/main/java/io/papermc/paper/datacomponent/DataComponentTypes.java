@@ -39,14 +39,35 @@ import io.papermc.paper.datacomponent.item.WritableBookContent;
 import io.papermc.paper.datacomponent.item.WrittenBookContent;
 import io.papermc.paper.item.MapPostProcessing;
 import java.util.List;
+import io.papermc.paper.registry.tag.TagKey;
 import net.kyori.adventure.key.Key;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Art;
 import org.bukkit.DyeColor;
 import org.bukkit.FireworkEffect;
 import org.bukkit.MusicInstrument;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
+import org.bukkit.block.banner.PatternType;
+import org.bukkit.entity.Axolotl;
+import org.bukkit.entity.Cat;
+import org.bukkit.entity.Chicken;
+import org.bukkit.entity.Cow;
+import org.bukkit.entity.Fox;
+import org.bukkit.entity.Frog;
+import org.bukkit.entity.Horse;
+import org.bukkit.entity.Llama;
+import org.bukkit.entity.MushroomCow;
+import org.bukkit.entity.Painting;
+import org.bukkit.entity.Parrot;
+import org.bukkit.entity.Pig;
+import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Salmon;
+import org.bukkit.entity.TropicalFish;
+import org.bukkit.entity.Villager;
+import org.bukkit.entity.Wolf;
 import org.bukkit.inventory.ItemRarity;
+import org.bukkit.inventory.meta.trim.TrimMaterial;
 import org.checkerframework.checker.index.qual.NonNegative;
 import org.checkerframework.checker.index.qual.Positive;
 import org.checkerframework.common.value.qual.IntRange;
@@ -145,15 +166,6 @@ public final class DataComponentTypes {
      */
     public static final DataComponentType.Valued<CustomModelData> CUSTOM_MODEL_DATA = valued("custom_model_data");
     /**
-     * If set, disables 'additional' tooltip part which comes from the item type
-     * (e.g. content of a shulker).
-     */
-    public static final DataComponentType.NonValued HIDE_ADDITIONAL_TOOLTIP = unvalued("hide_additional_tooltip");
-    /**
-     * If set, it will completely hide whole item tooltip (that includes item name).
-     */
-    public static final DataComponentType.NonValued HIDE_TOOLTIP = unvalued("hide_tooltip");
-    /**
      * The additional experience cost required to modify an item in an Anvil.
      * If not present, has an implicit default value of: {@code 0}.
      */
@@ -243,6 +255,7 @@ public final class DataComponentTypes {
      * or potion applied to a Tipped Arrow.
      */
     public static final DataComponentType.Valued<PotionContents> POTION_CONTENTS = valued("potion_contents");
+    public static final DataComponentType.Valued<Float> POTION_DURATION_SCALE = valued("potion_duration_scale");
     /**
      * Holds the effects that will be applied when consuming Suspicious Stew.
      */
@@ -267,11 +280,14 @@ public final class DataComponentTypes {
      * Holds the instrument type used by a Goat Horn.
      */
     public static final DataComponentType.Valued<MusicInstrument> INSTRUMENT = valued("instrument");
+    // this is a either holder, but due to legacy item loading
+    public static final DataComponentType.Valued<TrimMaterial> PROVIDES_TRIM_MATERIAL = valued("provides_trim_material");
     /**
      * Controls the amplifier amount for an Ominous Bottle's Bad Omen effect.
      */
     public static final DataComponentType.Valued<OminousBottleAmplifier> OMINOUS_BOTTLE_AMPLIFIER = valued("ominous_bottle_amplifier");
     public static final DataComponentType.Valued<JukeboxPlayable> JUKEBOX_PLAYABLE = valued("jukebox_playable");
+    public static final DataComponentType.Valued<TagKey<PatternType>> PROVIDES_BANNER_PATTERNS = valued("provides_banner_patterns");
     /**
      * List of recipes that should be unlocked when using the Knowledge Book item.
      */
@@ -329,6 +345,33 @@ public final class DataComponentTypes {
      * Holds the unresolved loot table and seed of a container-like block.
      */
     public static final DataComponentType.Valued<SeededContainerLoot> CONTAINER_LOOT = valued("container_loot");
+    public static final DataComponentType.Valued<Key> BREAK_SOUND = valued("break_sound");
+    public static final DataComponentType.Valued<Villager.Type> VILLAGER_VARIANT = valued("villager/variant");
+    public static final DataComponentType.Valued<Wolf.Variant> WOLF_VARIANT = valued("wolf/variant");
+    // public static final DataComponentType.Valued<Holder<WolfSoundVariant>> WOLF_SOUND_VARIANT = valued("wolf/sound_variant");
+    public static final DataComponentType.Valued<DyeColor> WOLF_COLLAR = valued("wolf/collar");
+    public static final DataComponentType.Valued<Fox.Type> FOX_VARIANT = valued("fox/variant");
+    public static final DataComponentType.Valued<Salmon.Variant> SALMON_SIZE = valued("salmon/size");
+    public static final DataComponentType.Valued<Parrot.Variant> PARROT_VARIANT = valued("parrot/variant");
+    public static final DataComponentType.Valued<TropicalFish.Pattern> TROPICAL_FISH_PATTERN = valued("tropical_fish/pattern");
+    public static final DataComponentType.Valued<DyeColor> TROPICAL_FISH_BASE_COLOR = valued("tropical_fish/base_color");
+    public static final DataComponentType.Valued<DyeColor> TROPICAL_FISH_PATTERN_COLOR = valued("tropical_fish/pattern_color");
+    public static final DataComponentType.Valued<MushroomCow.Variant> MOOSHROOM_VARIANT = valued("mooshroom/variant");
+    public static final DataComponentType.Valued<Rabbit.Type> RABBIT_VARIANT = valued("rabbit/variant");
+    public static final DataComponentType.Valued<Pig.Variant> PIG_VARIANT = valued("pig/variant");
+    public static final DataComponentType.Valued<Cow.Variant> COW_VARIANT = valued("cow/variant");
+    // TODO: This is a eitherholder? Why specifically the chicken?? Oh wait this is prolly for chicken egg cause legacy item loading
+    public static final DataComponentType.Valued<Chicken.Variant> CHICKEN_VARIANT = valued("chicken/variant");
+    public static final DataComponentType.Valued<Frog.Variant> FROG_VARIANT = valued("frog/variant");
+    public static final DataComponentType.Valued<Horse.Style> HORSE_VARIANT = valued("horse/variant");
+    public static final DataComponentType.Valued<Art> PAINTING_VARIANT = valued("painting/variant");
+    public static final DataComponentType.Valued<Llama.Color> LLAMA_VARIANT = valued("llama/variant");
+    public static final DataComponentType.Valued<Axolotl.Variant> AXOLOTL_VARIANT = valued("axolotl/variant");
+    public static final DataComponentType.Valued<Cat.Type> CAT_VARIANT = valued("cat/variant");
+    public static final DataComponentType.Valued<DyeColor> CAT_COLLAR = valued("cat/collar");
+    public static final DataComponentType.Valued<DyeColor> SHEEP_COLOR = valued("sheep/color");
+    public static final DataComponentType.Valued<DyeColor> SHULKER_COLOR = valued("shulker/color");
+
 
     private static DataComponentType.NonValued unvalued(final String name) {
         return (DataComponentType.NonValued) requireNonNull(Registry.DATA_COMPONENT_TYPE.get(NamespacedKey.minecraft(name)), name + " unvalued data component type couldn't be found, this is a bug.");
