@@ -22,7 +22,7 @@ public enum Particle implements Keyed {
     EFFECT("effect"),
     INSTANT_EFFECT("instant_effect"),
     /**
-     * Uses {@link Color} as DataType
+     * Uses {@link Color} as DataType (with alpha support)
      */
     ENTITY_EFFECT("entity_effect", Color.class),
     WITCH("witch"),
@@ -127,6 +127,10 @@ public enum Particle implements Keyed {
     SHRIEK("shriek", Integer.class),
     CHERRY_LEAVES("cherry_leaves"),
     PALE_OAK_LEAVES("pale_oak_leaves"),
+    /**
+     * Use {@link Color} as DataType (with alpha support)
+     */
+    TINTED_LEAVES("tinted_leaves", Color.class),
     EGG_CRACK("egg_crack"),
     DUST_PLUME("dust_plume"),
     WHITE_SMOKE("white_smoke"),
@@ -147,6 +151,7 @@ public enum Particle implements Keyed {
      * Uses {@link BlockData} as DataType
      */
     BLOCK_CRUMBLE("block_crumble", BlockData.class),
+    FIREFLY("firefly"),
     /**
      * Uses {@link Trail} as DataType
      */

@@ -3,6 +3,8 @@ package org.bukkit.entity;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.Locale;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -65,7 +67,7 @@ public interface Frog extends Animals {
 
         @NotNull
         private static Variant getVariant(@NotNull String key) {
-            return Registry.FROG_VARIANT.getOrThrow(NamespacedKey.minecraft(key));
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT).getOrThrow(NamespacedKey.minecraft(key));
         }
 
         /**
@@ -76,7 +78,7 @@ public interface Frog extends Animals {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Variant valueOf(@NotNull String name) {
-            Variant variant = Registry.FROG_VARIANT.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            Variant variant = RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT).get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
             Preconditions.checkArgument(variant != null, "No frog variant found with the name %s", name);
             return variant;
         }
@@ -88,7 +90,7 @@ public interface Frog extends Animals {
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Variant[] values() {
-            return Lists.newArrayList(Registry.FROG_VARIANT).toArray(new Variant[0]);
+            return Lists.newArrayList(RegistryAccess.registryAccess().getRegistry(RegistryKey.FROG_VARIANT)).toArray(new Variant[0]);
         }
     }
 }

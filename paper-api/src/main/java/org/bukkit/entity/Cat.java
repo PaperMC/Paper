@@ -3,6 +3,8 @@ package org.bukkit.entity;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import java.util.Locale;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.DyeColor;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -66,7 +68,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
 
         @NotNull
         private static Type getType(@NotNull String key) {
-            return Registry.CAT_VARIANT.getOrThrow(NamespacedKey.minecraft(key));
+            return RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_VARIANT).getOrThrow(NamespacedKey.minecraft(key));
         }
 
         /**
@@ -77,7 +79,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type valueOf(@NotNull String name) {
-            Type type = Registry.CAT_VARIANT.get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
+            Type type = RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_VARIANT).get(NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
             Preconditions.checkArgument(type != null, "No cat type found with the name %s", name);
             return type;
         }
@@ -89,7 +91,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
         @NotNull
         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
         static Type[] values() {
-            return Lists.newArrayList(Registry.CAT_VARIANT).toArray(new Type[0]);
+            return Lists.newArrayList(RegistryAccess.registryAccess().getRegistry(RegistryKey.CAT_VARIANT)).toArray(new Type[0]);
         }
     }
 

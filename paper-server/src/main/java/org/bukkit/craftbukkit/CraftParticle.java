@@ -206,6 +206,7 @@ public abstract class CraftParticle<D> implements Keyed {
             add("shriek", integerFunction);
             add("block_marker", blockDataFunction);
             add("entity_effect", colorFunction);
+            add("tinted_leaves", colorFunction);
             add("dust_pillar", blockDataFunction);
             add("block_crumble", blockDataFunction);
             add("trail", trailFunction);
