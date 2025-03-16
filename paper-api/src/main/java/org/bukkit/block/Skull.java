@@ -172,7 +172,9 @@ public interface Skull extends TileState {
 
     /**
      * Get the custom name of skull.
-     * <p>This name is set when placing a skull item that has a custom name.</p>
+     * <p>This name is set when placing a skull item that has a custom name.
+     * This name is only carried back to the item when broken for player heads
+     * (skeleton/creeper heads will not retain the name).</p>
      *
      * @return Custom name of skull
      */
@@ -180,7 +182,9 @@ public interface Skull extends TileState {
 
     /**
      * Set the custom name of skull.
-     * <p>This name is set when placing a skull item that has a custom name.</p>
+     * <p>This name is set when placing a skull item that has a custom name.
+     * This name is only carried back to the item when broken for player heads
+     * (skeleton/creeper heads will not retain the name).</p>
      *
      * @param customName Custom name of skull
      */
