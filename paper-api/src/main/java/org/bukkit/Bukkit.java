@@ -1119,7 +1119,7 @@ public final class Bukkit {
      * Adds a recipe to the crafting manager.
      * Recipes added with this method won't be sent to the client automatically.
      * <p>
-     * Player's still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
+     * Players still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
      * before seeing them in their recipe book.
      *
      * @param recipe the recipe to add
