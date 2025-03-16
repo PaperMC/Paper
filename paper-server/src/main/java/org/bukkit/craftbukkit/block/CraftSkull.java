@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
 import com.mojang.authlib.GameProfile;
+import io.papermc.paper.adventure.PaperAdventure;
+import net.kyori.adventure.text.Component;
 import net.minecraft.Util;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -28,6 +30,7 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
 
     private static final int MAX_OWNER_LENGTH = 16;
     private ResolvableProfile profile;
+    private Component customName;
 
     public CraftSkull(World world, SkullBlockEntity tileEntity) {
         super(world, tileEntity);
@@ -45,6 +48,7 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
         if (owner != null) {
             this.profile = owner;
         }
+        this.customName = PaperAdventure.asAdventure(skull.customName);
     }
 
     @Override
@@ -205,6 +209,7 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
         if (this.getSkullType() == SkullType.PLAYER) {
             skull.setOwner(this.hasOwner() ? this.profile : null);
         }
+        skull.customName = PaperAdventure.asVanilla(customName);
     }
 
     @Override
@@ -215,5 +220,15 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
     @Override
     public CraftSkull copy(Location location) {
         return new CraftSkull(this, location);
+    }
+
+    @Override
+    public @Nullable Component customName() {
+        return this.customName;
+    }
+
+    @Override
+    public void customName(@Nullable Component customName) {
+        this.customName = customName;
     }
 }

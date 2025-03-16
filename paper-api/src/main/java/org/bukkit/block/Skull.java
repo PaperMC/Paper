@@ -1,5 +1,6 @@
 package org.bukkit.block;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
@@ -168,4 +169,20 @@ public interface Skull extends TileState {
     @Deprecated(since = "1.13")
     @Contract("_ -> fail")
     public void setSkullType(SkullType skullType);
+
+    /**
+     * Get the custom name of skull.
+     * <p>This name is set when placing a skull item that has a custom name.</p>
+     *
+     * @return Custom name of skull
+     */
+    public @Nullable Component customName();
+
+    /**
+     * Set the custom name of skull.
+     * <p>This name is set when placing a skull item that has a custom name.</p>
+     *
+     * @param customName Custom name of skull
+     */
+    public void customName(@Nullable Component customName);
 }
