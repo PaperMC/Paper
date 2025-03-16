@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.registry.HolderableBase;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -78,14 +79,14 @@ public class CraftPig extends CraftAnimals implements Pig {
         this.getHandle().setVariant(CraftVariant.bukkitToMinecraftHolder(variant));
     }
 
-    public static class CraftVariant implements Variant, Handleable<PigVariant> {
+    public static class CraftVariant extends HolderableBase<PigVariant> implements Variant {
 
         public static Variant minecraftToBukkit(PigVariant minecraft) {
             return CraftRegistry.minecraftToBukkit(minecraft, Registries.PIG_VARIANT);
         }
 
         public static Variant minecraftHolderToBukkit(Holder<PigVariant> minecraft) {
-            return CraftVariant.minecraftToBukkit(minecraft.value());
+            return CraftRegistry.minecraftHolderToBukkit(minecraft, Registries.PIG_VARIANT);
         }
 
         public static PigVariant bukkitToMinecraft(Variant bukkit) {
@@ -93,57 +94,11 @@ public class CraftPig extends CraftAnimals implements Pig {
         }
 
         public static Holder<PigVariant> bukkitToMinecraftHolder(Variant bukkit) {
-            Preconditions.checkArgument(bukkit != null);
-
-            net.minecraft.core.Registry<PigVariant> registry = CraftRegistry.getMinecraftRegistry(Registries.PIG_VARIANT);
-
-            if (registry.wrapAsHolder(CraftVariant.bukkitToMinecraft(bukkit)) instanceof Holder.Reference<PigVariant> holder) {
-                return holder;
-            }
-
-            throw new IllegalArgumentException("No Reference holder found for " + bukkit
-                + ", this can happen if a plugin creates its own pig variant with out properly registering it.");
+            return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.PIG_VARIANT);
         }
 
-        private final NamespacedKey key;
-        private final PigVariant variant;
-
-        public CraftVariant(NamespacedKey key, PigVariant variant) {
-            this.key = key;
-            this.variant = variant;
-        }
-
-        @Override
-        public PigVariant getHandle() {
-            return this.variant;
-        }
-
-        @Override
-        public NamespacedKey getKey() {
-            return this.key;
-        }
-
-        @Override
-        public String toString() {
-            return this.key.toString();
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (this == other) {
-                return true;
-            }
-
-            if (!(other instanceof CraftVariant otherVariant)) {
-                return false;
-            }
-
-            return this.getKey().equals(otherVariant.getKey());
-        }
-
-        @Override
-        public int hashCode() {
-            return this.getKey().hashCode();
+        public CraftVariant(final Holder<PigVariant> holder) {
+            super(holder);
         }
     }
 
