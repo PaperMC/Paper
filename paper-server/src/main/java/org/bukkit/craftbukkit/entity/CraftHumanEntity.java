@@ -909,7 +909,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public Location getLastDeathLocation() {
-        return this.getHandle().getLastDeathLocation().map(CraftMemoryMapper::fromNms).orElse(null);
+        return this.getHandle().getLastDeathLocation().map(CraftLocation::fromGlobalPos).orElse(null);
     }
 
     @Override
@@ -917,7 +917,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (location == null) {
             this.getHandle().setLastDeathLocation(Optional.empty());
         } else {
-            this.getHandle().setLastDeathLocation(Optional.of(CraftMemoryMapper.toNms(location)));
+            this.getHandle().setLastDeathLocation(Optional.of(CraftLocation.toGlobalPos(location)));
         }
     }
 

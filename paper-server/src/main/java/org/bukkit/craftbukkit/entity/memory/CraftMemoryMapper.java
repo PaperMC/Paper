@@ -1,12 +1,9 @@
 package org.bukkit.craftbukkit.entity.memory;
 
 import java.util.UUID;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.CraftWorld;
+import org.bukkit.craftbukkit.util.CraftLocation;
 
 public final class CraftMemoryMapper {
 
@@ -14,7 +11,7 @@ public final class CraftMemoryMapper {
 
     public static Object fromNms(Object object) {
         if (object instanceof GlobalPos) {
-            return CraftMemoryMapper.fromNms((GlobalPos) object);
+            return CraftLocation.fromGlobalPos((GlobalPos) object);
         } else if (object instanceof Long) {
             return (Long) object;
         } else if (object instanceof UUID) {
@@ -32,7 +29,7 @@ public final class CraftMemoryMapper {
         if (object == null) {
             return null;
         } else if (object instanceof Location) {
-            return CraftMemoryMapper.toNms((Location) object);
+            return CraftLocation.toGlobalPos((Location) object);
         } else if (object instanceof Long) {
             return (Long) object;
         } else if (object instanceof UUID) {
@@ -44,13 +41,5 @@ public final class CraftMemoryMapper {
         }
 
         throw new UnsupportedOperationException("Do not know how to map " + object);
-    }
-
-    public static Location fromNms(GlobalPos globalPos) {
-        return new org.bukkit.Location(((CraftServer) Bukkit.getServer()).getServer().getLevel(globalPos.dimension()).getWorld(), globalPos.pos().getX(), globalPos.pos().getY(), globalPos.pos().getZ());
-    }
-
-    public static GlobalPos toNms(Location location) {
-        return GlobalPos.of(((CraftWorld) location.getWorld()).getHandle().dimension(), BlockPos.containing(location.getX(), location.getY(), location.getZ()));
     }
 }

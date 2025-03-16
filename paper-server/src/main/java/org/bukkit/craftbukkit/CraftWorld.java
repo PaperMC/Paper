@@ -2314,7 +2314,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
             return null;
         }
 
-        return new CraftBiomeSearchResult(CraftBiome.minecraftHolderToBukkit(found.getSecond()), new Location(this, found.getFirst().getX(), found.getFirst().getY(), found.getFirst().getZ()));
+        return new CraftBiomeSearchResult(CraftBiome.minecraftHolderToBukkit(found.getSecond()), CraftLocation.toBukkit(found.getFirst(), this));
     }
 
     @Override

@@ -3,8 +3,6 @@
  */
 package org.bukkit.craftbukkit.block.impl;
 
-import org.bukkit.block.data.type.TestBlock;
-
 public final class CraftTestBlock extends org.bukkit.craftbukkit.block.data.CraftBlockData implements org.bukkit.block.data.type.TestBlock {
 
     public CraftTestBlock() {
@@ -21,7 +19,7 @@ public final class CraftTestBlock extends org.bukkit.craftbukkit.block.data.Craf
 
     @Override
     public Mode getMode() {
-        return this.get(MODE, TestBlock.Mode.class);
+        return this.get(MODE, org.bukkit.block.data.type.TestBlock.Mode.class);
     }
 
     @Override

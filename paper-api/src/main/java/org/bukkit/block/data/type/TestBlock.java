@@ -17,9 +17,9 @@ public interface TestBlock extends BlockData {
     /**
      * Sets the value of the 'mode' property.
      *
-     * @param state the new 'mode' value
+     * @param mode the new 'mode' value
      */
-    void setMode(Mode state);
+    void setMode(Mode mode);
 
     enum Mode {
         START,

@@ -359,7 +359,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     @Override
     public Location getLastDeathLocation() {
         if (this.getData().contains("LastDeathLocation", 10)) {
-            return GlobalPos.CODEC.parse(NbtOps.INSTANCE, this.getData().get("LastDeathLocation")).result().map(CraftMemoryMapper::fromNms).orElse(null);
+            return GlobalPos.CODEC.parse(NbtOps.INSTANCE, this.getData().get("LastDeathLocation")).result().map(CraftLocation::fromGlobalPos).orElse(null);
         }
         return null;
     }

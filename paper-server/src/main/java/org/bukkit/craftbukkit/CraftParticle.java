@@ -192,7 +192,7 @@ public abstract class CraftParticle<D> implements Keyed {
             BiFunction<NamespacedKey, net.minecraft.core.particles.ParticleType<?>, CraftParticle<?>> trailFunction = (name, particle) -> new CraftParticle<>(name, particle, Particle.Trail.class) {
                 @Override
                 public ParticleOptions createParticleParam(Particle.Trail data) {
-                    return new TrailParticleOption(CraftLocation.toVec3D(data.getTarget()), data.getColor().asRGB(), data.getDuration());
+                    return new TrailParticleOption(CraftLocation.toVec3(data.getTarget()), data.getColor().asRGB(), data.getDuration());
                 }
             };
 
