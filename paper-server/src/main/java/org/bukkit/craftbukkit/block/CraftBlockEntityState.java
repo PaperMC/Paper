@@ -188,6 +188,19 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
     }
 
     @Override
+    public boolean place(int flags) {
+        if (super.place(flags)) {
+            this.getWorldHandle().getBlockEntity(this.getPosition(), this.blockEntity.getType()).ifPresent(blockEntity -> {
+                this.applyTo((T) blockEntity);
+                blockEntity.setChanged();
+            });
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
     public PersistentDataContainer getPersistentDataContainer() {
         return this.getSnapshot().persistentDataContainer;
     }

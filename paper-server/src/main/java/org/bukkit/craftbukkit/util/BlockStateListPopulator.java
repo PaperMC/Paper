@@ -95,8 +95,8 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     public void updateList() {
-        for (BlockState state : this.list.values()) {
-            state.update(true);
+        for (CraftBlockState state : this.list.values()) {
+            state.place(state.getFlags());
         }
     }
 

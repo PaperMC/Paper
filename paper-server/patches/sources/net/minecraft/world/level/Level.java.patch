@@ -361,17 +361,22 @@
          if (this.isOutsideBuildHeight(pos)) {
              return false;
          } else if (!this.isClientSide && this.isDebug()) {
-@@ -219,11 +_,26 @@
+@@ -219,11 +_,31 @@
          } else {
              LevelChunk chunkAt = this.getChunkAt(pos);
              Block block = state.getBlock();
 +            // CraftBukkit start - capture blockstates
 +            boolean captured = false;
-+            if (this.captureBlockStates && !this.capturedBlockStates.containsKey(pos)) {
-+                CraftBlockState blockstate = (CraftBlockState) world.getBlockAt(pos.getX(), pos.getY(), pos.getZ()).getState(); // Paper - use CB getState to get a suitable snapshot
-+                blockstate.setFlags(flags); // Paper - set flag
-+                this.capturedBlockStates.put(pos.immutable(), blockstate);
-+                captured = true;
++            if (this.captureBlockStates) {
++                final CraftBlockState snapshot;
++                if (!this.capturedBlockStates.containsKey(pos)) {
++                    snapshot = (CraftBlockState) world.getBlockAt(pos.getX(), pos.getY(), pos.getZ()).getState(); // Paper - use CB getState to get a suitable snapshot
++                    this.capturedBlockStates.put(pos.immutable(), snapshot);
++                    captured = true;
++                } else {
++                    snapshot = this.capturedBlockStates.get(pos);
++                }
++                snapshot.setFlags(flags); // Paper - always set the flag of the most recent call to mitigate issues with multiple update at the same pos with different flags
 +            }
              BlockState blockState = chunkAt.setBlockState(pos, state, flags);
 +            // CraftBukkit end

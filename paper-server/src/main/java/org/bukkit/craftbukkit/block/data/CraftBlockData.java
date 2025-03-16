@@ -614,7 +614,7 @@ public class CraftBlockData implements BlockData {
 
     // Paper start - optimize creating BlockData to not need a map lookup
     static {
-        // Initialize cached data for all BlockStates instances after registration
+        // Initialize cached data for all BlockState instances after registration
         Block.BLOCK_STATE_REGISTRY.iterator().forEachRemaining(net.minecraft.world.level.block.state.BlockState::createCraftBlockData);
     }
     public static CraftBlockData fromData(net.minecraft.world.level.block.state.BlockState data) {

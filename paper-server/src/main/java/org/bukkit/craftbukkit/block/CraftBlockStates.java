@@ -271,11 +271,6 @@ public final class CraftBlockStates {
         return new CraftBlockState(CraftBlock.at(world, pos));
     }
 
-    // This ignores block entity data.
-    public static CraftBlockState getBlockState(LevelAccessor world, BlockPos pos, int flags) {
-        return new CraftBlockState(CraftBlock.at(world, pos), flags);
-    }
-
     // Paper start
     @Nullable
     public static BlockEntityType<?> getBlockEntityType(final Material material) {

@@ -925,51 +925,45 @@ public class CraftEventFactory {
     /**
      * BlockFadeEvent
      */
-    public static BlockFadeEvent callBlockFadeEvent(LevelAccessor world, BlockPos pos, net.minecraft.world.level.block.state.BlockState newBlock) {
-        CraftBlockState state = CraftBlockStates.getBlockState(world, pos);
-        state.setData(newBlock);
+    public static BlockFadeEvent callBlockFadeEvent(LevelAccessor world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
+        snapshot.setData(state);
 
-        BlockFadeEvent event = new BlockFadeEvent(state.getBlock(), state);
+        BlockFadeEvent event = new BlockFadeEvent(snapshot.getBlock(), snapshot);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
 
-    public static boolean handleMoistureChangeEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState newBlock, int flag) {
-        CraftBlockState state = CraftBlockStates.getBlockState(world, pos, flag);
-        state.setData(newBlock);
+    public static boolean handleMoistureChangeEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags) {
+        CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
+        snapshot.setData(state);
 
-        MoistureChangeEvent event = new MoistureChangeEvent(state.getBlock(), state);
-        Bukkit.getPluginManager().callEvent(event);
-
-        if (!event.isCancelled()) {
-            state.update(true);
+        MoistureChangeEvent event = new MoistureChangeEvent(snapshot.getBlock(), snapshot);
+        if (event.callEvent()) {
+            snapshot.place(flags);
+            return true;
         }
-        return !event.isCancelled();
-    }
-
-    public static boolean handleBlockSpreadEvent(Level world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState block) {
-        return CraftEventFactory.handleBlockSpreadEvent(world, source, target, block, 2);
+        return false;
     }
 
     public static BlockPos sourceBlockOverride = null; // SPIGOT-7068: Add source block override, not the most elegant way but better than passing down a BlockPosition up to five methods deep.
 
-    public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState block, int flag) {
+    public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, int flags) {
         // Suppress during worldgen
         if (!(world instanceof Level)) {
-            world.setBlock(target, block, flag);
+            world.setBlock(target, state, flags);
             return true;
         }
 
-        CraftBlockState state = CraftBlockStates.getBlockState(world, target, flag);
-        state.setData(block);
+        CraftBlockState snapshot = CraftBlockStates.getBlockState(world, target);
+        snapshot.setData(state);
 
-        BlockSpreadEvent event = new BlockSpreadEvent(state.getBlock(), CraftBlock.at(world, CraftEventFactory.sourceBlockOverride != null ? CraftEventFactory.sourceBlockOverride : source), state);
-        Bukkit.getPluginManager().callEvent(event);
-
-        if (!event.isCancelled()) {
-            state.update(true);
+        BlockSpreadEvent event = new BlockSpreadEvent(snapshot.getBlock(), CraftBlock.at(world, CraftEventFactory.sourceBlockOverride != null ? CraftEventFactory.sourceBlockOverride : source), snapshot);
+        if (event.callEvent()) {
+            snapshot.place(flags);
+            return true;
         }
-        return !event.isCancelled();
+        return false;
     }
 
     public static EntityDeathEvent callEntityDeathEvent(net.minecraft.world.entity.LivingEntity victim, DamageSource damageSource) {
@@ -1321,22 +1315,17 @@ public class CraftEventFactory {
     }
     // Paper end
 
-    public static boolean handleBlockGrowEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState block) {
-        return CraftEventFactory.handleBlockGrowEvent(world, pos, block, 3);
-    }
+    public static boolean handleBlockGrowEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags) {
+        CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
+        snapshot.setData(state);
 
-    public static boolean handleBlockGrowEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState newData, int flag) {
-        CraftBlockState state = CraftBlockStates.getBlockState(world, pos, flag);
-        state.setData(newData);
-
-        BlockGrowEvent event = new BlockGrowEvent(state.getBlock(), state);
-        Bukkit.getPluginManager().callEvent(event);
-
-        if (!event.isCancelled()) {
-            state.update(true);
+        BlockGrowEvent event = new BlockGrowEvent(snapshot.getBlock(), snapshot);
+        if (event.callEvent()) {
+            snapshot.place(flags);
+            return true;
         }
 
-        return !event.isCancelled();
+        return false;
     }
 
     public static FluidLevelChangeEvent callFluidLevelChangeEvent(Level world, BlockPos block, net.minecraft.world.level.block.state.BlockState newData) {
@@ -1951,26 +1940,21 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState block, @Nullable Entity entity) {
-        return CraftEventFactory.handleBlockFormEvent(world, pos, block, 3, entity);
+    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags) {
+        return CraftEventFactory.handleBlockFormEvent(world, pos, state, flags, null);
     }
 
-    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState block, int flag) {
-        return CraftEventFactory.handleBlockFormEvent(world, pos, block, flag, null);
-    }
+    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags, @Nullable Entity entity) {
+        CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
+        snapshot.setData(state);
 
-    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState block, int flag, @Nullable Entity entity) {
-        CraftBlockState blockState = CraftBlockStates.getBlockState(world, pos, flag);
-        blockState.setData(block);
-
-        BlockFormEvent event = (entity == null) ? new BlockFormEvent(blockState.getBlock(), blockState) : new EntityBlockFormEvent(entity.getBukkitEntity(), blockState.getBlock(), blockState);
-        world.getCraftServer().getPluginManager().callEvent(event);
-
-        if (!event.isCancelled()) {
-            blockState.update(true);
+        BlockFormEvent event = (entity == null) ? new BlockFormEvent(snapshot.getBlock(), snapshot) : new EntityBlockFormEvent(entity.getBukkitEntity(), snapshot.getBlock(), snapshot);
+        if (event.callEvent()) {
+            snapshot.place(flags);
+            return true;
         }
 
-        return !event.isCancelled();
+        return false;
     }
 
     public static boolean handleBatToggleSleepEvent(Entity bat, boolean awake) {

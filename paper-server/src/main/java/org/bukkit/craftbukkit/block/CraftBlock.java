@@ -190,14 +190,14 @@ public class CraftBlock implements Block {
     @Override
     public void setBlockData(BlockData data, boolean applyPhysics) {
         Preconditions.checkArgument(data != null, "BlockData cannot be null");
-        this.setTypeAndData(((CraftBlockData) data).getState(), applyPhysics);
+        this.setBlockState(((CraftBlockData) data).getState(), applyPhysics);
     }
 
-    boolean setTypeAndData(final net.minecraft.world.level.block.state.BlockState state, final boolean applyPhysics) {
-        return CraftBlock.setTypeAndData(this.world, this.position, this.getNMS(), state, applyPhysics);
+    boolean setBlockState(final net.minecraft.world.level.block.state.BlockState state, final boolean applyPhysics) {
+        return CraftBlock.setBlockState(this.world, this.position, this.getNMS(), state, applyPhysics);
     }
 
-    public static boolean setTypeAndData(LevelAccessor world, BlockPos pos, net.minecraft.world.level.block.state.BlockState oldState, net.minecraft.world.level.block.state.BlockState newState, boolean applyPhysics) {
+    public static boolean setBlockState(LevelAccessor world, BlockPos pos, net.minecraft.world.level.block.state.BlockState oldState, net.minecraft.world.level.block.state.BlockState newState, boolean applyPhysics) {
         // SPIGOT-611: need to do this to prevent glitchiness. Easier to handle this here (like /setblock) than to fix weirdness in block entity cleanup
         if (oldState.hasBlockEntity() && newState.getBlock() != oldState.getBlock()) { // SPIGOT-3725 remove old block entity if block changes
             // SPIGOT-4612: faster - just clear tile
@@ -213,14 +213,14 @@ public class CraftBlock implements Block {
         } else {
             boolean success = world.setBlock(pos, newState,
                 net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
-                net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
-                net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
+                    net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
+                    net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE);
             if (success && world instanceof net.minecraft.world.level.Level) {
                 world.getMinecraftWorld().sendBlockUpdated(
-                        pos,
-                        oldState,
-                        newState,
-                        3
+                    pos,
+                    oldState,
+                    newState,
+                    net.minecraft.world.level.block.Block.UPDATE_ALL
                 );
             }
             return success;
@@ -554,26 +554,27 @@ public class CraftBlock implements Block {
         InteractionResult result = BoneMealItem.applyBonemeal(context);
         world.captureTreeGeneration = false;
 
-        if (world.capturedBlockStates.size() > 0) {
+        if (!world.capturedBlockStates.isEmpty()) {
             TreeType treeType = SaplingBlock.treeType;
             SaplingBlock.treeType = null;
-            List<BlockState> blocks = new ArrayList<>(world.capturedBlockStates.values());
+            List<BlockState> states = new ArrayList<>(world.capturedBlockStates.values());
             world.capturedBlockStates.clear();
             StructureGrowEvent structureEvent = null;
 
             if (treeType != null) {
-                structureEvent = new StructureGrowEvent(this.getLocation(), treeType, true, null, blocks);
+                structureEvent = new StructureGrowEvent(this.getLocation(), treeType, true, null, states);
                 Bukkit.getPluginManager().callEvent(structureEvent);
             }
 
-            event = new BlockFertilizeEvent(CraftBlock.at(world, this.getPosition()), null, blocks);
+            event = new BlockFertilizeEvent(CraftBlock.at(world, this.getPosition()), null, states);
             event.setCancelled(structureEvent != null && structureEvent.isCancelled());
             Bukkit.getPluginManager().callEvent(event);
 
             if (!event.isCancelled()) {
-                for (BlockState blockstate : blocks) {
-                    blockstate.update(true);
-                    world.checkCapturedTreeStateForObserverNotify(this.position, (org.bukkit.craftbukkit.block.CraftBlockState) blockstate); // Paper - notify observers even if grow failed
+                for (BlockState state : states) {
+                    CraftBlockState craftBlockState = (CraftBlockState) state;
+                    craftBlockState.place(craftBlockState.getFlags());
+                    world.checkCapturedTreeStateForObserverNotify(this.position, craftBlockState); // Paper - notify observers even if grow failed
                 }
             }
         }

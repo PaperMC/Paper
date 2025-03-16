@@ -2034,7 +2034,7 @@ public final class CraftServer implements Server {
         }
         BlockPos structurePosition = CraftLocation.toBlockPosition(structureLocation);
 
-        // Create map with showIcons = true, unlimitedTracking = true
+        // Create map with trackingPosition = true, unlimitedTracking = true
         net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePosition.getX(), structurePosition.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
         MapItem.renderBiomePreviewMap(level, stack);
         // "+" map ID taken from VillagerTrades$TreasureMapForEmeralds
@@ -2059,7 +2059,7 @@ public final class CraftServer implements Server {
         Location structureLocation = structureSearchResult.getLocation();
         BlockPos structurePosition = new BlockPos(structureLocation.getBlockX(), structureLocation.getBlockY(), structureLocation.getBlockZ());
 
-        // Create map with showIcons = true, unlimitedTracking = true
+        // Create map with trackingPosition = true, unlimitedTracking = true
         net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePosition.getX(), structurePosition.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
         MapItem.renderBiomePreviewMap(level, stack);
         // "+" map ID taken from VillagerTrades$TreasureMapForEmeralds

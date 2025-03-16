@@ -43,7 +43,6 @@ import org.bukkit.profile.PlayerProfile;
 
 @SerializableAs("Player")
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
-    private static final org.slf4j.Logger LOGGER = com.mojang.logging.LogUtils.getLogger(); // Paper
     private final GameProfile profile;
     private final CraftServer server;
     private final PlayerDataStorage storage;
@@ -52,7 +51,6 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         this.server = server;
         this.profile = profile;
         this.storage = server.console.playerDataStorage;
-
     }
 
     @Override
@@ -60,12 +58,10 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         return this.getPlayer() != null;
     }
 
-    // Paper start
     @Override
     public boolean isConnected() {
         return false;
     }
-    // Paper end
 
     @Override
     public String getName() {
@@ -267,7 +263,6 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         return this.getData() != null;
     }
 
-    // Paper start
     @Override
     public long getLastLogin() {
         Player player = getPlayer();
@@ -313,9 +308,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
         return result;
     }
-    // Paper end
 
-    // Paper start - Add Offline PDC API
     private static final org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry();
     private io.papermc.paper.persistence.@org.checkerframework.checker.nullness.qual.MonotonicNonNull PersistentDataContainerView persistentDataContainerView;
 
@@ -341,7 +334,6 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
         }
         return this.persistentDataContainerView;
     }
-    // Paper end - Add Offline PDC API
 
     @Override
     public Location getLastDeathLocation() {

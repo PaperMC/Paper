@@ -28,19 +28,20 @@ public class CraftBlockState implements BlockState {
     protected final CraftWorld world;
     private final BlockPos position;
     protected net.minecraft.world.level.block.state.BlockState data;
-    protected int flags; // todo move out of this class
+    protected int capturedFlags; // todo move out of this class
     private WeakReference<LevelAccessor> weakWorld;
 
     protected CraftBlockState(final Block block) {
         this(block.getWorld(), ((CraftBlock) block).getPosition(), ((CraftBlock) block).getNMS());
-        this.flags = net.minecraft.world.level.block.Block.UPDATE_ALL;
+        this.capturedFlags = net.minecraft.world.level.block.Block.UPDATE_ALL;
 
         this.setWorldHandle(((CraftBlock) block).getHandle());
     }
 
-    protected CraftBlockState(final Block block, int flags) {
+    @Deprecated
+    protected CraftBlockState(final Block block, int capturedFlags) {
         this(block);
-        this.flags = flags;
+        this.capturedFlags = capturedFlags;
     }
 
     // world can be null for non-placed BlockStates.
@@ -60,7 +61,7 @@ public class CraftBlockState implements BlockState {
             this.position = CraftLocation.toBlockPosition(location);
         }
         this.data = state.data;
-        this.flags = state.flags;
+        this.capturedFlags = state.capturedFlags;
         this.setWorldHandle(state.getWorldHandle());
     }
 
@@ -180,11 +181,11 @@ public class CraftBlockState implements BlockState {
     }
 
     public void setFlags(int flags) {
-        this.flags = flags;
+        this.capturedFlags = flags;
     }
 
     public int getFlags() {
-        return this.flags;
+        return this.capturedFlags;
     }
 
     @Override
@@ -223,13 +224,13 @@ public class CraftBlockState implements BlockState {
         }
 
         net.minecraft.world.level.block.state.BlockState newBlock = this.data;
-        block.setTypeAndData(newBlock, applyPhysics);
+        block.setBlockState(newBlock, applyPhysics);
         if (access instanceof net.minecraft.world.level.Level) {
             this.world.getHandle().sendBlockUpdated(
-                    this.position,
-                    block.getNMS(),
-                    newBlock,
-                    net.minecraft.world.level.block.Block.UPDATE_ALL
+                this.position,
+                block.getNMS(),
+                newBlock,
+                net.minecraft.world.level.block.Block.UPDATE_ALL
             );
         }
 
@@ -239,6 +240,25 @@ public class CraftBlockState implements BlockState {
         }
 
         return true;
+    }
+
+    // used when the flags matter for non API usage
+    public boolean place(int flags) {
+        if (!this.isPlaced()) {
+            return true;
+        }
+        return this.getWorldHandle().setBlock(this.position, this.data, flags);
+    }
+
+    // used to revert a block placement due to an event being cancelled for example
+    public boolean revertPlace() {
+        return this.place(
+            net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
+            net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
+            net.minecraft.world.level.block.Block.UPDATE_SUPPRESS_DROPS |
+            net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE |
+            net.minecraft.world.level.block.Block.UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS
+        );
     }
 
     @Override

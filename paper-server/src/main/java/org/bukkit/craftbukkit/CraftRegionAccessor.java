@@ -31,6 +31,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.CraftBlock;
+import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -150,7 +151,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         BlockPos pos = new BlockPos(x, y, z);
         net.minecraft.world.level.block.state.BlockState old = this.getHandle().getBlockState(pos);
 
-        CraftBlock.setTypeAndData(world, pos, old, ((CraftBlockData) blockData).getState(), true);
+        CraftBlock.setBlockState(world, pos, old, ((CraftBlockData) blockData).getState(), true);
     }
 
     @Override
@@ -206,7 +207,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
         for (BlockState blockState : populator.getList()) {
             if (predicate == null || predicate.test(blockState)) {
-                blockState.update(true, true);
+                CraftBlockState craftBlockState = (CraftBlockState) blockState;
+                craftBlockState.place(craftBlockState.getFlags());
             }
         }
 

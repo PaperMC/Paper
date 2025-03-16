@@ -9,7 +9,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
 import org.bukkit.craftbukkit.util.CraftLocation;
 
 @Deprecated(forRemoval = true)
@@ -17,8 +16,8 @@ public final class CapturedBlockState extends CraftBlockState {
 
     private final boolean treeBlock;
 
-    public CapturedBlockState(Block block, int flag, boolean treeBlock) {
-        super(block, flag);
+    public CapturedBlockState(Block block, int capturedFlags, boolean treeBlock) {
+        super(block, capturedFlags);
 
         this.treeBlock = treeBlock;
     }
@@ -34,20 +33,27 @@ public final class CapturedBlockState extends CraftBlockState {
 
         // Probably no longer needed with the extra #updatedTree method,
         // but leave if here for now in case a plugin for whatever reason relies on this.
-        this.addBees();
+        if (result) {
+            this.addBees();
+        }
 
         return result;
     }
 
-    private void updatedTree() {
-        // SPIGOT-7248 - Manual update to avoid physics where appropriate
-        // SPIGOT-7572 - Move SPIGOT-7248 fix from nms ItemStack to here, to allow bee generation in nests
-        this.world.getHandle().setBlock(CraftLocation.toBlockPosition(this.getLocation()), this.getHandle(), this.getFlags());
+    @Override
+    public boolean place(int flags) {
+        boolean result = super.place(flags);
 
-        this.addBees();
+        // Probably no longer needed with the extra #updatedTree method,
+        // but leave if here for now in case a plugin for whatever reason relies on this.
+        if (result) {
+            this.addBees();
+        }
+
+        return result;
     }
 
-    private void addBees() {
+    private void addBees() { // todo check if needed
         // SPIGOT-5537: Horrible hack to manually add bees given Level#captureTreeGeneration does not support block entities
         if (this.treeBlock && this.getType() == Material.BEE_NEST) {
             WorldGenLevel worldGenLevel = this.world.getHandle();
@@ -77,14 +83,6 @@ public final class CapturedBlockState extends CraftBlockState {
     }
 
     public static CapturedBlockState getTreeBlockState(Level world, BlockPos pos, int flag) {
-        return new CapturedBlockState(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), flag, true);
-    }
-
-    public static void setBlockState(BlockState blockState) {
-        if (blockState instanceof CapturedBlockState capturedBlockState) {
-            capturedBlockState.updatedTree();
-        } else {
-            blockState.update(true);
-        }
+        return new CapturedBlockState(CraftBlock.at(world, pos), flag, true);
     }
 }
