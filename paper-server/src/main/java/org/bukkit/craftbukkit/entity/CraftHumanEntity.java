@@ -154,12 +154,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             return null;
         }
 
-        net.minecraft.server.level.ServerLevel worldServer = ((ServerPlayer) this.getHandle()).server.getLevel(respawnConfig.dimension());
-        if (worldServer == null) {
+        net.minecraft.server.level.ServerLevel level = ((ServerPlayer) this.getHandle()).server.getLevel(respawnConfig.dimension());
+        if (level == null) {
             return null;
         }
 
-        return CraftLocation.toBukkit(respawnConfig.pos(), worldServer.getWorld());
+        return CraftLocation.toBukkit(respawnConfig.pos(), level.getWorld());
     }
 
     @Override
@@ -176,19 +176,19 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         Preconditions.checkArgument(location.getWorld() != null, "Location needs to be in a world");
         Preconditions.checkArgument(location.getWorld().equals(this.getWorld()), "Cannot sleep across worlds");
 
-        BlockPos blockposition = CraftLocation.toBlockPosition(location);
-        BlockState iblockdata = this.getHandle().level().getBlockState(blockposition);
-        if (!(iblockdata.getBlock() instanceof BedBlock)) {
+        BlockPos pos = CraftLocation.toBlockPosition(location);
+        BlockState state = this.getHandle().level().getBlockState(pos);
+        if (!(state.getBlock() instanceof BedBlock)) {
             return false;
         }
 
-        if (this.getHandle().startSleepInBed(blockposition, force).left().isPresent()) {
+        if (this.getHandle().startSleepInBed(pos, force).left().isPresent()) {
             return false;
         }
 
         // From BlockBed
-        iblockdata = iblockdata.setValue(BedBlock.OCCUPIED, true);
-        this.getHandle().level().setBlock(blockposition, iblockdata, 4);
+        state = state.setValue(BedBlock.OCCUPIED, true);
+        this.getHandle().level().setBlock(pos, state, 4);
 
         return true;
     }

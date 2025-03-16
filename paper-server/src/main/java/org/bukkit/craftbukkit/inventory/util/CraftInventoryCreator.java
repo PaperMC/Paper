@@ -15,30 +15,30 @@ public final class CraftInventoryCreator {
 
     private CraftInventoryCreator() {
         this.converterMap.put(InventoryType.CHEST, this.DEFAULT_CONVERTER);
-        this.converterMap.put(InventoryType.DISPENSER, new CraftTileInventoryConverter.Dispenser());
-        this.converterMap.put(InventoryType.DROPPER, new CraftTileInventoryConverter.Dropper());
-        this.converterMap.put(InventoryType.FURNACE, new CraftTileInventoryConverter.Furnace());
+        this.converterMap.put(InventoryType.DISPENSER, new CraftBlockInventoryConverter.Dispenser());
+        this.converterMap.put(InventoryType.DROPPER, new CraftBlockInventoryConverter.Dropper());
+        this.converterMap.put(InventoryType.FURNACE, new CraftBlockInventoryConverter.Furnace());
         this.converterMap.put(InventoryType.WORKBENCH, this.DEFAULT_CONVERTER);
         this.converterMap.put(InventoryType.ENCHANTING, this.DEFAULT_CONVERTER);
-        this.converterMap.put(InventoryType.BREWING, new CraftTileInventoryConverter.BrewingStand());
+        this.converterMap.put(InventoryType.BREWING, new CraftBlockInventoryConverter.BrewingStand());
         this.converterMap.put(InventoryType.PLAYER, this.DEFAULT_CONVERTER);
         this.converterMap.put(InventoryType.MERCHANT, this.DEFAULT_CONVERTER);
         this.converterMap.put(InventoryType.ENDER_CHEST, this.DEFAULT_CONVERTER);
         this.converterMap.put(InventoryType.ANVIL, this.DEFAULT_CONVERTER);
         this.converterMap.put(InventoryType.SMITHING, this.DEFAULT_CONVERTER);
         this.converterMap.put(InventoryType.BEACON, this.DEFAULT_CONVERTER);
-        this.converterMap.put(InventoryType.HOPPER, new CraftTileInventoryConverter.Hopper());
+        this.converterMap.put(InventoryType.HOPPER, new CraftBlockInventoryConverter.Hopper());
         this.converterMap.put(InventoryType.SHULKER_BOX, this.DEFAULT_CONVERTER);
         this.converterMap.put(InventoryType.BARREL, this.DEFAULT_CONVERTER);
-        this.converterMap.put(InventoryType.BLAST_FURNACE, new CraftTileInventoryConverter.BlastFurnace());
-        this.converterMap.put(InventoryType.LECTERN, new CraftTileInventoryConverter.Lectern());
-        this.converterMap.put(InventoryType.SMOKER, new CraftTileInventoryConverter.Smoker());
+        this.converterMap.put(InventoryType.BLAST_FURNACE, new CraftBlockInventoryConverter.BlastFurnace());
+        this.converterMap.put(InventoryType.LECTERN, new CraftBlockInventoryConverter.Lectern());
+        this.converterMap.put(InventoryType.SMOKER, new CraftBlockInventoryConverter.Smoker());
         this.converterMap.put(InventoryType.LOOM, this.DEFAULT_CONVERTER);
         this.converterMap.put(InventoryType.CARTOGRAPHY, this.DEFAULT_CONVERTER);
         this.converterMap.put(InventoryType.GRINDSTONE, this.DEFAULT_CONVERTER);
         this.converterMap.put(InventoryType.STONECUTTER, this.DEFAULT_CONVERTER);
         this.converterMap.put(InventoryType.SMITHING_NEW, this.DEFAULT_CONVERTER);
-        this.converterMap.put(InventoryType.CRAFTER, new CraftTileInventoryConverter.Crafter());
+        this.converterMap.put(InventoryType.CRAFTER, new CraftBlockInventoryConverter.Crafter());
     }
 
     public Inventory createInventory(InventoryHolder holder, InventoryType type) {

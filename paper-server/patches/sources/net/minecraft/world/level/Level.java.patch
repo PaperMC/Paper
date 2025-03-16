@@ -191,20 +191,20 @@
 +
 +    // Paper start - Cancel hit for vanished players
 +    // ret true if no collision
-+    public final boolean checkEntityCollision(BlockState data, Entity source, net.minecraft.world.phys.shapes.CollisionContext voxelshapedcollision,
++    public final boolean checkEntityCollision(BlockState state, Entity source, net.minecraft.world.phys.shapes.CollisionContext collisionContext,
 +                                              BlockPos position, boolean checkCanSee) {
-+        // Copied from IWorldReader#a(IBlockData, BlockPosition, VoxelShapeCollision) & EntityAccess#a(Entity, VoxelShape)
-+        net.minecraft.world.phys.shapes.VoxelShape voxelshape = data.getCollisionShape(this, position, voxelshapedcollision);
-+        if (voxelshape.isEmpty()) {
++        // Copied from CollisionGetter#isUnobstructed(BlockState, BlockPos, CollisionContext) & EntityGetter#isUnobstructed(Entity, VoxelShape)
++        net.minecraft.world.phys.shapes.VoxelShape collisionShape = state.getCollisionShape(this, position, collisionContext);
++        if (collisionShape.isEmpty()) {
 +            return true;
 +        }
 +
-+        voxelshape = voxelshape.move((double) position.getX(), (double) position.getY(), (double) position.getZ());
-+        if (voxelshape.isEmpty()) {
++        collisionShape = collisionShape.move((double) position.getX(), (double) position.getY(), (double) position.getZ());
++        if (collisionShape.isEmpty()) {
 +            return true;
 +        }
 +
-+        List<Entity> entities = this.getEntities(null, voxelshape.bounds());
++        List<Entity> entities = this.getEntities(null, collisionShape.bounds());
 +        for (int i = 0, len = entities.size(); i < len; ++i) {
 +            Entity entity = entities.get(i);
 +
@@ -213,14 +213,14 @@
 +                continue;
 +            }
 +
-+            // !entity1.dead && entity1.i && (entity == null || !entity1.x(entity));
++            // !entity1.isRemoved() && entity1.blocksBuilding && (entity == null || !entity1.isPassengerOfSameVehicle(entity))
 +            // elide the last check since vanilla calls with entity = null
 +            // only we care about the source for the canSee check
 +            if (entity.isRemoved() || !entity.blocksBuilding) {
 +                continue;
 +            }
 +
-+            if (net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(voxelshape, net.minecraft.world.phys.shapes.Shapes.create(entity.getBoundingBox()), net.minecraft.world.phys.shapes.BooleanOp.AND)) {
++            if (net.minecraft.world.phys.shapes.Shapes.joinIsNotEmpty(collisionShape, net.minecraft.world.phys.shapes.Shapes.create(entity.getBoundingBox()), net.minecraft.world.phys.shapes.BooleanOp.AND)) {
 +                return false;
 +            }
 +        }
@@ -323,7 +323,7 @@
 +        return getWorldBorder().isWithinBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
 +    }
 +
-+    public @Nullable LevelChunk getChunkIfLoaded(int x, int z) { // Overridden in WorldServer for ABI compat which has final
++    public @Nullable LevelChunk getChunkIfLoaded(int x, int z) { // Overridden in ServerLevel for ABI compat which has final
 +        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(x, z);
 +    }
 +    public final @Nullable LevelChunk getChunkIfLoaded(BlockPos blockposition) {
@@ -388,7 +388,7 @@
                  if (blockState1 == state) {
                      if (blockState != blockState1) {
                          this.setBlocksDirty(pos, blockState, blockState1);
-@@ -251,12 +_,75 @@
+@@ -251,12 +_,72 @@
  
                      this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
                  }
@@ -413,49 +413,46 @@
      }
  
 +    // CraftBukkit start - Split off from above in order to directly send client and physic updates
-+    public void notifyAndUpdatePhysics(BlockPos blockposition, LevelChunk chunk, BlockState oldBlock, BlockState newBlock, BlockState actualBlock, int i, int j) {
-+        BlockState iblockdata = newBlock;
-+        BlockState iblockdata1 = oldBlock;
-+        BlockState iblockdata2 = actualBlock;
-+        if (iblockdata2 == iblockdata) {
-+            if (iblockdata1 != iblockdata2) {
-+                this.setBlocksDirty(blockposition, iblockdata1, iblockdata2);
++    public void notifyAndUpdatePhysics(BlockPos pos, LevelChunk chunkAt, BlockState oldState, BlockState newState, BlockState currentState, int flags, int recursionLeft) {
++        BlockState state = newState;
++        BlockState blockState = oldState;
++        BlockState blockState1 = currentState;
++        if (blockState1 == state) {
++            if (blockState != blockState1) {
++                this.setBlocksDirty(pos, blockState, blockState1);
 +            }
 +
-+            if ((i & 2) != 0 && (!this.isClientSide || (i & 4) == 0) && (this.isClientSide || chunk == null || (chunk.getFullStatus() != null && chunk.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
-+                this.sendBlockUpdated(blockposition, iblockdata1, iblockdata, i);
++            if ((flags & 2) != 0 && (!this.isClientSide || (flags & 4) == 0) && (this.isClientSide || chunkAt == null || (chunkAt.getFullStatus() != null && chunkAt.getFullStatus().isOrAfter(FullChunkStatus.BLOCK_TICKING)))) { // allow chunk to be null here as chunk.isReady() is false when we send our notification during block placement
++                this.sendBlockUpdated(pos, blockState, state, flags);
 +            }
 +
-+            if ((i & 1) != 0) {
-+                this.updateNeighborsAt(blockposition, iblockdata1.getBlock());
-+                if (!this.isClientSide && iblockdata.hasAnalogOutputSignal()) {
-+                    this.updateNeighbourForOutputSignal(blockposition, newBlock.getBlock());
++            if ((flags & 1) != 0) {
++                this.updateNeighborsAt(pos, blockState.getBlock());
++                if (!this.isClientSide && state.hasAnalogOutputSignal()) {
++                    this.updateNeighbourForOutputSignal(pos, newState.getBlock());
 +                }
 +            }
 +
-+            if ((i & 16) == 0 && j > 0) {
-+                int k = i & -34;
++            if ((flags & 16) == 0 && recursionLeft > 0) {
++                int i = flags & -34;
 +
 +                // CraftBukkit start
-+                iblockdata1.updateIndirectNeighbourShapes(this, blockposition, k, j - 1); // Don't call an event for the old block to limit event spam
-+                CraftWorld world = ((ServerLevel) this).getWorld();
++                blockState.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1); // Don't call an event for the old block to limit event spam
 +                boolean cancelledUpdates = false; // Paper - Fix block place logic
-+                if (world != null && ((ServerLevel)this).hasPhysicsEvent) { // Paper - BlockPhysicsEvent
-+                    BlockPhysicsEvent event = new BlockPhysicsEvent(world.getBlockAt(blockposition.getX(), blockposition.getY(), blockposition.getZ()), CraftBlockData.fromData(iblockdata));
-+                    this.getCraftServer().getPluginManager().callEvent(event);
-+
-+                    cancelledUpdates = event.isCancelled(); // Paper - Fix block place logic
++                if (((ServerLevel)this).hasPhysicsEvent) { // Paper - BlockPhysicsEvent
++                    BlockPhysicsEvent event = new BlockPhysicsEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), CraftBlockData.fromData(state));
++                    cancelledUpdates = !event.callEvent(); // Paper - Fix block place logic
 +                }
 +                // CraftBukkit end
 +                if (!cancelledUpdates) { // Paper - Fix block place logic
-+                    iblockdata.updateNeighbourShapes(this, blockposition, k, j - 1);
-+                    iblockdata.updateIndirectNeighbourShapes(this, blockposition, k, j - 1);
++                    state.updateNeighbourShapes(this, pos, i, recursionLeft - 1);
++                    state.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1);
 +                } // Paper - Fix block place logic
 +            }
 +
 +            // CraftBukkit start - SPIGOT-5710
 +            if (!this.preventPoiUpdated) {
-+                this.updatePOIOnBlockStateChange(blockposition, iblockdata1, iblockdata2);
++                this.updatePOIOnBlockStateChange(pos, blockState, blockState1);
 +            }
 +            // CraftBukkit end
 +        }
@@ -470,7 +467,7 @@
              FluidState fluidState = this.getFluidState(pos);
 -            if (!(blockState.getBlock() instanceof BaseFireBlock)) {
 -                this.levelEvent(2001, pos, Block.getId(blockState));
-+            // Paper start - BlockDestroyEvent; while the above setAir method is named same and looks very similar
++            // Paper start - BlockDestroyEvent; while the above removeBlock method looks very similar
 +            // they are NOT used with same intent and the above should not fire this event. The above method is more of a BlockSetToAirEvent,
 +            // it doesn't imply destruction of a block that plays a sound effect / drops an item.
 +            boolean playEffect = true;

@@ -55,7 +55,7 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
         // Calls #update if needed, the block data compound tag is not synced with the client and hence can be mutated after the sync with clients.
         // The call also clears any potential old block data.
         this.setBlockData(blockState.getBlockData());
-        if (blockState instanceof final org.bukkit.craftbukkit.block.CraftBlockEntityState<?> tileEntity) this.getHandle().blockData = tileEntity.getSnapshotNBT();
+        if (blockState instanceof final org.bukkit.craftbukkit.block.CraftBlockEntityState<?> blockEntitySnapshot) this.getHandle().blockData = blockEntitySnapshot.getSnapshotNBT();
     }
 
     @Override

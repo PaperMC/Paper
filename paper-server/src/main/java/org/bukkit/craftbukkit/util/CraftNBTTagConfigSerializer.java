@@ -1,6 +1,5 @@
 package org.bukkit.craftbukkit.util;
 
-import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +9,6 @@ import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.SnbtGrammar;
 import net.minecraft.nbt.SnbtPrinterTagVisitor;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
@@ -24,9 +22,9 @@ public class CraftNBTTagConfigSerializer {
     private static final Pattern DOUBLE = Pattern.compile("[-+]?(?:[0-9]+[.]?|[0-9]*[.][0-9]+)(?:e[-+]?[0-9]+)?d", Pattern.CASE_INSENSITIVE);
     private static final TagParser<Tag> MOJANGSON_PARSER = TagParser.create(NbtOps.INSTANCE);
 
-    public static String serialize(@NotNull final Tag base) {
+    public static String serialize(@NotNull final Tag tag) {
         final SnbtPrinterTagVisitor snbtVisitor = new SnbtPrinterTagVisitor();
-        return snbtVisitor.visit(base);
+        return snbtVisitor.visit(tag);
     }
 
     public static Tag deserialize(final Object object) {
@@ -77,14 +75,14 @@ public class CraftNBTTagConfigSerializer {
                 return DoubleTag.valueOf(Double.parseDouble(string.substring(0, string.length() - 1)));
             } else {
                 try {
-                    Tag nbtBase = CraftNBTTagConfigSerializer.MOJANGSON_PARSER.parseFully(string);
+                    Tag tag = CraftNBTTagConfigSerializer.MOJANGSON_PARSER.parseFully(string);
 
-                    if (nbtBase instanceof IntTag) { // If this returns an integer, it did not use our method from above
-                        return StringTag.valueOf(nbtBase.toString()); // It then is a string that was falsely read as an int
-                    } else if (nbtBase instanceof DoubleTag) {
-                        return StringTag.valueOf(String.valueOf(((DoubleTag) nbtBase).doubleValue())); // Doubles add "d" at the end
+                    if (tag instanceof IntTag) { // If this returns an integer, it did not use our method from above
+                        return StringTag.valueOf(tag.toString()); // It then is a string that was falsely read as an int
+                    } else if (tag instanceof DoubleTag) {
+                        return StringTag.valueOf(String.valueOf(((DoubleTag) tag).doubleValue())); // Doubles add "d" at the end
                     } else {
-                        return nbtBase;
+                        return tag;
                     }
                 } catch (final CommandSyntaxException commandSyntaxException) {
                     throw new RuntimeException("Could not deserialize found primitive ", commandSyntaxException);
@@ -92,6 +90,6 @@ public class CraftNBTTagConfigSerializer {
             }
         }
 
-        throw new RuntimeException("Could not deserialize NBTBase");
+        throw new RuntimeException("Could not deserialize Tag");
     }
 }

@@ -106,8 +106,8 @@ public class CraftMetaCompass extends CraftMetaItem implements CompassMeta {
         if (this.tracker == null || this.tracker.target().isEmpty()) {
             return null;
         }
-        ServerLevel worldServer = MinecraftServer.getServer().getLevel(this.tracker.target().get().dimension());
-        World world = worldServer != null ? worldServer.getWorld() : null;
+        ServerLevel level = MinecraftServer.getServer().getLevel(this.tracker.target().get().dimension());
+        World world = level != null ? level.getWorld() : null;
         return org.bukkit.craftbukkit.util.CraftLocation.toBukkit(this.tracker.target().get().pos(), world); // world may be null here, if the referenced world is not loaded
     }
 

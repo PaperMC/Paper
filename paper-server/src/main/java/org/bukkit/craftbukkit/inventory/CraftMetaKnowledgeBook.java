@@ -54,15 +54,15 @@ public class CraftMetaKnowledgeBook extends CraftMetaItem implements KnowledgeBo
     }
 
     @Override
-    void applyToItem(CraftMetaItem.Applicator itemData) {
-        super.applyToItem(itemData);
+    void applyToItem(CraftMetaItem.Applicator tag) {
+        super.applyToItem(tag);
 
         if (this.hasRecipes()) {
             List<ResourceKey<Recipe<?>>> list = new ArrayList<>();
             for (NamespacedKey recipe : this.recipes) {
                 list.add(CraftRecipe.toMinecraft(recipe));
             }
-            itemData.put(CraftMetaKnowledgeBook.BOOK_RECIPES, list);
+            tag.put(CraftMetaKnowledgeBook.BOOK_RECIPES, list);
         }
     }
 

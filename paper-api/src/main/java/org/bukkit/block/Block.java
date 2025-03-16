@@ -364,7 +364,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
     // Paper start
     /**
      * @see #getState() optionally disables use of snapshot, to operate on real block data
-     * @param useSnapshot if this block is a TE, should we create a fully copy of the TileEntity
+     * @param useSnapshot if this block is a block entity, should we create a full copy of the BlockEntity
      * @return BlockState with the current state of this block
      */
     @NotNull

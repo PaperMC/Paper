@@ -39,14 +39,14 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
 
     @Override
     public net.minecraft.world.level.block.state.BlockState getBlockState(BlockPos pos) {
-        net.minecraft.world.level.block.state.BlockState blockData = this.dataMap.get(pos);
-        return (blockData != null) ? blockData : this.world.getBlockState(pos);
+        net.minecraft.world.level.block.state.BlockState state = this.dataMap.get(pos);
+        return (state != null) ? state : this.world.getBlockState(pos);
     }
 
     @Override
     public FluidState getFluidState(BlockPos pos) {
-        net.minecraft.world.level.block.state.BlockState blockData = this.dataMap.get(pos);
-        return (blockData != null) ? blockData.getFluidState() : this.world.getFluidState(pos);
+        net.minecraft.world.level.block.state.BlockState state = this.dataMap.get(pos);
+        return (state != null) ? state.getFluidState() : this.world.getFluidState(pos);
     }
 
     @Override
@@ -73,11 +73,11 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
         }
 
         // use 'this' to ensure that the block state is the correct TileState
-        CraftBlockState state1 = (CraftBlockState) CraftBlock.at(this, pos).getState();
-        state1.setFlags(flags);
+        CraftBlockState snapshot = (CraftBlockState) CraftBlock.at(this, pos).getState();
+        snapshot.setFlags(flags);
         // set world handle to ensure that updated calls are done to the world and not to this populator
-        state1.setWorldHandle(this.world);
-        this.list.put(pos, state1);
+        snapshot.setWorldHandle(this.world);
+        this.list.put(pos, snapshot);
         return true;
     }
 
@@ -87,9 +87,9 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     public void refreshTiles() {
-        for (CraftBlockState state : this.list.values()) {
-            if (state instanceof CraftBlockEntityState) {
-                ((CraftBlockEntityState<?>) state).refreshSnapshot();
+        for (CraftBlockState snapshot : this.list.values()) {
+            if (snapshot instanceof CraftBlockEntityState) {
+                ((CraftBlockEntityState<?>) snapshot).refreshSnapshot();
             }
         }
     }
@@ -160,12 +160,10 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
         return this.world.getRandom();
     }
 
-    // Paper start
     @Override
     public <T extends BlockEntity> java.util.Optional<T> getBlockEntity(BlockPos pos, net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
-        BlockEntity tileentity = this.getBlockEntity(pos);
-
-        return tileentity != null && tileentity.getType() == type ? (java.util.Optional<T>) java.util.Optional.of(tileentity) : java.util.Optional.empty();
+        BlockEntity blockEntity = this.getBlockEntity(pos);
+        return blockEntity != null && blockEntity.getType() == type ? (java.util.Optional<T>) java.util.Optional.of(blockEntity) : java.util.Optional.empty();
     }
 
     @Override
@@ -187,5 +185,4 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     public int getBrightness(net.minecraft.world.level.LightLayer type, BlockPos pos) {
         return world.getBrightness(type, pos);
     }
-    // Paper end
 }

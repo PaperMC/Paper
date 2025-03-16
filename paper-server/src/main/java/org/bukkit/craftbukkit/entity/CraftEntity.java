@@ -1017,12 +1017,12 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     }
 
     protected CompoundTag save() {
-        CompoundTag nbttagcompound = new CompoundTag();
+        CompoundTag tag = new CompoundTag();
 
-        nbttagcompound.putString("id", this.getHandle().getEncodeId());
-        this.getHandle().saveWithoutId(nbttagcompound);
+        tag.putString(Entity.ID_TAG, this.getHandle().getEncodeId()); // todo NPE?
+        this.getHandle().saveWithoutId(tag);
 
-        return nbttagcompound;
+        return tag;
     }
 
     // re-sends the spawn entity packet to updated values which cannot be updated otherwise

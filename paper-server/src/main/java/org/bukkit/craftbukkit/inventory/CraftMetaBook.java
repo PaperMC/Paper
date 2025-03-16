@@ -95,15 +95,15 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
     }
 
     @Override
-    void applyToItem(CraftMetaItem.Applicator itemData) {
-        super.applyToItem(itemData);
+    void applyToItem(CraftMetaItem.Applicator tag) {
+        super.applyToItem(tag);
 
         if (this.pages != null) {
             List<Filterable<String>> list = new ArrayList<>();
             for (String page : this.pages) {
                 list.add(Filterable.from(FilteredText.passThrough(page)));
             }
-            itemData.put(CraftMetaBook.BOOK_CONTENT, new WritableBookContent(list));
+            tag.put(CraftMetaBook.BOOK_CONTENT, new WritableBookContent(list));
         }
     }
 

@@ -180,8 +180,8 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
     }
 
     @Override
-    void applyToItem(CraftMetaItem.Applicator itemTag) {
-        super.applyToItem(itemTag);
+    void applyToItem(CraftMetaItem.Applicator tag) {
+        super.applyToItem(tag);
         if (this.isFireworkEmpty()) {
             return;
         }
@@ -193,7 +193,7 @@ class CraftMetaFirework extends CraftMetaItem implements FireworkMeta {
             }
         }
 
-        itemTag.put(CraftMetaFirework.FIREWORKS, new Fireworks(this.getPower(), effects));
+        tag.put(CraftMetaFirework.FIREWORKS, new Fireworks(this.getPower(), effects));
     }
 
     static IntList addColors(List<Color> colors) {

@@ -42,10 +42,10 @@ class CraftMetaLeatherArmor extends CraftMetaItem implements LeatherArmorMeta {
     }
 
     @Override
-    void applyToItem(CraftMetaItem.Applicator itemTag) {
-        super.applyToItem(itemTag);
+    void applyToItem(CraftMetaItem.Applicator tag) {
+        super.applyToItem(tag);
         if (this.hasColor()) {
-            itemTag.put(CraftMetaLeatherArmor.COLOR, new DyedItemColor(this.color));
+            tag.put(CraftMetaLeatherArmor.COLOR, new DyedItemColor(this.color));
         }
     }
 

@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import com.google.common.primitives.Primitives;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -56,7 +55,7 @@ public final class CraftPersistentDataTypeRegistry {
      *
      * @param primitiveType the class of the primitive type, e.g.
      *                      {@link String}.
-     * @param nbtBaseType   the class of the tag implementation that is used to
+     * @param tagType       the class of the tag implementation that is used to
      *                      store this primitive type, e.g {@link StringTag}.
      * @param nmsTypeByte   the byte identifier of the tag as defined by
      *                      {@link Tag#getId()}.
@@ -75,7 +74,7 @@ public final class CraftPersistentDataTypeRegistry {
      */
     private record TagAdapter<P, T extends Tag>(
         Class<P> primitiveType,
-        Class<T> nbtBaseType,
+        Class<T> tagType,
         byte nmsTypeByte,
         BiFunction<PersistentDataType<P, ?>, P, T> builder,
         BiFunction<PersistentDataType<P, ?>, T, P> extractor,
@@ -91,8 +90,8 @@ public final class CraftPersistentDataTypeRegistry {
          *                            extractor function.
          */
         private P extract(final PersistentDataType<P, ?> dataType, final Tag base) {
-            Preconditions.checkArgument(this.nbtBaseType.isInstance(base), "The provided NBTBase was of the type %s. Expected type %s", base.getClass().getSimpleName(), this.nbtBaseType.getSimpleName());
-            return this.extractor.apply(dataType, this.nbtBaseType.cast(base));
+            Preconditions.checkArgument(this.tagType.isInstance(base), "The provided Tag was of the type %s. Expected type %s", base.getClass().getSimpleName(), this.tagType.getSimpleName());
+            return this.extractor.apply(dataType, this.tagType.cast(base));
         }
 
         /**
@@ -259,27 +258,27 @@ public final class CraftPersistentDataTypeRegistry {
 
     // Plain constructor helper method.
     private <T, Z extends Tag> TagAdapter<T, Z> createAdapter(
-        final Class<T> primitiveType, final Class<Z> nbtBaseType, final byte nmsTypeByte,
+        final Class<T> primitiveType, final Class<Z> tagType, final byte nmsTypeByte,
         final Function<T, Z> builder, final Function<Z, T> extractor
     ) {
         return this.createAdapter(
             primitiveType,
-            nbtBaseType,
+            tagType,
             nmsTypeByte,
             (type, t) -> builder.apply(t),
             (type, z) -> extractor.apply(z),
-            (type, t) -> nbtBaseType.isInstance(t)
+            (type, t) -> tagType.isInstance(t)
         );
     }
 
     // Plain constructor helper method.
     private <T, Z extends Tag> TagAdapter<T, Z> createAdapter(
-        final Class<T> primitiveType, final Class<Z> nbtBaseType, final byte nmsTypeByte,
+        final Class<T> primitiveType, final Class<Z> tagType, final byte nmsTypeByte,
         final BiFunction<PersistentDataType<T, ?>, T, Z> builder,
         final BiFunction<PersistentDataType<T, ?>, Z, T> extractor,
         final BiPredicate<PersistentDataType<T, ?>, Tag> matcher
     ) {
-        return new TagAdapter<>(primitiveType, nbtBaseType, nmsTypeByte, builder, extractor, matcher);
+        return new TagAdapter<>(primitiveType, tagType, nmsTypeByte, builder, extractor, matcher);
     }
 
     /**

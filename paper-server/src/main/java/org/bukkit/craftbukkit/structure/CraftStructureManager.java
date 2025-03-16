@@ -163,8 +163,8 @@ public class CraftStructureManager implements StructureManager {
         Preconditions.checkArgument(outputStream != null, "outputStream cannot be null");
         Preconditions.checkArgument(structure != null, "structure cannot be null");
 
-        CompoundTag nbttagcompound = ((CraftStructure) structure).getHandle().save(new CompoundTag());
-        NbtIo.writeCompressed(nbttagcompound, outputStream);
+        CompoundTag tag = ((CraftStructure) structure).getHandle().save(new CompoundTag());
+        NbtIo.writeCompressed(tag, outputStream);
     }
 
     @Override

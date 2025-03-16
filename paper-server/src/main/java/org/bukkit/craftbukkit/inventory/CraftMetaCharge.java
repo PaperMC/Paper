@@ -58,11 +58,11 @@ class CraftMetaCharge extends CraftMetaItem implements FireworkEffectMeta {
     }
 
     @Override
-    void applyToItem(CraftMetaItem.Applicator itemTag) {
-        super.applyToItem(itemTag);
+    void applyToItem(CraftMetaItem.Applicator tag) {
+        super.applyToItem(tag);
 
         if (this.hasEffect()) {
-            itemTag.put(CraftMetaCharge.EXPLOSION, CraftMetaFirework.getExplosion(this.effect));
+            tag.put(CraftMetaCharge.EXPLOSION, CraftMetaFirework.getExplosion(this.effect));
         }
     }
 

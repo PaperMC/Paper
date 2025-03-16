@@ -44,10 +44,10 @@ public class CraftBlockState implements BlockState {
     }
 
     // world can be null for non-placed BlockStates.
-    protected CraftBlockState(@Nullable World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData) {
+    protected CraftBlockState(@Nullable World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState data) {
         this.world = (CraftWorld) world;
-        this.position = blockPosition;
-        this.data = blockData;
+        this.position = pos;
+        this.data = data;
     }
 
     // Creates an unplaced copy of the given CraftBlockState at the given location

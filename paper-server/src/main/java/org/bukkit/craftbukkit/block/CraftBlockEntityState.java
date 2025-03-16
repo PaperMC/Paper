@@ -81,8 +81,8 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
             return null;
         }
 
-        CompoundTag nbtTagCompound = from.saveWithFullMetadata(this.getRegistryAccess());
-        return (T) BlockEntity.loadStatic(this.getPosition(), this.getHandle(), nbtTagCompound, this.getRegistryAccess());
+        CompoundTag tag = from.saveWithFullMetadata(this.getRegistryAccess());
+        return (T) BlockEntity.loadStatic(this.getPosition(), this.getHandle(), tag, this.getRegistryAccess());
     }
 
     public Set<DataComponentType<?>> applyComponents(DataComponentMap datacomponentmap, DataComponentPatch datacomponentpatch) {
@@ -103,8 +103,8 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
 
     // copies the BlockEntity-specific data, retains the position
     private void copyData(T from, T to) {
-        CompoundTag nbtTagCompound = from.saveWithFullMetadata(this.getRegistryAccess());
-        to.loadWithComponents(nbtTagCompound, this.getRegistryAccess());
+        CompoundTag tag = from.saveWithFullMetadata(this.getRegistryAccess());
+        to.loadWithComponents(tag, this.getRegistryAccess());
     }
 
     // gets the wrapped BlockEntity

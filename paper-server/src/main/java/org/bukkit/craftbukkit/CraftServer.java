@@ -47,10 +47,12 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtException;
 import net.minecraft.nbt.ReportedNbtException;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.ConsoleInput;
@@ -1034,13 +1036,11 @@ public final class CraftServer implements Server {
         try {
             commands.performCommand(results, commandLine, commandLine, true);
         } catch (CommandException ex) {
-            this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
-            //target.timings.stopTiming(); // Spigot // Paper
+            new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args)).callEvent(); // Paper
             throw ex;
         } catch (Throwable ex) {
-            //target.timings.stopTiming(); // Spigot // Paper
             String msg = "Unhandled exception executing '" + commandLine + "' in " + target;
-            this.pluginManager.callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
+            new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args)).callEvent(); // Paper
             throw new CommandException(msg, ex);
         }
         // Paper end
@@ -1157,7 +1157,7 @@ public final class CraftServer implements Server {
         this.helpMap.initializeCommands();
         this.syncCommands(); // Refresh commands after event
         // Paper end - brigadier command API
-        this.getPluginManager().callEvent(new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD));
+        new ServerLoadEvent(ServerLoadEvent.LoadType.RELOAD).callEvent();
         org.spigotmc.WatchdogThread.hasStarted = true; // Paper - Disable watchdog early timeout on reload
     }
 
@@ -1472,7 +1472,7 @@ public final class CraftServer implements Server {
         this.getServer().prepareLevels(serverLevel.getChunkSource().chunkMap.progressListener, serverLevel);
         io.papermc.paper.FeatureHooks.tickEntityManager(serverLevel); // SPIGOT-6526: Load pending entities so they are available to the API // Paper - chunk system
 
-        this.pluginManager.callEvent(new WorldLoadEvent(serverLevel.getWorld()));
+        new WorldLoadEvent(serverLevel.getWorld()).callEvent();
         return serverLevel.getWorld();
     }
 
@@ -1498,14 +1498,12 @@ public final class CraftServer implements Server {
             return false;
         }
 
-        if (handle.players().size() > 0) {
+        if (!handle.players().isEmpty()) {
             return false;
         }
 
-        WorldUnloadEvent e = new WorldUnloadEvent(handle.getWorld());
-        this.pluginManager.callEvent(e);
-
-        if (e.isCancelled()) {
+        WorldUnloadEvent event = new WorldUnloadEvent(handle.getWorld());
+        if (!event.callEvent()) {
             return false;
         }
 
@@ -1550,9 +1548,9 @@ public final class CraftServer implements Server {
     // Paper start
     @Override
     public World getWorld(net.kyori.adventure.key.Key worldKey) {
-        ServerLevel worldServer = console.getLevel(ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, io.papermc.paper.adventure.PaperAdventure.asVanilla(worldKey)));
-        if (worldServer == null) return null;
-        return worldServer.getWorld();
+        ServerLevel level = console.getLevel(ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION, io.papermc.paper.adventure.PaperAdventure.asVanilla(worldKey)));
+        if (level == null) return null;
+        return level.getWorld();
     }
     // Paper end
 
@@ -1735,7 +1733,7 @@ public final class CraftServer implements Server {
         // Call Bukkit event to check for matrix/result changes.
         net.minecraft.world.item.ItemStack result = CraftEventFactory.callPreCraftEvent(inventoryCrafting, craftResult, itemstack, container.getBukkitView(), recipe.map(RecipeHolder::value).orElse(null) instanceof RepairItemRecipe);
 
-        return this.createItemCraftResult(recipe, CraftItemStack.asBukkitCopy(result), inventoryCrafting, craftWorld.getHandle());
+        return this.createItemCraftResult(recipe, CraftItemStack.asBukkitCopy(result), inventoryCrafting);
     }
 
     @Override
@@ -1761,10 +1759,10 @@ public final class CraftServer implements Server {
             itemStack = recipe.get().value().assemble(inventoryCrafting.asCraftInput(), craftWorld.getHandle().registryAccess());
         }
 
-        return this.createItemCraftResult(recipe, CraftItemStack.asBukkitCopy(itemStack), inventoryCrafting, craftWorld.getHandle());
+        return this.createItemCraftResult(recipe, CraftItemStack.asBukkitCopy(itemStack), inventoryCrafting);
     }
 
-    private CraftItemCraftResult createItemCraftResult(Optional<RecipeHolder<CraftingRecipe>> recipe, ItemStack itemStack, CraftingContainer inventoryCrafting, ServerLevel worldServer) {
+    private CraftItemCraftResult createItemCraftResult(Optional<RecipeHolder<CraftingRecipe>> recipe, ItemStack itemStack, CraftingContainer inventoryCrafting) {
         CraftItemCraftResult craftItemResult = new CraftItemCraftResult(itemStack);
         recipe.map((holder) -> holder.value().getRemainingItems(inventoryCrafting.asCraftInput())).ifPresent((remainingItems) -> {
             // Set the resulting matrix items and overflow items
@@ -2029,23 +2027,22 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(structureType != null, "StructureType cannot be null");
         Preconditions.checkArgument(structureType.getMapIcon() != null, "Cannot create explorer maps for StructureType %s", structureType.getName());
 
-        ServerLevel worldServer = ((CraftWorld) world).getHandle();
+        ServerLevel level = ((CraftWorld) world).getHandle();
         Location structureLocation = world.locateNearestStructure(location, structureType, radius, findUnexplored);
-        // Paper start - don't throw NPE
         if (structureLocation == null) {
             throw new IllegalStateException("Could not find a structure for " + structureType);
         }
-        // Paper end
         BlockPos structurePosition = CraftLocation.toBlockPosition(structureLocation);
 
-        // Create map with trackPlayer = true, unlimitedTracking = true
-        net.minecraft.world.item.ItemStack stack = MapItem.create(worldServer, structurePosition.getX(), structurePosition.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
-        MapItem.renderBiomePreviewMap(worldServer, stack);
-        // "+" map ID taken from EntityVillager
-        MapItem.getSavedData(stack, worldServer).addTargetDecoration(stack, structurePosition, "+", CraftMapCursor.CraftType.bukkitToMinecraftHolder(structureType.getMapIcon()));
+        // Create map with showIcons = true, unlimitedTracking = true
+        net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePosition.getX(), structurePosition.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
+        MapItem.renderBiomePreviewMap(level, stack);
+        // "+" map ID taken from VillagerTrades$TreasureMapForEmeralds
+        MapItemSavedData.addTargetDecoration(stack, structurePosition, "+", CraftMapCursor.CraftType.bukkitToMinecraftHolder(structureType.getMapIcon()));
 
         return CraftItemStack.asBukkitCopy(stack);
     }
+
     // Paper start - copied from above (uses un-deprecated StructureType type)
     @Override
     public ItemStack createExplorerMap(World world, Location location, org.bukkit.generator.structure.StructureType structureType, org.bukkit.map.MapCursor.Type mapIcon, int radius, boolean findUnexplored) {
@@ -2054,7 +2051,7 @@ public final class CraftServer implements Server {
         Preconditions.checkArgument(structureType != null, "StructureType cannot be null");
         Preconditions.checkArgument(mapIcon != null, "mapIcon cannot be null");
 
-        ServerLevel worldServer = ((CraftWorld) world).getHandle();
+        ServerLevel level = ((CraftWorld) world).getHandle();
         final org.bukkit.util.StructureSearchResult structureSearchResult = world.locateNearestStructure(location, structureType, radius, findUnexplored);
         if (structureSearchResult == null) {
             return null;
@@ -2063,10 +2060,10 @@ public final class CraftServer implements Server {
         BlockPos structurePosition = new BlockPos(structureLocation.getBlockX(), structureLocation.getBlockY(), structureLocation.getBlockZ());
 
         // Create map with showIcons = true, unlimitedTracking = true
-        net.minecraft.world.item.ItemStack stack = MapItem.create(worldServer, structurePosition.getX(), structurePosition.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
-        MapItem.renderBiomePreviewMap(worldServer, stack);
+        net.minecraft.world.item.ItemStack stack = MapItem.create(level, structurePosition.getX(), structurePosition.getZ(), MapView.Scale.NORMAL.getValue(), true, true);
+        MapItem.renderBiomePreviewMap(level, stack);
         // "+" map ID taken from VillagerTrades$TreasureMapForEmeralds
-        MapItem.getSavedData(stack, worldServer).addTargetDecoration(stack, structurePosition, "+", CraftMapCursor.CraftType.bukkitToMinecraftHolder(mapIcon));
+        MapItemSavedData.addTargetDecoration(stack, structurePosition, "+", CraftMapCursor.CraftType.bukkitToMinecraftHolder(mapIcon));
 
         return CraftItemStack.asBukkitCopy(stack);
     }
@@ -2100,9 +2097,7 @@ public final class CraftServer implements Server {
         }
 
         BroadcastMessageEvent broadcastMessageEvent = new BroadcastMessageEvent(!Bukkit.isPrimaryThread(), message, recipients); // Paper - Adventure
-        this.getPluginManager().callEvent(broadcastMessageEvent);
-
-        if (broadcastMessageEvent.isCancelled()) {
+        if (!broadcastMessageEvent.callEvent()) {
             return 0;
         }
 
@@ -2597,9 +2592,9 @@ public final class CraftServer implements Server {
         }
 
         TabCompleteEvent tabEvent = new TabCompleteEvent(player, message, offers, message.startsWith("/") || forceCommand, pos != null ? CraftLocation.toBukkit(BlockPos.containing(pos), ((CraftWorld) player.getWorld()).getHandle()) : null); // Paper - AsyncTabCompleteEvent
-        this.getPluginManager().callEvent(tabEvent);
+        tabEvent.callEvent();
 
-        return tabEvent.isCancelled() ? Collections.EMPTY_LIST : tabEvent.getCompletions();
+        return tabEvent.isCancelled() ? Collections.emptyList() : tabEvent.getCompletions();
     }
 
     public List<String> tabCompleteCommand(Player player, String message, ServerLevel world, Vec3 pos) {
@@ -2637,7 +2632,7 @@ public final class CraftServer implements Server {
                 completions.add(p.getName());
             }
         }
-        this.pluginManager.callEvent(event);
+        event.callEvent();
 
         Iterator<?> it = completions.iterator();
         while (it.hasNext()) {

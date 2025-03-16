@@ -6,23 +6,17 @@ import com.mojang.serialization.Codec;
 import io.papermc.paper.FeatureHooks;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Objects;
-import java.util.concurrent.locks.LockSupport;
-import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.thread.ConsecutiveExecutor;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.biome.Biomes;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.DataLayer;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
@@ -30,9 +24,7 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.chunk.PalettedContainerRO;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.chunk.storage.EntityStorage;
 import net.minecraft.world.level.chunk.storage.SerializableChunkData;
-import net.minecraft.world.level.entity.PersistentEntitySectionManager;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.lighting.LevelLightEngine;
@@ -54,7 +46,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.plugin.Plugin;
 
 public class CraftChunk implements Chunk {
-    private final ServerLevel worldServer;
+    private final ServerLevel level;
     private final int x;
     private final int z;
     private static final PalettedContainer<net.minecraft.world.level.block.state.BlockState> emptyBlockIDs = FeatureHooks.emptyPalettedBlockContainer();
@@ -62,20 +54,20 @@ public class CraftChunk implements Chunk {
     private static final byte[] EMPTY_LIGHT = new byte[2048];
 
     public CraftChunk(net.minecraft.world.level.chunk.LevelChunk chunk) {
-        this.worldServer = chunk.level;
+        this.level = chunk.level;
         this.x = chunk.getPos().x;
         this.z = chunk.getPos().z;
     }
 
-    public CraftChunk(ServerLevel worldServer, int x, int z) {
-        this.worldServer = worldServer;
+    public CraftChunk(ServerLevel level, int x, int z) {
+        this.level = level;
         this.x = x;
         this.z = z;
     }
 
     @Override
     public World getWorld() {
-        return this.worldServer.getWorld();
+        return this.level.getWorld();
     }
 
     public CraftWorld getCraftWorld() {
@@ -84,12 +76,12 @@ public class CraftChunk implements Chunk {
 
     public ChunkAccess getHandle(ChunkStatus chunkStatus) {
         // Paper start - chunk system
-        net.minecraft.world.level.chunk.LevelChunk full = this.worldServer.getChunkIfLoaded(this.x, this.z);
+        net.minecraft.world.level.chunk.LevelChunk full = this.level.getChunkIfLoaded(this.x, this.z);
         if (full != null) {
             return full;
         }
         // Paper end - chunk system
-        ChunkAccess chunkAccess = this.worldServer.getChunk(this.x, this.z, chunkStatus);
+        ChunkAccess chunkAccess = this.level.getChunk(this.x, this.z, chunkStatus);
 
         // SPIGOT-7332: Get unwrapped extension
         if (chunkAccess instanceof ImposterProtoChunk extension) {
@@ -116,9 +108,9 @@ public class CraftChunk implements Chunk {
 
     @Override
     public Block getBlock(int x, int y, int z) {
-        CraftChunk.validateChunkCoordinates(this.worldServer.getMinY(), this.worldServer.getMaxY(), x, y, z);
+        CraftChunk.validateChunkCoordinates(this.level.getMinY(), this.level.getMaxY(), x, y, z);
 
-        return new CraftBlock(this.worldServer, new BlockPos((this.x << 4) | x, y, (this.z << 4) | z));
+        return new CraftBlock(this.level, new BlockPos((this.x << 4) | x, y, (this.z << 4) | z));
     }
 
     @Override
@@ -128,7 +120,7 @@ public class CraftChunk implements Chunk {
 
     @Override
     public Entity[] getEntities() {
-        return FeatureHooks.getChunkEntities(this.worldServer, this.x, this.z); // Paper - chunk system
+        return FeatureHooks.getChunkEntities(this.level, this.x, this.z); // Paper - chunk system
     }
 
     @Override
@@ -150,7 +142,7 @@ public class CraftChunk implements Chunk {
 
         for (BlockPos position : chunk.blockEntities.keySet()) {
             // Paper start
-            entities[index++] = this.worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState(useSnapshot);
+            entities[index++] = this.level.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState(useSnapshot);
         }
 
         return entities;
@@ -167,7 +159,7 @@ public class CraftChunk implements Chunk {
         java.util.List<BlockState> entities = new java.util.ArrayList<>();
 
         for (BlockPos position : chunk.blockEntities.keySet()) {
-            Block block = this.worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
+            Block block = this.level.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
             if (blockPredicate.test(block)) {
                 entities.add(block.getState(useSnapshot));
             }
@@ -206,7 +198,7 @@ public class CraftChunk implements Chunk {
     @Override
     public boolean isSlimeChunk() {
         // 987234911L is deterimined in EntitySlime when seeing if a slime can spawn in a chunk
-        return this.worldServer.paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), worldServer.spigotConfig.slimeSeed).nextInt(10) == 0; // Paper
+        return this.level.paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), level.spigotConfig.slimeSeed).nextInt(10) == 0; // Paper
     }
 
     @Override
@@ -317,10 +309,10 @@ public class CraftChunk implements Chunk {
             // Paper end - Fix ChunkSnapshot#isSectionEmpty(int)
 
             if (includeLightData) { // Paper - Add getChunkSnapshot includeLightData parameter
-            LevelLightEngine lightengine = this.worldServer.getLightEngine();
+            LevelLightEngine lightengine = this.level.getLightEngine();
             DataLayer skyLightArray = lightengine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
             if (skyLightArray == null) {
-                sectionSkyLights[i] = this.worldServer.dimensionType().hasSkyLight() ? CraftChunk.FULL_LIGHT : CraftChunk.EMPTY_LIGHT;
+                sectionSkyLights[i] = this.level.dimensionType().hasSkyLight() ? CraftChunk.FULL_LIGHT : CraftChunk.EMPTY_LIGHT;
             } else {
                 sectionSkyLights[i] = new byte[2048];
                 System.arraycopy(skyLightArray.getData(), 0, sectionSkyLights[i], 0, 2048);
@@ -357,7 +349,7 @@ public class CraftChunk implements Chunk {
 
     @Override
     public LoadLevel getLoadLevel() {
-        net.minecraft.world.level.chunk.LevelChunk chunk = this.worldServer.getChunkIfLoaded(this.getX(), this.getZ());
+        net.minecraft.world.level.chunk.LevelChunk chunk = this.level.getChunkIfLoaded(this.getX(), this.getZ());
         if (chunk == null) {
             return LoadLevel.UNLOADED;
         }
@@ -388,12 +380,12 @@ public class CraftChunk implements Chunk {
 
         if (this.x != that.x) return false;
         if (this.z != that.z) return false;
-        return this.worldServer.equals(that.worldServer);
+        return this.level.equals(that.level);
     }
 
     @Override
     public int hashCode() {
-        int result = this.worldServer.hashCode();
+        int result = this.level.hashCode();
         result = 31 * result + this.x;
         result = 31 * result + this.z;
         return result;

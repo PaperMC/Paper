@@ -2237,18 +2237,17 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     private void refreshPlayer() {
         ServerPlayer handle = this.getHandle();
-        Location loc = this.getLocation();
 
         ServerGamePacketListenerImpl connection = handle.connection;
 
-        //Respawn the player then update their position and selected slot
-        ServerLevel worldserver = handle.serverLevel();
-        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(handle.createCommonSpawnInfo(worldserver), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA));
+        // Respawn the player then update their position and selected slot
+        ServerLevel level = handle.serverLevel();
+        connection.send(new net.minecraft.network.protocol.game.ClientboundRespawnPacket(handle.createCommonSpawnInfo(level), net.minecraft.network.protocol.game.ClientboundRespawnPacket.KEEP_ALL_DATA));
         handle.onUpdateAbilities();
         connection.internalTeleport(net.minecraft.world.entity.PositionMoveRotation.of(this.getHandle()), java.util.Collections.emptySet());
         net.minecraft.server.players.PlayerList playerList = handle.server.getPlayerList();
         playerList.sendPlayerPermissionLevel(handle, false);
-        playerList.sendLevelInfo(handle, worldserver);
+        playerList.sendLevelInfo(handle, level);
         playerList.sendAllPlayerInfo(handle);
 
         // Resend their XP and effects because the respawn packet resets it
@@ -2381,9 +2380,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
     // Paper end - getLastPlayed replacement API
 
-    public void readExtraData(CompoundTag nbttagcompound) {
+    public void readExtraData(CompoundTag tag) {
         this.hasPlayedBefore = true;
-        nbttagcompound.getCompound("bukkit").ifPresent(data -> {
+        tag.getCompound("bukkit").ifPresent(data -> {
             this.firstPlayed = data.getLongOr("firstPlayed", 0);
             this.lastPlayed = data.getLongOr("lastPlayed", 0);
 
@@ -2396,14 +2395,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         });
     }
 
-    public void setExtraData(CompoundTag compoundTag) {
+    public void setExtraData(CompoundTag tag) {
         this.lastSaveTime = System.currentTimeMillis(); // Paper
 
-        if (!compoundTag.contains("bukkit")) {
-            compoundTag.put("bukkit", new CompoundTag());
+        if (!tag.contains("bukkit")) {
+            tag.put("bukkit", new CompoundTag());
         }
 
-        CompoundTag data = compoundTag.getCompoundOrEmpty("bukkit");
+        CompoundTag data = tag.getCompoundOrEmpty("bukkit");
         ServerPlayer handle = this.getHandle();
         data.putInt("newExp", handle.newExp);
         data.putInt("newTotalExp", handle.newTotalExp);
@@ -2415,11 +2414,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         data.putString("lastKnownName", handle.getScoreboardName());
 
         // Paper start - persist for use in offline save data
-        if (!compoundTag.contains("Paper")) {
-            compoundTag.put("Paper", new CompoundTag());
+        if (!tag.contains("Paper")) {
+            tag.put("Paper", new CompoundTag());
         }
 
-        CompoundTag paper = compoundTag.getCompoundOrEmpty("Paper");
+        CompoundTag paper = tag.getCompoundOrEmpty("Paper");
         paper.putLong("LastLogin", handle.loginTime);
         paper.putLong("LastSeen", System.currentTimeMillis());
         // Paper end
@@ -3300,11 +3299,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         final ServerPlayer player = this.getHandle();
         final ServerGamePacketListenerImpl connection = player.connection;
         final net.minecraft.world.entity.player.Inventory inventory = player.getInventory();
-        final int slot = inventory.items.size() + inventory.selected;
+        final int slot = inventory.getNonEquipmentItems().size() + inventory.getSelectedSlot();
         final int stateId = getHandle().containerMenu.getStateId();
         connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, item));
         connection.send(new net.minecraft.network.protocol.game.ClientboundOpenBookPacket(net.minecraft.world.InteractionHand.MAIN_HAND));
-        connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, inventory.getSelected()));
+        connection.send(new net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket(0, stateId, slot, inventory.getSelectedItem()));
     }
 
     @Override

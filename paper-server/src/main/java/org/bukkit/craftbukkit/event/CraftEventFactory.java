@@ -1858,16 +1858,16 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static BlockDispenseLootEvent callBlockDispenseLootEvent(ServerLevel worldServer, BlockPos blockPosition, net.minecraft.world.entity.player.Player player, List<ItemStack> rewardLoot) {
+    public static BlockDispenseLootEvent callBlockDispenseLootEvent(ServerLevel level, BlockPos blockPosition, net.minecraft.world.entity.player.Player player, List<ItemStack> rewardLoot) {
         List<org.bukkit.inventory.ItemStack> craftItemStacks = rewardLoot.stream().map(CraftItemStack::asBukkitCopy).collect(Collectors.toList());
 
-        BlockDispenseLootEvent event = new BlockDispenseLootEvent((player == null) ? null : (Player) player.getBukkitEntity(), CraftBlock.at(worldServer, blockPosition), craftItemStacks);
+        BlockDispenseLootEvent event = new BlockDispenseLootEvent((player == null) ? null : (Player) player.getBukkitEntity(), CraftBlock.at(level, blockPosition), craftItemStacks);
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }
 
-    public static VaultDisplayItemEvent callVaultDisplayItemEvent(ServerLevel worldServer, BlockPos blockPosition, ItemStack displayitemStack) {
-        VaultDisplayItemEvent event = new VaultDisplayItemEvent(CraftBlock.at(worldServer, blockPosition), CraftItemStack.asBukkitCopy(displayitemStack));
+    public static VaultDisplayItemEvent callVaultDisplayItemEvent(ServerLevel level, BlockPos blockPosition, ItemStack displayitemStack) {
+        VaultDisplayItemEvent event = new VaultDisplayItemEvent(CraftBlock.at(level, blockPosition), CraftItemStack.asBukkitCopy(displayitemStack));
         Bukkit.getPluginManager().callEvent(event);
         return event;
     }

@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.util;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
@@ -39,48 +40,30 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
         return super.addFreshEntity(arg0, arg1);
     }
 
-    // Paper start - Don't fire sync event during generation; don't override these methods so all entities are run through addFreshEntity
-    // @Override
-    // public void addFreshEntityWithPassengers(Entity entity) {
-    //     if (this.structureTransformer != null && !this.structureTransformer.transformEntity(entity)) {
-    //         return;
-    //     }
-    //     super.addFreshEntityWithPassengers(entity);
-    // }
-    //
-    // @Override
-    // public void addFreshEntityWithPassengers(Entity arg0, SpawnReason arg1) {
-    //     if (this.structureTransformer != null && !this.structureTransformer.transformEntity(arg0)) {
-    //         return;
-    //     }
-    //     super.addFreshEntityWithPassengers(arg0, arg1);
-    // }
-    // Paper end - Don't fire sync event during generation; don't override these methods
-
     public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, int i, int j) {
         if (this.structureTransformer != null) {
             craftBlockState = this.structureTransformer.transformCraftState(craftBlockState);
         }
         // This code is based on the method 'net.minecraft.world.level.levelgen.structure.StructurePiece#placeBlock'
         // It ensures that any kind of block is updated correctly upon placing it
-        BlockState iblockdata = craftBlockState.getHandle();
-        boolean result = super.setBlock(position, iblockdata, i, j);
-        FluidState fluid = this.getFluidState(position);
-        if (!fluid.isEmpty()) {
-            this.scheduleTick(position, fluid.getType(), 0);
+        BlockState snapshot = craftBlockState.getHandle();
+        boolean result = super.setBlock(position, snapshot, i, j);
+        FluidState fluidState = this.getFluidState(position);
+        if (!fluidState.isEmpty()) {
+            this.scheduleTick(position, fluidState.getType(), 0);
         }
-        if (StructurePiece.SHAPE_CHECK_BLOCKS.contains(iblockdata.getBlock())) {
+        if (StructurePiece.SHAPE_CHECK_BLOCKS.contains(snapshot.getBlock())) {
             this.getChunk(position).markPosForPostprocessing(position);
         }
-        BlockEntity tileEntity = this.getBlockEntity(position);
-        if (tileEntity != null && craftBlockState instanceof CraftBlockEntityState<?> craftEntityState) {
-            tileEntity.loadWithComponents(craftEntityState.getSnapshotNBT(), this.registryAccess());
+        BlockEntity blockEntity = this.getBlockEntity(position);
+        if (blockEntity != null && craftBlockState instanceof CraftBlockEntityState<?> craftEntityState) {
+            blockEntity.loadWithComponents(craftEntityState.getSnapshotNBT(), this.registryAccess());
         }
         return result;
     }
 
-    public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, int i) {
-        return this.setCraftBlock(position, craftBlockState, i, 512);
+    public boolean setCraftBlock(BlockPos pos, CraftBlockState craftBlockState, int flags) {
+        return this.setCraftBlock(pos, craftBlockState, flags, Block.UPDATE_LIMIT);
     }
 
     @Override
@@ -93,6 +76,6 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
 
     @Override
     public boolean setBlock(BlockPos pos, BlockState state, int flags) {
-        return this.setBlock(pos, state, flags, 512);
+        return this.setBlock(pos, state, flags, Block.UPDATE_LIMIT);
     }
 }

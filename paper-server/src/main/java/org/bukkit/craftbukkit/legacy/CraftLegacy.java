@@ -82,10 +82,10 @@ public final class CraftLegacy {
 
         if (mappedData == null && material.isBlock()) {
             Block block = CraftMagicNumbers.getBlock(material);
-            BlockState blockData = block.defaultBlockState();
+            BlockState state = block.defaultBlockState();
 
             // Try exact match first
-            mappedData = CraftLegacy.dataToMaterial.get(blockData);
+            mappedData = CraftLegacy.dataToMaterial.get(state);
             // Fallback to any block
             if (mappedData == null) {
                 mappedData = CraftLegacy.blockToMaterial.get(block);
@@ -153,22 +153,22 @@ public final class CraftLegacy {
         return Items.AIR;
     }
 
-    public static byte toLegacyData(BlockState blockData) {
-        return CraftLegacy.toLegacy(blockData).getData();
+    public static byte toLegacyData(BlockState state) {
+        return CraftLegacy.toLegacy(state).getData();
     }
 
-    public static Material toLegacyMaterial(BlockState blockData) {
-        return CraftLegacy.toLegacy(blockData).getItemType();
+    public static Material toLegacyMaterial(BlockState state) {
+        return CraftLegacy.toLegacy(state).getItemType();
     }
 
-    public static MaterialData toLegacy(BlockState blockData) {
+    public static MaterialData toLegacy(BlockState state) {
         MaterialData mappedData;
 
         // Try exact match first
-        mappedData = CraftLegacy.dataToMaterial.get(blockData);
+        mappedData = CraftLegacy.dataToMaterial.get(state);
         // Fallback to any block
         if (mappedData == null) {
-            mappedData = CraftLegacy.blockToMaterial.get(blockData.getBlock());
+            mappedData = CraftLegacy.blockToMaterial.get(state.getBlock());
         }
 
         return (mappedData == null) ? new MaterialData(Material.LEGACY_AIR) : mappedData;

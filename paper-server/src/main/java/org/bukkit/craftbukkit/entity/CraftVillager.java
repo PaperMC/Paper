@@ -141,8 +141,8 @@ public class CraftVillager extends CraftAbstractVillager implements Villager {
         Preconditions.checkState(!this.getHandle().generation, "Cannot sleep during world generation");
 
         BlockPos position = CraftLocation.toBlockPosition(location);
-        BlockState iblockdata = this.getHandle().level().getBlockState(position);
-        if (!(iblockdata.getBlock() instanceof BedBlock)) {
+        BlockState state = this.getHandle().level().getBlockState(position);
+        if (!(state.getBlock() instanceof BedBlock)) {
             return false;
         }
 

@@ -727,10 +727,16 @@ public interface Tag<T extends Keyed> extends Keyed {
      */
     Tag<Material> MANGROVE_ROOTS_CAN_GROW_THROUGH = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("mangrove_roots_can_grow_through"), Material.class);
     /**
-     * Vanilla block tag representing all blocks which dead bushes may be placed
-     * on.
+     * Vanilla block tag representing all blocks which dry vegetation may be placed on.
      */
-    Tag<Material> DEAD_BUSH_MAY_PLACE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("dead_bush_may_place_on"), Material.class);
+    Tag<Material> DRY_VEGETATION_MAY_PLACE_ON = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("dry_vegetation_may_place_on"), Material.class);
+    /**
+     * Vanilla block tag representing all blocks which dead bushes may be placed on.
+     *
+     * @deprecated partially replaced by {@link #DRY_VEGETATION_MAY_PLACE_ON}
+     */
+    @Deprecated(since = "1.21.5", forRemoval = true)
+    Tag<Material> DEAD_BUSH_MAY_PLACE_ON = DRY_VEGETATION_MAY_PLACE_ON;
     /**
      * Vanilla block tag representing all blocks which snap dropped goat horns.
      */
