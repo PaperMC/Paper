@@ -362,7 +362,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
     @Override
     @Deprecated
     public void setVisualFire(boolean fire) {
-        setVisualFire(TriState.byBoolean(fire));
+        setVisualFire(fire ? TriState.TRUE : TriState.NOT_SET);
     }
 
     @Override
