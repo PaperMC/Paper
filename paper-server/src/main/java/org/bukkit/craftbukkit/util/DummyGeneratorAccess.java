@@ -104,7 +104,7 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void playSound(Player source, BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch) {
+    public void playSound(Entity source, BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
@@ -114,7 +114,7 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public void levelEvent(Player player, int eventId, BlockPos pos, int data) {
+    public void levelEvent(Entity entity, int eventId, BlockPos pos, int data) {
         // Used by PowderSnowBlock.removeFluid
     }
 

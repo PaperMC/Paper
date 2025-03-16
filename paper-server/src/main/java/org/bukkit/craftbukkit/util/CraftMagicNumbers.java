@@ -351,7 +351,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 //MinecraftServer.getServer().getPlayerList().reload();
                 MinecraftServer.getServer().getPlayerList().getPlayers().forEach(player -> {
                     player.getAdvancements().reload(MinecraftServer.getServer().getAdvancements());
-                    player.getAdvancements().flushDirty(player);
+                    player.getAdvancements().flushDirty(player, false);
                 });
                 // Paper end - Fix client lag on advancement loading
 
@@ -524,7 +524,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
 
         CompoundTag compound = deserializeNbtFromBytes(data);
-        final int dataVersion = compound.getInt("DataVersion");
+        final int dataVersion = compound.getIntOr("DataVersion", 0);
         compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, MinecraftServer.getServer().fixerUpper, compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
     }
@@ -622,7 +622,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(data.length > 0, "Cannot deserialize empty data");
 
         CompoundTag compound = deserializeNbtFromBytes(data);
-        int dataVersion = compound.getInt("DataVersion");
+        int dataVersion = compound.getIntOr("DataVersion", 0);
         compound = PlatformHooks.get().convertNBT(References.ENTITY, MinecraftServer.getServer().fixerUpper, compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
         if (!preservePassengers) {
             compound.remove("Passengers");
@@ -638,16 +638,15 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
         net.minecraft.world.entity.Entity nmsEntity = net.minecraft.world.entity.EntityType.create(compound, world, net.minecraft.world.entity.EntitySpawnReason.LOAD)
             .orElseThrow(() -> new IllegalArgumentException("An ID was not found for the data. Did you downgrade?"));
-        if (compound.contains("Passengers", Tag.TAG_LIST)) {
-            ListTag passengersCompound = compound.getList("Passengers", Tag.TAG_COMPOUND);
-            for (Tag tag : passengersCompound) {
-                if (!(tag instanceof CompoundTag serializedPassenger)) {
+        compound.getList("Passengers").ifPresent(passengers -> {
+            for (final Tag tag : passengers) {
+                if (!(tag instanceof final CompoundTag serializedPassenger)) {
                     continue;
                 }
-                net.minecraft.world.entity.Entity passengerEntity = deserializeEntity(serializedPassenger, world, preserveUUID);
+                final net.minecraft.world.entity.Entity passengerEntity = deserializeEntity(serializedPassenger, world, preserveUUID);
                 passengerEntity.startRiding(nmsEntity, true);
             }
-        }
+        });
         return nmsEntity;
     }
 
@@ -674,7 +673,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        int dataVersion = compound.getInt("DataVersion");
+        int dataVersion = compound.getIntOr("DataVersion", 0);
         Preconditions.checkArgument(dataVersion <= getDataVersion(), "Newer version! Server downgrades are not supported!");
         return compound;
     }

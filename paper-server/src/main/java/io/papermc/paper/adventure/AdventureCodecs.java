@@ -125,15 +125,15 @@ public final class AdventureCodecs {
     }
 
     static Codec<HoverEvent.ShowItem> showItemCodec(final Codec<Component> componentCodec) {
-        return net.minecraft.network.chat.HoverEvent.ItemStackInfo.CODEC.xmap(isi -> {
-            @Subst("key") final String typeKey = isi.item.unwrapKey().orElseThrow().location().toString();
-            return HoverEvent.ShowItem.showItem(Key.key(typeKey), isi.count, PaperAdventure.asAdventure(isi.getItemStack().getComponentsPatch()));
-        }, si -> {
-            final Item itemType = BuiltInRegistries.ITEM.getValue(PaperAdventure.asVanilla(si.item()));
-            final Map<Key, DataComponentValue> dataComponentsMap = si.dataComponents();
-            final ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.wrapAsHolder(itemType), si.count(), PaperAdventure.asVanilla(dataComponentsMap));
-            return new net.minecraft.network.chat.HoverEvent.ItemStackInfo(stack);
-        });
+        return net.minecraft.network.chat.HoverEvent.ShowItem.CODEC.xmap(internal -> {
+            @Subst("key") final String typeKey = internal.item().getItemHolder().unwrapKey().orElseThrow().location().toString();
+            return HoverEvent.ShowItem.showItem(Key.key(typeKey), internal.item().getCount(), PaperAdventure.asAdventure(internal.item().getComponentsPatch()));
+        }, adventure -> {
+            final Item itemType = BuiltInRegistries.ITEM.getValue(PaperAdventure.asVanilla(adventure.item()));
+            final Map<Key, DataComponentValue> dataComponentsMap = adventure.dataComponents();
+            final ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.wrapAsHolder(itemType), adventure.count(), PaperAdventure.asVanilla(dataComponentsMap));
+            return new net.minecraft.network.chat.HoverEvent.ShowItem(stack);
+        }).codec();
     }
 
     static final HoverEventType<HoverEvent.ShowEntity> SHOW_ENTITY_HOVER_EVENT_TYPE = new HoverEventType<>(AdventureCodecs::showEntityCodec, HoverEvent.Action.SHOW_ENTITY, "show_entity", AdventureCodecs::legacyDeserializeEntity);
@@ -143,11 +143,11 @@ public final class AdventureCodecs {
 
     static DataResult<HoverEvent.ShowEntity> legacyDeserializeEntity(final Component component, final @Nullable RegistryOps<?> ops, final Codec<Component> componentCodec) {
         try {
-            final CompoundTag tag = TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(component));
+            final CompoundTag tag = TagParser.parseCompoundFully(PlainTextComponentSerializer.plainText().serialize(component));
             final DynamicOps<JsonElement> dynamicOps = ops != null ? ops.withParent(JsonOps.INSTANCE) : JsonOps.INSTANCE;
-            final DataResult<Component> entityNameResult = componentCodec.parse(dynamicOps, JsonParser.parseString(tag.getString("name")));
-            @Subst("key") final String keyString = tag.getString("type");
-            final UUID entityUUID = UUID.fromString(tag.getString("id"));
+            final DataResult<Component> entityNameResult = componentCodec.parse(dynamicOps, JsonParser.parseString(tag.getStringOr("name", "")));
+            @Subst("key") final String keyString = tag.getStringOr("type", "");
+            final UUID entityUUID = UUID.fromString(tag.getStringOr("id", ""));
             return entityNameResult.map(name -> HoverEvent.ShowEntity.showEntity(Key.key(keyString), entityUUID, name));
         } catch (final Exception ex) {
             return DataResult.error(() -> "Failed to parse tooltip: " + ex.getMessage());
@@ -156,7 +156,7 @@ public final class AdventureCodecs {
 
     static DataResult<HoverEvent.ShowItem> legacyDeserializeItem(final Component component, final @Nullable RegistryOps<?> ops, final Codec<Component> componentCodec) {
         try {
-            final CompoundTag tag = TagParser.parseTag(PlainTextComponentSerializer.plainText().serialize(component));
+            final CompoundTag tag = TagParser.parseCompoundFully(PlainTextComponentSerializer.plainText().serialize(component));
             final DynamicOps<Tag> dynamicOps = ops != null ? ops.withParent(NbtOps.INSTANCE) : NbtOps.INSTANCE;
             final DataResult<ItemStack> stackResult = ItemStack.CODEC.parse(dynamicOps, tag);
             return stackResult.map(stack -> {

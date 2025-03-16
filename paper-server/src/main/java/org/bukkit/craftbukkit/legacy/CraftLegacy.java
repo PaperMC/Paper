@@ -361,8 +361,8 @@ public final class CraftLegacy {
                                 continue;
                             }
 
-                            Preconditions.checkState(!properties.getString(dataKey).isEmpty(), "Empty data string");
-                            Optional opt = state.getValue(properties.getString(dataKey));
+                            Preconditions.checkState(properties.getString(dataKey).isPresent(), "Empty data string");
+                            Optional opt = state.getValue(properties.getStringOr(dataKey, ""));
                             Preconditions.checkArgument(opt.isPresent(), "No state value %s for %s", properties.getString(dataKey), dataKey);
 
                             blockData = blockData.setValue(state, (Comparable) opt.get());

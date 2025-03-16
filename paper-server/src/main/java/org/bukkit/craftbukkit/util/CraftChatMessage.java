@@ -368,7 +368,7 @@ public final class CraftChatMessage {
                     extras.add(prev);
 
                     MutableComponent link = Component.literal(matcher.group());
-                    Style linkModi = modifier.withClickEvent(new ClickEvent(Action.OPEN_URL, match));
+                    Style linkModi = modifier.withClickEvent(new ClickEvent.OpenUrl(URI.create(match)));
                     link.setStyle(linkModi);
                     extras.add(link);
 

@@ -749,20 +749,20 @@ public class CraftEventFactory {
                 // Paper start - Maximum exp value when merging; Whole section has been tweaked, see comments for specifics
                 final long maxValue = world.paperConfig().entities.behavior.experienceMergeMaxValue;
                 final boolean mergeUnconditionally = maxValue <= 0;
-                if (mergeUnconditionally || xp.value < maxValue) { // Paper - Skip iteration if unnecessary
+                if (mergeUnconditionally || xp.getValue() < maxValue) { // Paper - Skip iteration if unnecessary
 
                 List<Entity> entities = world.getEntities(entity, entity.getBoundingBox().inflate(radius, radius, radius));
                 for (Entity e : entities) {
                     if (e instanceof net.minecraft.world.entity.ExperienceOrb loopItem) {
                         // Paper start
-                        if (!loopItem.isRemoved() && xp.count == loopItem.count && (mergeUnconditionally || loopItem.value < maxValue) && new com.destroystokyo.paper.event.entity.ExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) entity.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) loopItem.getBukkitEntity()).callEvent()) { // Paper - ExperienceOrbMergeEvent
-                            long newTotal = (long)xp.value + (long)loopItem.value;
+                        if (!loopItem.isRemoved() && xp.count == loopItem.count && (mergeUnconditionally || loopItem.getValue() < maxValue) && new com.destroystokyo.paper.event.entity.ExperienceOrbMergeEvent((org.bukkit.entity.ExperienceOrb) entity.getBukkitEntity(), (org.bukkit.entity.ExperienceOrb) loopItem.getBukkitEntity()).callEvent()) { // Paper - ExperienceOrbMergeEvent
+                            long newTotal = (long)xp.getValue() + (long)loopItem.getValue();
                             if ((int) newTotal < 0) continue; // Overflow
                             if (!mergeUnconditionally && newTotal > maxValue) {
-                                loopItem.value = (int) (newTotal - maxValue);
-                                xp.value = (int) maxValue;
+                                loopItem.setValue((int) (newTotal - maxValue));
+                                xp.setValue((int) maxValue);
                             } else {
-                            xp.value += loopItem.value;
+                            xp.setValue(xp.getValue() + loopItem.getValue());
                             loopItem.discard(null); // Add Bukkit remove cause
                             } // Paper end - Maximum exp value when merging
                         }
@@ -1030,7 +1030,7 @@ public class CraftEventFactory {
         if (event.isCancelled()) {
             return event;
         }
-        playDeathSound(victim, event);
+        playDeathSound(victim, event, damageSource);
         // Paper end
 
         victim.keepLevel = event.getKeepLevel();
@@ -2001,29 +2001,29 @@ public class CraftEventFactory {
     /**
      * Raid events
      */
-    public static boolean callRaidTriggerEvent(Raid raid, ServerPlayer player) {
-        RaidTriggerEvent event = new RaidTriggerEvent(new CraftRaid(raid), raid.getLevel().getWorld(), player.getBukkitEntity());
+    public static boolean callRaidTriggerEvent(Level level, Raid raid, ServerPlayer player) {
+        RaidTriggerEvent event = new RaidTriggerEvent(new CraftRaid(raid), level.getWorld(), player.getBukkitEntity());
         Bukkit.getPluginManager().callEvent(event);
         return !event.isCancelled();
     }
 
-    public static void callRaidFinishEvent(Raid raid, List<Player> players) {
-        RaidFinishEvent event = new RaidFinishEvent(new CraftRaid(raid), raid.getLevel().getWorld(), players);
+    public static void callRaidFinishEvent(Level level, Raid raid, List<Player> players) {
+        RaidFinishEvent event = new RaidFinishEvent(new CraftRaid(raid), level.getWorld(), players);
         Bukkit.getPluginManager().callEvent(event);
     }
 
-    public static void callRaidStopEvent(Raid raid, RaidStopEvent.Reason reason) {
-        RaidStopEvent event = new RaidStopEvent(new CraftRaid(raid), raid.getLevel().getWorld(), reason);
+    public static void callRaidStopEvent(Level level, Raid raid, RaidStopEvent.Reason reason) {
+        RaidStopEvent event = new RaidStopEvent(new CraftRaid(raid), level.getWorld(), reason);
         Bukkit.getPluginManager().callEvent(event);
     }
 
-    public static void callRaidSpawnWaveEvent(Raid raid, net.minecraft.world.entity.raid.Raider leader, Set<net.minecraft.world.entity.raid.Raider> raiders) {
+    public static void callRaidSpawnWaveEvent(Level level, Raid raid, net.minecraft.world.entity.raid.Raider leader, Set<net.minecraft.world.entity.raid.Raider> raiders) {
         Raider bukkitLeader = (Raider) leader.getBukkitEntity();
         List<Raider> bukkitRaiders = new ArrayList<>(raiders.size());
         for (net.minecraft.world.entity.raid.Raider raider : raiders) {
             bukkitRaiders.add((Raider) raider.getBukkitEntity());
         }
-        RaidSpawnWaveEvent event = new RaidSpawnWaveEvent(new CraftRaid(raid), raid.getLevel().getWorld(), bukkitLeader, bukkitRaiders);
+        RaidSpawnWaveEvent event = new RaidSpawnWaveEvent(new CraftRaid(raid), level.getWorld(), bukkitLeader, bukkitRaiders);
         event.callEvent();
     }
 

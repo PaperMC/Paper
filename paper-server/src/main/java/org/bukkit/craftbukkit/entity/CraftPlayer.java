@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.entity;
 
+import com.destroystokyo.paper.event.player.PlayerSetSpawnEvent;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -1561,11 +1562,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public Location getRespawnLocation() {
-        ServerLevel world = this.getHandle().server.getLevel(this.getHandle().getRespawnDimension());
-        BlockPos bed = this.getHandle().getRespawnPosition();
+        final ServerPlayer.RespawnConfig respawnConfig = this.getHandle().getRespawnConfig();
+        if (respawnConfig == null) return null;
 
-        if (world != null && bed != null) {
-            Optional<ServerPlayer.RespawnPosAngle> spawnLoc = ServerPlayer.findRespawnAndUseSpawnBlock(world, bed, this.getHandle().getRespawnAngle(), this.getHandle().isRespawnForced(), true);
+        ServerLevel world = this.getHandle().server.getLevel(respawnConfig.dimension());
+        if (world != null) {
+            Optional<ServerPlayer.RespawnPosAngle> spawnLoc = ServerPlayer.findRespawnAndUseSpawnBlock(world, respawnConfig, true);
             if (spawnLoc.isPresent()) {
                 ServerPlayer.RespawnPosAngle vec = spawnLoc.get();
                 return CraftLocation.toBukkit(vec.position(), world.getWorld(), vec.yaw(), 0);
@@ -1592,9 +1594,18 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void setRespawnLocation(Location location, boolean override) {
         if (location == null) {
-            this.getHandle().setRespawnPosition(null, null, 0.0F, override, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLUGIN); // Paper - Add PlayerSetSpawnEvent
+            this.getHandle().setRespawnPosition(null, false, PlayerSetSpawnEvent.Cause.PLUGIN);
         } else {
-            this.getHandle().setRespawnPosition(((CraftWorld) location.getWorld()).getHandle().dimension(), CraftLocation.toBlockPosition(location), location.getYaw(), override, false, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.PLUGIN); // Paper - Add PlayerSetSpawnEvent
+            this.getHandle().setRespawnPosition(
+                new ServerPlayer.RespawnConfig(
+                    ((CraftWorld) location.getWorld()).getHandle().dimension(),
+                    CraftLocation.toBlockPosition(location),
+                    location.getYaw(),
+                    override
+                ),
+                false,
+                PlayerSetSpawnEvent.Cause.PLUGIN
+            );
         }
     }
 
@@ -1612,7 +1623,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public Location getBedLocation() {
         Preconditions.checkState(this.isSleeping(), "Not sleeping");
 
-        BlockPos bed = this.getHandle().getRespawnPosition();
+        BlockPos bed = this.getHandle().getRespawnConfig().pos();
         return CraftLocation.toBukkit(bed, this.getWorld());
     }
 
@@ -1874,7 +1885,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         final net.minecraft.world.item.ItemStack itemstack = stackEntry.map(net.minecraft.world.item.enchantment.EnchantedItemInUse::itemStack).orElse(net.minecraft.world.item.ItemStack.EMPTY);
         if (!itemstack.isEmpty() && itemstack.getItem().components().has(net.minecraft.core.component.DataComponents.MAX_DAMAGE)) {
             net.minecraft.world.entity.ExperienceOrb orb = net.minecraft.world.entity.EntityType.EXPERIENCE_ORB.create(handle.level(), net.minecraft.world.entity.EntitySpawnReason.COMMAND);
-            orb.value = amount;
+            orb.setValue(amount);;
             orb.spawnReason = org.bukkit.entity.ExperienceOrb.SpawnReason.CUSTOM;
             orb.setPosRaw(handle.getX(), handle.getY(), handle.getZ());
 
@@ -2372,33 +2383,27 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     public void readExtraData(CompoundTag nbttagcompound) {
         this.hasPlayedBefore = true;
-        if (nbttagcompound.contains("bukkit")) {
-            CompoundTag data = nbttagcompound.getCompound("bukkit");
+        nbttagcompound.getCompound("bukkit").ifPresent(data -> {
+            this.firstPlayed = data.getLongOr("firstPlayed", 0);
+            this.lastPlayed = data.getLongOr("lastPlayed", 0);
 
-            if (data.contains("firstPlayed")) {
-                this.firstPlayed = data.getLong("firstPlayed");
-                this.lastPlayed = data.getLong("lastPlayed");
-            }
-
-            if (data.contains("newExp")) {
-                ServerPlayer handle = this.getHandle();
-                handle.newExp = data.getInt("newExp");
-                handle.newTotalExp = data.getInt("newTotalExp");
-                handle.newLevel = data.getInt("newLevel");
-                handle.expToDrop = data.getInt("expToDrop");
-                handle.keepLevel = data.getBoolean("keepLevel");
-            }
-        }
+            final ServerPlayer handle = getHandle();
+            handle.newExp = data.getIntOr("newExp", 0);
+            handle.newTotalExp = data.getIntOr("newTotalExp", 0);
+            handle.newLevel = data.getIntOr("newLevel", 0);
+            handle.expToDrop = data.getIntOr("expToDrop", 0);
+            handle.keepLevel = data.getBooleanOr("keepLevel", false);
+        });
     }
 
-    public void setExtraData(CompoundTag nbttagcompound) {
+    public void setExtraData(CompoundTag compoundTag) {
         this.lastSaveTime = System.currentTimeMillis(); // Paper
 
-        if (!nbttagcompound.contains("bukkit")) {
-            nbttagcompound.put("bukkit", new CompoundTag());
+        if (!compoundTag.contains("bukkit")) {
+            compoundTag.put("bukkit", new CompoundTag());
         }
 
-        CompoundTag data = nbttagcompound.getCompound("bukkit");
+        CompoundTag data = compoundTag.getCompoundOrEmpty("bukkit");
         ServerPlayer handle = this.getHandle();
         data.putInt("newExp", handle.newExp);
         data.putInt("newTotalExp", handle.newTotalExp);
@@ -2410,11 +2415,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         data.putString("lastKnownName", handle.getScoreboardName());
 
         // Paper start - persist for use in offline save data
-        if (!nbttagcompound.contains("Paper")) {
-            nbttagcompound.put("Paper", new CompoundTag());
+        if (!compoundTag.contains("Paper")) {
+            compoundTag.put("Paper", new CompoundTag());
         }
 
-        CompoundTag paper = nbttagcompound.getCompound("Paper");
+        CompoundTag paper = compoundTag.getCompoundOrEmpty("Paper");
         paper.putLong("LastLogin", handle.loginTime);
         paper.putLong("LastSeen", System.currentTimeMillis());
         // Paper end

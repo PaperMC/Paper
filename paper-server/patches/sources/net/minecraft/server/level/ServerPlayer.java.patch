@@ -355,13 +355,13 @@
 +        if (!keepInventory) {
 +            for (ItemStack item : this.getInventory().getContents()) {
 +                if (!item.isEmpty() && !EnchantmentHelper.has(item, net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)) {
-+                    loot.add(new DefaultDrop(item, stack -> this.drop(stack, true, false, false))); // Paper - Restore vanilla drops behavior; drop function taken from Inventory#dropAll (don't fire drop event)
++                    loot.add(new DefaultDrop(item, stack -> this.drop(stack, true, false, false, null))); // Paper - Restore vanilla drops behavior; drop function taken from Inventory#dropAll (don't fire drop event)
 +                }
 +            }
 +        }
 +        if (this.shouldDropLoot() && this.serverLevel().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) { // Paper - fix player loottables running when mob loot gamerule is false
 +            // SPIGOT-5071: manually add player loot tables (SPIGOT-5195 - ignores keepInventory rule)
-+            this.dropFromLootTable(this.serverLevel(), cause, this.lastHurtByPlayerTime > 0);
++            this.dropFromLootTable(this.serverLevel(), cause, this.lastHurtByPlayerMemoryTime > 0);
 +            // Paper - Restore vanilla drops behaviour; custom death loot is a noop on server player, remove.
 +            loot.addAll(this.drops);
 +            this.drops.clear(); // SPIGOT-5188: make sure to clear
@@ -558,7 +558,7 @@
 +        // CraftBukkit end
      }
  
-     private static Optional<ServerPlayer.RespawnPosAngle> findRespawnAndUseSpawnBlock(
+     public static Optional<ServerPlayer.RespawnPosAngle> findRespawnAndUseSpawnBlock(
 @@ -947,10 +_,10 @@
                  level.setBlock(blockPos, blockState.setValue(RespawnAnchorBlock.CHARGE, blockState.getValue(RespawnAnchorBlock.CHARGE) - 1), 3);
              }
@@ -1249,15 +1249,17 @@
      }
  
      @Override
-@@ -1820,12 +_,53 @@
-         this.setRespawnPosition(player.respawnConfig, false);
+@@ -1821,11 +_,56 @@
      }
  
--    public void setRespawnPosition(@Nullable ServerPlayer.RespawnConfig respawnConfig, boolean displayInChat) {
+     public void setRespawnPosition(@Nullable ServerPlayer.RespawnConfig respawnConfig, boolean displayInChat) {
 -        if (displayInChat && respawnConfig != null && !respawnConfig.isSamePosition(this.respawnConfig)) {
 -            this.sendSystemMessage(SPAWN_SET_MESSAGE);
 +    // Paper start - Add PlayerSetSpawnEvent
++        setRespawnPosition(respawnConfig, displayInChat, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause.UNKNOWN);
++    }
 +    public boolean setRespawnPosition(@Nullable ServerPlayer.RespawnConfig respawnConfig, boolean displayInChat, com.destroystokyo.paper.event.player.PlayerSetSpawnEvent.Cause cause) {
++    // Paper end - Add PlayerSetSpawnEvent
 +        org.bukkit.Location spawnLoc = null;
 +        boolean actuallyDisplayInChat = false;
 +        if (respawnConfig != null) {
