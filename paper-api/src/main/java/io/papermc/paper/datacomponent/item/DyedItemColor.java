@@ -13,11 +13,11 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface DyedItemColor extends ShownInTooltip<DyedItemColor> {
+public interface DyedItemColor {
 
     @Contract(value = "_, _ -> new", pure = true)
-    static DyedItemColor dyedItemColor(final Color color, final boolean showInTooltip) {
-        return dyedItemColor().color(color).showInTooltip(showInTooltip).build();
+    static DyedItemColor dyedItemColor(final Color color) {
+        return dyedItemColor().color(color).build();
     }
 
     @Contract(value = "-> new", pure = true)
@@ -38,7 +38,7 @@ public interface DyedItemColor extends ShownInTooltip<DyedItemColor> {
      */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
-    interface Builder extends ShownInTooltip.Builder<Builder>, DataComponentBuilder<DyedItemColor> {
+    interface Builder extends DataComponentBuilder<DyedItemColor> {
 
         /**
          * Sets the color of this builder.

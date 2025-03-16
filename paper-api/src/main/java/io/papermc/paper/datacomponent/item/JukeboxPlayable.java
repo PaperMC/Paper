@@ -13,7 +13,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface JukeboxPlayable extends ShownInTooltip<JukeboxPlayable> {
+public interface JukeboxPlayable  {
 
     @Contract(value = "_ -> new", pure = true)
     static JukeboxPlayable.Builder jukeboxPlayable(final JukeboxSong song) {
@@ -28,7 +28,7 @@ public interface JukeboxPlayable extends ShownInTooltip<JukeboxPlayable> {
      */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
-    interface Builder extends ShownInTooltip.Builder<JukeboxPlayable.Builder>, DataComponentBuilder<JukeboxPlayable> {
+    interface Builder extends DataComponentBuilder<JukeboxPlayable> {
 
         /**
          * Sets the jukebox song.
