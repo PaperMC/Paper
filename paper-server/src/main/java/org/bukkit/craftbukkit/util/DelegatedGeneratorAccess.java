@@ -688,8 +688,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
-        return this.handle.setBlock(pos, state, flags, maxUpdateDepth);
+    public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
+        return this.handle.setBlock(pos, state, flags, recursionLeft);
     }
 
     @Override

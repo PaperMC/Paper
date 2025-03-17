@@ -24,6 +24,10 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
         return this.structureTransformer;
     }
 
+    public boolean canTransformBlocks() {
+        return this.structureTransformer != null && this.structureTransformer.canTransformBlocks();
+    }
+
     @Override
     public boolean addFreshEntity(Entity entity) {
         if (this.structureTransformer != null && !this.structureTransformer.transformEntity(entity)) {
@@ -40,14 +44,12 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
         return super.addFreshEntity(arg0, arg1);
     }
 
-    public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, int i, int j) {
-        if (this.structureTransformer != null) {
-            craftBlockState = this.structureTransformer.transformCraftState(craftBlockState);
-        }
+    public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, int flags, int recursionLeft) {
+        craftBlockState = this.structureTransformer.transformCraftState(craftBlockState);
         // This code is based on the method 'net.minecraft.world.level.levelgen.structure.StructurePiece#placeBlock'
         // It ensures that any kind of block is updated correctly upon placing it
         BlockState snapshot = craftBlockState.getHandle();
-        boolean result = super.setBlock(position, snapshot, i, j);
+        boolean result = super.setBlock(position, snapshot, flags, recursionLeft);
         FluidState fluidState = this.getFluidState(position);
         if (!fluidState.isEmpty()) {
             this.scheduleTick(position, fluidState.getType(), 0);
@@ -67,11 +69,11 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, BlockState state, int flags, int maxUpdateDepth) {
-        if (this.structureTransformer == null || !this.structureTransformer.canTransformBlocks()) {
-            return super.setBlock(pos, state, flags, maxUpdateDepth);
+    public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
+        if (this.canTransformBlocks()) {
+            return this.setCraftBlock(pos, (CraftBlockState) CraftBlockStates.getBlockState(this, pos, state, null), flags, recursionLeft);
         }
-        return this.setCraftBlock(pos, (CraftBlockState) CraftBlockStates.getBlockState(this, pos, state, null), flags, maxUpdateDepth);
+        return super.setBlock(pos, state, flags, recursionLeft);
     }
 
     @Override
