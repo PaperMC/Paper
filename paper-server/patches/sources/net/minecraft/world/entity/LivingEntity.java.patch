@@ -177,14 +177,14 @@
 +                    this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                    if (event.isCancelled()) {
-+                        org.bukkit.inventory.ItemStack cur = player.getInventory().getItemInHand();
-+                        if (includeThrower && (cur == null || cur.getAmount() == 0)) {
++                        org.bukkit.inventory.ItemStack inHandItem = player.getInventory().getItemInMainHand();
++                        if (includeThrower && inHandItem.getAmount() == 0) {
 +                            // The complete stack was dropped
-+                            player.getInventory().setItemInHand(drop.getItemStack());
-+                        } else if (includeThrower && cur.isSimilar(drop.getItemStack()) && cur.getAmount() < cur.getMaxStackSize() && drop.getItemStack().getAmount() == 1) {
++                            player.getInventory().setItemInMainHand(drop.getItemStack());
++                        } else if (includeThrower && inHandItem.isSimilar(drop.getItemStack()) && inHandItem.getAmount() < inHandItem.getMaxStackSize() && drop.getItemStack().getAmount() == 1) {
 +                            // Only one item is dropped
-+                            cur.setAmount(cur.getAmount() + 1);
-+                            player.getInventory().setItemInHand(cur);
++                            inHandItem.setAmount(inHandItem.getAmount() + 1);
++                            player.getInventory().setItemInMainHand(inHandItem);
 +                        } else {
 +                            // Fallback
 +                            player.getInventory().addItem(drop.getItemStack());
@@ -533,7 +533,7 @@
  
 -            float f1 = this.applyItemBlocking(level, damageSource, amount);
 +            final float originalAmount = amount; // Paper - revert to vanilla #hurt - OBFHELPER
-+            float f1 = this.applyItemBlocking(level, damageSource, amount); // TODO: LOOK AT THE DAMAGE EVENTSTUFF
++            float f1 = this.applyItemBlocking(level, damageSource, amount, true); // Paper
 +            // Paper end
              amount -= f1;
              boolean flag = f1 > 0.0F;
@@ -647,13 +647,99 @@
              if (flag2) {
                  this.lastDamageSource = damageSource;
                  this.lastDamageStamp = this.level().getGameTime();
+@@ -1234,6 +_,12 @@
+     }
+ 
+     public float applyItemBlocking(ServerLevel level, DamageSource damageSource, float damageAmount) {
++        // Paper start
++        return applyItemBlocking(level, damageSource, damageAmount, false);
++    }
++
++    public float applyItemBlocking(ServerLevel level, DamageSource damageSource, float damageAmount, boolean dryRun) {
++        // Paper end
+         if (damageAmount <= 0.0F) {
+             return 0.0F;
+         } else {
+@@ -1258,10 +_,12 @@
+                         }
+ 
+                         float f = blocksAttacks.resolveBlockedDamage(damageSource, damageAmount, acos);
++                        if (!dryRun) { // Paper
+                         blocksAttacks.hurtBlockingItem(this.level(), itemBlockingWith, this, this.getUsedItemHand(), f);
+                         if (!damageSource.is(DamageTypeTags.IS_PROJECTILE) && damageSource.getDirectEntity() instanceof LivingEntity livingEntity) {
+                             this.blockUsingItem(level, livingEntity);
+                         }
++                        } // Paper
+ 
+                         return f;
+                     }
+@@ -1272,6 +_,59 @@
+         }
+     }
+ 
++    // Paper start - copied from above split by relevant part
++    public boolean canBlockAttack(DamageSource damageSource, float damageAmount) {
++        if (damageAmount <= 0.0F) {
++            return false;
++        } else {
++            ItemStack itemBlockingWith = this.getItemBlockingWith();
++            if (itemBlockingWith == null) {
++                return false;
++            } else {
++                BlocksAttacks blocksAttacks = itemBlockingWith.get(DataComponents.BLOCKS_ATTACKS);
++                if (blocksAttacks != null && !blocksAttacks.bypassedBy().map(damageSource::is).orElse(false)) {
++                    if (damageSource.getDirectEntity() instanceof AbstractArrow abstractArrow && abstractArrow.getPierceLevel() > 0) {
++                        return false;
++                    } else {
++                        return true;
++                    }
++                } else {
++                    return false;
++                }
++            }
++        }
++    }
++
++    public float resolveBlockedDamage(DamageSource damageSource, float damageAmount) {
++        Vec3 sourcePosition = damageSource.getSourcePosition();
++        double acos;
++        if (sourcePosition != null) {
++            Vec3 vec3 = this.calculateViewVector(0.0F, this.getYHeadRot());
++            Vec3 vec31 = sourcePosition.subtract(this.position());
++            vec31 = new Vec3(vec31.x, 0.0, vec31.z).normalize();
++            acos = Math.acos(vec31.dot(vec3));
++        } else {
++            acos = (float) Math.PI;
++        }
++
++        BlocksAttacks blocksAttacks = this.getItemBlockingWith().get(DataComponents.BLOCKS_ATTACKS);
++        return blocksAttacks.resolveBlockedDamage(damageSource, damageAmount, acos);
++    }
++
++    public void blockingItemEffects(ServerLevel level, DamageSource damageSource, float f) {
++        ItemStack itemBlockingWith = this.getItemBlockingWith();
++        if (itemBlockingWith == null) return;
++
++        BlocksAttacks blocksAttacks = itemBlockingWith.get(DataComponents.BLOCKS_ATTACKS);
++        if (blocksAttacks == null) return;
++
++        blocksAttacks.hurtBlockingItem(this.level(), itemBlockingWith, this, this.getUsedItemHand(), f);
++        if (!damageSource.is(DamageTypeTags.IS_PROJECTILE) && damageSource.getDirectEntity() instanceof LivingEntity livingEntity && livingEntity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
++            this.blockUsingItem(level, livingEntity);
++        }
++    }
++    // Paper end - copied from above split by relevant part
++
+     public void playSecondaryHurtSound(DamageSource damageSource) {
+         if (damageSource.is(DamageTypes.THORNS)) {
+             SoundSource soundSource = this instanceof Player ? SoundSource.PLAYERS : SoundSource.HOSTILE;
 @@ -1304,12 +_,24 @@
          return EntityReference.get(this.lastHurtByPlayer, this.level(), Player.class);
      }
  
 +    // Paper start - only call damage event when actuallyHurt will be called - move out amount computation logic
 +    private float computeAmountFromEntityDamageEvent(final EntityDamageEvent event) {
-+        // Taken from hurt()'s craftbukkit diff.
++        // Taken from hurtServer()'s craftbukkit diff.
 +        float amount = 0;
 +        amount += (float) event.getDamage(DamageModifier.BASE);
 +        amount += (float) event.getDamage(DamageModifier.BLOCKING);
@@ -990,7 +1076,7 @@
                  int i = (this.getEffect(MobEffects.RESISTANCE).getAmplifier() + 1) * 5;
                  int i1 = 25 - i;
                  float f = damageAmount * i1;
-@@ -1790,24 +_,198 @@
+@@ -1790,24 +_,201 @@
          }
      }
  
@@ -1033,13 +1119,16 @@
 +        amount += hardHatModifier;
 +
 +        com.google.common.base.Function<Double, Double> blocking = mod -> {
-+            return -((net.minecraft.world.entity.LivingEntity.this.isDamageSourceBlocked(damagesource)) ? mod : 0.0);
++            if (!LivingEntity.this.canBlockAttack(damagesource, mod.floatValue())) {
++                return 0D;
++            }
++            return (double) -LivingEntity.this.resolveBlockedDamage(damagesource, mod.floatValue());
 +        };
 +        float blockingModifier = blocking.apply((double) amount).floatValue();
 +        amount += blockingModifier;
 +
 +        com.google.common.base.Function<Double, Double> armor = mod -> {
-+            return -(mod - net.minecraft.world.entity.LivingEntity.this.getDamageAfterArmorAbsorb(damagesource, mod.floatValue()));
++            return -(mod - LivingEntity.this.getDamageAfterArmorAbsorb(damagesource, mod.floatValue()));
 +        };
 +        float armorModifier = armor.apply((double) amount).floatValue();
 +        amount += armorModifier;
@@ -1115,7 +1204,11 @@
 +
 +            // Apply damage to helmet
 +            if (damageSource.is(DamageTypeTags.DAMAGES_HELMET) && !this.getItemBySlot(EquipmentSlot.HEAD).isEmpty()) {
-+                this.hurtHelmet(damageSource, amount);
++                float helmetDamage = (float) event.getDamage();
++                helmetDamage += (float) event.getDamage(DamageModifier.INVULNERABILITY_REDUCTION);
++                helmetDamage += (float) event.getDamage(DamageModifier.BLOCKING);
++                helmetDamage += (float) event.getDamage(DamageModifier.FREEZING);
++                this.hurtHelmet(damageSource, helmetDamage);
 +            }
 +
 +            // Apply damage to armor
@@ -1123,18 +1216,14 @@
 +                float armorDamage = (float) event.getDamage();
 +                armorDamage += (float) event.getDamage(DamageModifier.INVULNERABILITY_REDUCTION);
 +                armorDamage += (float) event.getDamage(DamageModifier.BLOCKING);
++                armorDamage += (float) event.getDamage(DamageModifier.FREEZING);
 +                armorDamage += (float) event.getDamage(DamageModifier.HARD_HAT);
 +                this.hurtArmor(damageSource, armorDamage);
 +            }
 +
-+            // Apply blocking code // PAIL: steal from above
++            // Apply blocking code
 +            if (event.getDamage(DamageModifier.BLOCKING) < 0) {
-+//                this.hurtCurrentlyUsedShield((float) -event.getDamage(DamageModifier.BLOCKING));
-+//                Entity entity = damageSource.getDirectEntity();
-+//
-+//                if (!damageSource.is(DamageTypeTags.IS_PROJECTILE) && entity instanceof LivingEntity && entity.distanceToSqr(this) <= (200.0D * 200.0D)) { // Paper - Fix shield disable inconsistency & Check distance in entity interactions
-+//                    this.blockUsingShield((LivingEntity) entity);
-+//                }
++                this.blockingItemEffects(level, damageSource, (float) -event.getDamage(DamageModifier.BLOCKING));
 +            }
 +
 +            boolean human = this instanceof net.minecraft.world.entity.player.Player;

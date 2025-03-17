@@ -55,7 +55,7 @@ public final class CraftItemStack extends ItemStack {
         if (bukkit instanceof final CraftItemStack craftItemStack) {
             return craftItemStack;
         } else {
-            return  (CraftItemStack) API_ITEM_STACK_CRAFT_DELEGATE_FIELD.get(bukkit);
+            return (CraftItemStack) API_ITEM_STACK_CRAFT_DELEGATE_FIELD.get(bukkit);
         }
     }
 
@@ -75,9 +75,9 @@ public final class CraftItemStack extends ItemStack {
         if (!(obj instanceof final org.bukkit.inventory.ItemStack bukkit)) return false;
         final CraftItemStack craftStack = getCraftStack(bukkit);
         if (this.handle == craftStack.handle) return true;
-        else if (this.handle == null || craftStack.handle == null) return false;
-        else if (this.handle.isEmpty() && craftStack.handle.isEmpty()) return true;
-        else return net.minecraft.world.item.ItemStack.matches(this.handle, craftStack.handle);
+        if (this.handle == null || craftStack.handle == null) return false;
+        if (this.handle.isEmpty() && craftStack.handle.isEmpty()) return true;
+        return net.minecraft.world.item.ItemStack.matches(this.handle, craftStack.handle);
     }
     // Paper end
 
@@ -111,7 +111,6 @@ public final class CraftItemStack extends ItemStack {
         // Paper end - re-implement after delegating all api ItemStack calls to CraftItemStack
     }
 
-    // Paper start
     public static java.util.List<net.minecraft.world.item.ItemStack> asNMSCopy(java.util.List<? extends ItemStack> originals) {
         final java.util.List<net.minecraft.world.item.ItemStack> items = new java.util.ArrayList<>(originals.size());
         for (final ItemStack original : originals) {
@@ -119,7 +118,6 @@ public final class CraftItemStack extends ItemStack {
         }
         return items;
     }
-    // Paper end
 
     public static net.minecraft.world.item.ItemStack copyNMSStack(net.minecraft.world.item.ItemStack original, int amount) {
         net.minecraft.world.item.ItemStack stack = original.copy();
@@ -227,9 +225,6 @@ public final class CraftItemStack extends ItemStack {
         }
 
         this.handle.setCount(amount);
-        if (false && amount == 0) { // Paper - remove CraftItemStack#setAmount null assignment
-            this.handle = null;
-        }
     }
 
     @Override
@@ -254,20 +249,18 @@ public final class CraftItemStack extends ItemStack {
         return (this.handle == null) ? Item.DEFAULT_MAX_STACK_SIZE : this.handle.getMaxStackSize(); // Paper - air stacks to 64
     }
 
-    // Paper start
     @Override
     public int getMaxItemUseDuration(final org.bukkit.entity.LivingEntity entity) {
-        if (handle == null) {
+        if (this.handle == null) {
             return 0;
         }
 
         // Make sure plugins calling the old method don't blow up
-        if (entity == null && (handle.is(net.minecraft.world.item.Items.CROSSBOW) || handle.is(net.minecraft.world.item.Items.GOAT_HORN))) {
+        if (entity == null && (this.handle.is(net.minecraft.world.item.Items.CROSSBOW) || this.handle.is(net.minecraft.world.item.Items.GOAT_HORN))) {
             throw new UnsupportedOperationException("This item requires an entity to determine the max use duration");
         }
-        return handle.getUseDuration(entity != null ? ((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity).getHandle() : null);
+        return this.handle.getUseDuration(entity != null ? ((org.bukkit.craftbukkit.entity.CraftLivingEntity) entity).getHandle() : null);
     }
-    // Paper end
 
     @Override
     public void addUnsafeEnchantment(Enchantment enchant, int level) {
@@ -282,14 +275,6 @@ public final class CraftItemStack extends ItemStack {
             mutable.set(CraftEnchantment.bukkitToMinecraftHolder(enchant), level);
         });
         // Paper end
-    }
-
-    static boolean makeTag(net.minecraft.world.item.ItemStack item) {
-        if (item == null) {
-            return false;
-        }
-
-        return true;
     }
 
     @Override
@@ -310,7 +295,6 @@ public final class CraftItemStack extends ItemStack {
     public int removeEnchantment(Enchantment enchant) {
         Preconditions.checkArgument(enchant != null, "Enchantment cannot be null");
 
-        // Paper start
         if (this.handle == null) {
             return 0;
         }
@@ -331,51 +315,22 @@ public final class CraftItemStack extends ItemStack {
         }
 
         return 0;
-        // Paper end
     }
 
     @Override
     public void removeEnchantments() {
-        if (this.handle != null) { // Paper - fix NPE
-        this.handle.set(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY); // Paper - set to default instead of removing the component
-        } // Paper
+        if (this.handle != null) {
+            this.handle.set(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY); // Paper - set to default instead of removing the component
+        }
     }
 
     @Override
     public Map<Enchantment, Integer> getEnchantments() {
-        // Paper start
         io.papermc.paper.datacomponent.item.ItemEnchantments itemEnchantments = this.getData(io.papermc.paper.datacomponent.DataComponentTypes.ENCHANTMENTS); // empty constant might be useful here
         if (itemEnchantments == null) {
             return java.util.Collections.emptyMap();
         }
         return itemEnchantments.enchantments();
-        // Paper end
-    }
-
-    static Map<Enchantment, Integer> getEnchantments(net.minecraft.world.item.ItemStack item) {
-        ItemEnchantments list = (item != null && item.isEnchanted()) ? item.get(DataComponents.ENCHANTMENTS) : null;
-
-        if (list == null || list.size() == 0) {
-            return ImmutableMap.of();
-        }
-
-        ImmutableMap.Builder<Enchantment, Integer> result = ImmutableMap.builder();
-
-        list.entrySet().forEach((entry) -> {
-            Holder<net.minecraft.world.item.enchantment.Enchantment> id = entry.getKey();
-            int level = entry.getIntValue();
-
-            Enchantment enchant = CraftEnchantment.minecraftHolderToBukkit(id);
-            if (enchant != null) {
-                result.put(enchant, level);
-            }
-        });
-
-        return result.build();
-    }
-
-    static ItemEnchantments getEnchantmentList(net.minecraft.world.item.ItemStack item) {
-        return (item != null && item.isEnchanted()) ? item.get(DataComponents.ENCHANTMENTS) : null;
     }
 
     @Override
@@ -400,7 +355,7 @@ public final class CraftItemStack extends ItemStack {
         this.setItemMeta(newMeta);
     }
     // Paper end - improve handled tags on type change
-    // Paper start
+
     public static void applyMetaToItem(net.minecraft.world.item.ItemStack itemStack, ItemMeta itemMeta) {
         // Paper start - support updating profile after resolving it
         final CraftMetaItem.Applicator tag = new CraftMetaItem.Applicator() {
@@ -417,8 +372,8 @@ public final class CraftItemStack extends ItemStack {
     public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item) {
         return getItemMeta(item, null);
     }
+
     public static ItemMeta getItemMeta(net.minecraft.world.item.ItemStack item, org.bukkit.inventory.ItemType metaForType) {
-        // Paper end
         // Paper start - handled tags on type change
         return getItemMeta(item, metaForType, null);
     }
@@ -570,7 +525,7 @@ public final class CraftItemStack extends ItemStack {
         final CompoundTag newPdcTag = container.toTagCompound();
         if (!newPdcTag.isEmpty()) {
             customData = customData.update(tag -> tag.put(PDC_CUSTOM_DATA_KEY, newPdcTag));
-        } else if (newPdcTag.isEmpty() && customData.contains(PDC_CUSTOM_DATA_KEY)) {
+        } else if (customData.contains(PDC_CUSTOM_DATA_KEY)) {
             customData = customData.update(tag -> tag.remove(PDC_CUSTOM_DATA_KEY));
         }
 

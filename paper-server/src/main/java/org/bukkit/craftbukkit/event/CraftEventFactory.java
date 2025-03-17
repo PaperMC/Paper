@@ -280,8 +280,8 @@ public class CraftEventFactory {
     /**
      * PlayerSignOpenEvent
      */
-    public static boolean callPlayerSignOpenEvent(net.minecraft.world.entity.player.Player player, SignBlockEntity tileEntitySign, boolean front, PlayerSignOpenEvent.Cause cause) {
-        final Block block = CraftBlock.at(tileEntitySign.getLevel(), tileEntitySign.getBlockPos());
+    public static boolean callPlayerSignOpenEvent(net.minecraft.world.entity.player.Player player, SignBlockEntity signBlockEntity, boolean front, PlayerSignOpenEvent.Cause cause) {
+        final Block block = CraftBlock.at(signBlockEntity.getLevel(), signBlockEntity.getBlockPos());
         final Sign sign = (Sign) CraftBlockStates.getBlockState(block);
         final Side side = (front) ? Side.FRONT : Side.BACK;
         return CraftEventFactory.callPlayerSignOpenEvent((Player) player.getBukkitEntity(), sign, side, cause);
@@ -300,26 +300,15 @@ public class CraftEventFactory {
      * PlayerBedEnterEvent
      */
     public static Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> callPlayerBedEnterEvent(net.minecraft.world.entity.player.Player player, BlockPos bed, Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> nmsBedResult) {
-        BedEnterResult bedEnterResult = nmsBedResult.mapBoth(new Function<net.minecraft.world.entity.player.Player.BedSleepingProblem, BedEnterResult>() {
-            @Override
-            public BedEnterResult apply(net.minecraft.world.entity.player.Player.BedSleepingProblem t) {
-                switch (t) {
-                    case NOT_POSSIBLE_HERE:
-                        return BedEnterResult.NOT_POSSIBLE_HERE;
-                    case NOT_POSSIBLE_NOW:
-                        return BedEnterResult.NOT_POSSIBLE_NOW;
-                    case TOO_FAR_AWAY:
-                        return BedEnterResult.TOO_FAR_AWAY;
-                    case NOT_SAFE:
-                        return BedEnterResult.NOT_SAFE;
-                        // Paper start
-                    case OBSTRUCTED:
-                        return BedEnterResult.OBSTRUCTED;
-                        // Paper end
-                    default:
-                        return BedEnterResult.OTHER_PROBLEM;
-                }
-            }
+        BedEnterResult bedEnterResult = nmsBedResult.mapBoth(sleepingProblem -> {
+            return switch (sleepingProblem) {
+                case NOT_POSSIBLE_HERE -> BedEnterResult.NOT_POSSIBLE_HERE;
+                case NOT_POSSIBLE_NOW -> BedEnterResult.NOT_POSSIBLE_NOW;
+                case TOO_FAR_AWAY -> BedEnterResult.TOO_FAR_AWAY;
+                case NOT_SAFE -> BedEnterResult.NOT_SAFE;
+                case OBSTRUCTED -> BedEnterResult.OBSTRUCTED;
+                default -> BedEnterResult.OTHER_PROBLEM;
+            };
         }, t -> BedEnterResult.OK).map(java.util.function.Function.identity(), java.util.function.Function.identity());
 
         PlayerBedEnterEvent event = new PlayerBedEnterEvent((Player) player.getBukkitEntity(), CraftBlock.at(player.level(), bed), bedEnterResult);

@@ -110,12 +110,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public ItemStack getItemInHand() {
-        return this.getInventory().getItemInHand();
+        return this.getInventory().getItemInMainHand();
     }
 
     @Override
     public void setItemInHand(ItemStack item) {
-        this.getInventory().setItemInHand(item);
+        this.getInventory().setItemInMainHand(item);
     }
 
     @Override
