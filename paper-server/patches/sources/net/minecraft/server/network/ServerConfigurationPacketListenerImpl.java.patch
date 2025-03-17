@@ -1,18 +1,28 @@
 --- a/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerConfigurationPacketListenerImpl.java
-@@ -48,8 +_,10 @@
+@@ -40,18 +_,20 @@
+ public class ServerConfigurationPacketListenerImpl extends ServerCommonPacketListenerImpl implements ServerConfigurationPacketListener, TickablePacketListener {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final Component DISCONNECT_REASON_INVALID_DATA = Component.translatable("multiplayer.disconnect.invalid_player_data");
+-    private final GameProfile gameProfile;
++    public final GameProfile gameProfile; // Paper
+     private final Queue<ConfigurationTask> configurationTasks = new ConcurrentLinkedQueue<>();
+     @Nullable
+     private ConfigurationTask currentTask;
+-    private ClientInformation clientInformation;
++    public ClientInformation clientInformation; // Paper
      @Nullable
      private SynchronizeRegistriesTask synchronizeRegistriesTask;
++    public io.papermc.paper.connection.PaperPlayerConfigurationConnection paperConnection; // Paper
  
--    public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
--        super(server, connection, cookie);
-+    // CraftBukkit start
-+    public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie, ServerPlayer player) {
-+        super(server, connection, cookie, player);
-+        // CraftBukkit end
+     public ServerConfigurationPacketListenerImpl(MinecraftServer server, Connection connection, CommonListenerCookie cookie) {
+         super(server, connection, cookie);
          this.gameProfile = cookie.gameProfile();
          this.clientInformation = cookie.clientInformation();
++        this.paperConnection = new io.papermc.paper.connection.PaperPlayerConfigurationConnection(this); // Paper
      }
+ 
+     @Override
 @@ -61,6 +_,11 @@
  
      @Override
@@ -25,19 +35,23 @@
          LOGGER.info("{} lost connection: {}", this.gameProfile, details.reason().getString());
          super.onDisconnect(details);
      }
-@@ -73,6 +_,12 @@
+@@ -71,6 +_,8 @@
+     }
+ 
      public void startConfiguration() {
++        new io.papermc.paper.event.connection.configuration.PlayerConnectionInitialConfigurateEvent(this.paperConnection).callEvent();
++
          this.send(new ClientboundCustomPayloadPacket(new BrandPayload(this.server.getServerModName())));
          ServerLinks serverLinks = this.server.serverLinks();
-+        // CraftBukkit start
-+        org.bukkit.craftbukkit.CraftServerLinks wrapper = new org.bukkit.craftbukkit.CraftServerLinks(serverLinks);
-+        org.bukkit.event.player.PlayerLinksSendEvent event = new org.bukkit.event.player.PlayerLinksSendEvent(this.player.getBukkitEntity(), wrapper);
-+        this.cserver.getPluginManager().callEvent(event);
-+        serverLinks = wrapper.getServerLinks();
-+        // CraftBukkit end
          if (!serverLinks.isEmpty()) {
-             this.send(new ClientboundServerLinksPacket(serverLinks.untrust()));
-         }
+@@ -87,6 +_,7 @@
+         this.synchronizeRegistriesTask = new SynchronizeRegistriesTask(list, layeredRegistryAccess);
+         this.configurationTasks.add(this.synchronizeRegistriesTask);
+         this.addOptionalTasks();
++        this.configurationTasks.add(new io.papermc.paper.connection.PaperConfigurateTask(this)); // Paper
+         this.configurationTasks.add(new JoinWorldTask());
+         this.startNextTask();
+     }
 @@ -105,6 +_,7 @@
      @Override
      public void handleClientInformation(ServerboundClientInformationPacket packet) {
@@ -46,19 +60,34 @@
      }
  
      @Override
-@@ -139,16 +_,21 @@
+@@ -139,16 +_,36 @@
                  return;
              }
  
 -            Component component = playerList.canPlayerLogin(this.connection.getRemoteAddress(), this.gameProfile);
-+            Component component = null; // CraftBukkit - login checks already completed
++            Component component = org.bukkit.craftbukkit.event.CraftEventFactory.handleLoginResult(playerList.canPlayerLogin(this.connection.getRemoteAddress(), this.gameProfile), this.paperConnection, this.connection, this.gameProfile, this.server); // Paper - We want to actually call this logic again
              if (component != null) {
                  this.disconnect(component);
                  return;
              }
  
 -            ServerPlayer playerForLogin = playerList.getPlayerForLogin(this.gameProfile, this.clientInformation);
-+            ServerPlayer playerForLogin = playerList.getPlayerForLogin(this.gameProfile, this.clientInformation, this.player); // CraftBukkit
++            // Paper start
++            io.papermc.paper.event.connection.configuration.PostPlayerConnectionConfigurateEvent event = new io.papermc.paper.event.connection.configuration.PostPlayerConnectionConfigurateEvent(this.paperConnection);
++            event.callEvent();
++            if (!event.isAllowed()) {
++                this.disconnect(component);
++                return;
++            }
++            ServerPlayer playerForLogin;
++            if (this.connection.savedPlayerForLoginEventLegacy != null) {
++                playerForLogin = this.connection.savedPlayerForLoginEventLegacy;
++                // WE have to do this because the player isnt updated properly
++                playerForLogin.updateOptions(this.clientInformation);
++            } else {
++                playerForLogin = playerList.getPlayerForLogin(this.gameProfile, this.clientInformation);
++            }
++            // Paper end
              playerList.placeNewPlayer(this.connection, playerForLogin, this.createCookie(this.clientInformation));
          } catch (Exception var5) {
              LOGGER.error("Couldn't place player in world", (Throwable)var5);
@@ -70,3 +99,37 @@
              this.connection.send(new ClientboundDisconnectPacket(DISCONNECT_REASON_INVALID_DATA));
              this.connection.disconnect(DISCONNECT_REASON_INVALID_DATA);
          }
+@@ -171,7 +_,7 @@
+         }
+     }
+ 
+-    private void finishCurrentTask(ConfigurationTask.Type taskType) {
++    public void finishCurrentTask(ConfigurationTask.Type taskType) { // Paper
+         ConfigurationTask.Type type = this.currentTask != null ? this.currentTask.type() : null;
+         if (!taskType.equals(type)) {
+             throw new IllegalStateException("Unexpected request for task finish, current task: " + type + ", requested: " + taskType);
+@@ -180,4 +_,24 @@
+             this.startNextTask();
+         }
+     }
++
++    // Paper start
++    @Override
++    public void disconnectAsync(final net.minecraft.network.DisconnectionDetails disconnectionInfo) {
++        if (this.cserver.isPrimaryThread()) {
++            this.disconnect(disconnectionInfo);
++            return;
++        }
++
++        this.connection.setReadOnly();
++        this.server.scheduleOnMain(() -> {
++            this.disconnect(disconnectionInfo); // Currently you cannot cancel disconnect during the config stage
++        });
++    }
++
++    @Override
++    public io.papermc.paper.connection.CommonCookieConnection getCookieConnection() {
++        return this.paperConnection;
++    }
++    // Paper end
+ }

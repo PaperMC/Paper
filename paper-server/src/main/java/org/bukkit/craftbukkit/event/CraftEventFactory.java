@@ -4,6 +4,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -16,12 +17,17 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import io.papermc.paper.connection.PlayerConnection;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.Connection;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Unit;
 import net.minecraft.world.Container;
@@ -2274,4 +2280,21 @@ public class CraftEventFactory {
         return event;
     }
     // Paper end - add EntityFertilizeEggEvent
+    public static Component handleLoginResult(PlayerList.LoginResult result, PlayerConnection paperConnection, Connection connection, GameProfile profile, MinecraftServer server) {
+        if (result == null) {
+            result = new net.minecraft.server.players.PlayerList.LoginResult(null, io.papermc.paper.event.connection.common.PlayerConnectionValidateLoginEvent.Result.ALLOWED);
+        }
+
+        io.papermc.paper.event.connection.common.PlayerConnectionValidateLoginEvent event = new io.papermc.paper.event.connection.common.PlayerConnectionValidateLoginEvent(
+            paperConnection, result.result(), io.papermc.paper.adventure.PaperAdventure.asAdventure(result.message())
+        );
+        event.callEvent();
+
+        result = new net.minecraft.server.players.PlayerList.LoginResult(
+            event.getResult() == io.papermc.paper.event.connection.common.PlayerConnectionValidateLoginEvent.Result.ALLOWED ? null : io.papermc.paper.adventure.PaperAdventure.asVanilla(event.getMessage()), // allowed? mark as null
+            event.getResult()
+        );
+
+        return io.papermc.paper.connection.HorriblePlayerLoginEventHack.execute(connection, server, profile, result);
+    }
 }

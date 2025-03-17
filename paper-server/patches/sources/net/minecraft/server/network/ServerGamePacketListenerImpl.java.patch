@@ -1,5 +1,21 @@
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -57,7 +_,6 @@
+ import net.minecraft.network.protocol.Packet;
+ import net.minecraft.network.protocol.PacketUtils;
+ import net.minecraft.network.protocol.common.ServerboundClientInformationPacket;
+-import net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket;
+ import net.minecraft.network.protocol.configuration.ConfigurationProtocols;
+ import net.minecraft.network.protocol.game.ClientboundBlockChangedAckPacket;
+ import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
+@@ -183,7 +_,6 @@
+ import net.minecraft.world.level.block.entity.JigsawBlockEntity;
+ import net.minecraft.world.level.block.entity.SignBlockEntity;
+ import net.minecraft.world.level.block.entity.StructureBlockEntity;
+-import net.minecraft.world.level.block.state.BlockBehaviour;
+ import net.minecraft.world.level.block.state.BlockState;
+ import net.minecraft.world.phys.AABB;
+ import net.minecraft.world.phys.BlockHitResult;
 @@ -193,6 +_,59 @@
  import net.minecraft.world.phys.shapes.VoxelShape;
  import org.slf4j.Logger;
@@ -70,7 +86,7 @@
      private double firstGoodX;
      private double firstGoodY;
      private double firstGoodZ;
-@@ -236,22 +_,41 @@
+@@ -236,13 +_,32 @@
      private int receivedMovePacketCount;
      private int knownMovePacketCount;
      private boolean receivedMovementThisTick;
@@ -99,18 +115,18 @@
      private boolean waitingForSwitchToConfig;
 +    private static final int MAX_SIGN_LINE_LENGTH = Integer.getInteger("Paper.maxSignLength", 80); // Paper - Limit client sign length
 +    private final io.papermc.paper.event.packet.ClientTickEndEvent tickEndEvent; // Paper - add client tick end event
++    public final io.papermc.paper.connection.PaperPlayerGameConnection playerGameConnection; // Paper
  
      public ServerGamePacketListenerImpl(MinecraftServer server, Connection connection, ServerPlayer player, CommonListenerCookie cookie) {
--        super(server, connection, cookie);
-+        super(server, connection, cookie, player); // CraftBukkit
-         this.chunkSender = new PlayerChunkSender(connection.isMemoryConnection());
-         this.player = player;
+         super(server, connection, cookie);
+@@ -251,7 +_,9 @@
          player.connection = this;
          player.getTextFilter().join();
          this.signedMessageDecoder = SignedMessageChain.Decoder.unsigned(player.getUUID(), server::enforceSecureProfile);
 -        this.chatMessageChain = new FutureChain(server);
 +        this.chatMessageChain = new FutureChain(server.chatExecutor); // CraftBukkit - async chat
 +        this.tickEndEvent = new io.papermc.paper.event.packet.ClientTickEndEvent(player.getBukkitEntity()); // Paper - add client tick end event
++        this.playerGameConnection =  new io.papermc.paper.connection.PaperPlayerGameConnection(this); // Paper
      }
  
      @Override
@@ -2629,15 +2645,21 @@
                  }
              }
          }
-@@ -1892,7 +_,7 @@
+@@ -1889,11 +_,13 @@
+         if (!this.waitingForSwitchToConfig) {
+             throw new IllegalStateException("Client acknowledged config, but none was requested");
+         } else {
++            ServerConfigurationPacketListenerImpl listener = new ServerConfigurationPacketListenerImpl(this.server, this.connection, this.createCookie(this.player.clientInformation())); // Paper
              this.connection
                  .setupInboundProtocol(
                      ConfigurationProtocols.SERVERBOUND,
 -                    new ServerConfigurationPacketListenerImpl(this.server, this.connection, this.createCookie(this.player.clientInformation()))
-+                    new ServerConfigurationPacketListenerImpl(this.server, this.connection, this.createCookie(this.player.clientInformation()), this.player) // CraftBukkit
++                    listener // Paper
                  );
++            new io.papermc.paper.event.connection.configuration.PlayerConnectionReconfigurateEvent(listener.paperConnection).callEvent(); // Paper
          }
      }
+ 
 @@ -1911,6 +_,7 @@
  
      private void resetPlayerChatState(RemoteChatSession chatSession) {
@@ -2673,7 +2695,7 @@
          if (!this.receivedMovementThisTick) {
              this.player.setKnownMovement(Vec3.ZERO);
          }
-@@ -1957,4 +_,17 @@
+@@ -1957,4 +_,149 @@
      interface EntityInteraction {
          InteractionResult run(ServerPlayer player, Entity entity, InteractionHand hand);
      }
@@ -2690,4 +2712,136 @@
 +        return event;
 +    }
 +    // Paper end - Add fail move event
++    // Paper start - add utilities
++    public org.bukkit.craftbukkit.entity.CraftPlayer getCraftPlayer() {
++        return this.player == null ? null : this.player.getBukkitEntity();
++    }
++
++    @Override
++    public void disconnectAsync(final net.minecraft.network.DisconnectionDetails disconnectionInfo) {
++        if (this.cserver.isPrimaryThread()) {
++            this.disconnect(disconnectionInfo);
++            return;
++        }
++
++        this.connection.setReadOnly();
++        this.server.scheduleOnMain(() -> {
++            this.disconnect(disconnectionInfo);
++            if (this.player.quitReason == null) {
++                // cancelled
++                this.connection.enableAutoRead();
++            }
++        });
++    }
++
++    public final boolean isDisconnected() {
++        return (!this.player.joining && !this.connection.isConnected()) || this.processedDisconnect; // Paper - Fix duplication bugs
++    }
++
++    // Paper start
++    private static final net.minecraft.resources.ResourceLocation CUSTOM_REGISTER = net.minecraft.resources.ResourceLocation.withDefaultNamespace("register"); // CraftBukkit
++    private static final net.minecraft.resources.ResourceLocation CUSTOM_UNREGISTER = net.minecraft.resources.ResourceLocation.withDefaultNamespace("unregister"); // CraftBukkit
++
++    @Override
++    public void handleCustomPayload(final net.minecraft.network.protocol.common.ServerboundCustomPayloadPacket packet) {
++        if (packet.payload() instanceof net.minecraft.network.protocol.common.custom.BrandPayload(String brand)) {
++            this.player.clientBrandName = brand;
++        }
++        if (!(packet.payload() instanceof final net.minecraft.network.protocol.common.custom.DiscardedPayload discardedPayload)) {
++            return;
++        }
++        PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
++        net.minecraft.resources.ResourceLocation identifier = packet.payload().type().id();
++        io.netty.buffer.ByteBuf payload = discardedPayload.data();
++
++        if (identifier.equals(CUSTOM_REGISTER)) {
++            try {
++                String channels = payload.toString(com.google.common.base.Charsets.UTF_8);
++                for (String channel : channels.split("\0")) {
++                    this.getCraftPlayer().addChannel(channel);
++                }
++            } catch (Exception ex) {
++                ServerGamePacketListenerImpl.LOGGER.error("Couldn't register custom payload", ex);
++                this.disconnect(Component.literal("Invalid payload REGISTER!"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
++            }
++        } else if (identifier.equals(CUSTOM_UNREGISTER)) {
++            try {
++                String channels = payload.toString(com.google.common.base.Charsets.UTF_8);
++                for (String channel : channels.split("\0")) {
++                    this.getCraftPlayer().removeChannel(channel);
++                }
++            } catch (Exception ex) {
++                ServerGamePacketListenerImpl.LOGGER.error("Couldn't unregister custom payload", ex);
++                this.disconnect(Component.literal("Invalid payload UNREGISTER!"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
++            }
++        } else {
++            try {
++                byte[] data = new byte[payload.readableBytes()];
++                payload.readBytes(data);
++                // Paper start - Brand support; Retain this incase upstream decides to 'break' the new mechanism in favour of backwards compat...
++                if (identifier.equals(MINECRAFT_BRAND)) {
++                    try {
++                        this.player.clientBrandName = new net.minecraft.network.FriendlyByteBuf(io.netty.buffer.Unpooled.copiedBuffer(data)).readUtf(256);
++                    } catch (StringIndexOutOfBoundsException ex) {
++                        this.player.clientBrandName = "illegal";
++                    }
++                }
++                // Paper end - Brand support
++                this.cserver.getMessenger().dispatchIncomingMessage(this.player.getBukkitEntity(), identifier.toString(), data);
++            } catch (Exception ex) {
++                ServerGamePacketListenerImpl.LOGGER.error("Couldn't dispatch custom payload", ex);
++                this.disconnect(Component.literal("Invalid custom payload!"), org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
++            }
++        }
++    }
++
++    @Override
++    public void handleResourcePackResponse(final net.minecraft.network.protocol.common.ServerboundResourcePackPacket packet) {
++        super.handleResourcePackResponse(packet);
++        // Paper start - adventure pack callbacks
++        // call the callbacks before the previously-existing event so the event has final say
++        final net.kyori.adventure.resource.ResourcePackCallback callback;
++        if (packet.action().isTerminal()) {
++            callback = this.packCallbacks.remove(packet.id());
++        } else {
++            callback = this.packCallbacks.get(packet.id());
++        }
++        if (callback != null) {
++            callback.packEventReceived(packet.id(), net.kyori.adventure.resource.ResourcePackStatus.valueOf(packet.action().name()), this.getCraftPlayer());
++        }
++        // Paper end
++        // Paper start - store last pack status
++        org.bukkit.event.player.PlayerResourcePackStatusEvent.Status packStatus = org.bukkit.event.player.PlayerResourcePackStatusEvent.Status.values()[packet.action().ordinal()];
++        this.player.getBukkitEntity().resourcePackStatus = packStatus;
++        this.cserver.getPluginManager().callEvent(new org.bukkit.event.player.PlayerResourcePackStatusEvent(this.getCraftPlayer(), packet.id(), packStatus)); // CraftBukkit
++        // Paper end - store last pack status
++    }
++
++    // Paper start - adventure
++    public void disconnect(final net.kyori.adventure.text.Component reason) {
++        this.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.UNKNOWN);
++    }
++
++    public void disconnect(final net.kyori.adventure.text.Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(reason), io.papermc.paper.connection.DisconnectionReason.game(cause));
++    }
++
++    public void disconnect(final Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnect(reason, io.papermc.paper.connection.DisconnectionReason.game(cause));
++    }
++
++    public void disconnectAsync(net.kyori.adventure.text.Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnectAsync(io.papermc.paper.adventure.PaperAdventure.asVanilla(reason), cause);
++    }
++
++    public void disconnectAsync(Component reason, org.bukkit.event.player.PlayerKickEvent.Cause cause) {
++        this.disconnectAsync(reason, io.papermc.paper.connection.DisconnectionReason.game(cause));
++    }
++
++    @Override
++    public io.papermc.paper.connection.CommonCookieConnection getCookieConnection() {
++        return this.playerGameConnection;
++    }
++
++    // Paper end
  }
