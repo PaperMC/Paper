@@ -777,5 +777,18 @@ public abstract class ChunkGenerator {
          */
         @Deprecated(since = "1.8.8")
         public byte getData(int x, int y, int z);
+
+        /**
+         * Get the current of the chunk data.
+         * <p>This will differ based on which state generation of the chunk is currently at.
+         * If for example the chunk is in the generate surface stage,
+         * this will return what was already generated in the noise stage.</p>
+         *
+         * @param heightMap Heightmap to determine where to grab height
+         * @param x the x location in the chunk from 0-15 inclusive
+         * @param z the z location in the chunk from 0-15 inclusive
+         * @return Y coordinate at highest position
+         */
+        public int getHeight(@NotNull HeightMap heightMap, int x, int z);
     }
 }
