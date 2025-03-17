@@ -10,6 +10,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftFishHook extends CraftProjectile implements FishHook {
     private double biteChance = -1;
@@ -239,7 +240,9 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     }
 
     @Override
-    public int retrieve(final EquipmentSlot slot, final ItemStack itemStack) {
+    public int retrieve(EquipmentSlot slot, ItemStack itemStack) {
+        Preconditions.checkNotNull(slot, "Equipment slot cannot be null");
+        Preconditions.checkNotNull(itemStack, "ItemStack cannot be null");
         return getHandle().retrieve(CraftEquipmentSlot.getHand(slot), CraftItemStack.asNMSCopy(itemStack));
     }
 }

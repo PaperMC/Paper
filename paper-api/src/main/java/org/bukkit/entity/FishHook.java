@@ -377,5 +377,5 @@ public interface FishHook extends Projectile {
      * @param itemStack The fishing rod item currently cast out
      * @return The amount of damage which would be applied to the itemstack
      */
-    int retrieve(EquipmentSlot slot, ItemStack itemStack);
+    int retrieve(@NotNull EquipmentSlot slot, @NotNull ItemStack itemStack);
 }
