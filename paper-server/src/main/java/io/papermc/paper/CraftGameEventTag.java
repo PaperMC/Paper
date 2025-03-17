@@ -30,6 +30,6 @@ public class CraftGameEventTag extends CraftTag<net.minecraft.world.level.gameev
 
     @Override
     public @NotNull Set<GameEvent> getValues() {
-        return getHandle().stream().map((nms) -> Objects.requireNonNull(GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.GAME_EVENT.getKey(nms.value()))), nms + " is not a recognized game event")).collect(Collectors.toUnmodifiableSet());
+        return getHandle().stream().map((nms) -> Objects.requireNonNull(GameEvent.getByKey(CraftNamespacedKey.fromMinecraft(BuiltInRegistries.GAME_EVENT.getKey(nms.value()))), () -> nms + " is not a recognized game event")).collect(Collectors.toUnmodifiableSet());
     }
 }

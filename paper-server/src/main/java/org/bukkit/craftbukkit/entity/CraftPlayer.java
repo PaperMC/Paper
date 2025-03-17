@@ -8,6 +8,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
 import io.netty.buffer.Unpooled;
 import io.papermc.paper.FeatureHooks;
+import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.entity.LookAnchor;
 import io.papermc.paper.entity.PaperPlayerGiveResult;
 import io.papermc.paper.entity.PlayerGiveResult;
@@ -225,6 +226,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     private BorderChangeListener clientWorldBorderListener = this.createWorldBorderListener();
     public org.bukkit.event.player.PlayerResourcePackStatusEvent.Status resourcePackStatus; // Paper - more resource pack API
     private static final boolean DISABLE_CHANNEL_LIMIT = System.getProperty("paper.disableChannelLimit") != null; // Paper - add a flag to disable the channel limit
+    private boolean simplifyContainerDesyncCheck = GlobalConfiguration.get().unsupportedSettings.simplifyRemoteItemMatching;
     private long lastSaveTime; // Paper - getLastPlayed replacement API
 
     public CraftPlayer(CraftServer server, ServerPlayer entity) {
@@ -3605,5 +3607,21 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void setDeathScreenScore(final int score) {
         getHandle().setScore(score);
+    }
+
+    /**
+     * Returns whether container desync checks should skip the full item comparison of remote carried and changed slots
+     * and should instead only check their type and amount.
+     * <p>
+     * This is useful if the client is not able to produce the same item stack (or as of 1.21.5, its data hashes) as the server.
+     *
+     * @return whether to simplify container desync checks
+     */
+    public boolean simplifyContainerDesyncCheck() {
+        return simplifyContainerDesyncCheck;
+    }
+
+    public void setSimplifyContainerDesyncCheck(final boolean simplifyContainerDesyncCheck) {
+        this.simplifyContainerDesyncCheck = simplifyContainerDesyncCheck;
     }
 }
