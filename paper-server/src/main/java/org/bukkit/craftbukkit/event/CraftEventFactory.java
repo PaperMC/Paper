@@ -1040,7 +1040,7 @@ public class CraftEventFactory {
         // Paper end - Restore vanilla drops behavior
             if (stack == null || stack.getType() == Material.AIR) continue;
 
-            drop.runConsumer(s -> victim.drop(CraftItemStack.unwrap(s), true, false, false)); // Paper - Restore vanilla drops behavior
+            drop.runConsumer(s -> victim.drop(CraftItemStack.unwrap(s), true, false)); // Paper - Restore vanilla drops behavior
         }
 
         return event;

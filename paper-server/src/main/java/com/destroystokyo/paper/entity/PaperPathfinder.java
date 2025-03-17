@@ -112,7 +112,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
         @Override
         public Location getFinalPoint() {
             Node point = this.path.getEndNode();
-            return point != null ? CraftLocation.toBukkit(point, this.entity.level()) : null;
+            return point != null ? CraftLocation.toBukkit(point, PaperPathfinder.this.entity.level()) : null;
         }
 
         @Override
@@ -124,7 +124,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
         public List<Location> getPoints() {
             List<Location> points = new ArrayList<>();
             for (Node point : this.path.nodes) {
-                points.add(CraftLocation.toBukkit(point, this.entity.level()));
+                points.add(CraftLocation.toBukkit(point, PaperPathfinder.this.entity.level()));
             }
             return points;
         }
@@ -140,7 +140,7 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
             if (this.path.isDone()) {
                 return null;
             }
-            return CraftLocation.toBukkit(this.path.nodes.get(this.path.getNextNodeIndex()), this.entity.level());
+            return CraftLocation.toBukkit(this.path.nodes.get(this.path.getNextNodeIndex()), PaperPathfinder.this.entity.level());
         }
     }
 }

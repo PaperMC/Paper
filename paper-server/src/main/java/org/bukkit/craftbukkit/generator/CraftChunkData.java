@@ -164,16 +164,16 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
 
         ChunkAccess access = this.getHandle();
         BlockPos pos = new BlockPos(access.getPos().getMinBlockX() + x, y, access.getPos().getMinBlockZ() + z);
-        BlockState oldBlockState = access.setBlockState(pos, type, false);
+        BlockState oldBlockState = access.setBlockState(pos, type);
 
         if (type.hasBlockEntity()) {
-            BlockEntity tileEntity = ((EntityBlock) type.getBlock()).newBlockEntity(pos, type);
+            BlockEntity blockEntity = ((EntityBlock) type.getBlock()).newBlockEntity(pos, type);
 
             // createTile can return null, currently only the case with material MOVING_PISTON
-            if (tileEntity == null) {
+            if (blockEntity == null) {
                 access.removeBlockEntity(pos);
             } else {
-                access.setBlockEntity(tileEntity);
+                access.setBlockEntity(blockEntity);
             }
         } else if (oldBlockState != null && oldBlockState.hasBlockEntity()) {
             access.removeBlockEntity(pos);

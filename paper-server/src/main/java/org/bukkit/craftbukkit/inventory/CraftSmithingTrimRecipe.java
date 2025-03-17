@@ -27,6 +27,12 @@ public class CraftSmithingTrimRecipe extends SmithingTrimRecipe implements Craft
 
     @Override
     public void addToCraftingManager() {
-        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.SmithingTrimRecipe(this.toNMSOptional(this.getTemplate(), false), this.toNMSOptional(this.getBase(), false), this.toNMSOptional(this.getAddition(), false), this.willCopyDataComponents()))); // Paper - Option to prevent data components copy
+        final SmithingTrimRecipe recipe = new SmithingTrimRecipe(
+            this.toNMSOptional(this.getTemplate(), false),
+            this.toNMSOptional(this.getBase(), false),
+            this.toNMSOptional(this.getAddition(), false),
+            this.willCopyDataComponents()
+        );
+        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), recipe));
     }
 }

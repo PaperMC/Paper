@@ -3571,7 +3571,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             leftovers.add(CraftItemStack.asBukkitCopy(nmsStack)); // Insert copy to avoid mutation to the dropped item from affecting leftovers
             if (!dropIfFull) continue;
 
-            final ItemEntity entity = handle.drop(nmsStack, false, true, false);
+            final ItemEntity entity = handle.drop(nmsStack, false, true);
             if (entity != null) drops.add((Item) entity.getBukkitEntity());
         }
 
