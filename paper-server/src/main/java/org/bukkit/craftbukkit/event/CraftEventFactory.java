@@ -949,10 +949,14 @@ public class CraftEventFactory {
     public static BlockPos sourceBlockOverride = null; // SPIGOT-7068: Add source block override, not the most elegant way but better than passing down a BlockPosition up to five methods deep.
 
     public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, int flags) {
+        return handleBlockSpreadEvent(world, source, target, state, flags, false);
+    }
+
+    public static boolean handleBlockSpreadEvent(LevelAccessor world, BlockPos source, BlockPos target, net.minecraft.world.level.block.state.BlockState state, int flags, boolean checkSetResult) {
         // Suppress during worldgen
         if (!(world instanceof Level)) {
-            world.setBlock(target, state, flags);
-            return true;
+            boolean result = world.setBlock(target, state, flags);
+            return !checkSetResult || result;
         }
 
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, target);
@@ -960,8 +964,8 @@ public class CraftEventFactory {
 
         BlockSpreadEvent event = new BlockSpreadEvent(snapshot.getBlock(), CraftBlock.at(world, CraftEventFactory.sourceBlockOverride != null ? CraftEventFactory.sourceBlockOverride : source), snapshot);
         if (event.callEvent()) {
-            snapshot.place(flags);
-            return true;
+            boolean result = snapshot.place(flags);
+            return !checkSetResult || result;
         }
         return false;
     }
@@ -1905,10 +1909,6 @@ public class CraftEventFactory {
         return event;
     }
 
-    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState block) {
-        return CraftEventFactory.handleBlockFormEvent(world, pos, block, 3);
-    }
-
     public static EntityPotionEffectEvent callEntityPotionEffectChangeEvent(net.minecraft.world.entity.LivingEntity entity, @Nullable MobEffectInstance oldEffect, @Nullable MobEffectInstance newEffect, EntityPotionEffectEvent.Cause cause) {
         return CraftEventFactory.callEntityPotionEffectChangeEvent(entity, oldEffect, newEffect, cause, true);
     }
@@ -1945,13 +1945,17 @@ public class CraftEventFactory {
     }
 
     public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags, @Nullable Entity entity) {
+        return CraftEventFactory.handleBlockFormEvent(world, pos, state, flags, entity, false);
+    }
+
+    public static boolean handleBlockFormEvent(Level world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags, @Nullable Entity entity, boolean checkSetResult) {
         CraftBlockState snapshot = CraftBlockStates.getBlockState(world, pos);
         snapshot.setData(state);
 
         BlockFormEvent event = (entity == null) ? new BlockFormEvent(snapshot.getBlock(), snapshot) : new EntityBlockFormEvent(entity.getBukkitEntity(), snapshot.getBlock(), snapshot);
         if (event.callEvent()) {
-            snapshot.place(flags);
-            return true;
+            boolean result = snapshot.place(flags);
+            return !checkSetResult || result;
         }
 
         return false;

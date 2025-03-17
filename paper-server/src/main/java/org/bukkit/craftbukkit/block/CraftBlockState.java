@@ -245,8 +245,9 @@ public class CraftBlockState implements BlockState {
     // used when the flags matter for non API usage
     public boolean place(int flags) {
         if (!this.isPlaced()) {
-            return true;
+            return false;
         }
+
         return this.getWorldHandle().setBlock(this.position, this.data, flags);
     }
 

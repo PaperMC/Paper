@@ -9,7 +9,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.craftbukkit.util.CraftLocation;
 
 @Deprecated(forRemoval = true)
 public final class CapturedBlockState extends CraftBlockState {
