@@ -1,5 +1,7 @@
 package org.bukkit.entity;
 
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -323,7 +325,6 @@ public interface FishHook extends Projectile {
         BOBBING;
     }
 
-    // Paper start - More FishHook API
     /**
      * Get the number of ticks the hook needs to wait for a fish to bite.
      *
@@ -367,5 +368,14 @@ public interface FishHook extends Projectile {
      * enchantment.
      */
     void resetFishingState();
-    // Paper end
+
+    /**
+     * Retrieve this fishhook back to the casting player.
+     * <p>This will act the same as if the player manually reels in their fishhook.</p>
+     *
+     * @param slot Slot holding the fishing rod (must be HAND/OFF_HAND)
+     * @param itemStack The fishing rod item currently cast out
+     * @return The amount of damage which would be applied to the itemstack
+     */
+    int retrieve(EquipmentSlot slot, ItemStack itemStack);
 }
