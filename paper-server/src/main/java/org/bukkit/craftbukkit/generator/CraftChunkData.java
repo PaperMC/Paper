@@ -8,7 +8,6 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.levelgen.Heightmap;
 import org.bukkit.HeightMap;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -16,7 +15,6 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftHeightMap;
 import org.bukkit.craftbukkit.block.CraftBiome;
-import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
 import org.bukkit.generator.ChunkGenerator;
@@ -187,6 +185,6 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     @Override
     public int getHeight(HeightMap heightMap, final int x, final int z) {
         Preconditions.checkNotNull(heightMap, "HeightMap cannot be null");
-        return getHandle().getHeight(CraftHeightMap.toNMS(heightMap),  x, z);
+        return getHandle().getHeight(CraftHeightMap.toNMS(heightMap), x, z);
     }
 }
