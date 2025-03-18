@@ -36,12 +36,13 @@ If you're compiling with Docker, you can use Adoptium's
 [`eclipse-temurin`](https://hub.docker.com/_/eclipse-temurin/) images like so:
 
 ```console
-# docker run -it -v "$(pwd)":/data --rm eclipse-temurin:21.0.5_11-jdk bash
+# docker run -it -v "$(pwd)":/data --rm eclipse-temurin:21-jdk bash
 Pulling image...
 
 root@abcdefg1234:/# javac -version
-javac 21.0.5
+javac 21.0.6
 ```
+*The version show in javac can be different based in latest version of 21 in Docker*
 
 ## Understanding Patches
 
