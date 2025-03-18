@@ -241,7 +241,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
 
     @Override
     public int retrieve(EquipmentSlot slot, ItemStack itemStack) {
-        Preconditions.checkArgument(slot != null, "Equipment slot cannot be null");
+        Preconditions.checkArgument(slot == EquipmentSlot.HAND || slot == EquipmentSlot.OFF_HAND, "Equipment slot must be HAND or OFF_HAND");
         Preconditions.checkArgument(itemStack != null, "ItemStack cannot be null");
         return getHandle().retrieve(CraftEquipmentSlot.getHand(slot), CraftItemStack.asNMSCopy(itemStack));
     }
