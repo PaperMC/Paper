@@ -52,6 +52,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.NaturalSpawner;
+import net.minecraft.world.level.block.BambooStalkBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -389,7 +390,7 @@ public class WorldConfiguration extends ConfigurationPart {
         public Bamboo bamboo;
 
         public class Bamboo extends ConfigurationPart {
-            public int max = 16;
+            public int max = BambooStalkBlock.MAX_HEIGHT;
             public int min = 11;
         }
     }
