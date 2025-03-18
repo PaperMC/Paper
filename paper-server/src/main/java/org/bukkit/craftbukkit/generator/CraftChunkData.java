@@ -184,7 +184,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
 
     @Override
     public int getHeight(HeightMap heightMap, final int x, final int z) {
-        Preconditions.checkNotNull(heightMap, "HeightMap cannot be null");
+        Preconditions.checkArgument(heightMap != null, "HeightMap cannot be null");
         return getHandle().getHeight(CraftHeightMap.toNMS(heightMap), x, z);
     }
 }
