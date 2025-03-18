@@ -779,7 +779,7 @@ public abstract class ChunkGenerator {
         public byte getData(int x, int y, int z);
 
         /**
-         * Get the current of the chunk data.
+         * Get the current height of a position in the chunk data.
          * <p>This will differ based on which state generation of the chunk is currently at.
          * If for example the chunk is in the generate surface stage,
          * this will return what was already generated in the noise stage.</p>
