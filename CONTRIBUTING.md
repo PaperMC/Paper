@@ -276,7 +276,7 @@ ex:
 public void sendMessageComponent(Player player, String message) {
     Preconditions.checkArgument(player != null, "player cannot be null");
     Preconditions.checkArgument(message != null && !message.isBlank(), "message cannot be null or blank");
-    Preconditions.checkArgument(!message.contains("rat"), "message [%s] cannot contains the word rat", message);
+    Preconditions.checkArgument(!message.contains("rat"), "message [%s] cannot contain the word rat", message);
     // rest of code
 }
 ```
