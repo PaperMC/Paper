@@ -38,7 +38,7 @@
      protected final NeighborUpdater neighborUpdater;
      private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
      private boolean tickingBlockEntities;
-@@ -119,6 +_,59 @@
+@@ -119,6 +_,60 @@
      private final DamageSources damageSources;
      private long subTickCount;
  
@@ -51,6 +51,7 @@
 +    public boolean captureTreeGeneration = false;
 +    public Map<BlockPos, org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates = new java.util.LinkedHashMap<>(); // Paper
 +    public Map<BlockPos, BlockEntity> capturedTileEntities = new java.util.LinkedHashMap<>(); // Paper - Retain block place order when capturing blockstates
++    @Nullable
 +    public List<net.minecraft.world.entity.item.ItemEntity> captureDrops;
 +    public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
 +    public boolean populating;
@@ -246,7 +247,7 @@
      }
  
      public static boolean isInSpawnableBounds(BlockPos pos) {
-@@ -178,21 +_,84 @@
+@@ -178,21 +_,85 @@
      }
  
      private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
@@ -306,6 +307,7 @@
 +    }
 +
 +    @Override
++    @Nullable
 +    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
 +        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
 +
@@ -515,7 +517,7 @@
              return chunk.getBlockState(pos);
          }
      }
-@@ -461,32 +_,49 @@
+@@ -461,32 +_,48 @@
              this.pendingBlockEntityTickers.clear();
          }
  
@@ -527,8 +529,7 @@
 -            TickingBlockEntity tickingBlockEntity = iterator.next();
 +        var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
 +        toRemove.add(null); // Paper - Fix MC-117075
-+        for (tileTickPosition = 0; tileTickPosition < this.blockEntityTickers.size(); tileTickPosition++) { // Paper - Disable tick limiters
-+            this.tileTickPosition = (this.tileTickPosition < this.blockEntityTickers.size()) ? this.tileTickPosition : 0;
++        for (this.tileTickPosition = 0; this.tileTickPosition < this.blockEntityTickers.size(); this.tileTickPosition++) { // Paper - Disable tick limiters
 +            TickingBlockEntity tickingBlockEntity = this.blockEntityTickers.get(this.tileTickPosition);
 +            // Spigot end
              if (tickingBlockEntity.isRemoved()) {

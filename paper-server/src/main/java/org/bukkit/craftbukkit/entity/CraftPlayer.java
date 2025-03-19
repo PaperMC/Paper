@@ -1763,7 +1763,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public WeatherType getPlayerWeather() {
-        return this.getHandle().getPlayerWeather();
+        return this.getHandle().weatherType;
     }
 
     @Override
@@ -3337,47 +3337,40 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
     // Paper end
     // Spigot start
-    private final Player.Spigot spigot = new Player.Spigot()
-    {
+    private final Player.Spigot spigot = new Player.Spigot() {
 
         @Override
-        public InetSocketAddress getRawAddress()
-        {
+        public InetSocketAddress getRawAddress() {
             return (InetSocketAddress) CraftPlayer.this.getHandle().connection.getRawAddress();
         }
 
         @Override
-        public void respawn()
-        {
-            if ( CraftPlayer.this.getHealth() <= 0 && CraftPlayer.this.isOnline() )
-            {
-                CraftPlayer.this.server.getServer().getPlayerList().respawn( CraftPlayer.this.getHandle(), false, Entity.RemovalReason.KILLED, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason.PLUGIN );
+        public void respawn() {
+            if (CraftPlayer.this.getHealth() <= 0 && CraftPlayer.this.isOnline()) {
+                CraftPlayer.this.server.getServer().getPlayerList().respawn(CraftPlayer.this.getHandle(), false, Entity.RemovalReason.KILLED, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason.PLUGIN);
             }
         }
 
         @Override
-        public Set<Player> getHiddenPlayers()
-        {
+        public Set<Player> getHiddenPlayers() {
             Set<Player> ret = new HashSet<>();
-            for ( Player p : CraftPlayer.this.getServer().getOnlinePlayers() )
-            {
-                if ( !CraftPlayer.this.canSee(p) )
-                {
-                    ret.add( p );
+            for (Player player : CraftPlayer.this.getServer().getOnlinePlayers()) {
+                if (!CraftPlayer.this.canSee(player)) {
+                    ret.add(player);
                 }
             }
 
-            return java.util.Collections.unmodifiableSet( ret );
+            return java.util.Collections.unmodifiableSet(ret);
         }
 
         @Override
         public void sendMessage(BaseComponent component) {
-          this.sendMessage( new BaseComponent[] { component } );
+            this.sendMessage(new BaseComponent[]{component});
         }
 
         @Override
         public void sendMessage(BaseComponent... components) {
-           this.sendMessage(net.md_5.bungee.api.ChatMessageType.SYSTEM, components);
+            this.sendMessage(net.md_5.bungee.api.ChatMessageType.SYSTEM, components);
         }
 
         @Override
@@ -3392,7 +3385,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         @Override
         public void sendMessage(net.md_5.bungee.api.ChatMessageType position, BaseComponent component) {
-            this.sendMessage( position, new BaseComponent[] { component } );
+            this.sendMessage(position, new BaseComponent[]{component});
         }
 
         @Override
@@ -3402,20 +3395,19 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         @Override
         public void sendMessage(net.md_5.bungee.api.ChatMessageType position, UUID sender, BaseComponent component) {
-            this.sendMessage( position, sender, new BaseComponent[] { component } );
+            this.sendMessage(position, sender, new BaseComponent[]{component});
         }
 
         @Override
         public void sendMessage(net.md_5.bungee.api.ChatMessageType position, UUID sender, BaseComponent... components) {
-            if ( CraftPlayer.this.getHandle().connection == null ) return;
+            if (CraftPlayer.this.getHandle().connection == null) return;
 
             CraftPlayer.this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(components, position == net.md_5.bungee.api.ChatMessageType.ACTION_BAR));
         }
 
         // Paper start
         @Override
-        public int getPing()
-        {
+        public int getPing() {
             return CraftPlayer.this.getPing();
         }
         // Paper end

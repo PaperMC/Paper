@@ -142,7 +142,7 @@
 +    public org.bukkit.projectiles.ProjectileSource projectileSource; // For projectiles only
 +    public boolean lastDamageCancelled; // SPIGOT-5339, SPIGOT-6252, SPIGOT-6777: Keep track if the event was canceled
 +    public boolean persistentInvisibility = false;
-+    public BlockPos lastLavaContact;
++    public @Nullable BlockPos lastLavaContact;
 +    // Marks an entity, that it was removed by a plugin via Entity#remove
 +    // Main use case currently is for SPIGOT-7487, preventing dropping of leash when leash is removed
 +    public boolean pluginRemoved = false;
@@ -234,7 +234,7 @@
 +        this.discard(null);
 +    }
 +
-+    public final void discard(org.bukkit.event.entity.EntityRemoveEvent.Cause cause) {
++    public final void discard(@Nullable org.bukkit.event.entity.EntityRemoveEvent.Cause cause) {
 +        this.remove(Entity.RemovalReason.DISCARDED, cause);
 +        // CraftBukkit end
      }
@@ -295,10 +295,10 @@
      public void remove(Entity.RemovalReason reason) {
 -        this.setRemoved(reason);
 +        // CraftBukkit start - add Bukkit remove cause
-+        this.setRemoved(reason, null);
++        this.remove(reason, null);
 +    }
 +
-+    public void remove(Entity.RemovalReason reason, org.bukkit.event.entity.EntityRemoveEvent.Cause eventCause) {
++    public void remove(Entity.RemovalReason reason, @Nullable org.bukkit.event.entity.EntityRemoveEvent.Cause eventCause) {
 +        this.setRemoved(reason, eventCause);
 +        // CraftBukkit end
      }
@@ -500,13 +500,14 @@
      }
  
      public boolean isFree(double x, double y, double z) {
-@@ -635,7 +_,43 @@
+@@ -635,7 +_,44 @@
          return this.onGround;
      }
  
 +    // Paper start - detailed watchdog information
 +    public final Object posLock = new Object(); // Paper - log detailed entity tick information
 +
++    @Nullable
 +    private Vec3 moveVector;
 +    private double moveStartX;
 +    private double moveStartY;
@@ -1451,16 +1452,20 @@
          }
      }
  
-@@ -2828,11 +_,34 @@
+@@ -2828,11 +_,37 @@
          return PortalShape.getRelativePosition(portal, axis, this.position(), this.getDimensions(this.getPose()));
      }
  
 +    // CraftBukkit start
-+    public org.bukkit.craftbukkit.event.CraftPortalEvent callPortalEvent(Entity entity, org.bukkit.Location exit, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause, int searchRadius, int creationRadius) {
++    public @Nullable org.bukkit.craftbukkit.event.CraftPortalEvent callPortalEvent(
++        Entity entity,
++        org.bukkit.Location exit,
++        org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause,
++        int searchRadius, int creationRadius
++    ) {
 +        org.bukkit.entity.Entity bukkitEntity = entity.getBukkitEntity();
 +        org.bukkit.Location enter = bukkitEntity.getLocation();
 +
-+        // Paper start
 +        final org.bukkit.PortalType portalType = switch (cause) {
 +            case END_PORTAL -> org.bukkit.PortalType.ENDER;
 +            case NETHER_PORTAL -> org.bukkit.PortalType.NETHER;
@@ -1468,8 +1473,7 @@
 +            default -> org.bukkit.PortalType.CUSTOM;
 +        };
 +        org.bukkit.event.entity.EntityPortalEvent event = new org.bukkit.event.entity.EntityPortalEvent(bukkitEntity, enter, exit, searchRadius, true, creationRadius, portalType);
-+        // Paper end
-+        event.getEntity().getServer().getPluginManager().callEvent(event);
++        event.callEvent();
 +        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null || !entity.isAlive()) {
 +            return null;
 +        }
@@ -1713,18 +1717,13 @@
      }
  
      public void checkDespawn() {
-@@ -3594,6 +_,15 @@
+@@ -3593,7 +_,9 @@
+     }
  
      @Override
-     public final void setRemoved(Entity.RemovalReason removalReason) {
-+        // CraftBukkit start - add Bukkit remove cause
-+        this.setRemoved(removalReason, null);
-+    }
-+
-+    @Override
-+    public final void setRemoved(Entity.RemovalReason removalReason, org.bukkit.event.entity.EntityRemoveEvent.Cause cause) {
-+        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityRemoveEvent(this, cause);
-+        // CraftBukkit end
+-    public final void setRemoved(Entity.RemovalReason removalReason) {
++    public final void setRemoved(Entity.RemovalReason removalReason, @Nullable org.bukkit.event.entity.EntityRemoveEvent.Cause cause) { // CraftBukkit - add Bukkit remove cause
++        org.bukkit.craftbukkit.event.CraftEventFactory.callEntityRemoveEvent(this, cause); // CraftBukkit
 +        final boolean alreadyRemoved = this.removalReason != null; // Paper - Folia schedulers
          if (this.removalReason == null) {
              this.removalReason = removalReason;

@@ -11,6 +11,7 @@ import org.bukkit.craftbukkit.block.CraftBlockEntityState;
 import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
+import org.jetbrains.annotations.Nullable;
 
 public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
 
@@ -37,11 +38,11 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
     }
 
     @Override
-    public boolean addFreshEntity(Entity arg0, SpawnReason arg1) {
-        if (this.structureTransformer != null && !this.structureTransformer.transformEntity(arg0)) {
+    public boolean addFreshEntity(Entity entity, @Nullable SpawnReason reason) {
+        if (this.structureTransformer != null && !this.structureTransformer.transformEntity(entity)) {
             return false;
         }
-        return super.addFreshEntity(arg0, arg1);
+        return super.addFreshEntity(entity, reason);
     }
 
     public boolean setCraftBlock(BlockPos position, CraftBlockState craftBlockState, int flags, int recursionLeft) {

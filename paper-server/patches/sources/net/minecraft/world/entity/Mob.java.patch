@@ -53,14 +53,14 @@
  
      public void setTarget(@Nullable LivingEntity target) {
 +        // CraftBukkit start - fire event
-+        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN, true);
++        this.setTarget(target, EntityTargetEvent.TargetReason.UNKNOWN);
 +    }
 +
-+    public boolean setTarget(LivingEntity target, EntityTargetEvent.TargetReason reason, boolean fireEvent) {
++    public boolean setTarget(@Nullable LivingEntity target, @Nullable EntityTargetEvent.TargetReason reason) {
 +        if (this.getTarget() == target) {
 +            return false;
 +        }
-+        if (fireEvent) {
++        if (reason != null) {
 +            if (reason == EntityTargetEvent.TargetReason.UNKNOWN && this.getTarget() != null && target == null) {
 +                reason = this.getTarget().isAlive() ? EntityTargetEvent.TargetReason.FORGOT_TARGET : EntityTargetEvent.TargetReason.TARGET_DIED;
 +            }
@@ -89,19 +89,6 @@
      }
  
      @Override
-@@ -338,6 +_,12 @@
-         return null;
-     }
- 
-+    // CraftBukkit start - Add delegate method
-+    public SoundEvent getAmbientSound0() {
-+        return this.getAmbientSound();
-+    }
-+    // CraftBukkit end
-+
-     @Override
-     public void addAdditionalSaveData(CompoundTag compound) {
-         super.addAdditionalSaveData(compound);
 @@ -358,13 +_,22 @@
          if (this.isNoAi()) {
              compound.putBoolean("NoAI", this.isNoAi());
@@ -296,26 +283,25 @@
                  }
              }
          }
-@@ -1122,6 +_,22 @@
+@@ -1122,6 +_,21 @@
      public <T extends Mob> T convertTo(
          EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.AfterConversion<T> afterConversion
      ) {
++        // Paper start - entity zap event - allow cancellation of conversion post creation
 +        return this.convertTo(entityType, conversionParams, spawnReason, afterConversion, EntityTransformEvent.TransformReason.UNKNOWN, CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
 +    public <T extends Mob> T convertTo(
-+        EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.AfterConversion<T> afterConversion, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason creatureSpawnReason
++        EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.AfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason
 +    ) {
-+    // Paper start - entity zap event - allow cancellation of conversion post creation
 +        return this.convertTo(entityType, conversionParams, spawnReason, e -> { afterConversion.finalizeConversion(e); return true; }, transformReason, creatureSpawnReason);
 +    }
 +    @Nullable
 +    public <T extends Mob> T convertTo(
-+        EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.CancellingAfterConversion<T> afterConversion, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason creatureSpawnReason
++        EntityType<T> entityType, ConversionParams conversionParams, EntitySpawnReason spawnReason, ConversionParams.CancellingAfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason
 +    ) {
 +        // Paper end - entity zap event - allow cancellation of conversion post creation
-+        // CraftBukkit end
          if (this.isRemoved()) {
              return null;
          } else {
@@ -346,25 +332,23 @@
                  }
  
                  return mob;
-@@ -1146,7 +_,20 @@
+@@ -1146,7 +_,18 @@
  
      @Nullable
      public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.AfterConversion<T> afterConversion) {
 -        return this.convertTo(entityType, coversionParams, EntitySpawnReason.CONVERSION, afterConversion);
-+        // CraftBukkit start
++        // Paper start - entity zap event - allow cancellation of conversion post creation
 +        return this.convertTo(entityType, coversionParams, afterConversion, EntityTransformEvent.TransformReason.UNKNOWN, CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
 +    @Nullable
-+    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.AfterConversion<T> afterConversion, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
-+    // Paper start - entity zap event - allow cancellation of conversion post creation
++    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.AfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
 +        return this.convertTo(entityType, coversionParams, e -> { afterConversion.finalizeConversion(e); return true; }, transformReason, creatureSpawnReason);
 +    }
 +    @Nullable
-+    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.CancellingAfterConversion<T> afterConversion, EntityTransformEvent.TransformReason transformReason, CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
-+    // Paper start - entity zap event - allow cancellation of conversion post creation
++    public <T extends Mob> T convertTo(EntityType<T> entityType, ConversionParams coversionParams, ConversionParams.CancellingAfterConversion<T> afterConversion, @Nullable EntityTransformEvent.TransformReason transformReason, @Nullable CreatureSpawnEvent.SpawnReason creatureSpawnReason) {
 +        return this.convertTo(entityType, coversionParams, EntitySpawnReason.CONVERSION, afterConversion, transformReason, creatureSpawnReason);
-+        // CraftBukkit end
++        // Paper end - entity zap event - allow cancellation of conversion post creation
      }
  
      @Nullable

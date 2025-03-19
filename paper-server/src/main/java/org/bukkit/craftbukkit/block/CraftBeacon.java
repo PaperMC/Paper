@@ -44,7 +44,7 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
             BeaconBlockEntity beacon = (BeaconBlockEntity) blockEntity;
 
             Collection<Player> nms = BeaconBlockEntity.getHumansInRange(beacon.getLevel(), beacon.getBlockPos(), beacon.levels, beacon); // Paper - Custom beacon ranges
-            Collection<LivingEntity> bukkit = new ArrayList<LivingEntity>(nms.size());
+            Collection<LivingEntity> bukkit = new ArrayList<>(nms.size());
 
             for (Player human : nms) {
                 bukkit.add(human.getBukkitEntity());
@@ -54,7 +54,7 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
         }
 
         // block is no longer a beacon
-        return new ArrayList<LivingEntity>();
+        return new ArrayList<>();
     }
 
     @Override

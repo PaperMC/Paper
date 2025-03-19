@@ -205,10 +205,9 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         boolean result = this.generateTree(populator, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
         populator.refreshTiles();
 
-        for (BlockState blockState : populator.getList()) {
+        for (CraftBlockState blockState : populator.getList()) {
             if (predicate == null || predicate.test(blockState)) {
-                CraftBlockState craftBlockState = (CraftBlockState) blockState;
-                craftBlockState.place(craftBlockState.getFlags());
+                blockState.place(blockState.getFlags());
             }
         }
 

@@ -75,7 +75,7 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
     // Paper start
     @Override
     public Material getMinecartMaterial() {
-        return CraftMagicNumbers.getMaterial(this.getHandle().publicGetDropItem());
+        return CraftMagicNumbers.getMaterial(this.getHandle().getDropItem());
     }
     // Paper end
 

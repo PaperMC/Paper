@@ -723,7 +723,7 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public boolean addFreshEntity(Entity entity, CreatureSpawnEvent.SpawnReason reason) {
+    public boolean addFreshEntity(Entity entity, @Nullable CreatureSpawnEvent.SpawnReason reason) {
         return this.handle.addFreshEntity(entity, reason);
     }
 

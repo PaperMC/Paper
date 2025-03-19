@@ -929,19 +929,19 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public Sound getHurtSound() {
-        SoundEvent sound = this.getHandle().getHurtSound0(this.getHandle().damageSources().generic());
+        SoundEvent sound = this.getHandle().getHurtSound(this.getHandle().damageSources().generic());
         return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
     }
 
     @Override
     public Sound getDeathSound() {
-        SoundEvent sound = this.getHandle().getDeathSound0();
+        SoundEvent sound = this.getHandle().getDeathSound();
         return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
     }
 
     @Override
     public Sound getFallDamageSound(int fallHeight) {
-        return CraftSound.minecraftToBukkit(this.getHandle().getFallDamageSound0(fallHeight));
+        return CraftSound.minecraftToBukkit(this.getHandle().getFallDamageSound(fallHeight));
     }
 
     @Override

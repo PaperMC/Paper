@@ -15,20 +15,18 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.inventory.InventoryHolder;
 
 public class CraftInventoryCustom extends CraftInventory {
-    // Paper start
+
     public CraftInventoryCustom(InventoryHolder owner, InventoryType type, Container delegate) {
         super(new io.papermc.paper.inventory.PaperInventoryCustomHolderContainer(owner, delegate, type));
     }
-    // Paper end
+
     public CraftInventoryCustom(InventoryHolder owner, InventoryType type) {
         super(new MinecraftInventory(owner, type));
     }
 
-    // Paper start
     public CraftInventoryCustom(InventoryHolder owner, InventoryType type, net.kyori.adventure.text.Component title) {
         super(new MinecraftInventory(owner, type, title));
     }
-    // Paper end
 
     public CraftInventoryCustom(InventoryHolder owner, InventoryType type, String title) {
         super(new MinecraftInventory(owner, type, title));
@@ -38,16 +36,14 @@ public class CraftInventoryCustom extends CraftInventory {
         super(new MinecraftInventory(owner, size));
     }
 
-    // Paper start
     public CraftInventoryCustom(InventoryHolder owner, int size, net.kyori.adventure.text.Component title) {
         super(new MinecraftInventory(owner, size, title));
     }
-    // Paper end
 
     public CraftInventoryCustom(InventoryHolder owner, int size, String title) {
         super(new MinecraftInventory(owner, size, title));
     }
-    // Paper start
+
     public String getTitle() {
         if (this.inventory instanceof MinecraftInventory minecraftInventory) {
             return minecraftInventory.getTitle();
@@ -67,7 +63,6 @@ public class CraftInventoryCustom extends CraftInventory {
             throw new UnsupportedOperationException(this.inventory.getClass() + " isn't a recognized Container type here");
         }
     }
-    // Paper end
 
     static class MinecraftInventory implements Container {
         private final NonNullList<ItemStack> items;
@@ -78,12 +73,10 @@ public class CraftInventoryCustom extends CraftInventory {
         private InventoryType type;
         private final InventoryHolder owner;
 
-        // Paper start
         public MinecraftInventory(InventoryHolder owner, InventoryType type, net.kyori.adventure.text.Component title) {
             this(owner, type.getDefaultSize(), title);
             this.type = type;
         }
-        // Paper end
 
         public MinecraftInventory(InventoryHolder owner, InventoryType type) {
             this(owner, type.getDefaultSize(), type.getDefaultTitle());
@@ -104,22 +97,20 @@ public class CraftInventoryCustom extends CraftInventory {
             this.items = NonNullList.withSize(size, ItemStack.EMPTY);
             this.title = title;
             this.adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(title);
-            this.viewers = new ArrayList<HumanEntity>();
+            this.viewers = new ArrayList<>();
             this.owner = owner;
             this.type = InventoryType.CHEST;
         }
 
-        // Paper start
         public MinecraftInventory(final InventoryHolder owner, final int size, final net.kyori.adventure.text.Component title) {
             Preconditions.checkArgument(title != null, "Title cannot be null");
             this.items = NonNullList.withSize(size, ItemStack.EMPTY);
             this.title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(title);
             this.adventure$title = title;
-            this.viewers = new ArrayList<HumanEntity>();
+            this.viewers = new ArrayList<>();
             this.owner = owner;
             this.type = InventoryType.CHEST;
         }
-        // Paper end
 
         @Override
         public int getContainerSize() {
@@ -224,12 +215,10 @@ public class CraftInventoryCustom extends CraftInventory {
 
         @Override
         public void startOpen(Player player) {
-
         }
 
         @Override
         public void stopOpen(Player player) {
-
         }
 
         @Override
@@ -242,11 +231,9 @@ public class CraftInventoryCustom extends CraftInventory {
             return null;
         }
 
-        // Paper start
         public net.kyori.adventure.text.Component title() {
             return this.adventure$title;
         }
-        // Paper end
 
         public String getTitle() {
             return this.title;

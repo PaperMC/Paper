@@ -1,7 +1,6 @@
 package org.bukkit.craftbukkit.block;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.BellBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BellBlockEntity;
@@ -33,24 +32,7 @@ public class CraftBell extends CraftBlockEntityState<BellBlockEntity> implements
         }
 
         net.minecraft.world.entity.Entity nmsEntity = (entity != null) ? ((CraftEntity) entity).getHandle() : null;
-        Direction enumDirection = CraftBlock.blockFaceToNotch(direction);
-
-        return ((BellBlock) Blocks.BELL).attemptToRing(nmsEntity, this.world.getHandle(), this.getPosition(), enumDirection);
-    }
-
-    @Override
-    public boolean ring(Entity entity) {
-        return this.ring(entity, null);
-    }
-
-    @Override
-    public boolean ring(BlockFace direction) {
-        return this.ring(null, direction);
-    }
-
-    @Override
-    public boolean ring() {
-        return this.ring(null, null);
+        return ((BellBlock) Blocks.BELL).attemptToRing(nmsEntity, this.world.getHandle(), this.getPosition(), CraftBlock.blockFaceToNotch(direction));
     }
 
     @Override

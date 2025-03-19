@@ -336,7 +336,7 @@
              }
  
              @Override
-@@ -312,56 +_,162 @@
+@@ -312,56 +_,156 @@
      }
  
      protected void save(ServerPlayer player) {
@@ -356,11 +356,11 @@
      }
  
 -    public void remove(ServerPlayer player) {
-+    public net.kyori.adventure.text.Component remove(ServerPlayer player) { // CraftBukkit - return string // Paper - return Component
++    public @Nullable net.kyori.adventure.text.Component remove(ServerPlayer player) { // CraftBukkit - return string // Paper - return Component
 +        // Paper start - Fix kick event leave message not being sent
 +        return this.remove(player, net.kyori.adventure.text.Component.translatable("multiplayer.player.left", net.kyori.adventure.text.format.NamedTextColor.YELLOW, io.papermc.paper.configuration.GlobalConfiguration.get().messages.useDisplayNameInQuitMessage ? player.getBukkitEntity().displayName() : io.papermc.paper.adventure.PaperAdventure.asAdventure(player.getDisplayName())));
 +    }
-+    public net.kyori.adventure.text.Component remove(ServerPlayer player, net.kyori.adventure.text.Component leaveMessage) {
++    public @Nullable net.kyori.adventure.text.Component remove(ServerPlayer player, net.kyori.adventure.text.Component leaveMessage) {
 +        // Paper end - Fix kick event leave message not being sent
          ServerLevel serverLevel = player.serverLevel();
          player.awardStat(Stats.LEAVE_GAME);
@@ -472,28 +472,22 @@
 -        if (this.bans.isBanned(gameProfile)) {
 -            UserBanListEntry userBanListEntry = this.bans.get(gameProfile);
 +    // CraftBukkit start - Whole method, SocketAddress to LoginListener, added hostname to signature, return EntityPlayer
-+    public ServerPlayer canPlayerLogin(net.minecraft.server.network.ServerLoginPacketListenerImpl loginlistener, GameProfile gameProfile) {
++    public @Nullable ServerPlayer canPlayerLogin(net.minecraft.server.network.ServerLoginPacketListenerImpl loginlistener, GameProfile gameProfile) {
 +        // if (this.bans.isBanned(gameProfile)) {
 +        //     UserBanListEntry userBanListEntry = this.bans.get(gameProfile);
-+        // Moved from processLogin
++        // Moved from disconnectAllPlayersWithProfile
 +        UUID uuid = gameProfile.getId();
 +        List<ServerPlayer> list = Lists.newArrayList();
 +
-+        ServerPlayer entityplayer;
-+
-+        for (int i = 0; i < this.players.size(); ++i) {
-+            entityplayer = (ServerPlayer) this.players.get(i);
-+            if (entityplayer.getUUID().equals(uuid) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && entityplayer.getGameProfile().getName().equalsIgnoreCase(gameProfile.getName()))) { // Paper - validate usernames
-+                list.add(entityplayer);
++        for (net.minecraft.server.level.ServerPlayer serverPlayer : this.players) {
++            if (serverPlayer.getUUID().equals(uuid) || (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && serverPlayer.getGameProfile().getName().equalsIgnoreCase(gameProfile.getName()))) { // Paper - validate usernames
++                list.add(serverPlayer);
 +            }
 +        }
 +
-+        java.util.Iterator iterator = list.iterator();
-+
-+        while (iterator.hasNext()) {
-+            entityplayer = (ServerPlayer) iterator.next();
-+            this.save(entityplayer); // CraftBukkit - Force the player's inventory to be saved
-+            entityplayer.connection.disconnect(Component.translatable("multiplayer.disconnect.duplicate_login"), org.bukkit.event.player.PlayerKickEvent.Cause.DUPLICATE_LOGIN); // Paper - kick event cause
++        for (final net.minecraft.server.level.ServerPlayer serverPlayer : list) {
++            this.save(serverPlayer); // CraftBukkit - Force the player's inventory to be saved
++            serverPlayer.connection.disconnect(DUPLICATE_LOGIN_DISCONNECT_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.DUPLICATE_LOGIN); // Paper - kick event cause
 +        }
 +
 +        // Instead of kicking then returning, we need to store the kick reason
@@ -530,7 +524,7 @@
              IpBanListEntry ipBanListEntry = this.ipBans.get(socketAddress);
              MutableComponent mutableComponent = Component.translatable("multiplayer.disconnect.banned_ip.reason", ipBanListEntry.getReason());
              if (ipBanListEntry.getExpires() != null) {
-@@ -381,69 +_,129 @@
+@@ -381,69 +_,130 @@
                  );
              }
  
@@ -617,10 +611,11 @@
 +    }
 +
 +    // CraftBukkit start
-+    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason) {
++    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason) {
 +        return this.respawn(player, keepInventory, reason, eventReason, null);
 +    }
-+    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason, org.bukkit.Location location) {
++
++    public ServerPlayer respawn(ServerPlayer player, boolean keepInventory, Entity.RemovalReason reason, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason eventReason, @Nullable org.bukkit.Location location) {
 +        player.stopRiding(); // CraftBukkit
          this.players.remove(player);
 +        this.playersByName.remove(player.getScoreboardName().toLowerCase(java.util.Locale.ROOT)); // Spigot

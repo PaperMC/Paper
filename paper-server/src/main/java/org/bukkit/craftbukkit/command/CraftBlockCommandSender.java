@@ -29,17 +29,17 @@ public class CraftBlockCommandSender extends ServerCommandSender implements Bloc
         }
     });
     private final CommandSourceStack block;
-    private final BlockEntity tile;
+    private final BlockEntity blockEntity;
 
-    public CraftBlockCommandSender(CommandSourceStack commandBlockListenerAbstract, BlockEntity tile) {
+    public CraftBlockCommandSender(CommandSourceStack commandBlockListenerAbstract, BlockEntity blockEntity) {
         super(CraftBlockCommandSender.SHARED_PERM);
         this.block = commandBlockListenerAbstract;
-        this.tile = tile;
+        this.blockEntity = blockEntity;
     }
 
     @Override
     public Block getBlock() {
-        return CraftBlock.at(this.tile.getLevel(), this.tile.getBlockPos());
+        return CraftBlock.at(this.blockEntity.getLevel(), this.blockEntity.getBlockPos());
     }
 
     @Override

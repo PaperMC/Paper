@@ -9,7 +9,7 @@
      private int lastSpawnChunkRadius;
      final EntityTickList entityTickList = new EntityTickList();
      public final PersistentEntitySectionManager<Entity> entityManager;
-@@ -205,11 +_,130 @@
+@@ -205,11 +_,131 @@
      private final boolean tickTime;
      private final RandomSequences randomSequences;
  
@@ -19,7 +19,8 @@
 +    public boolean hasPhysicsEvent = true; // Paper - BlockPhysicsEvent
 +    public boolean hasEntityMoveEvent; // Paper - Add EntityMoveEvent
 +
-+    public LevelChunk getChunkIfLoaded(int x, int z) {
++    @Override
++    public @Nullable LevelChunk getChunkIfLoaded(int x, int z) {
 +        return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
 +    }
 +
@@ -362,13 +363,14 @@
                  }
              }
  
-@@ -577,6 +_,11 @@
+@@ -577,6 +_,12 @@
      }
  
      protected BlockPos findLightningTargetAround(BlockPos pos) {
 +        // Paper start - Add methods to find targets for lightning strikes
 +        return this.findLightningTargetAround(pos, false);
 +    }
++
 +    public BlockPos findLightningTargetAround(BlockPos pos, boolean returnNullWhenNoTarget) {
 +        // Paper end - Add methods to find targets for lightning strikes
          BlockPos heightmapPos = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
@@ -558,7 +560,7 @@
 +    }
 +
 +    @Override
-+    public boolean addFreshEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public boolean addFreshEntity(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
      }
@@ -569,7 +571,7 @@
 +        return this.addWithUUID(entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.DEFAULT);
 +    }
 +
-+    public boolean addWithUUID(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public boolean addWithUUID(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +        return this.addEntity(entity, reason);
 +        // CraftBukkit end
      }
@@ -582,7 +584,7 @@
 +        this.addDuringTeleport(entity, null);
 +    }
 +
-+    public void addDuringTeleport(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public void addDuringTeleport(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
 +        // CraftBukkit end
          if (entity instanceof ServerPlayer serverPlayer) {
              this.addPlayer(serverPlayer);
@@ -598,7 +600,7 @@
  
 -    private boolean addEntity(Entity entity) {
 +    // CraftBukkit start
-+    private boolean addEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++    private boolean addEntity(Entity entity, @Nullable org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
 +        org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
 +        entity.generation = false; // Paper - Don't fire sync event during generation; Reset flag if it was added during a ServerLevel generation process
 +        // Paper start - extra debug info

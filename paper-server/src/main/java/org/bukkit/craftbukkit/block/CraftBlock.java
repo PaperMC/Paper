@@ -78,11 +78,9 @@ public class CraftBlock implements Block {
         return this.world.getBlockState(this.position);
     }
 
-    // Paper start
     public net.minecraft.world.level.material.FluidState getNMSFluid() {
         return this.world.getFluidState(this.position);
     }
-    // Paper end
 
     public BlockPos getPosition() {
         return this.position;
@@ -285,7 +283,7 @@ public class CraftBlock implements Block {
 
     @Override
     public String toString() {
-        return "CraftBlock{pos=" + this.position + ",type=" + this.getType() + ",data=" + this.getNMS() + ",fluid=" + this.world.getFluidState(this.position) + '}';
+        return "CraftBlock{pos=" + this.position + ",type=" + this.getType() + ",data=" + this.getNMS() + ",fluid=" + this.getNMSFluid() + '}';
     }
 
     public static BlockFace notchToBlockFace(Direction notch) {
@@ -511,7 +509,7 @@ public class CraftBlock implements Block {
         // Modelled off Player#hasCorrectToolForDrops
         if (block != Blocks.AIR && (item == null || !state.requiresCorrectToolForDrops() || nmsItem.isCorrectToolForDrops(state))) {
             net.minecraft.world.level.block.Block.dropResources(state, this.world.getMinecraftWorld(), this.position, this.world.getBlockEntity(this.position), null, nmsItem, false); // Paper - Properly handle xp dropping
-            // Paper start - improve Block#breanNaturally
+            // Paper start - improve Block#breakNaturally
             if (triggerEffect) {
                 if (state.getBlock() instanceof net.minecraft.world.level.block.BaseFireBlock) {
                     this.world.levelEvent(net.minecraft.world.level.block.LevelEvent.SOUND_EXTINGUISH_FIRE, this.position, 0);
@@ -524,7 +522,7 @@ public class CraftBlock implements Block {
             result = true;
         }
 
-        // SPIGOT-6778: Directly call setBlock instead of setTypeAndData, so that the tile entiy is not removed and custom remove logic is run.
+        // SPIGOT-6778: Directly call setBlock instead of setBlockState, so that the block entity is not removed and custom remove logic is run.
         // Paper start - improve breakNaturally
         boolean destroyed = this.world.removeBlock(this.position, false);
         if (destroyed) {

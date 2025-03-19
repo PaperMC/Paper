@@ -76,13 +76,13 @@
 +    public int patrolSpawnDelay; // Paper - Pillager patrol spawn settings and per player options
 +    // Paper start - cancellable death event
 +    public boolean queueHealthUpdatePacket;
-+    public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
++    public @Nullable net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
 +    // Paper end - cancellable death event
 +    // CraftBukkit start
 +    public org.bukkit.craftbukkit.entity.CraftPlayer.TransferCookieConnection transferCookieConnection;
 +    public String displayName;
 +    public net.kyori.adventure.text.Component adventure$displayName; // Paper
-+    public Component listName;
++    public @Nullable Component listName;
 +    public int listOrder = 0;
 +    public org.bukkit.Location compassTarget;
 +    public int newExp = 0;
@@ -95,9 +95,9 @@
 +    public boolean supressTrackerForLogin = false; // Paper - Fire PlayerJoinEvent when Player is actually ready
 +    // CraftBukkit end
 +    public boolean isRealPlayer; // Paper
-+    public com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
++    public @Nullable com.destroystokyo.paper.event.entity.PlayerNaturallySpawnCreaturesEvent playerNaturallySpawnedEvent; // Paper - PlayerNaturallySpawnCreaturesEvent
 +    public @Nullable String clientBrandName = null; // Paper - Brand support
-+    public org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
++    public @Nullable org.bukkit.event.player.PlayerQuitEvent.QuitReason quitReason = null; // Paper - Add API for quit reason; there are a lot of changes to do if we change all methods leading to the event
  
      public ServerPlayer(MinecraftServer server, ServerLevel level, GameProfile gameProfile, ClientInformation clientInformation) {
          super(level, level.getSharedSpawnPos(), level.getSharedSpawnAngle(), gameProfile);
@@ -481,7 +481,7 @@
  
 -    public TeleportTransition findRespawnPositionAndUseSpawnBlock(boolean useCharge, TeleportTransition.PostTeleportTransition postTeleportTransition) {
 +    // CraftBukkit start
-+    public TeleportTransition findRespawnPositionAndUseSpawnBlock(boolean useCharge, TeleportTransition.PostTeleportTransition postTeleportTransition, org.bukkit.event.player.PlayerRespawnEvent.RespawnReason respawnReason) {
++    public @Nullable TeleportTransition findRespawnPositionAndUseSpawnBlock(boolean useCharge, TeleportTransition.PostTeleportTransition postTeleportTransition, @Nullable org.bukkit.event.player.PlayerRespawnEvent.RespawnReason respawnReason) {
 +        TeleportTransition teleportTransition;
 +        boolean isBedSpawn = false;
 +        boolean isAnchorSpawn = false;
@@ -678,7 +678,7 @@
                  this.connection.resetPosition();
                  level.addDuringTeleport(this);
                  profilerFiller.pop();
-@@ -1027,10 +_,40 @@
+@@ -1027,10 +_,39 @@
                  this.lastSentExp = -1;
                  this.lastSentHealth = -1.0F;
                  this.lastSentFood = -1;
@@ -700,16 +700,15 @@
 +
 +    // CraftBukkit start
 +    @Override
-+    public org.bukkit.craftbukkit.event.CraftPortalEvent callPortalEvent(
++    public @Nullable org.bukkit.craftbukkit.event.CraftPortalEvent callPortalEvent(
 +        Entity entity,
 +        org.bukkit.Location exit,
 +        org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause,
-+        int searchRadius,
-+        int creationRadius
++        int searchRadius, int creationRadius
 +    ) {
 +        org.bukkit.Location enter = this.getBukkitEntity().getLocation();
 +        org.bukkit.event.player.PlayerPortalEvent event = new org.bukkit.event.player.PlayerPortalEvent(this.getBukkitEntity(), enter, exit, cause, searchRadius, true, creationRadius);
-+        org.bukkit.Bukkit.getServer().getPluginManager().callEvent(event);
++        event.callEvent();
 +        if (event.isCancelled() || event.getTo() == null || event.getTo().getWorld() == null) {
 +            return null;
 +        }
@@ -786,8 +785,8 @@
 +
 +    @Override
 +    public Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> startSleepInBed(BlockPos at, boolean force) {
-+        Direction enumdirection = (Direction) this.level().getBlockState(at).getValue(HorizontalDirectionalBlock.FACING);
-+        Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> bedResult = this.getBedResult(at, enumdirection);
++        Direction direction = this.level().getBlockState(at).getValue(HorizontalDirectionalBlock.FACING);
++        Either<net.minecraft.world.entity.player.Player.BedSleepingProblem, Unit> bedResult = this.getBedResult(at, direction);
 +
 +        if (bedResult.left().orElse(null) == net.minecraft.world.entity.player.Player.BedSleepingProblem.OTHER_PROBLEM) {
 +            return bedResult; // return immediately if the result is not bypassable by plugins
@@ -1341,11 +1340,11 @@
  
      public void loadGameTypes(@Nullable CompoundTag tag) {
 +        // Paper start - Expand PlayerGameModeChangeEvent
-+        if (this.server.getForcedGameType() != null && this.server.getForcedGameType() != ServerPlayer.readPlayerMode(tag, "playerGameType")) {
++        if (this.server.getForcedGameType() != null && this.server.getForcedGameType() != readPlayerMode(tag, "playerGameType")) {
 +            if (new org.bukkit.event.player.PlayerGameModeChangeEvent(this.getBukkitEntity(), org.bukkit.GameMode.getByValue(this.server.getDefaultGameType().getId()), org.bukkit.event.player.PlayerGameModeChangeEvent.Cause.DEFAULT_GAMEMODE, null).callEvent()) {
 +                this.gameMode.setGameModeForPlayer(this.server.getForcedGameType(), GameType.DEFAULT_MODE);
 +            } else {
-+                this.gameMode.setGameModeForPlayer(ServerPlayer.readPlayerMode(tag,"playerGameType"), ServerPlayer.readPlayerMode(tag, "previousPlayerGameType"));
++                this.gameMode.setGameModeForPlayer(readPlayerMode(tag,"playerGameType"), readPlayerMode(tag, "previousPlayerGameType"));
 +            }
 +            return;
 +        }
@@ -1393,7 +1392,7 @@
          }
  
          private static float calculateLookAtYaw(Vec3 position, BlockPos towardsPos) {
-@@ -2127,4 +_,147 @@
+@@ -2127,4 +_,143 @@
              return (float)Mth.wrapDegrees(Mth.atan2(vec3.z, vec3.x) * 180.0F / (float)Math.PI - 90.0);
          }
      }
@@ -1412,19 +1411,15 @@
 +        }
 +    }
 +
-+    public org.bukkit.WeatherType weather = null;
-+
-+    public org.bukkit.WeatherType getPlayerWeather() {
-+        return this.weather;
-+    }
++    public @Nullable org.bukkit.WeatherType weatherType = null;
 +
 +    public void setPlayerWeather(org.bukkit.WeatherType type, boolean plugin) {
-+        if (!plugin && this.weather != null) {
++        if (!plugin && this.weatherType != null) {
 +            return;
 +        }
 +
 +        if (plugin) {
-+            this.weather = type;
++            this.weatherType = type;
 +        }
 +
 +        if (type == org.bukkit.WeatherType.DOWNFALL) {
@@ -1438,7 +1433,7 @@
 +    private float pluginRainPositionPrevious;
 +
 +    public void updateWeather(float oldRain, float newRain, float oldThunder, float newThunder) {
-+        if (this.weather == null) {
++        if (this.weatherType == null) {
 +            // Vanilla
 +            if (oldRain != newRain) {
 +                this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, newRain));
@@ -1451,7 +1446,7 @@
 +        }
 +
 +        if (oldThunder != newThunder) {
-+            if (this.weather == org.bukkit.WeatherType.DOWNFALL || this.weather == null) {
++            if (this.weatherType == org.bukkit.WeatherType.DOWNFALL || this.weatherType == null) {
 +                this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, newThunder));
 +            } else {
 +                this.connection.send(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, 0));
@@ -1460,20 +1455,20 @@
 +    }
 +
 +    public void tickWeather() {
-+        if (this.weather == null) return;
++        if (this.weatherType == null) return;
 +
 +        this.pluginRainPositionPrevious = this.pluginRainPosition;
-+        if (this.weather == org.bukkit.WeatherType.DOWNFALL) {
-+            this.pluginRainPosition += 0.01;
++        if (this.weatherType == org.bukkit.WeatherType.DOWNFALL) {
++            this.pluginRainPosition += 0.01F;
 +        } else {
-+            this.pluginRainPosition -= 0.01;
++            this.pluginRainPosition -= 0.01F;
 +        }
 +
 +        this.pluginRainPosition = Mth.clamp(this.pluginRainPosition, 0.0F, 1.0F);
 +    }
 +
 +    public void resetPlayerWeather() {
-+        this.weather = null;
++        this.weatherType = null;
 +        this.setPlayerWeather(this.level().getLevelData().isRaining() ? org.bukkit.WeatherType.DOWNFALL : org.bukkit.WeatherType.CLEAR, false);
 +    }
 +

@@ -3,14 +3,7 @@ package org.bukkit.craftbukkit.inventory.util;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.npc.Villager;
-import net.minecraft.world.inventory.AnvilMenu;
-import net.minecraft.world.inventory.CartographyTableMenu;
-import net.minecraft.world.inventory.CraftingMenu;
-import net.minecraft.world.inventory.EnchantmentMenu;
-import net.minecraft.world.inventory.GrindstoneMenu;
 import net.minecraft.world.inventory.MerchantMenu;
-import net.minecraft.world.inventory.SmithingMenu;
-import net.minecraft.world.inventory.StonecutterMenu;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.block.Blocks;
@@ -73,13 +66,13 @@ public final class CraftMenus {
         player.connection.send(new ClientboundOpenScreenPacket(merchant.containerId, net.minecraft.world.inventory.MenuType.MERCHANT, merchant.getTitle()));
         player.containerMenu = merchant;
         player.initMenu(merchant);
-        // Copy IMerchant#openTradingScreen
-        MerchantOffers merchantrecipelist = minecraftMerchant.getOffers();
 
-        if (!merchantrecipelist.isEmpty()) {
-            player.sendMerchantOffers(merchant.containerId, merchantrecipelist, level, minecraftMerchant.getVillagerXp(), minecraftMerchant.showProgressBar(), minecraftMerchant.canRestock());
+        // Copy Merchant#openTradingScreen
+        MerchantOffers offers = minecraftMerchant.getOffers();
+        if (!offers.isEmpty()) {
+            player.sendMerchantOffers(merchant.containerId, offers, level, minecraftMerchant.getVillagerXp(), minecraftMerchant.showProgressBar(), minecraftMerchant.canRestock());
         }
-        // End Copy IMerchant#openTradingScreen
+        // End Copy Merchant#openTradingScreen
     }
 
     public static <V extends InventoryView, B extends InventoryViewBuilder<V>> MenuTypeData<V, B> getMenuTypeData(final CraftMenuType<?, ?> menuType) {

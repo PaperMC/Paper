@@ -162,11 +162,11 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
         /**
          * When the target is in a different dimension
          */
-        TARGET_OTHER_LEVEL, // Paper
+        TARGET_OTHER_LEVEL,
         /**
          * When the target is in creative or spectator gamemode, or the difficulty is peaceful, or other reasons
          */
-        TARGET_INVALID, // Paper
+        TARGET_INVALID,
         /**
          * A currently unknown reason for the entity changing target.
          */

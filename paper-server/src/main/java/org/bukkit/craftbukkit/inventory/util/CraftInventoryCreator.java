@@ -9,7 +9,7 @@ import org.bukkit.inventory.InventoryHolder;
 public final class CraftInventoryCreator {
 
     public static final CraftInventoryCreator INSTANCE = new CraftInventoryCreator();
-    //
+
     private final CraftCustomInventoryConverter DEFAULT_CONVERTER = new CraftCustomInventoryConverter();
     private final Map<InventoryType, InventoryConverter> converterMap = new HashMap<>();
 

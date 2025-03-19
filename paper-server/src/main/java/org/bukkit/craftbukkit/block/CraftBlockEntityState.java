@@ -167,21 +167,15 @@ public abstract class CraftBlockEntityState<T extends BlockEntity> extends Craft
         }
     }
 
-    protected boolean isApplicable(BlockEntity blockEntity) {
-        return blockEntity != null && this.blockEntity.getClass() == blockEntity.getClass();
-    }
-
     @Override
     public boolean update(boolean force, boolean applyPhysics) {
         boolean result = super.update(force, applyPhysics);
 
         if (result && this.isPlaced()) {
-            BlockEntity blockEntity = this.getBlockEntityFromWorld();
-
-            if (this.isApplicable(blockEntity)) {
+            this.getWorldHandle().getBlockEntity(this.getPosition(), this.blockEntity.getType()).ifPresent(blockEntity -> {
                 this.applyTo((T) blockEntity);
                 blockEntity.setChanged();
-            }
+            });
         }
 
         return result;

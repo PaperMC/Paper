@@ -39,7 +39,6 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
@@ -325,29 +324,28 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         ServerPlayer player = (ServerPlayer) this.getHandle();
         AbstractContainerMenu formerContainer = this.getHandle().containerMenu;
 
-        MenuProvider tileInventory = null;
+        MenuProvider menuProvider = null;
         if (inventory instanceof CraftInventoryDoubleChest) {
-            tileInventory = ((CraftInventoryDoubleChest) inventory).tile;
+            menuProvider = ((CraftInventoryDoubleChest) inventory).provider;
         } else if (inventory instanceof CraftInventoryLectern) {
-            tileInventory = ((CraftInventoryLectern) inventory).tile;
+            menuProvider = ((CraftInventoryLectern) inventory).provider;
         } else if (inventory instanceof CraftInventory) {
             CraftInventory craft = (CraftInventory) inventory;
             if (craft.getInventory() instanceof MenuProvider) {
-                tileInventory = (MenuProvider) craft.getInventory();
+                menuProvider = (MenuProvider) craft.getInventory();
             }
         }
 
-        if (tileInventory instanceof MenuProvider) {
-            if (tileInventory instanceof BlockEntity) {
-                BlockEntity te = (BlockEntity) tileInventory;
-                if (!te.hasLevel()) {
-                    te.setLevel(this.getHandle().level());
+        if (menuProvider != null) {
+            if (menuProvider instanceof final BlockEntity blockEntity) {
+                if (!blockEntity.hasLevel()) {
+                    blockEntity.setLevel(this.getHandle().level());
                 }
             }
         }
 
-        if (tileInventory instanceof MenuProvider) {
-            this.getHandle().openMenu(tileInventory);
+        if (menuProvider != null) {
+            this.getHandle().openMenu(menuProvider);
         } else if (inventory instanceof CraftInventoryAbstractHorse craft && craft.getInventory().getOwner() instanceof CraftAbstractHorse horse) {
             this.getHandle().openHorseInventory(horse.getHandle(), craft.getInventory());
         } else {

@@ -216,8 +216,8 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
                 BlockState block = craftData.getTypeId(tx, ty, tz);
 
                 if (block.hasBlockEntity()) {
-                    BlockEntity tile = ((EntityBlock) block.getBlock()).newBlockEntity(new BlockPos((x << 4) + tx, ty, (z << 4) + tz), block);
-                    chunk.setBlockEntity(tile);
+                    BlockEntity blockEntity = ((EntityBlock) block.getBlock()).newBlockEntity(new BlockPos((x << 4) + tx, ty, (z << 4) + tz), block);
+                    chunk.setBlockEntity(blockEntity);
                 }
             }
         }

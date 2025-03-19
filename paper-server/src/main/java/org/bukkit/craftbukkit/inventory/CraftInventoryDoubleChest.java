@@ -11,15 +11,15 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
 public class CraftInventoryDoubleChest extends CraftInventory implements DoubleChestInventory {
-    public MenuProvider tile;
+    public MenuProvider provider;
     private final CraftInventory left;
     private final CraftInventory right;
 
-    public CraftInventoryDoubleChest(ChestBlock.DoubleInventory block) {
-        super(block.container);
-        this.tile = block;
-        this.left = new CraftInventory(block.container.container1);
-        this.right = new CraftInventory(block.container.container2);
+    public CraftInventoryDoubleChest(ChestBlock.DoubleInventory inventory) {
+        super(inventory.container);
+        this.provider = inventory;
+        this.left = new CraftInventory(inventory.container.container1);
+        this.right = new CraftInventory(inventory.container.container2);
     }
 
     public CraftInventoryDoubleChest(CompoundContainer largeChest) {
@@ -66,7 +66,7 @@ public class CraftInventoryDoubleChest extends CraftInventory implements DoubleC
     // Paper start - getHolder without snapshot
     @Override
     public DoubleChest getHolder(boolean useSnapshot) {
-        return getHolder();
+        return this.getHolder();
     }
     // Paper end
 

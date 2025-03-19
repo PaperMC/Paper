@@ -25,9 +25,9 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
 
         net.minecraft.world.entity.Mob entity = this.getHandle();
         if (target == null) {
-            entity.setTarget(null, null, false);
+            entity.setTarget(null, null);
         } else if (target instanceof CraftLivingEntity) {
-            entity.setTarget(((CraftLivingEntity) target).getHandle(), null, false);
+            entity.setTarget(((CraftLivingEntity) target).getHandle(), null);
         }
     }
 
@@ -50,7 +50,7 @@ public abstract class CraftMob extends CraftLivingEntity implements Mob, io.pape
 
     @Override
     public Sound getAmbientSound() {
-        SoundEvent sound = this.getHandle().getAmbientSound0();
+        SoundEvent sound = this.getHandle().getAmbientSound();
         return (sound != null) ? CraftSound.minecraftToBukkit(sound) : null;
     }
 
