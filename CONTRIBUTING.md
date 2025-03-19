@@ -266,7 +266,7 @@ will be replaced later.
 
 ### API checks
 
-When performing API-related checks where an exception needs to be thrown under specific conditions, you should use the `Preconditions` package.
+When performing API-related checks where an exception needs to be thrown under specific conditions, you should use the `Preconditions` class.
 
 #### Checking Method Arguments
 To validate method arguments, use `Preconditions#checkArgument`. This will throw an `IllegalArgumentException` if the condition is not met.
