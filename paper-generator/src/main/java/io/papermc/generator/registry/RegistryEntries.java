@@ -31,8 +31,11 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.animal.CatVariant;
-import net.minecraft.world.entity.animal.FrogVariant;
-import net.minecraft.world.entity.animal.WolfVariants;
+import net.minecraft.world.entity.animal.ChickenVariants;
+import net.minecraft.world.entity.animal.CowVariants;
+import net.minecraft.world.entity.animal.PigVariants;
+import net.minecraft.world.entity.animal.frog.FrogVariant;
+import net.minecraft.world.entity.animal.wolf.WolfVariants;
 import net.minecraft.world.entity.decoration.PaintingVariants;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
@@ -64,8 +67,11 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Cat;
+import org.bukkit.entity.Chicken;
+import org.bukkit.entity.Cow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Frog;
+import org.bukkit.entity.Pig;
 import org.bukkit.entity.Villager;
 import org.bukkit.entity.Wolf;
 import org.bukkit.entity.memory.MemoryKey;
@@ -161,7 +167,12 @@ public final class RegistryEntries {
         entry(Registries.JUKEBOX_SONG, JukeboxSongs.class, JukeboxSong.class).delayed(),
         entry(Registries.BANNER_PATTERN, BannerPatterns.class, PatternType.class).allowDirect().apiRegistryBuilder(BannerPatternRegistryEntry.Builder.class, "PaperBannerPatternRegistryEntry.PaperBuilder").delayed(),
         entry(Registries.PAINTING_VARIANT, PaintingVariants.class, Art.class).allowDirect().apiRegistryBuilder(PaintingVariantRegistryEntry.Builder.class, "PaperPaintingVariantRegistryEntry.PaperBuilder").apiRegistryField("ART").delayed(),
-        entry(Registries.INSTRUMENT, Instruments.class, MusicInstrument.class).allowDirect().delayed()
+        entry(Registries.INSTRUMENT, Instruments.class, MusicInstrument.class).allowDirect().delayed(),
+        entry(Registries.CAT_VARIANT, CatVariant.class, Cat.Type.class).delayed(),
+        entry(Registries.FROG_VARIANT, FrogVariant.class, Frog.Variant.class).delayed(),
+        entry(Registries.CHICKEN_VARIANT, ChickenVariants.class, Chicken.Variant.class),
+        entry(Registries.COW_VARIANT, CowVariants.class, Cow.Variant.class),
+        entry(Registries.PIG_VARIANT, PigVariants.class, Pig.Variant.class)
     );
 
     public static final List<RegistryEntry<?>> API_ONLY = List.of(

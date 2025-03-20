@@ -63,8 +63,6 @@ import static java.util.Objects.requireNonNull;
 @ApiStatus.Experimental
 public final class DataComponentTypes {
 
-    // Start generate - DataComponentTypes
-    // @GeneratedFrom 1.21.4
     /**
      * Holds attribute modifiers applied to any item,
      * if not set, has an implicit default value based on the item type's
@@ -372,7 +370,6 @@ public final class DataComponentTypes {
      * Holds the contents and metadata of a Written Book.
      */
     public static final DataComponentType.Valued<WrittenBookContent> WRITTEN_BOOK_CONTENT = valued("written_book_content");
-    // End generate - DataComponentTypes
     // /**
     //  * Causes an item to not be pickable in the creative menu, currently not very useful.
     //  */

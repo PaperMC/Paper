@@ -45,6 +45,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.level.block.state.properties.ComparatorMode;
+import net.minecraft.world.level.block.state.properties.CreakingHeartState;
 import net.minecraft.world.level.block.state.properties.DoorHingeSide;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.DripstoneThickness;
@@ -59,6 +60,7 @@ import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
 import net.minecraft.world.level.block.state.properties.SlabType;
 import net.minecraft.world.level.block.state.properties.StairsShape;
 import net.minecraft.world.level.block.state.properties.StructureMode;
+import net.minecraft.world.level.block.state.properties.TestBlockMode;
 import net.minecraft.world.level.block.state.properties.Tilt;
 import net.minecraft.world.level.block.state.properties.WallSide;
 import org.bukkit.Axis;
@@ -81,6 +83,7 @@ import org.bukkit.block.data.Orientable;
 import org.bukkit.block.data.Powerable;
 import org.bukkit.block.data.Rail;
 import org.bukkit.block.data.Rotatable;
+import org.bukkit.block.data.Segmentable;
 import org.bukkit.block.data.Snowable;
 import org.bukkit.block.data.Waterlogged;
 import org.bukkit.block.data.type.Bamboo;
@@ -89,6 +92,7 @@ import org.bukkit.block.data.type.Bell;
 import org.bukkit.block.data.type.BigDripleaf;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.block.data.type.Comparator;
+import org.bukkit.block.data.type.CreakingHeart;
 import org.bukkit.block.data.type.Door;
 import org.bukkit.block.data.type.Dripleaf;
 import org.bukkit.block.data.type.Fence;
@@ -102,6 +106,7 @@ import org.bukkit.block.data.type.Slab;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.block.data.type.Switch;
 import org.bukkit.block.data.type.TechnicalPiston;
+import org.bukkit.block.data.type.TestBlock;
 import org.bukkit.block.data.type.TrialSpawner;
 import org.bukkit.block.data.type.Vault;
 import org.bukkit.block.data.type.Wall;
@@ -144,10 +149,10 @@ public final class BlockStateMapping {
         .put(WallBlock.class,
             VirtualField.createMap("PROPERTY_BY_FACE", BlockFace.class, new TypeToken<EnumProperty<WallSide>>() {}, "HEIGHT")
             .withValues(List.of(
-                WallBlock.EAST_WALL,
-                WallBlock.NORTH_WALL,
-                WallBlock.SOUTH_WALL,
-                WallBlock.WEST_WALL
+                WallBlock.EAST,
+                WallBlock.NORTH,
+                WallBlock.SOUTH,
+                WallBlock.WEST
             )).make())
         .build();
 
@@ -282,6 +287,7 @@ public final class BlockStateMapping {
         .put(BlockStateProperties.ROTATION_16, Rotatable.class)
         .put(BlockStateProperties.SNOWY, Snowable.class)
         .put(BlockStateProperties.WATERLOGGED, Waterlogged.class)
+        .put(BlockStateProperties.SEGMENT_AMOUNT, Segmentable.class)
         .buildOrThrow();
 
     private static final Map<Property<?>, Class<? extends org.bukkit.block.data.BlockData>> MAIN_PROPERTY_TO_DATA = Map.of(
@@ -315,6 +321,8 @@ public final class BlockStateMapping {
         .put(TrialSpawnerState.class, TrialSpawner.State.class)
         .put(FrontAndTop.class, Orientation.class)
         .put(VaultState.class, Vault.State.class)
+        .put(CreakingHeartState.class, CreakingHeart.State.class)
+        .put(TestBlockMode.class, TestBlock.Mode.class)
         .buildOrThrow();
 
     public static @Nullable Class<? extends org.bukkit.block.data.BlockData> getBestSuitedApiClass(Class<?> block) {

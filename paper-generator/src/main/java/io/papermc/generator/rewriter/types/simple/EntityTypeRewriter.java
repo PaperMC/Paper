@@ -68,7 +68,7 @@ public class EntityTypeRewriter extends EnumRegistryRewriter<EntityType<?>> {
         map.put(EntityType.SMALL_FIREBALL, 13);
         map.put(EntityType.ENDER_PEARL, 14);
         map.put(EntityType.EYE_OF_ENDER, 15);
-        map.put(EntityType.POTION, 16);
+        // map.put(EntityType.POTION, 16);
         map.put(EntityType.EXPERIENCE_BOTTLE, 17);
         map.put(EntityType.ITEM_FRAME, 18);
         map.put(EntityType.WITHER_SKULL, 19);

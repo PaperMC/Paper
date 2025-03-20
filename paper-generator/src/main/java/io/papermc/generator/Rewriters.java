@@ -13,18 +13,15 @@ import io.papermc.generator.rewriter.types.simple.BlockTypeRewriter;
 import io.papermc.generator.rewriter.types.simple.CraftBlockDataMapping;
 import io.papermc.generator.rewriter.types.simple.CraftBlockEntityStateMapping;
 import io.papermc.generator.rewriter.types.simple.CraftPotionUtilRewriter;
-import io.papermc.generator.rewriter.types.simple.EntityTypeRewriter;
 import io.papermc.generator.rewriter.types.simple.ItemTypeRewriter;
 import io.papermc.generator.rewriter.types.simple.MapPaletteRewriter;
 import io.papermc.generator.rewriter.types.simple.MaterialRewriter;
 import io.papermc.generator.rewriter.types.simple.MemoryKeyRewriter;
 import io.papermc.generator.rewriter.types.registry.PaperFeatureFlagMapping;
 import io.papermc.generator.rewriter.types.simple.StatisticRewriter;
-import io.papermc.generator.rewriter.types.simple.trial.DataComponentTypesRewriter;
 import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewriter;
 import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
-import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
 import io.papermc.typewriter.preset.model.EnumValue;
@@ -36,7 +33,6 @@ import javax.lang.model.SourceVersion;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.item.Rarity;
 import org.bukkit.Art;
@@ -56,10 +52,12 @@ import org.bukkit.block.banner.PatternType;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Cat;
-import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Chicken;
+import org.bukkit.entity.Cow;
 import org.bukkit.entity.Fox;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Panda;
+import org.bukkit.entity.Pig;
 import org.bukkit.entity.Salmon;
 import org.bukkit.entity.Sniffer;
 import org.bukkit.entity.TropicalFish;
@@ -99,7 +97,7 @@ public final class Rewriters {
     private static void bootstrapApi(PatternSourceSetRewriter sourceSet) {
         sourceSet
             .register("PotionType", PotionType.class, new EnumRegistryRewriter<>(Registries.POTION))
-            .register("EntityType", EntityType.class, new EntityTypeRewriter())
+            // .register("EntityType", EntityType.class, new EntityTypeRewriter()) - disable for now - potion need to be split
             .register("DisplaySlot", DisplaySlot.class, new EnumCloneRewriter<>(net.minecraft.world.scores.DisplaySlot.class) {
                 @Override
                 protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.scores.DisplaySlot slot) {
@@ -178,8 +176,11 @@ public final class Rewriters {
             .register("Attribute", Attribute.class, new RegistryFieldRewriter<>(Registries.ATTRIBUTE, "getAttribute"))
             .register("Sound", Sound.class, new RegistryFieldRewriter<>(Registries.SOUND_EVENT, "getSound"))
             .register("Art", Art.class, new RegistryFieldRewriter<>(Registries.PAINTING_VARIANT, "getArt"))
+            .register("ChickenVariant", Chicken.Variant.class, new RegistryFieldRewriter<>(Registries.CHICKEN_VARIANT, "getVariant"))
+            .register("CowVariant", Cow.Variant.class, new RegistryFieldRewriter<>(Registries.COW_VARIANT, "getVariant"))
+            .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
             .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
-            .register("DataComponentTypes", DataComponentTypes.class, new DataComponentTypesRewriter())
+            // .register("DataComponentTypes", DataComponentTypes.class, new DataComponentTypesRewriter()) - disable for now
             .register("ItemType", ItemType.class, new ItemTypeRewriter())
             .register("BlockType", BlockType.class, new BlockTypeRewriter())
             .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
