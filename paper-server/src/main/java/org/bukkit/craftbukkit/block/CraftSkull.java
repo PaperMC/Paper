@@ -30,7 +30,6 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
 
     private static final int MAX_OWNER_LENGTH = 16;
     private ResolvableProfile profile;
-    private Component customName;
 
     public CraftSkull(World world, SkullBlockEntity tileEntity) {
         super(world, tileEntity);
@@ -48,7 +47,6 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
         if (owner != null) {
             this.profile = owner;
         }
-        this.customName = PaperAdventure.asAdventure(skull.customName);
     }
 
     @Override
@@ -209,7 +207,6 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
         if (this.getSkullType() == SkullType.PLAYER) {
             skull.setOwner(this.hasOwner() ? this.profile : null);
         }
-        skull.customName = PaperAdventure.asVanilla(customName);
     }
 
     @Override
@@ -224,11 +221,13 @@ public class CraftSkull extends CraftBlockEntityState<SkullBlockEntity> implemen
 
     @Override
     public @Nullable Component customName() {
-        return this.customName;
+        SkullBlockEntity snapshot = getSnapshot();
+        return snapshot.customName == null ? null : PaperAdventure.asAdventure(snapshot.customName);
     }
 
     @Override
     public void customName(@Nullable Component customName) {
-        this.customName = customName;
+        SkullBlockEntity snapshot = getSnapshot();
+        snapshot.customName = customName == null ? null : PaperAdventure.asVanilla(customName);
     }
 }
