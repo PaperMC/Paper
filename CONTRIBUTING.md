@@ -270,13 +270,15 @@ When performing API-related checks where an exception needs to be thrown under s
 
 #### Checking Method Arguments
 To validate method arguments, use `Preconditions#checkArgument`. This will throw an `IllegalArgumentException` if the condition is not met.
+> Don't use Preconditions#checkNotNull, as it throws a NullPointerException, which makes it harder to determine whether the error was caused by an internal issue or invalid arguments.
+
 ex:
 ```java
 @Override
 public void sendMessageComponent(Player player, String message) {
     Preconditions.checkArgument(player != null, "player cannot be null");
     Preconditions.checkArgument(message != null && !message.isBlank(), "message cannot be null or blank");
-    Preconditions.checkArgument(!message.contains("rat"), "message [%s] cannot contain the word rat", message);
+    Preconditions.checkArgument(!message.contains(Component.text("rat")), "message [%s] cannot contain the word rat", message);
     // rest of code
 }
 ```
