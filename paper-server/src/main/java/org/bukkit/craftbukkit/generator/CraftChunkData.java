@@ -169,7 +169,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
         if (type.hasBlockEntity()) {
             BlockEntity blockEntity = ((EntityBlock) type.getBlock()).newBlockEntity(pos, type);
 
-            // createTile can return null, currently only the case with material MOVING_PISTON
+            // newBlockEntity can return null, currently only the case with material MOVING_PISTON
             if (blockEntity == null) {
                 access.removeBlockEntity(pos);
             } else {

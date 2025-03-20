@@ -37,7 +37,7 @@ public final class PaperBrigadier {
 
         final PluginCommandMeta meta;
         if ((meta = node.pluginCommandMeta) == null) {
-            return new VanillaCommandWrapper(null, node);
+            return new VanillaCommandWrapper(node);
         }
         CommandNode<CommandSourceStack> argumentCommandNode = node;
         if (argumentCommandNode.getRedirect() != null) {

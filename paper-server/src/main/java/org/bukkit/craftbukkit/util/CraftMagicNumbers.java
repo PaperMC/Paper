@@ -88,7 +88,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     private CraftMagicNumbers() {}
 
-    // Paper start
     @Override
     public net.kyori.adventure.text.flattener.ComponentFlattener componentFlattener() {
         return io.papermc.paper.adventure.PaperAdventure.FLATTENER;
@@ -123,7 +122,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
     public net.kyori.adventure.text.Component resolveWithContext(final net.kyori.adventure.text.Component component, final org.bukkit.command.CommandSender context, final org.bukkit.entity.Entity scoreboardSubject, final boolean bypassPermissions) throws IOException {
         return io.papermc.paper.adventure.PaperAdventure.resolveWithContext(component, context, scoreboardSubject, bypassPermissions);
     }
-    // Paper end
 
     public static BlockState getBlock(MaterialData material) {
         return CraftMagicNumbers.getBlock(material.getItemType(), material.getData());
@@ -169,7 +167,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 continue;
             }
 
-            ResourceLocation key = key(material);
+            ResourceLocation key = CraftNamespacedKey.toMinecraft(material.getKey());
             BuiltInRegistries.ITEM.getOptional(key).ifPresent((item) -> {
                 CraftMagicNumbers.MATERIAL_ITEM.put(material, item);
             });
@@ -201,10 +199,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
 
         return CraftMagicNumbers.MATERIAL_BLOCK.get(material);
-    }
-
-    public static ResourceLocation key(Material mat) {
-        return CraftNamespacedKey.toMinecraft(mat.getKey());
     }
     // ========================================================================
 
@@ -307,33 +301,31 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public Advancement loadAdvancement(NamespacedKey key, String advancement) {
         Preconditions.checkArgument(Bukkit.getAdvancement(key) == null, "Advancement %s already exists", key);
-        ResourceLocation minecraftkey = CraftNamespacedKey.toMinecraft(key);
+        ResourceLocation resourceKey = CraftNamespacedKey.toMinecraft(key);
 
         JsonElement jsonelement = JsonParser.parseString(advancement);
         final net.minecraft.resources.RegistryOps<JsonElement> ops = CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE); // Paper - use RegistryOps
         final net.minecraft.advancements.Advancement nms = net.minecraft.advancements.Advancement.CODEC.parse(ops, jsonelement).getOrThrow(JsonParseException::new); // Paper - use RegistryOps
         if (nms != null) {
-            // Paper start - Fix throw UnsupportedOperationException
-            //MinecraftServer.getServer().getAdvancements().advancements.put(minecraftkey, new AdvancementHolder(minecraftkey, nms));
             final com.google.common.collect.ImmutableMap.Builder<ResourceLocation, AdvancementHolder> mapBuilder = com.google.common.collect.ImmutableMap.builder();
             mapBuilder.putAll(MinecraftServer.getServer().getAdvancements().advancements);
 
-            final AdvancementHolder holder = new AdvancementHolder(minecraftkey, nms);
-            mapBuilder.put(minecraftkey, holder);
+            final AdvancementHolder holder = new AdvancementHolder(resourceKey, nms);
+            mapBuilder.put(resourceKey, holder);
 
             MinecraftServer.getServer().getAdvancements().advancements = mapBuilder.build();
             final net.minecraft.advancements.AdvancementTree tree = MinecraftServer.getServer().getAdvancements().tree();
             tree.addAll(java.util.List.of(holder));
 
             // recalculate advancement position
-            final net.minecraft.advancements.AdvancementNode node = tree.get(minecraftkey);
+            final net.minecraft.advancements.AdvancementNode node = tree.get(resourceKey);
             if (node != null) {
                 final net.minecraft.advancements.AdvancementNode root = node.root();
                 if (root.holder().value().display().isPresent()) {
                     net.minecraft.advancements.TreeNodePosition.run(root);
                 }
             }
-            // Paper end - Fix throw UnsupportedOperationException
+
             Advancement bukkit = Bukkit.getAdvancement(key);
 
             if (bukkit != null) {
@@ -346,13 +338,10 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     Bukkit.getLogger().log(Level.SEVERE, "Error saving advancement " + key, ex);
                 }
 
-                // Paper start - Fix client lag on advancement loading
-                //MinecraftServer.getServer().getPlayerList().reload();
                 MinecraftServer.getServer().getPlayerList().getPlayers().forEach(player -> {
                     player.getAdvancements().reload(MinecraftServer.getServer().getAdvancements());
                     player.getAdvancements().flushDirty(player, false);
                 });
-                // Paper end - Fix client lag on advancement loading
 
                 return bukkit;
             }
@@ -368,18 +357,18 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public void checkSupported(PluginDescriptionFile pdf) throws InvalidPluginException {
-        ApiVersion toCheck = ApiVersion.getOrCreateVersion(pdf.getAPIVersion());
+    public void checkSupported(PluginDescriptionFile descriptionFile) throws InvalidPluginException {
+        ApiVersion toCheck = ApiVersion.getOrCreateVersion(descriptionFile.getAPIVersion());
         ApiVersion minimumVersion = MinecraftServer.getServer().server.minimumAPI;
 
         if (toCheck.isNewerThan(ApiVersion.CURRENT)) {
             // Newer than supported
-            throw new InvalidPluginException("Unsupported API version " + pdf.getAPIVersion());
+            throw new InvalidPluginException("Unsupported API version " + descriptionFile.getAPIVersion());
         }
 
         if (toCheck.isOlderThan(minimumVersion)) {
             // Older than supported
-            throw new InvalidPluginException("Plugin API version " + pdf.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
+            throw new InvalidPluginException("Plugin API version " + descriptionFile.getAPIVersion() + " is lower than the minimum allowed version. Please update or replace it.");
         }
 
         if (!DISABLE_OLD_API_SUPPORT && toCheck.isOlderThan(ApiVersion.FLATTENING)) { // Paper
@@ -387,7 +376,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
 
         if (toCheck == ApiVersion.NONE) {
-            Bukkit.getLogger().log(Level.WARNING, "Legacy plugin " + pdf.getFullName() + " does not specify an api-version.");
+            Bukkit.getLogger().log(Level.WARNING, "Legacy plugin " + descriptionFile.getFullName() + " does not specify an api-version.");
         }
     }
 
@@ -447,7 +436,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
         net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
         return nmsItemStack.getItem().getDescriptionId();
     }
-    // Paper start
+
     @Override
     public boolean isSupportedApiVersion(String apiVersion) {
         if (apiVersion == null) return false;
@@ -456,14 +445,11 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
         return !toCheck.isNewerThan(ApiVersion.CURRENT) && !toCheck.isOlderThan(minimumVersion);
     }
-    // Paper end
 
     @Override
     public String getTranslationKey(final Attribute attribute) {
         return attribute.getTranslationKey();
     }
-
-    // Paper - replace feature flag API
 
     @Override
     public PotionType.InternalPotionData getInternalPotionData(NamespacedKey namespacedKey) {
@@ -503,7 +489,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return this.customBiome;
     }
 
-    // Paper start
     @Override
     public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
         return new com.destroystokyo.paper.PaperVersionFetcher();
@@ -701,14 +686,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public boolean hasDefaultEntityAttributes(NamespacedKey bukkitEntityKey) {
-        return net.minecraft.world.entity.ai.attributes.DefaultAttributes.hasSupplier(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(CraftNamespacedKey.toMinecraft(bukkitEntityKey)));
+    public boolean hasDefaultEntityAttributes(NamespacedKey entityKey) {
+        return net.minecraft.world.entity.ai.attributes.DefaultAttributes.hasSupplier(net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(CraftNamespacedKey.toMinecraft(entityKey)));
     }
 
     @Override
-    public org.bukkit.attribute.Attributable getDefaultEntityAttributes(NamespacedKey bukkitEntityKey) {
-        Preconditions.checkArgument(hasDefaultEntityAttributes(bukkitEntityKey), bukkitEntityKey + " doesn't have default attributes");
-        var supplier = net.minecraft.world.entity.ai.attributes.DefaultAttributes.getSupplier((net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.LivingEntity>) net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(CraftNamespacedKey.toMinecraft(bukkitEntityKey)));
+    public org.bukkit.attribute.Attributable getDefaultEntityAttributes(NamespacedKey entityKey) {
+        Preconditions.checkArgument(hasDefaultEntityAttributes(entityKey), entityKey + " doesn't have default attributes");
+        var supplier = net.minecraft.world.entity.ai.attributes.DefaultAttributes.getSupplier((net.minecraft.world.entity.EntityType<? extends net.minecraft.world.entity.LivingEntity>) net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getValue(CraftNamespacedKey.toMinecraft(entityKey)));
         return new io.papermc.paper.attribute.UnmodifiableAttributeMap(supplier);
     }
 
@@ -729,20 +714,19 @@ public final class CraftMagicNumbers implements UnsafeValues {
     }
 
     @Override
-    public java.util.List<net.kyori.adventure.text.Component> computeTooltipLines(final ItemStack itemStack, final io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final org.bukkit.entity.Player player) {
+    public List<net.kyori.adventure.text.Component> computeTooltipLines(final ItemStack itemStack, final io.papermc.paper.inventory.tooltip.TooltipContext tooltipContext, final org.bukkit.entity.Player player) {
         Preconditions.checkArgument(tooltipContext != null, "tooltipContext cannot be null");
         net.minecraft.world.item.TooltipFlag.Default flag = tooltipContext.isAdvanced() ? net.minecraft.world.item.TooltipFlag.ADVANCED : net.minecraft.world.item.TooltipFlag.NORMAL;
         if (tooltipContext.isCreative()) {
             flag = flag.asCreative();
         }
-        final java.util.List<net.minecraft.network.chat.Component> lines = CraftItemStack.asNMSCopy(itemStack).getTooltipLines(
-            net.minecraft.world.item.Item.TooltipContext.of(player == null ? net.minecraft.server.MinecraftServer.getServer().registryAccess() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
+        final List<net.minecraft.network.chat.Component> lines = CraftItemStack.asNMSCopy(itemStack).getTooltipLines(
+            net.minecraft.world.item.Item.TooltipContext.of(player == null ? CraftRegistry.getMinecraftRegistry() : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle().level().registryAccess()),
             player == null ? null : ((org.bukkit.craftbukkit.entity.CraftPlayer) player).getHandle(), flag);
         return lines.stream().map(io.papermc.paper.adventure.PaperAdventure::asAdventure).toList();
     }
     // Paper end
 
-    // Paper start - spawn egg color visibility
     @Override
     public org.bukkit.Color getSpawnEggLayerColor(final EntityType entityType, final int layer) {
         final net.minecraft.world.entity.EntityType<?> nmsType = org.bukkit.craftbukkit.entity.CraftEntityType.bukkitToMinecraft(entityType);
@@ -752,19 +736,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
         }
         return null;
     }
-    // Paper end - spawn egg color visibility
 
-    // Paper start - lifecycle event API
     @Override
     public io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager<org.bukkit.plugin.Plugin> createPluginLifecycleEventManager(final org.bukkit.plugin.java.JavaPlugin plugin, final java.util.function.BooleanSupplier registrationCheck) {
         return new io.papermc.paper.plugin.lifecycle.event.PaperLifecycleEventManager<>(plugin, registrationCheck);
     }
-    // Paper end - lifecycle event API
 
-    // Paper start - proxy ItemStack
     @Override
     public org.bukkit.inventory.ItemStack createEmptyStack() {
         return CraftItemStack.asCraftMirror(null);
     }
-    // Paper end - proxy ItemStack
 }

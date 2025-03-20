@@ -175,9 +175,9 @@ public class CraftStructureManager implements StructureManager {
     private ResourceLocation createAndValidateMinecraftStructureKey(NamespacedKey structureKey) {
         Preconditions.checkArgument(structureKey != null, "NamespacedKey structureKey cannot be null");
 
-        ResourceLocation minecraftkey = CraftNamespacedKey.toMinecraft(structureKey);
-        Preconditions.checkArgument(!minecraftkey.getPath().contains("//"), "Resource key for Structures can not contain \"//\"");
-        return minecraftkey;
+        ResourceLocation key = CraftNamespacedKey.toMinecraft(structureKey);
+        Preconditions.checkArgument(!key.getPath().contains("//"), "Resource key for Structures can not contain \"//\"");
+        return key;
     }
 
     @Override

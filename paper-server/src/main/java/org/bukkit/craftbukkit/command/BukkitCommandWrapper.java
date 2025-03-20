@@ -32,7 +32,6 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
     }
 
     public LiteralCommandNode<CommandSourceStack> register(CommandDispatcher<CommandSourceStack> dispatcher, String label) {
-        // Paper start - Expose Brigadier to Paper-MojangAPI
         com.mojang.brigadier.tree.RootCommandNode<CommandSourceStack> root = dispatcher.getRoot();
         LiteralCommandNode<CommandSourceStack> literal = LiteralArgumentBuilder.<CommandSourceStack>literal(label).requires(this).executes(this).build();
         LiteralCommandNode<CommandSourceStack> defaultNode = literal;
@@ -49,7 +48,6 @@ public class BukkitCommandWrapper implements com.mojang.brigadier.Command<Comman
         }
         root.addChild(literal);
         return literal;
-        // Paper end
     }
 
     @Override

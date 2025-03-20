@@ -1057,22 +1057,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public EntityCategory getCategory();
 
     /**
-     * Sets whether the entity is invisible or not.
-     *
-     * @param invisible If the entity is invisible
-     */
-    @Override // Paper - move invisibility up to Entity
-    public void setInvisible(boolean invisible);
-
-    /**
-     * Gets whether the entity is invisible or not.
-     *
-     * @return Whether the entity is invisible
-     */
-    @Override // Paper - move invisibility up to Entity
-    public boolean isInvisible();
-
-    /**
      * Get the number of arrows stuck in this entity
      * @return Number of arrows stuck
      * @deprecated use {@link #getArrowsInBody()}

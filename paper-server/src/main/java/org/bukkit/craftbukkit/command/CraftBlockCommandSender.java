@@ -61,7 +61,6 @@ public class CraftBlockCommandSender extends ServerCommandSender implements Bloc
         return this.block.getTextName();
     }
 
-    // Paper start
     @Override
     public void sendMessage(net.kyori.adventure.identity.Identity identity, net.kyori.adventure.text.Component message, net.kyori.adventure.audience.MessageType type) {
         block.source.sendSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message));
@@ -71,7 +70,6 @@ public class CraftBlockCommandSender extends ServerCommandSender implements Bloc
     public net.kyori.adventure.text.Component name() {
         return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.block.getDisplayName());
     }
-    // Paper end
 
     @Override
     public boolean isOp() {

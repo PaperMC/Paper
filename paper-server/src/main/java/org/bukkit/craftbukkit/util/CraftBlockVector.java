@@ -13,7 +13,7 @@ public final class CraftBlockVector {
         return new BlockPos(blockVector.getBlockX(), blockVector.getBlockY(), blockVector.getBlockZ());
     }
 
-    public static BlockVector toBukkit(Vec3i baseBlockPosition) {
-        return new BlockVector(baseBlockPosition.getX(), baseBlockPosition.getY(), baseBlockPosition.getZ());
+    public static BlockVector toBukkit(Vec3i vec3i) {
+        return new BlockVector(vec3i.getX(), vec3i.getY(), vec3i.getZ());
     }
 }

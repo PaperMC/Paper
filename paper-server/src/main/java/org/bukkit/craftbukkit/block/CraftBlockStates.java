@@ -199,15 +199,15 @@ public final class CraftBlockStates {
         Preconditions.checkNotNull(block, "block is null");
         CraftBlock craftBlock = (CraftBlock) block;
         CraftWorld world = (CraftWorld) block.getWorld();
-        BlockPos blockPosition = craftBlock.getPosition();
+        BlockPos pos = craftBlock.getPosition();
         net.minecraft.world.level.block.state.BlockState state = craftBlock.getNMS();
-        BlockEntity blockEntity = craftBlock.getHandle().getBlockEntity(blockPosition);
+        BlockEntity blockEntity = craftBlock.getHandle().getBlockEntity(pos);
         // Paper start - block state snapshots
         boolean prev = CraftBlockEntityState.DISABLE_SNAPSHOT;
         CraftBlockEntityState.DISABLE_SNAPSHOT = !useSnapshot;
         try {
         // Paper end
-        CraftBlockState blockState = CraftBlockStates.getBlockState(world, blockPosition, state, blockEntity);
+        CraftBlockState blockState = CraftBlockStates.getBlockState(world, pos, state, blockEntity);
         blockState.setWorldHandle(craftBlock.getHandle()); // Inject the block's generator access
         return blockState;
         // Paper start

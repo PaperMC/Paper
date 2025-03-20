@@ -44,6 +44,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import net.minecraft.advancements.AdvancementProgress;
+import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
@@ -674,16 +675,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().transferCookieConnection.kickPlayer(CraftChatMessage.fromStringOrEmpty(message, true), org.bukkit.event.player.PlayerKickEvent.Cause.PLUGIN); // Paper - kick event cause
     }
 
-    // Paper start
     private static final net.kyori.adventure.text.Component DEFAULT_KICK_COMPONENT = net.kyori.adventure.text.Component.translatable("multiplayer.disconnect.kicked");
+
     @Override
     public void kick() {
         this.kick(DEFAULT_KICK_COMPONENT);
-    }
-
-    @Override
-    public void kick(final net.kyori.adventure.text.Component message) {
-        kick(message, org.bukkit.event.player.PlayerKickEvent.Cause.PLUGIN);
     }
 
     @Override
@@ -718,18 +714,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
         throw new RuntimeException("Unknown settings type");
     }
-    // Paper end
 
-    // Paper start - Add sendOpLevel API
     @Override
     public void sendOpLevel(byte level) {
-        Preconditions.checkArgument(level >= 0 && level <= 4, "Level must be within [0, 4]");
+        Preconditions.checkArgument(level >= Commands.LEVEL_ALL && level <= Commands.LEVEL_OWNERS, "Level must be within [%s, %s]", Commands.LEVEL_ALL, Commands.LEVEL_OWNERS);
 
         this.getHandle().getServer().getPlayerList().sendPlayerPermissionLevel(this.getHandle(), level, false);
     }
-    // Paper end - Add sendOpLevel API
 
-    // Paper start - custom chat completions API
     @Override
     public void addAdditionalChatCompletions(@NotNull Collection<String> completions) {
         this.getHandle().connection.send(new net.minecraft.network.protocol.game.ClientboundCustomChatCompletionsPacket(
@@ -745,7 +737,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             new ArrayList<>(completions)
         ));
     }
-    // Paper end - custom chat completions API
 
     @Override
     public void setCompassTarget(Location loc) {
@@ -878,14 +869,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void playSound(org.bukkit.entity.Entity entity, Sound sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
-        if (!(entity instanceof CraftEntity craftEntity) || sound == null || category == null || this.getHandle().connection == null) return;
+        if (!(entity instanceof CraftEntity) || sound == null || category == null || this.getHandle().connection == null) return;
 
         this.playSound0(entity, CraftSound.bukkitToMinecraftHolder(sound), net.minecraft.sounds.SoundSource.valueOf(category.name()), volume, pitch, seed);
     }
 
     @Override
     public void playSound(org.bukkit.entity.Entity entity, String sound, org.bukkit.SoundCategory category, float volume, float pitch, long seed) {
-        if (!(entity instanceof CraftEntity craftEntity) || sound == null || category == null || this.getHandle().connection == null) return;
+        if (!(entity instanceof CraftEntity) || sound == null || category == null || this.getHandle().connection == null) return;
 
         this.playSound0(entity, Holder.direct(SoundEvent.createVariableRangeEvent(ResourceLocation.parse(sound))), net.minecraft.sounds.SoundSource.valueOf(category.name()), volume, pitch, seed);
     }
@@ -989,7 +980,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         this.getHandle().connection.send(packet);
     }
 
-    // Paper start
     @Override
     public void sendMultiBlockChange(final Map<? extends io.papermc.paper.math.Position, BlockData> blockChanges) {
         if (this.getHandle().connection == null) return;
@@ -1013,7 +1003,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             this.getHandle().connection.send(packet);
         }
     }
-    // Paper end
 
     @Override
     public void sendBlockChanges(Collection<BlockState> blocks) {
@@ -1026,15 +1015,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         Map<SectionPos, ChunkSectionChanges> changes = new HashMap<>();
         for (BlockState state : blocks) {
             CraftBlockState cstate = (CraftBlockState) state;
-            BlockPos blockPosition = cstate.getPosition();
+            BlockPos pos = cstate.getPosition();
 
             // The coordinates of the chunk section in which the block is located, aka chunk x, y, and z
-            SectionPos sectionPosition = SectionPos.of(blockPosition);
+            SectionPos sectionPosition = SectionPos.of(pos);
 
             // Push the block change position and block data to the final change map
             ChunkSectionChanges sectionChanges = changes.computeIfAbsent(sectionPosition, (ignore) -> new ChunkSectionChanges());
 
-            sectionChanges.positions().add(SectionPos.sectionRelativePos(blockPosition));
+            sectionChanges.positions().add(SectionPos.sectionRelativePos(pos));
             sectionChanges.blockData().add(cstate.getHandle());
         }
 
@@ -1044,11 +1033,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
             ClientboundSectionBlocksUpdatePacket packet = new ClientboundSectionBlocksUpdatePacket(entry.getKey(), chunkChanges.positions(), chunkChanges.blockData().toArray(net.minecraft.world.level.block.state.BlockState[]::new));
             this.getHandle().connection.send(packet);
         }
-    }
-
-    @Override
-    public void sendBlockChanges(Collection<BlockState> blocks, boolean suppressLightUpdates) {
-        this.sendBlockChanges(blocks);
     }
 
     private record ChunkSectionChanges(ShortSet positions, List<net.minecraft.world.level.block.state.BlockState> blockData) {
@@ -1556,11 +1540,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public Location getBedSpawnLocation() {
-        return this.getRespawnLocation();
-    }
-
-    @Override
     public Location getRespawnLocation() {
         final ServerPlayer.RespawnConfig respawnConfig = this.getHandle().getRespawnConfig();
         if (respawnConfig == null) return null;
@@ -1875,10 +1854,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    // Paper start - ability to apply mending
     public int applyMending(int amount) {
         ServerPlayer handle = this.getHandle();
-        // Logic copied from EntityExperienceOrb and remapped to unobfuscated methods/properties
+        // Logic copied from ExperienceOrb#repairPlayerItems
 
         final Optional<net.minecraft.world.item.enchantment.EnchantedItemInUse> stackEntry = net.minecraft.world.item.enchantment.EnchantmentHelper
             .getRandomItemWith(net.minecraft.world.item.enchantment.EnchantmentEffectComponents.REPAIR_WITH_XP, handle, net.minecraft.world.item.ItemStack::isDamaged);
@@ -1910,7 +1888,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         if (applyMending) {
             exp = this.applyMending(exp);
         }
-    // Paper end - ability to apply mending
         this.getHandle().giveExperiencePoints(exp);
     }
 
@@ -2635,14 +2612,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
             for (String channel : listening) {
                 try {
-                    stream.write(channel.getBytes("UTF8"));
+                    stream.write(channel.getBytes(StandardCharsets.UTF_8));
                     stream.write((byte) 0);
                 } catch (IOException ex) {
                     Logger.getLogger(CraftPlayer.class.getName()).log(Level.SEVERE, "Could not send Plugin Channel REGISTER to " + this.getName(), ex);
                 }
             }
 
-            this.sendCustomPayload(ResourceLocation.withDefaultNamespace("register"), stream.toByteArray());
+            this.sendCustomPayload(ServerGamePacketListenerImpl.CUSTOM_REGISTER, stream.toByteArray());
         }
     }
 
@@ -2779,8 +2756,11 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void setScoreboard(Scoreboard scoreboard) {
         Preconditions.checkArgument(scoreboard != null, "Scoreboard cannot be null");
         Preconditions.checkState(this.getHandle().connection != null, "Cannot set scoreboard yet (invalid player connection)");
+        if (!(scoreboard instanceof CraftScoreboard craftScoreboard)) {
+            throw new IllegalArgumentException("Cannot set player scoreboard to an unregistered Scoreboard");
+        }
 
-        this.server.getScoreboardManager().setPlayerBoard(this, scoreboard);
+        this.server.getScoreboardManager().setPlayerBoard(this, craftScoreboard);
     }
 
     @Override

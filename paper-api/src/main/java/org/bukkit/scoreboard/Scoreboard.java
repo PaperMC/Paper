@@ -24,9 +24,10 @@ public interface Scoreboard {
      */
     @Deprecated(since = "1.13")
     @NotNull
-    Objective registerNewObjective(@NotNull String name, @NotNull String criteria);
+    default Objective registerNewObjective(@NotNull String name, @NotNull String criteria) {
+        return this.registerNewObjective(name, criteria, name);
+    }
 
-    // Paper start - Adventure
     /**
      * Registers an Objective on this Scoreboard
      *
@@ -42,7 +43,10 @@ public interface Scoreboard {
      */
     @NotNull
     @Deprecated
-    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, net.kyori.adventure.text.@Nullable Component displayName);
+    default Objective registerNewObjective(@NotNull String name, @NotNull String criteria, net.kyori.adventure.text.@Nullable Component displayName) {
+        return this.registerNewObjective(name, criteria, displayName, RenderType.INTEGER);
+    }
+
     /**
      * Registers an Objective on this Scoreboard
      *
@@ -60,6 +64,7 @@ public interface Scoreboard {
     @NotNull
     @Deprecated
     Objective registerNewObjective(@NotNull String name, @NotNull String criteria, net.kyori.adventure.text.@Nullable Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
+
     /**
      * Registers an Objective on this Scoreboard
      *
@@ -73,7 +78,10 @@ public interface Scoreboard {
      *     exists
      */
     @NotNull
-    Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, net.kyori.adventure.text.@Nullable Component displayName) throws IllegalArgumentException;
+    default Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, net.kyori.adventure.text.@Nullable Component displayName) throws IllegalArgumentException {
+        return this.registerNewObjective(name, criteria, displayName, RenderType.INTEGER);
+    }
+
     /**
      * Registers an Objective on this Scoreboard
      *
@@ -89,7 +97,6 @@ public interface Scoreboard {
      */
     @NotNull
     Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, net.kyori.adventure.text.@Nullable Component displayName, @NotNull RenderType renderType) throws IllegalArgumentException;
-    // Paper end - Adventure
 
     /**
      * Registers an Objective on this Scoreboard
@@ -106,7 +113,9 @@ public interface Scoreboard {
      */
     @Deprecated(since = "1.20.5")
     @NotNull
-    Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName);
+    default Objective registerNewObjective(@NotNull String name, @NotNull String criteria, @NotNull String displayName) {
+        return this.registerNewObjective(name, criteria, displayName, RenderType.INTEGER);
+    }
 
     /**
      * Registers an Objective on this Scoreboard
@@ -141,7 +150,9 @@ public interface Scoreboard {
      */
     @NotNull
     @Deprecated // Paper
-    Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName);
+    default Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName) {
+        return this.registerNewObjective(name, criteria, displayName, RenderType.INTEGER);
+    }
 
     /**
      * Registers an Objective on this Scoreboard
@@ -159,7 +170,9 @@ public interface Scoreboard {
      */
     @NotNull
     @Deprecated // Paper
-    Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName, @NotNull RenderType renderType);
+    default Objective registerNewObjective(@NotNull String name, @NotNull Criteria criteria, @NotNull String displayName, @NotNull RenderType renderType) {
+        return this.registerNewObjective(name, criteria, net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(displayName), renderType); // Paper - Adventure
+    }
 
     /**
      * Gets an Objective on this Scoreboard by name

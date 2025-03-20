@@ -159,7 +159,7 @@ public class CraftAbstractArrow extends AbstractProjectile implements AbstractAr
     @Override
     public void setItemStack(final ItemStack stack) {
         Preconditions.checkArgument(stack != null, "ItemStack cannot be null");
-        this.getHandle().setPickupItemStackPublic(CraftItemStack.asNMSCopy(stack));
+        this.getHandle().setPickupItemStack(CraftItemStack.asNMSCopy(stack));
     }
 
     @Override

@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Warning.WarningState;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.data.BlockData;
@@ -189,8 +190,8 @@ public final class Bukkit {
      * uses. Normal and immediate iterator use without consequences that
      * affect the collection are fully supported. The effects following
      * (non-exhaustive) {@link Entity#teleport(Location) teleportation},
-     * {@link Player#setHealth(double) death}, and {@link Player#kickPlayer(
-     * String) kicking} are undefined. Any use of this collection from
+     * {@link Player#setHealth(double) death}, and {@link Player#kick(
+     * Component) kicking} are undefined. Any use of this collection from
      * asynchronous threads is unsafe.
      * <p>
      * For safe consequential iteration or mimicking the old array behavior,
@@ -468,7 +469,7 @@ public final class Bukkit {
      *
      * @param message the message
      * @return the number of players
-     * @deprecated in favour of {@link Server#broadcast(net.kyori.adventure.text.Component)}
+     * @deprecated in favour of {@link Server#broadcast(Component)}
      */
     @Deprecated // Paper
     public static int broadcastMessage(@NotNull String message) {
@@ -480,7 +481,7 @@ public final class Bukkit {
      * Sends the component to all online players.
      *
      * @param component the component to send
-     * @deprecated use {@code sendMessage} methods on {@link #getServer()} that accept {@link net.kyori.adventure.text.Component}
+     * @deprecated use {@code sendMessage} methods on {@link #getServer()} that accept {@link Component}
      */
     @Deprecated
     public static void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent component) {
@@ -491,7 +492,7 @@ public final class Bukkit {
      * Sends an array of components as a single message to all online players.
      *
      * @param components the components to send
-     * @deprecated use {@code sendMessage} methods on {@link #getServer()} that accept {@link net.kyori.adventure.text.Component}
+     * @deprecated use {@code sendMessage} methods on {@link #getServer()} that accept {@link Component}
      */
     @Deprecated
     public static void broadcast(@NotNull net.md_5.bungee.api.chat.BaseComponent... components) {
@@ -1461,7 +1462,7 @@ public final class Bukkit {
     /**
      * Broadcast a message to all players.
      * <p>
-     * This is the same as calling {@link #broadcast(net.kyori.adventure.text.Component,
+     * This is the same as calling {@link #broadcast(Component,
      * java.lang.String)} with the {@link Server#BROADCAST_CHANNEL_USERS} permission.
      *
      * @param message the message
@@ -1491,7 +1492,7 @@ public final class Bukkit {
      * @param permission the required permission {@link Permissible
      *     permissibles} must have to receive the broadcast
      * @return number of message recipients
-     * @deprecated in favour of {@link #broadcast(net.kyori.adventure.text.Component, String)}
+     * @deprecated in favour of {@link #broadcast(Component, String)}
      */
     @Deprecated // Paper
     public static int broadcast(@NotNull String message, @NotNull String permission) {
@@ -1739,7 +1740,7 @@ public final class Bukkit {
      * @return a command sender
      */
     @NotNull
-    public static CommandSender createCommandSender(final @NotNull java.util.function.Consumer<? super net.kyori.adventure.text.Component> feedback) {
+    public static CommandSender createCommandSender(final @NotNull java.util.function.Consumer<? super Component> feedback) {
         return server.createCommandSender(feedback);
     }
     // Paper end
@@ -1863,7 +1864,7 @@ public final class Bukkit {
      * @return The new inventory.
      * @throws IllegalArgumentException if the {@link InventoryType} cannot be
      * viewed.
-     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
+     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, Component)}
      *
      * @see InventoryType#isCreatable()
      */
@@ -1915,7 +1916,7 @@ public final class Bukkit {
      *     viewed
      * @return a new inventory
      * @throws IllegalArgumentException if the size is not a multiple of 9
-     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, net.kyori.adventure.text.Component)}
+     * @deprecated in favour of {@link #createInventory(InventoryHolder, InventoryType, Component)}
      */
     @Deprecated // Paper
     @NotNull
@@ -1944,7 +1945,7 @@ public final class Bukkit {
      * @param title the title of the corresponding merchant inventory, displayed
      * when the merchant inventory is viewed
      * @return a new merchant
-     * @deprecated in favour of {@link #createMerchant(net.kyori.adventure.text.Component)}. The title parameter is
+     * @deprecated in favour of {@link #createMerchant(Component)}. The title parameter is
      * no-longer needed when used with {@link MenuType#MERCHANT} and {@link MenuType.Typed#builder()}
      */
     @NotNull
@@ -2081,7 +2082,7 @@ public final class Bukkit {
      *
      * @return the server's MOTD
      */
-    @NotNull public static net.kyori.adventure.text.Component motd() {
+    @NotNull public static Component motd() {
         return server.motd();
     }
 
@@ -2120,7 +2121,7 @@ public final class Bukkit {
      * Set the message that is displayed on the server list.
      *
      * @param motd The message to be displayed
-     * @deprecated in favour of {@link #motd(net.kyori.adventure.text.Component)}
+     * @deprecated in favour of {@link #motd(Component)}
      */
     @Deprecated // Paper
     public static void setMotd(@NotNull String motd) {
@@ -2694,7 +2695,7 @@ public final class Bukkit {
      * @return the default message
      */
     @NotNull
-    public static net.kyori.adventure.text.Component permissionMessage() {
+    public static Component permissionMessage() {
         return server.permissionMessage();
     }
 

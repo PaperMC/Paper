@@ -12,7 +12,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.component.Tool;
 import net.minecraft.world.level.block.Block;
@@ -20,6 +19,7 @@ import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.block.CraftBlockType;
+import org.bukkit.craftbukkit.configuration.ConfigSerializationUtil;
 import org.bukkit.craftbukkit.inventory.SerializableMeta;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
 import org.bukkit.inventory.meta.components.ToolComponent;
@@ -195,7 +195,7 @@ public final class CraftToolComponent implements ToolComponent {
         public CraftToolRule(Map<String, Object> map) {
             Float speed = SerializableMeta.getObject(Float.class, map, "speed", true);
             Boolean correct = SerializableMeta.getObject(Boolean.class, map, "correct-for-drops", true);
-            HolderSet<Block> blocks = CraftHolderUtil.parse(SerializableMeta.getObject(Object.class, map, "blocks", false), Registries.BLOCK, BuiltInRegistries.BLOCK);
+            HolderSet<Block> blocks = ConfigSerializationUtil.getHolderSet(SerializableMeta.getObject(Object.class, map, "blocks", false), Registries.BLOCK);
 
             this.handle = new Tool.Rule(blocks, Optional.ofNullable(speed), Optional.ofNullable(correct));
         }
@@ -204,7 +204,7 @@ public final class CraftToolComponent implements ToolComponent {
         public Map<String, Object> serialize() {
             Map<String, Object> result = new LinkedHashMap<>();
 
-            CraftHolderUtil.serialize(result, "blocks", this.handle.blocks());
+            ConfigSerializationUtil.setHolderSet(result, "blocks", this.handle.blocks());
 
             Float speed = this.getSpeed();
             if (speed != null) {

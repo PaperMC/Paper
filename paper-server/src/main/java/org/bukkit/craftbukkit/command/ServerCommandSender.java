@@ -12,8 +12,8 @@ import org.bukkit.permissions.PermissionAttachmentInfo;
 import org.bukkit.plugin.Plugin;
 
 public abstract class ServerCommandSender implements CommandSender {
-    public final PermissibleBase perm; // Paper
-    private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
+    public final PermissibleBase perm;
+    private net.kyori.adventure.pointer.Pointers adventure$pointers;
 
     protected ServerCommandSender() {
         this.perm = new PermissibleBase(this);
@@ -97,7 +97,6 @@ public abstract class ServerCommandSender implements CommandSender {
         this.sendMessage(messages); // ServerCommandSenders have no use for senders
     }
 
-    // Spigot start
     private final org.bukkit.command.CommandSender.Spigot spigot = new org.bukkit.command.CommandSender.Spigot() {
         @Override
         public void sendMessage(net.md_5.bungee.api.chat.BaseComponent component) {
@@ -124,9 +123,7 @@ public abstract class ServerCommandSender implements CommandSender {
     public org.bukkit.command.CommandSender.Spigot spigot() {
         return this.spigot;
     }
-    // Spigot end
 
-    // Paper start - implement pointers
     @Override
     public net.kyori.adventure.pointer.Pointers pointers() {
         if (this.adventure$pointers == null) {
@@ -138,5 +135,4 @@ public abstract class ServerCommandSender implements CommandSender {
 
         return this.adventure$pointers;
     }
-    // Paper end
 }

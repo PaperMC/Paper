@@ -68,9 +68,9 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     public boolean contains(BlockData block) {
         Preconditions.checkArgument(block != null, "Block cannot be null");
 
-        Predicate<BlockState> nms = Predicates.equalTo(((CraftBlockData) block).getState());
+        Predicate<BlockState> filter = Predicates.equalTo(((CraftBlockData) block).getState());
         for (PalettedContainer<BlockState> palette : this.blockIds) {
-            if (palette.maybeHas(nms)) {
+            if (palette.maybeHas(filter)) {
                 return true;
             }
         }
@@ -82,9 +82,9 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     public boolean contains(Biome biome) {
         Preconditions.checkArgument(biome != null, "Biome cannot be null");
 
-        Predicate<Holder<net.minecraft.world.level.biome.Biome>> nms = Predicates.equalTo(CraftBiome.bukkitToMinecraftHolder(biome));
+        Predicate<Holder<net.minecraft.world.level.biome.Biome>> filter = Predicates.equalTo(CraftBiome.bukkitToMinecraftHolder(biome));
         for (PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>> palette : this.biome) {
-            if (palette.maybeHas(nms)) {
+            if (palette.maybeHas(filter)) {
                 return true;
             }
         }
@@ -96,7 +96,7 @@ public class CraftChunkSnapshot implements ChunkSnapshot {
     public Material getBlockType(int x, int y, int z) {
         this.validateChunkCoordinates(x, y, z);
 
-        return this.blockIds[this.getSectionIndex(y)].get(x, y & 0xF, z).getBukkitMaterial(); // Paper - optimise getType calls
+        return this.blockIds[this.getSectionIndex(y)].get(x, y & 0xF, z).getBukkitMaterial(); // Paper - optimise get calls
     }
 
     @Override

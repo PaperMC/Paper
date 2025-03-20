@@ -31,7 +31,6 @@ public abstract class CraftBlockInventoryConverter implements CraftInventoryCrea
         return this.getInventory(holder, type, this.getBlockEntity()); // Paper
     }
 
-    // Paper start
     @Override
     public Inventory createInventory(InventoryHolder owner, InventoryType type, net.kyori.adventure.text.Component title) {
         Container blockEntity = getBlockEntity();
@@ -41,7 +40,6 @@ public abstract class CraftBlockInventoryConverter implements CraftInventoryCrea
 
         return this.getInventory(owner, type, blockEntity); // Paper
     }
-    // Paper end
 
     @Override
     public Inventory createInventory(InventoryHolder holder, InventoryType type, String title) {
@@ -55,13 +53,11 @@ public abstract class CraftBlockInventoryConverter implements CraftInventoryCrea
 
     @Deprecated // Paper - use getInventory with owner and type
     public Inventory getInventory(Container blockEntity) {
-        // Paper start
         return this.getInventory(null, null, blockEntity);
     }
 
     public Inventory getInventory(InventoryHolder owner, InventoryType type, Container blockEntity) { // Paper
         if (owner != null) return new org.bukkit.craftbukkit.inventory.CraftInventoryCustom(owner, type, blockEntity); // Paper
-        // Paper end
         return new CraftInventory(blockEntity);
     }
 
@@ -78,14 +74,13 @@ public abstract class CraftBlockInventoryConverter implements CraftInventoryCrea
 
     public static abstract class AbstractFurnaceInventoryConverter extends CraftBlockInventoryConverter {
     // Paper end - abstract furnace converter to apply to all 3 furnaces
-        // Paper start
+
         @Override
         public Inventory createInventory(InventoryHolder owner, InventoryType type, net.kyori.adventure.text.Component title) {
             Container blockEntity = getBlockEntity();
             ((AbstractFurnaceBlockEntity) blockEntity).name = io.papermc.paper.adventure.PaperAdventure.asVanilla(title);
             return this.getInventory(owner, type, blockEntity); // Paper
         }
-        // Paper end
 
         @Override
         public Inventory createInventory(InventoryHolder owner, InventoryType type, String title) {
@@ -96,14 +91,12 @@ public abstract class CraftBlockInventoryConverter implements CraftInventoryCrea
 
         @Override
         public Inventory getInventory(Container blockEntity) {
-            // Paper start
-            return getInventory(null, null, blockEntity);
+            return this.getInventory(null, null, blockEntity);
         }
 
         @Override
         public Inventory getInventory(InventoryHolder owner, InventoryType type, net.minecraft.world.Container blockEntity) { // Paper
             if (owner != null) return new org.bukkit.craftbukkit.inventory.CraftInventoryCustom(owner, type, blockEntity); // Paper
-            // Paper end
             return new CraftInventoryFurnace((AbstractFurnaceBlockEntity) blockEntity);
         }
     }
@@ -115,7 +108,6 @@ public abstract class CraftBlockInventoryConverter implements CraftInventoryCrea
             return new BrewingStandBlockEntity(BlockPos.ZERO, Blocks.BREWING_STAND.defaultBlockState());
         }
 
-        // Paper start
         @Override
         public Inventory createInventory(InventoryHolder owner, InventoryType type, net.kyori.adventure.text.Component title) {
             // BrewingStand does not extend RandomizableContainerBlockEntity
@@ -125,7 +117,6 @@ public abstract class CraftBlockInventoryConverter implements CraftInventoryCrea
             }
             return this.getInventory(owner, type, blockEntity); // Paper
         }
-        // Paper end
 
         @Override
         public Inventory createInventory(InventoryHolder holder, InventoryType type, String title) {
@@ -139,14 +130,12 @@ public abstract class CraftBlockInventoryConverter implements CraftInventoryCrea
 
         @Override
         public Inventory getInventory(Container blockEntity) {
-            // Paper start
-            return getInventory(null, null, blockEntity);
+            return this.getInventory(null, null, blockEntity);
         }
 
         @Override
         public Inventory getInventory(InventoryHolder owner, InventoryType type, net.minecraft.world.Container blockEntity) { // Paper
             if (owner != null) return new org.bukkit.craftbukkit.inventory.CraftInventoryCustom(owner, type, blockEntity); // Paper
-            // Paper end
             return new CraftInventoryBrewer(blockEntity);
         }
     }

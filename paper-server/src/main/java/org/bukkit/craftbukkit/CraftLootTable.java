@@ -128,7 +128,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
             }
         }
 
-        // SPIGOT-5603 - Avoid IllegalArgumentException in LootTableInfo#build()
+        // SPIGOT-5603 - Avoid IllegalArgumentException in ContextKeySet.Builder#create
         ContextKeySet.Builder nmsBuilder = new ContextKeySet.Builder();
         for (ContextKey<?> param : this.getHandle().getParamSet().required()) {
             nmsBuilder.required(param);
@@ -151,7 +151,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
     public static LootContext convertContext(net.minecraft.world.level.storage.loot.LootContext info) {
         Vec3 position = info.getOptionalParameter(LootContextParams.ORIGIN);
         if (position == null) {
-            position = info.getOptionalParameter(LootContextParams.THIS_ENTITY).position(); // Every vanilla context has origin or this_entity, see LootContextParameterSets
+            position = info.getOptionalParameter(LootContextParams.THIS_ENTITY).position(); // Every vanilla context has origin or this_entity, see LootContextParamSets
         }
         Location location = CraftLocation.toBukkit(position, info.getLevel().getWorld());
         LootContext.Builder contextBuilder = new LootContext.Builder(location);
@@ -173,7 +173,7 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
 
     @Override
     public String toString() {
-        return this.getKey().toString();
+        return this.key.toString();
     }
 
     @Override
@@ -183,13 +183,11 @@ public class CraftLootTable implements org.bukkit.loot.LootTable {
         }
 
         org.bukkit.loot.LootTable table = (org.bukkit.loot.LootTable) obj;
-        return table.getKey().equals(this.getKey());
+        return table.getKey().equals(this.key);
     }
 
-    // Paper start - satisfy equals/hashCode contract
     @Override
     public int hashCode() {
-        return java.util.Objects.hash(key);
+        return this.key.hashCode();
     }
-    // Paper end
 }

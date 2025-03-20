@@ -4,8 +4,10 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.mojang.serialization.Codec;
 import io.papermc.paper.FeatureHooks;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
@@ -125,48 +127,44 @@ public class CraftChunk implements Chunk {
 
     @Override
     public BlockState[] getTileEntities() {
-        // Paper start
-        return getTileEntities(true);
+        return this.getTileEntities(true);
     }
 
     @Override
     public BlockState[] getTileEntities(boolean useSnapshot) {
-        // Paper end
         if (!this.isLoaded()) {
             this.getWorld().getChunkAt(this.x, this.z); // Transient load for this tick
         }
+
         int index = 0;
         ChunkAccess chunk = this.getHandle(ChunkStatus.FULL);
 
-        BlockState[] entities = new BlockState[chunk.blockEntities.size()];
-
-        for (BlockPos position : chunk.blockEntities.keySet()) {
-            // Paper start
-            entities[index++] = this.level.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState(useSnapshot);
+        BlockState[] states = new BlockState[chunk.blockEntities.size()];
+        for (BlockPos pos : chunk.blockEntities.keySet()) {
+            states[index++] = CraftBlock.at(this.level, pos).getState(useSnapshot);
         }
 
-        return entities;
+        return states;
     }
 
     @Override
     public Collection<BlockState> getTileEntities(Predicate<? super Block> blockPredicate, boolean useSnapshot) {
-        Preconditions.checkNotNull(blockPredicate, "blockPredicate");
+        Preconditions.checkArgument(blockPredicate != null, "blockPredicate cannot be null");
+
         if (!this.isLoaded()) {
             this.getWorld().getChunkAt(this.x, this.z); // Transient load for this tick
         }
         ChunkAccess chunk = this.getHandle(ChunkStatus.FULL);
 
-        java.util.List<BlockState> entities = new java.util.ArrayList<>();
-
-        for (BlockPos position : chunk.blockEntities.keySet()) {
-            Block block = this.level.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
+        List<BlockState> states = new ArrayList<>();
+        for (BlockPos pos : chunk.blockEntities.keySet()) {
+            Block block = CraftBlock.at(this.level, pos);
             if (blockPredicate.test(block)) {
-                entities.add(block.getState(useSnapshot));
+                states.add(block.getState(useSnapshot));
             }
-            // Paper end
         }
 
-        return entities;
+        return states;
     }
 
     @Override
@@ -197,7 +195,7 @@ public class CraftChunk implements Chunk {
 
     @Override
     public boolean isSlimeChunk() {
-        // 987234911L is deterimined in EntitySlime when seeing if a slime can spawn in a chunk
+        // 987234911L is taken from Slime when seeing if a slime can spawn in a chunk
         return this.level.paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), level.spigotConfig.slimeSeed).nextInt(10) == 0; // Paper
     }
 
@@ -247,9 +245,9 @@ public class CraftChunk implements Chunk {
     public boolean contains(BlockData block) {
         Preconditions.checkArgument(block != null, "Block cannot be null");
 
-        Predicate<net.minecraft.world.level.block.state.BlockState> nms = Predicates.equalTo(((CraftBlockData) block).getState());
+        Predicate<net.minecraft.world.level.block.state.BlockState> filter = Predicates.equalTo(((CraftBlockData) block).getState());
         for (LevelChunkSection section : this.getHandle(ChunkStatus.FULL).getSections()) {
-            if (section != null && section.getStates().maybeHas(nms)) {
+            if (section != null && section.getStates().maybeHas(filter)) {
                 return true;
             }
         }
@@ -262,9 +260,9 @@ public class CraftChunk implements Chunk {
         Preconditions.checkArgument(biome != null, "Biome cannot be null");
 
         ChunkAccess chunk = this.getHandle(ChunkStatus.BIOMES);
-        Predicate<Holder<net.minecraft.world.level.biome.Biome>> nms = Predicates.equalTo(CraftBiome.bukkitToMinecraftHolder(biome));
+        Predicate<Holder<net.minecraft.world.level.biome.Biome>> filter = Predicates.equalTo(CraftBiome.bukkitToMinecraftHolder(biome));
         for (LevelChunkSection section : chunk.getSections()) {
-            if (section != null && section.getBiomes().maybeHas(nms)) {
+            if (section != null && section.getBiomes().maybeHas(filter)) {
                 return true;
             }
         }
@@ -279,21 +277,17 @@ public class CraftChunk implements Chunk {
 
     @Override
     public ChunkSnapshot getChunkSnapshot(boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain) {
-        // Paper start - Add getChunkSnapshot includeLightData parameter
         return getChunkSnapshot(includeMaxBlockY, includeBiome, includeBiomeTempRain, true);
     }
 
     @Override
     public ChunkSnapshot getChunkSnapshot(boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain, boolean includeLightData) {
-        // Paper end - Add getChunkSnapshot includeLightData parameter
         ChunkAccess chunk = this.getHandle(ChunkStatus.FULL);
 
         LevelChunkSection[] cs = chunk.getSections();
         PalettedContainer[] sectionBlockIDs = new PalettedContainer[cs.length];
-        // Paper start - Add getChunkSnapshot includeLightData parameter
         byte[][] sectionSkyLights = includeLightData ? new byte[cs.length][] : null;
         byte[][] sectionEmitLights = includeLightData ? new byte[cs.length][] : null;
-        // Paper end - Add getChunkSnapshot includeLightData parameter
         boolean[] sectionEmpty = new boolean[cs.length];
         PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
 
@@ -308,26 +302,27 @@ public class CraftChunk implements Chunk {
             }
             // Paper end - Fix ChunkSnapshot#isSectionEmpty(int)
 
-            if (includeLightData) { // Paper - Add getChunkSnapshot includeLightData parameter
-            LevelLightEngine lightengine = this.level.getLightEngine();
-            DataLayer skyLightArray = lightengine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
-            if (skyLightArray == null) {
-                sectionSkyLights[i] = this.level.dimensionType().hasSkyLight() ? CraftChunk.FULL_LIGHT : CraftChunk.EMPTY_LIGHT;
-            } else {
-                sectionSkyLights[i] = new byte[2048];
-                System.arraycopy(skyLightArray.getData(), 0, sectionSkyLights[i], 0, 2048);
+            if (includeLightData) {
+                LevelLightEngine lightEngine = this.level.getLightEngine();
+                DataLayer skyLightArray = lightEngine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
+                if (skyLightArray == null) {
+                    sectionSkyLights[i] = this.level.dimensionType().hasSkyLight() ? CraftChunk.FULL_LIGHT : CraftChunk.EMPTY_LIGHT;
+                } else {
+                    sectionSkyLights[i] = new byte[2048];
+                    System.arraycopy(skyLightArray.getData(), 0, sectionSkyLights[i], 0, 2048);
+                }
+
+                DataLayer emitLightArray = lightEngine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
+                if (emitLightArray == null) {
+                    sectionEmitLights[i] = CraftChunk.EMPTY_LIGHT;
+                } else {
+                    sectionEmitLights[i] = new byte[2048];
+                    System.arraycopy(emitLightArray.getData(), 0, sectionEmitLights[i], 0, 2048);
+                }
             }
-            DataLayer emitLightArray = lightengine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
-            if (emitLightArray == null) {
-                sectionEmitLights[i] = CraftChunk.EMPTY_LIGHT;
-            } else {
-                sectionEmitLights[i] = new byte[2048];
-                System.arraycopy(emitLightArray.getData(), 0, sectionEmitLights[i], 0, 2048);
-            }
-            } // Paper - Add getChunkSnapshot includeLightData parameter
 
             if (biome != null) {
-                biome[i] = ((PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>) cs[i].getBiomes()).copy(); // Paper - Perf: use copy instead of round tripping with codecs
+                biome[i] = cs[i].getBiomes().copy(); // Paper - Perf: use copy instead of round tripping with codecs
             }
         }
 

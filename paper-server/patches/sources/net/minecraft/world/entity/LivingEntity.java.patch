@@ -27,7 +27,7 @@
  public abstract class LivingEntity extends Entity implements Attackable {
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final String TAG_ACTIVE_EFFECTS = "active_effects";
-@@ -251,11 +_,29 @@
+@@ -251,11 +_,25 @@
          EquipmentSlot.class
      );
      protected final EntityEquipment equipment;
@@ -41,11 +41,7 @@
 +    public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
 +    public boolean silentDeath = false; // Paper - mark entity as dying silently for cancellable death event
 +    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
-+
-+    @Override
-+    public float getBukkitYaw() {
-+        return this.getYHeadRot();
-+    }
++    public int shieldBlockingDelay = this.level().paperConfig().misc.shieldBlockingDelay; // Paper - Make shield blocking delay configurable
 +    // CraftBukkit end
  
      protected LivingEntity(EntityType<? extends LivingEntity> entityType, Level level) {
@@ -63,7 +59,7 @@
                  double d1 = Math.min(0.2F + d / 15.0, 2.5);
                  int i = (int)(150.0 * d1);
 -                serverLevel.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, state), x, y1, z, i, 0.0, 0.0, 0.0, 0.15F);
-+                // CraftBukkit start - visiblity api
++                // CraftBukkit start - visibility api
 +                if (this instanceof ServerPlayer) {
 +                    serverLevel.sendParticlesSource((ServerPlayer) this, new BlockParticleOption(ParticleTypes.BLOCK, state), false, false, x, y1, z, i, 0.0, 0.0, 0.0, 0.15F);
 +                } else {
@@ -1788,11 +1784,18 @@
      }
  
      public boolean isBlocking() {
-@@ -3280,6 +_,63 @@
+@@ -3280,6 +_,60 @@
          }
      }
  
-+    // Paper start - Make shield blocking delay configurable
++    // CraftBukkit start
++    @Override
++    public float getBukkitYaw() {
++        return this.getYHeadRot();
++    }
++    // CraftBukkit end
++
++    // Paper start
 +    public HitResult getRayTrace(int maxDistance, ClipContext.Fluid fluidCollisionOption) {
 +        if (maxDistance < 1 || maxDistance > 120) {
 +            throw new IllegalArgumentException("maxDistance must be between 1-120");
@@ -1821,7 +1824,7 @@
 +        net.minecraft.world.phys.EntityHitResult result = null;
 +
 +        for (Entity entity : entityList) {
-+            final double inflationAmount = (double) entity.getPickRadius();
++            final double inflationAmount = entity.getPickRadius();
 +            AABB aabb = entity.getBoundingBox().inflate(inflationAmount, inflationAmount, inflationAmount);
 +            Optional<Vec3> rayTraceResult = aabb.clip(start, end);
 +
@@ -1837,17 +1840,7 @@
 +
 +        return result;
 +    }
-+
-+    public int shieldBlockingDelay = this.level().paperConfig().misc.shieldBlockingDelay;
-+
-+    public int getShieldBlockingDelay() {
-+        return shieldBlockingDelay;
-+    }
-+
-+    public void setShieldBlockingDelay(int shieldBlockingDelay) {
-+        this.shieldBlockingDelay = shieldBlockingDelay;
-+    }
-+    // Paper end - Make shield blocking delay configurable
++    // Paper end
 +
      public boolean isSuppressingSlidingDownLadder() {
          return this.isShiftKeyDown();

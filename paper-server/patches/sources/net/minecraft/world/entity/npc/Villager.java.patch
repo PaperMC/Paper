@@ -1,20 +1,5 @@
 --- a/net/minecraft/world/entity/npc/Villager.java
 +++ b/net/minecraft/world/entity/npc/Villager.java
-@@ -91,6 +_,14 @@
- import net.minecraft.world.phys.AABB;
- import org.slf4j.Logger;
- 
-+// CraftBukkit start
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.event.entity.EntityRemoveEvent;
-+import org.bukkit.event.entity.EntityTransformEvent;
-+import org.bukkit.event.entity.VillagerReplenishTradeEvent;
-+// CraftBukkit end
-+
- public class Villager extends AbstractVillager implements ReputationEventHandler, VillagerDataHolder {
-     private static final Logger LOGGER = LogUtils.getLogger();
-     private static final EntityDataAccessor<VillagerData> DATA_VILLAGER_DATA = SynchedEntityData.defineId(Villager.class, EntityDataSerializers.VILLAGER_DATA);
 @@ -286,7 +_,7 @@
                      this.increaseProfessionLevelOnUpdate = false;
                  }
@@ -24,30 +9,28 @@
              }
          }
  
-@@ -395,7 +_,13 @@
+@@ -395,7 +_,12 @@
          this.updateDemand();
  
          for (MerchantOffer merchantOffer : this.getOffers()) {
 -            merchantOffer.resetUses();
 +            // CraftBukkit start
-+            VillagerReplenishTradeEvent event = new VillagerReplenishTradeEvent((org.bukkit.entity.Villager) this.getBukkitEntity(), merchantOffer.asBukkit());
-+            Bukkit.getPluginManager().callEvent(event);
-+            if (!event.isCancelled()) {
++            org.bukkit.event.entity.VillagerReplenishTradeEvent event = new org.bukkit.event.entity.VillagerReplenishTradeEvent((org.bukkit.entity.Villager) this.getBukkitEntity(), merchantOffer.asBukkit());
++            if (event.callEvent()) {
 +                merchantOffer.resetUses();
 +            }
 +            // CraftBukkit end
          }
  
          this.resendOffersToTradingPlayer();
-@@ -456,7 +_,13 @@
+@@ -456,7 +_,12 @@
          int i = 2 - this.numberOfRestocksToday;
          if (i > 0) {
              for (MerchantOffer merchantOffer : this.getOffers()) {
 -                merchantOffer.resetUses();
 +                // CraftBukkit start
-+                VillagerReplenishTradeEvent event = new VillagerReplenishTradeEvent((org.bukkit.entity.Villager) this.getBukkitEntity(), merchantOffer.asBukkit());
-+                Bukkit.getPluginManager().callEvent(event);
-+                if (!event.isCancelled()) {
++                org.bukkit.event.entity.VillagerReplenishTradeEvent event = new org.bukkit.event.entity.VillagerReplenishTradeEvent((org.bukkit.entity.Villager) this.getBukkitEntity(), merchantOffer.asBukkit());
++                if (event.callEvent()) {
 +                    merchantOffer.resetUses();
 +                }
 +                // CraftBukkit end
@@ -99,14 +82,14 @@
 +                if (org.bukkit.craftbukkit.event.CraftEventFactory.callEntityZapEvent(this, lightning, witch1).isCancelled()) {
 +                    return false;
 +                }
-+                if (org.spigotmc.SpigotConfig.logVillagerDeaths) Villager.LOGGER.info("Villager {} was struck by lightning {}.", this, lightning); // Move down
++                if (org.spigotmc.SpigotConfig.logVillagerDeaths) LOGGER.info("Villager {} was struck by lightning {}.", this, lightning); // Move down
 +                // Paper end - Add EntityZapEvent
                  witch1.finalizeSpawn(level, level.getCurrentDifficultyAt(witch1.blockPosition()), EntitySpawnReason.CONVERSION, null);
                  witch1.setPersistenceRequired();
                  this.releaseAllPois();
 -            });
 +                return true; // Paper start - Add EntityZapEvent
-+            }, EntityTransformEvent.TransformReason.LIGHTNING, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // CraftBukkit
++            }, org.bukkit.event.entity.EntityTransformEvent.TransformReason.LIGHTNING, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.LIGHTNING); // CraftBukkit
              if (witch == null) {
                  super.thunderHit(level, lightning);
              }
@@ -115,7 +98,7 @@
      @Override
      protected void updateTrades() {
 +        // Paper start - More vanilla friendly methods to update trades
-+        updateTrades(TRADES_PER_LEVEL);
++        this.updateTrades(TRADES_PER_LEVEL);
 +    }
 +
 +    public boolean updateTrades(int amount) {

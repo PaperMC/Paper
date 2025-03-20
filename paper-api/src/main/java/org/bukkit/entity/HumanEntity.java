@@ -299,16 +299,16 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     /**
      * Force-closes the currently open inventory view for this player, if any.
      */
-    public void closeInventory();
+    default void closeInventory() {
+        this.closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.PLUGIN);
+    }
 
-    // Paper start
     /**
      * Force-closes the currently open inventory view for this player, if any.
      *
      * @param reason why the inventory is closing
      */
-    public void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason);
-    // Paper end
+    void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason);
 
     /**
      * Returns the ItemStack currently in your hand, can be empty.

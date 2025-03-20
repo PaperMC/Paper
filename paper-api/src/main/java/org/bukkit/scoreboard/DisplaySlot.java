@@ -1,11 +1,13 @@
 package org.bukkit.scoreboard;
 
 import net.kyori.adventure.text.format.NamedTextColor; // Paper
+import org.jspecify.annotations.NullMarked;
+
 /**
  * Locations for displaying objectives to the player
  */
+@NullMarked
 public enum DisplaySlot {
-    // Paper start
     BELOW_NAME("below_name"),
     PLAYER_LIST("list"),
     SIDEBAR("sidebar"),
@@ -30,11 +32,11 @@ public enum DisplaySlot {
 
     private final String id;
 
-    DisplaySlot(@org.jetbrains.annotations.NotNull String id) {
+    DisplaySlot(String id) {
         this.id = id;
     }
 
-    DisplaySlot(@org.jetbrains.annotations.NotNull NamedTextColor color) {
+    DisplaySlot(NamedTextColor color) {
         this.id = "sidebar.team." + color;
     }
 
@@ -43,13 +45,12 @@ public enum DisplaySlot {
      *
      * @return the string id
      */
-    public @org.jetbrains.annotations.NotNull String getId() {
-        return id;
+    public String getId() {
+        return this.id;
     }
 
     @Override
     public String toString() {
         return this.id;
     }
-    // Paper end
 }

@@ -157,7 +157,7 @@
 +        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules()))); // Paper - create paper world configs
 +        this.pvpMode = server.isPvpAllowed();
 +        this.levelStorageAccess = levelStorageAccess;
-+        this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getUUID(levelStorageAccess.levelDirectory.path().toFile());
++        this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getOrCreate(levelStorageAccess.levelDirectory.path().toFile());
 +        // CraftBukkit end
          this.tickTime = tickTime;
          this.server = server;
@@ -880,7 +880,7 @@
 +        return this.sendParticlesSource(null, type, overrideLimiter, alwaysShow, posX, posY, posZ, particleCount, xOffset, yOffset, zOffset, speed);
 +    }
 +    public <T extends ParticleOptions> int sendParticlesSource(
-+        @javax.annotation.Nullable Entity sender,
++        @Nullable Entity sender,
 +        T type,
 +        boolean overrideLimiter,
 +        boolean alwaysShow,
@@ -897,7 +897,7 @@
 +    }
 +    public <T extends ParticleOptions> int sendParticlesSource(
 +        List<ServerPlayer> receivers,
-+        @javax.annotation.Nullable Entity sender,
++        @Nullable Entity sender,
 +        T type,
 +        boolean overrideLimiter,
 +        boolean alwaysShow,
@@ -1118,12 +1118,12 @@
 +            entity.valid = true; // CraftBukkit
 +            ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server
 +            // Paper start - Entity origin API
-+            if (entity.getOriginVector() == null) {
-+                entity.setOrigin(entity.getBukkitEntity().getLocation());
++            if (entity.origin == null) {
++                entity.origin = entity.position();
 +            }
 +            // Default to current world if unknown, gross assumption but entities rarely change world
-+            if (entity.getOriginWorld() == null) {
-+                entity.setOrigin(entity.getOriginVector().toLocation(getWorld()));
++            if (entity.originWorld == null) {
++                entity.originWorld = ServerLevel.this.getWorld().getUID();
 +            }
 +            // Paper end - Entity origin API
 +            new com.destroystokyo.paper.event.entity.EntityAddToWorldEvent(entity.getBukkitEntity(), ServerLevel.this.getWorld()).callEvent(); // Paper - fire while valid

@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
@@ -26,15 +26,15 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     private final LevelAccessor world;
     private final Map<BlockPos, net.minecraft.world.level.block.state.BlockState> dataMap = new HashMap<>();
     private final Map<BlockPos, BlockEntity> entityMap = new HashMap<>();
-    private final LinkedHashMap<BlockPos, CraftBlockState> list;
+    private final LinkedHashMap<BlockPos, CraftBlockState> blocks;
 
     public BlockStateListPopulator(LevelAccessor world) {
         this(world, new LinkedHashMap<>());
     }
 
-    private BlockStateListPopulator(LevelAccessor world, LinkedHashMap<BlockPos, CraftBlockState> list) {
+    private BlockStateListPopulator(LevelAccessor world, LinkedHashMap<BlockPos, CraftBlockState> blocks) {
         this.world = world;
-        this.list = list;
+        this.blocks = blocks;
     }
 
     @Override
@@ -63,7 +63,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     public boolean setBlock(BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags) {
         pos = pos.immutable();
         // remove first to keep insertion order
-        this.list.remove(pos);
+        this.blocks.remove(pos);
 
         this.dataMap.put(pos, state);
         if (state.hasBlockEntity()) {
@@ -77,7 +77,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
         snapshot.setFlags(flags);
         // set world handle to ensure that updated calls are done to the world and not to this populator
         snapshot.setWorldHandle(this.world);
-        this.list.put(pos, snapshot);
+        this.blocks.put(pos, snapshot);
         return true;
     }
 
@@ -87,25 +87,36 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     public void refreshTiles() {
-        for (CraftBlockState snapshot : this.list.values()) {
+        for (CraftBlockState snapshot : this.blocks.values()) {
             if (snapshot instanceof CraftBlockEntityState) {
                 ((CraftBlockEntityState<?>) snapshot).refreshSnapshot();
             }
         }
     }
 
-    public void updateList() {
-        for (CraftBlockState state : this.list.values()) {
-            state.place(state.getFlags());
+    public void placeBlocks() {
+        this.placeSomeBlocks($ -> true);
+    }
+
+    public void placeSomeBlocks(Predicate<? super BlockState> filter) {
+        this.placeSomeBlocks($ -> {}, filter);
+    }
+
+    public void placeBlocks(Consumer<? super CraftBlockState> beforeRun) {
+        this.placeSomeBlocks(beforeRun, $ -> true);
+    }
+
+    public void placeSomeBlocks(Consumer<? super CraftBlockState> beforeRun, Predicate<? super BlockState> filter) {
+        for (CraftBlockState state : this.blocks.values()) {
+            if (filter.test(state)) {
+                beforeRun.accept(state);
+                state.place(state.getFlags());
+            }
         }
     }
 
-    public Set<BlockPos> getBlocks() {
-        return this.list.keySet();
-    }
-
-    public List<CraftBlockState> getList() {
-        return new ArrayList<>(this.list.values());
+    public List<CraftBlockState> getSnapshotList() {
+        return new ArrayList<>(this.blocks.values());
     }
 
     public LevelAccessor getWorld() {
@@ -168,21 +179,21 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
 
     @Override
     public BlockPos getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types heightmap, BlockPos pos) {
-        return world.getHeightmapPos(heightmap, pos);
+        return this.world.getHeightmapPos(heightmap, pos);
     }
 
     @Override
     public int getHeight(net.minecraft.world.level.levelgen.Heightmap.Types heightmap, int x, int z) {
-        return world.getHeight(heightmap, x, z);
+        return this.world.getHeight(heightmap, x, z);
     }
 
     @Override
-    public int getRawBrightness(BlockPos pos, int ambientDarkness) {
-        return world.getRawBrightness(pos, ambientDarkness);
+    public int getRawBrightness(BlockPos pos, int amount) {
+        return this.world.getRawBrightness(pos, amount);
     }
 
     @Override
-    public int getBrightness(net.minecraft.world.level.LightLayer type, BlockPos pos) {
-        return world.getBrightness(type, pos);
+    public int getBrightness(net.minecraft.world.level.LightLayer lightLayer, BlockPos pos) {
+        return this.world.getBrightness(lightLayer, pos);
     }
 }

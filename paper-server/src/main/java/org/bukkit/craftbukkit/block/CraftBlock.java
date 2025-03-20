@@ -661,8 +661,8 @@ public class CraftBlock implements Block {
         Vec3 startPos = CraftLocation.toVec3(start);
         Vec3 endPos = startPos.add(dir.getX(), dir.getY(), dir.getZ());
 
-        HitResult nmsHitResult = this.world.clip(new ClipContext(startPos, endPos, ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toNMS(fluidCollisionMode), CollisionContext.empty()), this.position);
-        return CraftRayTraceResult.fromNMS(this.getWorld(), nmsHitResult);
+        HitResult hitResult = this.world.clip(new ClipContext(startPos, endPos, ClipContext.Block.OUTLINE, CraftFluidCollisionMode.toFluid(fluidCollisionMode), CollisionContext.empty()), this.position);
+        return CraftRayTraceResult.convertFromInternal(this.world, hitResult);
     }
 
     @Override

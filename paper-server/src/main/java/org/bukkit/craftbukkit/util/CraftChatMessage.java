@@ -13,14 +13,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.ClickEvent.Action;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.server.MinecraftServer;
 import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.CraftRegistry;
 
@@ -148,7 +146,7 @@ public final class CraftChatMessage {
                         if (!(match.startsWith("http://") || match.startsWith("https://"))) {
                             match = "http://" + match;
                         }
-                        this.modifier = this.modifier.withClickEvent(new ClickEvent.OpenUrl(new URI(match)));
+                        this.modifier = this.modifier.withClickEvent(new ClickEvent.OpenUrl(URI.create(match)));
                         this.appendNewComponent(matcher.end(groupId));
                         this.modifier = this.modifier.withClickEvent((ClickEvent) null);
                     }

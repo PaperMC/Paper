@@ -843,12 +843,10 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         return this.getHandle().craftAttributes.getAttribute(attribute);
     }
 
-    // Paper start - living entity allow attribute registration
     @Override
     public void registerAttribute(Attribute attribute) {
         this.getHandle().craftAttributes.registerAttribute(attribute);
     }
-    // Paper end - living entity allow attribute registration
 
     @Override
     public void setAI(boolean ai) {
@@ -989,16 +987,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     }
 
     @Override
-    public boolean isInvisible() {
-        return super.isInvisible(); // Paper - move invisibility up to Entity - diff on change
-    }
-
-    @Override
-    public void setInvisible(boolean invisible) {
-        super.setInvisible(invisible); // Paper - move invisibility up to Entity
-    }
-
-    @Override
     public float getSidewaysMovement() {
         return this.getHandle().xxa;
     }
@@ -1025,28 +1013,27 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public int getShieldBlockingDelay() {
-        return getHandle().getShieldBlockingDelay();
+        return this.getHandle().shieldBlockingDelay;
     }
 
     @Override
     public void setShieldBlockingDelay(int delay) {
-        getHandle().setShieldBlockingDelay(delay);
+        this.getHandle().shieldBlockingDelay = delay;
     }
 
-    // Paper start - active item API
     @Override
     public void startUsingItem(org.bukkit.inventory.EquipmentSlot hand) {
         Preconditions.checkArgument(hand != null, "hand must not be null");
         switch (hand) {
-            case HAND -> getHandle().startUsingItem(InteractionHand.MAIN_HAND);
-            case OFF_HAND -> getHandle().startUsingItem(InteractionHand.OFF_HAND);
+            case HAND -> this.getHandle().startUsingItem(InteractionHand.MAIN_HAND);
+            case OFF_HAND -> this.getHandle().startUsingItem(InteractionHand.OFF_HAND);
             default -> throw new IllegalArgumentException("hand may only be HAND or OFF_HAND");
         }
     }
 
     @Override
     public void completeUsingActiveItem() {
-        getHandle().completeUsingItem();
+        this.getHandle().completeUsingItem();
     }
 
     @Override
@@ -1085,32 +1072,26 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public org.bukkit.inventory.EquipmentSlot getActiveItemHand() {
         return org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(this.getHandle().getUsedItemHand());
     }
-    // Paper end - active item API
 
-    // Paper start - entity jump API
     @Override
     public boolean isJumping() {
-        return getHandle().jumping;
+        return this.getHandle().jumping;
     }
 
     @Override
     public void setJumping(boolean jumping) {
-        getHandle().setJumping(jumping);
-        if (jumping && getHandle() instanceof Mob) {
+        this.getHandle().setJumping(jumping);
+        if (jumping && this.getHandle() instanceof Mob) {
             // this is needed to actually make a mob jump
             ((Mob) getHandle()).getJumpControl().jump();
         }
     }
-    // Paper end - entity jump API
 
-    // Paper start - pickup animation API
     @Override
     public void playPickupItemAnimation(final org.bukkit.entity.Item item, final int quantity) {
         this.getHandle().take(((CraftItem) item).getHandle(), quantity);
     }
-    // Paper end - pickup animation API
 
-    // Paper start - hurt direction API
     @Override
     public float getHurtDirection() {
         return this.getHandle().getHurtDir();
@@ -1120,17 +1101,13 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void setHurtDirection(final float hurtDirection) {
         throw new UnsupportedOperationException("Cannot set the hurt direction on a non player");
     }
-    // Paper end - hurt direction API
 
-    // Paper start - knockback API
     @Override
     public void knockback(final double strength, final double directionX, final double directionZ) {
         Preconditions.checkArgument(strength > 0, "Knockback strength must be > 0");
         this.getHandle().knockback(strength, directionX, directionZ);
     };
-    // Paper end - knockback API
 
-    // Paper start - ItemStack damage API
     public void broadcastSlotBreak(final org.bukkit.inventory.EquipmentSlot slot) {
         this.getHandle().level().broadcastEntityEvent(this.getHandle(), net.minecraft.world.entity.LivingEntity.entityEventForEquipmentBreak(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot)));
     }
@@ -1172,7 +1149,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     private void damageItemStack0(final net.minecraft.world.item.ItemStack nmsStack, final int amount, final net.minecraft.world.entity.EquipmentSlot slot) {
         nmsStack.hurtAndBreak(amount, this.getHandle(), slot, true);
     }
-    // Paper end - ItemStack damage API
 
     @org.jetbrains.annotations.NotNull
     @Override
@@ -1186,7 +1162,6 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
         this.getHandle().frictionState = state;
     }
 
-    // Paper start - body yaw API
     @Override
     public float getBodyYaw() {
         return this.getHandle().getVisualRotationYInDegrees();
@@ -1196,12 +1171,9 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     public void setBodyYaw(final float bodyYaw) {
         this.getHandle().setYBodyRot(bodyYaw);
     }
-    // Paper end - body yaw API
 
-    // Paper start - Expose canUseSlot
     @Override
     public boolean canUseEquipmentSlot(org.bukkit.inventory.EquipmentSlot slot) {
         return this.getHandle().canUseSlot(org.bukkit.craftbukkit.CraftEquipmentSlot.getNMS(slot));
     }
-    // Paper end - Expose canUseSlot
 }

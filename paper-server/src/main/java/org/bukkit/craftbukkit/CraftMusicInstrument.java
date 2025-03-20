@@ -41,7 +41,6 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
         return io.papermc.paper.util.Holderable.fromBukkitSerializationObject(string, Instrument.CODEC, RegistryKey.INSTRUMENT); // Paper - switch to Holder
     }
 
-    // Paper start - switch to Holder
     @Override
     public boolean equals(final Object o) {
         return this.implEquals(o);
@@ -58,9 +57,9 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
     }
 
     private final Holder<Instrument> holder;
+
     public CraftMusicInstrument(Holder<Instrument> holder) {
         this.holder = holder;
-        // Paper end - switch to Holder
     }
 
     @Override
@@ -74,7 +73,6 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
         return Holderable.super.getKey();
     }
 
-    // Paper start - add translationKey methods
     @Override
     public @NotNull String translationKey() {
         if (!(this.getHandle().description().getContents() instanceof final net.minecraft.network.chat.contents.TranslatableContents translatableContents)) {
@@ -82,7 +80,4 @@ public class CraftMusicInstrument extends MusicInstrument implements io.papermc.
         }
         return translatableContents.getKey();
     }
-    // Paper end - add translationKey methods
-
-    // Paper - switch to Holder
 }

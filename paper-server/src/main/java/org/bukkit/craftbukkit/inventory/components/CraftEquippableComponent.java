@@ -8,7 +8,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderSet;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -22,6 +21,7 @@ import org.bukkit.Tag;
 import org.bukkit.configuration.serialization.SerializableAs;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftSound;
+import org.bukkit.craftbukkit.configuration.ConfigSerializationUtil;
 import org.bukkit.craftbukkit.entity.CraftEntityType;
 import org.bukkit.craftbukkit.inventory.SerializableMeta;
 import org.bukkit.craftbukkit.tag.CraftEntityTag;
@@ -47,9 +47,9 @@ public final class CraftEquippableComponent implements EquippableComponent {
         net.minecraft.world.entity.EquipmentSlot slot = CraftEquipmentSlot.getNMS(EquipmentSlot.valueOf(SerializableMeta.getString(map, "slot", false)));
 
         Sound equipSound = null;
-        String snd = SerializableMeta.getString(map, "equip-sound", true);
-        if (snd != null) {
-            equipSound = Registry.SOUNDS.get(NamespacedKey.fromString(snd));
+        String equipSoundKey = SerializableMeta.getString(map, "equip-sound", true);
+        if (equipSoundKey != null) {
+            equipSound = Registry.SOUNDS.get(NamespacedKey.fromString(equipSoundKey));
         }
 
         String model = SerializableMeta.getString(map, "model", true);
@@ -58,7 +58,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
         HolderSet<net.minecraft.world.entity.EntityType<?>> allowedEntities = null;
         Object allowed = SerializableMeta.getObject(Object.class, map, "allowed-entities", true);
         if (allowed != null) {
-            allowedEntities = CraftHolderUtil.parse(allowed, Registries.ENTITY_TYPE, BuiltInRegistries.ENTITY_TYPE);
+            allowedEntities = ConfigSerializationUtil.getHolderSet(allowed, Registries.ENTITY_TYPE);
         }
 
         Boolean dispensable = SerializableMeta.getObject(Boolean.class, map, "dispensable", true);
@@ -93,10 +93,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
             result.put("camera-overlay", cameraOverlay.toString());
         }
 
-        Optional<HolderSet<net.minecraft.world.entity.EntityType<?>>> allowed = this.handle.allowedEntities();
-        if (allowed.isPresent()) {
-            CraftHolderUtil.serialize(result, "allowed-entities", allowed.get());
-        }
+        this.handle.allowedEntities().ifPresent(holders -> ConfigSerializationUtil.setHolderSet(result, "allowed-entities", holders));
 
         result.put("dispensable", this.isDispensable());
         result.put("swappable", this.isSwappable());

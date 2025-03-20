@@ -516,7 +516,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return this.getHandle().containerMenu.getBukkitView();
     }
 
-    // Paper start - Add additional containers
     @Override
     public InventoryView openAnvil(Location location, boolean force) {
         return this.openInventory(location, force, Material.ANVIL);
@@ -578,18 +577,11 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         this.getHandle().containerMenu.checkReachable = !force;
         return this.getHandle().containerMenu.getBukkitView();
     }
-    // Paper end
 
     @Override
-    public void closeInventory() {
-        // Paper start - Inventory close reason
-        this.getHandle().closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.PLUGIN);
-    }
-    @Override
     public void closeInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason reason) {
-        getHandle().closeContainer(reason);
+        this.getHandle().closeContainer(reason);
     }
-    // Paper end - Inventory close reason
 
     @Override
     public boolean isBlocking() {
@@ -675,7 +667,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         this.getHandle().getCooldowns().addCooldown(CraftItemStack.asNMSCopy(item), ticks);
     }
 
-    // Paper start
     @Override
     public org.bukkit.entity.Entity releaseLeftShoulderEntity() {
         if (!getHandle().getShoulderEntityLeft().isEmpty()) {
@@ -699,7 +690,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         return null;
     }
-    // Paper end
 
     @Override
     public boolean discoverRecipe(NamespacedKey recipe) {
@@ -737,7 +727,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
         for (NamespacedKey recipeKey : recipeKeys) {
             Optional<? extends RecipeHolder<?>> recipe = manager.byKey(CraftRecipe.toMinecraft(recipeKey));
-            if (!recipe.isPresent()) {
+            if (recipe.isEmpty()) {
                 continue;
             }
 
@@ -751,8 +741,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public org.bukkit.entity.Entity getShoulderEntityLeft() {
         if (!this.getHandle().getShoulderEntityLeft().isEmpty()) {
             Optional<Entity> shoulder = EntityType.create(this.getHandle().getShoulderEntityLeft(), this.getHandle().level(), EntitySpawnReason.LOAD);
-
-            return (!shoulder.isPresent()) ? null : shoulder.get().getBukkitEntity();
+            return shoulder.map(Entity::getBukkitEntity).orElse(null);
         }
 
         return null;
@@ -770,8 +759,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     public org.bukkit.entity.Entity getShoulderEntityRight() {
         if (!this.getHandle().getShoulderEntityRight().isEmpty()) {
             Optional<Entity> shoulder = EntityType.create(this.getHandle().getShoulderEntityRight(), this.getHandle().level(), EntitySpawnReason.LOAD);
-
-            return (!shoulder.isPresent()) ? null : shoulder.get().getBukkitEntity();
+            return shoulder.map(Entity::getBukkitEntity).orElse(null);
         }
 
         return null;
@@ -785,23 +773,23 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         }
     }
 
-    // Paper start - move open sign method to HumanEntity
     @Override
     public void openSign(final org.bukkit.block.Sign sign, final org.bukkit.block.sign.Side side) {
         org.bukkit.craftbukkit.block.CraftSign.openSign(sign, (CraftPlayer) this, side);
     }
-    // Paper end
+
     @Override
     public boolean dropItem(boolean dropAll) {
-        // Paper start - Fix HumanEntity#drop not updating the client inv
         if (!(this.getHandle() instanceof ServerPlayer player)) return false;
         boolean success = player.drop(dropAll);
-        if (!success) return false;
+        if (!success) {
+            return false;
+        }
+
         final net.minecraft.world.entity.player.Inventory inv = player.getInventory();
         final java.util.OptionalInt optionalSlot = player.containerMenu.findSlot(inv, inv.getSelectedSlot());
         optionalSlot.ifPresent(slot -> player.containerSynchronizer.sendSlotChange(player.containerMenu, slot, inv.getSelectedItem()));
         return true;
-        // Paper end - Fix HumanEntity#drop not updating the client inv
     }
 
     @Override
@@ -912,11 +900,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public void setLastDeathLocation(Location location) {
-        if (location == null) {
-            this.getHandle().setLastDeathLocation(Optional.empty());
-        } else {
-            this.getHandle().setLastDeathLocation(Optional.of(CraftLocation.toGlobalPos(location)));
-        }
+        this.getHandle().setLastDeathLocation(Optional.ofNullable(location).map(CraftLocation::toGlobalPos));
     }
 
     @Override

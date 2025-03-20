@@ -458,9 +458,7 @@ public enum EntityEffect {
      */
     BREAK_EQUIPMENT_BODY(65, LivingEntity.class),
     /**
-     * A creaking transient shaking when being hit.
-     * Does not apply to plain creaking entities as they are not invulnerable like the transient ones spawned by the
-     * creaking heart.
+     * A creaking shaking when being hit.
      */
     SHAKE(66, Creaking.class);
 

@@ -12,12 +12,13 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.features.TreeFeatures;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnGroupData;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.WorldGenLevel;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -31,7 +32,6 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.CraftBlock;
-import org.bukkit.craftbukkit.block.CraftBlockState;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -78,12 +78,10 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         return CraftBiome.minecraftHolderToBukkit(this.getHandle().getNoiseBiome(x >> 2, y >> 2, z >> 2));
     }
 
-    // Paper start
     @Override
     public Biome getComputedBiome(int x, int y, int z) {
         return CraftBiome.minecraftHolderToBukkit(this.getHandle().getBiome(new BlockPos(x, y, z)));
     }
-    // Paper end
 
     @Override
     public void setBiome(Location location, Biome biome) {
@@ -109,12 +107,10 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         return CraftBlock.at(this.getHandle(), new BlockPos(x, y, z)).getState();
     }
 
-    // Paper start - FluidState API
     @Override
     public io.papermc.paper.block.fluid.FluidData getFluidData(final int x, final int y, final int z) {
         return io.papermc.paper.block.fluid.PaperFluidData.createData(getHandle().getFluidState(new BlockPos(x, y, z)));
     }
-    // Paper end
 
     @Override
     public BlockData getBlockData(Location location) {
@@ -204,13 +200,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         BlockStateListPopulator populator = new BlockStateListPopulator(this.getHandle());
         boolean result = this.generateTree(populator, this.getHandle().getMinecraftWorld().getChunkSource().getGenerator(), pos, new RandomSourceWrapper(random), treeType);
         populator.refreshTiles();
-
-        for (CraftBlockState blockState : populator.getList()) {
-            if (predicate == null || predicate.test(blockState)) {
-                blockState.place(blockState.getFlags());
-            }
-        }
-
+        populator.placeSomeBlocks(predicate == null ? ($ -> true) : predicate);
         return result;
     }
 
@@ -266,7 +256,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
                 gen = TreeFeatures.SUPER_BIRCH_BEES_0002;
                 break;
             case CHORUS_PLANT:
-                ((ChorusFlowerBlock) Blocks.CHORUS_FLOWER).generatePlant(access, pos, random, 8);
+                ChorusFlowerBlock.generatePlant(access, pos, random, 8);
                 return true;
             case CRIMSON_FUNGUS:
                 gen = this.isNormalWorld() ? TreeFeatures.CRIMSON_FUNGUS_PLANTED : TreeFeatures.CRIMSON_FUNGUS; // Paper - Fix async entity add due to fungus trees; if world gen, don't use planted version
@@ -299,7 +289,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         }
 
         Holder<ConfiguredFeature<?, ?>> holder = access.registryAccess().lookupOrThrow(Registries.CONFIGURED_FEATURE).get(gen).orElse(null);
-        return (holder != null) ? holder.value().place(access, chunkGenerator, random, pos) : false;
+        return holder != null && holder.value().place(access, chunkGenerator, random, pos);
     }
 
     @Override
@@ -314,7 +304,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public List<Entity> getEntities() {
-        List<Entity> list = new ArrayList<Entity>();
+        List<Entity> list = new ArrayList<>();
 
         this.getNMSEntities().forEach(entity -> {
             Entity bukkitEntity = entity.getBukkitEntity();
@@ -330,13 +320,13 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public List<LivingEntity> getLivingEntities() {
-        List<LivingEntity> list = new ArrayList<LivingEntity>();
+        List<LivingEntity> list = new ArrayList<>();
 
         this.getNMSEntities().forEach(entity -> {
             Entity bukkitEntity = entity.getBukkitEntity();
 
             // Assuming that bukkitEntity isn't null
-            if (bukkitEntity != null && bukkitEntity instanceof LivingEntity && (!this.isNormalWorld() || bukkitEntity.isValid())) {
+            if (bukkitEntity instanceof LivingEntity && (!this.isNormalWorld() || bukkitEntity.isValid())) {
                 list.add((LivingEntity) bukkitEntity);
             }
         });
@@ -368,7 +358,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
     @Override
     public Collection<Entity> getEntitiesByClasses(Class<?>... classes) {
-        Collection<Entity> list = new ArrayList<Entity>();
+        Collection<Entity> list = new ArrayList<>();
 
         this.getNMSEntities().forEach(entity -> {
             Entity bukkitEntity = entity.getBukkitEntity();
@@ -474,11 +464,6 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
     public abstract void addEntityWithPassengers(net.minecraft.world.entity.Entity entity, CreatureSpawnEvent.SpawnReason reason);
 
     @SuppressWarnings("unchecked")
-    public net.minecraft.world.entity.Entity makeEntity(Location location, Class<? extends Entity> clazz) throws IllegalArgumentException {
-        return this.createEntity(location, clazz, true);
-    }
-
-    @SuppressWarnings("unchecked")
     public net.minecraft.world.entity.Entity createEntity(Location location, Class<? extends Entity> clazz, boolean randomizeData) throws IllegalArgumentException {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(clazz != null, "Entity class cannot be null");
@@ -531,10 +516,9 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
         throw new IllegalArgumentException("Cannot spawn an entity for " + clazz.getName());
     }
 
-    // Paper start
     @Override
     public io.papermc.paper.world.MoonPhase getMoonPhase() {
-        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().dayTime() / 24000L);
+        return io.papermc.paper.world.MoonPhase.getPhase(this.getHandle().dayTime() / Level.TICKS_PER_DAY);
     }
 
     @Override
@@ -551,7 +535,7 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
         net.minecraft.world.phys.Vec3 start = new net.minecraft.world.phys.Vec3(from.getX(), from.getY(), from.getZ());
         net.minecraft.world.phys.Vec3 end = new net.minecraft.world.phys.Vec3(to.getX(), to.getY(), to.getZ());
-        if (end.distanceToSqr(start) > 128D * 128D) {
+        if (end.distanceToSqr(start) > Mth.square(128D)) {
             return false; // Return early if the distance is greater than 128 blocks
         }
 
@@ -564,12 +548,9 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
 
         return !this.getHandle().noCollision(aabb);
     }
-    // Paper end
 
-    // Paper start - feature flag API
     @Override
     public java.util.Set<org.bukkit.FeatureFlag> getFeatureFlags() {
         return io.papermc.paper.world.flag.PaperFeatureFlagProviderImpl.fromNms(this.getHandle().enabledFeatures());
     }
-    // Paper end - feature flag API
 }

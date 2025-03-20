@@ -11,7 +11,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import org.bukkit.Location;
 import org.bukkit.Raid;
-import org.bukkit.Raid.RaidStatus;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Raider;
 
@@ -104,7 +103,6 @@ public final class CraftRaid implements Raid {
         return this.handle;
     }
 
-    // Paper start - more Raid API
     @Override
     public int getId() {
         return this.handle.getId();
@@ -132,5 +130,4 @@ public final class CraftRaid implements Raid {
     public int hashCode() {
         return this.handle.hashCode();
     }
-    // Paper end - more Raid API
 }

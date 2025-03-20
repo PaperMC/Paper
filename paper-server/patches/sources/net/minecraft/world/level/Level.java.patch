@@ -38,7 +38,7 @@
      protected final NeighborUpdater neighborUpdater;
      private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
      private boolean tickingBlockEntities;
-@@ -119,6 +_,60 @@
+@@ -119,6 +_,58 @@
      private final DamageSources damageSources;
      private long subTickCount;
  
@@ -64,8 +64,6 @@
 +    // Paper end - add paper world config
 +
 +    public static BlockPos lastPhysicsProblem; // Spigot
-+    private org.spigotmc.TickLimiter entityLimiter;
-+    private org.spigotmc.TickLimiter tileLimiter;
 +    private int tileTickPosition;
 +    public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
 +    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
@@ -142,7 +140,7 @@
                  }
              };
          } else {
-@@ -156,7 +_,86 @@
+@@ -156,7 +_,84 @@
          this.neighborUpdater = new CollectingNeighborUpdater(this, maxChainedNeighborUpdates);
          this.registryAccess = registryAccess;
          this.damageSources = new DamageSources(registryAccess);
@@ -184,8 +182,6 @@
 +            public void onBorderSetDamageSafeZOne(WorldBorder border, double safeZoneRadius) {}
 +        });
 +        // CraftBukkit end
-+        this.entityLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.entityMaxTickTime);
-+        this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
 +    }
 +
 +    // Paper start - Cancel hit for vanished players
@@ -247,7 +243,7 @@
      }
  
      public static boolean isInSpawnableBounds(BlockPos pos) {
-@@ -178,21 +_,85 @@
+@@ -178,21 +_,86 @@
      }
  
      private static boolean isInWorldBoundsHorizontal(BlockPos pos) {
@@ -308,10 +304,10 @@
 +
 +    @Override
 +    @Nullable
-+    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
-+        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++    public final FluidState getFluidIfLoaded(BlockPos pos) {
++        ChunkAccess chunk = this.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);
 +
-+        return chunk == null ? null : chunk.getFluidState(blockposition);
++        return chunk == null ? null : chunk.getFluidState(pos);
 +    }
 +
 +    @Override
@@ -319,20 +315,21 @@
 +        return getChunkIfLoaded(pos.getX() >> 4, pos.getZ() >> 4) != null; // Paper - Perf: Optimize Level.hasChunkAt(BlockPosition)Z
 +    }
 +
-+    public final boolean isLoadedAndInBounds(BlockPos blockposition) { // Paper - final for inline
-+        return getWorldBorder().isWithinBounds(blockposition) && getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4) != null;
++    public final boolean isLoadedAndInBounds(BlockPos pos) { // Paper - final for inline
++        return getWorldBorder().isWithinBounds(pos) && getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4) != null;
 +    }
 +
 +    public @Nullable LevelChunk getChunkIfLoaded(int x, int z) { // Overridden in ServerLevel for ABI compat which has final
 +        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(x, z);
 +    }
-+    public final @Nullable LevelChunk getChunkIfLoaded(BlockPos blockposition) {
-+        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
++
++    public final @Nullable LevelChunk getChunkIfLoaded(BlockPos pos) {
++        return ((ServerLevel) this).getChunkSource().getChunkAtIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);
 +    }
 +
 +    //  reduces need to do isLoaded before getType
-+    public final @Nullable BlockState getBlockStateIfLoadedAndInBounds(BlockPos blockposition) {
-+        return getWorldBorder().isWithinBounds(blockposition) ? getBlockStateIfLoaded(blockposition) : null;
++    public final @Nullable BlockState getBlockStateIfLoadedAndInBounds(BlockPos pos) {
++        return getWorldBorder().isWithinBounds(pos) ? getBlockStateIfLoaded(pos) : null;
 +    }
 +    // Paper end
  

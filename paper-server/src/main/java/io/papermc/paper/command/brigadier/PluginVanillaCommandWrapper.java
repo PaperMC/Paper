@@ -2,7 +2,6 @@ package io.papermc.paper.command.brigadier;
 
 import com.mojang.brigadier.tree.CommandNode;
 import net.minecraft.commands.CommandSourceStack;
-import net.minecraft.commands.Commands;
 import org.bukkit.command.Command;
 import org.bukkit.command.PluginIdentifiableCommand;
 import org.bukkit.craftbukkit.command.VanillaCommandWrapper;
@@ -15,17 +14,17 @@ import java.util.List;
 public class PluginVanillaCommandWrapper extends VanillaCommandWrapper implements PluginIdentifiableCommand {
 
     private final Plugin plugin;
-    private final List<String> alises;
+    private final List<String> aliases;
 
     public PluginVanillaCommandWrapper(String name, String description, String usageMessage, List<String> aliases, CommandNode<CommandSourceStack> vanillaCommand, Plugin plugin) {
         super(name, description, usageMessage, aliases, vanillaCommand);
         this.plugin = plugin;
-        this.alises = aliases;
+        this.aliases = aliases;
     }
 
     @Override
     public @NotNull List<String> getAliases() {
-        return this.alises;
+        return this.aliases;
     }
 
     @Override
@@ -36,11 +35,5 @@ public class PluginVanillaCommandWrapper extends VanillaCommandWrapper implement
     @Override
     public @NotNull Plugin getPlugin() {
         return this.plugin;
-    }
-
-    // Show in help menu!
-    @Override
-    public boolean isRegistered() {
-        return true;
     }
 }

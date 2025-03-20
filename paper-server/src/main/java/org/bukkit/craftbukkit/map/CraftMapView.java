@@ -23,11 +23,11 @@ public final class CraftMapView implements MapView {
     private final Map<CraftPlayer, RenderData> renderCache = new WeakHashMap<>();
     private final List<MapRenderer> renderers = new ArrayList<>();
     private final Map<MapRenderer, Map<CraftPlayer, CraftMapCanvas>> canvases = new HashMap<>();
-    protected final MapItemSavedData worldMap;
+    final MapItemSavedData worldMap;
 
     public CraftMapView(MapItemSavedData worldMap) {
         this.worldMap = worldMap;
-        this.addRenderer(new CraftMapRenderer(this, worldMap));
+        this.addRenderer(new CraftMapRenderer(worldMap));
     }
 
     @Override
@@ -37,7 +37,7 @@ public final class CraftMapView implements MapView {
 
     @Override
     public boolean isVirtual() {
-        return this.renderers.size() > 0 && !(this.renderers.get(0) instanceof CraftMapRenderer);
+        return !this.renderers.isEmpty() && !(this.renderers.get(0) instanceof CraftMapRenderer);
     }
 
     @Override

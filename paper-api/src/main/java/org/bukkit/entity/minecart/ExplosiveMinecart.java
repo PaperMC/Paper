@@ -65,7 +65,7 @@ public interface ExplosiveMinecart extends Minecart, Explosive {
     /**
      * Immediately explode this minecart with the given power.
      *
-     * @param power the power to use. Must be positive and cannot exceed 5.0
+     * @param power the power to use. Must be positive and cannot exceed 25.0
      */
     public void explode(double power);
 }

@@ -255,7 +255,6 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         return this.minecraftToBukkit.supportsDirectHolders();
     }
 
-    // Paper start - improve Registry
     @Override
     public NamespacedKey getKey(final B value) {
         if (value instanceof Holderable<?> holderable) {
@@ -263,7 +262,6 @@ public class CraftRegistry<B extends Keyed, M> implements Registry<B> {
         }
         return value.getKey();
     }
-    // Paper end - improve Registry
 
     // Paper start - RegistrySet API
     @Override

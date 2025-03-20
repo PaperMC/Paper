@@ -25,7 +25,7 @@ public class CraftGameEventTag extends CraftTag<net.minecraft.world.level.gameev
 
     @Override
     public boolean isTagged(@NotNull GameEvent gameEvent) {
-        return registry.getOrThrow(KEY_CACHE.computeIfAbsent(gameEvent, event -> ResourceKey.create(Registries.GAME_EVENT, CraftNamespacedKey.toMinecraft(event.getKey())))).is(tag);
+        return registry.getOrThrow(KEY_CACHE.computeIfAbsent(gameEvent, event -> ResourceKey.create(Registries.GAME_EVENT, CraftNamespacedKey.toMinecraft(event.getKey())))).is(this.tag);
     }
 
     @Override

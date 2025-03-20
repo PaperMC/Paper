@@ -4,20 +4,14 @@ import org.bukkit.Location;
 import org.bukkit.generator.structure.Structure;
 import org.bukkit.util.StructureSearchResult;
 
-public class CraftStructureSearchResult implements StructureSearchResult {
+public record CraftStructureSearchResult(Structure structure, Location location) implements StructureSearchResult {
 
-    private final Structure structure;
-    private final Location location;
-
-    public CraftStructureSearchResult(Structure structure, Location location) {
-        this.structure = structure;
-        this.location = location;
-    }
-
+    @Override
     public Structure getStructure() {
         return this.structure;
     }
 
+    @Override
     public Location getLocation() {
         return this.location;
     }

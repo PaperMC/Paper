@@ -66,8 +66,8 @@ public class CraftVex extends CraftMonster implements Vex {
 
     @Override
     public Location getBound() {
-        BlockPos blockPosition = this.getHandle().getBoundOrigin();
-        return (blockPosition == null) ? null : CraftLocation.toBukkit(blockPosition, this.getWorld());
+        BlockPos pos = this.getHandle().getBoundOrigin();
+        return (pos == null) ? null : CraftLocation.toBukkit(pos, this.getWorld());
     }
 
     @Override

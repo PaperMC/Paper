@@ -11,8 +11,6 @@ import java.util.Map;
 import java.util.UUID;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.UserWhiteListEntry;
@@ -32,14 +30,11 @@ import org.bukkit.World;
 import org.bukkit.ban.ProfileBanList;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
-import org.bukkit.craftbukkit.entity.memory.CraftMemoryMapper;
-import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
-import org.bukkit.profile.PlayerProfile;
 
 @SerializableAs("Player")
 public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializable {
@@ -192,17 +187,14 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             return false;
         }
 
-        if ((this.getUniqueId() == null) || (other.getUniqueId() == null)) {
-            return false;
-        }
-
         return this.getUniqueId().equals(other.getUniqueId());
     }
 
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 97 * hash + (this.getUniqueId() != null ? this.getUniqueId().hashCode() : 0);
+
+        hash = 97 * hash + this.getUniqueId().hashCode();
         return hash;
     }
 
@@ -265,10 +257,10 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public long getLastLogin() {
-        Player player = getPlayer();
+        Player player = this.getPlayer();
         if (player != null) return player.getLastLogin();
 
-        CompoundTag data = getPaperData();
+        CompoundTag data = this.getPaperData();
 
         if (data != null) {
             return data.getLong("LastLogin").orElseGet(() -> {
@@ -283,10 +275,10 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
 
     @Override
     public long getLastSeen() {
-        Player player = getPlayer();
+        Player player = this.getPlayer();
         if (player != null) return player.getLastSeen();
 
-        CompoundTag data = getPaperData();
+        CompoundTag data = this.getPaperData();
 
         if (data != null) {
             return data.getLong("LastSeen").orElseGet(() -> {
@@ -300,7 +292,7 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     private CompoundTag getPaperData() {
-        CompoundTag result = getData();
+        CompoundTag result = this.getData();
 
         if (result != null) {
             result = result.getCompound("Paper").orElse(null);
@@ -370,11 +362,6 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
     }
 
     @Override
-    public Location getBedSpawnLocation() {
-        return this.getRespawnLocation();
-    }
-
-    @Override
     public Location getRespawnLocation() {
         CompoundTag data = this.getData();
         if (data == null) return null;
@@ -387,22 +374,6 @@ public class CraftOfflinePlayer implements OfflinePlayer, ConfigurationSerializa
             }
         }
         return null;
-    }
-
-    public void setMetadata(String metadataKey, MetadataValue metadataValue) {
-        this.server.getPlayerMetadata().setMetadata(this, metadataKey, metadataValue);
-    }
-
-    public List<MetadataValue> getMetadata(String metadataKey) {
-        return this.server.getPlayerMetadata().getMetadata(this, metadataKey);
-    }
-
-    public boolean hasMetadata(String metadataKey) {
-        return this.server.getPlayerMetadata().hasMetadata(this, metadataKey);
-    }
-
-    public void removeMetadata(String metadataKey, Plugin plugin) {
-        this.server.getPlayerMetadata().removeMetadata(this, metadataKey, plugin);
     }
 
     private ServerStatsCounter getStatisticManager() {

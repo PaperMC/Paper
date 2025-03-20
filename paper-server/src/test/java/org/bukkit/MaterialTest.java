@@ -16,6 +16,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import org.bukkit.craftbukkit.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.util.CraftNamespacedKey;
 import org.bukkit.support.LegacyHelper;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ public class MaterialTest {
                 continue;
             }
 
-            materials.put(CraftMagicNumbers.key(material), material);
+            materials.put(CraftNamespacedKey.toMinecraft(material.getKey()), material);
         }
 
         Iterator<Item> items = BuiltInRegistries.ITEM.iterator();

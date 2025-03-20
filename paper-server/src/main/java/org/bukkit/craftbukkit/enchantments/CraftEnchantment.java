@@ -144,14 +144,12 @@ public class CraftEnchantment extends Enchantment implements Holderable<net.mine
         CraftEnchantment ench = (CraftEnchantment) other;
         return !net.minecraft.world.item.enchantment.Enchantment.areCompatible(this.handle, ench.handle);
     }
-    // Paper start
+
     @Override
     public net.kyori.adventure.text.Component displayName(int level) {
         return io.papermc.paper.adventure.PaperAdventure.asAdventure(net.minecraft.world.item.enchantment.Enchantment.getFullname(this.handle, level));
     }
-    // Paper end
 
-    // Paper start - add translationKey methods
     @Override
     public String translationKey() {
         if (!(this.getHandle().description().getContents() instanceof final net.minecraft.network.chat.contents.TranslatableContents translatableContents)) {
@@ -159,9 +157,7 @@ public class CraftEnchantment extends Enchantment implements Holderable<net.mine
         }
         return translatableContents.getKey();
     }
-    // Paper end - add translationKey methods
 
-    // Paper start - more Enchantment API
     @Override
     public boolean isTradeable() {
         return this.handle.is(EnchantmentTags.TRADEABLE);
@@ -212,9 +208,7 @@ public class CraftEnchantment extends Enchantment implements Holderable<net.mine
             .map(org.bukkit.craftbukkit.CraftEquipmentSlot::getSlot)
             .collect(java.util.stream.Collectors.toSet());
     }
-    // Paper end - more Enchantment API
 
-    // Paper start - even more Enchantment API
     @Override
     public net.kyori.adventure.text.Component description() {
         return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.handle.value().description());
@@ -240,7 +234,6 @@ public class CraftEnchantment extends Enchantment implements Holderable<net.mine
     public io.papermc.paper.registry.set.RegistryKeySet<org.bukkit.enchantments.Enchantment> getExclusiveWith() {
         return io.papermc.paper.registry.set.PaperRegistrySets.convertToApi(io.papermc.paper.registry.RegistryKey.ENCHANTMENT, this.handle.value().exclusiveSet());
     }
-    // Paper end - even more Enchantment API
 
     @Override
     public String getTranslationKey() {

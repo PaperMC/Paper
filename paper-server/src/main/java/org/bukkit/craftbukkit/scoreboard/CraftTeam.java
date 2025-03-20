@@ -2,7 +2,11 @@ package org.bukkit.craftbukkit.scoreboard;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import net.kyori.adventure.audience.Audience;
 import net.minecraft.world.scores.PlayerTeam;
 import net.minecraft.world.scores.Team.Visibility;
 import org.bukkit.Bukkit;
@@ -26,63 +30,69 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
 
         return this.team.getName();
     }
-    // Paper start
+
     @Override
     public net.kyori.adventure.text.Component displayName() throws IllegalStateException {
-        CraftScoreboard scoreboard = checkState();
-        return io.papermc.paper.adventure.PaperAdventure.asAdventure(team.getDisplayName());
+        this.checkState();
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.team.getDisplayName());
     }
+
     @Override
     public void displayName(net.kyori.adventure.text.Component displayName) throws IllegalStateException, IllegalArgumentException {
         if (displayName == null) displayName = net.kyori.adventure.text.Component.empty();
-        CraftScoreboard scoreboard = checkState();
-        team.setDisplayName(io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName));
+        this.checkState();
+        this.team.setDisplayName(io.papermc.paper.adventure.PaperAdventure.asVanilla(displayName));
     }
+
     @Override
     public net.kyori.adventure.text.Component prefix() throws IllegalStateException {
-        CraftScoreboard scoreboard = checkState();
-        return io.papermc.paper.adventure.PaperAdventure.asAdventure(team.getPlayerPrefix());
+        this.checkState();
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.team.getPlayerPrefix());
     }
+
     @Override
     public void prefix(net.kyori.adventure.text.Component prefix) throws IllegalStateException, IllegalArgumentException {
         if (prefix == null) prefix = net.kyori.adventure.text.Component.empty();
-        CraftScoreboard scoreboard = checkState();
-        team.setPlayerPrefix(io.papermc.paper.adventure.PaperAdventure.asVanilla(prefix));
+        this.checkState();
+        this.team.setPlayerPrefix(io.papermc.paper.adventure.PaperAdventure.asVanilla(prefix));
     }
+
     @Override
     public net.kyori.adventure.text.Component suffix() throws IllegalStateException {
-        CraftScoreboard scoreboard = checkState();
-        return io.papermc.paper.adventure.PaperAdventure.asAdventure(team.getPlayerSuffix());
+        this.checkState();
+        return io.papermc.paper.adventure.PaperAdventure.asAdventure(this.team.getPlayerSuffix());
     }
+
     @Override
     public void suffix(net.kyori.adventure.text.Component suffix) throws IllegalStateException, IllegalArgumentException {
         if (suffix == null) suffix = net.kyori.adventure.text.Component.empty();
-        CraftScoreboard scoreboard = checkState();
-        team.setPlayerSuffix(io.papermc.paper.adventure.PaperAdventure.asVanilla(suffix));
+        this.checkState();
+        this.team.setPlayerSuffix(io.papermc.paper.adventure.PaperAdventure.asVanilla(suffix));
     }
+
     @Override
     public boolean hasColor() {
-        CraftScoreboard scoreboard = checkState();
+        this.checkState();
         return this.team.getColor().getColor() != null;
     }
+
     @Override
     public net.kyori.adventure.text.format.TextColor color() throws IllegalStateException {
-        CraftScoreboard scoreboard = checkState();
-        if (team.getColor().getColor() == null) throw new IllegalStateException("Team colors must have hex values");
-        net.kyori.adventure.text.format.TextColor color = net.kyori.adventure.text.format.TextColor.color(team.getColor().getColor());
-        if (!(color instanceof net.kyori.adventure.text.format.NamedTextColor)) throw new IllegalStateException("Team doesn't have a NamedTextColor");
-        return (net.kyori.adventure.text.format.NamedTextColor) color;
+        Preconditions.checkState(this.team.getColor().getColor() != null, "Team colors must have hex values");
+        this.checkState();
+
+        net.kyori.adventure.text.format.TextColor color = net.kyori.adventure.text.format.TextColor.color(this.team.getColor().getColor());
+        if (!(color instanceof net.kyori.adventure.text.format.NamedTextColor)) {
+            throw new IllegalStateException("Team doesn't have a NamedTextColor");
+        }
+        return color;
     }
+
     @Override
     public void color(net.kyori.adventure.text.format.NamedTextColor color) {
-        CraftScoreboard scoreboard = checkState();
-        if (color == null) {
-            this.team.setColor(net.minecraft.ChatFormatting.RESET);
-        } else {
-            this.team.setColor(io.papermc.paper.adventure.PaperAdventure.asVanilla(color));
-        }
+        this.checkState();
+        this.team.setColor(color == null ? net.minecraft.ChatFormatting.RESET : io.papermc.paper.adventure.PaperAdventure.asVanilla(color));
     }
-    // Paper end
 
     @Override
     public String getDisplayName() {
@@ -224,12 +234,11 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     @Override
     public void addEntry(String entry) {
         Preconditions.checkArgument(entry != null, "Entry cannot be null");
-        CraftScoreboard scoreboard = this.checkState();
+        this.checkState();
 
-        scoreboard.board.addPlayerToTeam(entry, this.team);
+        this.getScoreboard().getHandle().addPlayerToTeam(entry, this.team);
     }
 
-    // Paper start - Multiple Entries with Scoreboards
     @Override
     public void addEntities(java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException {
         this.addEntries(entities.stream().map(entity -> ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName()).toList());
@@ -238,11 +247,10 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     @Override
     public void addEntries(java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
         Preconditions.checkArgument(entries != null, "Entries cannot be null");
-        CraftScoreboard scoreboard = this.checkState();
+        this.checkState();
 
-        ((net.minecraft.server.ServerScoreboard) scoreboard.board).addPlayersToTeam(entries, this.team);
+        ((net.minecraft.server.ServerScoreboard) this.getScoreboard().getHandle()).addPlayersToTeam(entries, this.team);
     }
-    // Paper end - Multiple Entries with Scoreboards
 
     @Override
     public boolean removePlayer(OfflinePlayer player) {
@@ -253,17 +261,16 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     @Override
     public boolean removeEntry(String entry) {
         Preconditions.checkArgument(entry != null, "Entry cannot be null");
-        CraftScoreboard scoreboard = this.checkState();
+        this.checkState();
 
         if (!this.team.getPlayers().contains(entry)) {
             return false;
         }
 
-        scoreboard.board.removePlayerFromTeam(entry, this.team);
+        this.getScoreboard().getHandle().removePlayerFromTeam(entry, this.team);
         return true;
     }
 
-    // Paper start - Multiple Entries with Scoreboards
     @Override
     public boolean removeEntities(java.util.Collection<org.bukkit.entity.Entity> entities) throws IllegalStateException, IllegalArgumentException {
         return this.removeEntries(entities.stream().map(entity -> ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName()).toList());
@@ -272,18 +279,17 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
     @Override
     public boolean removeEntries(java.util.Collection<String> entries) throws IllegalStateException, IllegalArgumentException {
         Preconditions.checkArgument(entries != null, "Entry cannot be null");
-        CraftScoreboard scoreboard = this.checkState();
+        this.checkState();
 
         for (String entry : entries) {
             if (this.team.getPlayers().contains(entry)) {
-                ((net.minecraft.server.ServerScoreboard) scoreboard.board).removePlayersFromTeam(entries, this.team);
+                ((net.minecraft.server.ServerScoreboard) this.getScoreboard().getHandle()).removePlayersFromTeam(entries, this.team);
                 return true;
             }
         }
 
         return false;
     }
-    // Paper end - Multiple Entries with Scoreboards
 
     @Override
     public boolean hasPlayer(OfflinePlayer player) throws IllegalArgumentException, IllegalStateException {
@@ -301,25 +307,20 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
 
     @Override
     public void unregister() {
-        CraftScoreboard scoreboard = this.checkState();
-
-        scoreboard.board.removePlayerTeam(this.team);
+        this.checkState();
+        this.getScoreboard().getHandle().removePlayerTeam(this.team);
     }
 
     @Override
     public OptionStatus getOption(Option option) {
         this.checkState();
 
-        switch (option) {
-            case NAME_TAG_VISIBILITY:
-                return OptionStatus.values()[this.team.getNameTagVisibility().ordinal()];
-            case DEATH_MESSAGE_VISIBILITY:
-                return OptionStatus.values()[this.team.getDeathMessageVisibility().ordinal()];
-            case COLLISION_RULE:
-                return OptionStatus.values()[this.team.getCollisionRule().ordinal()];
-            default:
-                throw new IllegalArgumentException("Unrecognised option " + option);
-        }
+        Enum<?> value = switch (option) {
+            case NAME_TAG_VISIBILITY -> this.team.getNameTagVisibility();
+            case DEATH_MESSAGE_VISIBILITY -> this.team.getDeathMessageVisibility();
+            case COLLISION_RULE -> this.team.getCollisionRule();
+        };
+        return OptionStatus.values()[value.ordinal()];
     }
 
     @Override
@@ -327,21 +328,13 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         this.checkState();
 
         switch (option) {
-            case NAME_TAG_VISIBILITY:
-                this.team.setNameTagVisibility(Visibility.values()[status.ordinal()]);
-                break;
-            case DEATH_MESSAGE_VISIBILITY:
-                this.team.setDeathMessageVisibility(Visibility.values()[status.ordinal()]);
-                break;
-            case COLLISION_RULE:
-                this.team.setCollisionRule(net.minecraft.world.scores.Team.CollisionRule.values()[status.ordinal()]);
-                break;
-            default:
-                throw new IllegalArgumentException("Unrecognised option " + option);
+            case NAME_TAG_VISIBILITY -> this.team.setNameTagVisibility(Visibility.values()[status.ordinal()]);
+            case DEATH_MESSAGE_VISIBILITY -> this.team.setDeathMessageVisibility(Visibility.values()[status.ordinal()]);
+            case COLLISION_RULE -> this.team.setCollisionRule(net.minecraft.world.scores.Team.CollisionRule.values()[status.ordinal()]);
+            default -> throw new IllegalArgumentException("Unrecognised option " + option);
         }
     }
 
-    // Paper start
     @Override
     public void addEntity(org.bukkit.entity.Entity entity) throws IllegalStateException, IllegalArgumentException {
         Preconditions.checkArgument(entity != null, "Entity cannot be null");
@@ -359,43 +352,44 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
         Preconditions.checkArgument(entity != null, "Entity cannot be null");
         return this.hasEntry(((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle().getScoreboardName());
     }
-    // Paper end
 
-    public static Visibility bukkitToNotch(NameTagVisibility visibility) {
-        switch (visibility) {
-            case ALWAYS:
-                return Visibility.ALWAYS;
-            case NEVER:
-                return Visibility.NEVER;
-            case HIDE_FOR_OTHER_TEAMS:
-                return Visibility.HIDE_FOR_OTHER_TEAMS;
-            case HIDE_FOR_OWN_TEAM:
-                return Visibility.HIDE_FOR_OWN_TEAM;
-            default:
-                throw new IllegalArgumentException("Unknown visibility level " + visibility);
+    @Override
+    public Iterable<? extends Audience> audiences() {
+        this.checkState();
+        List<Audience> audiences = new ArrayList<>();
+        for (String playerName : this.team.getPlayers()) {
+            org.bukkit.entity.Player player = Bukkit.getPlayerExact(playerName);
+            if (player != null) {
+                audiences.add(player);
+            }
         }
+
+        return audiences;
     }
 
+    @Deprecated
+    public static Visibility bukkitToNotch(NameTagVisibility visibility) {
+        return switch (visibility) {
+            case ALWAYS -> Visibility.ALWAYS;
+            case NEVER -> Visibility.NEVER;
+            case HIDE_FOR_OTHER_TEAMS -> Visibility.HIDE_FOR_OTHER_TEAMS;
+            case HIDE_FOR_OWN_TEAM -> Visibility.HIDE_FOR_OWN_TEAM;
+        };
+    }
+
+    @Deprecated
     public static NameTagVisibility notchToBukkit(Visibility visibility) {
-        switch (visibility) {
-            case ALWAYS:
-                return NameTagVisibility.ALWAYS;
-            case NEVER:
-                return NameTagVisibility.NEVER;
-            case HIDE_FOR_OTHER_TEAMS:
-                return NameTagVisibility.HIDE_FOR_OTHER_TEAMS;
-            case HIDE_FOR_OWN_TEAM:
-                return NameTagVisibility.HIDE_FOR_OWN_TEAM;
-            default:
-                throw new IllegalArgumentException("Unknown visibility level " + visibility);
-        }
+        return switch (visibility) {
+            case ALWAYS -> NameTagVisibility.ALWAYS;
+            case NEVER -> NameTagVisibility.NEVER;
+            case HIDE_FOR_OTHER_TEAMS -> NameTagVisibility.HIDE_FOR_OTHER_TEAMS;
+            case HIDE_FOR_OWN_TEAM -> NameTagVisibility.HIDE_FOR_OWN_TEAM;
+        };
     }
 
     @Override
-    CraftScoreboard checkState() {
-        Preconditions.checkState(this.getScoreboard().board.getPlayerTeam(this.team.getName()) != null, "Unregistered scoreboard component");
-
-        return this.getScoreboard();
+    void checkState() {
+        Preconditions.checkState(this.getScoreboard().getHandle().getPlayerTeam(this.team.getName()) != null, "Unregistered scoreboard component");
     }
 
     @Override
@@ -414,23 +408,6 @@ final class CraftTeam extends CraftScoreboardComponent implements Team {
             return false;
         }
         final CraftTeam other = (CraftTeam) obj;
-        return !(this.team != other.team && (this.team == null || !this.team.equals(other.team)));
+        return Objects.equals(this.team, other.team);
     }
-
-    // Paper start - make Team extend ForwardingAudience
-    @Override
-    public @org.jetbrains.annotations.NotNull Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
-        this.checkState();
-        java.util.List<net.kyori.adventure.audience.Audience> audiences = new java.util.ArrayList<>();
-        for (String playerName : this.team.getPlayers()) {
-            org.bukkit.entity.Player player = Bukkit.getPlayerExact(playerName);
-            if (player != null) {
-                audiences.add(player);
-            }
-        }
-
-        return audiences;
-    }
-    // Paper end - make Team extend ForwardingAudience
-
 }

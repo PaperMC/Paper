@@ -23,7 +23,7 @@ public class CustomHelpTopic extends HelpTopic {
             return true;
         }
 
-        if (!this.permissionNode.equals("")) {
+        if (!this.permissionNode.isEmpty()) {
             return sender.hasPermission(this.permissionNode);
         } else {
             return true;

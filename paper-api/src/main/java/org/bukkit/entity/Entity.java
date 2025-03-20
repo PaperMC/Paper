@@ -337,7 +337,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     boolean isFrozen();
 
-    // Paper start - missing entity api
     /**
      * Sets whether the entity is invisible or not.
      * <p>
@@ -347,14 +346,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param invisible If the entity is invisible
      */
-    void setInvisible(boolean invisible); // Paper - moved up from LivingEntity
+    void setInvisible(boolean invisible);
 
     /**
      * Gets whether the entity is invisible or not.
      *
      * @return Whether the entity is invisible
      */
-    boolean isInvisible(); // Paper - moved up from LivingEntity
+    boolean isInvisible();
 
     /**
      * Sets this entities no physics status.
@@ -369,9 +368,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return true if the entity does not have physics.
      */
     boolean hasNoPhysics();
-    // Paper end - missing entity api
 
-    // Paper start - Freeze Tick Lock API
     /**
      * Gets if the entity currently has its freeze ticks locked
      * to a set amount.
@@ -389,12 +386,11 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param locked prevent vanilla modification or not
      */
     void lockFreezeTicks(boolean locked);
-    // Paper end - Freeze Tick Lock API
 
     /**
      * Mark the entity's removal.
      *
-     * @throws UnsupportedOperationException if you try to remove a {@link Player} use {@link Player#kickPlayer(String)} in this case instead
+     * @throws UnsupportedOperationException if you try to remove a {@link Player} use {@link Player#kick(net.kyori.adventure.text.Component)} in this case instead
      */
     public void remove();
 

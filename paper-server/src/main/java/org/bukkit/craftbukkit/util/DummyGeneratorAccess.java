@@ -220,12 +220,12 @@ public class DummyGeneratorAccess implements WorldGenLevel {
     }
 
     @Override
-    public BlockState getBlockStateIfLoaded(BlockPos blockposition) {
+    public BlockState getBlockStateIfLoaded(BlockPos pos) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
-    public FluidState getFluidIfLoaded(BlockPos blockposition) {
+    public FluidState getFluidIfLoaded(BlockPos pos) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     // Paper end
