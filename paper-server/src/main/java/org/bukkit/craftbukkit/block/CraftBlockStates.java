@@ -86,7 +86,7 @@ public final class CraftBlockStates {
 
     static {
         // Start generate - CraftBlockEntityStates
-        // @GeneratedFrom 1.21.4
+        // @GeneratedFrom 1.21.5 Pre-Release 1
         register(BlockEntityType.BANNER, CraftBanner.class, CraftBanner::new);
         register(BlockEntityType.BARREL, CraftBarrel.class, CraftBarrel::new);
         register(BlockEntityType.BEACON, CraftBeacon.class, CraftBeacon::new);
@@ -129,6 +129,8 @@ public final class CraftBlockStates {
         register(BlockEntityType.SKULL, CraftSkull.class, CraftSkull::new);
         register(BlockEntityType.SMOKER, CraftSmoker.class, CraftSmoker::new);
         register(BlockEntityType.STRUCTURE_BLOCK, CraftStructureBlock.class, CraftStructureBlock::new);
+        register(BlockEntityType.TEST_BLOCK, CraftTestBlock.class, CraftTestBlock::new);
+        register(BlockEntityType.TEST_INSTANCE_BLOCK, CraftTestInstanceBlock.class, CraftTestInstanceBlock::new);
         register(BlockEntityType.TRAPPED_CHEST, CraftChest.class, CraftChest::new);
         register(BlockEntityType.TRIAL_SPAWNER, CraftTrialSpawner.class, CraftTrialSpawner::new);
         register(BlockEntityType.VAULT, CraftVault.class, CraftVault::new);
