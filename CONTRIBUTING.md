@@ -275,10 +275,10 @@ To validate method arguments, use `Preconditions#checkArgument`. This will throw
 ex:
 ```java
 @Override
-public void sendMessageComponent(Player player, String message) {
+public void sendMessage(Player player, Component message) {
     Preconditions.checkArgument(player != null, "player cannot be null");
-    Preconditions.checkArgument(message != null && !message.isBlank(), "message cannot be null or blank");
-    Preconditions.checkArgument(!message.contains(Component.text("rat")), "message [%s] cannot contain the word rat", message);
+    Preconditions.checkArgument(player.isOnline(), "player %s must be online", player.getName());
+    Preconditions.checkArgument(message != null, "message cannot be null");
     // rest of code
 }
 ```
@@ -290,8 +290,8 @@ ex:
 private Player player;
 
 @Override
-public void sendMessageComponent(String message) {
-    Preconditions.checkArgument(message != null && !message.isBlank(), "message cannot be null or blank");
+public void sendMessage(Component message) {
+    Preconditions.checkArgument(message != null, "message cannot be null");
     Preconditions.checkState(this.player != null, "player cannot be null");
     Preconditions.checkState(this.player.isOnline(), "player %s must be online", this.player.getName());
     // rest of code
