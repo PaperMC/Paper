@@ -289,7 +289,7 @@ public final class MapCursor {
     public interface Type extends OldEnum<Type>, Keyed {
 
         // Start generate - MapCursorType
-        // @GeneratedFrom 1.21.4
+        // @GeneratedFrom 1.21.5 Pre-Release 1
         Type BANNER_BLACK = getType("banner_black");
 
         Type BANNER_BLUE = getType("banner_blue");

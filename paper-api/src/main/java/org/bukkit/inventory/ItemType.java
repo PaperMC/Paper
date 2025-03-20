@@ -90,7 +90,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     //<editor-fold desc="ItemTypes" defaultstate="collapsed">
     // Start generate - ItemType
-    // @GeneratedFrom 1.21.4
+    // @GeneratedFrom 1.21.5 Pre-Release 1
     ItemType.Typed<ItemMeta> ACACIA_BOAT = getItemType("acacia_boat");
 
     ItemType.Typed<ItemMeta> ACACIA_BUTTON = getItemType("acacia_button");
@@ -341,6 +341,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> BLUE_DYE = getItemType("blue_dye");
 
+    ItemType.Typed<ItemMeta> BLUE_EGG = getItemType("blue_egg");
+
     ItemType.Typed<ItemMeta> BLUE_GLAZED_TERRACOTTA = getItemType("blue_glazed_terracotta");
 
     ItemType.Typed<ItemMeta> BLUE_ICE = getItemType("blue_ice");
@@ -419,6 +421,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> BROWN_DYE = getItemType("brown_dye");
 
+    ItemType.Typed<ItemMeta> BROWN_EGG = getItemType("brown_egg");
+
     ItemType.Typed<ItemMeta> BROWN_GLAZED_TERRACOTTA = getItemType("brown_glazed_terracotta");
 
     ItemType.Typed<ItemMeta> BROWN_MUSHROOM = getItemType("brown_mushroom");
@@ -451,7 +455,11 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> BURN_POTTERY_SHERD = getItemType("burn_pottery_sherd");
 
+    ItemType.Typed<ItemMeta> BUSH = getItemType("bush");
+
     ItemType.Typed<ItemMeta> CACTUS = getItemType("cactus");
+
+    ItemType.Typed<ItemMeta> CACTUS_FLOWER = getItemType("cactus_flower");
 
     ItemType.Typed<ItemMeta> CAKE = getItemType("cake");
 
@@ -917,23 +925,113 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> DIRT_PATH = getItemType("dirt_path");
 
-    ItemType.Typed<ItemMeta> FIELD_MASONED_BANNER_PATTERN = getItemType("field_masoned_banner_pattern");
+    ItemType.Typed<ItemMeta> DOLPHIN_SPAWN_EGG = getItemType("dolphin_spawn_egg");
 
-    ItemType.Typed<ItemMeta> FLETCHING_TABLE = getItemType("fletching_table");
+    ItemType.Typed<ItemMeta> DONKEY_SPAWN_EGG = getItemType("donkey_spawn_egg");
+
+    ItemType.Typed<ItemMeta> DRAGON_BREATH = getItemType("dragon_breath");
+
+    ItemType.Typed<ItemMeta> DRAGON_HEAD = getItemType("dragon_head");
+
+    ItemType.Typed<ItemMeta> DROWNED_SPAWN_EGG = getItemType("drowned_spawn_egg");
+
+    ItemType.Typed<ItemMeta> ELDER_GUARDIAN_SPAWN_EGG = getItemType("elder_guardian_spawn_egg");
+
+    ItemType.Typed<ItemMeta> ENCHANTED_BOOK = getItemType("enchanted_book");
+
+    ItemType.Typed<ItemMeta> END_CRYSTAL = getItemType("end_crystal");
+
+    ItemType.Typed<ItemMeta> ENDER_DRAGON_SPAWN_EGG = getItemType("ender_dragon_spawn_egg");
+
+    ItemType.Typed<ItemMeta> ENDER_EYE = getItemType("ender_eye");
+
+    ItemType.Typed<ItemMeta> ENDERMAN_SPAWN_EGG = getItemType("enderman_spawn_egg");
+
+    ItemType.Typed<ItemMeta> ENDERMITE_SPAWN_EGG = getItemType("endermite_spawn_egg");
+
+    ItemType.Typed<ItemMeta> EVOKER_SPAWN_EGG = getItemType("evoker_spawn_egg");
+
+    ItemType.Typed<ItemMeta> EXPERIENCE_BOTTLE = getItemType("experience_bottle");
+
+    ItemType.Typed<ItemMeta> FERMENTED_SPIDER_EYE = getItemType("fermented_spider_eye");
+
+    ItemType.Typed<ItemMeta> FIRE_CHARGE = getItemType("fire_charge");
+
+    ItemType.Typed<ItemMeta> FIREWORK_ROCKET = getItemType("firework_rocket");
+
+    ItemType.Typed<ItemMeta> FIREWORK_STAR = getItemType("firework_star");
 
     ItemType.Typed<ItemMeta> FLOW_BANNER_PATTERN = getItemType("flow_banner_pattern");
 
     ItemType.Typed<ItemMeta> FLOWER_BANNER_PATTERN = getItemType("flower_banner_pattern");
 
-    ItemType.Typed<ItemMeta> GLOW_BERRIES = getItemType("glow_berries");
+    ItemType.Typed<ItemMeta> FLOWER_POT = getItemType("flower_pot");
 
-    ItemType.Typed<ItemMeta> GOAT_HORN = getItemType("goat_horn");
+    ItemType.Typed<ItemMeta> FOX_SPAWN_EGG = getItemType("fox_spawn_egg");
 
-    ItemType.Typed<ItemMeta> GRINDSTONE = getItemType("grindstone");
+    ItemType.Typed<ItemMeta> FROG_SPAWN_EGG = getItemType("frog_spawn_egg");
 
-    ItemType.Typed<ItemMeta> HONEYCOMB = getItemType("honeycomb");
+    ItemType.Typed<ItemMeta> GHAST_SPAWN_EGG = getItemType("ghast_spawn_egg");
 
-    ItemType.Typed<ItemMeta> LANTERN = getItemType("lantern");
+    ItemType.Typed<ItemMeta> GLASS_BOTTLE = getItemType("glass_bottle");
+
+    ItemType.Typed<ItemMeta> GLISTERING_MELON_SLICE = getItemType("glistering_melon_slice");
+
+    ItemType.Typed<ItemMeta> GLOW_ITEM_FRAME = getItemType("glow_item_frame");
+
+    ItemType.Typed<ItemMeta> GLOW_SQUID_SPAWN_EGG = getItemType("glow_squid_spawn_egg");
+
+    ItemType.Typed<ItemMeta> GOAT_SPAWN_EGG = getItemType("goat_spawn_egg");
+
+    ItemType.Typed<ItemMeta> GOLD_NUGGET = getItemType("gold_nugget");
+
+    ItemType.Typed<ItemMeta> GOLDEN_CARROT = getItemType("golden_carrot");
+
+    ItemType.Typed<ItemMeta> GOLDEN_HORSE_ARMOR = getItemType("golden_horse_armor");
+
+    ItemType.Typed<ItemMeta> GRAY_BANNER = getItemType("gray_banner");
+
+    ItemType.Typed<ItemMeta> GREEN_BANNER = getItemType("green_banner");
+
+    ItemType.Typed<ItemMeta> GUARDIAN_SPAWN_EGG = getItemType("guardian_spawn_egg");
+
+    ItemType.Typed<ItemMeta> HOGLIN_SPAWN_EGG = getItemType("hoglin_spawn_egg");
+
+    ItemType.Typed<ItemMeta> HORSE_SPAWN_EGG = getItemType("horse_spawn_egg");
+
+    ItemType.Typed<ItemMeta> HUSK_SPAWN_EGG = getItemType("husk_spawn_egg");
+
+    ItemType.Typed<ItemMeta> IRON_GOLEM_SPAWN_EGG = getItemType("iron_golem_spawn_egg");
+
+    ItemType.Typed<ItemMeta> IRON_HORSE_ARMOR = getItemType("iron_horse_armor");
+
+    ItemType.Typed<ItemMeta> ITEM_FRAME = getItemType("item_frame");
+
+    ItemType.Typed<ItemMeta> LEAD = getItemType("lead");
+
+    ItemType.Typed<ItemMeta> LEATHER_HORSE_ARMOR = getItemType("leather_horse_armor");
+
+    ItemType.Typed<ItemMeta> LIGHT_BLUE_BANNER = getItemType("light_blue_banner");
+
+    ItemType.Typed<ItemMeta> LIGHT_GRAY_BANNER = getItemType("light_gray_banner");
+
+    ItemType.Typed<ItemMeta> LIME_BANNER = getItemType("lime_banner");
+
+    ItemType.Typed<ItemMeta> LLAMA_SPAWN_EGG = getItemType("llama_spawn_egg");
+
+    ItemType.Typed<ItemMeta> MACE = getItemType("mace");
+
+    ItemType.Typed<ItemMeta> MAGENTA_BANNER = getItemType("magenta_banner");
+
+    ItemType.Typed<ItemMeta> MAGMA_CREAM = getItemType("magma_cream");
+
+    ItemType.Typed<ItemMeta> MAGMA_CUBE_SPAWN_EGG = getItemType("magma_cube_spawn_egg");
+
+    ItemType.Typed<ItemMeta> MAP = getItemType("map");
+
+    ItemType.Typed<ItemMeta> MOOSHROOM_SPAWN_EGG = getItemType("mooshroom_spawn_egg");
+
+    ItemType.Typed<ItemMeta> MULE_SPAWN_EGG = getItemType("mule_spawn_egg");
 
     ItemType.Typed<ItemMeta> MUSIC_DISC_5 = getItemType("music_disc_5");
 
@@ -941,15 +1039,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> DISPENSER = getItemType("dispenser");
 
-    ItemType.Typed<ItemMeta> DOLPHIN_SPAWN_EGG = getItemType("dolphin_spawn_egg");
-
-    ItemType.Typed<ItemMeta> DONKEY_SPAWN_EGG = getItemType("donkey_spawn_egg");
-
-    ItemType.Typed<ItemMeta> DRAGON_BREATH = getItemType("dragon_breath");
-
     ItemType.Typed<ItemMeta> DRAGON_EGG = getItemType("dragon_egg");
-
-    ItemType.Typed<ItemMeta> DRAGON_HEAD = getItemType("dragon_head");
 
     ItemType.Typed<ItemMeta> DRIED_KELP = getItemType("dried_kelp");
 
@@ -959,15 +1049,11 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> DROPPER = getItemType("dropper");
 
-    ItemType.Typed<ItemMeta> DROWNED_SPAWN_EGG = getItemType("drowned_spawn_egg");
-
     ItemType.Typed<ItemMeta> DUNE_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("dune_armor_trim_smithing_template");
 
     ItemType.Typed<ItemMeta> ECHO_SHARD = getItemType("echo_shard");
 
     ItemType.Typed<ItemMeta> EGG = getItemType("egg");
-
-    ItemType.Typed<ItemMeta> ELDER_GUARDIAN_SPAWN_EGG = getItemType("elder_guardian_spawn_egg");
 
     ItemType.Typed<ItemMeta> ELYTRA = getItemType("elytra");
 
@@ -977,13 +1063,9 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> EMERALD_ORE = getItemType("emerald_ore");
 
-    ItemType.Typed<ItemMeta> ENCHANTED_BOOK = getItemType("enchanted_book");
-
     ItemType.Typed<ItemMeta> ENCHANTED_GOLDEN_APPLE = getItemType("enchanted_golden_apple");
 
     ItemType.Typed<ItemMeta> ENCHANTING_TABLE = getItemType("enchanting_table");
-
-    ItemType.Typed<ItemMeta> END_CRYSTAL = getItemType("end_crystal");
 
     ItemType.Typed<ItemMeta> END_PORTAL_FRAME = getItemType("end_portal_frame");
 
@@ -1001,19 +1083,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> ENDER_CHEST = getItemType("ender_chest");
 
-    ItemType.Typed<ItemMeta> ENDER_DRAGON_SPAWN_EGG = getItemType("ender_dragon_spawn_egg");
-
-    ItemType.Typed<ItemMeta> ENDER_EYE = getItemType("ender_eye");
-
     ItemType.Typed<ItemMeta> ENDER_PEARL = getItemType("ender_pearl");
-
-    ItemType.Typed<ItemMeta> ENDERMAN_SPAWN_EGG = getItemType("enderman_spawn_egg");
-
-    ItemType.Typed<ItemMeta> ENDERMITE_SPAWN_EGG = getItemType("endermite_spawn_egg");
-
-    ItemType.Typed<ItemMeta> EVOKER_SPAWN_EGG = getItemType("evoker_spawn_egg");
-
-    ItemType.Typed<ItemMeta> EXPERIENCE_BOTTLE = getItemType("experience_bottle");
 
     ItemType.Typed<ItemMeta> EXPLORER_POTTERY_SHERD = getItemType("explorer_pottery_sherd");
 
@@ -1041,13 +1111,11 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> FEATHER = getItemType("feather");
 
-    ItemType.Typed<ItemMeta> FERMENTED_SPIDER_EYE = getItemType("fermented_spider_eye");
-
     ItemType.Typed<ItemMeta> FERN = getItemType("fern");
 
-    ItemType.Typed<ItemMeta> FILLED_MAP = getItemType("filled_map");
+    ItemType.Typed<ItemMeta> FIELD_MASONED_BANNER_PATTERN = getItemType("field_masoned_banner_pattern");
 
-    ItemType.Typed<ItemMeta> FIRE_CHARGE = getItemType("fire_charge");
+    ItemType.Typed<ItemMeta> FILLED_MAP = getItemType("filled_map");
 
     ItemType.Typed<ItemMeta> FIRE_CORAL = getItemType("fire_coral");
 
@@ -1055,11 +1123,11 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> FIRE_CORAL_FAN = getItemType("fire_coral_fan");
 
-    ItemType.Typed<ItemMeta> FIREWORK_ROCKET = getItemType("firework_rocket");
-
-    ItemType.Typed<ItemMeta> FIREWORK_STAR = getItemType("firework_star");
+    ItemType.Typed<ItemMeta> FIREFLY_BUSH = getItemType("firefly_bush");
 
     ItemType.Typed<ItemMeta> FISHING_ROD = getItemType("fishing_rod");
+
+    ItemType.Typed<ItemMeta> FLETCHING_TABLE = getItemType("fletching_table");
 
     ItemType.Typed<ItemMeta> FLINT = getItemType("flint");
 
@@ -1069,17 +1137,11 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> FLOW_POTTERY_SHERD = getItemType("flow_pottery_sherd");
 
-    ItemType.Typed<ItemMeta> FLOWER_POT = getItemType("flower_pot");
-
     ItemType.Typed<ItemMeta> FLOWERING_AZALEA = getItemType("flowering_azalea");
 
     ItemType.Typed<ItemMeta> FLOWERING_AZALEA_LEAVES = getItemType("flowering_azalea_leaves");
 
-    ItemType.Typed<ItemMeta> FOX_SPAWN_EGG = getItemType("fox_spawn_egg");
-
     ItemType.Typed<ItemMeta> FRIEND_POTTERY_SHERD = getItemType("friend_pottery_sherd");
-
-    ItemType.Typed<ItemMeta> FROG_SPAWN_EGG = getItemType("frog_spawn_egg");
 
     ItemType.Typed<ItemMeta> FROGSPAWN = getItemType("frogspawn");
 
@@ -1087,41 +1149,31 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> FURNACE_MINECART = getItemType("furnace_minecart");
 
-    ItemType.Typed<ItemMeta> GHAST_SPAWN_EGG = getItemType("ghast_spawn_egg");
-
     ItemType.Typed<ItemMeta> GHAST_TEAR = getItemType("ghast_tear");
 
     ItemType.Typed<ItemMeta> GILDED_BLACKSTONE = getItemType("gilded_blackstone");
 
     ItemType.Typed<ItemMeta> GLASS = getItemType("glass");
 
-    ItemType.Typed<ItemMeta> GLASS_BOTTLE = getItemType("glass_bottle");
-
     ItemType.Typed<ItemMeta> GLASS_PANE = getItemType("glass_pane");
-
-    ItemType.Typed<ItemMeta> GLISTERING_MELON_SLICE = getItemType("glistering_melon_slice");
 
     ItemType.Typed<ItemMeta> GLOBE_BANNER_PATTERN = getItemType("globe_banner_pattern");
 
+    ItemType.Typed<ItemMeta> GLOW_BERRIES = getItemType("glow_berries");
+
     ItemType.Typed<ItemMeta> GLOW_INK_SAC = getItemType("glow_ink_sac");
 
-    ItemType.Typed<ItemMeta> GLOW_ITEM_FRAME = getItemType("glow_item_frame");
-
     ItemType.Typed<ItemMeta> GLOW_LICHEN = getItemType("glow_lichen");
-
-    ItemType.Typed<ItemMeta> GLOW_SQUID_SPAWN_EGG = getItemType("glow_squid_spawn_egg");
 
     ItemType.Typed<ItemMeta> GLOWSTONE = getItemType("glowstone");
 
     ItemType.Typed<ItemMeta> GLOWSTONE_DUST = getItemType("glowstone_dust");
 
-    ItemType.Typed<ItemMeta> GOAT_SPAWN_EGG = getItemType("goat_spawn_egg");
+    ItemType.Typed<ItemMeta> GOAT_HORN = getItemType("goat_horn");
 
     ItemType.Typed<ItemMeta> GOLD_BLOCK = getItemType("gold_block");
 
     ItemType.Typed<ItemMeta> GOLD_INGOT = getItemType("gold_ingot");
-
-    ItemType.Typed<ItemMeta> GOLD_NUGGET = getItemType("gold_nugget");
 
     ItemType.Typed<ItemMeta> GOLD_ORE = getItemType("gold_ore");
 
@@ -1131,15 +1183,11 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> GOLDEN_BOOTS = getItemType("golden_boots");
 
-    ItemType.Typed<ItemMeta> GOLDEN_CARROT = getItemType("golden_carrot");
-
     ItemType.Typed<ItemMeta> GOLDEN_CHESTPLATE = getItemType("golden_chestplate");
 
     ItemType.Typed<ItemMeta> GOLDEN_HELMET = getItemType("golden_helmet");
 
     ItemType.Typed<ItemMeta> GOLDEN_HOE = getItemType("golden_hoe");
-
-    ItemType.Typed<ItemMeta> GOLDEN_HORSE_ARMOR = getItemType("golden_horse_armor");
 
     ItemType.Typed<ItemMeta> GOLDEN_LEGGINGS = getItemType("golden_leggings");
 
@@ -1160,8 +1208,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> GRASS_BLOCK = getItemType("grass_block");
 
     ItemType.Typed<ItemMeta> GRAVEL = getItemType("gravel");
-
-    ItemType.Typed<ItemMeta> GRAY_BANNER = getItemType("gray_banner");
 
     ItemType.Typed<ItemMeta> GRAY_BED = getItemType("gray_bed");
 
@@ -1189,8 +1235,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> GRAY_WOOL = getItemType("gray_wool");
 
-    ItemType.Typed<ItemMeta> GREEN_BANNER = getItemType("green_banner");
-
     ItemType.Typed<ItemMeta> GREEN_BED = getItemType("green_bed");
 
     ItemType.Typed<ItemMeta> GREEN_BUNDLE = getItemType("green_bundle");
@@ -1217,7 +1261,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> GREEN_WOOL = getItemType("green_wool");
 
-    ItemType.Typed<ItemMeta> GUARDIAN_SPAWN_EGG = getItemType("guardian_spawn_egg");
+    ItemType.Typed<ItemMeta> GRINDSTONE = getItemType("grindstone");
 
     ItemType.Typed<ItemMeta> GUNPOWDER = getItemType("gunpowder");
 
@@ -1239,11 +1283,11 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> HEAVY_WEIGHTED_PRESSURE_PLATE = getItemType("heavy_weighted_pressure_plate");
 
-    ItemType.Typed<ItemMeta> HOGLIN_SPAWN_EGG = getItemType("hoglin_spawn_egg");
-
     ItemType.Typed<ItemMeta> HONEY_BLOCK = getItemType("honey_block");
 
     ItemType.Typed<ItemMeta> HONEY_BOTTLE = getItemType("honey_bottle");
+
+    ItemType.Typed<ItemMeta> HONEYCOMB = getItemType("honeycomb");
 
     ItemType.Typed<ItemMeta> HONEYCOMB_BLOCK = getItemType("honeycomb_block");
 
@@ -1257,13 +1301,9 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> HORN_CORAL_FAN = getItemType("horn_coral_fan");
 
-    ItemType.Typed<ItemMeta> HORSE_SPAWN_EGG = getItemType("horse_spawn_egg");
-
     ItemType.Typed<ItemMeta> HOST_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("host_armor_trim_smithing_template");
 
     ItemType.Typed<ItemMeta> HOWL_POTTERY_SHERD = getItemType("howl_pottery_sherd");
-
-    ItemType.Typed<ItemMeta> HUSK_SPAWN_EGG = getItemType("husk_spawn_egg");
 
     ItemType.Typed<ItemMeta> ICE = getItemType("ice");
 
@@ -1295,13 +1335,9 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> IRON_DOOR = getItemType("iron_door");
 
-    ItemType.Typed<ItemMeta> IRON_GOLEM_SPAWN_EGG = getItemType("iron_golem_spawn_egg");
-
     ItemType.Typed<ItemMeta> IRON_HELMET = getItemType("iron_helmet");
 
     ItemType.Typed<ItemMeta> IRON_HOE = getItemType("iron_hoe");
-
-    ItemType.Typed<ItemMeta> IRON_HORSE_ARMOR = getItemType("iron_horse_armor");
 
     ItemType.Typed<ItemMeta> IRON_INGOT = getItemType("iron_ingot");
 
@@ -1318,8 +1354,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> IRON_SWORD = getItemType("iron_sword");
 
     ItemType.Typed<ItemMeta> IRON_TRAPDOOR = getItemType("iron_trapdoor");
-
-    ItemType.Typed<ItemMeta> ITEM_FRAME = getItemType("item_frame");
 
     ItemType.Typed<ItemMeta> JACK_O_LANTERN = getItemType("jack_o_lantern");
 
@@ -1367,6 +1401,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> LADDER = getItemType("ladder");
 
+    ItemType.Typed<ItemMeta> LANTERN = getItemType("lantern");
+
     ItemType.Typed<ItemMeta> LAPIS_BLOCK = getItemType("lapis_block");
 
     ItemType.Typed<ItemMeta> LAPIS_LAZULI = getItemType("lapis_lazuli");
@@ -1379,7 +1415,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> LAVA_BUCKET = getItemType("lava_bucket");
 
-    ItemType.Typed<ItemMeta> LEAD = getItemType("lead");
+    ItemType.Typed<ItemMeta> LEAF_LITTER = getItemType("leaf_litter");
 
     ItemType.Typed<ItemMeta> LEATHER = getItemType("leather");
 
@@ -1389,8 +1425,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> LEATHER_HELMET = getItemType("leather_helmet");
 
-    ItemType.Typed<ItemMeta> LEATHER_HORSE_ARMOR = getItemType("leather_horse_armor");
-
     ItemType.Typed<ItemMeta> LEATHER_LEGGINGS = getItemType("leather_leggings");
 
     ItemType.Typed<ItemMeta> LECTERN = getItemType("lectern");
@@ -1398,8 +1432,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> LEVER = getItemType("lever");
 
     ItemType.Typed<ItemMeta> LIGHT = getItemType("light");
-
-    ItemType.Typed<ItemMeta> LIGHT_BLUE_BANNER = getItemType("light_blue_banner");
 
     ItemType.Typed<ItemMeta> LIGHT_BLUE_BED = getItemType("light_blue_bed");
 
@@ -1426,8 +1458,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> LIGHT_BLUE_TERRACOTTA = getItemType("light_blue_terracotta");
 
     ItemType.Typed<ItemMeta> LIGHT_BLUE_WOOL = getItemType("light_blue_wool");
-
-    ItemType.Typed<ItemMeta> LIGHT_GRAY_BANNER = getItemType("light_gray_banner");
 
     ItemType.Typed<ItemMeta> LIGHT_GRAY_BED = getItemType("light_gray_bed");
 
@@ -1465,8 +1495,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> LILY_PAD = getItemType("lily_pad");
 
-    ItemType.Typed<ItemMeta> LIME_BANNER = getItemType("lime_banner");
-
     ItemType.Typed<ItemMeta> LIME_BED = getItemType("lime_bed");
 
     ItemType.Typed<ItemMeta> LIME_BUNDLE = getItemType("lime_bundle");
@@ -1495,15 +1523,9 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> LINGERING_POTION = getItemType("lingering_potion");
 
-    ItemType.Typed<ItemMeta> LLAMA_SPAWN_EGG = getItemType("llama_spawn_egg");
-
     ItemType.Typed<ItemMeta> LODESTONE = getItemType("lodestone");
 
     ItemType.Typed<ItemMeta> LOOM = getItemType("loom");
-
-    ItemType.Typed<ItemMeta> MACE = getItemType("mace");
-
-    ItemType.Typed<ItemMeta> MAGENTA_BANNER = getItemType("magenta_banner");
 
     ItemType.Typed<ItemMeta> MAGENTA_BED = getItemType("magenta_bed");
 
@@ -1532,10 +1554,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> MAGENTA_WOOL = getItemType("magenta_wool");
 
     ItemType.Typed<ItemMeta> MAGMA_BLOCK = getItemType("magma_block");
-
-    ItemType.Typed<ItemMeta> MAGMA_CREAM = getItemType("magma_cream");
-
-    ItemType.Typed<ItemMeta> MAGMA_CUBE_SPAWN_EGG = getItemType("magma_cube_spawn_egg");
 
     ItemType.Typed<ItemMeta> MANGROVE_BOAT = getItemType("mangrove_boat");
 
@@ -1573,8 +1591,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> MANGROVE_WOOD = getItemType("mangrove_wood");
 
-    ItemType.Typed<ItemMeta> MAP = getItemType("map");
-
     ItemType.Typed<ItemMeta> MEDIUM_AMETHYST_BUD = getItemType("medium_amethyst_bud");
 
     ItemType.Typed<ItemMeta> MELON = getItemType("melon");
@@ -1590,8 +1606,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> MINER_POTTERY_SHERD = getItemType("miner_pottery_sherd");
 
     ItemType.Typed<ItemMeta> MOJANG_BANNER_PATTERN = getItemType("mojang_banner_pattern");
-
-    ItemType.Typed<ItemMeta> MOOSHROOM_SPAWN_EGG = getItemType("mooshroom_spawn_egg");
 
     ItemType.Typed<ItemMeta> MOSS_BLOCK = getItemType("moss_block");
 
@@ -1626,8 +1640,6 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> MUD_BRICKS = getItemType("mud_bricks");
 
     ItemType.Typed<ItemMeta> MUDDY_MANGROVE_ROOTS = getItemType("muddy_mangrove_roots");
-
-    ItemType.Typed<ItemMeta> MULE_SPAWN_EGG = getItemType("mule_spawn_egg");
 
     ItemType.Typed<ItemMeta> MUSHROOM_STEM = getItemType("mushroom_stem");
 
@@ -2277,6 +2289,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> SHIELD = getItemType("shield");
 
+    ItemType.Typed<ItemMeta> SHORT_DRY_GRASS = getItemType("short_dry_grass");
+
     ItemType.Typed<ItemMeta> SHORT_GRASS = getItemType("short_grass");
 
     ItemType.Typed<ItemMeta> SHROOMLIGHT = getItemType("shroomlight");
@@ -2527,11 +2541,17 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<ItemMeta> TADPOLE_SPAWN_EGG = getItemType("tadpole_spawn_egg");
 
+    ItemType.Typed<ItemMeta> TALL_DRY_GRASS = getItemType("tall_dry_grass");
+
     ItemType.Typed<ItemMeta> TALL_GRASS = getItemType("tall_grass");
 
     ItemType.Typed<ItemMeta> TARGET = getItemType("target");
 
     ItemType.Typed<ItemMeta> TERRACOTTA = getItemType("terracotta");
+
+    ItemType.Typed<ItemMeta> TEST_BLOCK = getItemType("test_block");
+
+    ItemType.Typed<ItemMeta> TEST_INSTANCE_BLOCK = getItemType("test_instance_block");
 
     ItemType.Typed<ItemMeta> TIDE_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("tide_armor_trim_smithing_template");
 
@@ -2790,6 +2810,8 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
     ItemType.Typed<ItemMeta> WHITE_WOOL = getItemType("white_wool");
 
     ItemType.Typed<ItemMeta> WILD_ARMOR_TRIM_SMITHING_TEMPLATE = getItemType("wild_armor_trim_smithing_template");
+
+    ItemType.Typed<ItemMeta> WILDFLOWERS = getItemType("wildflowers");
 
     ItemType.Typed<ItemMeta> WIND_CHARGE = getItemType("wind_charge");
 

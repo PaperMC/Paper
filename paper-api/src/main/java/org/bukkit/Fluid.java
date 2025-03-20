@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 public interface Fluid extends OldEnum<Fluid>, Keyed {
 
     // Start generate - Fluid
-    // @GeneratedFrom 1.21.4
+    // @GeneratedFrom 1.21.5 Pre-Release 1
     Fluid EMPTY = getFluid("empty");
 
     Fluid FLOWING_LAVA = getFluid("flowing_lava");

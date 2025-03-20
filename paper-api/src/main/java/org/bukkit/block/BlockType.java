@@ -59,6 +59,7 @@ import org.bukkit.block.data.type.EnderChest;
 import org.bukkit.block.data.type.Farmland;
 import org.bukkit.block.data.type.Fence;
 import org.bukkit.block.data.type.Fire;
+import org.bukkit.block.data.type.FlowerBed;
 import org.bukkit.block.data.type.Furnace;
 import org.bukkit.block.data.type.Gate;
 import org.bukkit.block.data.type.GlassPane;
@@ -71,6 +72,7 @@ import org.bukkit.block.data.type.Jigsaw;
 import org.bukkit.block.data.type.Jukebox;
 import org.bukkit.block.data.type.Ladder;
 import org.bukkit.block.data.type.Lantern;
+import org.bukkit.block.data.type.LeafLitter;
 import org.bukkit.block.data.type.Leaves;
 import org.bukkit.block.data.type.Lectern;
 import org.bukkit.block.data.type.Light;
@@ -107,6 +109,7 @@ import org.bukkit.block.data.type.StructureBlock;
 import org.bukkit.block.data.type.Switch;
 import org.bukkit.block.data.type.TNT;
 import org.bukkit.block.data.type.TechnicalPiston;
+import org.bukkit.block.data.type.TestBlock;
 import org.bukkit.block.data.type.TrapDoor;
 import org.bukkit.block.data.type.TrialSpawner;
 import org.bukkit.block.data.type.Tripwire;
@@ -195,7 +198,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     //<editor-fold desc="BlockTypes" defaultstate="collapsed">
     // Start generate - BlockType
-    // @GeneratedFrom 1.21.4
+    // @GeneratedFrom 1.21.5 Pre-Release 1
     BlockType.Typed<Switch> ACACIA_BUTTON = getBlockType("acacia_button");
 
     BlockType.Typed<Door> ACACIA_DOOR = getBlockType("acacia_door");
@@ -492,7 +495,11 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> BUDDING_AMETHYST = getBlockType("budding_amethyst");
 
+    BlockType.Typed<BlockData> BUSH = getBlockType("bush");
+
     BlockType.Typed<Ageable> CACTUS = getBlockType("cactus");
+
+    BlockType.Typed<BlockData> CACTUS_FLOWER = getBlockType("cactus_flower");
 
     BlockType.Typed<Cake> CAKE = getBlockType("cake");
 
@@ -956,6 +963,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<CoralWallFan> FIRE_CORAL_WALL_FAN = getBlockType("fire_coral_wall_fan");
 
+    BlockType.Typed<BlockData> FIREFLY_BUSH = getBlockType("firefly_bush");
+
     BlockType.Typed<BlockData> FLETCHING_TABLE = getBlockType("fletching_table");
 
     BlockType.Typed<BlockData> FLOWER_POT = getBlockType("flower_pot");
@@ -1161,6 +1170,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Levelled> LAVA = getBlockType("lava");
 
     BlockType.Typed<BlockData> LAVA_CAULDRON = getBlockType("lava_cauldron");
+
+    BlockType.Typed<LeafLitter> LEAF_LITTER = getBlockType("leaf_litter");
 
     BlockType.Typed<Lectern> LECTERN = getBlockType("lectern");
 
@@ -1566,7 +1577,7 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Directional> PINK_GLAZED_TERRACOTTA = getBlockType("pink_glazed_terracotta");
 
-    BlockType.Typed<PinkPetals> PINK_PETALS = getBlockType("pink_petals");
+    BlockType.Typed<FlowerBed> PINK_PETALS = getBlockType("pink_petals");
 
     BlockType.Typed<Directional> PINK_SHULKER_BOX = getBlockType("pink_shulker_box");
 
@@ -1926,6 +1937,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<BlockData> SEAGRASS = getBlockType("seagrass");
 
+    BlockType.Typed<BlockData> SHORT_DRY_GRASS = getBlockType("short_dry_grass");
+
     BlockType.Typed<BlockData> SHORT_GRASS = getBlockType("short_grass");
 
     BlockType.Typed<BlockData> SHROOMLIGHT = getBlockType("shroomlight");
@@ -2112,6 +2125,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
 
     BlockType.Typed<Ageable> SWEET_BERRY_BUSH = getBlockType("sweet_berry_bush");
 
+    BlockType.Typed<BlockData> TALL_DRY_GRASS = getBlockType("tall_dry_grass");
+
     BlockType.Typed<Bisected> TALL_GRASS = getBlockType("tall_grass");
 
     BlockType.Typed<Bisected> TALL_SEAGRASS = getBlockType("tall_seagrass");
@@ -2119,6 +2134,10 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<AnaloguePowerable> TARGET = getBlockType("target");
 
     BlockType.Typed<BlockData> TERRACOTTA = getBlockType("terracotta");
+
+    BlockType.Typed<TestBlock> TEST_BLOCK = getBlockType("test_block");
+
+    BlockType.Typed<BlockData> TEST_INSTANCE_BLOCK = getBlockType("test_instance_block");
 
     BlockType.Typed<BlockData> TINTED_GLASS = getBlockType("tinted_glass");
 
@@ -2347,6 +2366,8 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
     BlockType.Typed<Directional> WHITE_WALL_BANNER = getBlockType("white_wall_banner");
 
     BlockType.Typed<BlockData> WHITE_WOOL = getBlockType("white_wool");
+
+    BlockType.Typed<FlowerBed> WILDFLOWERS = getBlockType("wildflowers");
 
     BlockType.Typed<BlockData> WITHER_ROSE = getBlockType("wither_rose");
 

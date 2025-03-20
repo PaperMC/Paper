@@ -96,7 +96,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
     interface Variant extends Keyed {
 
         // Start generate - WolfVariant
-        // @GeneratedFrom 1.21.4
+        // @GeneratedFrom 1.21.5 Pre-Release 1
         Variant ASHEN = getVariant("ashen");
 
         Variant BLACK = getVariant("black");

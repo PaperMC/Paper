@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 public abstract class MusicInstrument implements Keyed, net.kyori.adventure.translation.Translatable { // Paper - translation keys
 
     // Start generate - MusicInstrument
-    // @GeneratedFrom 1.21.4
+    // @GeneratedFrom 1.21.5 Pre-Release 1
     public static final MusicInstrument ADMIRE_GOAT_HORN = getInstrument("admire_goat_horn");
 
     public static final MusicInstrument CALL_GOAT_HORN = getInstrument("call_goat_horn");

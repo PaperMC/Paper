@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
 
     // Start generate - Biome
-    // @GeneratedFrom 1.21.4
+    // @GeneratedFrom 1.21.5 Pre-Release 1
     Biome BADLANDS = getBiome("badlands");
 
     Biome BAMBOO_JUNGLE = getBiome("bamboo_jungle");

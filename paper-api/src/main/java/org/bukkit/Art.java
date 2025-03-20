@@ -36,7 +36,7 @@ public interface Art extends OldEnum<Art>, Keyed {
     }
 
     // Start generate - Art
-    // @GeneratedFrom 1.21.4
+    // @GeneratedFrom 1.21.5 Pre-Release 1
     Art ALBAN = getArt("alban");
 
     Art AZTEC = getArt("aztec");

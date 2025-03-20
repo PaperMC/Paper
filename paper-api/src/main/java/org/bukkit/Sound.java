@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.Sound.Type { // Paper - implement Sound.Type
 
     // Start generate - Sound
-    // @GeneratedFrom 1.21.4
+    // @GeneratedFrom 1.21.5 Pre-Release 1
     Sound AMBIENT_BASALT_DELTAS_ADDITIONS = getSound("ambient.basalt_deltas.additions");
 
     Sound AMBIENT_BASALT_DELTAS_LOOP = getSound("ambient.basalt_deltas.loop");
@@ -269,6 +269,10 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound BLOCK_BUBBLE_COLUMN_WHIRLPOOL_INSIDE = getSound("block.bubble_column.whirlpool_inside");
 
+    Sound BLOCK_CACTUS_FLOWER_BREAK = getSound("block.cactus_flower.break");
+
+    Sound BLOCK_CACTUS_FLOWER_PLACE = getSound("block.cactus_flower.place");
+
     Sound BLOCK_CAKE_ADD_CANDLE = getSound("block.cake.add_candle");
 
     Sound BLOCK_CALCITE_BREAK = getSound("block.calcite.break");
@@ -511,6 +515,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound BLOCK_CROP_BREAK = getSound("block.crop.break");
 
+    Sound BLOCK_DEADBUSH_IDLE = getSound("block.deadbush.idle");
+
     Sound BLOCK_DECORATED_POT_BREAK = getSound("block.decorated_pot.break");
 
     Sound BLOCK_DECORATED_POT_FALL = getSound("block.decorated_pot.fall");
@@ -602,6 +608,8 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound BLOCK_FIRE_AMBIENT = getSound("block.fire.ambient");
 
     Sound BLOCK_FIRE_EXTINGUISH = getSound("block.fire.extinguish");
+
+    Sound BLOCK_FIREFLY_BUSH_IDLE = getSound("block.firefly_bush.idle");
 
     Sound BLOCK_FLOWERING_AZALEA_BREAK = getSound("block.flowering_azalea.break");
 
@@ -735,6 +743,16 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound BLOCK_HONEY_BLOCK_STEP = getSound("block.honey_block.step");
 
+    Sound BLOCK_IRON_BREAK = getSound("block.iron.break");
+
+    Sound BLOCK_IRON_FALL = getSound("block.iron.fall");
+
+    Sound BLOCK_IRON_HIT = getSound("block.iron.hit");
+
+    Sound BLOCK_IRON_PLACE = getSound("block.iron.place");
+
+    Sound BLOCK_IRON_STEP = getSound("block.iron.step");
+
     Sound BLOCK_IRON_DOOR_CLOSE = getSound("block.iron_door.close");
 
     Sound BLOCK_IRON_DOOR_OPEN = getSound("block.iron_door.open");
@@ -772,6 +790,16 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound BLOCK_LAVA_EXTINGUISH = getSound("block.lava.extinguish");
 
     Sound BLOCK_LAVA_POP = getSound("block.lava.pop");
+
+    Sound BLOCK_LEAF_LITTER_BREAK = getSound("block.leaf_litter.break");
+
+    Sound BLOCK_LEAF_LITTER_FALL = getSound("block.leaf_litter.fall");
+
+    Sound BLOCK_LEAF_LITTER_HIT = getSound("block.leaf_litter.hit");
+
+    Sound BLOCK_LEAF_LITTER_PLACE = getSound("block.leaf_litter.place");
+
+    Sound BLOCK_LEAF_LITTER_STEP = getSound("block.leaf_litter.step");
 
     Sound BLOCK_LEVER_CLICK = getSound("block.lever.click");
 
@@ -1159,9 +1187,13 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound BLOCK_SAND_HIT = getSound("block.sand.hit");
 
+    Sound BLOCK_SAND_IDLE = getSound("block.sand.idle");
+
     Sound BLOCK_SAND_PLACE = getSound("block.sand.place");
 
     Sound BLOCK_SAND_STEP = getSound("block.sand.step");
+
+    Sound BLOCK_SAND_WIND = getSound("block.sand.wind");
 
     Sound BLOCK_SCAFFOLDING_BREAK = getSound("block.scaffolding.break");
 
@@ -2937,8 +2969,6 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
 
     Sound ENTITY_WOLF_GROWL = getSound("entity.wolf.growl");
 
-    Sound ENTITY_WOLF_HOWL = getSound("entity.wolf.howl");
-
     Sound ENTITY_WOLF_HURT = getSound("entity.wolf.hurt");
 
     Sound ENTITY_WOLF_PANT = getSound("entity.wolf.pant");
@@ -2948,6 +2978,78 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound ENTITY_WOLF_STEP = getSound("entity.wolf.step");
 
     Sound ENTITY_WOLF_WHINE = getSound("entity.wolf.whine");
+
+    Sound ENTITY_WOLF_ANGRY_AMBIENT = getSound("entity.wolf_angry.ambient");
+
+    Sound ENTITY_WOLF_ANGRY_DEATH = getSound("entity.wolf_angry.death");
+
+    Sound ENTITY_WOLF_ANGRY_GROWL = getSound("entity.wolf_angry.growl");
+
+    Sound ENTITY_WOLF_ANGRY_HURT = getSound("entity.wolf_angry.hurt");
+
+    Sound ENTITY_WOLF_ANGRY_PANT = getSound("entity.wolf_angry.pant");
+
+    Sound ENTITY_WOLF_ANGRY_WHINE = getSound("entity.wolf_angry.whine");
+
+    Sound ENTITY_WOLF_BIG_AMBIENT = getSound("entity.wolf_big.ambient");
+
+    Sound ENTITY_WOLF_BIG_DEATH = getSound("entity.wolf_big.death");
+
+    Sound ENTITY_WOLF_BIG_GROWL = getSound("entity.wolf_big.growl");
+
+    Sound ENTITY_WOLF_BIG_HURT = getSound("entity.wolf_big.hurt");
+
+    Sound ENTITY_WOLF_BIG_PANT = getSound("entity.wolf_big.pant");
+
+    Sound ENTITY_WOLF_BIG_WHINE = getSound("entity.wolf_big.whine");
+
+    Sound ENTITY_WOLF_CUTE_AMBIENT = getSound("entity.wolf_cute.ambient");
+
+    Sound ENTITY_WOLF_CUTE_DEATH = getSound("entity.wolf_cute.death");
+
+    Sound ENTITY_WOLF_CUTE_GROWL = getSound("entity.wolf_cute.growl");
+
+    Sound ENTITY_WOLF_CUTE_HURT = getSound("entity.wolf_cute.hurt");
+
+    Sound ENTITY_WOLF_CUTE_PANT = getSound("entity.wolf_cute.pant");
+
+    Sound ENTITY_WOLF_CUTE_WHINE = getSound("entity.wolf_cute.whine");
+
+    Sound ENTITY_WOLF_GRUMPY_AMBIENT = getSound("entity.wolf_grumpy.ambient");
+
+    Sound ENTITY_WOLF_GRUMPY_DEATH = getSound("entity.wolf_grumpy.death");
+
+    Sound ENTITY_WOLF_GRUMPY_GROWL = getSound("entity.wolf_grumpy.growl");
+
+    Sound ENTITY_WOLF_GRUMPY_HURT = getSound("entity.wolf_grumpy.hurt");
+
+    Sound ENTITY_WOLF_GRUMPY_PANT = getSound("entity.wolf_grumpy.pant");
+
+    Sound ENTITY_WOLF_GRUMPY_WHINE = getSound("entity.wolf_grumpy.whine");
+
+    Sound ENTITY_WOLF_PUGLIN_AMBIENT = getSound("entity.wolf_puglin.ambient");
+
+    Sound ENTITY_WOLF_PUGLIN_DEATH = getSound("entity.wolf_puglin.death");
+
+    Sound ENTITY_WOLF_PUGLIN_GROWL = getSound("entity.wolf_puglin.growl");
+
+    Sound ENTITY_WOLF_PUGLIN_HURT = getSound("entity.wolf_puglin.hurt");
+
+    Sound ENTITY_WOLF_PUGLIN_PANT = getSound("entity.wolf_puglin.pant");
+
+    Sound ENTITY_WOLF_PUGLIN_WHINE = getSound("entity.wolf_puglin.whine");
+
+    Sound ENTITY_WOLF_SAD_AMBIENT = getSound("entity.wolf_sad.ambient");
+
+    Sound ENTITY_WOLF_SAD_DEATH = getSound("entity.wolf_sad.death");
+
+    Sound ENTITY_WOLF_SAD_GROWL = getSound("entity.wolf_sad.growl");
+
+    Sound ENTITY_WOLF_SAD_HURT = getSound("entity.wolf_sad.hurt");
+
+    Sound ENTITY_WOLF_SAD_PANT = getSound("entity.wolf_sad.pant");
+
+    Sound ENTITY_WOLF_SAD_WHINE = getSound("entity.wolf_sad.whine");
 
     Sound ENTITY_ZOGLIN_AMBIENT = getSound("entity.zoglin.ambient");
 

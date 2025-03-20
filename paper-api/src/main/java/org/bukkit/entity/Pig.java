@@ -32,6 +32,12 @@ public interface Pig extends Steerable, Vehicle {
     interface Variant extends Keyed {
 
         // Start generate - PigVariant
+        // @GeneratedFrom 1.21.5 Pre-Release 1
+        Variant COLD = getVariant("cold");
+
+        Variant TEMPERATE = getVariant("temperate");
+
+        Variant WARM = getVariant("warm");
         // End generate - PigVariant
 
         private static Variant getVariant(String key) {

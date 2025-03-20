@@ -10,22 +10,11 @@ import net.kyori.adventure.text.format.TextColor;
 public enum ItemRarity {
 
     // Start generate - ItemRarity
-    /**
-     * White item name.
-     */
-    COMMON(net.kyori.adventure.text.format.NamedTextColor.WHITE),
-    /**
-     * Yellow item name.
-     */
-    UNCOMMON(net.kyori.adventure.text.format.NamedTextColor.YELLOW),
-    /**
-     * Aqua item name.
-     */
-    RARE(net.kyori.adventure.text.format.NamedTextColor.AQUA),
-    /**
-     * Light purple item name.
-     */
-    EPIC(net.kyori.adventure.text.format.NamedTextColor.LIGHT_PURPLE);
+    // @GeneratedFrom 1.21.5 Pre-Release 1
+    COMMON(NamedTextColor.WHITE),
+    UNCOMMON(NamedTextColor.YELLOW),
+    RARE(NamedTextColor.AQUA),
+    EPIC(NamedTextColor.LIGHT_PURPLE);
     // End generate - ItemRarity
 
     private final net.kyori.adventure.text.format.NamedTextColor color;

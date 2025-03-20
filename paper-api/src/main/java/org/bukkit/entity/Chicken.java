@@ -60,6 +60,12 @@ public interface Chicken extends Animals {
     interface Variant extends Keyed {
 
         // Start generate - ChickenVariant
+        // @GeneratedFrom 1.21.5 Pre-Release 1
+        Variant COLD = getVariant("cold");
+
+        Variant TEMPERATE = getVariant("temperate");
+
+        Variant WARM = getVariant("warm");
         // End generate - ChickenVariant
 
         private static Variant getVariant(String key) {

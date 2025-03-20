@@ -32,6 +32,12 @@ public interface Cow extends AbstractCow {
     interface Variant extends Keyed {
 
         // Start generate - CowVariant
+        // @GeneratedFrom 1.21.5 Pre-Release 1
+        Variant COLD = getVariant("cold");
+
+        Variant TEMPERATE = getVariant("temperate");
+
+        Variant WARM = getVariant("warm");
         // End generate - CowVariant
 
         private static Variant getVariant(String key) {

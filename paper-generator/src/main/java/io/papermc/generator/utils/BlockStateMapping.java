@@ -132,6 +132,8 @@ public final class BlockStateMapping {
         .put("BambooStalk", "Bamboo")
         .put("Farm", "Farmland")
         .put("ChiseledBookShelf", "ChiseledBookshelf")
+        .put("UntintedParticleLeaves", "Leaves")
+        .put("TintedParticleLeaves", "Leaves")
         .put("StandingSign", "Sign")
         .put("FenceGate", "Gate")
         .buildOrThrow();

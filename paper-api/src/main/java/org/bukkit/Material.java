@@ -4,13 +4,13 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Equippable;
 import java.lang.reflect.Constructor;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import io.papermc.paper.datacomponent.DataComponentTypes;
-import io.papermc.paper.datacomponent.item.Equippable;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
@@ -66,6 +66,7 @@ import org.bukkit.block.data.type.EnderChest;
 import org.bukkit.block.data.type.Farmland;
 import org.bukkit.block.data.type.Fence;
 import org.bukkit.block.data.type.Fire;
+import org.bukkit.block.data.type.FlowerBed;
 import org.bukkit.block.data.type.Furnace;
 import org.bukkit.block.data.type.Gate;
 import org.bukkit.block.data.type.GlassPane;
@@ -78,6 +79,7 @@ import org.bukkit.block.data.type.Jigsaw;
 import org.bukkit.block.data.type.Jukebox;
 import org.bukkit.block.data.type.Ladder;
 import org.bukkit.block.data.type.Lantern;
+import org.bukkit.block.data.type.LeafLitter;
 import org.bukkit.block.data.type.Leaves;
 import org.bukkit.block.data.type.Lectern;
 import org.bukkit.block.data.type.Light;
@@ -114,6 +116,7 @@ import org.bukkit.block.data.type.StructureBlock;
 import org.bukkit.block.data.type.Switch;
 import org.bukkit.block.data.type.TNT;
 import org.bukkit.block.data.type.TechnicalPiston;
+import org.bukkit.block.data.type.TestBlock;
 import org.bukkit.block.data.type.TrapDoor;
 import org.bukkit.block.data.type.TrialSpawner;
 import org.bukkit.block.data.type.Tripwire;
@@ -141,7 +144,7 @@ import org.jetbrains.annotations.Nullable;
 public enum Material implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper
     //<editor-fold desc="Materials" defaultstate="collapsed">
     // Start generate - Items
-    // @GeneratedFrom 1.21.4
+    // @GeneratedFrom 1.21.5 Pre-Release 1
     ACACIA_BOAT(-1, 1),
     ACACIA_CHEST_BOAT(-1, 1),
     AIR(-1),
@@ -176,6 +179,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     BLAZE_SPAWN_EGG(-1),
     BLUE_BUNDLE(-1, 1),
     BLUE_DYE(-1),
+    BLUE_EGG(-1, 16),
     BOGGED_SPAWN_EGG(-1),
     BOLT_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
     BONE(-1),
@@ -191,6 +195,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     BRICK(-1),
     BROWN_BUNDLE(-1, 1),
     BROWN_DYE(-1),
+    BROWN_EGG(-1, 16),
     BRUSH(-1, 1, 64),
     BUCKET(-1, 16),
     BUNDLE(-1, 1),
@@ -257,7 +262,6 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     FIELD_MASONED_BANNER_PATTERN(-1, 1),
     FLOW_BANNER_PATTERN(-1, 1),
     GLOBE_BANNER_PATTERN(-1, 1),
-    GOAT_HORN(-1, 1),
     IRON_NUGGET(-1),
     KNOWLEDGE_BOOK(-1, 1),
     LINGERING_POTION(-1, 1),
@@ -309,6 +313,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     GLOW_ITEM_FRAME(-1),
     GLOW_SQUID_SPAWN_EGG(-1),
     GLOWSTONE_DUST(-1),
+    GOAT_HORN(-1, 1),
     GOAT_SPAWN_EGG(-1),
     GOLD_INGOT(-1),
     GOLD_NUGGET(-1),
@@ -587,7 +592,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     ZOMBIFIED_PIGLIN_SPAWN_EGG(-1),
     // End generate - Items
     // Start generate - Blocks
-    // @GeneratedFrom 1.21.4
+    // @GeneratedFrom 1.21.5 Pre-Release 1
     ACACIA_BUTTON(-1, Switch.class),
     ACACIA_DOOR(-1, Door.class),
     ACACIA_FENCE(-1, Fence.class),
@@ -735,7 +740,9 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     BUBBLE_CORAL_FAN(-1, Waterlogged.class),
     BUBBLE_CORAL_WALL_FAN(-1, CoralWallFan.class),
     BUDDING_AMETHYST(-1),
+    BUSH(-1),
     CACTUS(-1, Ageable.class),
+    CACTUS_FLOWER(-1),
     CAKE(-1, 1, Cake.class),
     CALCITE(-1),
     CALIBRATED_SCULK_SENSOR(-1, CalibratedSculkSensor.class),
@@ -967,6 +974,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     FIRE_CORAL_BLOCK(-1),
     FIRE_CORAL_FAN(-1, Waterlogged.class),
     FIRE_CORAL_WALL_FAN(-1, CoralWallFan.class),
+    FIREFLY_BUSH(-1),
     FLETCHING_TABLE(-1),
     FLOWER_POT(-1),
     FLOWERING_AZALEA(-1),
@@ -1070,6 +1078,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     LARGE_FERN(-1, Bisected.class),
     LAVA(-1, Levelled.class),
     LAVA_CAULDRON(-1),
+    LEAF_LITTER(-1, LeafLitter.class),
     LECTERN(-1, Lectern.class),
     LEVER(-1, Switch.class),
     LIGHT(-1, Light.class),
@@ -1272,7 +1281,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     PINK_CONCRETE(-1),
     PINK_CONCRETE_POWDER(-1),
     PINK_GLAZED_TERRACOTTA(-1, Directional.class),
-    PINK_PETALS(-1, PinkPetals.class),
+    PINK_PETALS(-1, FlowerBed.class),
     PINK_SHULKER_BOX(-1, 1, Directional.class),
     PINK_STAINED_GLASS(-1),
     PINK_STAINED_GLASS_PANE(-1, GlassPane.class),
@@ -1452,6 +1461,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     SEA_LANTERN(-1),
     SEA_PICKLE(-1, SeaPickle.class),
     SEAGRASS(-1),
+    SHORT_DRY_GRASS(-1),
     SHORT_GRASS(-1),
     SHROOMLIGHT(-1),
     SHULKER_BOX(-1, 1, Directional.class),
@@ -1545,10 +1555,13 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     SUSPICIOUS_GRAVEL(-1, Brushable.class),
     SUSPICIOUS_SAND(-1, Brushable.class),
     SWEET_BERRY_BUSH(-1, Ageable.class),
+    TALL_DRY_GRASS(-1),
     TALL_GRASS(-1, Bisected.class),
     TALL_SEAGRASS(-1, Bisected.class),
     TARGET(-1, AnaloguePowerable.class),
     TERRACOTTA(-1),
+    TEST_BLOCK(-1, TestBlock.class),
+    TEST_INSTANCE_BLOCK(-1),
     TINTED_GLASS(-1),
     TNT(-1, TNT.class),
     TORCH(-1),
@@ -1663,6 +1676,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     WHITE_TULIP(-1),
     WHITE_WALL_BANNER(-1, Directional.class),
     WHITE_WOOL(-1),
+    WILDFLOWERS(-1, FlowerBed.class),
     WITHER_ROSE(-1),
     WITHER_SKELETON_SKULL(-1, Skull.class),
     WITHER_SKELETON_WALL_SKULL(-1, WallSkull.class),
