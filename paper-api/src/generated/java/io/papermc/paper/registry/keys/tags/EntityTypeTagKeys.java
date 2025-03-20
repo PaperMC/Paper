@@ -24,7 +24,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 @ApiStatus.Experimental
 public final class EntityTypeTagKeys {
     /**
@@ -84,11 +84,25 @@ public final class EntityTypeTagKeys {
     public static final TagKey<EntityType> CAN_BREATHE_UNDER_WATER = create(key("can_breathe_under_water"));
 
     /**
+     * {@code #minecraft:can_equip_saddle}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CAN_EQUIP_SADDLE = create(key("can_equip_saddle"));
+
+    /**
      * {@code #minecraft:can_turn_in_boats}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<EntityType> CAN_TURN_IN_BOATS = create(key("can_turn_in_boats"));
+
+    /**
+     * {@code #minecraft:can_wear_horse_armor}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<EntityType> CAN_WEAR_HORSE_ARMOR = create(key("can_wear_horse_armor"));
 
     /**
      * {@code #minecraft:deflects_projectiles}

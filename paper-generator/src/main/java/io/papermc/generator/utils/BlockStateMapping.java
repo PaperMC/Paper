@@ -4,7 +4,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.reflect.TypeToken;
 import com.mojang.datafixers.util.Either;
 import io.papermc.generator.types.craftblockdata.property.holder.VirtualField;
 import java.lang.reflect.Field;
@@ -34,7 +33,8 @@ import net.minecraft.world.level.block.MultifaceBlock;
 import net.minecraft.world.level.block.NoteBlock;
 import net.minecraft.world.level.block.PipeBlock;
 import net.minecraft.world.level.block.StructureBlock;
-import net.minecraft.world.level.block.WallBlock;
+import net.minecraft.world.level.block.TestBlock;
+import net.minecraft.world.level.block.TestInstanceBlock;
 import net.minecraft.world.level.block.entity.trialspawner.TrialSpawnerState;
 import net.minecraft.world.level.block.entity.vault.VaultState;
 import net.minecraft.world.level.block.state.properties.AttachFace;
@@ -49,7 +49,6 @@ import net.minecraft.world.level.block.state.properties.CreakingHeartState;
 import net.minecraft.world.level.block.state.properties.DoorHingeSide;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.DripstoneThickness;
-import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import net.minecraft.world.level.block.state.properties.PistonType;
@@ -106,7 +105,6 @@ import org.bukkit.block.data.type.Slab;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.block.data.type.Switch;
 import org.bukkit.block.data.type.TechnicalPiston;
-import org.bukkit.block.data.type.TestBlock;
 import org.bukkit.block.data.type.TrialSpawner;
 import org.bukkit.block.data.type.Vault;
 import org.bukkit.block.data.type.Wall;
@@ -141,19 +139,21 @@ public final class BlockStateMapping {
     private static final Set<Class<? extends Block>> BLOCK_SUFFIX_INTENDED = Set.of(
         CommandBlock.class,
         StructureBlock.class,
-        NoteBlock.class
+        NoteBlock.class,
+        TestBlock.class,
+        TestInstanceBlock.class
     );
 
     // virtual data that doesn't exist as constant in the source but still organized this way in the api
     public static final ImmutableMultimap<Class<?>, VirtualField> VIRTUAL_NODES = ImmutableMultimap.<Class<?>, VirtualField>builder()
-        .put(WallBlock.class,
+        /*.put(WallBlock.class,
             VirtualField.createMap("PROPERTY_BY_FACE", BlockFace.class, new TypeToken<EnumProperty<WallSide>>() {}, "HEIGHT")
             .withValues(List.of(
                 WallBlock.EAST,
                 WallBlock.NORTH,
                 WallBlock.SOUTH,
                 WallBlock.WEST
-            )).make())
+            )).make())*/
         .build();
 
     public static final Map<Property<?>, Field> FALLBACK_GENERIC_FIELDS;
@@ -217,7 +217,7 @@ public final class BlockStateMapping {
                         if (properties.remove(property)) {
                             complexPropertyFields.put(Either.right(virtualField), property);
                         } else {
-                            throw new IllegalStateException("Unhandled virtual node " + virtualField.name() + " for " + property);
+                            throw new IllegalStateException("Unhandled virtual node " + virtualField.name() + " for " + property + " in " + specialBlock.getCanonicalName());
                         }
                     }
                 }
@@ -322,7 +322,7 @@ public final class BlockStateMapping {
         .put(FrontAndTop.class, Orientation.class)
         .put(VaultState.class, Vault.State.class)
         .put(CreakingHeartState.class, CreakingHeart.State.class)
-        .put(TestBlockMode.class, TestBlock.Mode.class)
+        .put(TestBlockMode.class, org.bukkit.block.data.type.TestBlock.Mode.class)
         .buildOrThrow();
 
     public static @Nullable Class<? extends org.bukkit.block.data.BlockData> getBestSuitedApiClass(Class<?> block) {

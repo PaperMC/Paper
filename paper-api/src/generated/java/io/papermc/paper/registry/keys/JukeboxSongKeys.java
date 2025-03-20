@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 public final class JukeboxSongKeys {
     /**
      * {@code minecraft:11}

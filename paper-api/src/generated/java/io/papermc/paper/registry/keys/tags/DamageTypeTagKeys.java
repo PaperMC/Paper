@@ -24,7 +24,7 @@ import org.jspecify.annotations.NullMarked;
         "SpellCheckingInspection"
 })
 @NullMarked
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 @ApiStatus.Experimental
 public final class DamageTypeTagKeys {
     /**

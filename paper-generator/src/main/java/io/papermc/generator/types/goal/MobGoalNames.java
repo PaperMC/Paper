@@ -130,6 +130,7 @@ public final class MobGoalNames { // todo sync with MobGoalHelper ideally this s
         bukkitMap.put(net.minecraft.world.entity.monster.Bogged.class, Bogged.class);
         bukkitMap.put(net.minecraft.world.entity.monster.creaking.Creaking.class, Creaking.class);
         bukkitMap.put(net.minecraft.world.entity.animal.AgeableWaterCreature.class, Squid.class); // close enough
+        bukkitMap.put(net.minecraft.world.entity.animal.AbstractCow.class, AbstractCow.class);
         //</editor-fold>
     }
 

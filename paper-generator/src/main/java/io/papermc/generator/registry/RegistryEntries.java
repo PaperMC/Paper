@@ -144,8 +144,6 @@ public final class RegistryEntries {
         entry(Registries.MOB_EFFECT, MobEffects.class, PotionEffectType.class),
         entry(Registries.BLOCK, Blocks.class, BlockType.class),
         entry(Registries.ITEM, Items.class, ItemType.class),
-        entry(Registries.CAT_VARIANT, CatVariant.class, Cat.Type.class),
-        entry(Registries.FROG_VARIANT, FrogVariant.class, Frog.Variant.class),
         entry(Registries.VILLAGER_PROFESSION, VillagerProfession.class, Villager.Profession.class),
         entry(Registries.VILLAGER_TYPE, VillagerType.class, Villager.Type.class),
         entry(Registries.MAP_DECORATION_TYPE, MapDecorationTypes.class, MapCursor.Type.class),

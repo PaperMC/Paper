@@ -103,7 +103,7 @@ fun TaskContainer.registerGenerationTask(
     block: JavaExec.() -> Unit
 ): TaskProvider<JavaExec> = register<JavaExec>(name) {
     group = "generation"
-    dependsOn(project.tasks.check)
+    dependsOn(project.tasks.test)
     javaLauncher = project.javaToolchains.defaultJavaLauncher(project)
     inputs.property("gameVersion", gameVersion)
     inputs.dir(layout.projectDirectory.dir("src/main/java")).withPathSensitivity(PathSensitivity.RELATIVE)

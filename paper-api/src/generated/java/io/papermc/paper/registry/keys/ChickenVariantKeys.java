@@ -6,11 +6,11 @@ import io.papermc.paper.generated.GeneratedFrom;
 import io.papermc.paper.registry.RegistryKey;
 import io.papermc.paper.registry.TypedKey;
 import net.kyori.adventure.key.Key;
-import org.bukkit.Fluid;
+import org.bukkit.entity.Chicken;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Vanilla keys for {@link RegistryKey#FLUID}.
+ * Vanilla keys for {@link RegistryKey#CHICKEN_VARIANT}.
  *
  * @apiNote The fields provided here are a direct representation of
  * what is available from the vanilla game source. They may be
@@ -24,46 +24,38 @@ import org.jspecify.annotations.NullMarked;
 })
 @NullMarked
 @GeneratedFrom("1.21.5 Pre-Release 1")
-public final class FluidKeys {
+public final class ChickenVariantKeys {
     /**
-     * {@code minecraft:empty}
+     * {@code minecraft:cold}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<Fluid> EMPTY = create(key("empty"));
+    public static final TypedKey<Chicken.Variant> COLD = create(key("cold"));
 
     /**
-     * {@code minecraft:flowing_lava}
+     * {@code minecraft:temperate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<Fluid> FLOWING_LAVA = create(key("flowing_lava"));
+    public static final TypedKey<Chicken.Variant> TEMPERATE = create(key("temperate"));
 
     /**
-     * {@code minecraft:flowing_water}
+     * {@code minecraft:warm}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
-    public static final TypedKey<Fluid> FLOWING_WATER = create(key("flowing_water"));
+    public static final TypedKey<Chicken.Variant> WARM = create(key("warm"));
 
-    /**
-     * {@code minecraft:lava}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<Fluid> LAVA = create(key("lava"));
-
-    /**
-     * {@code minecraft:water}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TypedKey<Fluid> WATER = create(key("water"));
-
-    private FluidKeys() {
+    private ChickenVariantKeys() {
     }
 
-    private static TypedKey<Fluid> create(final Key key) {
-        return TypedKey.create(RegistryKey.FLUID, key);
+    /**
+     * Creates a typed key for {@link Chicken.Variant} in the registry {@code minecraft:chicken_variant}.
+     *
+     * @param key the value's key in the registry
+     * @return a new typed key
+     */
+    public static TypedKey<Chicken.Variant> create(final Key key) {
+        return TypedKey.create(RegistryKey.CHICKEN_VARIANT, key);
     }
 }
