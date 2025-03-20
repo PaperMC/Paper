@@ -13,7 +13,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 public class CraftTrappedChest extends CraftBlockData implements Chest {
     private static final EnumProperty<Direction> FACING = TrappedChestBlock.FACING;
 

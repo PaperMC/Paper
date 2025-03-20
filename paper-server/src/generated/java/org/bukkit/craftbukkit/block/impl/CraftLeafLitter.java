@@ -4,25 +4,21 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.generated.GeneratedFrom;
 import java.util.Set;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.CampfireBlock;
+import net.minecraft.world.level.block.LeafLitterBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
+import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.type.Campfire;
+import org.bukkit.block.data.type.LeafLitter;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 @GeneratedFrom("1.21.5 Pre-Release 1")
-public class CraftCampfire extends CraftBlockData implements Campfire {
-    private static final EnumProperty<Direction> FACING = CampfireBlock.FACING;
+public class CraftLeafLitter extends CraftBlockData implements LeafLitter {
+    private static final EnumProperty<Direction> FACING = LeafLitterBlock.FACING;
 
-    private static final BooleanProperty LIT = CampfireBlock.LIT;
+    private static final IntegerProperty AMOUNT = LeafLitterBlock.AMOUNT;
 
-    private static final BooleanProperty SIGNAL_FIRE = CampfireBlock.SIGNAL_FIRE;
-
-    private static final BooleanProperty WATERLOGGED = CampfireBlock.WATERLOGGED;
-
-    public CraftCampfire(BlockState state) {
+    public CraftLeafLitter(BlockState state) {
         super(state);
     }
 
@@ -44,32 +40,22 @@ public class CraftCampfire extends CraftBlockData implements Campfire {
     }
 
     @Override
-    public boolean isLit() {
-        return this.get(LIT);
+    public int getSegmentAmount() {
+        return this.get(AMOUNT);
     }
 
     @Override
-    public void setLit(final boolean lit) {
-        this.set(LIT, lit);
+    public void setSegmentAmount(final int segmentAmount) {
+        this.set(AMOUNT, segmentAmount);
     }
 
     @Override
-    public boolean isSignalFire() {
-        return this.get(SIGNAL_FIRE);
+    public int getMinimumSegmentAmount() {
+        return AMOUNT.min;
     }
 
     @Override
-    public void setSignalFire(final boolean signalFire) {
-        this.set(SIGNAL_FIRE, signalFire);
-    }
-
-    @Override
-    public boolean isWaterlogged() {
-        return this.get(WATERLOGGED);
-    }
-
-    @Override
-    public void setWaterlogged(final boolean waterlogged) {
-        this.set(WATERLOGGED, waterlogged);
+    public int getMaximumSegmentAmount() {
+        return AMOUNT.max;
     }
 }

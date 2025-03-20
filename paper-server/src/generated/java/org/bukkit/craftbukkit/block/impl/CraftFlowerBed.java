@@ -4,21 +4,21 @@ import com.google.common.base.Preconditions;
 import io.papermc.paper.generated.GeneratedFrom;
 import java.util.Set;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.block.PinkPetalsBlock;
+import net.minecraft.world.level.block.FlowerBedBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.type.PinkPetals;
+import org.bukkit.block.data.type.FlowerBed;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.4")
-public class CraftPinkPetals extends CraftBlockData implements PinkPetals {
-    private static final EnumProperty<Direction> FACING = PinkPetalsBlock.FACING;
+@GeneratedFrom("1.21.5 Pre-Release 1")
+public class CraftFlowerBed extends CraftBlockData implements FlowerBed {
+    private static final EnumProperty<Direction> FACING = FlowerBedBlock.FACING;
 
-    private static final IntegerProperty AMOUNT = PinkPetalsBlock.AMOUNT;
+    private static final IntegerProperty AMOUNT = FlowerBedBlock.AMOUNT;
 
-    public CraftPinkPetals(BlockState state) {
+    public CraftFlowerBed(BlockState state) {
         super(state);
     }
 

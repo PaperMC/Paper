@@ -26,6 +26,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.ChiseledBookShelfBlock;
 import net.minecraft.world.level.block.MossyCarpetBlock;
+import net.minecraft.world.level.block.WallBlock;
 import net.minecraft.world.level.block.state.properties.Property;
 import org.bukkit.block.BlockFace;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
@@ -51,7 +52,8 @@ public class DataPropertyWriter extends DataPropertyWriterBase {
 
     private static final Map<FieldKey, String> FIELD_TO_BASE_NAME_SPECIFICS = Map.of(
         key(ChiseledBookShelfBlock.class, "SLOT_OCCUPIED_PROPERTIES"), "SLOT_OCCUPIED",
-        key(MossyCarpetBlock.class, "PROPERTY_BY_DIRECTION"), "HEIGHT"
+        key(MossyCarpetBlock.class, "PROPERTY_BY_DIRECTION"), "HEIGHT",
+        key(WallBlock.class, "PROPERTY_BY_DIRECTION"), "HEIGHT"
     );
 
     protected final Field field;

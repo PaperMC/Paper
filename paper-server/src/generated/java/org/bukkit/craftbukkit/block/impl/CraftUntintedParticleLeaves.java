@@ -1,22 +1,22 @@
 package org.bukkit.craftbukkit.block.impl;
 
 import io.papermc.paper.generated.GeneratedFrom;
-import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.UntintedParticleLeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.data.type.Leaves;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.4")
-public class CraftLeaves extends CraftBlockData implements Leaves {
-    private static final IntegerProperty DISTANCE = LeavesBlock.DISTANCE;
+@GeneratedFrom("1.21.5 Pre-Release 1")
+public class CraftUntintedParticleLeaves extends CraftBlockData implements Leaves {
+    private static final IntegerProperty DISTANCE = UntintedParticleLeavesBlock.DISTANCE;
 
-    private static final BooleanProperty PERSISTENT = LeavesBlock.PERSISTENT;
+    private static final BooleanProperty PERSISTENT = UntintedParticleLeavesBlock.PERSISTENT;
 
-    private static final BooleanProperty WATERLOGGED = LeavesBlock.WATERLOGGED;
+    private static final BooleanProperty WATERLOGGED = UntintedParticleLeavesBlock.WATERLOGGED;
 
-    public CraftLeaves(BlockState state) {
+    public CraftUntintedParticleLeaves(BlockState state) {
         super(state);
     }
 

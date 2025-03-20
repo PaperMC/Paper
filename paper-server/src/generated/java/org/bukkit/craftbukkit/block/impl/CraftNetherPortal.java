@@ -11,7 +11,7 @@ import org.bukkit.Axis;
 import org.bukkit.block.data.Orientable;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 public class CraftNetherPortal extends CraftBlockData implements Orientable {
     private static final EnumProperty<Direction.Axis> AXIS = NetherPortalBlock.AXIS;
 

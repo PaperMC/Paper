@@ -8,24 +8,20 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import net.minecraft.world.level.block.MossyCarpetBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.WallSide;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.MossyCarpet;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 public class CraftMossyCarpet extends CraftBlockData implements MossyCarpet {
     private static final BooleanProperty BASE = MossyCarpetBlock.BASE;
 
-    private static final Map<BlockFace, EnumProperty<WallSide>> PROPERTY_BY_DIRECTION = Map.of(
-        BlockFace.NORTH, BlockStateProperties.NORTH_WALL,
-        BlockFace.SOUTH, BlockStateProperties.SOUTH_WALL,
-        BlockFace.WEST, BlockStateProperties.WEST_WALL,
-        BlockFace.EAST, BlockStateProperties.EAST_WALL
-    );
+    private static final Map<BlockFace, EnumProperty<WallSide>> PROPERTY_BY_DIRECTION = MossyCarpetBlock.PROPERTY_BY_DIRECTION.entrySet().stream()
+            .collect(Collectors.toMap(entry -> CraftBlock.notchToBlockFace(entry.getKey()), entry -> entry.getValue()));
 
     public CraftMossyCarpet(BlockState state) {
         super(state);

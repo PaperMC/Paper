@@ -12,7 +12,7 @@ import org.bukkit.Axis;
 import org.bukkit.block.data.type.Chain;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 public class CraftChain extends CraftBlockData implements Chain {
     private static final EnumProperty<Direction.Axis> AXIS = ChainBlock.AXIS;
 

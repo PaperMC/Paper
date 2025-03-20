@@ -11,7 +11,7 @@ import org.bukkit.block.data.Rotatable;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.util.Vector;
 
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 public class CraftBanner extends CraftBlockData implements Rotatable {
     private static final IntegerProperty ROTATION = BannerBlock.ROTATION;
 

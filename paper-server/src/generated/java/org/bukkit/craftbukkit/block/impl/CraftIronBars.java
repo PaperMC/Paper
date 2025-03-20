@@ -12,18 +12,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Fence;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 public class CraftIronBars extends CraftBlockData implements Fence {
     private static final BooleanProperty WATERLOGGED = IronBarsBlock.WATERLOGGED;
 
-    private static final Map<BlockFace, BooleanProperty> PROPERTY_BY_DIRECTION = Map.of(
-        BlockFace.EAST, IronBarsBlock.EAST,
-        BlockFace.NORTH, IronBarsBlock.NORTH,
-        BlockFace.SOUTH, IronBarsBlock.SOUTH,
-        BlockFace.WEST, IronBarsBlock.WEST
-    );
+    private static final Map<BlockFace, BooleanProperty> PROPERTY_BY_DIRECTION = IronBarsBlock.PROPERTY_BY_DIRECTION.entrySet().stream()
+            .collect(Collectors.toMap(entry -> CraftBlock.notchToBlockFace(entry.getKey()), entry -> entry.getValue()));
 
     public CraftIronBars(BlockState state) {
         super(state);

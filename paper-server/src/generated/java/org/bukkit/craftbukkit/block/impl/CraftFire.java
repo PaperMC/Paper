@@ -13,19 +13,15 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Fire;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 public class CraftFire extends CraftBlockData implements Fire {
     private static final IntegerProperty AGE = FireBlock.AGE;
 
-    private static final Map<BlockFace, BooleanProperty> PROPERTY_BY_DIRECTION = Map.of(
-        BlockFace.EAST, FireBlock.EAST,
-        BlockFace.NORTH, FireBlock.NORTH,
-        BlockFace.SOUTH, FireBlock.SOUTH,
-        BlockFace.UP, FireBlock.UP,
-        BlockFace.WEST, FireBlock.WEST
-    );
+    private static final Map<BlockFace, BooleanProperty> PROPERTY_BY_DIRECTION = FireBlock.PROPERTY_BY_DIRECTION.entrySet().stream()
+            .collect(Collectors.toMap(entry -> CraftBlock.notchToBlockFace(entry.getKey()), entry -> entry.getValue()));
 
     public CraftFire(BlockState state) {
         super(state);

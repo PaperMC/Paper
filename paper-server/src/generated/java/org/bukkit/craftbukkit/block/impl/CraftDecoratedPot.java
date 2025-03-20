@@ -6,20 +6,19 @@ import java.util.Set;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.DecoratedPotBlock;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.DecoratedPot;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 public class CraftDecoratedPot extends CraftBlockData implements DecoratedPot {
     private static final BooleanProperty CRACKED = DecoratedPotBlock.CRACKED;
 
-    private static final EnumProperty<Direction> HORIZONTAL_FACING = BlockStateProperties.HORIZONTAL_FACING;
+    private static final EnumProperty<Direction> HORIZONTAL_FACING = DecoratedPotBlock.HORIZONTAL_FACING;
 
-    private static final BooleanProperty WATERLOGGED = BlockStateProperties.WATERLOGGED;
+    private static final BooleanProperty WATERLOGGED = DecoratedPotBlock.WATERLOGGED;
 
     public CraftDecoratedPot(BlockState state) {
         super(state);

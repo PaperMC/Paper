@@ -12,7 +12,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Barrel;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 public class CraftBarrel extends CraftBlockData implements Barrel {
     private static final EnumProperty<Direction> FACING = BarrelBlock.FACING;
 

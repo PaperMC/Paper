@@ -12,18 +12,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.GlassPane;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
-@GeneratedFrom("1.21.4")
+@GeneratedFrom("1.21.5 Pre-Release 1")
 public class CraftStainedGlassPane extends CraftBlockData implements GlassPane {
     private static final BooleanProperty WATERLOGGED = StainedGlassPaneBlock.WATERLOGGED;
 
-    private static final Map<BlockFace, BooleanProperty> PROPERTY_BY_DIRECTION = Map.of(
-        BlockFace.EAST, StainedGlassPaneBlock.EAST,
-        BlockFace.NORTH, StainedGlassPaneBlock.NORTH,
-        BlockFace.SOUTH, StainedGlassPaneBlock.SOUTH,
-        BlockFace.WEST, StainedGlassPaneBlock.WEST
-    );
+    private static final Map<BlockFace, BooleanProperty> PROPERTY_BY_DIRECTION = StainedGlassPaneBlock.PROPERTY_BY_DIRECTION.entrySet().stream()
+            .collect(Collectors.toMap(entry -> CraftBlock.notchToBlockFace(entry.getKey()), entry -> entry.getValue()));
 
     public CraftStainedGlassPane(BlockState state) {
         super(state);
