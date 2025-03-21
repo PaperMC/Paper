@@ -15,7 +15,7 @@ public interface Boat extends Vehicle, io.papermc.paper.entity.Leashable { // Pa
      * @return the wood type
      * @deprecated deprecated in favor of {@link #getBoatType()}
      */
-    @Deprecated(since = "1.19")
+    @Deprecated(since = "1.19", forRemoval = true)
     @NotNull
     TreeSpecies getWoodType();
 
@@ -25,7 +25,7 @@ public interface Boat extends Vehicle, io.papermc.paper.entity.Leashable { // Pa
      * @param species the new wood type
      * @deprecated deprecated in favor of {@link #setBoatType(Type)}
      */
-    @Deprecated(since = "1.19")
+    @Deprecated(since = "1.19", forRemoval = true)
     void setWoodType(@NotNull TreeSpecies species);
 
     /**

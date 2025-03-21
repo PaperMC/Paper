@@ -17,7 +17,6 @@ public interface MapMeta extends ItemMeta {
      * @return true if this has a map ID number.
      * @see #hasMapView()
      */
-    //@Deprecated(since = "1.13.2") // Paper
     boolean hasMapId();
 
     /**
@@ -30,7 +29,6 @@ public interface MapMeta extends ItemMeta {
      * @return the map ID that is set
      * @see #getMapView()
      */
-    // @Deprecated(since = "1.13.2") // Paper
     int getMapId();
 
     /**

@@ -6,6 +6,7 @@ import java.util.List;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -16,13 +17,14 @@ public class BlockPistonExtendEvent extends BlockPistonEvent {
     private final int length;
     private List<Block> blocks;
 
-    @Deprecated(since = "1.8")
+    @Deprecated(since = "1.8", forRemoval = true)
     public BlockPistonExtendEvent(@NotNull final Block block, final int length, @NotNull final BlockFace direction) {
         super(block, direction);
 
         this.length = length;
     }
 
+    @ApiStatus.Internal
     public BlockPistonExtendEvent(@NotNull final Block block, @NotNull final List<Block> blocks, @NotNull final BlockFace direction) {
         super(block, direction);
 
@@ -51,7 +53,7 @@ public class BlockPistonExtendEvent extends BlockPistonEvent {
     @NotNull
     public List<Block> getBlocks() {
         if (blocks == null) {
-            ArrayList<Block> tmp = new ArrayList<Block>();
+            List<Block> tmp = new ArrayList<Block>();
             for (int i = 0; i < this.getLength(); i++) {
                 tmp.add(block.getRelative(getDirection(), i + 1));
             }

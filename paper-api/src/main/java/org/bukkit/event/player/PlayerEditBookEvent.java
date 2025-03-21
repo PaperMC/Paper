@@ -74,7 +74,7 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
      * @return the inventory slot number that the book item occupies
      * @deprecated books may be signed from off hand
      */
-    @Deprecated(since = "1.13.1")
+    @Deprecated(since = "1.13.1", forRemoval = true)
     public int getSlot() {
         return slot;
     }

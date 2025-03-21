@@ -3,6 +3,7 @@ package org.bukkit.event.weather;
 import org.bukkit.World;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -12,16 +13,16 @@ public class WeatherChangeEvent extends WeatherEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean canceled;
     private final boolean to;
-    // Paper start
     private final Cause cause;
 
+    @ApiStatus.Internal
     public WeatherChangeEvent(@NotNull final World world, final boolean to, @NotNull Cause cause) {
         super(world);
         this.to = to;
         this.cause = cause;
     }
 
-    @Deprecated // Paper end
+    @Deprecated(forRemoval = true)
     public WeatherChangeEvent(@NotNull final World world, final boolean to) {
         super(world);
         this.to = to;

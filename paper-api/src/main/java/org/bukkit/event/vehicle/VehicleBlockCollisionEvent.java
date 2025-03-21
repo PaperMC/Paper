@@ -3,6 +3,7 @@ package org.bukkit.event.vehicle;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -13,11 +14,12 @@ public class VehicleBlockCollisionEvent extends VehicleCollisionEvent {
     private final org.bukkit.util.Vector velocity; // Paper
 
     // Paper start - Add pre-collision velocity
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public VehicleBlockCollisionEvent(@NotNull final Vehicle vehicle, @NotNull final Block block) {
         this(vehicle, block, vehicle.getVelocity());
     }
 
+    @ApiStatus.Internal
     public VehicleBlockCollisionEvent(@NotNull final Vehicle vehicle, @NotNull final Block block, @NotNull final org.bukkit.util.Vector velocity) { // Paper - Added velocity
         super(vehicle);
         this.block = block;

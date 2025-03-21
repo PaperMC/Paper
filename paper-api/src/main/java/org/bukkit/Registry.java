@@ -64,7 +64,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
     @SuppressWarnings("removal")
     @Deprecated(forRemoval = true, since = "1.21.4")
     private static <A extends Keyed> Registry<A> legacyRegistryFor(final Class<A> clazz) {
-        return Objects.requireNonNull(RegistryAccess.registryAccess().getRegistry(clazz), "No registry present for " + clazz.getSimpleName() + ". This is a bug.");
+        return Objects.requireNonNull(RegistryAccess.registryAccess().getRegistry(clazz), () -> "No registry present for " + clazz.getSimpleName() + ". This is a bug.");
     }
 
     /**

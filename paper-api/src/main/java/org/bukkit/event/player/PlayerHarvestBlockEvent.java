@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -27,6 +28,7 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
     private final EquipmentSlot hand;
     private final List<ItemStack> itemsHarvested;
 
+    @ApiStatus.Internal
     public PlayerHarvestBlockEvent(@NotNull Player player, @NotNull Block harvestedBlock, @NotNull EquipmentSlot hand, @NotNull List<ItemStack> itemsHarvested) {
         super(player);
         this.harvestedBlock = harvestedBlock;
@@ -34,7 +36,7 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
         this.itemsHarvested = itemsHarvested;
     }
 
-    @Deprecated(since = "1.19.2")
+    @Deprecated(since = "1.19.2", forRemoval = true)
     public PlayerHarvestBlockEvent(@NotNull Player player, @NotNull Block harvestedBlock, @NotNull List<ItemStack> itemsHarvested) {
         this(player, harvestedBlock, EquipmentSlot.HAND, itemsHarvested);
     }
