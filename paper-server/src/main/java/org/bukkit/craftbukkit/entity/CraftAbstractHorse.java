@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.UUID;
 import net.minecraft.Optionull;
 import net.minecraft.world.entity.EntityReference;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftSaddledInventory;
@@ -114,7 +115,7 @@ public abstract class CraftAbstractHorse extends CraftAnimals implements Abstrac
 
     @Override
     public AbstractHorseInventory getInventory() {
-        return new CraftSaddledInventory(getHandle().inventory, this.getHandle().getBodyArmorAccess()); // Paper - use both inventories
+        return new CraftSaddledInventory(getHandle().inventory, this.getHandle().createEquipmentSlotContainer(EquipmentSlot.BODY));
     }
 
     @Override

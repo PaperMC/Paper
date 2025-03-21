@@ -134,7 +134,7 @@ public final class PaperAdventure {
     public static final Codec<Tag, String, CommandSyntaxException, RuntimeException> NBT_CODEC = new Codec<>() {
         @Override
         public @NotNull Tag decode(final @NotNull String encoded) throws CommandSyntaxException {
-            return new TagParser(new StringReader(encoded)).readValue();
+            return TagParser.parseCompoundFully(encoded);
         }
 
         @Override
