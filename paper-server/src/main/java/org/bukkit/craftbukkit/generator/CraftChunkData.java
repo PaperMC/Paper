@@ -186,7 +186,7 @@ public final class CraftChunkData implements ChunkGenerator.ChunkData {
     public int getHeight(HeightMap heightMap, final int x, final int z) {
         Preconditions.checkArgument(heightMap != null, "HeightMap cannot be null");
         if (x < 0 || x > 15 || z < 0 || z > 15) {
-            throw new IllegalArgumentException("Cannot get height outside of a chunks bounds");
+            throw new IllegalArgumentException("Cannot get height outside of a chunks bounds, must be between 0 and 15, found: x: " + x + ", z: " + z);
         }
         return getHandle().getHeight(CraftHeightMap.toNMS(heightMap), x, z);
     }
