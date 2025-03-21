@@ -3,9 +3,14 @@ package org.bukkit.craftbukkit.entity;
 import com.google.common.base.Preconditions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.projectile.FishingHook;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftFishHook extends CraftProjectile implements FishHook {
     private double biteChance = -1;
@@ -196,7 +201,7 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     public HookState getState() {
         return HookState.values()[this.getHandle().currentState.ordinal()];
     }
-    // Paper start - More FishHook API
+
     @Override
     public int getWaitTime() {
         return this.getHandle().timeUntilLured;
@@ -233,5 +238,11 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
         hook.resetTimeUntilLured();
         hook.timeUntilHooked = 0; // Reset time until hooked, will be repopulated once lured time is ticked down.
     }
-    // Paper end
+
+    @Override
+    public int retrieve(EquipmentSlot slot, ItemStack itemStack) {
+        Preconditions.checkArgument(slot == EquipmentSlot.HAND || slot == EquipmentSlot.OFF_HAND, "Equipment slot must be HAND or OFF_HAND");
+        Preconditions.checkArgument(itemStack != null, "ItemStack cannot be null");
+        return getHandle().retrieve(CraftEquipmentSlot.getHand(slot), CraftItemStack.asNMSCopy(itemStack));
+    }
 }
