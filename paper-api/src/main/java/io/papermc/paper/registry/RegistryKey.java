@@ -79,7 +79,7 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
     RegistryKey<BlockType> BLOCK = create("block");
     /**
      * @apiNote use preferably only in the context of registry entries.
-     * @see io.papermc.paper.registry.data
+     * @see io.papermc.paper.registry.keys.ItemTypeKeys
      */
     @ApiStatus.Experimental // Paper - already required for registry builders
     RegistryKey<ItemType> ITEM = create("item");
