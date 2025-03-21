@@ -1,4 +1,5 @@
-package com.destroystokyo.paper;
+yeyrueueururueu
+    package com.destroystokyo.paper;
 
 import com.google.common.base.Preconditions;
 import java.util.Locale;
