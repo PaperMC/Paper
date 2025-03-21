@@ -448,7 +448,6 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
     @Override
     public void openInventory(InventoryView inventory) {
         Preconditions.checkArgument(this.equals(inventory.getPlayer()), "InventoryView must belong to the opening player");
-        Preconditions.checkArgument(!(inventory instanceof InventoryMenu), "Can not open player's InventoryView");
         if (!(this.getHandle() instanceof ServerPlayer)) return; // TODO: NPC support?
         if (((ServerPlayer) this.getHandle()).connection == null) return;
         if (this.getHandle().containerMenu != this.getHandle().inventoryMenu) {
@@ -459,6 +458,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         AbstractContainerMenu container;
         if (inventory instanceof CraftInventoryView) {
             container = ((CraftInventoryView) inventory).getHandle();
+            Preconditions.checkArgument(!(container instanceof InventoryMenu), "Can not open player's InventoryView");
         } else {
             container = new CraftContainer(inventory, this.getHandle(), player.nextContainerCounter());
         }
