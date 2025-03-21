@@ -208,10 +208,11 @@
                  }
  
                  return true;
-@@ -472,28 +_,31 @@
+@@ -471,40 +_,62 @@
+         float health = this.getHealth();
          health -= damageAmount;
          if (health <= 0.5F) {
-             this.brokenByAnything(level, damageSource);
+-            this.brokenByAnything(level, damageSource);
 -            this.kill(level);
 +            // Paper start - avoid duplicate event call
 +            org.bukkit.event.entity.EntityDeathEvent event = this.brokenByAnything(level, damageSource);
@@ -238,25 +239,44 @@
          this.playBrokenSound();
 -        this.dropAllDeathLoot(level, damageSource);
 +        // this.dropAllDeathLoot(level, damageSource); // CraftBukkit - moved down
++        // Paper start - save hand-armor items for rollback
++        NonNullList<ItemStack> copyHandItems = NonNullList.withSize(2, ItemStack.EMPTY);
++        NonNullList<ItemStack> copyArmorItems = NonNullList.withSize(4, ItemStack.EMPTY);
++        // Paper end
  
          for (int i = 0; i < this.handItems.size(); i++) {
              ItemStack itemStack = this.handItems.get(i);
++            copyHandItems.set(i, itemStack); // Paper - save item for rollback in cancel state
              if (!itemStack.isEmpty()) {
 -                Block.popResource(this.level(), this.blockPosition().above(), itemStack);
 +                this.drops.add(new DefaultDrop(itemStack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly
                  this.handItems.set(i, ItemStack.EMPTY);
              }
          }
-@@ -501,10 +_,11 @@
+ 
          for (int ix = 0; ix < this.armorItems.size(); ix++) {
              ItemStack itemStack = this.armorItems.get(ix);
++            copyArmorItems.set(ix, itemStack); // Paper - save item for rollback in cancel state
              if (!itemStack.isEmpty()) {
 -                Block.popResource(this.level(), this.blockPosition().above(), itemStack);
 +                this.drops.add(new DefaultDrop(itemStack, stack -> Block.popResource(this.level(), this.blockPosition().above(), stack))); // CraftBukkit - add to drops // Paper - Restore vanilla drops behavior; mirror so we can destroy it later - though this call site was safe & spawn drops correctly
                  this.armorItems.set(ix, ItemStack.EMPTY);
              }
          }
-+        return this.dropAllDeathLoot(level, damageSource); // CraftBukkit - moved from above // Paper
++        // Paper start - handle cancel for rollback items
++        org.bukkit.event.entity.EntityDeathEvent event = this.dropAllDeathLoot(level, damageSource); // CraftBukkit - moved from above // Paper
++        if (event.isCancelled()) {
++            for (int i = 0; i < copyHandItems.size(); i++) {
++                ItemStack itemStack = copyHandItems.get(i);
++                this.handItems.set(i, itemStack);
++            }
++            for (int ix = 0; ix < copyArmorItems.size(); ix++) {
++                ItemStack itemStack = copyArmorItems.get(ix);
++                this.armorItems.set(ix, itemStack);
++            }
++        }
++        return event;
++        // Paper end
      }
  
      private void playBrokenSound() {
