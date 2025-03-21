@@ -41,7 +41,6 @@ public class CraftAdvancement implements org.bukkit.advancement.Advancement {
     }
 
     @Deprecated
-    @io.papermc.paper.annotation.DoNotUse
     public AdvancementDisplay getDisplay0() { // May be called by plugins via Commodore
         return this.handle.value().display().map(CraftAdvancementDisplay::new).orElse(null);
     }

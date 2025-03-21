@@ -15,11 +15,12 @@ public class EntityPortalEnterEvent extends EntityEvent implements org.bukkit.ev
     private static final HandlerList handlers = new HandlerList();
     private final Location location;
 
-    @Deprecated(since = "1.21") @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated(since = "1.21")
     public EntityPortalEnterEvent(@NotNull final Entity entity, @NotNull final Location location) {
         // Paper start
         this(entity, location, org.bukkit.PortalType.CUSTOM);
     }
+
     @org.jetbrains.annotations.ApiStatus.Internal
     public EntityPortalEnterEvent(@NotNull final Entity entity, @NotNull final Location location, @NotNull final org.bukkit.PortalType portalType) {
         // Paper end

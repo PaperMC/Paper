@@ -62,8 +62,8 @@ public abstract class DelegatedGeneratorAccess implements WorldGenLevel {
 
     private WorldGenLevel delegate;
 
-    public void setHandle(WorldGenLevel worldAccess) {
-        this.delegate = worldAccess;
+    public void setDelegate(WorldGenLevel delegate) {
+        this.delegate = delegate;
     }
 
     public WorldGenLevel getDelegate() {

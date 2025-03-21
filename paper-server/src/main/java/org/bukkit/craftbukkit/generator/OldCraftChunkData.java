@@ -30,7 +30,6 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
     private final Set<BlockPos> lights = new HashSet<>();
     private final org.bukkit.World world;
 
-    @Deprecated @io.papermc.paper.annotation.DoNotUse
     public OldCraftChunkData(int minHeight, int maxHeight, Registry<net.minecraft.world.level.biome.Biome> biomes) {
         this(minHeight, maxHeight, biomes, null);
     }

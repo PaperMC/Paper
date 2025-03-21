@@ -37,7 +37,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
     }
 
     public EntityDamageEvent(@NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, final double damage) {
-        this(damagee, cause, damageSource, new EnumMap<DamageModifier, Double>(ImmutableMap.of(DamageModifier.BASE, damage)), new EnumMap<DamageModifier, Function<? super Double, Double>>(ImmutableMap.of(DamageModifier.BASE, ZERO)));
+        this(damagee, cause, damageSource, new EnumMap<>(ImmutableMap.of(DamageModifier.BASE, damage)), new EnumMap<DamageModifier, Function<? super Double, Double>>(ImmutableMap.of(DamageModifier.BASE, ZERO)));
     }
 
     @Deprecated(since = "1.20.4", forRemoval = true)
@@ -52,7 +52,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
         Preconditions.checkArgument(modifiers.values().stream().allMatch(Objects::nonNull), "Cannot have null modifier values");
         Preconditions.checkArgument(modifiers.keySet().equals(modifierFunctions.keySet()), "Must have a modifier function for each DamageModifier");
         Preconditions.checkArgument(modifierFunctions.values().stream().allMatch(Objects::nonNull), "Cannot have null modifier function");
-        this.originals = new EnumMap<DamageModifier, Double>(modifiers);
+        this.originals = new EnumMap<>(modifiers);
         this.cause = cause;
         this.modifiers = modifiers;
         this.modifierFunctions = modifierFunctions;
@@ -236,9 +236,7 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
      * An enum to specify the types of modifier
      *
      * @deprecated This API is responsible for a large number of implementation
-     * problems and is in general unsustainable to maintain. It is likely to be
-     * removed very soon in a subsequent release. Please see
-     * <a href="https://www.spigotmc.org/threads/194446/">this thread</a> for more information.
+     * problems and is in general unsustainable to maintain.
      */
     @Deprecated(since = "1.12")
     public enum DamageModifier {

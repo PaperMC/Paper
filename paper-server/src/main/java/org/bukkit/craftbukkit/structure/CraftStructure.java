@@ -94,7 +94,7 @@ public class CraftStructure implements Structure {
         WorldGenLevel handle = ((CraftRegionAccessor) regionAccessor).getHandle();
 
         TransformerGeneratorAccess access = new TransformerGeneratorAccess();
-        access.setHandle(handle);
+        access.setDelegate(handle);
         access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(pos), blockTransformers, entityTransformers));
 
         this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, 2);

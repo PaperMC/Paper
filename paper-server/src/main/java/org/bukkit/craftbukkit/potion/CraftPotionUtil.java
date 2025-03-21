@@ -78,8 +78,8 @@ public class CraftPotionUtil {
 
     public static MobEffectInstance fromBukkit(PotionEffect effect) {
         Holder<MobEffect> type = CraftPotionEffectType.bukkitToMinecraftHolder(effect.getType());
-        // Paper - Note: do not copy over the hidden effect, as this method is only used for applying to entities which we do not want to convert over.
-        return new MobEffectInstance(type, effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles(), effect.hasIcon()); // Paper
+        // Note: do not copy over the hidden effect, as this method is only used for applying to entities which we do not want to convert over.
+        return new MobEffectInstance(type, effect.getDuration(), effect.getAmplifier(), effect.isAmbient(), effect.hasParticles(), effect.hasIcon());
     }
 
     public static PotionEffect toBukkit(MobEffectInstance effect) {
@@ -88,7 +88,7 @@ public class CraftPotionUtil {
         int duration = effect.getDuration();
         boolean ambient = effect.isAmbient();
         boolean particles = effect.isVisible();
-        return new PotionEffect(type, duration, amp, ambient, particles, effect.showIcon(), effect.hiddenEffect == null ? null : toBukkit(effect.hiddenEffect)); // Paper
+        return new PotionEffect(type, duration, amp, ambient, particles, effect.showIcon(), effect.hiddenEffect == null ? null : toBukkit(effect.hiddenEffect));
     }
 
     public static boolean equals(Holder<MobEffect> mobEffect, PotionEffectType type) {

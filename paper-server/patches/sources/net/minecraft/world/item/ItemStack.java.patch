@@ -193,7 +193,7 @@
  
              return interactionResult;
          }
-@@ -473,31 +_,70 @@
+@@ -473,31 +_,71 @@
          return this.isDamageableItem() && this.getDamageValue() >= this.getMaxDamage() - 1;
      }
  
@@ -204,6 +204,7 @@
 +        // Paper start - add force boolean overload
 +        this.hurtAndBreak(damage, level, player, onBreak, false);
 +    }
++
 +    public void hurtAndBreak(int damage, ServerLevel level, @Nullable LivingEntity player, Consumer<Item> onBreak, boolean force) { // Paper - Add EntityDamageItemEvent
 +        // Paper end
 +        final int originalDamage = damage; // Paper - Expand PlayerItemDamageEvent
@@ -327,32 +328,35 @@
      @Nullable
      public <T> T set(DataComponentType<T> component, @Nullable T value) {
          return this.components.set(component, value);
-@@ -769,6 +_,25 @@
-         }
+@@ -779,6 +_,28 @@
+         this.getItem().verifyComponentsAfterLoad(this);
      }
  
 +    // Paper start - (this is just a good no conflict location)
 +    public org.bukkit.inventory.ItemStack asBukkitMirror() {
 +        return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this);
 +    }
++
 +    public org.bukkit.inventory.ItemStack asBukkitCopy() {
 +        return org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.copy());
 +    }
++
 +    public static ItemStack fromBukkitCopy(org.bukkit.inventory.ItemStack itemstack) {
 +        return org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(itemstack);
 +    }
-+    private org.bukkit.craftbukkit.inventory.CraftItemStack bukkitStack;
++
++    private @Nullable org.bukkit.craftbukkit.inventory.CraftItemStack bukkitStack;
 +    public org.bukkit.inventory.ItemStack getBukkitStack() {
-+        if (bukkitStack == null || bukkitStack.handle != this) {
-+            bukkitStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this);
++        if (this.bukkitStack == null || this.bukkitStack.handle != this) {
++            this.bukkitStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this);
 +        }
-+        return bukkitStack;
++        return this.bukkitStack;
 +    }
 +    // Paper end
 +
-     public void applyComponents(DataComponentPatch components) {
-         this.components.applyPatch(components);
-         this.getItem().verifyComponentsAfterLoad(this);
+     public Component getHoverName() {
+         Component customName = this.getCustomName();
+         return customName != null ? customName : this.getItemName();
 @@ -1054,6 +_,19 @@
          EnchantmentHelper.forEachModifier(this, equipmentSLot, action);
      }

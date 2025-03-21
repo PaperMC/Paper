@@ -377,7 +377,7 @@
          }
  
 -        this.handlePortal();
-+        if (this instanceof ServerPlayer) this.handlePortal(); // CraftBukkit - // Moved up to postTick
++        if (this instanceof ServerPlayer) this.handlePortal(); // CraftBukkit - Moved up to postTick
          if (this.canSpawnSprintParticle()) {
              this.spawnSprintParticle();
          }
@@ -443,29 +443,27 @@
                  && this.shouldPlayLavaHurtSound()
                  && !this.isSilent()) {
                  serverLevel.playSound(
-@@ -555,7 +_,21 @@
+@@ -555,6 +_,20 @@
      }
  
      public final void igniteForSeconds(float seconds) {
--        this.igniteForTicks(Mth.floor(seconds * 20.0F));
 +        // CraftBukkit start
 +        this.igniteForSeconds(seconds, true);
 +    }
 +
-+    public final void igniteForSeconds(float f, boolean callEvent) {
++    public final void igniteForSeconds(float seconds, boolean callEvent) {
 +        if (callEvent) {
-+            org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.event.entity.EntityCombustEvent(this.getBukkitEntity(), f);
++            org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.event.entity.EntityCombustEvent(this.getBukkitEntity(), seconds);
 +            if (!event.callEvent()) {
 +                return;
 +            }
 +
-+            f = event.getDuration();
++            seconds = event.getDuration();
 +        }
 +        // CraftBukkit end
-+        this.igniteForTicks(Mth.floor(f * 20.0F));
+         this.igniteForTicks(Mth.floor(seconds * 20.0F));
      }
  
-     public void igniteForTicks(int ticks) {
 @@ -579,7 +_,7 @@
      }
  
@@ -1299,7 +1297,7 @@
      public Entity teleport(TeleportTransition teleportTransition) {
 +        // Paper start - Fix item duplication and teleport issues
 +        if ((!this.isAlive() || !this.valid) && (teleportTransition.newLevel() != this.level)) {
-+            LOGGER.warn("Illegal Entity Teleport " + this + " to " + teleportTransition.newLevel() + ":" + teleportTransition.position(), new Throwable());
++            LOGGER.warn("Illegal Entity Teleport {} to {}:{}", this, teleportTransition.newLevel(), teleportTransition.position(), new Throwable());
 +            return null;
 +        }
 +        // Paper end - Fix item duplication and teleport issues
@@ -1336,7 +1334,7 @@
 +                event.callEvent();
 +
 +                // Only change the target if actually needed, since we reset relative flags
-+                if (!event.isCancelled() && event.getTo() != null && (!event.getTo().equals(event.getFrom()) || !event.getAfter().equals(event.getBefore()))) {
++                if (!event.isCancelled() && event.getTo() != null && (!event.getTo().equals(event.getFrom()) || !event.getAfter().equals(event.getBefore()))) { // todo this looks broken
 +                    to = event.getTo().clone();
 +                    velocity = org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getAfter());
 +                    teleportTransition = new TeleportTransition(((org.bukkit.craftbukkit.CraftWorld) to.getWorld()).getHandle(), org.bukkit.craftbukkit.util.CraftLocation.toVec3(to), velocity, to.getYaw(), to.getPitch(), teleportTransition.missingRespawnBlock(), teleportTransition.asPassenger(), Set.of(), teleportTransition.postTeleportTransition(), teleportTransition.cause());
@@ -1350,7 +1348,7 @@
              ServerLevel level = teleportTransition.newLevel();
              boolean flag = level.dimension() != serverLevel.dimension();
              if (!teleportTransition.asPassenger()) {
-@@ -2742,10 +_,19 @@
+@@ -2742,10 +_,15 @@
              profilerFiller.pop();
              return null;
          } else {
@@ -1361,10 +1359,6 @@
 +            // Paper end - Fix item duplication and teleport issues
              entityx.restoreFrom(this);
              this.removeAfterChangingDimensions();
-+            // CraftBukkit start - Forward the CraftEntity to the new entity
-+            //this.getBukkitEntity().setHandle(entity);
-+            //entity.bukkitEntity = this.getBukkitEntity(); // Paper - forward CraftEntity in teleport command; moved to Entity#restoreFrom
-+            // CraftBukkit end
              entityx.teleportSetPosition(PositionMoveRotation.of(teleportTransition), teleportTransition.relatives());
 -            level.addDuringTeleport(entityx);
 +            if (this.inWorld) level.addDuringTeleport(entityx); // CraftBukkit - Don't spawn the new entity if the current entity isn't spawned
@@ -1430,7 +1424,7 @@
          if (fromLevel.dimension() == Level.END && toLevel.dimension() == Level.OVERWORLD) {
              for (Entity entity : this.getPassengers()) {
                  if (entity instanceof ServerPlayer serverPlayer && !serverPlayer.seenCredits) {
-@@ -2940,8 +_,13 @@
+@@ -2940,8 +_,14 @@
          return this.entityData.get(DATA_CUSTOM_NAME_VISIBLE);
      }
  
@@ -1440,6 +1434,7 @@
 +    public final boolean teleportTo(ServerLevel level, double x, double y, double z, Set<Relative> relativeMovements, float yaw, float pitch, boolean setCamera) {
 +        return this.teleportTo(level, x, y, z, relativeMovements, yaw, pitch, setCamera, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.UNKNOWN);
 +    }
++
 +    public boolean teleportTo(ServerLevel level, double x, double y, double z, Set<Relative> relativeMovements, float yaw, float pitch, boolean setCamera, org.bukkit.event.player.PlayerTeleportEvent.TeleportCause cause) {
 +        // CraftBukkit end
 +        Entity entity = this.teleport(new TeleportTransition(level, new Vec3(x, y, z), Vec3.ZERO, yaw, pitch, relativeMovements, TeleportTransition.DO_NOTHING, cause)); // CraftBukkit
@@ -1600,7 +1595,7 @@
      }
  
      public void addDeltaMovement(Vec3 addend) {
-@@ -3488,9 +_,43 @@
+@@ -3488,9 +_,45 @@
          return this.getZ((2.0 * this.random.nextDouble() - 1.0) * scale);
      }
  
@@ -1616,12 +1611,14 @@
 +        } catch (Exception ex) {
 +            entityInfo = "[Entity info unavailable] ";
 +        }
-+        LOGGER.error("New entity position is invalid! Tried to set invalid position ({},{},{}) for entity {} located at {}, entity info: {}", newX, newY, newZ, entity.getClass().getName(), entity.position, entityInfo, new Throwable());
++        LOGGER.error("New entity position is invalid! Tried to set invalid position ({},{},{}) for entity {} located at {}, entity info: {}", newX, newY, newZ, entity.getClass().getName(), entity.position(), entityInfo, new Throwable());
 +        return false;
 +    }
++
      public final void setPosRaw(double x, double y, double z) {
 +        this.setPosRaw(x, y, z, false);
 +    }
++
 +    public final void setPosRaw(double x, double y, double z, boolean forceBoundingBoxUpdate) {
 +        if (!checkPosition(this, x, y, z)) {
 +            return;
@@ -1630,7 +1627,7 @@
 +        // Paper start - Fix MC-4
 +        if (this instanceof ItemEntity) {
 +            if (io.papermc.paper.configuration.GlobalConfiguration.get().misc.fixEntityPositionDesync) {
-+                // encode/decode from ClientboundMoveEntityPacket
++                // encode/decode from VecDeltaCodec todo computation changed?
 +                x = Mth.lfloor(x * 4096.0) * (1 / 4096.0);
 +                y = Mth.lfloor(y * 4096.0) * (1 / 4096.0);
 +                z = Mth.lfloor(z * 4096.0) * (1 / 4096.0);
@@ -1721,7 +1718,7 @@
 +    }
 +
 +    public boolean isTicking() {
-+        return ((ServerLevel) this.level).isPositionEntityTicking(this.blockPosition());
++        return ((ServerLevel) this.level()).isPositionEntityTicking(this.blockPosition());
 +    }
 +    // Paper end - Expose entity id counter
  }

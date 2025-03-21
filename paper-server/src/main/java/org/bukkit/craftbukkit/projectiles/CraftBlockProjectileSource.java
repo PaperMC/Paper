@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.entity.AbstractArrow;
 import org.bukkit.entity.Egg;
 import org.bukkit.entity.Fireball;
@@ -36,7 +37,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
 
     @Override
     public Block getBlock() {
-        return this.dispenserBlock.getLevel().getWorld().getBlockAt(this.dispenserBlock.getBlockPos().getX(), this.dispenserBlock.getBlockPos().getY(), this.dispenserBlock.getBlockPos().getZ());
+        return CraftBlock.at(this.dispenserBlock.getLevel(), this.dispenserBlock.getBlockPos());
     }
 
     @Override
@@ -46,18 +47,16 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
 
     @Override
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity) {
-        // Paper start - launchProjectile consumer
         return this.launchProjectile(projectile, velocity, null);
     }
 
     @Override
     public <T extends Projectile> T launchProjectile(Class<? extends T> projectile, Vector velocity, Consumer<? super T> function) {
-        // Paper end - launchProjectile consumer
         Preconditions.checkArgument(this.getBlock().getType() == Material.DISPENSER, "Block is no longer dispenser");
 
-        // Copied from BlockDispenser.dispense()
+        // Copied from DispenserBlock#dispenseFrom
         BlockSource blockSource = new BlockSource((ServerLevel) this.dispenserBlock.getLevel(), this.dispenserBlock.getBlockPos(), this.dispenserBlock.getBlockState(), this.dispenserBlock);
-        // Copied from DispenseBehaviorProjectile
+        // Copied from ProjectileDispenseBehavior
         Direction direction = blockSource.state().getValue(DispenserBlock.FACING);
         net.minecraft.world.level.Level world = this.dispenserBlock.getLevel();
         net.minecraft.world.item.Item item = null;
@@ -79,20 +78,20 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
                 item = Items.TIPPED_ARROW;
             } else if (SpectralArrow.class.isAssignableFrom(projectile)) {
                 item = Items.SPECTRAL_ARROW;
-            } else if (org.bukkit.entity.Arrow.class.isAssignableFrom(projectile)) { // Paper - more projectile API - disallow trident
+            } else if (org.bukkit.entity.Arrow.class.isAssignableFrom(projectile)) { // disallow trident
                 item = Items.ARROW;
             }
         } else if (Fireball.class.isAssignableFrom(projectile)) {
-            if (org.bukkit.entity.WindCharge.class.isAssignableFrom(projectile)) { // Paper - more projectile API - only allow wind charge not breeze wind charge
+            if (org.bukkit.entity.WindCharge.class.isAssignableFrom(projectile)) {
                 item = Items.WIND_CHARGE;
-            } else if (org.bukkit.entity.SmallFireball.class.isAssignableFrom(projectile)) { // Paper - more projectile API - only allow firing fire charges.
+            } else if (org.bukkit.entity.SmallFireball.class.isAssignableFrom(projectile)) { // only allow firing fire charges
                 item = Items.FIRE_CHARGE;
             }
         } else if (Firework.class.isAssignableFrom(projectile)) {
             item = Items.FIREWORK_ROCKET;
         }
 
-        Preconditions.checkArgument(item instanceof ProjectileItem, "Projectile '%s' not supported", projectile.getSimpleName()); // Paper - more projectile API - include simple name in exception
+        Preconditions.checkArgument(item instanceof ProjectileItem, "Projectile '%s' not supported", projectile.getSimpleName());
 
         ItemStack itemstack = new ItemStack(item);
         ProjectileItem projectileItem = (ProjectileItem) item;
@@ -104,7 +103,7 @@ public class CraftBlockProjectileSource implements BlockProjectileSource {
         projectileItem.shoot(launch, direction.getStepX(), direction.getStepY(), direction.getStepZ(), dispenseConfig.power(), dispenseConfig.uncertainty());
 
         if (velocity != null) {
-            ((T) launch.getBukkitEntity()).setVelocity(velocity);
+            launch.getBukkitEntity().setVelocity(velocity);
         }
         if (function != null) {
             function.accept((T) launch.getBukkitEntity());

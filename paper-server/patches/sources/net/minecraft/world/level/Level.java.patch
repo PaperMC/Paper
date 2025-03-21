@@ -38,11 +38,11 @@
      protected final NeighborUpdater neighborUpdater;
      private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
      private boolean tickingBlockEntities;
-@@ -119,6 +_,58 @@
+@@ -119,6 +_,57 @@
      private final DamageSources damageSources;
      private long subTickCount;
  
-+    // CraftBukkit start Added the following
++    // CraftBukkit start
 +    private final CraftWorld world;
 +    public boolean pvpMode;
 +    public org.bukkit.generator.ChunkGenerator generator;
@@ -63,7 +63,7 @@
 +    }
 +    // Paper end - add paper world config
 +
-+    public static BlockPos lastPhysicsProblem; // Spigot
++    public static @Nullable BlockPos lastPhysicsProblem; // Spigot
 +    private int tileTickPosition;
 +    public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
 +    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
@@ -91,13 +91,12 @@
 +    }
 +    // Paper end
 +
-+
 +    public abstract ResourceKey<LevelStem> getTypeKey();
 +
      protected Level(
          WritableLevelData levelData,
          ResourceKey<Level> dimension,
-@@ -127,8 +_,26 @@
+@@ -127,8 +_,24 @@
          boolean isClientSide,
          boolean isDebug,
          long biomeZoomSeed,
@@ -114,13 +113,11 @@
 +        this.generator = gen;
 +        this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
 +
-+        // CraftBukkit Ticks things
 +        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
 +            if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
-+                this.ticksPerSpawnCategory.put(spawnCategory, this.getTicksPerSpawn(spawnCategory)); // Paper
++                this.ticksPerSpawnCategory.put(spawnCategory, this.getTicksPerSpawn(spawnCategory));
 +            }
 +        }
-+
 +        // CraftBukkit end
          this.levelData = levelData;
          this.dimensionTypeRegistration = dimensionTypeRegistration;
@@ -403,7 +400,7 @@
 +                    try {
 +                        this.notifyAndUpdatePhysics(pos, chunkAt, blockState, state, blockState1, flags, recursionLeft);
 +                    } catch (StackOverflowError ex) {
-+                        Level.lastPhysicsProblem = new BlockPos(pos);
++                        Level.lastPhysicsProblem = pos.immutable();
 +                    }
 +                    // Spigot end
 +                }

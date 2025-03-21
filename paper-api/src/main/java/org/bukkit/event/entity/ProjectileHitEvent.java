@@ -19,22 +19,22 @@ public class ProjectileHitEvent extends EntityEvent implements Cancellable {
     private final BlockFace hitFace;
     private boolean cancel = false;
 
-    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated // Paper
     public ProjectileHitEvent(@NotNull final Projectile projectile) {
         this(projectile, null, null, null); // Paper
     }
 
-    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated // Paper
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity) {
         this(projectile, hitEntity, null, null); // Paper
     }
 
-    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated // Paper
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Block hitBlock) {
         this(projectile, null, hitBlock, null); // Paper
     }
 
-    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated // Paper
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity, @Nullable Block hitBlock) {
         this(projectile, hitEntity, hitBlock, null);
     }

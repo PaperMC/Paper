@@ -35,10 +35,7 @@ import org.bukkit.material.MaterialData;
 /**
  * This class may seem unnecessarily slow and complicated/repetitive however it
  * is able to handle a lot more edge cases and invertible transformations (many
- * of which are not immediately obvious) than any other alternative. If you do
- * make changes to this class please make sure to contribute them back
- * https://hub.spigotmc.org/stash/projects/SPIGOT/repos/craftbukkit/browse so
- * that all may benefit.
+ * of which are not immediately obvious) than any other alternative.
  *
  * @deprecated legacy use only
  */
@@ -56,7 +53,6 @@ public final class CraftLegacy {
     private static final Map<Block, MaterialData> blockToMaterial = new HashMap<>(1024);
 
     private CraftLegacy() {
-        //
     }
 
     public static Material toLegacy(Material material) {
@@ -443,9 +439,5 @@ public final class CraftLegacy {
         // From Material#isBlock before the rewrite to ItemType / BlockType
         // Git hash: 42f6cdf4c5dcdd52a27543403dcd17fb60311621
         return 0 <= material.getId() && material.getId() < 256;
-    }
-
-    public static void main(String[] args) {
-        System.err.println("");
     }
 }

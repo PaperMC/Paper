@@ -23,7 +23,6 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
 
     // Paper start - expose blockface
     @Deprecated(forRemoval = true)
-    @io.papermc.paper.annotation.DoNotUse
     public BlockDamageEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final ItemStack itemInHand, final boolean instaBreak) {
         this(player, block, null, itemInHand, instaBreak); // Some plugin do bad things...
     }

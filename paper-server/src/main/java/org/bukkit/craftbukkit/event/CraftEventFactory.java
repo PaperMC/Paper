@@ -2097,19 +2097,17 @@ public class CraftEventFactory {
     @Nullable
     public static ItemStack handleBlockDispenseEvent(net.minecraft.core.dispenser.BlockSource pointer, BlockPos to, ItemStack itemStack, net.minecraft.core.dispenser.DispenseItemBehavior instance) {
         org.bukkit.block.Block bukkitBlock = CraftBlock.at(pointer.level(), pointer.pos());
-        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemStack.copyWithCount(1));
+        CraftItemStack craftItem = CraftItemStack.asCraftMirror(itemStack.isDamageableItem() ? itemStack : itemStack.copyWithCount(1));
 
         org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(bukkitBlock, craftItem.clone(), CraftVector.toBukkit(to));
-        if (!net.minecraft.world.level.block.DispenserBlock.eventFired) {
-            if (!event.callEvent()) {
-                return itemStack;
-            }
+        if (!event.callEvent()) {
+            return itemStack;
         }
 
         if (!event.getItem().equals(craftItem)) {
             // Chain to handler for new item
             ItemStack eventStack = CraftItemStack.asNMSCopy(event.getItem());
-            net.minecraft.core.dispenser.DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.getDispenseBehavior(pointer, eventStack); // Paper - Fix NPE with equippable and items without behavior
+            net.minecraft.core.dispenser.DispenseItemBehavior itemBehavior = net.minecraft.world.level.block.DispenserBlock.getDispenseBehavior(pointer, eventStack);
             if (itemBehavior != net.minecraft.core.dispenser.DispenseItemBehavior.NOOP && itemBehavior != instance) {
                 itemBehavior.dispense(pointer, eventStack);
                 return itemStack;

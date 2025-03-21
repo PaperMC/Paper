@@ -1686,7 +1686,7 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
      * @deprecated only for backwards compatibility, use {@link Registry#get(NamespacedKey)} instead.
      */
     @NotNull
-    @Deprecated(since = "1.21.3")
+    @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Sound valueOf(@NotNull String name) {
         Sound sound = Bukkit.getUnsafe().get(RegistryKey.SOUND_EVENT, NamespacedKey.fromString(name.toLowerCase(Locale.ROOT)));
         if (sound != null) {
@@ -1720,7 +1720,7 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
      * @deprecated use {@link Registry#iterator()}.
      */
     @NotNull
-    @Deprecated(since = "1.21.3")
+    @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
     static Sound[] values() {
         return Lists.newArrayList(Registry.SOUNDS).toArray(new Sound[0]);
     }

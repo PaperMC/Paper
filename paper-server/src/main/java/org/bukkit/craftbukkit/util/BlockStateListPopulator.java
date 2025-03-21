@@ -60,7 +60,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
     }
 
     @Override
-    public boolean setBlock(BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags) {
+    public boolean setBlock(BlockPos pos, net.minecraft.world.level.block.state.BlockState state, int flags, int recursionLeft) {
         pos = pos.immutable();
         // remove first to keep insertion order
         this.blocks.remove(pos);
@@ -115,23 +115,19 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
         }
     }
 
-    public List<CraftBlockState> getSnapshotList() {
+    public List<CraftBlockState> getSnapshotBlocks() {
         return new ArrayList<>(this.blocks.values());
-    }
-
-    public LevelAccessor getWorld() {
-        return this.world;
     }
 
     // For tree generation
     @Override
     public int getMinY() {
-        return this.getWorld().getMinY();
+        return this.world.getMinY();
     }
 
     @Override
     public int getHeight() {
-        return this.getWorld().getHeight();
+        return this.world.getHeight();
     }
 
     @Override
@@ -141,7 +137,7 @@ public class BlockStateListPopulator extends DummyGeneratorAccess {
 
     @Override
     public boolean isFluidAtPosition(BlockPos pos, Predicate<FluidState> state) {
-        return state.test(this.getFluidState(pos)); // Paper - fix
+        return state.test(this.getFluidState(pos));
     }
 
     @Override
