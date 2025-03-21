@@ -174,7 +174,6 @@ import org.bukkit.craftbukkit.map.CraftMapView;
 import org.bukkit.craftbukkit.map.RenderData;
 import org.bukkit.craftbukkit.potion.CraftPotionEffectType;
 import org.bukkit.craftbukkit.potion.CraftPotionUtil;
-import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.craftbukkit.scoreboard.CraftScoreboard;
 import org.bukkit.craftbukkit.util.CraftChatMessage;
 import org.bukkit.craftbukkit.util.CraftLocation;
@@ -189,7 +188,6 @@ import org.bukkit.event.player.PlayerExpCooldownChangeEvent;
 import org.bukkit.event.player.PlayerHideEntityEvent;
 import org.bukkit.event.player.PlayerRegisterChannelEvent;
 import org.bukkit.event.player.PlayerShowEntityEvent;
-import org.bukkit.event.player.PlayerSpawnChangeEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerUnregisterChannelEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -202,7 +200,6 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.profile.PlayerProfile;
 import org.bukkit.scoreboard.Scoreboard;
 import org.jetbrains.annotations.NotNull;
 
@@ -1566,16 +1563,16 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     @Override
-    public Location getRespawnLocation() {
+    public Location getRespawnLocation(boolean load) {
         ServerLevel world = this.getHandle().server.getLevel(this.getHandle().getRespawnDimension());
-        BlockPos bed = this.getHandle().getRespawnPosition();
+        BlockPos respawnPos = this.getHandle().getRespawnPosition();
 
-        if (world != null && bed != null) {
-            Optional<ServerPlayer.RespawnPosAngle> spawnLoc = ServerPlayer.findRespawnAndUseSpawnBlock(world, bed, this.getHandle().getRespawnAngle(), this.getHandle().isRespawnForced(), true);
-            if (spawnLoc.isPresent()) {
-                ServerPlayer.RespawnPosAngle vec = spawnLoc.get();
-                return CraftLocation.toBukkit(vec.position(), world.getWorld(), vec.yaw(), 0);
+        if (world != null && respawnPos != null) {
+            if (!load) {
+                return CraftLocation.toBukkit(respawnPos, world.getWorld(), this.getHandle().getRespawnAngle(), 0);
             }
+            return ServerPlayer.findRespawnAndUseSpawnBlock(world, respawnPos, this.getHandle().getRespawnAngle(), this.getHandle().isRespawnForced(), false)
+                .map(resolvedPos -> CraftLocation.toBukkit(resolvedPos.position(), world.getWorld(), resolvedPos.yaw(), 0)).orElse(null);
         }
         return null;
     }
