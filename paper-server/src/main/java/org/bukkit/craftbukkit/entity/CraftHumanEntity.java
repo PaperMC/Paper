@@ -489,7 +489,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
             if (container instanceof HorseInventoryMenu horse) {
                 player.connection.send(new ClientboundHorseScreenOpenPacket(horse.containerId, horse.horse.getInventoryColumns(), horse.horse.getId()));
             } else {
-                player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
+                player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title)));
             }
         }
         player.containerMenu = container;
