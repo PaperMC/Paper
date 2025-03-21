@@ -64,7 +64,7 @@ public final class ItemComponentSanitizer {
     }
 
     public static int sanitizeCount(final ItemObfuscationSession obfuscationSession, final ItemStack itemStack, final int count) {
-        if (obfuscationSession.obfuscationLevel() != ItemObfuscationSession.ObfuscationLevel.ALL) return count; // Ignore if we are not obfuscating
+        if (obfuscationSession.obfuscationLevel() != ItemObfuscationSession.ObfuscationLevel.ALL || obfuscationSession.disableOverride) return count; // Ignore if we are not obfuscating
 
         if (GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(itemStack).sanitizeCount()) {
             return 1;
@@ -79,7 +79,7 @@ public final class ItemComponentSanitizer {
         final ItemStack targetItemstack = obfuscationSession.context().itemStack();
 
         // Only drop if configured to do so.
-        return GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE && (obfuscationSession.obfuscationAssertion == null || obfuscationSession.obfuscationAssertion.test(key));
+        return GlobalConfiguration.get().anticheat.obfuscation.items.binding.getAssetObfuscation(targetItemstack).patchStrategy().get(key) == ItemObfuscationBinding.BoundObfuscationConfiguration.MutationType.Drop.INSTANCE && !obfuscationSession.disableOverride;
     }
 
     public static Optional<?> override(final ItemObfuscationSession obfuscationSession, final DataComponentType<?> key, final Optional<?> value) {
@@ -92,8 +92,7 @@ public final class ItemComponentSanitizer {
 
         final ItemStack targetItemstack = obfuscationSession.context().itemStack();
 
-        // used to let through certain DataComponents e.g. Custom Name for ItemFrames
-        if ((obfuscationSession.obfuscationAssertion != null && !obfuscationSession.obfuscationAssertion.test(key))) {
+        if (obfuscationSession.disableOverride) {
             return value;
         }
 

@@ -1,9 +1,7 @@
 package io.papermc.paper.util;
 
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import com.google.common.base.Preconditions;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.world.item.ItemStack;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -73,8 +71,7 @@ public class ItemObfuscationSession implements SafeAutoClosable {
 
     private final ObfuscationContext root = new ObfuscationContext(this, null, null, ObfuscationLevel.NONE);
     private ObfuscationContext context = root;
-    @Nullable
-    public Predicate<DataComponentType<?>> obfuscationAssertion;
+    public boolean disableOverride;
 
     public void switchContext(final ObfuscationContext context) {
         this.context = context;
