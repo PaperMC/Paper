@@ -25,29 +25,7 @@ import org.jetbrains.annotations.NotNull;
 
     /**
      * Create a key in the plugin's namespace.
-     * <p>
-     * Namespaces may only contain lowercase alphanumeric characters, periods,
-     * underscores, and hyphens.
-     * <p>
-     * Keys may only contain lowercase alphanumeric characters, periods,
-     * underscores, hyphens, and forward slashes.
-     *
-     * @param plugin the plugin to use for the namespace
-     * @param key the key to create
-     */
-    public NamespacedTag(@NotNull Plugin plugin, @NotNull String key) {
-        Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
-        Preconditions.checkArgument(key != null, "Key cannot be null");
-
-        this.namespace = plugin.getName().toLowerCase(Locale.ROOT);
-        this.key = key.toLowerCase().toLowerCase(Locale.ROOT);
-
-        // Check validity after normalization
-        Preconditions.checkArgument(VALID_NAMESPACE.matcher(this.namespace).matches(), "Invalid namespace. Must be [a-z0-9._-]: %s", this.namespace);
-        Preconditions.checkArgument(VALID_KEY.matcher(this.key).matches(), "Invalid key. Must be [a-z0-9/._-]: %s", this.key);
-
-        String string = toString();
-        Preconditions.checkArgument(string.length() < 256, "NamespacedTag must be less than 256 characters (%s)", string);
+     * <pPreconditions.checkArgument(string.length() < 256, "NamespacedTag must be less than 256 characters (%s)", string);
     }
 
     @NotNull
