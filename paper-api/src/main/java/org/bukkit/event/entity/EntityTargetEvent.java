@@ -105,7 +105,7 @@ public class EntityTargetEvent extends EntityEvent implements Cancellable {
          *
          * @deprecated obsoleted by {@link #TARGET_ATTACKED_NEARBY_ENTITY}
          */
-        @Deprecated(since = "1.13")
+        @Deprecated(since = "1.13", forRemoval = true)
         PIG_ZOMBIE_TARGET,
         /**
          * When the target is forgotten for whatever reason.

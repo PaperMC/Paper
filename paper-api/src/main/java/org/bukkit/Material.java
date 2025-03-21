@@ -3815,940 +3815,940 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     POTTED_OPEN_EYEBLOSSOM(24999),
     POTTED_CLOSED_EYEBLOSSOM(16694),
     // ----- Legacy Separator -----
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_AIR(0, 0),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STONE(1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GRASS(2),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIRT(3),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COBBLESTONE(4),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD(5, org.bukkit.material.Wood.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SAPLING(6, org.bukkit.material.Sapling.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BEDROCK(7),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WATER(8, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STATIONARY_WATER(9, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LAVA(10, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STATIONARY_LAVA(11, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SAND(12),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GRAVEL(13),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_ORE(14),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_ORE(15),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COAL_ORE(16),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LOG(17, org.bukkit.material.Tree.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LEAVES(18, org.bukkit.material.Leaves.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SPONGE(19),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GLASS(20),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LAPIS_ORE(21),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LAPIS_BLOCK(22),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DISPENSER(23, org.bukkit.material.Dispenser.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SANDSTONE(24, org.bukkit.material.Sandstone.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NOTE_BLOCK(25),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BED_BLOCK(26, org.bukkit.material.Bed.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_POWERED_RAIL(27, org.bukkit.material.PoweredRail.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DETECTOR_RAIL(28, org.bukkit.material.DetectorRail.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PISTON_STICKY_BASE(29, org.bukkit.material.PistonBaseMaterial.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WEB(30),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LONG_GRASS(31, org.bukkit.material.LongGrass.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DEAD_BUSH(32),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PISTON_BASE(33, org.bukkit.material.PistonBaseMaterial.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PISTON_EXTENSION(34, org.bukkit.material.PistonExtensionMaterial.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOL(35, org.bukkit.material.Wool.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PISTON_MOVING_PIECE(36),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_YELLOW_FLOWER(37),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RED_ROSE(38),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BROWN_MUSHROOM(39),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RED_MUSHROOM(40),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_BLOCK(41),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_BLOCK(42),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DOUBLE_STEP(43, org.bukkit.material.Step.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STEP(44, org.bukkit.material.Step.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BRICK(45),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_TNT(46),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOOKSHELF(47),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MOSSY_COBBLESTONE(48),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_OBSIDIAN(49),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_TORCH(50, org.bukkit.material.Torch.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FIRE(51),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MOB_SPAWNER(52),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD_STAIRS(53, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CHEST(54, org.bukkit.material.Chest.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_REDSTONE_WIRE(55, org.bukkit.material.RedstoneWire.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_ORE(56),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_BLOCK(57),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WORKBENCH(58),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CROPS(59, org.bukkit.material.Crops.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SOIL(60, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FURNACE(61, org.bukkit.material.Furnace.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BURNING_FURNACE(62, org.bukkit.material.Furnace.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SIGN_POST(63, 64, org.bukkit.material.Sign.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOODEN_DOOR(64, org.bukkit.material.Door.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LADDER(65, org.bukkit.material.Ladder.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RAILS(66, org.bukkit.material.Rails.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COBBLESTONE_STAIRS(67, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WALL_SIGN(68, 64, org.bukkit.material.Sign.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LEVER(69, org.bukkit.material.Lever.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STONE_PLATE(70, org.bukkit.material.PressurePlate.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_DOOR_BLOCK(71, org.bukkit.material.Door.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD_PLATE(72, org.bukkit.material.PressurePlate.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_REDSTONE_ORE(73),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GLOWING_REDSTONE_ORE(74),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_REDSTONE_TORCH_OFF(75, org.bukkit.material.RedstoneTorch.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_REDSTONE_TORCH_ON(76, org.bukkit.material.RedstoneTorch.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STONE_BUTTON(77, org.bukkit.material.Button.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SNOW(78),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ICE(79),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SNOW_BLOCK(80),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CACTUS(81, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CLAY(82),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SUGAR_CANE_BLOCK(83, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_JUKEBOX(84),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FENCE(85),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PUMPKIN(86, org.bukkit.material.Pumpkin.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NETHERRACK(87),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SOUL_SAND(88),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GLOWSTONE(89),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PORTAL(90),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_JACK_O_LANTERN(91, org.bukkit.material.Pumpkin.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CAKE_BLOCK(92, 64, org.bukkit.material.Cake.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIODE_BLOCK_OFF(93, org.bukkit.material.Diode.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIODE_BLOCK_ON(94, org.bukkit.material.Diode.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STAINED_GLASS(95),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_TRAP_DOOR(96, org.bukkit.material.TrapDoor.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MONSTER_EGGS(97, org.bukkit.material.MonsterEggs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SMOOTH_BRICK(98, org.bukkit.material.SmoothBrick.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_HUGE_MUSHROOM_1(99, org.bukkit.material.Mushroom.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_HUGE_MUSHROOM_2(100, org.bukkit.material.Mushroom.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_FENCE(101),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_THIN_GLASS(102),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MELON_BLOCK(103),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PUMPKIN_STEM(104, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MELON_STEM(105, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_VINE(106, org.bukkit.material.Vine.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FENCE_GATE(107, org.bukkit.material.Gate.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BRICK_STAIRS(108, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SMOOTH_STAIRS(109, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MYCEL(110),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WATER_LILY(111),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NETHER_BRICK(112),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NETHER_FENCE(113),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NETHER_BRICK_STAIRS(114, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NETHER_WARTS(115, org.bukkit.material.NetherWarts.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ENCHANTMENT_TABLE(116),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BREWING_STAND(117, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CAULDRON(118, org.bukkit.material.Cauldron.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ENDER_PORTAL(119),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ENDER_PORTAL_FRAME(120),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ENDER_STONE(121),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DRAGON_EGG(122),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_REDSTONE_LAMP_OFF(123),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_REDSTONE_LAMP_ON(124),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD_DOUBLE_STEP(125, org.bukkit.material.Wood.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD_STEP(126, org.bukkit.material.WoodenStep.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COCOA(127, org.bukkit.material.CocoaPlant.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SANDSTONE_STAIRS(128, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_EMERALD_ORE(129),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ENDER_CHEST(130, org.bukkit.material.EnderChest.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_TRIPWIRE_HOOK(131, org.bukkit.material.TripwireHook.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_TRIPWIRE(132, org.bukkit.material.Tripwire.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_EMERALD_BLOCK(133),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SPRUCE_WOOD_STAIRS(134, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BIRCH_WOOD_STAIRS(135, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_JUNGLE_WOOD_STAIRS(136, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COMMAND(137, org.bukkit.material.Command.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BEACON(138),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COBBLE_WALL(139),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FLOWER_POT(140, org.bukkit.material.FlowerPot.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CARROT(141, org.bukkit.material.Crops.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_POTATO(142, org.bukkit.material.Crops.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD_BUTTON(143, org.bukkit.material.Button.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SKULL(144, org.bukkit.material.Skull.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ANVIL(145),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_TRAPPED_CHEST(146, org.bukkit.material.Chest.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_PLATE(147),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_PLATE(148),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_REDSTONE_COMPARATOR_OFF(149, org.bukkit.material.Comparator.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_REDSTONE_COMPARATOR_ON(150, org.bukkit.material.Comparator.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DAYLIGHT_DETECTOR(151),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_REDSTONE_BLOCK(152),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_QUARTZ_ORE(153),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_HOPPER(154, org.bukkit.material.Hopper.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_QUARTZ_BLOCK(155),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_QUARTZ_STAIRS(156, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ACTIVATOR_RAIL(157, org.bukkit.material.PoweredRail.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DROPPER(158, org.bukkit.material.Dispenser.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STAINED_CLAY(159),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STAINED_GLASS_PANE(160),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LEAVES_2(161, org.bukkit.material.Leaves.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LOG_2(162, org.bukkit.material.Tree.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ACACIA_STAIRS(163, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DARK_OAK_STAIRS(164, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SLIME_BLOCK(165),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BARRIER(166),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_TRAPDOOR(167, org.bukkit.material.TrapDoor.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PRISMARINE(168),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SEA_LANTERN(169),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_HAY_BLOCK(170),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CARPET(171),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_HARD_CLAY(172),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COAL_BLOCK(173),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PACKED_ICE(174),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DOUBLE_PLANT(175),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STANDING_BANNER(176, org.bukkit.material.Banner.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WALL_BANNER(177, org.bukkit.material.Banner.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DAYLIGHT_DETECTOR_INVERTED(178),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RED_SANDSTONE(179),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RED_SANDSTONE_STAIRS(180, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DOUBLE_STONE_SLAB2(181),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STONE_SLAB2(182),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SPRUCE_FENCE_GATE(183, org.bukkit.material.Gate.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BIRCH_FENCE_GATE(184, org.bukkit.material.Gate.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_JUNGLE_FENCE_GATE(185, org.bukkit.material.Gate.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DARK_OAK_FENCE_GATE(186, org.bukkit.material.Gate.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ACACIA_FENCE_GATE(187, org.bukkit.material.Gate.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SPRUCE_FENCE(188),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BIRCH_FENCE(189),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_JUNGLE_FENCE(190),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DARK_OAK_FENCE(191),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ACACIA_FENCE(192),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SPRUCE_DOOR(193, org.bukkit.material.Door.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BIRCH_DOOR(194, org.bukkit.material.Door.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_JUNGLE_DOOR(195, org.bukkit.material.Door.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ACACIA_DOOR(196, org.bukkit.material.Door.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DARK_OAK_DOOR(197, org.bukkit.material.Door.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_END_ROD(198),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CHORUS_PLANT(199),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CHORUS_FLOWER(200),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PURPUR_BLOCK(201),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PURPUR_PILLAR(202),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PURPUR_STAIRS(203, org.bukkit.material.Stairs.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PURPUR_DOUBLE_SLAB(204),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PURPUR_SLAB(205),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_END_BRICKS(206),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BEETROOT_BLOCK(207, org.bukkit.material.Crops.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GRASS_PATH(208),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_END_GATEWAY(209),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COMMAND_REPEATING(210, org.bukkit.material.Command.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COMMAND_CHAIN(211, org.bukkit.material.Command.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FROSTED_ICE(212),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MAGMA(213),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NETHER_WART_BLOCK(214),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RED_NETHER_BRICK(215),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BONE_BLOCK(216),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STRUCTURE_VOID(217),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_OBSERVER(218, org.bukkit.material.Observer.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WHITE_SHULKER_BOX(219, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ORANGE_SHULKER_BOX(220, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MAGENTA_SHULKER_BOX(221, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LIGHT_BLUE_SHULKER_BOX(222, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_YELLOW_SHULKER_BOX(223, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LIME_SHULKER_BOX(224, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PINK_SHULKER_BOX(225, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GRAY_SHULKER_BOX(226, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SILVER_SHULKER_BOX(227, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CYAN_SHULKER_BOX(228, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PURPLE_SHULKER_BOX(229, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BLUE_SHULKER_BOX(230, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BROWN_SHULKER_BOX(231, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GREEN_SHULKER_BOX(232, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RED_SHULKER_BOX(233, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BLACK_SHULKER_BOX(234, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WHITE_GLAZED_TERRACOTTA(235),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ORANGE_GLAZED_TERRACOTTA(236),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MAGENTA_GLAZED_TERRACOTTA(237),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LIGHT_BLUE_GLAZED_TERRACOTTA(238),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_YELLOW_GLAZED_TERRACOTTA(239),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LIME_GLAZED_TERRACOTTA(240),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PINK_GLAZED_TERRACOTTA(241),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GRAY_GLAZED_TERRACOTTA(242),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SILVER_GLAZED_TERRACOTTA(243),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CYAN_GLAZED_TERRACOTTA(244),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PURPLE_GLAZED_TERRACOTTA(245),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BLUE_GLAZED_TERRACOTTA(246),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BROWN_GLAZED_TERRACOTTA(247),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GREEN_GLAZED_TERRACOTTA(248),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RED_GLAZED_TERRACOTTA(249),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BLACK_GLAZED_TERRACOTTA(250),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CONCRETE(251),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CONCRETE_POWDER(252),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STRUCTURE_BLOCK(255),
     // ----- Item Separator -----
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_SPADE(256, 1, 250),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_PICKAXE(257, 1, 250),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_AXE(258, 1, 250),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FLINT_AND_STEEL(259, 1, 64),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_APPLE(260),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOW(261, 1, 384),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ARROW(262),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COAL(263, org.bukkit.material.Coal.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND(264),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_INGOT(265),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_INGOT(266),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_SWORD(267, 1, 250),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD_SWORD(268, 1, 59),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD_SPADE(269, 1, 59),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD_PICKAXE(270, 1, 59),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD_AXE(271, 1, 59),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STONE_SWORD(272, 1, 131),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STONE_SPADE(273, 1, 131),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STONE_PICKAXE(274, 1, 131),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STONE_AXE(275, 1, 131),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_SWORD(276, 1, 1561),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_SPADE(277, 1, 1561),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_PICKAXE(278, 1, 1561),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_AXE(279, 1, 1561),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STICK(280),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOWL(281),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MUSHROOM_SOUP(282, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_SWORD(283, 1, 32),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_SPADE(284, 1, 32),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_PICKAXE(285, 1, 32),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_AXE(286, 1, 32),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STRING(287),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FEATHER(288),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SULPHUR(289),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD_HOE(290, 1, 59),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STONE_HOE(291, 1, 131),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_HOE(292, 1, 250),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_HOE(293, 1, 1561),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_HOE(294, 1, 32),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SEEDS(295),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WHEAT(296),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BREAD(297),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LEATHER_HELMET(298, 1, 55),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LEATHER_CHESTPLATE(299, 1, 80),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LEATHER_LEGGINGS(300, 1, 75),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LEATHER_BOOTS(301, 1, 65),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CHAINMAIL_HELMET(302, 1, 165),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CHAINMAIL_CHESTPLATE(303, 1, 240),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CHAINMAIL_LEGGINGS(304, 1, 225),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CHAINMAIL_BOOTS(305, 1, 195),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_HELMET(306, 1, 165),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_CHESTPLATE(307, 1, 240),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_LEGGINGS(308, 1, 225),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_BOOTS(309, 1, 195),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_HELMET(310, 1, 363),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_CHESTPLATE(311, 1, 528),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_LEGGINGS(312, 1, 495),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_BOOTS(313, 1, 429),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_HELMET(314, 1, 77),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_CHESTPLATE(315, 1, 112),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_LEGGINGS(316, 1, 105),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_BOOTS(317, 1, 91),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FLINT(318),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PORK(319),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GRILLED_PORK(320),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PAINTING(321),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLDEN_APPLE(322),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SIGN(323, 16),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WOOD_DOOR(324, 64),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BUCKET(325, 16),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WATER_BUCKET(326, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LAVA_BUCKET(327, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MINECART(328, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SADDLE(329, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_DOOR(330, 64),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_REDSTONE(331),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SNOW_BALL(332, 16),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOAT(333, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LEATHER(334),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MILK_BUCKET(335, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CLAY_BRICK(336),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CLAY_BALL(337),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SUGAR_CANE(338),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PAPER(339),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOOK(340),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SLIME_BALL(341),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STORAGE_MINECART(342, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_POWERED_MINECART(343, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_EGG(344, 16),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COMPASS(345),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FISHING_ROD(346, 1, 64),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WATCH(347),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GLOWSTONE_DUST(348),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RAW_FISH(349),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COOKED_FISH(350),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_INK_SACK(351, org.bukkit.material.Dye.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BONE(352),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SUGAR(353),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CAKE(354, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BED(355, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIODE(356),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COOKIE(357),
     /**
      * @see org.bukkit.map.MapView
      */
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MAP(358, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SHEARS(359, 1, 238),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MELON(360),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PUMPKIN_SEEDS(361),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MELON_SEEDS(362),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RAW_BEEF(363),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COOKED_BEEF(364),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RAW_CHICKEN(365),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COOKED_CHICKEN(366),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ROTTEN_FLESH(367),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ENDER_PEARL(368, 16),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BLAZE_ROD(369),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GHAST_TEAR(370),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_NUGGET(371),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NETHER_STALK(372),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_POTION(373, 1, org.bukkit.material.MaterialData.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GLASS_BOTTLE(374),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SPIDER_EYE(375),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FERMENTED_SPIDER_EYE(376),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BLAZE_POWDER(377),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MAGMA_CREAM(378),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BREWING_STAND_ITEM(379),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CAULDRON_ITEM(380),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_EYE_OF_ENDER(381),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SPECKLED_MELON(382),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MONSTER_EGG(383, 64, org.bukkit.material.SpawnEgg.class),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_EXP_BOTTLE(384, 64),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FIREBALL(385, 64),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOOK_AND_QUILL(386, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WRITTEN_BOOK(387, 16),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_EMERALD(388, 64),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ITEM_FRAME(389),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FLOWER_POT_ITEM(390),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CARROT_ITEM(391),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_POTATO_ITEM(392),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BAKED_POTATO(393),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_POISONOUS_POTATO(394),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_EMPTY_MAP(395),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLDEN_CARROT(396),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SKULL_ITEM(397),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CARROT_STICK(398, 1, 25),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NETHER_STAR(399),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PUMPKIN_PIE(400),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FIREWORK(401),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FIREWORK_CHARGE(402),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ENCHANTED_BOOK(403, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_REDSTONE_COMPARATOR(404),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NETHER_BRICK_ITEM(405),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_QUARTZ(406),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_EXPLOSIVE_MINECART(407, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_HOPPER_MINECART(408, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PRISMARINE_SHARD(409),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_PRISMARINE_CRYSTALS(410),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RABBIT(411),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COOKED_RABBIT(412),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RABBIT_STEW(413, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RABBIT_FOOT(414),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RABBIT_HIDE(415),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ARMOR_STAND(416, 16),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_BARDING(417, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_BARDING(418, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DIAMOND_BARDING(419, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LEASH(420),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NAME_TAG(421),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COMMAND_MINECART(422, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MUTTON(423),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COOKED_MUTTON(424),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BANNER(425, 16),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_END_CRYSTAL(426),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SPRUCE_DOOR_ITEM(427),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BIRCH_DOOR_ITEM(428),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_JUNGLE_DOOR_ITEM(429),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ACACIA_DOOR_ITEM(430),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DARK_OAK_DOOR_ITEM(431),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CHORUS_FRUIT(432),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_CHORUS_FRUIT_POPPED(433),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BEETROOT(434),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BEETROOT_SEEDS(435),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BEETROOT_SOUP(436, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_DRAGONS_BREATH(437),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SPLASH_POTION(438, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SPECTRAL_ARROW(439),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_TIPPED_ARROW(440),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LINGERING_POTION(441, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SHIELD(442, 1, 336),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ELYTRA(443, 1, 431),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOAT_SPRUCE(444, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOAT_BIRCH(445, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOAT_JUNGLE(446, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOAT_ACACIA(447, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOAT_DARK_OAK(448, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_TOTEM(449, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SHULKER_SHELL(450),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_IRON_NUGGET(452),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_KNOWLEDGE_BOOK(453, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_RECORD(2256, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GREEN_RECORD(2257, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RECORD_3(2258, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RECORD_4(2259, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RECORD_5(2260, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RECORD_6(2261, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RECORD_7(2262, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RECORD_8(2263, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RECORD_9(2264, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RECORD_10(2265, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RECORD_11(2266, 1),
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_RECORD_12(2267, 1),
     ;
     //</editor-fold>
 
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     public static final String LEGACY_PREFIX = "LEGACY_";
 
     private final int id;
@@ -4909,7 +4909,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      *
      * @return legacy status
      */
-    // @Deprecated(since = "1.13") // Paper - this is useful, don't deprecate
+    // @Deprecated(since = "1.13", forRemoval = true) // Paper - this is useful, don't deprecate
     public boolean isLegacy() {
         return legacy;
     }
@@ -5167,7 +5167,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * @deprecated currently does not have an implementation which is well
      * linked to the underlying server. Contributions welcome.
      */
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     public boolean isTransparent() {
         if (!isBlock()) {
             return false;

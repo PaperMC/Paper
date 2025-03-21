@@ -2,6 +2,7 @@ package org.bukkit.event.entity;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -22,11 +23,12 @@ public class EntityUnleashEvent extends EntityEvent implements org.bukkit.event.
     private boolean cancelled; // Paper
 
     // Paper start - drop leash variable
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public EntityUnleashEvent(@NotNull Entity entity, @NotNull UnleashReason reason) {
         this(entity, reason, false);
     }
 
+    @ApiStatus.Internal
     public EntityUnleashEvent(@NotNull Entity entity, @NotNull UnleashReason reason, boolean dropLeash) {
         super(entity);
         // Paper end

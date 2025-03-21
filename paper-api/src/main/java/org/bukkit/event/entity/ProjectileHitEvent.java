@@ -6,6 +6,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,27 +20,27 @@ public class ProjectileHitEvent extends EntityEvent implements Cancellable {
     private final BlockFace hitFace;
     private boolean cancel = false;
 
-    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated(forRemoval = true) @io.papermc.paper.annotation.DoNotUse // Paper
     public ProjectileHitEvent(@NotNull final Projectile projectile) {
         this(projectile, null, null, null); // Paper
     }
 
-    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated(forRemoval = true) @io.papermc.paper.annotation.DoNotUse // Paper
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity) {
         this(projectile, hitEntity, null, null); // Paper
     }
 
-    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated(forRemoval = true) @io.papermc.paper.annotation.DoNotUse // Paper
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Block hitBlock) {
         this(projectile, null, hitBlock, null); // Paper
     }
 
-    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated(forRemoval = true) @io.papermc.paper.annotation.DoNotUse // Paper
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity, @Nullable Block hitBlock) {
         this(projectile, hitEntity, hitBlock, null);
     }
 
-    @org.jetbrains.annotations.ApiStatus.Internal // Paper
+    @ApiStatus.Internal
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity, @Nullable Block hitBlock, @Nullable BlockFace hitFace) {
         super(projectile);
         this.hitEntity = hitEntity;

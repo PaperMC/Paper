@@ -34,6 +34,7 @@ public class PlayerDeathEvent extends EntityDeathEvent {
         // Paper start - shouldDropExperience API
         this(player, damageSource, drops, droppedExp, newExp, newTotalExp, newLevel, deathMessage, true);
     }
+
     @org.jetbrains.annotations.ApiStatus.Internal
     public PlayerDeathEvent(final @NotNull Player player, final @NotNull DamageSource damageSource, final @NotNull List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, final @Nullable net.kyori.adventure.text.Component deathMessage, final boolean doExpDrop) {
         // Paper end - shouldDropExperience API
@@ -46,23 +47,23 @@ public class PlayerDeathEvent extends EntityDeathEvent {
     }
     // Paper end - adventure
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public PlayerDeathEvent(@NotNull final Player player, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp, @Nullable final String deathMessage) {
         this(player, damageSource, drops, droppedExp, 0, deathMessage);
     }
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public PlayerDeathEvent(@NotNull final Player player, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, @Nullable final String deathMessage) {
         this(player, damageSource, drops, droppedExp, newExp, 0, 0, deathMessage);
     }
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public PlayerDeathEvent(@NotNull final Player player, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, @Nullable final String deathMessage) {
         // Paper start - shouldDropExperience API
         this(player, damageSource, drops, droppedExp, newExp, newTotalExp, newLevel, deathMessage, true);
     }
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public PlayerDeathEvent(@NotNull final Player player, final @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp, final int newExp, final int newTotalExp, final int newLevel, @Nullable final String deathMessage, boolean doExpDrop) {
         // Paper end - shouldDropExperience API
         super(player, damageSource, drops, droppedExp);

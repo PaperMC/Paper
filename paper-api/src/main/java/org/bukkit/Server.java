@@ -1231,8 +1231,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @return true if the server should send a preview, false otherwise
      * @deprecated chat previews have been removed
      */
-    @Deprecated(since = "1.19.3")
-    public boolean shouldSendChatPreviews();
+    @Deprecated(since = "1.19.3", forRemoval = true)
+    default boolean shouldSendChatPreviews() {
+        return false;
+    }
 
     /**
      * Gets whether the server only allow players with Mojang-signed public key

@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,11 +16,12 @@ public class EntityCombustEvent extends EntityEvent implements Cancellable {
     private float duration;
     private boolean cancel;
 
-    @Deprecated(since = "1.21")
+    @Deprecated(since = "1.21", forRemoval = true)
     public EntityCombustEvent(@NotNull final Entity combustee, final int duration) {
         this(combustee, (float) duration);
     }
 
+    @ApiStatus.Internal
     public EntityCombustEvent(@NotNull final Entity combustee, final float duration) {
         super(combustee);
         this.duration = duration;

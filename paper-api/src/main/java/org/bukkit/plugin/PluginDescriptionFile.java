@@ -1061,7 +1061,7 @@ public final class PluginDescriptionFile implements io.papermc.paper.plugin.conf
      * @return unused
      * @deprecated unused
      */
-    @Deprecated(since = "1.7.2")
+    @Deprecated(since = "1.7.2", forRemoval = true)
     @Nullable
     public String getClassLoaderOf() {
         return classLoaderOf;

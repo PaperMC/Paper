@@ -271,7 +271,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
      * @return duration modifier
      * @deprecated unused, always 1.0
      */
-    @Deprecated(since = "1.14")
+    @Deprecated(since = "1.14", forRemoval = true)
     public abstract double getDurationModifier();
 
     /**
