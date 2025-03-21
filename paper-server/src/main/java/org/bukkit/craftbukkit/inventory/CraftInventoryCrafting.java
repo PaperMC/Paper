@@ -39,20 +39,28 @@ public class CraftInventoryCrafting extends CraftInventory implements CraftingIn
 
     @Override
     public ItemStack[] getContents() {
+        // Create an array with enough space for both result and matrix items.
         ItemStack[] items = new ItemStack[this.getSize()];
+        
+        // Fill in the result inventory items.
         List<net.minecraft.world.item.ItemStack> mcResultItems = this.getResultInventory().getContents();
-
-        int i = 0;
-        for (i = 0; i < mcResultItems.size(); i++) {
+        int resultSize = mcResultItems.size();
+        for (int i = 0; i < resultSize; i++) {
             items[i] = CraftItemStack.asCraftMirror(mcResultItems.get(i));
         }
-
-        List<net.minecraft.world.item.ItemStack> mcItems = this.getMatrixInventory().getContents();
-
-        for (int j = 0; j < mcItems.size(); j++) {
-            items[i + j] = CraftItemStack.asCraftMirror(mcItems.get(j));
+        
+        // Fill in the matrix inventory items using proper row/column indexing.
+        List<net.minecraft.world.item.ItemStack> mcMatrixItems = this.getMatrixInventory().getContents();
+        int matrixStart = resultSize; // Offset in the items array where matrix items begin.
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 3; col++) {
+                int index = row * 3 + col;
+                if (index < mcMatrixItems.size()) {
+                    items[matrixStart + index] = CraftItemStack.asCraftMirror(mcMatrixItems.get(index));
+                }
+            }
         }
-
+        
         return items;
     }
 
