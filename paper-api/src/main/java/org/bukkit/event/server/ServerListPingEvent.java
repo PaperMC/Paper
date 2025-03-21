@@ -8,6 +8,7 @@ import org.bukkit.UndefinedNullability;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.util.CachedServerIcon;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -26,6 +27,8 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
     private final int numPlayers;
     private int maxPlayers;
 
+    @Deprecated(forRemoval = true)
+    @ApiStatus.Internal
     public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int numPlayers, final int maxPlayers) {
         super(true);
         Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online", numPlayers);
@@ -47,7 +50,8 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @param maxPlayers the max number of players
      * @deprecated in favour of {@link #ServerListPingEvent(String, java.net.InetAddress, net.kyori.adventure.text.Component, int)}
      */
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
+    @ApiStatus.Internal
     protected ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final String motd, final int maxPlayers) {
         super(true);
         this.numPlayers = MAGIC_PLAYER_COUNT;
@@ -56,11 +60,14 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
         this.motd = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(motd); // Paper
         this.maxPlayers = maxPlayers;
     }
-    // Paper start
-    @Deprecated
+
+    @Deprecated(forRemoval = true)
+    @ApiStatus.Internal
     public ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int numPlayers, final int maxPlayers) {
         this("", address, motd, numPlayers, maxPlayers);
     }
+
+    @ApiStatus.Internal
     public ServerListPingEvent(@NotNull final String hostname, @NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int numPlayers, final int maxPlayers) {
         super(true);
         Preconditions.checkArgument(numPlayers >= 0, "Cannot have negative number of players online (%s)", numPlayers);
@@ -80,7 +87,8 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @param maxPlayers the max number of players
      * @deprecated in favour of {@link #ServerListPingEvent(String, java.net.InetAddress, net.kyori.adventure.text.Component, int)}
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
+    @ApiStatus.Internal
     protected ServerListPingEvent(@NotNull final InetAddress address, @NotNull final net.kyori.adventure.text.Component motd, final int maxPlayers) {
         this("", address, motd, maxPlayers);
     }
@@ -95,6 +103,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @param motd the message of the day
      * @param maxPlayers the max number of players
      */
+    @ApiStatus.Internal
     protected ServerListPingEvent(final @NotNull String hostname, final @NotNull InetAddress address, final net.kyori.adventure.text.@NotNull Component motd, final int maxPlayers) {
         this.numPlayers = MAGIC_PLAYER_COUNT;
         this.hostname = hostname;
@@ -118,7 +127,6 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
     public void motd(net.kyori.adventure.text.@NotNull Component motd) {
         this.motd = motd;
     }
-    // Paper end
 
     /**
      * Gets the hostname that the player used to connect to the server, or
@@ -196,7 +204,7 @@ public class ServerListPingEvent extends ServerEvent implements Iterable<Player>
      * @return true if chat preview is enabled, false otherwise
      * @deprecated chat previews have been removed
      */
-    @Deprecated(since = "1.19.3")
+    @Deprecated(since = "1.19.3", forRemoval = true)
     public boolean shouldSendChatPreviews() {
         return false;
     }

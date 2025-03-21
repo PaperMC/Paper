@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.bukkit.Warning;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -31,11 +32,12 @@ public class PlayerPreLoginEvent extends Event {
     private final InetAddress ipAddress;
     private final UUID uniqueId;
 
-    @Deprecated(since = "1.7.5")
+    @Deprecated(since = "1.7.5", forRemoval = true)
     public PlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
         this(name, ipAddress, null);
     }
 
+    @ApiStatus.Internal
     public PlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
         this.result = Result.ALLOWED;
         this.message = net.kyori.adventure.text.Component.empty(); // Paper

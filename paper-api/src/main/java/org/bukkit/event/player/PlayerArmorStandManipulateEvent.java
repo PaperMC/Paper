@@ -26,7 +26,7 @@ public class PlayerArmorStandManipulateEvent extends PlayerInteractEntityEvent {
         this.slot = slot;
     }
 
-    @Deprecated(since = "1.19.2")
+    @Deprecated(since = "1.19.2", forRemoval = true)
     public PlayerArmorStandManipulateEvent(@NotNull final Player player, @NotNull final ArmorStand clickedEntity, @NotNull final ItemStack playerItem, @NotNull final ItemStack armorStandItem, @NotNull final EquipmentSlot slot) {
         this(player, clickedEntity, playerItem, armorStandItem, slot, EquipmentSlot.HAND);
     }

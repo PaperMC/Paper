@@ -155,7 +155,7 @@ public interface Skull extends TileState {
      * @return the type of skull
      * @deprecated check {@link Material} instead
      */
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     @NotNull
     public SkullType getSkullType();
 
@@ -165,7 +165,7 @@ public interface Skull extends TileState {
      * @param skullType the type of skull
      * @deprecated check {@link Material} instead
      */
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     @Contract("_ -> fail")
     public void setSkullType(SkullType skullType);
 }

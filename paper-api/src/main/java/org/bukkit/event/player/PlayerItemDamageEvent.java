@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -14,22 +15,21 @@ public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
     private final ItemStack item;
+    private final int originalDamage;
     private int damage;
-    private final int originalDamage; // Paper - Add pre-reduction damage
     private boolean cancelled = false;
 
-    @Deprecated // Paper - Add pre-reduction damage
+    @Deprecated(forRemoval = true)
     public PlayerItemDamageEvent(@NotNull Player player, @NotNull ItemStack item, int damage) {
-        // Paper start - Add pre-reduction damage
         this(player, item, damage, damage);
     }
 
+    @ApiStatus.Internal
     public PlayerItemDamageEvent(@NotNull Player player, @NotNull ItemStack item, int damage, int originalDamage) {
         super(player);
         this.item = item;
         this.damage = damage;
         this.originalDamage = originalDamage;
-        // Paper end
     }
 
     /**
@@ -48,10 +48,9 @@ public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
      * @return durability change
      */
     public int getDamage() {
-        return damage;
+        return this.damage;
     }
 
-    // Paper start - Add pre-reduction damage
     /**
      * Gets the amount of durability damage this item would have taken before
      * the Unbreaking reduction. If the item has no Unbreaking level then
@@ -60,9 +59,8 @@ public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
      * @return pre-reduction damage amount
      */
     public int getOriginalDamage() {
-        return originalDamage;
+        return this.originalDamage;
     }
-    // Paper end
 
     public void setDamage(int damage) {
         this.damage = damage;

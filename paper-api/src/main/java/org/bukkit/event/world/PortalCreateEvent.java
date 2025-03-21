@@ -6,6 +6,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,11 +20,12 @@ public class PortalCreateEvent extends WorldEvent implements Cancellable {
     private final Entity entity;
     private final CreateReason reason;
 
-    @Deprecated(since = "1.14.1")
+    @Deprecated(since = "1.14.1", forRemoval = true)
     public PortalCreateEvent(@NotNull final List<BlockState> blocks, @NotNull final World world, @NotNull CreateReason reason) {
         this(blocks, world, null, reason);
     }
 
+    @ApiStatus.Internal
     public PortalCreateEvent(@NotNull final List<BlockState> blocks, @NotNull final World world, @Nullable Entity entity, @NotNull CreateReason reason) {
         super(world);
 

@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -19,6 +20,7 @@ public class PlayerLeashEntityEvent extends Event implements Cancellable {
     private final Player player;
     private final EquipmentSlot hand;
 
+    @ApiStatus.Internal
     public PlayerLeashEntityEvent(@NotNull Entity entity, @NotNull Entity leashHolder, @NotNull Player leasher, @NotNull EquipmentSlot hand) {
         this.leashHolder = leashHolder;
         this.entity = entity;
@@ -26,7 +28,7 @@ public class PlayerLeashEntityEvent extends Event implements Cancellable {
         this.hand = hand;
     }
 
-    @Deprecated(since = "1.19.2")
+    @Deprecated(since = "1.19.2", forRemoval = true)
     public PlayerLeashEntityEvent(@NotNull Entity entity, @NotNull Entity leashHolder, @NotNull Player leasher) {
         this(entity, leashHolder, leasher, EquipmentSlot.HAND);
     }

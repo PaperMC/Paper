@@ -2,6 +2,7 @@ package org.bukkit.event.player;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,23 +15,24 @@ public class PlayerQuitEvent extends PlayerEvent {
     private net.kyori.adventure.text.Component quitMessage;
     private final QuitReason reason;
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public PlayerQuitEvent(@NotNull final Player player, @Nullable final String quitMessage) {
         this(player, quitMessage, null);
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public PlayerQuitEvent(@NotNull final Player player, @Nullable final String quitMessage, @Nullable QuitReason quitReason) {
         super(player);
         this.quitMessage = quitMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(quitMessage) : null; // Paper
         this.reason = quitReason == null ? QuitReason.DISCONNECTED : quitReason;
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public PlayerQuitEvent(@NotNull final Player player, @Nullable final net.kyori.adventure.text.Component quitMessage) {
         this(player, quitMessage, null);
     }
 
+    @ApiStatus.Internal
     public PlayerQuitEvent(@NotNull final Player player, @Nullable final net.kyori.adventure.text.Component quitMessage, @Nullable QuitReason quitReason) {
         super(player);
         this.quitMessage = quitMessage;
@@ -89,7 +91,6 @@ public class PlayerQuitEvent extends PlayerEvent {
         return handlers;
     }
 
-    // Paper start
     @NotNull
     public QuitReason getReason() {
         return this.reason;
@@ -122,5 +123,4 @@ public class PlayerQuitEvent extends PlayerEvent {
          */
         ERRONEOUS_STATE,
     }
-    // Paper end
 }

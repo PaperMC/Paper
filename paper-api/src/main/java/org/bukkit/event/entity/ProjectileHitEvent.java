@@ -6,6 +6,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,27 +20,27 @@ public class ProjectileHitEvent extends EntityEvent implements Cancellable {
     private final BlockFace hitFace;
     private boolean cancel = false;
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public ProjectileHitEvent(@NotNull final Projectile projectile) {
-        this(projectile, null, null, null); // Paper
+        this(projectile, null, null, null);
     }
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity) {
-        this(projectile, hitEntity, null, null); // Paper
+        this(projectile, hitEntity, null, null);
     }
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Block hitBlock) {
-        this(projectile, null, hitBlock, null); // Paper
+        this(projectile, null, hitBlock, null);
     }
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity, @Nullable Block hitBlock) {
         this(projectile, hitEntity, hitBlock, null);
     }
 
-    @org.jetbrains.annotations.ApiStatus.Internal // Paper
+    @ApiStatus.Internal
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity, @Nullable Block hitBlock, @Nullable BlockFace hitFace) {
         super(projectile);
         this.hitEntity = hitEntity;

@@ -1,6 +1,5 @@
 package com.destroystokyo.paper.event.entity;
 
-import com.google.common.collect.ImmutableList;
 import java.util.List;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.SkeletonHorse;
@@ -20,12 +19,6 @@ public class SkeletonHorseTrapEvent extends EntityEvent implements Cancellable {
 
     private final List<HumanEntity> eligibleHumans;
     private boolean cancelled;
-
-    @Deprecated
-    @ApiStatus.Internal
-    public SkeletonHorseTrapEvent(final SkeletonHorse horse) {
-        this(horse, ImmutableList.of());
-    }
 
     @ApiStatus.Internal
     public SkeletonHorseTrapEvent(final SkeletonHorse horse, final List<HumanEntity> eligibleHumans) {

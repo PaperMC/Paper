@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -63,13 +64,14 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     private final BedEnterResult bedEnterResult;
     private Result useBed = Result.DEFAULT;
 
+    @ApiStatus.Internal
     public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult) {
         super(player);
         this.bed = bed;
         this.bedEnterResult = bedEnterResult;
     }
 
-    @Deprecated(since = "1.13.2")
+    @Deprecated(since = "1.13.2", forRemoval = true)
     public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed) {
         this(player, bed, BedEnterResult.OK);
     }

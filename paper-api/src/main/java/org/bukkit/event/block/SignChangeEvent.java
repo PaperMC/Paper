@@ -5,6 +5,7 @@ import org.bukkit.block.sign.Side;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,10 +18,10 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel = false;
     private final Player player;
-    private final java.util.List<net.kyori.adventure.text.Component> adventure$lines; // Paper
+    private final java.util.List<net.kyori.adventure.text.Component> adventure$lines;
     private final Side side;
 
-    // Paper start
+    @ApiStatus.Internal
     public SignChangeEvent(@NotNull final Block sign, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines, @NotNull Side side) {
         super(sign);
         this.player = player;
@@ -28,27 +29,24 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
         this.side = side;
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public SignChangeEvent(@NotNull final Block sign, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
         this(sign, player, adventure$lines, Side.FRONT);
     }
-    // Paper end
 
-    @Deprecated(since = "1.19.4")
+    @Deprecated(since = "1.19.4", forRemoval = true)
     public SignChangeEvent(@NotNull final Block sign, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
         this(sign, thePlayer, theLines, Side.FRONT);
     }
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public SignChangeEvent(@NotNull final Block sign, @NotNull final Player thePlayer, @NotNull final String[] theLines, @NotNull Side side) {
         super(sign);
         this.player = thePlayer;
-        // Paper start
         this.adventure$lines = new java.util.ArrayList<>();
         for (String theLine : theLines) {
             this.adventure$lines.add(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(theLine));
         }
-        // Paper end
         this.side = side;
     }
 

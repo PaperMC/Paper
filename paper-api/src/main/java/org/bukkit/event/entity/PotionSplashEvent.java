@@ -11,6 +11,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,11 +23,12 @@ public class PotionSplashEvent extends ProjectileHitEvent implements Cancellable
     private boolean cancelled;
     protected final Map<LivingEntity, Double> affectedEntities; // Paper
 
-    @Deprecated(since = "1.20.2")
+    @Deprecated(since = "1.20.2", forRemoval = true)
     public PotionSplashEvent(@NotNull final ThrownPotion potion, @NotNull final Map<LivingEntity, Double> affectedEntities) {
         this(potion, null, null, null, affectedEntities);
     }
 
+    @ApiStatus.Internal
     public PotionSplashEvent(@NotNull final ThrownPotion potion, @Nullable Entity hitEntity, @Nullable Block hitBlock, @Nullable BlockFace hitFace, @NotNull final Map<LivingEntity, Double> affectedEntities) {
         super(potion, hitEntity, hitBlock, hitFace);
         this.affectedEntities = affectedEntities;

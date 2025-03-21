@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,7 +16,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
     private final Cause cause; // Paper
     private boolean cancel;
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final String kickReason, @NotNull final String leaveMessage) {
         super(playerKicked);
         this.kickReason = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(kickReason); // Paper
@@ -24,7 +25,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         this.cancel = false;
     }
     // Paper start
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final net.kyori.adventure.text.Component kickReason, @NotNull final net.kyori.adventure.text.Component leaveMessage) {
         super(playerKicked);
         this.kickReason = kickReason;
@@ -33,7 +34,7 @@ public class PlayerKickEvent extends PlayerEvent implements Cancellable {
         this.cause = Cause.UNKNOWN;
     }
 
-    @org.jetbrains.annotations.ApiStatus.Internal
+    @ApiStatus.Internal
     public PlayerKickEvent(@NotNull final Player playerKicked, @NotNull final net.kyori.adventure.text.Component kickReason, @NotNull final net.kyori.adventure.text.Component leaveMessage, @NotNull final Cause cause) {
         super(playerKicked);
         this.kickReason = kickReason;

@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -20,22 +21,23 @@ public class PlayerRespawnEvent extends PlayerEvent {
     private final RespawnReason respawnReason;
     private final java.util.Set<RespawnFlag> respawnFlags; // Paper
 
-    @Deprecated(since = "1.16.1")
+    @Deprecated(since = "1.16.1", forRemoval = true)
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn) {
         this(respawnPlayer, respawnLocation, isBedSpawn, false);
     }
 
-    @Deprecated(since = "1.19.4")
+    @Deprecated(since = "1.19.4", forRemoval = true)
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn) {
         this(respawnPlayer, respawnLocation, isBedSpawn, false, RespawnReason.PLUGIN);
     }
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final RespawnReason respawnReason) {
         // Paper start
         this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, respawnReason, com.google.common.collect.ImmutableSet.builder());
     }
 
+    @ApiStatus.Internal
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final RespawnReason respawnReason, @NotNull final com.google.common.collect.ImmutableSet.Builder<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag> respawnFlags) {
         // Paper end
         super(respawnPlayer);

@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,15 +25,15 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
     private final ExperienceOrb experienceOrb;
     private int repairAmount;
     private boolean cancelled;
-    private final int consumedExperience; // Paper
+    private final int consumedExperience;
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
         // Paper start
         this(player, item, slot, experienceOrb, repairAmount, repairAmount / 2);
     }
 
-    @org.jetbrains.annotations.ApiStatus.Internal
+    @ApiStatus.Internal
     public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount, int consumedExperience) {
         // Paper end
         super(player);
@@ -40,8 +41,12 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
         this.slot = slot;
         this.experienceOrb = experienceOrb;
         this.repairAmount = repairAmount;
-        // Paper start
         this.consumedExperience = consumedExperience;
+    }
+
+    @Deprecated(since = "1.19.2", forRemoval = true)
+    public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
+        this(player, item, null, experienceOrb, repairAmount);
     }
 
     /**
@@ -82,13 +87,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
      * @return the amount of xp that will be consumed
      */
     public int getConsumedExperience() {
-         return this.consumedExperience;
-    }
-    // Paper end
-
-    @Deprecated(since = "1.19.2")
-    public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
-        this(player, item, null, experienceOrb, repairAmount);
+        return this.consumedExperience;
     }
 
     /**
