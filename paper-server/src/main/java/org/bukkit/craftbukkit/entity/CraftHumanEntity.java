@@ -152,12 +152,12 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         return this.getHandle().sleepCounter;
     }
 
-    // Paper start - Potential bed api
+    // Paper start - respawn api
     @Override
-    public Location getPotentialRespawnLocation() {
+    public Block getRespawnBlock() {
         ServerPlayer handle = (ServerPlayer) getHandle();
-        BlockPos bed = handle.getRespawnPosition();
-        if (bed == null) {
+        BlockPos pos = handle.getRespawnPosition();
+        if (pos == null) {
             return null;
         }
 
@@ -165,7 +165,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         if (worldServer == null) {
             return null;
         }
-        return new Location(worldServer.getWorld(), bed.getX(), bed.getY(), bed.getZ());
+        return worldServer.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
     }
     // Paper end
     // Paper start

@@ -7,6 +7,7 @@ import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.Block;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -440,7 +441,6 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
     public int getSleepTicks();
 
 
-    // Paper start - Potential bed api
     /**
      * Gets the Location of the player's bed, null if they have not slept
      * in one. This method will not attempt to validate if the current bed
@@ -463,10 +463,26 @@ public interface HumanEntity extends LivingEntity, AnimalTamer, InventoryHolder 
      * to validate if the current respawn location is still valid.
      *
      * @return respawn location if exists, otherwise null.
+     * @see #getRespawnBlock()
+     * @deprecated Misleading name.
+     * This method returns the respawn point block location and not the player's respawn location
      */
     @Nullable
-    Location getPotentialRespawnLocation();
-    // Paper end
+    @Deprecated(since = "1.21.4")
+    default Location getPotentialRespawnLocation() {
+        Block block = this.getRespawnBlock();
+        return block != null ? block.getLocation() : null;
+    }
+
+    /**
+     * Retrieves the block located at the player's designated respawn point.
+     * This method will not attempt to validate if the current respawn point is still valid.
+     *
+     * @return The respawn point {@link Block}, or {@code null} if no respawn point is set.
+     */
+    @Nullable
+    Block getRespawnBlock();
+
     // Paper start
     /**
      * @return the player's fishing hook if they are fishing
