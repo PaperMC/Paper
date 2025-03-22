@@ -562,6 +562,7 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      * Gets the Location where the player will spawn at, null if they
      * don't have a valid respawn point.
      *
+     * @see #getRespawnBlock()
      * @return respawn location if exists, otherwise null.
      */
     @Nullable
