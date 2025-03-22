@@ -20,8 +20,8 @@ public class PlayerHideEntityEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private final Entity entity;
 
-    public PlayerHideEntityEvent(@NotNull Player who, @NotNull Entity entity) {
-        super(who);
+    public PlayerHideEntityEvent(@NotNull Player player, @NotNull Entity entity) {
+        super(player);
         this.entity = entity;
     }
 

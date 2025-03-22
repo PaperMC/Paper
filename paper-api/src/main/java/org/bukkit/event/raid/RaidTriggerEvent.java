@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 public class RaidTriggerEvent extends RaidEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private final Player player;
     private boolean cancel;
 

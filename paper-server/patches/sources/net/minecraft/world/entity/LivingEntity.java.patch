@@ -1,27 +1,18 @@
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -135,6 +_,26 @@
+@@ -135,6 +_,17 @@
  import org.jetbrains.annotations.Contract;
  import org.slf4j.Logger;
  
 +// CraftBukkit start
-+import java.util.ArrayList;
-+import java.util.HashSet;
-+import java.util.LinkedList;
-+import net.minecraft.world.item.component.Consumable;
 +import org.bukkit.Location;
-+import org.bukkit.craftbukkit.attribute.CraftAttributeMap;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.event.entity.ArrowBodyCountChangeEvent;
 +import org.bukkit.event.entity.EntityDamageEvent;
 +import org.bukkit.event.entity.EntityDamageEvent.DamageModifier;
 +import org.bukkit.event.entity.EntityPotionEffectEvent;
 +import org.bukkit.event.entity.EntityRegainHealthEvent;
-+import org.bukkit.event.entity.EntityRemoveEvent;
 +import org.bukkit.event.entity.EntityResurrectEvent;
-+import org.bukkit.event.entity.EntityTeleportEvent;
-+import org.bukkit.event.player.PlayerItemConsumeEvent;
 +// CraftBukkit end
 +
  public abstract class LivingEntity extends Entity implements Attackable {
@@ -33,10 +24,10 @@
      protected final EntityEquipment equipment;
 +    // CraftBukkit start
 +    public int expToDrop;
-+    public ArrayList<DefaultDrop> drops = new ArrayList<>(); // Paper - Restore vanilla drops behavior
++    public List<DefaultDrop> drops = new java.util.ArrayList<>(); // Paper - Restore vanilla drops behavior
 +    public final org.bukkit.craftbukkit.attribute.CraftAttributeMap craftAttributes;
 +    public boolean collides = true;
-+    public Set<UUID> collidableExemptions = new HashSet<>();
++    public Set<UUID> collidableExemptions = new java.util.HashSet<>();
 +    public boolean bukkitPickUpLoot;
 +    public org.bukkit.craftbukkit.entity.CraftLivingEntity getBukkitLivingEntity() { return (org.bukkit.craftbukkit.entity.CraftLivingEntity) super.getBukkitEntity(); } // Paper
 +    public boolean silentDeath = false; // Paper - mark entity as dying silently for cancellable death event
@@ -48,7 +39,7 @@
          super(entityType, level);
          this.attributes = new AttributeMap(DefaultAttributes.getSupplier(entityType));
 -        this.setHealth(this.getMaxHealth());
-+        this.craftAttributes = new CraftAttributeMap(this.attributes); // CraftBukkit
++        this.craftAttributes = new org.bukkit.craftbukkit.attribute.CraftAttributeMap(this.attributes); // CraftBukkit
 +        // CraftBukkit - this.setHealth(this.getMaxHealth()) inlined and simplified to skip the instanceof check for Player, as getBukkitEntity() is not initialized in constructor
 +        this.entityData.set(LivingEntity.DATA_HEALTH_ID, this.getMaxHealth());
          this.equipment = this.createEquipment();
@@ -74,7 +65,7 @@
          if (this.deathTime >= 20 && !this.level().isClientSide() && !this.isRemoved()) {
              this.level().broadcastEntityEvent(this, (byte)60);
 -            this.remove(Entity.RemovalReason.KILLED);
-+            this.remove(Entity.RemovalReason.KILLED, EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
++            this.remove(Entity.RemovalReason.KILLED, org.bukkit.event.entity.EntityRemoveEvent.Cause.DEATH); // CraftBukkit - add Bukkit remove cause
          }
      }
  
@@ -109,7 +100,7 @@
  
      @Override
 -    public void remove(Entity.RemovalReason reason) {
-+    public void remove(Entity.RemovalReason reason, @Nullable EntityRemoveEvent.Cause eventCause) { // CraftBukkit - add Bukkit remove cause
++    public void remove(Entity.RemovalReason reason, @Nullable org.bukkit.event.entity.EntityRemoveEvent.Cause eventCause) { // CraftBukkit - add Bukkit remove cause
          if ((reason == Entity.RemovalReason.KILLED || reason == Entity.RemovalReason.DISCARDED) && this.level() instanceof ServerLevel serverLevel) {
              this.triggerOnDeathMobEffects(serverLevel, reason);
          }
@@ -327,7 +318,7 @@
 -            this.onEffectsRemoved(map.values());
 -            return true;
 +            // CraftBukkit start
-+            List<MobEffectInstance> toRemove = new LinkedList<>();
++            List<MobEffectInstance> toRemove = new java.util.LinkedList<>();
 +            Iterator<MobEffectInstance> iterator = this.activeEffects.values().iterator();
 +            while (iterator.hasNext()) {
 +                MobEffectInstance effect = iterator.next();
@@ -806,7 +797,7 @@
              if (killCredit != null) {
                  killCredit.awardKillScore(this, damageSource);
              }
-@@ -1398,68 +_,142 @@
+@@ -1398,68 +_,141 @@
              }
  
              if (!this.level().isClientSide && this.hasCustomName()) {
@@ -880,7 +871,7 @@
                      if (this.level().getBlockState(blockPos).isAir() && blockState.canSurvive(this.level(), blockPos)) {
 -                        this.level().setBlock(blockPos, blockState, 3);
 -                        var6 = true;
-+                        var6 = org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this.level(), blockPos, blockState, 3, this); // CraftBukkit - call EntityBlockFormEvent for Wither Rose
++                        var6 = CraftEventFactory.handleBlockFormEvent(this.level(), blockPos, blockState, 3, this); // CraftBukkit - call EntityBlockFormEvent for Wither Rose
                      }
                  }
  
@@ -888,8 +879,7 @@
                      ItemEntity itemEntity = new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), new ItemStack(Items.WITHER_ROSE));
 +                    // CraftBukkit start
 +                    org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.getBukkitEntity(), (org.bukkit.entity.Item) itemEntity.getBukkitEntity());
-+                    CraftEventFactory.callEvent(event);
-+                    if (event.isCancelled()) {
++                    if (!event.callEvent()) {
 +                        return;
 +                    }
 +                    // CraftBukkit end
@@ -927,7 +917,7 @@
 +            }
 +        }); // Paper end
 +        this.postDeathDropItems(deathEvent); // Paper
-+        this.drops = new ArrayList<>();
++        this.drops = new java.util.ArrayList<>();
 +        // this.dropEquipment(level); // CraftBukkit - moved up
 +        // CraftBukkit end
          this.dropExperience(level, damageSource.getEntity());
@@ -1269,7 +1259,7 @@
 +    }
 +
 +    public final void setArrowCount(int count, boolean reset) {
-+        ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, this.getArrowCount(), count, reset);
++        org.bukkit.event.entity.ArrowBodyCountChangeEvent event = CraftEventFactory.callArrowBodyCountChangeEvent(this, this.getArrowCount(), count, reset);
 +        if (event.isCancelled()) {
 +            return;
 +        }
@@ -1680,13 +1670,14 @@
              this.completeUsingItem();
          }
      }
-@@ -3141,10 +_,18 @@
+@@ -3141,10 +_,19 @@
      }
  
      public void startUsingItem(InteractionHand hand) {
 +        // Paper start - Prevent consuming the wrong itemstack
 +        this.startUsingItem(hand, false);
 +    }
++
 +    public void startUsingItem(InteractionHand hand, boolean forceUpdate) {
 +        // Paper end - Prevent consuming the wrong itemstack
          ItemStack itemInHand = this.getItemInHand(hand);
@@ -1721,16 +1712,16 @@
 +                    this.startUsingItem(this.getUsedItemHand(), true); // Paper - Prevent consuming the wrong itemstack
 +                    // CraftBukkit start - fire PlayerItemConsumeEvent
 +                    ItemStack itemStack;
-+                    PlayerItemConsumeEvent event = null; // Paper
++                    org.bukkit.event.player.PlayerItemConsumeEvent event = null; // Paper
 +                    if (this instanceof ServerPlayer serverPlayer) {
 +                        org.bukkit.inventory.ItemStack craftItem = CraftItemStack.asBukkitCopy(this.useItem);
 +                        org.bukkit.inventory.EquipmentSlot hand = org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(usedItemHand);
-+                        event = new PlayerItemConsumeEvent((org.bukkit.entity.Player) this.getBukkitEntity(), craftItem, hand); // Paper
++                        event = new org.bukkit.event.player.PlayerItemConsumeEvent((org.bukkit.entity.Player) this.getBukkitEntity(), craftItem, hand); // Paper
 +                        this.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                        if (event.isCancelled()) {
 +                            // Update client
-+                            Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
++                            net.minecraft.world.item.component.Consumable consumable = this.useItem.get(DataComponents.CONSUMABLE);
 +                            if (consumable != null) {
 +                                consumable.cancelUsingItem(serverPlayer, this.useItem);
 +                            }
@@ -1874,7 +1865,7 @@
 +
 +                if (flag) {
 +                    if (!(this instanceof ServerPlayer)) {
-+                        EntityTeleportEvent teleport = new EntityTeleportEvent(this.getBukkitEntity(), new Location(this.level().getWorld(), x1, y1, z1), new Location(this.level().getWorld(), x, d, z));
++                        org.bukkit.event.entity.EntityTeleportEvent teleport = new org.bukkit.event.entity.EntityTeleportEvent(this.getBukkitEntity(), new Location(this.level().getWorld(), x1, y1, z1), new Location(this.level().getWorld(), x, d, z));
 +                        this.level().getCraftServer().getPluginManager().callEvent(teleport);
 +                        if (!teleport.isCancelled() && teleport.getTo() != null) { // Paper
 +                            Location to = teleport.getTo();

@@ -1,43 +1,22 @@
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -81,6 +_,28 @@
+@@ -81,6 +_,16 @@
  import net.minecraft.world.phys.Vec3;
  import net.minecraft.world.scores.Scoreboard;
  
 +// CraftBukkit start
-+import java.util.HashMap;
 +import java.util.Map;
-+import net.minecraft.network.protocol.game.ClientboundSetBorderCenterPacket;
-+import net.minecraft.network.protocol.game.ClientboundSetBorderLerpSizePacket;
-+import net.minecraft.network.protocol.game.ClientboundSetBorderSizePacket;
-+import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDelayPacket;
-+import net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePacket;
 +import net.minecraft.server.level.ServerLevel;
-+import net.minecraft.world.level.border.BorderChangeListener;
-+import net.minecraft.world.level.dimension.LevelStem;
-+import org.bukkit.Bukkit;
 +import org.bukkit.craftbukkit.CraftServer;
 +import org.bukkit.craftbukkit.CraftWorld;
-+import org.bukkit.craftbukkit.block.CapturedBlockState;
 +import org.bukkit.craftbukkit.block.CraftBlockState;
 +import org.bukkit.craftbukkit.block.data.CraftBlockData;
-+import org.bukkit.craftbukkit.util.CraftSpawnCategory;
 +import org.bukkit.entity.SpawnCategory;
-+import org.bukkit.event.block.BlockPhysicsEvent;
 +// CraftBukkit end
 +
  public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCloseable {
      public static final Codec<ResourceKey<Level>> RESOURCE_KEY_CODEC = ResourceKey.codec(Registries.DIMENSION);
      public static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
-@@ -93,7 +_,7 @@
-     public static final int TICKS_PER_DAY = 24000;
-     public static final int MAX_ENTITY_SPAWN_Y = 20000000;
-     public static final int MIN_ENTITY_SPAWN_Y = -20000000;
--    protected final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList();
-+    public final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList(); // Paper - public
-     protected final NeighborUpdater neighborUpdater;
-     private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
-     private boolean tickingBlockEntities;
 @@ -119,6 +_,57 @@
      private final DamageSources damageSources;
      private long subTickCount;
@@ -65,7 +44,7 @@
 +
 +    public static @Nullable BlockPos lastPhysicsProblem; // Spigot
 +    private int tileTickPosition;
-+    public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
++    public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new java.util.HashMap<>(); // Paper - Optimize explosions
 +    public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
 +
 +    public CraftWorld getWorld() {
@@ -73,7 +52,7 @@
 +    }
 +
 +    public CraftServer getCraftServer() {
-+        return (CraftServer) Bukkit.getServer();
++        return (CraftServer) org.bukkit.Bukkit.getServer();
 +    }
 +    // Paper start - Use getChunkIfLoadedImmediately
 +    @Override
@@ -83,7 +62,7 @@
 +    // Paper end - Use getChunkIfLoadedImmediately
 +    // Paper start - per world ticks per spawn
 +    private int getTicksPerSpawn(SpawnCategory spawnCategory) {
-+        final int perWorld = this.paperConfig().entities.spawning.ticksPerSpawn.getInt(CraftSpawnCategory.toNMS(spawnCategory));
++        final int perWorld = this.paperConfig().entities.spawning.ticksPerSpawn.getInt(org.bukkit.craftbukkit.util.CraftSpawnCategory.toNMS(spawnCategory));
 +        if (perWorld >= 0) {
 +            return perWorld;
 +        }
@@ -91,7 +70,7 @@
 +    }
 +    // Paper end
 +
-+    public abstract ResourceKey<LevelStem> getTypeKey();
++    public abstract ResourceKey<net.minecraft.world.level.dimension.LevelStem> getTypeKey();
 +
      protected Level(
          WritableLevelData levelData,
@@ -114,7 +93,7 @@
 +        this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
 +
 +        for (SpawnCategory spawnCategory : SpawnCategory.values()) {
-+            if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
++            if (org.bukkit.craftbukkit.util.CraftSpawnCategory.isValidForLimits(spawnCategory)) {
 +                this.ticksPerSpawnCategory.put(spawnCategory, this.getTicksPerSpawn(spawnCategory));
 +            }
 +        }
@@ -146,30 +125,30 @@
 +        // CraftBukkit start
 +        this.getWorldBorder().world = (ServerLevel) this;
 +        // From PlayerList.setPlayerFileData
-+        this.getWorldBorder().addListener(new BorderChangeListener() {
++        this.getWorldBorder().addListener(new net.minecraft.world.level.border.BorderChangeListener() {
 +            @Override
 +            public void onBorderSizeSet(WorldBorder border, double size) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderSizePacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderSizePacket(border), border.world);
 +            }
 +
 +            @Override
 +            public void onBorderSizeLerping(WorldBorder border, double fromSize, double toSize, long time) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderLerpSizePacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderLerpSizePacket(border), border.world);
 +            }
 +
 +            @Override
 +            public void onBorderCenterSet(WorldBorder border, double centerX, double centerZ) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderCenterPacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderCenterPacket(border), border.world);
 +            }
 +
 +            @Override
 +            public void onBorderSetWarningTime(WorldBorder border, int warningTime) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderWarningDelayPacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderWarningDelayPacket(border), border.world);
 +            }
 +
 +            @Override
 +            public void onBorderSetWarningBlocks(WorldBorder border, int warningBlockDistance) {
-+                Level.this.getCraftServer().getHandle().broadcastAll(new ClientboundSetBorderWarningDistancePacket(border), border.world);
++                Level.this.getCraftServer().getHandle().broadcastAll(new net.minecraft.network.protocol.game.ClientboundSetBorderWarningDistancePacket(border), border.world);
 +            }
 +
 +            @Override
@@ -344,7 +323,7 @@
 +            // Paper end - Protect Bedrock and End Portal/Frames from being destroyed
 +            CraftBlockState blockstate = this.capturedBlockStates.get(pos);
 +            if (blockstate == null) {
-+                blockstate = CapturedBlockState.getTreeBlockState(this, pos, flags);
++                blockstate = org.bukkit.craftbukkit.block.CapturedBlockState.getTreeBlockState(this, pos, flags);
 +                this.capturedBlockStates.put(pos.immutable(), blockstate);
 +            }
 +            blockstate.setData(state);
@@ -364,7 +343,7 @@
 +            if (this.captureBlockStates) {
 +                final CraftBlockState snapshot;
 +                if (!this.capturedBlockStates.containsKey(pos)) {
-+                    snapshot = (CraftBlockState) world.getBlockAt(pos.getX(), pos.getY(), pos.getZ()).getState(); // Paper - use CB getState to get a suitable snapshot
++                    snapshot = (CraftBlockState) org.bukkit.craftbukkit.block.CraftBlock.at(this, pos).getState(); // Paper - use CB getState to get a suitable snapshot
 +                    this.capturedBlockStates.put(pos.immutable(), snapshot);
 +                    captured = true;
 +                } else {
@@ -439,7 +418,7 @@
 +                blockState.updateIndirectNeighbourShapes(this, pos, i, recursionLeft - 1); // Don't call an event for the old block to limit event spam
 +                boolean cancelledUpdates = false; // Paper - Fix block place logic
 +                if (((ServerLevel)this).hasPhysicsEvent) { // Paper - BlockPhysicsEvent
-+                    BlockPhysicsEvent event = new BlockPhysicsEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), CraftBlockData.fromData(state));
++                    org.bukkit.event.block.BlockPhysicsEvent event = new org.bukkit.event.block.BlockPhysicsEvent(org.bukkit.craftbukkit.block.CraftBlock.at(this, pos), CraftBlockData.fromData(state));
 +                    cancelledUpdates = !event.callEvent(); // Paper - Fix block place logic
 +                }
 +                // CraftBukkit end

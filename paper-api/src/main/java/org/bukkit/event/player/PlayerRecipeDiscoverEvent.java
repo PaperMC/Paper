@@ -16,8 +16,8 @@ public class PlayerRecipeDiscoverEvent extends PlayerEvent implements Cancellabl
     private boolean cancel = false;
     private final NamespacedKey recipe;
 
-    public PlayerRecipeDiscoverEvent(@NotNull Player who, @NotNull NamespacedKey recipe) {
-        super(who);
+    public PlayerRecipeDiscoverEvent(@NotNull Player player, @NotNull NamespacedKey recipe) {
+        super(player);
         this.recipe = recipe;
     }
 

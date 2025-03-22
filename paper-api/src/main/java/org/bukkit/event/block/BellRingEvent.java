@@ -18,8 +18,8 @@ public class BellRingEvent extends BlockEvent implements Cancellable {
     private final Entity entity;
     private boolean cancelled;
 
-    public BellRingEvent(@NotNull Block theBlock, @NotNull BlockFace direction, @Nullable Entity entity) {
-        super(theBlock);
+    public BellRingEvent(@NotNull Block block, @NotNull BlockFace direction, @Nullable Entity entity) {
+        super(block);
         this.direction = direction;
         this.entity = entity;
     }

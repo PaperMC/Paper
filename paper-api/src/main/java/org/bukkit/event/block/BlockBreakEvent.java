@@ -31,8 +31,8 @@ public class BlockBreakEvent extends BlockExpEvent implements Cancellable {
     private boolean dropItems;
     private boolean cancel;
 
-    public BlockBreakEvent(@NotNull final Block theBlock, @NotNull final Player player) {
-        super(theBlock, 0);
+    public BlockBreakEvent(@NotNull final Block block, @NotNull final Player player) {
+        super(block, 0);
 
         this.player = player;
         this.dropItems = true; // Defaults to dropping items as it normally would

@@ -21,8 +21,8 @@ public class PlayerShowEntityEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
     private final Entity entity;
 
-    public PlayerShowEntityEvent(@NotNull Player who, @NotNull Entity entity) {
-        super(who);
+    public PlayerShowEntityEvent(@NotNull Player player, @NotNull Entity entity) {
+        super(player);
         this.entity = entity;
     }
 

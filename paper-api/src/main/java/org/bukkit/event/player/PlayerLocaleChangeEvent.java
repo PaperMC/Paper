@@ -10,22 +10,12 @@ import org.jetbrains.annotations.NotNull;
 public class PlayerLocaleChangeEvent extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();
-    //
-    private final String locale;
-    // Paper start
-    private final java.util.Locale adventure$locale;
-    /**
-     * @see Player#locale()
-     *
-     * @return the player's new locale
-     */
-    public @NotNull java.util.Locale locale() {
-        return this.adventure$locale;
-    }
-    // Paper end
 
-    public PlayerLocaleChangeEvent(@NotNull Player who, @NotNull String locale) {
-        super(who);
+    private final String locale;
+    private final java.util.Locale adventure$locale;
+
+    public PlayerLocaleChangeEvent(@NotNull Player player, @NotNull String locale) {
+        super(player);
         this.locale = locale;
         this.adventure$locale = java.util.Objects.requireNonNullElse(net.kyori.adventure.translation.Translator.parseLocale(locale), java.util.Locale.US); // Paper start
     }
@@ -39,6 +29,15 @@ public class PlayerLocaleChangeEvent extends PlayerEvent {
     @Deprecated // Paper
     public String getLocale() {
         return locale;
+    }
+
+    /**
+     * @see Player#locale()
+     *
+     * @return the player's new locale
+     */
+    public @NotNull java.util.Locale locale() {
+        return this.adventure$locale;
     }
 
     @NotNull

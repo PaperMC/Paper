@@ -14,8 +14,8 @@ public class EntityToggleSwimEvent extends EntityEvent implements Cancellable {
     private boolean cancel = false;
     private final boolean isSwimming;
 
-    public EntityToggleSwimEvent(@NotNull LivingEntity who, final boolean isSwimming) {
-        super(who);
+    public EntityToggleSwimEvent(@NotNull LivingEntity livingEntity, final boolean isSwimming) {
+        super(livingEntity);
         this.isSwimming = isSwimming;
     }
 

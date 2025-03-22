@@ -15,23 +15,23 @@ import org.jetbrains.annotations.NotNull;
 public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private boolean cancel;
-    private final Entity what;
+    private final Entity entity;
     private final ItemStack item;
     private final EquipmentSlot hand;
     private java.util.List<ItemStack> drops; // Paper - custom shear drops
 
     @org.jetbrains.annotations.ApiStatus.Internal // Paper
-    public PlayerShearEntityEvent(@NotNull Player who, @NotNull Entity what, @NotNull ItemStack item, @NotNull EquipmentSlot hand, final java.util.@NotNull List<ItemStack> drops) { // Paper - custom shear drops
-        super(who);
-        this.what = what;
+    public PlayerShearEntityEvent(@NotNull Player player, @NotNull Entity entity, @NotNull ItemStack item, @NotNull EquipmentSlot hand, final java.util.@NotNull List<ItemStack> drops) { // Paper - custom shear drops
+        super(player);
+        this.entity = entity;
         this.item = item;
         this.hand = hand;
         this.drops = drops; // Paper - custom shear drops
     }
 
     @Deprecated(since = "1.15.2")
-    public PlayerShearEntityEvent(@NotNull final Player who, @NotNull final Entity what) {
-        this(who, what, new ItemStack(Material.SHEARS), EquipmentSlot.HAND, java.util.Collections.emptyList()); // Paper - custom shear drops
+    public PlayerShearEntityEvent(@NotNull final Player player, @NotNull final Entity entity) {
+        this(player, entity, new ItemStack(Material.SHEARS), EquipmentSlot.HAND, java.util.Collections.emptyList()); // Paper - custom shear drops
     }
 
     @Override
@@ -51,7 +51,7 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
      */
     @NotNull
     public Entity getEntity() {
-        return what;
+        return entity;
     }
 
     /**

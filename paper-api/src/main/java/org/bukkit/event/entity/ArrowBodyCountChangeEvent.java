@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
 public class ArrowBodyCountChangeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private boolean cancelled;
     private final boolean isReset;
     private final int oldAmount;

@@ -15,19 +15,17 @@ import net.kyori.adventure.text.Component;
 public class PlayerAdvancementDoneEvent extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();
-    //
-    private final Advancement advancement;
-    private Component message; // Paper - Add Adventure message
 
-    public PlayerAdvancementDoneEvent(@NotNull Player who, @NotNull Advancement advancement) {
-        // Paper start - Add Adventure message
-        this(who, advancement, null);
+    private final Advancement advancement;
+    private Component message;
+
+    public PlayerAdvancementDoneEvent(@NotNull Player player, @NotNull Advancement advancement) {
+        this(player, advancement, null);
     }
-    public PlayerAdvancementDoneEvent(@NotNull Player who, @NotNull Advancement advancement, @Nullable Component message) {
-        // Paper end
-        super(who);
+    public PlayerAdvancementDoneEvent(@NotNull Player player, @NotNull Advancement advancement, @Nullable Component message) {
+        super(player);
         this.advancement = advancement;
-        this.message = message; // Paper - Add Adventure message
+        this.message = message;
     }
 
     /**

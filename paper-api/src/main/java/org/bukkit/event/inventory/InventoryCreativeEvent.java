@@ -13,8 +13,8 @@ import org.jetbrains.annotations.NotNull;
 public class InventoryCreativeEvent extends InventoryClickEvent {
     private ItemStack item;
 
-    public InventoryCreativeEvent(@NotNull InventoryView what, @NotNull SlotType type, int slot, @NotNull ItemStack newItem) {
-        super(what, type, slot, ClickType.CREATIVE, InventoryAction.PLACE_ALL);
+    public InventoryCreativeEvent(@NotNull InventoryView view, @NotNull SlotType type, int slot, @NotNull ItemStack newItem) {
+        super(view, type, slot, ClickType.CREATIVE, InventoryAction.PLACE_ALL);
         this.item = newItem;
     }
 

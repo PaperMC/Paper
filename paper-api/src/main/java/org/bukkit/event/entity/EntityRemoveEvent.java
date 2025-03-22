@@ -20,8 +20,8 @@ public class EntityRemoveEvent extends EntityEvent {
     private static final HandlerList handlers = new HandlerList();
     private final Cause cause;
 
-    public EntityRemoveEvent(@NotNull Entity what, @NotNull Cause cause) {
-        super(what);
+    public EntityRemoveEvent(@NotNull Entity entity, @NotNull Cause cause) {
+        super(entity);
         this.cause = cause;
     }
 

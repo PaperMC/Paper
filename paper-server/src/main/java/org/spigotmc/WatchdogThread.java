@@ -127,12 +127,11 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
 
                 if (isLongTimeout) {
                     if (!server.hasStopped()) {
-                        AsyncCatcher.enabled = false; // Disable async catcher incase it interferes with us
                         server.forceTicks = true;
                         if (this.restart) {
                             RestartCommand.addShutdownHook(SpigotConfig.restartScript);
                         }
-                        // try one last chance to safe shutdown on main incase it 'comes back'
+                        // try one last chance to safe shutdown on main in case it 'comes back'
                         server.abnormalExit = true;
                         server.safeShutdown(false, this.restart);
                         try {

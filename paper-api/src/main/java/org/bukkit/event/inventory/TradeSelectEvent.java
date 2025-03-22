@@ -16,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 public class TradeSelectEvent extends InventoryInteractEvent {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private final int index;
 
     public TradeSelectEvent(@NotNull MerchantView transaction, int newIndex) {

@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 public class RaidSpawnWaveEvent extends RaidEvent {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private final List<Raider> raiders;
     private final Raider leader;
 

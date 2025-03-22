@@ -10,15 +10,15 @@ import org.jetbrains.annotations.NotNull;
  * Called when the recipe of an Item is completed inside a crafting matrix.
  */
 public class CraftItemEvent extends InventoryClickEvent {
-    private Recipe recipe;
+    private final Recipe recipe;
 
-    public CraftItemEvent(@NotNull Recipe recipe, @NotNull InventoryView what, @NotNull SlotType type, int slot, @NotNull ClickType click, @NotNull InventoryAction action) {
-        super(what, type, slot, click, action);
+    public CraftItemEvent(@NotNull Recipe recipe, @NotNull InventoryView view, @NotNull SlotType type, int slot, @NotNull ClickType click, @NotNull InventoryAction action) {
+        super(view, type, slot, click, action);
         this.recipe = recipe;
     }
 
-    public CraftItemEvent(@NotNull Recipe recipe, @NotNull InventoryView what, @NotNull SlotType type, int slot, @NotNull ClickType click, @NotNull InventoryAction action, int key) {
-        super(what, type, slot, click, action, key);
+    public CraftItemEvent(@NotNull Recipe recipe, @NotNull InventoryView view, @NotNull SlotType type, int slot, @NotNull ClickType click, @NotNull InventoryAction action, int key) {
+        super(view, type, slot, click, action, key);
         this.recipe = recipe;
     }
 

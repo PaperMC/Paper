@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import java.util.UUID;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -16,21 +17,20 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
     private final UUID id;
     private final Status status;
 
-    public PlayerResourcePackStatusEvent(@NotNull final Player who, @NotNull UUID id, @NotNull Status resourcePackStatus) {
-        super(who);
+    public PlayerResourcePackStatusEvent(@NotNull final Player player, @NotNull UUID id, @NotNull Status resourcePackStatus) {
+        super(player);
         this.id = id;
         this.status = resourcePackStatus;
     }
 
-    // Paper start - add hash (not used anymore)
     /**
-     * @deprecated Hash does not seem to ever be set
+     * @deprecated This is no longer sent from the client and will always be null
      */
     @Deprecated(forRemoval = true)
+    @Contract("-> null")
     public String getHash() {
         return null;
     }
-    // Paper end
 
     /**
      * Gets the unique ID of this pack.

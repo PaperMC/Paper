@@ -48,7 +48,6 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -593,7 +592,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
             org.bukkit.inventory.EquipmentSlotGroup slot = null;
             try {
-                slot = CraftEquipmentSlot.getSlot(slotName);
+                slot = CraftEquipmentSlot.getSlotGroup(slotName);
             } catch (IllegalArgumentException ex) {
                 // SPIGOT-4551 - Slot is invalid, should really match nothing but this is undefined behaviour anyway
             }

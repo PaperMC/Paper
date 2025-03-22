@@ -1,19 +1,5 @@
 --- a/net/minecraft/world/entity/monster/piglin/PiglinAi.java
 +++ b/net/minecraft/world/entity/monster/piglin/PiglinAi.java
-@@ -72,6 +_,13 @@
- import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
- import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
- import net.minecraft.world.phys.Vec3;
-+// CraftBukkit start
-+import java.util.stream.Collectors;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.craftbukkit.inventory.CraftItemStack;
-+import org.bukkit.event.entity.EntityRemoveEvent;
-+import org.bukkit.event.entity.PiglinBarterEvent;
-+// CraftBukkit end
- 
- public class PiglinAi {
-     public static final int REPELLENT_DETECTION_RANGE_HORIZONTAL = 8;
 @@ -330,23 +_,32 @@
      protected static void pickUpItem(ServerLevel level, Piglin piglin, ItemEntity itemEntity) {
          stopWalking(piglin);
@@ -29,7 +15,7 @@
              item = itemEntity.getItem();
 -            itemEntity.discard();
 -        } else {
-+            itemEntity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            itemEntity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
 +        } else if (!org.bukkit.craftbukkit.event.CraftEventFactory.callEntityPickupItemEvent(piglin, itemEntity, itemEntity.getItem().getCount() - 1, false).isCancelled()) {
 +            piglin.onItemPickup(itemEntity); // Paper - EntityPickupItemEvent fixes; moved from Piglin#pickUpItem - call prior to item entity modification
              piglin.take(itemEntity, 1);
@@ -67,7 +53,7 @@
          ItemStack itemStack = item.split(1);
          if (item.isEmpty()) {
 -            itemEntity.discard();
-+            itemEntity.discard(EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
++            itemEntity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.PICKUP); // CraftBukkit - add Bukkit remove cause
          } else {
              itemEntity.setItem(item);
          }
@@ -80,9 +66,9 @@
              if (barter && isBarterCurrency) {
 -                throwItems(piglin, getBarterResponseItems(piglin));
 +                // CraftBukkit start
-+                PiglinBarterEvent event = CraftEventFactory.callPiglinBarterEvent(piglin, getBarterResponseItems(piglin), itemInHand);
++                org.bukkit.event.entity.PiglinBarterEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callPiglinBarterEvent(piglin, getBarterResponseItems(piglin), itemInHand);
 +                if (!event.isCancelled()) {
-+                    throwItems(piglin, event.getOutcome().stream().map(CraftItemStack::asNMSCopy).collect(Collectors.toList()));
++                    throwItems(piglin, event.getOutcome().stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asNMSCopy).collect(java.util.stream.Collectors.toList()));
 +                }
 +                // CraftBukkit end
              } else if (!isBarterCurrency) {

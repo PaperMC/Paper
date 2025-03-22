@@ -31,6 +31,7 @@ public class PlayerClientOptionsChangeEvent extends PlayerEvent {
     private final ParticleVisibility particleVisibility;
 
     @Deprecated
+    @ApiStatus.Internal
     public PlayerClientOptionsChangeEvent(final Player player, final String locale, final int viewDistance, final ChatVisibility chatVisibility, final boolean chatColors, final SkinParts skinParts, final MainHand mainHand) {
         super(player);
         this.locale = locale;

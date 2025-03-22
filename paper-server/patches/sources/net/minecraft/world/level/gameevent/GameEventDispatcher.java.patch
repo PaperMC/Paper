@@ -1,27 +1,14 @@
 --- a/net/minecraft/world/level/gameevent/GameEventDispatcher.java
 +++ b/net/minecraft/world/level/gameevent/GameEventDispatcher.java
-@@ -11,6 +_,13 @@
- import net.minecraft.world.level.chunk.ChunkAccess;
- import net.minecraft.world.phys.Vec3;
- 
-+// CraftBukkit start
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.CraftGameEvent;
-+import org.bukkit.craftbukkit.util.CraftLocation;
-+import org.bukkit.event.world.GenericGameEvent;
-+// CraftBukkit end
-+
- public class GameEventDispatcher {
-     private final ServerLevel level;
- 
-@@ -21,6 +_,14 @@
+@@ -21,6 +_,15 @@
      public void post(Holder<GameEvent> gameEvent, Vec3 pos, GameEvent.Context context) {
          int notificationRadius = gameEvent.value().notificationRadius();
          BlockPos blockPos = BlockPos.containing(pos);
 +        // CraftBukkit start
-+        GenericGameEvent apiEvent = new GenericGameEvent(CraftGameEvent.minecraftToBukkit(gameEvent.value()), CraftLocation.toBukkit(blockPos, this.level.getWorld()), (context.sourceEntity() == null) ? null : context.sourceEntity().getBukkitEntity(), notificationRadius, !Bukkit.isPrimaryThread());
-+        this.level.getCraftServer().getPluginManager().callEvent(apiEvent);
-+        if (apiEvent.isCancelled()) {
++        org.bukkit.event.world.GenericGameEvent apiEvent = new org.bukkit.event.world.GenericGameEvent(
++            org.bukkit.craftbukkit.CraftGameEvent.minecraftToBukkit(gameEvent.value()), org.bukkit.craftbukkit.util.CraftLocation.toBukkit(blockPos, this.level.getWorld()),
++            (context.sourceEntity() == null) ? null : context.sourceEntity().getBukkitEntity(), notificationRadius, !org.bukkit.Bukkit.isPrimaryThread());
++        if (!apiEvent.callEvent()) {
 +            return;
 +        }
 +        notificationRadius = apiEvent.getRadius();

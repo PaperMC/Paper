@@ -10,7 +10,7 @@ public interface CommandBlock extends TileState, io.papermc.paper.command.Comman
 
     /**
      * Gets the command that this CommandBlock will run when powered.
-     * This will never return null.  If the CommandBlock does not have a
+     * This will never return null. If the CommandBlock does not have a
      * command, an empty String will be returned instead.
      *
      * @return Command that this CommandBlock will run when powered.
@@ -28,8 +28,8 @@ public interface CommandBlock extends TileState, io.papermc.paper.command.Comman
     public void setCommand(@Nullable String command);
 
     /**
-     * Gets the name of this CommandBlock.  The name is used with commands
-     * that this CommandBlock executes.  This name will never be null, and
+     * Gets the name of this CommandBlock. The name is used with commands
+     * that this CommandBlock executes. This name will never be null, and
      * by default is "@".
      *
      * @return Name of this CommandBlock.
@@ -40,8 +40,8 @@ public interface CommandBlock extends TileState, io.papermc.paper.command.Comman
     public String getName();
 
     /**
-     * Sets the name of this CommandBlock.  The name is used with commands
-     * that this CommandBlock executes.  Setting the name to null is the
+     * Sets the name of this CommandBlock. The name is used with commands
+     * that this CommandBlock executes. Setting the name to null is the
      * same as setting it to "@".
      *
      * @param name New name for this CommandBlock.
@@ -50,10 +50,9 @@ public interface CommandBlock extends TileState, io.papermc.paper.command.Comman
     @Deprecated // Paper
     public void setName(@Nullable String name);
 
-    // Paper start
     /**
-     * Gets the name of this CommandBlock.  The name is used with commands
-     * that this CommandBlock executes.  This name will never be null, and
+     * Gets the name of this CommandBlock. The name is used with commands
+     * that this CommandBlock executes. This name will never be null, and
      * by default is a {@link net.kyori.adventure.text.TextComponent} containing {@code @}.
      *
      * @return Name of this CommandBlock.
@@ -61,12 +60,11 @@ public interface CommandBlock extends TileState, io.papermc.paper.command.Comman
     public net.kyori.adventure.text.@NotNull Component name();
 
     /**
-     * Sets the name of this CommandBlock.  The name is used with commands
-     * that this CommandBlock executes.  Setting the name to null is the
+     * Sets the name of this CommandBlock. The name is used with commands
+     * that this CommandBlock executes. Setting the name to null is the
      * same as setting it to a {@link net.kyori.adventure.text.TextComponent} containing {@code @}.
      *
      * @param name New name for this CommandBlock.
      */
     public void name(net.kyori.adventure.text.@Nullable Component name);
-    // Paper end
 }

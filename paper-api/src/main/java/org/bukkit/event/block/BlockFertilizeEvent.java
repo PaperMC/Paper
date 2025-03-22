@@ -19,12 +19,12 @@ public class BlockFertilizeEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
-    //
+
     private final Player player;
     private final List<BlockState> blocks;
 
-    public BlockFertilizeEvent(@NotNull Block theBlock, @Nullable Player player, @NotNull List<BlockState> blocks) {
-        super(theBlock);
+    public BlockFertilizeEvent(@NotNull Block block, @Nullable Player player, @NotNull List<BlockState> blocks) {
+        super(block);
         this.player = player;
         this.blocks = blocks;
     }

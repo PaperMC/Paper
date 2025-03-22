@@ -21,8 +21,8 @@ public class PlayerEditBookEvent extends PlayerEvent implements Cancellable {
     private boolean isSigning;
     private boolean cancel;
 
-    public PlayerEditBookEvent(@NotNull Player who, int slot, @NotNull BookMeta previousBookMeta, @NotNull BookMeta newBookMeta, boolean isSigning) {
-        super(who);
+    public PlayerEditBookEvent(@NotNull Player player, int slot, @NotNull BookMeta previousBookMeta, @NotNull BookMeta newBookMeta, boolean isSigning) {
+        super(player);
 
         Preconditions.checkArgument(slot >= -1 && slot <= 8, "Slot must be in range (-1)-8 inclusive");
         Preconditions.checkArgument(previousBookMeta != null, "Previous book meta must not be null");

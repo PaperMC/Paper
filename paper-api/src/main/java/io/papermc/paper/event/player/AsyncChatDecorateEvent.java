@@ -42,7 +42,7 @@ public class AsyncChatDecorateEvent extends ServerEvent implements Cancellable {
      * Gets the player (if available) associated with this event.
      * <p>
      * Certain commands request decorations without a player context
-     * which is why this is possibly null.
+     * which is why this is possibly {@code null}.
      *
      * @return the player or {@code null}
      */

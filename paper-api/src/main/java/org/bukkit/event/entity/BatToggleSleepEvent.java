@@ -18,8 +18,8 @@ public class BatToggleSleepEvent extends EntityEvent implements Cancellable {
     private boolean cancel = false;
     private final boolean awake;
 
-    public BatToggleSleepEvent(@NotNull Bat what, boolean awake) {
-        super(what);
+    public BatToggleSleepEvent(@NotNull Bat bat, boolean awake) {
+        super(bat);
         this.awake = awake;
     }
 

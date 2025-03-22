@@ -15,14 +15,14 @@ public class EntityDismountEvent extends EntityEvent implements Cancellable {
     private final Entity dismounted;
     private final boolean isCancellable; // Paper
 
-    public EntityDismountEvent(@NotNull Entity what, @NotNull Entity dismounted) {
+    public EntityDismountEvent(@NotNull Entity entity, @NotNull Entity dismounted) {
         // Paper start
-        this(what, dismounted, true);
+        this(entity, dismounted, true);
     }
 
-    public EntityDismountEvent(@NotNull Entity what, @NotNull Entity dismounted, boolean isCancellable) {
+    public EntityDismountEvent(@NotNull Entity entity, @NotNull Entity dismounted, boolean isCancellable) {
         // Paper end
-        super(what);
+        super(entity);
         this.dismounted = dismounted;
         this.isCancellable = isCancellable; // Paper
     }

@@ -19,15 +19,15 @@ public class PlayerRiptideEvent extends PlayerEvent {
     private final ItemStack item;
     private final Vector velocity;
 
-    public PlayerRiptideEvent(@NotNull final Player who, @NotNull final ItemStack item, @NotNull Vector velocity) {
-        super(who);
+    public PlayerRiptideEvent(@NotNull final Player player, @NotNull final ItemStack item, @NotNull Vector velocity) {
+        super(player);
         this.item = item;
         this.velocity = velocity;
     }
 
     @Deprecated(since = "1.20.4")
-    public PlayerRiptideEvent(@NotNull final Player who, @NotNull final ItemStack item) {
-        this(who, item, new Vector());
+    public PlayerRiptideEvent(@NotNull final Player player, @NotNull final ItemStack item) {
+        this(player, item, new Vector());
     }
 
     /**

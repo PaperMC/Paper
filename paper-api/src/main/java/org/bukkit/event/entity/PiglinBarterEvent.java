@@ -19,8 +19,8 @@ public class PiglinBarterEvent extends EntityEvent implements Cancellable {
     private final List<ItemStack> outcome;
     private final ItemStack input;
 
-    public PiglinBarterEvent(@NotNull Piglin what, @NotNull ItemStack input, @NotNull List<ItemStack> outcome) {
-        super(what);
+    public PiglinBarterEvent(@NotNull Piglin piglin, @NotNull ItemStack input, @NotNull List<ItemStack> outcome) {
+        super(piglin);
 
         this.input = input;
         this.outcome = outcome;

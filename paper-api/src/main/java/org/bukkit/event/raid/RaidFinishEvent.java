@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 public class RaidFinishEvent extends RaidEvent {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private final List<Player> winners;
 
     public RaidFinishEvent(@NotNull Raid raid, @NotNull World world, @NotNull List<Player> winners) {

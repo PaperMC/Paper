@@ -14,8 +14,8 @@ public class EntityMountEvent extends EntityEvent implements Cancellable {
     private boolean cancelled;
     private final Entity mount;
 
-    public EntityMountEvent(@NotNull Entity what, @NotNull Entity mount) {
-        super(what);
+    public EntityMountEvent(@NotNull Entity entity, @NotNull Entity mount) {
+        super(entity);
         this.mount = mount;
     }
 

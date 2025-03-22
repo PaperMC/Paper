@@ -22,8 +22,8 @@ public class BellRevealRaiderEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public BellRevealRaiderEvent(@NotNull Block theBlock, @NotNull Raider raider) {
-        super(theBlock);
+    public BellRevealRaiderEvent(@NotNull Block bell, @NotNull Raider raider) {
+        super(bell);
         this.raider = raider;
     }
 

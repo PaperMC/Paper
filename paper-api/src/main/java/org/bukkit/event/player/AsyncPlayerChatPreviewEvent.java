@@ -19,8 +19,8 @@ public class AsyncPlayerChatPreviewEvent extends AsyncPlayerChatEvent {
 
     private static final HandlerList handlers = new HandlerList();
 
-    public AsyncPlayerChatPreviewEvent(final boolean async, @NotNull final Player who, @NotNull final String message, @NotNull final Set<Player> players) {
-        super(async, who, message, players);
+    public AsyncPlayerChatPreviewEvent(final boolean async, @NotNull final Player player, @NotNull final String message, @NotNull final Set<Player> players) {
+        super(async, player, message, players);
     }
 
     @NotNull

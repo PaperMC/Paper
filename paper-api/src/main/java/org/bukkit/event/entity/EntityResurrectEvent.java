@@ -15,19 +15,19 @@ import org.jetbrains.annotations.Nullable;
 public class EntityResurrectEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private boolean cancelled;
 
     private final EquipmentSlot hand;
 
-    public EntityResurrectEvent(@NotNull LivingEntity what, @Nullable EquipmentSlot hand) {
-        super(what);
+    public EntityResurrectEvent(@NotNull LivingEntity livingEntity, @Nullable EquipmentSlot hand) {
+        super(livingEntity);
         this.hand = hand;
     }
 
     @Deprecated(since = "1.19.2")
-    public EntityResurrectEvent(@NotNull LivingEntity what) {
-        this(what, null);
+    public EntityResurrectEvent(@NotNull LivingEntity livingEntity) {
+        this(livingEntity, null);
     }
 
     @NotNull

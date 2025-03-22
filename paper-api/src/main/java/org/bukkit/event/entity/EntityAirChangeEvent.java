@@ -11,13 +11,12 @@ import org.jetbrains.annotations.NotNull;
 public class EntityAirChangeEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private int amount;
-    //
     private boolean cancelled;
 
-    public EntityAirChangeEvent(@NotNull Entity what, int amount) {
-        super(what);
+    public EntityAirChangeEvent(@NotNull Entity entity, int amount) {
+        super(entity);
         this.amount = amount;
     }
 

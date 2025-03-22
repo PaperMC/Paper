@@ -10,27 +10,29 @@ import org.jetbrains.annotations.Nullable;
  */
 public class PlayerQuitEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
-    private net.kyori.adventure.text.Component quitMessage; // Paper
-    private final QuitReason reason; // Paper
 
-    @Deprecated // Paper
-    public PlayerQuitEvent(@NotNull final Player who, @Nullable final String quitMessage) {
-        // Paper start
-        this(who, quitMessage, null);
+    private net.kyori.adventure.text.Component quitMessage;
+    private final QuitReason reason;
+
+    @Deprecated
+    public PlayerQuitEvent(@NotNull final Player player, @Nullable final String quitMessage) {
+        this(player, quitMessage, null);
     }
-    @Deprecated // Paper
-    public PlayerQuitEvent(@NotNull final Player who, @Nullable final String quitMessage, @Nullable QuitReason quitReason) {
-        super(who);
+
+    @Deprecated
+    public PlayerQuitEvent(@NotNull final Player player, @Nullable final String quitMessage, @Nullable QuitReason quitReason) {
+        super(player);
         this.quitMessage = quitMessage != null ? net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(quitMessage) : null; // Paper
         this.reason = quitReason == null ? QuitReason.DISCONNECTED : quitReason;
     }
-    // Paper start
+
     @Deprecated
-    public PlayerQuitEvent(@NotNull final Player who, @Nullable final net.kyori.adventure.text.Component quitMessage) {
-        this(who, quitMessage, null);
+    public PlayerQuitEvent(@NotNull final Player player, @Nullable final net.kyori.adventure.text.Component quitMessage) {
+        this(player, quitMessage, null);
     }
-    public PlayerQuitEvent(@NotNull final Player who, @Nullable final net.kyori.adventure.text.Component quitMessage, @Nullable QuitReason quitReason) {
-        super(who);
+
+    public PlayerQuitEvent(@NotNull final Player player, @Nullable final net.kyori.adventure.text.Component quitMessage, @Nullable QuitReason quitReason) {
+        super(player);
         this.quitMessage = quitMessage;
         this.reason = quitReason == null ? QuitReason.DISCONNECTED : quitReason;
     }
@@ -52,7 +54,6 @@ public class PlayerQuitEvent extends PlayerEvent {
     public void quitMessage(net.kyori.adventure.text.@Nullable Component quitMessage) {
         this.quitMessage = quitMessage;
     }
-    // Paper end
 
     /**
      * Gets the quit message to send to all online players

@@ -16,8 +16,8 @@ public class PlayerBedLeaveEvent extends PlayerEvent implements Cancellable {
     private boolean setBedSpawn;
     private boolean cancelled;
 
-    public PlayerBedLeaveEvent(@NotNull final Player who, @NotNull final Block bed, boolean setBedSpawn) {
-        super(who);
+    public PlayerBedLeaveEvent(@NotNull final Player player, @NotNull final Block bed, boolean setBedSpawn) {
+        super(player);
         this.bed = bed;
         this.setBedSpawn = setBedSpawn;
     }

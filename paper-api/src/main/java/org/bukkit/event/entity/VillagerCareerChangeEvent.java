@@ -13,8 +13,8 @@ public class VillagerCareerChangeEvent extends EntityEvent implements Cancellabl
     private Profession profession;
     private final ChangeReason reason;
 
-    public VillagerCareerChangeEvent(@NotNull Villager what, @NotNull Profession profession, @NotNull ChangeReason reason) {
-        super(what);
+    public VillagerCareerChangeEvent(@NotNull Villager villager, @NotNull Profession profession, @NotNull ChangeReason reason) {
+        super(villager);
         this.profession = profession;
         this.reason = reason;
     }

@@ -15,18 +15,18 @@ public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
     private static final HandlerList handlers = new HandlerList();
     private final ItemStack item;
     private int damage;
-    private int originalDamage; // Paper - Add pre-reduction damage
+    private final int originalDamage; // Paper - Add pre-reduction damage
     private boolean cancelled = false;
 
     @Deprecated // Paper - Add pre-reduction damage
-    public PlayerItemDamageEvent(@NotNull Player player, @NotNull ItemStack what, int damage) {
+    public PlayerItemDamageEvent(@NotNull Player player, @NotNull ItemStack item, int damage) {
         // Paper start - Add pre-reduction damage
-        this(player, what, damage, damage);
+        this(player, item, damage, damage);
     }
 
-    public PlayerItemDamageEvent(@NotNull Player player, @NotNull ItemStack what, int damage, int originalDamage) {
+    public PlayerItemDamageEvent(@NotNull Player player, @NotNull ItemStack item, int damage, int originalDamage) {
         super(player);
-        this.item = what;
+        this.item = item;
         this.damage = damage;
         this.originalDamage = originalDamage;
         // Paper end

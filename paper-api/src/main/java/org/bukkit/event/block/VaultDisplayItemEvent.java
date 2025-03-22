@@ -18,8 +18,8 @@ public class VaultDisplayItemEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
     private ItemStack displayItem;
 
-    public VaultDisplayItemEvent(@NotNull Block theBlock, @Nullable ItemStack displayItem) {
-        super(theBlock);
+    public VaultDisplayItemEvent(@NotNull Block vault, @Nullable ItemStack displayItem) {
+        super(vault);
         this.displayItem = displayItem;
     }
 

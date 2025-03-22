@@ -17,8 +17,8 @@ public class EntityExhaustionEvent extends EntityEvent implements Cancellable {
     private float exhaustion;
     private boolean cancel;
 
-    public EntityExhaustionEvent(@NotNull HumanEntity who, @NotNull ExhaustionReason exhaustionReason, float exhaustion) {
-        super(who);
+    public EntityExhaustionEvent(@NotNull HumanEntity human, @NotNull ExhaustionReason exhaustionReason, float exhaustion) {
+        super(human);
         this.exhaustionReason = exhaustionReason;
         this.exhaustion = exhaustion;
     }

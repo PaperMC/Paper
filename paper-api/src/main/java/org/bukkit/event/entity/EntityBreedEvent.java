@@ -14,22 +14,17 @@ import org.jetbrains.annotations.Nullable;
 public class EntityBreedEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private final LivingEntity mother;
     private final LivingEntity father;
     private final LivingEntity breeder;
     private final ItemStack bredWith;
     private int experience;
-    //
+
     private boolean cancel;
 
     public EntityBreedEvent(@NotNull LivingEntity child, @NotNull LivingEntity mother, @NotNull LivingEntity father, @Nullable LivingEntity breeder, @Nullable ItemStack bredWith, int experience) {
         super(child);
-
-        Preconditions.checkArgument(child != null, "Cannot have null child");
-        Preconditions.checkArgument(mother != null, "Cannot have null mother");
-        Preconditions.checkArgument(father != null, "Cannot have null father");
-
         // Breeder can be null in the case of spontaneous conception
         this.mother = mother;
         this.father = father;

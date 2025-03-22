@@ -27,10 +27,10 @@ public class BlockDispenseLootEvent extends BlockEvent implements Cancellable {
     private List<ItemStack> dispensedLoot;
     private boolean cancelled;
 
-    public BlockDispenseLootEvent(@Nullable Player player, @NotNull Block theBlock, @NotNull List<ItemStack> dispensedLoot) {
-        super(theBlock);
+    public BlockDispenseLootEvent(@Nullable Player player, @NotNull Block block, @NotNull List<ItemStack> dispensedLoot) {
+        super(block);
         this.player = player;
-        this.block = theBlock;
+        this.block = block;
         this.dispensedLoot = dispensedLoot;
     }
 

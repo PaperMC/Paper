@@ -18,8 +18,8 @@ public class CrafterCraftEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
 
     @org.jetbrains.annotations.ApiStatus.Internal // Paper - fix upstream annotation mistakes
-    public CrafterCraftEvent(@NotNull Block theBlock, @NotNull CraftingRecipe recipe, @NotNull ItemStack result) {
-        super(theBlock);
+    public CrafterCraftEvent(@NotNull Block crafter, @NotNull CraftingRecipe recipe, @NotNull ItemStack result) {
+        super(crafter);
         this.result = result;
         this.recipe = recipe;
     }

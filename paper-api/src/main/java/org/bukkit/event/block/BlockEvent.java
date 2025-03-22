@@ -10,8 +10,8 @@ import org.jetbrains.annotations.NotNull;
 public abstract class BlockEvent extends Event {
     protected Block block;
 
-    public BlockEvent(@NotNull final Block theBlock) {
-        block = theBlock;
+    public BlockEvent(@NotNull final Block block) {
+        this.block = block;
     }
 
     /**

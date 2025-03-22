@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 public class TabCompleteEvent extends Event implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private final CommandSender sender;
     private final String buffer;
     private List<String> completions;

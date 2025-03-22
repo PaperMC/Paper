@@ -63,15 +63,15 @@ public class PlayerBedEnterEvent extends PlayerEvent implements Cancellable {
     private final BedEnterResult bedEnterResult;
     private Result useBed = Result.DEFAULT;
 
-    public PlayerBedEnterEvent(@NotNull Player who, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult) {
-        super(who);
+    public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed, @NotNull BedEnterResult bedEnterResult) {
+        super(player);
         this.bed = bed;
         this.bedEnterResult = bedEnterResult;
     }
 
     @Deprecated(since = "1.13.2")
-    public PlayerBedEnterEvent(@NotNull Player who, @NotNull Block bed) {
-        this(who, bed, BedEnterResult.OK);
+    public PlayerBedEnterEvent(@NotNull Player player, @NotNull Block bed) {
+        this(player, bed, BedEnterResult.OK);
     }
 
     /**

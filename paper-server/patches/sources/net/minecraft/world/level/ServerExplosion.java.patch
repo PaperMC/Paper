@@ -1,18 +1,15 @@
 --- a/net/minecraft/world/level/ServerExplosion.java
 +++ b/net/minecraft/world/level/ServerExplosion.java
-@@ -33,6 +_,17 @@
+@@ -33,6 +_,14 @@
  import net.minecraft.world.phys.HitResult;
  import net.minecraft.world.phys.Vec3;
  
 +// CraftBukkit start
 +import net.minecraft.world.entity.boss.EnderDragonPart;
 +import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
-+import net.minecraft.world.level.block.Blocks;
 +import org.bukkit.craftbukkit.event.CraftEventFactory;
 +import org.bukkit.craftbukkit.util.CraftLocation;
-+import org.bukkit.event.entity.EntityExplodeEvent;
 +import org.bukkit.Location;
-+import org.bukkit.event.block.BlockExplodeEvent;
 +// CraftBukkit end
 +
  public class ServerExplosion implements Explosion {
@@ -60,7 +57,7 @@
                              if (f > 0.0F && this.damageCalculator.shouldBlockExplode(this, this.level, blockPos, blockState, f)) {
                                  set.add(blockPos);
 +                                // Paper start - prevent headless pistons from forming
-+                                if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowHeadlessPistons && blockState.is(Blocks.MOVING_PISTON)) {
++                                if (!io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.allowHeadlessPistons && blockState.is(net.minecraft.world.level.block.Blocks.MOVING_PISTON)) {
 +                                    net.minecraft.world.level.block.entity.BlockEntity extension = this.level.getBlockEntity(blockPos);
 +                                    if (extension instanceof net.minecraft.world.level.block.piston.PistonMovingBlockEntity blockEntity && blockEntity.isSourcePiston()) {
 +                                        net.minecraft.core.Direction direction = blockState.getValue(net.minecraft.world.level.block.piston.PistonHeadBlock.FACING);
@@ -147,18 +144,15 @@
                              this.hitPlayers.put(player, vec3);
                          }
  
-@@ -222,7 +_,61 @@
+@@ -222,7 +_,56 @@
          List<ServerExplosion.StackCollector> list = new ArrayList<>();
          Util.shuffle(blocks, this.level.random);
  
 +        // CraftBukkit start
-+        org.bukkit.World bworld = this.level.getWorld();
-+        Location location = CraftLocation.toBukkit(this.center, bworld);
-+
++        Location location = CraftLocation.toBukkit(this.center, this.level.getWorld());
 +        List<org.bukkit.block.Block> blockList = new ObjectArrayList<>();
 +        for (int i1 = blocks.size() - 1; i1 >= 0; i1--) {
-+            BlockPos cpos = blocks.get(i1);
-+            org.bukkit.block.Block bblock = bworld.getBlockAt(cpos.getX(), cpos.getY(), cpos.getZ());
++            org.bukkit.block.Block bblock = org.bukkit.craftbukkit.block.CraftBlock.at(this.level, blocks.get(i1));
 +            if (!bblock.getType().isAir()) {
 +                blockList.add(bblock);
 +            }
@@ -167,24 +161,22 @@
 +        List<org.bukkit.block.Block> bukkitBlocks;
 +
 +        if (this.source != null) {
-+            EntityExplodeEvent event = CraftEventFactory.callEntityExplodeEvent(this.source, blockList, this.yield, this.getBlockInteraction());
++            org.bukkit.event.entity.EntityExplodeEvent event = CraftEventFactory.callEntityExplodeEvent(this.source, blockList, this.yield, this.getBlockInteraction());
 +            this.wasCanceled = event.isCancelled();
 +            bukkitBlocks = event.blockList();
 +            this.yield = event.getYield();
 +        } else {
 +            org.bukkit.block.Block block = location.getBlock();
 +            org.bukkit.block.BlockState blockState = (this.damageSource.causingBlockSnapshot() != null) ? this.damageSource.causingBlockSnapshot() : block.getState();
-+            BlockExplodeEvent event = CraftEventFactory.callBlockExplodeEvent(block, blockState, blockList, this.yield, this.getBlockInteraction());
++            org.bukkit.event.block.BlockExplodeEvent event = CraftEventFactory.callBlockExplodeEvent(block, blockState, blockList, this.yield, this.getBlockInteraction());
 +            this.wasCanceled = event.isCancelled();
 +            bukkitBlocks = event.blockList();
 +            this.yield = event.getYield();
 +        }
 +
 +        blocks.clear();
-+
 +        for (org.bukkit.block.Block bblock : bukkitBlocks) {
-+            BlockPos coords = new BlockPos(bblock.getX(), bblock.getY(), bblock.getZ());
-+            blocks.add(coords);
++            blocks.add(((org.bukkit.craftbukkit.block.CraftBlock) bblock).getPosition());
 +        }
 +
 +        if (this.wasCanceled) {
@@ -200,7 +192,7 @@
 +                Entity sourceEntity = this.source == null ? null : this.source;
 +                BlockPos sourceBlock = sourceEntity == null ? BlockPos.containing(this.center) : null;
 +                if (!CraftEventFactory.callTNTPrimeEvent(this.level, blockPos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.EXPLOSION, sourceEntity, sourceBlock)) {
-+                    this.level.sendBlockUpdated(blockPos, Blocks.AIR.defaultBlockState(), state, 3); // Update the block on the client
++                    this.level.sendBlockUpdated(blockPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), state, 3); // Update the block on the client
 +                    continue;
 +                }
 +            }

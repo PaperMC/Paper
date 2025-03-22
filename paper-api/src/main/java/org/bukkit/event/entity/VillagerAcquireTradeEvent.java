@@ -13,11 +13,11 @@ public class VillagerAcquireTradeEvent extends EntityEvent implements Cancellabl
 
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
-    //
+
     private MerchantRecipe recipe;
 
-    public VillagerAcquireTradeEvent(@NotNull AbstractVillager what, @NotNull MerchantRecipe recipe) {
-        super(what);
+    public VillagerAcquireTradeEvent(@NotNull AbstractVillager villager, @NotNull MerchantRecipe recipe) {
+        super(villager);
         this.recipe = recipe;
     }
 

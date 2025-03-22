@@ -26,12 +26,12 @@ public class EntityDeathEvent extends EntityEvent implements org.bukkit.event.Ca
     private float deathSoundPitch;
     // Paper end
 
-    public EntityDeathEvent(@NotNull final LivingEntity entity, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops) {
-        this(entity, damageSource, drops, 0);
+    public EntityDeathEvent(@NotNull final LivingEntity livingEntity, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops) {
+        this(livingEntity, damageSource, drops, 0);
     }
 
-    public EntityDeathEvent(@NotNull final LivingEntity what, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp) {
-        super(what);
+    public EntityDeathEvent(@NotNull final LivingEntity livingEntity, @NotNull DamageSource damageSource, @NotNull final List<ItemStack> drops, final int droppedExp) {
+        super(livingEntity);
         this.damageSource = damageSource;
         this.drops = drops;
         this.dropExp = droppedExp;

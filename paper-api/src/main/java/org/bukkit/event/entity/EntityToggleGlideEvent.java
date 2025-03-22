@@ -20,8 +20,8 @@ public class EntityToggleGlideEvent extends EntityEvent implements Cancellable {
     private boolean cancel = false;
     private final boolean isGliding;
 
-    public EntityToggleGlideEvent(@NotNull LivingEntity who, final boolean isGliding) {
-        super(who);
+    public EntityToggleGlideEvent(@NotNull LivingEntity livingEntity, final boolean isGliding) {
+        super(livingEntity);
         this.isGliding = isGliding;
     }
 

@@ -14,14 +14,14 @@ public class PlayerInteractEntityEvent extends PlayerEvent implements Cancellabl
     private static final HandlerList handlers = new HandlerList();
     protected Entity clickedEntity;
     boolean cancelled = false;
-    private EquipmentSlot hand;
+    private final EquipmentSlot hand;
 
-    public PlayerInteractEntityEvent(@NotNull final Player who, @NotNull final Entity clickedEntity) {
-        this(who, clickedEntity, EquipmentSlot.HAND);
+    public PlayerInteractEntityEvent(@NotNull final Player player, @NotNull final Entity clickedEntity) {
+        this(player, clickedEntity, EquipmentSlot.HAND);
     }
 
-    public PlayerInteractEntityEvent(@NotNull final Player who, @NotNull final Entity clickedEntity, @NotNull final EquipmentSlot hand) {
-        super(who);
+    public PlayerInteractEntityEvent(@NotNull final Player player, @NotNull final Entity clickedEntity, @NotNull final EquipmentSlot hand) {
+        super(player);
         this.clickedEntity = clickedEntity;
         this.hand = hand;
     }

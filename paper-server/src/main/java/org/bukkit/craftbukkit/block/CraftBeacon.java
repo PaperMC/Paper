@@ -82,18 +82,16 @@ public class CraftBeacon extends CraftBlockEntityState<BeaconBlockEntity> implem
         this.getSnapshot().secondaryPower = (effect != null) ? CraftPotionEffectType.bukkitToMinecraftHolder(effect) : null;
     }
 
-    // Paper start
     @Override
     public net.kyori.adventure.text.Component customName() {
-        final BeaconBlockEntity be = this.getSnapshot();
-        return be.name != null ? io.papermc.paper.adventure.PaperAdventure.asAdventure(be.name) : null;
+        final BeaconBlockEntity beacon = this.getSnapshot();
+        return beacon.name != null ? io.papermc.paper.adventure.PaperAdventure.asAdventure(beacon.name) : null;
     }
 
     @Override
     public void customName(final net.kyori.adventure.text.Component customName) {
         this.getSnapshot().setCustomName(customName != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(customName) : null);
     }
-    // Paper end
 
     @Override
     public String getCustomName() {

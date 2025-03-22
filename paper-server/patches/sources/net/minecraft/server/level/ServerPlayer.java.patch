@@ -808,25 +808,15 @@
                      this.awardStat(Stats.SLEEP_IN_BED);
                      CriteriaTriggers.SLEPT_IN_BED.trigger(this);
                  });
-@@ -1128,21 +_,39 @@
+@@ -1128,21 +_,29 @@
  
      @Override
      public void stopSleepInBed(boolean wakeImmediately, boolean updateLevelForSleepingPlayers) {
 +        if (!this.isSleeping()) return; // CraftBukkit - Can't leave bed if not in one!
 +        // CraftBukkit start - fire PlayerBedLeaveEvent
-+        org.bukkit.craftbukkit.entity.CraftPlayer player = this.getBukkitEntity();
-+        BlockPos bedPosition = this.getSleepingPos().orElse(null);
-+
-+        org.bukkit.block.Block bed;
-+        if (bedPosition != null) {
-+            bed = this.level().getWorld().getBlockAt(bedPosition.getX(), bedPosition.getY(), bedPosition.getZ());
-+        } else {
-+            bed = this.level().getWorld().getBlockAt(player.getLocation());
-+        }
-+
-+        org.bukkit.event.player.PlayerBedLeaveEvent event = new org.bukkit.event.player.PlayerBedLeaveEvent(player, bed, true);
-+        this.level().getCraftServer().getPluginManager().callEvent(event);
-+        if (event.isCancelled()) {
++        org.bukkit.block.Block bed = org.bukkit.craftbukkit.block.CraftBlock.at(this.level(), this.getSleepingPos().orElse(this.blockPosition()));
++        org.bukkit.event.player.PlayerBedLeaveEvent event = new org.bukkit.event.player.PlayerBedLeaveEvent(this.getBukkitEntity(), bed, true);
++        if (!event.callEvent()) {
 +            return;
 +        }
 +        // CraftBukkit end

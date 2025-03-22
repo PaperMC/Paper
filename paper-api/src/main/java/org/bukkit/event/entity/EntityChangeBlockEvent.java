@@ -17,8 +17,8 @@ public class EntityChangeBlockEvent extends EntityEvent implements Cancellable {
     private boolean cancel;
     private final BlockData to;
 
-    public EntityChangeBlockEvent(@NotNull final Entity what, @NotNull final Block block, @NotNull final BlockData to) {
-        super(what);
+    public EntityChangeBlockEvent(@NotNull final Entity entity, @NotNull final Block block, @NotNull final BlockData to) {
+        super(entity);
         this.block = block;
         this.cancel = false;
         this.to = to;

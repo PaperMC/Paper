@@ -10,14 +10,13 @@ import org.jetbrains.annotations.NotNull;
 public abstract class PlayerEvent extends Event {
     protected Player player;
 
-    public PlayerEvent(@NotNull final Player who) {
-        player = who;
+    public PlayerEvent(@NotNull final Player player) {
+        this.player = player;
     }
 
-    public PlayerEvent(@NotNull final Player who, boolean async) { // Paper - public
+    public PlayerEvent(@NotNull final Player player, boolean async) {
         super(async);
-        player = who;
-
+        this.player = player;
     }
 
     /**

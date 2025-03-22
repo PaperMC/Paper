@@ -15,8 +15,8 @@ public class StriderTemperatureChangeEvent extends EntityEvent implements Cancel
     private final boolean shivering;
     private boolean cancelled;
 
-    public StriderTemperatureChangeEvent(@NotNull Strider what, boolean shivering) {
-        super(what);
+    public StriderTemperatureChangeEvent(@NotNull Strider strider, boolean shivering) {
+        super(strider);
         this.shivering = shivering;
     }
 

@@ -15,8 +15,8 @@ public class BellResonateEvent extends BlockEvent {
     private static final HandlerList handlers = new HandlerList();
     private final List<LivingEntity> resonatedEntities;
 
-    public BellResonateEvent(@NotNull Block theBlock, @NotNull List<LivingEntity> resonatedEntities) {
-        super(theBlock);
+    public BellResonateEvent(@NotNull Block bell, @NotNull List<LivingEntity> resonatedEntities) {
+        super(bell);
         this.resonatedEntities = resonatedEntities;
     }
 

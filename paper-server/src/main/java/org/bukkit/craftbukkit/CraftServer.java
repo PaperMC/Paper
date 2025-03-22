@@ -40,7 +40,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.imageio.ImageIO;
-// import jline.console.ConsoleReader;
 import net.minecraft.advancements.AdvancementHolder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -117,7 +116,6 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Keyed;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Registry;
@@ -260,6 +258,7 @@ import org.bukkit.structure.StructureManager;
 import org.bukkit.util.StringUtil;
 import org.bukkit.util.permissions.DefaultPermissions;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -267,11 +266,8 @@ import org.yaml.snakeyaml.error.MarkedYAMLException;
 
 import net.md_5.bungee.api.chat.BaseComponent; // Spigot
 
-import javax.annotation.Nullable; // Paper
-import javax.annotation.Nonnull; // Paper
-
 public final class CraftServer implements Server {
-    private final String serverName = io.papermc.paper.ServerBuildInfo.buildInfo().brandName(); // Paper
+    private final String serverName = io.papermc.paper.ServerBuildInfo.buildInfo().brandName();
     private final String serverVersion;
     private final String bukkitVersion = Versioning.getBukkitVersion();
     private final Logger logger = Logger.getLogger("Minecraft");
@@ -281,12 +277,11 @@ public final class CraftServer implements Server {
     private final SimpleHelpMap helpMap = new SimpleHelpMap(this);
     private final StandardMessenger messenger = new StandardMessenger();
     private final SimplePluginManager pluginManager; // Paper - Move down
-    public final io.papermc.paper.plugin.manager.PaperPluginManagerImpl paperPluginManager; // Paper
+    public final io.papermc.paper.plugin.manager.PaperPluginManagerImpl paperPluginManager;
     private final StructureManager structureManager;
-    protected final DedicatedServer console;
-    protected final DedicatedPlayerList playerList;
-    private final Map<String, World> worlds = new LinkedHashMap<String, World>();
-    // private final Map<Class<?>, Registry<?>> registries = new HashMap<>(); // Paper - replace with RegistryAccess
+    final DedicatedServer console;
+    private final DedicatedPlayerList playerList;
+    private final Map<String, World> worlds = new LinkedHashMap<>();
     private YamlConfiguration configuration;
     private YamlConfiguration commandsConfiguration;
     private final Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
@@ -300,8 +295,8 @@ public final class CraftServer implements Server {
     public ApiVersion minimumAPI;
     public CraftScoreboardManager scoreboardManager;
     public CraftDataPackManager dataPackManager;
-    private CraftServerTickManager serverTickManager;
-    private CraftServerLinks serverLinks;
+    private final CraftServerTickManager serverTickManager;
+    private final CraftServerLinks serverLinks;
     public boolean playerCommandState;
     private boolean printSaveWarning;
     private CraftIconCache icon;
@@ -310,11 +305,11 @@ public final class CraftServer implements Server {
     private final List<CraftPlayer> playerView;
     public int reloadCount;
     public Set<String> activeCompatibilities = Collections.emptySet();
-    private final io.papermc.paper.datapack.PaperDatapackManager datapackManager; // Paper
-    public static Exception excessiveVelEx; // Paper - Velocity warnings
-    private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher(); // Paper
-    private final io.papermc.paper.potion.PaperPotionBrewer potionBrewer; // Paper - Custom Potion Mixes
-    public final io.papermc.paper.SparksFly spark; // Paper - spark
+    private final io.papermc.paper.datapack.PaperDatapackManager datapackManager;
+    public static Exception excessiveVelEx;
+    private final io.papermc.paper.logging.SysoutCatcher sysoutCatcher = new io.papermc.paper.logging.SysoutCatcher();
+    private final io.papermc.paper.potion.PaperPotionBrewer potionBrewer;
+    public final io.papermc.paper.SparksFly spark;
 
     // Paper start - Folia region threading API
     private final io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler regionizedScheduler = new io.papermc.paper.threadedregions.scheduler.FallbackRegionScheduler();
@@ -2051,7 +2046,7 @@ public final class CraftServer implements Server {
         return recipients.size();
     }
 
-    @Nullable
+    @Override
     public UUID getPlayerUniqueId(String name) {
         Player player = Bukkit.getPlayerExact(name);
         if (player != null) {
@@ -2910,7 +2905,7 @@ public final class CraftServer implements Server {
 
     @Override
     public <T extends Keyed> Registry<T> getRegistry(Class<T> aClass) {
-        return io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(aClass); // Paper - replace with RegistryAccess
+        return io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(aClass);
     }
 
     @Deprecated
@@ -2919,7 +2914,6 @@ public final class CraftServer implements Server {
         return CraftMagicNumbers.INSTANCE;
     }
 
-    // Paper start
     @Override
     public long[] getTickTimes() {
         return this.getServer().tickTimes5s.getTimes();
@@ -2929,9 +2923,7 @@ public final class CraftServer implements Server {
     public double getAverageTickTime() {
         return this.getServer().tickTimes5s.getAverage();
     }
-    // Paper end
 
-    // Spigot start
     private final org.bukkit.Server.Spigot spigot = new org.bukkit.Server.Spigot() {
 
         @Deprecated
@@ -2978,7 +2970,6 @@ public final class CraftServer implements Server {
     public org.bukkit.Server.Spigot spigot() {
         return this.spigot;
     }
-    // Spigot end
 
     @Override
     public void restart() {
@@ -2996,7 +2987,7 @@ public final class CraftServer implements Server {
 
     @Override
     public void playSound(final net.kyori.adventure.sound.Sound sound) {
-        if (sound.seed().isEmpty()) org.spigotmc.AsyncCatcher.catchOp("play sound; cannot generate seed with world random"); // Paper
+        if (sound.seed().isEmpty()) org.spigotmc.AsyncCatcher.catchOp("play sound; cannot generate seed with world random");
         final long seed = sound.seed().orElseGet(this.console.overworld().getRandom()::nextLong);
         for (ServerPlayer player : this.playerList.getPlayers()) {
             player.connection.send(io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, player.getX(), player.getY(), player.getZ(), seed, null));
@@ -3005,20 +2996,20 @@ public final class CraftServer implements Server {
 
     @Override
     public void playSound(final net.kyori.adventure.sound.Sound sound, final double x, final double y, final double z) {
-        org.spigotmc.AsyncCatcher.catchOp("play sound"); // Paper
+        org.spigotmc.AsyncCatcher.catchOp("play sound");
         io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, x, y, z, sound.seed().orElseGet(this.console.overworld().getRandom()::nextLong), this.playSound0(x, y, z, this.console.getAllLevels()));
     }
 
     @Override
     public void playSound(final net.kyori.adventure.sound.Sound sound, final net.kyori.adventure.sound.Sound.Emitter emitter) {
-        if (sound.seed().isEmpty()) org.spigotmc.AsyncCatcher.catchOp("play sound; cannot generate seed with world random"); // Paper
+        if (sound.seed().isEmpty()) org.spigotmc.AsyncCatcher.catchOp("play sound; cannot generate seed with world random");
         final long seed = sound.seed().orElseGet(this.console.overworld().getRandom()::nextLong);
         if (emitter == net.kyori.adventure.sound.Sound.Emitter.self()) {
             for (ServerPlayer player : this.playerList.getPlayers()) {
                 player.connection.send(io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, player, seed, null));
             }
         } else if (emitter instanceof org.bukkit.craftbukkit.entity.CraftEntity craftEntity) {
-            org.spigotmc.AsyncCatcher.catchOp("play sound; cannot use entity emitter"); // Paper
+            org.spigotmc.AsyncCatcher.catchOp("play sound; cannot use entity emitter");
             final net.minecraft.world.entity.Entity entity = craftEntity.getHandle();
             io.papermc.paper.adventure.PaperAdventure.asSoundPacket(sound, entity, seed, this.playSound0(entity.getX(), entity.getY(), entity.getZ(), List.of((ServerLevel) entity.level())));
         } else {
@@ -3126,12 +3117,12 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nonnull UUID uuid) {
+    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull UUID uuid) {
         return createProfile(uuid, null);
     }
 
     @Override
-    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@Nonnull String name) {
+    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@NonnNotNullull String name) {
         return createProfile(null, name);
     }
 

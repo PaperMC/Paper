@@ -257,7 +257,6 @@ public final class CraftLegacy {
     }
 
     public static void init() {
-        //
     }
 
     static {

@@ -22,8 +22,8 @@ public class EntityExplodeEvent extends EntityEvent implements Cancellable {
     private float yield;
     private final ExplosionResult result;
 
-    public EntityExplodeEvent(@NotNull final Entity what, @NotNull final Location location, @NotNull final List<Block> blocks, final float yield, @NotNull final ExplosionResult result) {
-        super(what);
+    public EntityExplodeEvent(@NotNull final Entity entity, @NotNull final Location location, @NotNull final List<Block> blocks, final float yield, @NotNull final ExplosionResult result) {
+        super(entity);
         this.location = location;
         this.blocks = blocks;
         this.yield = yield;

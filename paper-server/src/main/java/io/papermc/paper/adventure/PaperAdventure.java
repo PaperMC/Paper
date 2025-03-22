@@ -1,6 +1,5 @@
 package io.papermc.paper.adventure;
 
-import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.JavaOps;
 import io.netty.util.AttributeKey;

@@ -40,6 +40,7 @@ import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
+import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftSound;
 import org.bukkit.craftbukkit.CraftWorld;
@@ -1024,11 +1025,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
     @Override
     public void startUsingItem(org.bukkit.inventory.EquipmentSlot hand) {
         Preconditions.checkArgument(hand != null, "hand must not be null");
-        switch (hand) {
-            case HAND -> this.getHandle().startUsingItem(InteractionHand.MAIN_HAND);
-            case OFF_HAND -> this.getHandle().startUsingItem(InteractionHand.OFF_HAND);
-            default -> throw new IllegalArgumentException("hand may only be HAND or OFF_HAND");
-        }
+        this.getHandle().startUsingItem(CraftEquipmentSlot.getHand(hand));
     }
 
     @Override

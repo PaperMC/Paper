@@ -16,17 +16,17 @@ public class PlayerBucketEmptyEvent extends PlayerBucketEvent {
     private static final HandlerList handlers = new HandlerList();
 
     @Deprecated(since = "1.14.4")
-    public PlayerBucketEmptyEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
-        super(who, blockClicked, blockFace, bucket, itemInHand);
+    public PlayerBucketEmptyEvent(@NotNull final Player player, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
+        super(player, blockClicked, blockFace, bucket, itemInHand);
     }
 
     @Deprecated(since = "1.19.2")
-    public PlayerBucketEmptyEvent(@NotNull final Player who, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
-        super(who, block, blockClicked, blockFace, bucket, itemInHand);
+    public PlayerBucketEmptyEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
+        super(player, block, blockClicked, blockFace, bucket, itemInHand);
     }
 
-    public PlayerBucketEmptyEvent(@NotNull final Player who, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @NotNull final EquipmentSlot hand) {
-        super(who, block, blockClicked, blockFace, bucket, itemInHand, hand);
+    public PlayerBucketEmptyEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @NotNull final EquipmentSlot hand) {
+        super(player, block, blockClicked, blockFace, bucket, itemInHand, hand);
     }
 
     @NotNull

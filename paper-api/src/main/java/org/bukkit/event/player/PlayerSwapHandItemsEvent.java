@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 public class PlayerSwapHandItemsEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private ItemStack mainHandItem;
     private ItemStack offHandItem;
     private boolean cancelled;

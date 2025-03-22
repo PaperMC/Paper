@@ -9,7 +9,6 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.tags.EnchantmentTags;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.legacy.FieldRename;
@@ -205,7 +204,7 @@ public class CraftEnchantment extends Enchantment implements Holderable<net.mine
     @Override
     public java.util.Set<org.bukkit.inventory.EquipmentSlotGroup> getActiveSlotGroups() {
         return this.getHandle().definition().slots().stream()
-            .map(org.bukkit.craftbukkit.CraftEquipmentSlot::getSlot)
+            .map(org.bukkit.craftbukkit.CraftEquipmentSlot::getSlotGroup)
             .collect(java.util.stream.Collectors.toSet());
     }
 

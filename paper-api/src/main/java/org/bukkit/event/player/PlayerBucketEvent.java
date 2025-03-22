@@ -25,17 +25,17 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
     private final EquipmentSlot hand;
 
     @Deprecated(since = "1.14.4")
-    public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
-        this(who, null, blockClicked.getRelative(blockFace), blockFace, bucket, itemInHand, EquipmentSlot.HAND);
+    public PlayerBucketEvent(@NotNull final Player player, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
+        this(player, null, blockClicked.getRelative(blockFace), blockFace, bucket, itemInHand, EquipmentSlot.HAND);
     }
 
     @Deprecated(since = "1.19.2")
-    public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
-        this(who, block, blockClicked, blockFace, bucket, itemInHand, EquipmentSlot.HAND);
+    public PlayerBucketEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
+        this(player, block, blockClicked, blockFace, bucket, itemInHand, EquipmentSlot.HAND);
     }
 
-    public PlayerBucketEvent(@NotNull final Player who, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @NotNull final EquipmentSlot hand) {
-        super(who);
+    public PlayerBucketEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand, @NotNull final EquipmentSlot hand) {
+        super(player);
         this.block = block;
         this.blockClicked = blockClicked;
         this.blockFace = blockFace;

@@ -11,12 +11,12 @@ import org.jetbrains.annotations.NotNull;
 public class EntitySpellCastEvent extends EntityEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private boolean cancelled = false;
     private final Spellcaster.Spell spell;
 
-    public EntitySpellCastEvent(@NotNull Spellcaster what, @NotNull Spellcaster.Spell spell) {
-        super(what);
+    public EntitySpellCastEvent(@NotNull Spellcaster spellcaster, @NotNull Spellcaster.Spell spell) {
+        super(spellcaster);
         this.spell = spell;
     }
 

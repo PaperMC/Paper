@@ -1,14 +1,6 @@
 --- a/net/minecraft/world/level/block/PressurePlateBlock.java
 +++ b/net/minecraft/world/level/block/PressurePlateBlock.java
-@@ -5,6 +_,7 @@
- import net.minecraft.core.BlockPos;
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.LivingEntity;
-+import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.state.BlockBehaviour;
- import net.minecraft.world.level.block.state.BlockState;
-@@ -46,7 +_,31 @@
+@@ -46,7 +_,29 @@
              case EVERYTHING -> Entity.class;
              case MOBS -> LivingEntity.class;
          };
@@ -16,15 +8,13 @@
 +        // CraftBukkit start - Call interact event when turning on a pressure plate
 +        for (Entity entity : getEntities(level, PressurePlateBlock.TOUCH_AABB.move(pos), clazz)) {
 +            if (this.getSignalForState(level.getBlockState(pos)) == 0) {
-+                org.bukkit.World bworld = level.getWorld();
-+                org.bukkit.plugin.PluginManager manager = level.getCraftServer().getPluginManager();
 +                org.bukkit.event.Cancellable cancellable;
 +
-+                if (entity instanceof Player player) {
++                if (entity instanceof net.minecraft.world.entity.player.Player player) {
 +                    cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(player, org.bukkit.event.block.Action.PHYSICAL, pos, null, null, null);
 +                } else {
-+                    cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), bworld.getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
-+                    manager.callEvent((org.bukkit.event.entity.EntityInteractEvent) cancellable);
++                    cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos));
++                    level.getCraftServer().getPluginManager().callEvent((org.bukkit.event.entity.EntityInteractEvent) cancellable);
 +                }
 +
 +                // We only want to block turning the plate on if all events are cancelled

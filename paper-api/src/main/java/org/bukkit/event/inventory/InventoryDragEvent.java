@@ -62,8 +62,8 @@ public class InventoryDragEvent extends InventoryInteractEvent {
     private final ItemStack oldCursor;
     private ItemStack newCursor;
 
-    public InventoryDragEvent(@NotNull InventoryView what, @Nullable ItemStack newCursor, @NotNull ItemStack oldCursor, boolean right, @NotNull Map<Integer, ItemStack> slots) {
-        super(what);
+    public InventoryDragEvent(@NotNull InventoryView view, @Nullable ItemStack newCursor, @NotNull ItemStack oldCursor, boolean right, @NotNull Map<Integer, ItemStack> slots) {
+        super(view);
 
         Preconditions.checkArgument(oldCursor != null);
         Preconditions.checkArgument(slots != null);
@@ -74,7 +74,7 @@ public class InventoryDragEvent extends InventoryInteractEvent {
         this.addedItems = slots;
         ImmutableSet.Builder<Integer> b = ImmutableSet.builder();
         for (Integer slot : slots.keySet()) {
-            b.add(what.convertSlot(slot));
+            b.add(view.convertSlot(slot));
         }
         this.containerSlots = b.build();
     }

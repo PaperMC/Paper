@@ -21,27 +21,27 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     private final Side side;
 
     // Paper start
-    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines, @NotNull Side side) {
-        super(theBlock);
+    public SignChangeEvent(@NotNull final Block sign, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines, @NotNull Side side) {
+        super(sign);
         this.player = player;
         this.adventure$lines = adventure$lines;
         this.side = side;
     }
 
     @Deprecated
-    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
-        this(theBlock, player, adventure$lines, Side.FRONT);
+    public SignChangeEvent(@NotNull final Block sign, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
+        this(sign, player, adventure$lines, Side.FRONT);
     }
     // Paper end
 
     @Deprecated(since = "1.19.4")
-    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
-        this(theBlock, thePlayer, theLines, Side.FRONT);
+    public SignChangeEvent(@NotNull final Block sign, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
+        this(sign, thePlayer, theLines, Side.FRONT);
     }
 
     @Deprecated // Paper
-    public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines, @NotNull Side side) {
-        super(theBlock);
+    public SignChangeEvent(@NotNull final Block sign, @NotNull final Player thePlayer, @NotNull final String[] theLines, @NotNull Side side) {
+        super(sign);
         this.player = thePlayer;
         // Paper start
         this.adventure$lines = new java.util.ArrayList<>();

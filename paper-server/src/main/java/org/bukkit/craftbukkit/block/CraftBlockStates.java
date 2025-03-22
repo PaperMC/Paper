@@ -11,7 +11,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType; // Paper
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -41,9 +41,9 @@ public final class CraftBlockStates {
     private static class BlockEntityStateFactory<T extends BlockEntity, B extends CraftBlockEntityState<T>> extends BlockStateFactory<B> {
 
         private final BiFunction<World, T, B> blockStateConstructor;
-        private final BlockEntityType<? extends T> blockEntityType; // Paper
+        private final BlockEntityType<? extends T> blockEntityType;
 
-        protected BlockEntityStateFactory(Class<B> blockStateType, BiFunction<World, T, B> blockStateConstructor, BlockEntityType<? extends T> blockEntityType) { // Paper
+        protected BlockEntityStateFactory(Class<B> blockStateType, BiFunction<World, T, B> blockStateConstructor, BlockEntityType<? extends T> blockEntityType) {
             super(blockStateType);
             this.blockStateConstructor = blockStateConstructor;
             this.blockEntityType = blockEntityType;
@@ -60,7 +60,7 @@ public final class CraftBlockStates {
         }
 
         private T createBlockEntity(BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-            return this.blockEntityType.create(pos, state); // Paper
+            return this.blockEntityType.create(pos, state);
         }
 
         private B createBlockState(World world, T blockEntity) {
@@ -77,15 +77,13 @@ public final class CraftBlockStates {
             return new CraftBlockState(world, pos, state);
         }
     };
-    // Paper start
+
     private static final Map<BlockEntityType<?>, BlockStateFactory<?>> FACTORIES_BY_BLOCK_ENTITY_TYPE = new HashMap<>();
     private static void register(BlockEntityType<?> type, BlockStateFactory<?> factory) {
         FACTORIES_BY_BLOCK_ENTITY_TYPE.put(type, factory);
     }
-    // Paper end
 
     static {
-        // Paper start - simplify
         register(BlockEntityType.SIGN, CraftSign.class, CraftSign::new);
         register(BlockEntityType.HANGING_SIGN, CraftHangingSign.class, CraftHangingSign::new);
         register(BlockEntityType.SKULL, CraftSkull.class, CraftSkull::new);
@@ -133,7 +131,6 @@ public final class CraftBlockStates {
         register(BlockEntityType.CRAFTER, CraftCrafter.class, CraftCrafter::new);
         register(BlockEntityType.TRIAL_SPAWNER, CraftTrialSpawner.class, CraftTrialSpawner::new);
         register(BlockEntityType.VAULT, CraftVault.class, CraftVault::new);
-        // Paper end
     }
 
     private static void register(Material blockType, BlockStateFactory<?> factory) {
@@ -141,24 +138,21 @@ public final class CraftBlockStates {
     }
 
     private static <T extends BlockEntity, B extends CraftBlockEntityState<T>> void register(
-            net.minecraft.world.level.block.entity.BlockEntityType<? extends T> blockEntityType, // Paper
+            net.minecraft.world.level.block.entity.BlockEntityType<? extends T> blockEntityType,
             Class<B> blockStateType,
-            BiFunction<World, T, B> blockStateConstructor // Paper
+            BiFunction<World, T, B> blockStateConstructor
     ) {
-        // Paper start
-        BlockStateFactory<B> factory = new BlockEntityStateFactory<>(blockStateType, blockStateConstructor, blockEntityType); // Paper
+        BlockStateFactory<B> factory = new BlockEntityStateFactory<>(blockStateType, blockStateConstructor, blockEntityType);
         for (net.minecraft.world.level.block.Block block : blockEntityType.validBlocks) {
             CraftBlockStates.register(CraftBlockType.minecraftToBukkit(block), factory);
         }
         CraftBlockStates.register(blockEntityType, factory);
-        // Paper end
     }
 
     private static BlockStateFactory<?> getFactory(Material material) {
         return CraftBlockStates.FACTORIES.getOrDefault(material, CraftBlockStates.DEFAULT_FACTORY);
     }
 
-    // Paper start
     private static BlockStateFactory<?> getFactory(Material material, BlockEntityType<?> type) {
         if (type != null) {
             return CraftBlockStates.FACTORIES_BY_BLOCK_ENTITY_TYPE.getOrDefault(type, getFactory(material));
@@ -166,7 +160,6 @@ public final class CraftBlockStates {
             return getFactory(material);
         }
     }
-    // Paper end
 
     public static Class<? extends CraftBlockState> getBlockStateType(Material material) {
         Preconditions.checkNotNull(material, "material is null");
@@ -183,38 +176,31 @@ public final class CraftBlockStates {
         return null;
     }
 
-    // Paper start
     public static Class<? extends CraftBlockState> getBlockStateType(BlockEntityType<?> blockEntityType) {
         Preconditions.checkNotNull(blockEntityType, "blockEntityType is null");
         return CraftBlockStates.getFactory(null, blockEntityType).blockStateType;
     }
-    // Paper end
 
     public static BlockState getBlockState(Block block) {
-        // Paper start
         return CraftBlockStates.getBlockState(block, true);
     }
+
     public static BlockState getBlockState(Block block, boolean useSnapshot) {
-        // Paper end
         Preconditions.checkNotNull(block, "block is null");
         CraftBlock craftBlock = (CraftBlock) block;
         CraftWorld world = (CraftWorld) block.getWorld();
         BlockPos pos = craftBlock.getPosition();
         net.minecraft.world.level.block.state.BlockState state = craftBlock.getNMS();
         BlockEntity blockEntity = craftBlock.getHandle().getBlockEntity(pos);
-        // Paper start - block state snapshots
         boolean prev = CraftBlockEntityState.DISABLE_SNAPSHOT;
         CraftBlockEntityState.DISABLE_SNAPSHOT = !useSnapshot;
         try {
-        // Paper end
-        CraftBlockState blockState = CraftBlockStates.getBlockState(world, pos, state, blockEntity);
-        blockState.setWorldHandle(craftBlock.getHandle()); // Inject the block's generator access
-        return blockState;
-        // Paper start
+            CraftBlockState blockState = CraftBlockStates.getBlockState(world, pos, state, blockEntity);
+            blockState.setWorldHandle(craftBlock.getHandle()); // Inject the block's generator access
+            return blockState;
         } finally {
             CraftBlockEntityState.DISABLE_SNAPSHOT = prev;
         }
-        // Paper end
     }
 
     @Deprecated
@@ -252,7 +238,7 @@ public final class CraftBlockStates {
     public static CraftBlockState getBlockState(World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState state, BlockEntity blockEntity) {
         Material material = CraftBlockType.minecraftToBukkit(state.getBlock());
         BlockStateFactory<?> factory;
-        // For some types of BlockEntity blocks (e.g. moving pistons), Minecraft may in some situations (eg. when using Block#setType or the
+        // For some types of BlockEntity blocks (e.g. moving pistons), Minecraft may in some situations (e.g. when using Block#setType or the
         // setBlock command) not create a corresponding BlockEntity in the world. We return a normal BlockState in this case.
         if (world != null && blockEntity == null && CraftBlockStates.isBlockEntityOptional(material)) {
             factory = CraftBlockStates.DEFAULT_FACTORY;
@@ -271,13 +257,11 @@ public final class CraftBlockStates {
         return new CraftBlockState(CraftBlock.at(world, pos));
     }
 
-    // Paper start
     @Nullable
     public static BlockEntityType<?> getBlockEntityType(final Material material) {
         final BlockStateFactory<?> factory = org.bukkit.craftbukkit.block.CraftBlockStates.FACTORIES.get(material);
         return factory instanceof final BlockEntityStateFactory<?,?> blockEntityStateFactory ? blockEntityStateFactory.blockEntityType : null;
     }
-    // Paper end
 
     private CraftBlockStates() {
     }

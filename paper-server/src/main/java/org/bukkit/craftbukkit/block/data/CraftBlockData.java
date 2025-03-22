@@ -360,7 +360,6 @@ public class CraftBlockData implements BlockData {
         return state.max;
     }
 
-    //
     private static final Map<Class<? extends Block>, Function<net.minecraft.world.level.block.state.BlockState, CraftBlockData>> MAP = new HashMap<>();
 
     static {

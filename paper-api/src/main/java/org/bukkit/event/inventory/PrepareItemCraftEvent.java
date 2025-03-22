@@ -9,12 +9,12 @@ import org.jetbrains.annotations.Nullable;
 
 public class PrepareItemCraftEvent extends InventoryEvent {
     private static final HandlerList handlers = new HandlerList();
-    private boolean repair;
-    private CraftingInventory matrix;
+    private final boolean repair;
+    private final CraftingInventory matrix;
 
-    public PrepareItemCraftEvent(@NotNull CraftingInventory what, @NotNull InventoryView view, boolean isRepair) {
+    public PrepareItemCraftEvent(@NotNull CraftingInventory matrix, @NotNull InventoryView view, boolean isRepair) {
         super(view);
-        this.matrix = what;
+        this.matrix = matrix;
         this.repair = isRepair;
     }
 

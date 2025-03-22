@@ -63,7 +63,7 @@ public class CraftBlockCommandSender extends ServerCommandSender implements Bloc
 
     @Override
     public void sendMessage(net.kyori.adventure.identity.Identity identity, net.kyori.adventure.text.Component message, net.kyori.adventure.audience.MessageType type) {
-        block.source.sendSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message));
+        this.block.source.sendSystemMessage(io.papermc.paper.adventure.PaperAdventure.asVanilla(message));
     }
 
     @Override

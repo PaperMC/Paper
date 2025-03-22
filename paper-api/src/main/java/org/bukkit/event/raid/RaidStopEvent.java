@@ -11,7 +11,7 @@ import org.jetbrains.annotations.NotNull;
 public class RaidStopEvent extends RaidEvent {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private final Reason reason;
 
     public RaidStopEvent(@NotNull Raid raid, @NotNull World world, @NotNull Reason reason) {

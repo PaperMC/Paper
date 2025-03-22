@@ -15,11 +15,11 @@ import org.jetbrains.annotations.NotNull;
 public class PlayerChangedMainHandEvent extends PlayerEvent {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private final MainHand newMainHand;
 
-    public PlayerChangedMainHandEvent(@NotNull Player who, @NotNull MainHand newMainHand) {
-        super(who);
+    public PlayerChangedMainHandEvent(@NotNull Player player, @NotNull MainHand newMainHand) {
+        super(player);
         this.newMainHand = newMainHand;
     }
 

@@ -376,8 +376,7 @@ public final class JavaPluginLoader implements PluginLoader {
 
                 try {
                     loader.close();
-                } catch (IOException ex) {
-                    //
+                } catch (IOException ignored) {
                 }
             }
         }

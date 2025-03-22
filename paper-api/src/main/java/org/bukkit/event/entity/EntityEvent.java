@@ -11,8 +11,8 @@ import org.jetbrains.annotations.NotNull;
 public abstract class EntityEvent extends Event {
     protected Entity entity;
 
-    public EntityEvent(@NotNull final Entity what) {
-        entity = what;
+    public EntityEvent(@NotNull final Entity entity) {
+        this.entity = entity;
     }
 
     /**

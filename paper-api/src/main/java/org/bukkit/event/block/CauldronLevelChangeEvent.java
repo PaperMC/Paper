@@ -16,7 +16,7 @@ public class CauldronLevelChangeEvent extends BlockEvent implements Cancellable 
 
     private static final HandlerList handlers = new HandlerList();
     private boolean cancelled;
-    //
+
     private final Entity entity;
     private final ChangeReason reason;
     private final BlockState newState;

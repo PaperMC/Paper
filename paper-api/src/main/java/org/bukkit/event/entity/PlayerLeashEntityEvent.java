@@ -19,16 +19,16 @@ public class PlayerLeashEntityEvent extends Event implements Cancellable {
     private final Player player;
     private final EquipmentSlot hand;
 
-    public PlayerLeashEntityEvent(@NotNull Entity what, @NotNull Entity leashHolder, @NotNull Player leasher, @NotNull EquipmentSlot hand) {
+    public PlayerLeashEntityEvent(@NotNull Entity entity, @NotNull Entity leashHolder, @NotNull Player leasher, @NotNull EquipmentSlot hand) {
         this.leashHolder = leashHolder;
-        this.entity = what;
+        this.entity = entity;
         this.player = leasher;
         this.hand = hand;
     }
 
     @Deprecated(since = "1.19.2")
-    public PlayerLeashEntityEvent(@NotNull Entity what, @NotNull Entity leashHolder, @NotNull Player leasher) {
-        this(what, leashHolder, leasher, EquipmentSlot.HAND);
+    public PlayerLeashEntityEvent(@NotNull Entity entity, @NotNull Entity leashHolder, @NotNull Player leasher) {
+        this(entity, leashHolder, leasher, EquipmentSlot.HAND);
     }
 
     /**

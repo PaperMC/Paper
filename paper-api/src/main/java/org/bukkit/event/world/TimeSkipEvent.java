@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 public class TimeSkipEvent extends WorldEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private boolean cancelled;
     private final SkipReason skipReason;
     private long skipAmount;

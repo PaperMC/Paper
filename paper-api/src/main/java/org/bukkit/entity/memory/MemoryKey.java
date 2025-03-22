@@ -45,7 +45,7 @@ public final class MemoryKey<T> implements Keyed {
     }
 
     private static final Map<NamespacedKey, MemoryKey> MEMORY_KEYS = new HashMap<>();
-    //
+
     public static final MemoryKey<Location> HOME = new MemoryKey<>(NamespacedKey.minecraft("home"), Location.class);
     public static final MemoryKey<Location> POTENTIAL_JOB_SITE = new MemoryKey<>(NamespacedKey.minecraft("potential_job_site"), Location.class);
     public static final MemoryKey<Location> JOB_SITE = new MemoryKey<>(NamespacedKey.minecraft("job_site"), Location.class);

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 public class BlockShearEntityEvent extends BlockEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private final Entity sheared;
     private final ItemStack tool;
     private boolean cancelled;

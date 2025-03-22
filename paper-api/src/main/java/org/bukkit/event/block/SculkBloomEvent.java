@@ -32,8 +32,8 @@ public class SculkBloomEvent extends BlockEvent implements Cancellable {
 
     private int charge;
 
-    public SculkBloomEvent(@NotNull Block theBlock, int charge) {
-        super(theBlock);
+    public SculkBloomEvent(@NotNull Block block, int charge) {
+        super(block);
         this.charge = charge;
     }
 

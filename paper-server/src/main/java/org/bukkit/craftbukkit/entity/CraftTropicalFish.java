@@ -70,7 +70,6 @@ public class CraftTropicalFish extends io.papermc.paper.entity.PaperSchoolableFi
         private final int variant;
         private final boolean large;
 
-        //
         private static final Map<Integer, Pattern> BY_DATA = new HashMap<>();
 
         static {

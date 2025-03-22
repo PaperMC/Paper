@@ -38,16 +38,16 @@ public class PlayerInteractEvent extends PlayerEvent implements Cancellable {
     private EquipmentSlot hand;
     private Vector clickedPosistion;
 
-    public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace) {
-        this(who, action, item, clickedBlock, clickedFace, EquipmentSlot.HAND);
+    public PlayerInteractEvent(@NotNull final Player player, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace) {
+        this(player, action, item, clickedBlock, clickedFace, EquipmentSlot.HAND);
     }
 
-    public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand) {
-        this(who, action, item, clickedBlock, clickedFace, hand, null);
+    public PlayerInteractEvent(@NotNull final Player player, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand) {
+        this(player, action, item, clickedBlock, clickedFace, hand, null);
     }
 
-    public PlayerInteractEvent(@NotNull final Player who, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand, @Nullable final Vector clickedPosition) {
-        super(who);
+    public PlayerInteractEvent(@NotNull final Player player, @NotNull final Action action, @Nullable final ItemStack item, @Nullable final Block clickedBlock, @NotNull final BlockFace clickedFace, @Nullable final EquipmentSlot hand, @Nullable final Vector clickedPosition) {
+        super(player);
         this.action = action;
         this.item = item;
         this.blockClicked = clickedBlock;

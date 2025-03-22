@@ -31,10 +31,10 @@ public final class NamespacedTag implements com.destroystokyo.paper.Namespaced {
      * compatibility measures.
      */
     public static final String BUKKIT = "bukkit";
-    //
+
     private static final Pattern VALID_NAMESPACE = Pattern.compile("[a-z0-9._-]+");
     private static final Pattern VALID_KEY = Pattern.compile("[a-z0-9/._-]+");
-    //
+
     private final String namespace;
     private final String key;
 

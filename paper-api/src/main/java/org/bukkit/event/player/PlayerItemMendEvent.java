@@ -18,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private final ItemStack item;
     private final EquipmentSlot slot;
     private final ExperienceOrb experienceOrb;
@@ -27,15 +27,15 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
     private final int consumedExperience; // Paper
 
     @Deprecated // Paper
-    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
+    public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
         // Paper start
-        this(who, item, slot, experienceOrb, repairAmount, repairAmount / 2);
+        this(player, item, slot, experienceOrb, repairAmount, repairAmount / 2);
     }
 
     @org.jetbrains.annotations.ApiStatus.Internal
-    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount, int consumedExperience) {
+    public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount, int consumedExperience) {
         // Paper end
-        super(who);
+        super(player);
         this.item = item;
         this.slot = slot;
         this.experienceOrb = experienceOrb;
@@ -87,8 +87,8 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
     // Paper end
 
     @Deprecated(since = "1.19.2")
-    public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
-        this(who, item, null, experienceOrb, repairAmount);
+    public PlayerItemMendEvent(@NotNull Player player, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
+        this(player, item, null, experienceOrb, repairAmount);
     }
 
     /**

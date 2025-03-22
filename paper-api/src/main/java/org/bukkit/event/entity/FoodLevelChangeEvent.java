@@ -16,12 +16,12 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
     private int level;
     private final ItemStack item;
 
-    public FoodLevelChangeEvent(@NotNull final HumanEntity what, final int level) {
-        this(what, level, null);
+    public FoodLevelChangeEvent(@NotNull final HumanEntity human, final int level) {
+        this(human, level, null);
     }
 
-    public FoodLevelChangeEvent(@NotNull final HumanEntity what, final int level, @Nullable final ItemStack item) {
-        super(what);
+    public FoodLevelChangeEvent(@NotNull final HumanEntity human, final int level, @Nullable final ItemStack item) {
+        super(human);
         this.level = level;
         this.item = item;
     }
@@ -29,7 +29,7 @@ public class FoodLevelChangeEvent extends EntityEvent implements Cancellable {
     @NotNull
     @Override
     public HumanEntity getEntity() {
-        return (HumanEntity) entity;
+        return (HumanEntity) this.entity;
     }
 
     /**

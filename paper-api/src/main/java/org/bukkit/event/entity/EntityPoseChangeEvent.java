@@ -13,11 +13,11 @@ import org.jetbrains.annotations.NotNull;
 public class EntityPoseChangeEvent extends EntityEvent {
 
     private static final HandlerList handlers = new HandlerList();
-    //
+
     private final Pose pose;
 
-    public EntityPoseChangeEvent(@NotNull Entity who, @NotNull Pose pose) {
-        super(who);
+    public EntityPoseChangeEvent(@NotNull Entity entity, @NotNull Pose pose) {
+        super(entity);
         this.pose = pose;
     }
 

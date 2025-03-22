@@ -36,13 +36,13 @@ public class AsyncPlayerChatEvent extends PlayerEvent implements Cancellable {
 
     /**
      * @param async This changes the event to a synchronous state.
-     * @param who the chat sender
+     * @param player the chat sender
      * @param message the message sent
      * @param players the players to receive the message. This may be a lazy
      *     or unmodifiable collection.
      */
-    public AsyncPlayerChatEvent(final boolean async, @NotNull final Player who, @NotNull final String message, @NotNull final Set<Player> players) {
-        super(who, async);
+    public AsyncPlayerChatEvent(final boolean async, @NotNull final Player player, @NotNull final String message, @NotNull final Set<Player> players) {
+        super(player, async);
         this.message = message;
         recipients = players;
     }

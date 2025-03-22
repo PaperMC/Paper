@@ -30,7 +30,6 @@ public class RestartCommand extends Command {
     }
 
     private static void restart(final String restartScript) {
-        AsyncCatcher.enabled = false; // Disable async catcher in case it interferes with us
         try {
             // Paper - extract method and cleanup
             boolean isRestarting = addShutdownHook(restartScript);

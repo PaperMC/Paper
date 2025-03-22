@@ -1,19 +1,5 @@
 --- a/net/minecraft/world/level/NaturalSpawner.java
 +++ b/net/minecraft/world/level/NaturalSpawner.java
-@@ -49,6 +_,13 @@
- import net.minecraft.world.phys.Vec3;
- import org.slf4j.Logger;
- 
-+// CraftBukkit start
-+import net.minecraft.world.level.storage.LevelData;
-+import org.bukkit.craftbukkit.util.CraftSpawnCategory;
-+import org.bukkit.entity.SpawnCategory;
-+import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
-+// CraftBukkit end
-+
- public final class NaturalSpawner {
-     private static final Logger LOGGER = LogUtils.getLogger();
-     private static final int MIN_SPAWN_DISTANCE = 24;
 @@ -73,6 +_,13 @@
              if (!(entity instanceof Mob mob && (mob.isPersistenceRequired() || mob.requiresCustomPersistence()))) {
                  MobCategory category = entity.getType().getCategory();
@@ -37,7 +23,7 @@
 -        NaturalSpawner.SpawnState spawnState, boolean spawnFriendlies, boolean spawnEnemies, boolean spawnPassives
 +        NaturalSpawner.SpawnState spawnState, boolean spawnFriendlies, boolean spawnEnemies, boolean spawnPassives, ServerLevel level
      ) {
-+        LevelData worlddata = level.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
++        net.minecraft.world.level.storage.LevelData worlddata = level.getLevelData(); // CraftBukkit - Other mob type spawn tick rate
 +        // CraftBukkit end
          List<MobCategory> list = new ArrayList<>(SPAWNING_CATEGORIES.length);
  
@@ -45,8 +31,8 @@
 +            // CraftBukkit start - Use per-world spawn limits
 +            boolean spawnThisTick = true;
 +            int limit = mobCategory.getMaxInstancesPerChunk();
-+            SpawnCategory spawnCategory = CraftSpawnCategory.toBukkit(mobCategory);
-+            if (CraftSpawnCategory.isValidForLimits(spawnCategory)) {
++            org.bukkit.entity.SpawnCategory spawnCategory = org.bukkit.craftbukkit.util.CraftSpawnCategory.toBukkit(mobCategory);
++            if (org.bukkit.craftbukkit.util.CraftSpawnCategory.isValidForLimits(spawnCategory)) {
 +                spawnThisTick = level.ticksPerSpawnCategory.getLong(spawnCategory) != 0 && worlddata.getGameTime() % level.ticksPerSpawnCategory.getLong(spawnCategory) == 0;
 +                limit = level.getWorld().getSpawnLimit(spawnCategory);
 +            }
@@ -71,7 +57,7 @@
  
 +    // Paper start - Add mobcaps commands
 +    public static int globalLimitForCategory(final ServerLevel level, final MobCategory category, final int spawnableChunkCount) {
-+        final int categoryLimit = level.getWorld().getSpawnLimitUnsafe(CraftSpawnCategory.toBukkit(category));
++        final int categoryLimit = level.getWorld().getSpawnLimitUnsafe(org.bukkit.craftbukkit.util.CraftSpawnCategory.toBukkit(category));
 +        if (categoryLimit < 1) {
 +            return categoryLimit;
 +        }
@@ -127,7 +113,7 @@
 -                                    callback.run(mobForSpawn, chunk);
 +                                    // CraftBukkit start
 +                                    // SPIGOT-7045: Give ocelot babies back their special spawn reason. Note: This is the only modification required as ocelots count as monsters which means they only spawn during normal chunk ticking and do not spawn during chunk generation as starter mobs.
-+                                    level.addFreshEntityWithPassengers(mobForSpawn, (mobForSpawn instanceof net.minecraft.world.entity.animal.Ocelot && !((org.bukkit.entity.Ageable) mobForSpawn.getBukkitEntity()).isAdult()) ? SpawnReason.OCELOT_BABY : SpawnReason.NATURAL);
++                                    level.addFreshEntityWithPassengers(mobForSpawn, (mobForSpawn instanceof net.minecraft.world.entity.animal.Ocelot && !((org.bukkit.entity.Ageable) mobForSpawn.getBukkitEntity()).isAdult()) ? org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.OCELOT_BABY : org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL);
 +                                    if (!mobForSpawn.isRemoved()) {
 +                                        ++i;
 +                                        ++i3;
@@ -162,7 +148,7 @@
 +        // Paper start - PreCreatureSpawnEvent
 +        com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent event = new com.destroystokyo.paper.event.entity.PreCreatureSpawnEvent(
 +                org.bukkit.craftbukkit.util.CraftLocation.toBukkit(pos, level),
-+                org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(entityType), SpawnReason.NATURAL
++                org.bukkit.craftbukkit.entity.CraftEntityType.minecraftToBukkit(entityType), org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL
 +        );
 +        if (!event.callEvent()) {
 +            if (event.shouldAbortSpawn()) {
@@ -204,7 +190,7 @@
                                          spawnGroupData
                                      );
 -                                    levelAccessor.addFreshEntityWithPassengers(mob);
-+                                    levelAccessor.addFreshEntityWithPassengers(mob, SpawnReason.CHUNK_GEN); // CraftBukkit
++                                    levelAccessor.addFreshEntityWithPassengers(mob, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN); // CraftBukkit
                                      flag = true;
                                  }
                              }
