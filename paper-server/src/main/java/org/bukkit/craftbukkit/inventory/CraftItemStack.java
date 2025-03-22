@@ -2,11 +2,14 @@ package org.bukkit.craftbukkit.inventory;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import io.papermc.paper.adventure.PaperAdventure;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import io.papermc.paper.inventory.CreativeModeTab;
 import net.kyori.adventure.text.Component;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
@@ -23,6 +26,7 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.ItemEnchantments;
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.enchantments.CraftEnchantment;
 import org.bukkit.craftbukkit.persistence.CraftPersistentDataContainer;
@@ -693,4 +697,23 @@ public final class CraftItemStack extends ItemStack {
     }
 
     // Paper end - data component API
+
+    @Override
+    public @NotNull Collection<CreativeModeTab> getCreativeModeTabs() {
+        final ImmutableSet.Builder<CreativeModeTab> builder = ImmutableSet.builder();
+
+        for (final CreativeModeTab tab : Registry.CREATIVE_MODE_TAB) {
+            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItem(this)) {
+                builder.add(tab);
+            }
+        }
+
+        // Differing data components (i.e. durability) may cause the above contains to fail, return the categories for the item type if empty.
+        final Collection<CreativeModeTab> built = builder.build();
+        if (built.isEmpty() && this.handle != null) {
+            return CraftItemType.minecraftToBukkitNew(this.handle.getItem()).getCreativeModeTabs();
+        } else {
+            return built;
+        }
+    }
 }
