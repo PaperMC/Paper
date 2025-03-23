@@ -933,13 +933,14 @@
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
-@@ -1340,10 +_,33 @@
+@@ -1340,10 +_,36 @@
      @Nullable
      @Override
      public MapItemSavedData getMapData(MapId mapId) {
 -        return this.getServer().overworld().getDataStorage().get(MapItemSavedData.type(mapId));
 +        // Paper start - Call missing map initialize event and set id
 +        final DimensionDataStorage storage = this.getServer().overworld().getDataStorage();
++
 +        final Optional<net.minecraft.world.level.saveddata.SavedData> cacheEntry = storage.cache.get(mapId.key());
 +        if (cacheEntry == null) { // Cache did not contain, try to load and may init
 +            final MapItemSavedData mapData = storage.get(MapItemSavedData.type(mapId)); // get populates the cache
@@ -948,6 +949,7 @@
 +                new org.bukkit.event.server.MapInitializeEvent(mapData.mapView).callEvent();
 +                return mapData;
 +            }
++
 +            return null; // Map does not exist, reading failed.
 +        }
 +        // Cache entry exists, update it with the id ref and return.
@@ -955,6 +957,7 @@
 +            mapItemSavedData.id = mapId;
 +            return mapItemSavedData;
 +        }
++
 +        return null;
 +        // Paper end - Call missing map initialize event and set id
      }

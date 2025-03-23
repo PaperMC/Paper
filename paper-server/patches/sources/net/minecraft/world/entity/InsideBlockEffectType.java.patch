@@ -9,3 +9,32 @@
              entity.setTicksFrozen(Math.min(entity.getTicksRequiredToFreeze(), entity.getTicksFrozen() + 1));
          }
      }),
+@@ -14,13 +_,26 @@
+     LAVA_IGNITE(Entity::lavaIgnite),
+     EXTINGUISH(Entity::clearFire);
+ 
+-    private final Consumer<Entity> effect;
++    private final Applier effect; // Paper - track position inside effect was triggered on
+ 
+     private InsideBlockEffectType(final Consumer<Entity> effect) {
++    // Paper start - track position inside effect was triggered on
++        this((entity, block) -> effect.accept(entity));
++    }
++    private InsideBlockEffectType(final Applier effect) {
++    // Paper end - track position inside effect was triggered on
+         this.effect = effect;
+     }
+ 
+-    public Consumer<Entity> effect() {
++    public Applier effect() { // Paper - track position inside effect was triggered on
+         return this.effect;
+     }
++
++    // Paper start - track position inside effect was triggered on
++    // Use over biconsumer for less fqn spamming.
++    @FunctionalInterface
++    public interface Applier {
++        void affect(final Entity entity, final net.minecraft.core.BlockPos blockPos);
++    }
++    // Paper end - track position inside effect was triggered on
+ }
