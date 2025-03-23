@@ -1,6 +1,5 @@
 package org.bukkit;
 
-import io.papermc.paper.math.Position;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import java.io.File;
 import java.util.ArrayList;
@@ -22,11 +21,8 @@ import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.SpawnCategory;
-import org.bukkit.entity.SpectralArrow;
-import org.bukkit.entity.TippedArrow;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.BiomeProvider;
 import org.bukkit.generator.BlockPopulator;
@@ -47,13 +43,12 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Represents a world, which may contain entities, chunks and blocks
  */
-@NullMarked
 public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient, Metadatable, PersistentDataHolder, Keyed, net.kyori.adventure.audience.ForwardingAudience { // Paper
 
     // Paper start - void damage configuration
@@ -135,14 +130,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * Check if the naturally-generated structure exists at the position.
      * <p>
      * Note that if the position is not loaded, this may cause chunk loads/generation
-     * to check if a structure is at that position. Use {@link #isPositionLoaded(Position)}
+     * to check if a structure is at that position. Use {@link #isPositionLoaded(io.papermc.paper.math.Position)}
      * to check if a position is loaded
      *
      * @param position the position to check at
      * @param structure the structure to check for
      * @return true if that structure exists at the position
      */
-    boolean hasStructureAt(Position position, Structure structure);
+    boolean hasStructureAt(io.papermc.paper.math.@NotNull Position position, @NotNull Structure structure);
 
     /**
      * Checks if this position is loaded.
@@ -150,7 +145,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param position position to check
      * @return true if loaded
      */
-    default boolean isPositionLoaded(Position position) {
+    default boolean isPositionLoaded(io.papermc.paper.math.@NotNull Position position) {
         return this.isChunkLoaded(position.blockX() >> 4, position.blockZ() >> 4);
     }
     // Paper end
@@ -163,7 +158,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the block
      * @return Block at the given coordinates
      */
-    Block getBlockAt(int x, int y, int z);
+    @NotNull
+    public Block getBlockAt(int x, int y, int z);
 
     /**
      * Gets the {@link Block} at the given {@link Location}
@@ -171,7 +167,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param location Location of the block
      * @return Block at the given location
      */
-    Block getBlockAt(Location location);
+    @NotNull
+    public Block getBlockAt(@NotNull Location location);
 
     // Paper start
     /**
@@ -182,8 +179,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see Block#getBlockKey(int, int, int)
      * @deprecated only encodes y block ranges from -512 to 511 and represents an already changed implementation detail
      */
+    @NotNull
     @Deprecated(since = "1.18.1")
-    default Block getBlockAtKey(long key) {
+    public default Block getBlockAtKey(long key) {
         int x = Block.getBlockKeyX(key);
         int y = Block.getBlockKeyY(key);
         int z = Block.getBlockKeyZ(key);
@@ -197,8 +195,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return Location at the key
      * @see Block#getBlockKey(int, int, int)
      */
+    @NotNull
     @Deprecated(since = "1.18.1")
-    default Location getLocationAtKey(long key) {
+    public default Location getLocationAtKey(long key) {
         int x = Block.getBlockKeyX(key);
         int y = Block.getBlockKeyY(key);
         int z = Block.getBlockKeyZ(key);
@@ -213,7 +212,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the block
      * @return Highest non-empty block
      */
-    Block getHighestBlockAt(int x, int z);
+    @NotNull
+    public Block getHighestBlockAt(int x, int z);
 
     /**
      * Gets the highest non-empty (impassable) block at the given coordinates.
@@ -221,7 +221,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param location Coordinates to get the highest block
      * @return Highest non-empty block
      */
-    Block getHighestBlockAt(Location location);
+    @NotNull
+    public Block getHighestBlockAt(@NotNull Location location);
 
     /**
      * Gets the highest block corresponding to the {@link HeightMap} at the
@@ -233,7 +234,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * point
      * @return Highest block corresponding to the {@link HeightMap}
      */
-    Block getHighestBlockAt(int x, int z, HeightMap heightMap);
+    @NotNull
+    public Block getHighestBlockAt(int x, int z, @NotNull HeightMap heightMap);
 
     /**
      * Gets the highest block corresponding to the {@link HeightMap} at the
@@ -244,7 +246,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * point
      * @return Highest block corresponding to the {@link HeightMap}
      */
-    Block getHighestBlockAt(Location location, HeightMap heightMap);
+    @NotNull
+    public Block getHighestBlockAt(@NotNull Location location, @NotNull HeightMap heightMap);
 
     /**
      * Gets the {@link Chunk} at the given coordinates
@@ -253,7 +256,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @return Chunk at the given coordinates
      */
-    Chunk getChunkAt(int x, int z);
+    @NotNull
+    public Chunk getChunkAt(int x, int z);
 
     /**
      * Gets the {@link Chunk} at the given coordinates
@@ -263,7 +267,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param generate Whether the chunk should be fully generated or not
      * @return Chunk at the given coordinates
      */
-    Chunk getChunkAt(int x, int z, boolean generate);
+    @NotNull
+    public Chunk getChunkAt(int x, int z, boolean generate);
 
     /**
      * Gets the {@link Chunk} at the given {@link Location}
@@ -271,7 +276,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param location Location of the chunk
      * @return Chunk at the given location
      */
-    Chunk getChunkAt(Location location);
+    @NotNull
+    public Chunk getChunkAt(@NotNull Location location);
 
     /**
      * Gets the {@link Chunk} that contains the given {@link Block}
@@ -279,7 +285,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param block Block to get the containing chunk from
      * @return The chunk that contains the given block
      */
-    Chunk getChunkAt(Block block);
+    @NotNull
+    public Chunk getChunkAt(@NotNull Block block);
 
     // Paper start - chunk long key API
     /**
@@ -291,6 +298,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param chunkKey The Chunk Key to look up the chunk by
      * @return The chunk at the specified key
      */
+    @NotNull
     default Chunk getChunkAt(long chunkKey) {
         return getChunkAt(chunkKey, true);
     }
@@ -305,6 +313,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param generate Whether the chunk should be fully generated or not
      * @return The chunk at the specified key
      */
+    @NotNull
     default Chunk getChunkAt(long chunkKey, boolean generate) {
         return getChunkAt((int) chunkKey, (int) (chunkKey >> 32), generate);
     }
@@ -329,14 +338,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param chunk The chunk to check
      * @return true if the chunk is loaded, otherwise false
      */
-    boolean isChunkLoaded(Chunk chunk);
+    public boolean isChunkLoaded(@NotNull Chunk chunk);
 
     /**
      * Gets an array of all loaded {@link Chunk}s
      *
      * @return Chunk[] containing all loaded chunks
      */
-    Chunk[] getLoadedChunks();
+    public @NotNull Chunk @NotNull [] getLoadedChunks();
 
     /**
      * Loads the specified {@link Chunk}.
@@ -347,7 +356,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param chunk The chunk to load
      */
-    void loadChunk(Chunk chunk);
+    public void loadChunk(@NotNull Chunk chunk);
 
     /**
      * Checks if the {@link Chunk} at the specified coordinates is loaded
@@ -356,7 +365,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @return true if the chunk is loaded, otherwise false
      */
-    boolean isChunkLoaded(int x, int z);
+    public boolean isChunkLoaded(int x, int z);
 
     /**
      * Checks if the {@link Chunk} at the specified coordinates is generated
@@ -365,7 +374,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @return true if the chunk is generated, otherwise false
      */
-    boolean isChunkGenerated(int x, int z);
+    public boolean isChunkGenerated(int x, int z);
 
     /**
      * Checks if the {@link Chunk} at the specified coordinates is loaded and
@@ -380,7 +389,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     will not be loaded for more than 1 tick unless they are in use.
      */
     @Deprecated(since = "1.14")
-    boolean isChunkInUse(int x, int z);
+    public boolean isChunkInUse(int x, int z);
 
     /**
      * Loads the {@link Chunk} at the specified coordinates.
@@ -397,7 +406,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param x X-coordinate of the chunk
      * @param z Z-coordinate of the chunk
      */
-    void loadChunk(int x, int z);
+    public void loadChunk(int x, int z);
 
     /**
      * Loads the {@link Chunk} at the specified coordinates.
@@ -412,7 +421,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     already exist
      * @return true if the chunk has loaded successfully, otherwise false
      */
-    boolean loadChunk(int x, int z, boolean generate);
+    public boolean loadChunk(int x, int z, boolean generate);
 
     /**
      * Safely unloads and saves the {@link Chunk} at the specified coordinates
@@ -423,7 +432,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param chunk the chunk to unload
      * @return true if the chunk has unloaded successfully, otherwise false
      */
-    boolean unloadChunk(Chunk chunk);
+    public boolean unloadChunk(@NotNull Chunk chunk);
 
     /**
      * Safely unloads and saves the {@link Chunk} at the specified coordinates
@@ -435,7 +444,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @return true if the chunk has unloaded successfully, otherwise false
      */
-    boolean unloadChunk(int x, int z);
+    public boolean unloadChunk(int x, int z);
 
     /**
      * Safely unloads and optionally saves the {@link Chunk} at the specified
@@ -446,7 +455,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param save Whether or not to save the chunk
      * @return true if the chunk has unloaded successfully, otherwise false
      */
-    boolean unloadChunk(int x, int z, boolean save);
+    public boolean unloadChunk(int x, int z, boolean save);
 
     /**
      * Safely queues the {@link Chunk} at the specified coordinates for
@@ -456,7 +465,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @return true is the queue attempt was successful, otherwise false
      */
-    boolean unloadChunkRequest(int x, int z);
+    public boolean unloadChunkRequest(int x, int z);
 
     /**
      * Regenerates the {@link Chunk} at the specified coordinates
@@ -483,7 +492,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return Whether the chunk was actually refreshed
      *
      */
-    boolean refreshChunk(int x, int z);
+    public boolean refreshChunk(int x, int z);
 
     /**
      * Get a list of all players who are can view the specified chunk from their
@@ -495,7 +504,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param chunk the chunk to check
      * @return collection of players who can see the chunk
      */
-    Collection<Player> getPlayersSeeingChunk(Chunk chunk);
+    @NotNull
+    public Collection<Player> getPlayersSeeingChunk(@NotNull Chunk chunk);
 
     /**
      * Get a list of all players who are can view the specified chunk from their
@@ -508,7 +518,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @return collection of players who can see the chunk
      */
-    Collection<Player> getPlayersSeeingChunk(int x, int z);
+    @NotNull
+    public Collection<Player> getPlayersSeeingChunk(int x, int z);
 
     /**
      * Gets whether the chunk at the specified chunk coordinates is force
@@ -520,7 +531,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @return force load status
      */
-    boolean isChunkForceLoaded(int x, int z);
+    public boolean isChunkForceLoaded(int x, int z);
 
     /**
      * Sets whether the chunk at the specified chunk coordinates is force
@@ -532,7 +543,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z-coordinate of the chunk
      * @param forced force load status
      */
-    void setChunkForceLoaded(int x, int z, boolean forced);
+    public void setChunkForceLoaded(int x, int z, boolean forced);
 
     /**
      * Returns all force loaded chunks in this world.
@@ -541,7 +552,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return unmodifiable collection of force loaded chunks
      */
-    Collection<Chunk> getForceLoadedChunks();
+    @NotNull
+    public Collection<Chunk> getForceLoadedChunks();
 
     /**
      * Adds a plugin ticket for the specified chunk, loading the chunk if it is
@@ -560,7 +572,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @throws IllegalStateException If the specified plugin is not enabled
      * @see #removePluginChunkTicket(int, int, Plugin)
      */
-    boolean addPluginChunkTicket(int x, int z, Plugin plugin);
+    public boolean addPluginChunkTicket(int x, int z, @NotNull Plugin plugin);
 
     /**
      * Removes the specified plugin's ticket for the specified chunk
@@ -577,7 +589,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * there is no plugin ticket for the chunk
      * @see #addPluginChunkTicket(int, int, Plugin)
      */
-    boolean removePluginChunkTicket(int x, int z, Plugin plugin);
+    public boolean removePluginChunkTicket(int x, int z, @NotNull Plugin plugin);
 
     /**
      * Removes all plugin tickets for the specified plugin
@@ -591,7 +603,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #addPluginChunkTicket(int, int, Plugin)
      * @see #removePluginChunkTicket(int, int, Plugin)
      */
-    void removePluginChunkTickets(Plugin plugin);
+    public void removePluginChunkTickets(@NotNull Plugin plugin);
 
     /**
      * Retrieves a collection specifying which plugins have tickets for the
@@ -610,7 +622,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #addPluginChunkTicket(int, int, Plugin)
      * @see #removePluginChunkTicket(int, int, Plugin)
      */
-    Collection<Plugin> getPluginChunkTickets(int x, int z);
+    @NotNull
+    public Collection<Plugin> getPluginChunkTickets(int x, int z);
 
     /**
      * Returns a map of which plugins have tickets for what chunks. The returned
@@ -627,7 +640,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #addPluginChunkTicket(int, int, Plugin)
      * @see #removePluginChunkTicket(int, int, Plugin)
      */
-    Map<Plugin, Collection<Chunk>> getPluginChunkTickets();
+    @NotNull
+    public Map<Plugin, Collection<Chunk>> getPluginChunkTickets();
 
     /**
      * Gets all Chunks intersecting the given BoundingBox.
@@ -635,7 +649,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param box BoundingBox to check
      * @return A collection of Chunks intersecting the given BoundingBox
      */
-    Collection<Chunk> getIntersectingChunks(BoundingBox box);
+    @NotNull
+    public Collection<Chunk> getIntersectingChunks(@NotNull BoundingBox box);
 
     /**
      * Drops an item at the specified {@link Location}
@@ -644,7 +659,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param item ItemStack to drop
      * @return ItemDrop entity created as a result of this method
      */
-    Item dropItem(Location location, ItemStack item);
+    @NotNull
+    public Item dropItem(@NotNull Location location, @NotNull ItemStack item);
 
     /**
      * Drops an item at the specified {@link Location}
@@ -655,7 +671,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param function the function to be run before the entity is spawned.
      * @return ItemDrop entity created as a result of this method
      */
-    Item dropItem(Location location, ItemStack item, @Nullable Consumer<? super Item> function);
+    @NotNull
+    public Item dropItem(@NotNull Location location, @NotNull ItemStack item, @Nullable Consumer<? super Item> function);
 
     /**
      * Drops an item at the specified {@link Location} with a random offset
@@ -664,7 +681,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param item ItemStack to drop
      * @return ItemDrop entity created as a result of this method
      */
-    Item dropItemNaturally(Location location, ItemStack item);
+    @NotNull
+    public Item dropItemNaturally(@NotNull Location location, @NotNull ItemStack item);
 
     /**
      * Drops an item at the specified {@link Location} with a random offset
@@ -675,7 +693,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param function the function to be run before the entity is spawned.
      * @return ItemDrop entity created as a result of this method
      */
-    Item dropItemNaturally(Location location, ItemStack item, @Nullable Consumer<? super Item> function);
+    @NotNull
+    public Item dropItemNaturally(@NotNull Location location, @NotNull ItemStack item, @Nullable Consumer<? super Item> function);
 
     /**
      * Creates an {@link Arrow} entity at the given {@link Location}
@@ -686,7 +705,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param spread Spread of the arrow. A recommend spread is 12
      * @return Arrow entity spawned as a result of this method
      */
-    Arrow spawnArrow(Location location, Vector direction, float speed, float spread);
+    @NotNull
+    public Arrow spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread);
 
     /**
      * Creates an arrow entity of the given class at the given {@link Location}
@@ -697,10 +717,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param speed Speed of the arrow. A recommend speed is 0.6
      * @param spread Spread of the arrow. A recommend spread is 12
      * @param clazz the Entity class for the arrow
-     * {@link SpectralArrow},{@link Arrow},{@link TippedArrow}
+     * {@link org.bukkit.entity.SpectralArrow},{@link org.bukkit.entity.Arrow},{@link org.bukkit.entity.TippedArrow}
      * @return Arrow entity spawned as a result of this method
      */
-    <T extends AbstractArrow> T spawnArrow(Location location, Vector direction, float speed, float spread, Class<T> clazz);
+    @NotNull
+    public <T extends AbstractArrow> T spawnArrow(@NotNull Location location, @NotNull Vector direction, float speed, float spread, @NotNull Class<T> clazz);
 
     /**
      * Creates a tree at the given {@link Location}
@@ -709,7 +730,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param type Type of the tree to create
      * @return true if the tree was created successfully, otherwise false
      */
-    boolean generateTree(Location location, TreeType type);
+    public boolean generateTree(@NotNull Location location, @NotNull TreeType type);
 
     /**
      * Creates a tree at the given {@link Location}
@@ -719,11 +740,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param delegate A class to call for each block changed as a result of
      *     this method
      * @return true if the tree was created successfully, otherwise false
-     * @see #generateTree(Location, java.util.Random, TreeType, java.util.function.Consumer)
+     * @see #generateTree(org.bukkit.Location, java.util.Random, org.bukkit.TreeType, java.util.function.Consumer)
      * @deprecated this method does not handle tile entities (bee nests)
      */
     @Deprecated(since = "1.17.1")
-    boolean generateTree(Location loc, TreeType type, BlockChangeDelegate delegate);
+    public boolean generateTree(@NotNull Location loc, @NotNull TreeType type, @NotNull BlockChangeDelegate delegate);
 
     /**
      * Strikes lightning at the given {@link Location}
@@ -731,7 +752,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param loc The location to strike lightning
      * @return The lightning entity.
      */
-    LightningStrike strikeLightning(Location loc);
+    @NotNull
+    public LightningStrike strikeLightning(@NotNull Location loc);
 
     /**
      * Strikes lightning at the given {@link Location} without doing damage
@@ -739,7 +761,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param loc The location to strike lightning
      * @return The lightning entity.
      */
-    LightningStrike strikeLightningEffect(Location loc);
+    @NotNull
+    public LightningStrike strikeLightningEffect(@NotNull Location loc);
 
     // Paper start
     /**
@@ -752,7 +775,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return {@link Location} of Lightning Rod or {@code null}
      */
     @Nullable
-    Location findLightningRod(Location location);
+    public Location findLightningRod(@NotNull Location location);
 
     /**
      * Finds a target {@link Location} for lightning to strike.
@@ -769,7 +792,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return lightning target or {@code null}
      */
     @Nullable
-    Location findLightningTarget(Location location);
+    public Location findLightningTarget(@NotNull Location location);
     // Paper end
 
     /**
@@ -777,14 +800,16 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return A List of all Entities currently residing in this world
      */
-    List<Entity> getEntities();
+    @NotNull
+    public List<Entity> getEntities();
 
     /**
      * Get a list of all living entities in this World
      *
      * @return A List of all LivingEntities currently residing in this world
      */
-    List<LivingEntity> getLivingEntities();
+    @NotNull
+    public List<LivingEntity> getLivingEntities();
 
     /**
      * Get a collection of all entities in this World matching the given
@@ -796,7 +821,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     match the given class/interface
      */
     @Deprecated(since = "1.1")
-    <T extends Entity> Collection<T> getEntitiesByClass(Class<T>... classes);
+    @NotNull
+    public <T extends Entity> Collection<T> getEntitiesByClass(@NotNull Class<T>... classes);
 
     /**
      * Get a collection of all entities in this World matching the given
@@ -807,7 +833,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return A List of all Entities currently residing in this world that
      *     match the given class/interface
      */
-    <T extends Entity> Collection<T> getEntitiesByClass(Class<T> cls);
+    @NotNull
+    public <T extends Entity> Collection<T> getEntitiesByClass(@NotNull Class<T> cls);
 
     /**
      * Get a collection of all entities in this World matching any of the
@@ -817,7 +844,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return A List of all Entities currently residing in this world that
      *     match one or more of the given classes/interfaces
      */
-    Collection<Entity> getEntitiesByClasses(Class<?>... classes);
+    @NotNull
+    public Collection<Entity> getEntitiesByClasses(@NotNull Class<?>... classes);
 
     // Paper start - additional getNearbyEntities API
     /**
@@ -826,7 +854,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param radius Radius
      * @return the collection of entities near location. This will always be a non-null collection.
      */
-    default Collection<LivingEntity> getNearbyLivingEntities(final Location loc, final double radius) {
+    default @NotNull Collection<LivingEntity> getNearbyLivingEntities(final @NotNull Location loc, final double radius) {
         return this.getNearbyEntitiesByType(LivingEntity.class, loc, radius, radius, radius);
     }
 
@@ -837,7 +865,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param yRadius Y Radius
      * @return the collection of entities near location. This will always be a non-null collection.
      */
-    default Collection<LivingEntity> getNearbyLivingEntities(final Location loc, final double xzRadius, final double yRadius) {
+    default @NotNull Collection<LivingEntity> getNearbyLivingEntities(final @NotNull Location loc, final double xzRadius, final double yRadius) {
         return this.getNearbyEntitiesByType(LivingEntity.class, loc, xzRadius, yRadius, xzRadius);
     }
 
@@ -849,7 +877,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param zRadius Z radius
      * @return the collection of entities near location. This will always be a non-null collection.
      */
-    default Collection<LivingEntity> getNearbyLivingEntities(final Location loc, final double xRadius, final double yRadius, final double zRadius) {
+    default @NotNull Collection<LivingEntity> getNearbyLivingEntities(final @NotNull Location loc, final double xRadius, final double yRadius, final double zRadius) {
         return this.getNearbyEntitiesByType(LivingEntity.class, loc, xRadius, yRadius, zRadius);
     }
 
@@ -860,7 +888,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param predicate a predicate used to filter results
      * @return the collection of living entities near location. This will always be a non-null collection
      */
-    default Collection<LivingEntity> getNearbyLivingEntities(final Location loc, final double radius, final @Nullable Predicate<? super LivingEntity> predicate) {
+    default @NotNull Collection<LivingEntity> getNearbyLivingEntities(final @NotNull Location loc, final double radius, final @Nullable Predicate<? super LivingEntity> predicate) {
         return this.getNearbyEntitiesByType(LivingEntity.class, loc, radius, radius, radius, predicate);
     }
 
@@ -872,7 +900,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param predicate a predicate used to filter results
      * @return the collection of living entities near location. This will always be a non-null collection
      */
-    default Collection<LivingEntity> getNearbyLivingEntities(final Location loc, final double xzRadius, final double yRadius, final @Nullable Predicate<? super LivingEntity> predicate) {
+    default @NotNull Collection<LivingEntity> getNearbyLivingEntities(final @NotNull Location loc, final double xzRadius, final double yRadius, final @Nullable Predicate<? super LivingEntity> predicate) {
         return this.getNearbyEntitiesByType(LivingEntity.class, loc, xzRadius, yRadius, xzRadius, predicate);
     }
 
@@ -885,7 +913,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param predicate a predicate used to filter results
      * @return the collection of living entities near location. This will always be a non-null collection.
      */
-    default Collection<LivingEntity> getNearbyLivingEntities(final Location loc, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super LivingEntity> predicate) {
+    default @NotNull Collection<LivingEntity> getNearbyLivingEntities(final @NotNull Location loc, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super LivingEntity> predicate) {
         return this.getNearbyEntitiesByType(LivingEntity.class, loc, xRadius, yRadius, zRadius, predicate);
     }
 
@@ -895,7 +923,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param radius X/Y/Z Radius
      * @return the collection of living entities near location. This will always be a non-null collection.
      */
-    default Collection<Player> getNearbyPlayers(final Location loc, final double radius) {
+    default @NotNull Collection<Player> getNearbyPlayers(final @NotNull Location loc, final double radius) {
         return this.getNearbyEntitiesByType(Player.class, loc, radius, radius, radius);
     }
 
@@ -906,7 +934,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param yRadius Y Radius
      * @return the collection of living entities near location. This will always be a non-null collection.
      */
-    default Collection<Player> getNearbyPlayers(final Location loc, final double xzRadius, final double yRadius) {
+    default @NotNull Collection<Player> getNearbyPlayers(final @NotNull Location loc, final double xzRadius, final double yRadius) {
         return this.getNearbyEntitiesByType(Player.class, loc, xzRadius, yRadius, xzRadius);
     }
 
@@ -918,7 +946,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param zRadius Z Radius
      * @return the collection of players near location. This will always be a non-null collection.
      */
-    default Collection<Player> getNearbyPlayers(final Location loc, final double xRadius, final double yRadius, final double zRadius) {
+    default @NotNull Collection<Player> getNearbyPlayers(final @NotNull Location loc, final double xRadius, final double yRadius, final double zRadius) {
         return this.getNearbyEntitiesByType(Player.class, loc, xRadius, yRadius, zRadius);
     }
 
@@ -929,7 +957,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param predicate a predicate used to filter results
      * @return the collection of players near location. This will always be a non-null collection.
      */
-    default Collection<Player> getNearbyPlayers(final Location loc, final double radius, final @Nullable Predicate<? super Player> predicate) {
+    default @NotNull Collection<Player> getNearbyPlayers(final @NotNull Location loc, final double radius, final @Nullable Predicate<? super Player> predicate) {
         return this.getNearbyEntitiesByType(Player.class, loc, radius, radius, radius, predicate);
     }
 
@@ -941,7 +969,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param predicate a predicate used to filter results
      * @return the collection of players near location. This will always be a non-null collection.
      */
-    default Collection<Player> getNearbyPlayers(final Location loc, final double xzRadius, final double yRadius, final @Nullable Predicate<? super Player> predicate) {
+    default @NotNull Collection<Player> getNearbyPlayers(final @NotNull Location loc, final double xzRadius, final double yRadius, final @Nullable Predicate<? super Player> predicate) {
         return this.getNearbyEntitiesByType(Player.class, loc, xzRadius, yRadius, xzRadius, predicate);
     }
 
@@ -954,7 +982,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param predicate a predicate used to filter results
      * @return the collection of players near location. This will always be a non-null collection.
      */
-    default Collection<Player> getNearbyPlayers(final Location loc, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super Player> predicate) {
+    default @NotNull Collection<Player> getNearbyPlayers(final @NotNull Location loc, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super Player> predicate) {
         return this.getNearbyEntitiesByType(Player.class, loc, xRadius, yRadius, zRadius, predicate);
     }
 
@@ -966,7 +994,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param <T> the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
      */
-    default <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final Location loc, final double radius) {
+    default @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final @NotNull Location loc, final double radius) {
         return this.getNearbyEntitiesByType(clazz, loc, radius, radius, radius, null);
     }
 
@@ -979,7 +1007,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param <T> the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
      */
-    default <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final Location loc, final double xzRadius, final double yRadius) {
+    default @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final @NotNull Location loc, final double xzRadius, final double yRadius) {
         return this.getNearbyEntitiesByType(clazz, loc, xzRadius, yRadius, xzRadius, null);
     }
 
@@ -993,7 +1021,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param <T> the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
      */
-    default <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final Location loc, final double xRadius, final double yRadius, final double zRadius) {
+    default @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final @NotNull Location loc, final double xRadius, final double yRadius, final double zRadius) {
         return this.getNearbyEntitiesByType(clazz, loc, xRadius, yRadius, zRadius, null);
     }
 
@@ -1006,7 +1034,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param <T> the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
      */
-    default <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final Location loc, final double radius, final @Nullable Predicate<? super T> predicate) {
+    default @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final @NotNull Location loc, final double radius, final @Nullable Predicate<? super T> predicate) {
         return this.getNearbyEntitiesByType(clazz, loc, radius, radius, radius, predicate);
     }
 
@@ -1020,7 +1048,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param <T> the entity type
      * @return the collection of entities near location. This will always be a non-null collection.
      */
-    default <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final Location loc, final double xzRadius, final double yRadius, final @Nullable Predicate<? super T> predicate) {
+    default @NotNull <T extends Entity> Collection<T> getNearbyEntitiesByType(final @Nullable Class<? extends T> clazz, final @NotNull Location loc, final double xzRadius, final double yRadius, final @Nullable Predicate<? super T> predicate) {
         return this.getNearbyEntitiesByType(clazz, loc, xzRadius, yRadius, xzRadius, predicate);
     }
 
@@ -1035,7 +1063,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
       * @param <T> the entity type
       * @return the collection of entities near location. This will always be a non-null collection.
       */
-     default <T extends Entity> Collection<T> getNearbyEntitiesByType(@Nullable Class<? extends Entity> clazz, final Location loc, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super T> predicate) {
+     default <T extends Entity> @NotNull Collection<T> getNearbyEntitiesByType(@Nullable Class<? extends Entity> clazz, final @NotNull Location loc, final double xRadius, final double yRadius, final double zRadius, final @Nullable Predicate<? super T> predicate) {
          if (clazz == null) {
             clazz = Entity.class;
         }
@@ -1069,11 +1097,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Deprecated(since = "1.13.1")
     public static interface ChunkLoadCallback extends java.util.function.Consumer<Chunk> {
-        void onLoad(Chunk chunk);
+        public void onLoad(@NotNull Chunk chunk);
 
         // backwards compat to old api
         @Override
-        default void accept(Chunk chunk) {
+        default void accept(@NotNull Chunk chunk) {
             onLoad(chunk);
         }
     }
@@ -1098,7 +1126,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *           will be executed synchronously
      */
     @Deprecated(since = "1.13.1")
-    default void getChunkAtAsync(int x, int z, ChunkLoadCallback cb) {
+    public default void getChunkAtAsync(int x, int z, @NotNull ChunkLoadCallback cb) {
         this.getChunkAtAsync(x, z, (java.util.function.Consumer<Chunk>)cb);
     }
 
@@ -1121,7 +1149,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *           will be executed synchronously
      */
     @Deprecated(since = "1.13.1")
-    default void getChunkAtAsync(Location loc, ChunkLoadCallback cb) {
+    public default void getChunkAtAsync(@NotNull Location loc, @NotNull ChunkLoadCallback cb) {
         this.getChunkAtAsync(loc.getBlockX() >> 4, loc.getBlockZ() >> 4, cb);
     }
 
@@ -1144,7 +1172,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *           will be executed synchronously
      */
     @Deprecated(since = "1.13.1")
-    default void getChunkAtAsync(Block block, ChunkLoadCallback cb) {
+    public default void getChunkAtAsync(@NotNull Block block, @NotNull ChunkLoadCallback cb) {
         this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, cb);
     }
 
@@ -1166,7 +1194,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
      */
-    default void getChunkAtAsync(final int x, final int z, final Consumer<? super Chunk> cb) {
+    default void getChunkAtAsync(final int x, final int z, final @NotNull Consumer<? super Chunk> cb) {
         this.getChunkAtAsync(x, z, true, cb);
     }
 
@@ -1189,7 +1217,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
      */
-    default void getChunkAtAsync(final int x, final int z, final boolean gen, final Consumer<? super Chunk> cb) {
+    default void getChunkAtAsync(final int x, final int z, final boolean gen, final @NotNull Consumer<? super Chunk> cb) {
         this.getChunkAtAsync(x, z, gen, false, cb);
     }
 
@@ -1213,7 +1241,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
      */
-    void getChunkAtAsync(final int x, final int z, final boolean gen, final boolean urgent, final Consumer<? super Chunk> cb);
+    void getChunkAtAsync(final int x, final int z, final boolean gen, final boolean urgent, final @NotNull Consumer<? super Chunk> cb);
 
     /**
      * Requests all chunks with x between [minX, maxZ] and z
@@ -1239,7 +1267,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see Chunk
      */
     void getChunksAtAsync(final int minX, final int minZ, final int maxX, final int maxZ, final boolean urgent,
-                          final Runnable cb);
+                          final @NotNull Runnable cb);
 
     /**
      * Requests a {@link Chunk} to be loaded at the given {@link Location}
@@ -1258,7 +1286,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
      */
-    default void getChunkAtAsync(final Location loc, final Consumer<? super Chunk> cb) {
+    default void getChunkAtAsync(final @NotNull Location loc, final @NotNull Consumer<? super Chunk> cb) {
         this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, true, cb);
     }
 
@@ -1280,7 +1308,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
      */
-    default void getChunkAtAsync(final Location loc, final boolean gen, final Consumer<? super Chunk> cb) {
+    default void getChunkAtAsync(final @NotNull Location loc, final boolean gen, final @NotNull Consumer<? super Chunk> cb) {
         this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, gen, cb);
     }
 
@@ -1301,7 +1329,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
      */
-    default void getChunkAtAsync(final Block block, final Consumer<? super Chunk> cb) {
+    default void getChunkAtAsync(final @NotNull Block block, final @NotNull Consumer<? super Chunk> cb) {
         this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true, cb);
     }
 
@@ -1323,7 +1351,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param cb Callback to receive the chunk when it is loaded.
      *           will be executed synchronously
      */
-    default void getChunkAtAsync(final Block block, final boolean gen, final Consumer<? super Chunk> cb) {
+    default void getChunkAtAsync(final @NotNull Block block, final boolean gen, final @NotNull Consumer<? super Chunk> cb) {
         this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen, cb);
     }
 
@@ -1342,7 +1370,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param loc Location to load the corresponding chunk from
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final Location loc) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Location loc) {
         return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, true);
     }
 
@@ -1362,7 +1390,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param gen Should the chunk generate if it doesn't exist
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final Location loc, final boolean gen) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Location loc, final boolean gen) {
         return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, gen);
     }
 
@@ -1381,7 +1409,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param block Block to load the corresponding chunk from
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final Block block) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Block block) {
         return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true);
     }
 
@@ -1401,7 +1429,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param gen Should the chunk generate if it doesn't exist
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final Block block, final boolean gen) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final @NotNull Block block, final boolean gen) {
         return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen);
     }
 
@@ -1422,7 +1450,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Chunk z-coordinate
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z) {
         return this.getChunkAtAsync(x, z, true);
     }
 
@@ -1444,7 +1472,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param gen Should we generate a chunk if it doesn't exist or not
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z, final boolean gen) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(final int x, final int z, final boolean gen) {
         return this.getChunkAtAsync(x, z, gen, false);
     }
 
@@ -1463,7 +1491,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param loc Location to load the corresponding chunk from
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final Location loc) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Location loc) {
         return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, true, true);
     }
 
@@ -1483,7 +1511,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param gen Should the chunk generate if it doesn't exist
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final Location loc, final boolean gen) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Location loc, final boolean gen) {
         return this.getChunkAtAsync((int) Math.floor(loc.getX()) >> 4, (int) Math.floor(loc.getZ()) >> 4, gen, true);
     }
 
@@ -1502,7 +1530,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param block Block to load the corresponding chunk from
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final Block block) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Block block) {
         return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, true, true);
     }
 
@@ -1522,7 +1550,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param gen Should the chunk generate if it doesn't exist
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final Block block, final boolean gen) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final @NotNull Block block, final boolean gen) {
         return this.getChunkAtAsync(block.getX() >> 4, block.getZ() >> 4, gen, true);
     }
 
@@ -1543,7 +1571,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Chunk z-coordinate
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final int x, final int z) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsyncUrgently(final int x, final int z) {
         return this.getChunkAtAsync(x, z, true, true);
     }
 
@@ -1567,7 +1595,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return Future that will resolve when the chunk is loaded
      */
-    default java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
+    default @NotNull java.util.concurrent.CompletableFuture<Chunk> getChunkAtAsync(int x, int z, boolean gen, boolean urgent) {
         java.util.concurrent.CompletableFuture<Chunk> ret = new java.util.concurrent.CompletableFuture<>();
         this.getChunkAtAsync(x, z, gen, urgent, ret::complete);
         return ret;
@@ -1579,9 +1607,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return A list of all Players currently residing in this world
      */
-    List<Player> getPlayers();
+    @NotNull
+    public List<Player> getPlayers();
 
     // Paper start
+    @NotNull
     @Override
     default Iterable<? extends net.kyori.adventure.audience.Audience> audiences() {
         return this.getPlayers();
@@ -1603,7 +1633,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the collection of entities near location. This will always be a
      *      non-null collection.
      */
-    Collection<Entity> getNearbyEntities(Location location, double x, double y, double z);
+    @NotNull
+    public Collection<Entity> getNearbyEntities(@NotNull Location location, double x, double y, double z);
 
     // Paper start - getEntity by UUID API
     /**
@@ -1613,7 +1644,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the entity with the given UUID, or null if it isn't found
      */
     @Nullable
-    Entity getEntity(java.util.UUID uuid);
+    public Entity getEntity(@NotNull java.util.UUID uuid);
     // Paper end
 
     /**
@@ -1633,7 +1664,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the collection of entities near location. This will always be a
      *     non-null collection.
      */
-    Collection<Entity> getNearbyEntities(Location location, double x, double y, double z, @Nullable Predicate<? super Entity> filter);
+    @NotNull
+    public Collection<Entity> getNearbyEntities(@NotNull Location location, double x, double y, double z, @Nullable Predicate<? super Entity> filter);
 
     /**
      * Returns a list of entities within the given bounding box.
@@ -1646,7 +1678,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the collection of entities within the bounding box, will always
      *     be a non-null collection
      */
-    Collection<Entity> getNearbyEntities(BoundingBox boundingBox);
+    @NotNull
+    public Collection<Entity> getNearbyEntities(@NotNull BoundingBox boundingBox);
 
     /**
      * Returns a list of entities within the given bounding box.
@@ -1661,7 +1694,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the collection of entities within the bounding box, will always
      *     be a non-null collection
      */
-    Collection<Entity> getNearbyEntities(BoundingBox boundingBox, @Nullable Predicate<? super Entity> filter);
+    @NotNull
+    public Collection<Entity> getNearbyEntities(@NotNull BoundingBox boundingBox, @Nullable Predicate<? super Entity> filter);
 
     /**
      * Performs a ray trace that checks for entity collisions.
@@ -1681,7 +1715,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #rayTraceEntities(Location, Vector, double, double, Predicate)
      */
     @Nullable
-    RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance);
+    public RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance);
 
     /**
      * Performs a ray trace that checks for entity collisions.
@@ -1700,7 +1734,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #rayTraceEntities(Location, Vector, double, double, Predicate)
      */
     @Nullable
-    RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize);
+    public RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance, double raySize);
 
     /**
      * Performs a ray trace that checks for entity collisions.
@@ -1722,7 +1756,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #rayTraceEntities(Location, Vector, double, double, Predicate)
      */
     @Nullable
-    RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, @Nullable Predicate<? super Entity> filter);
+    public RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance, @Nullable Predicate<? super Entity> filter);
 
     /**
      * Performs a ray trace that checks for entity collisions.
@@ -1742,7 +1776,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     is no hit
      */
     @Nullable
-    RayTraceResult rayTraceEntities(Location start, Vector direction, double maxDistance, double raySize, @Nullable Predicate<? super Entity> filter);
+    public RayTraceResult rayTraceEntities(@NotNull Location start, @NotNull Vector direction, double maxDistance, double raySize, @Nullable Predicate<? super Entity> filter);
 
     // Paper start
     /**
@@ -1762,7 +1796,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the closest ray trace hit result, or <code>null</code> if there
      *     is no hit
      */
-    @Nullable RayTraceResult rayTraceEntities(Position start, Vector direction, double maxDistance, double raySize, @Nullable Predicate<? super Entity> filter);
+    @Nullable RayTraceResult rayTraceEntities(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, double raySize, @Nullable Predicate<? super Entity> filter);
     // Paper end
 
     /**
@@ -1782,7 +1816,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #rayTraceBlocks(Location, Vector, double, FluidCollisionMode, boolean)
      */
     @Nullable
-    RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance);
+    public RayTraceResult rayTraceBlocks(@NotNull Location start, @NotNull Vector direction, double maxDistance);
 
     /**
      * Performs a ray trace that checks for block collisions using the blocks'
@@ -1801,7 +1835,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #rayTraceBlocks(Location, Vector, double, FluidCollisionMode, boolean)
      */
     @Nullable
-    RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode);
+    public RayTraceResult rayTraceBlocks(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode);
 
     /**
      * Performs a ray trace that checks for block collisions using the blocks'
@@ -1826,7 +1860,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the ray trace hit result, or <code>null</code> if there is no hit
      */
     @Nullable
-    RayTraceResult rayTraceBlocks(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks);
+    public RayTraceResult rayTraceBlocks(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks);
 
     // Paper start
     /**
@@ -1853,7 +1887,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     with, or <code>null</code> to consider all blocks
      * @return the ray trace hit result, or <code>null</code> if there is no hit
      */
-    @Nullable RayTraceResult rayTraceBlocks(Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, @Nullable Predicate<? super Block> canCollide);
+    @Nullable RayTraceResult rayTraceBlocks(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, @Nullable Predicate<? super Block> canCollide);
     // Paper end
 
     /**
@@ -1887,7 +1921,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     entity, or <code>null</code> if there is no hit
      */
     @Nullable
-    RayTraceResult rayTrace(Location start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter);
+    public RayTraceResult rayTrace(@NotNull Location start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter);
 
     // Paper start
     /**
@@ -1922,7 +1956,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the closest ray trace hit result with either a block or an
      *     entity, or <code>null</code> if there is no hit
      */
-    @Nullable RayTraceResult rayTrace(Position start, Vector direction, double maxDistance, FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
+    @Nullable RayTraceResult rayTrace(io.papermc.paper.math.@NotNull Position start, @NotNull Vector direction, double maxDistance, @NotNull FluidCollisionMode fluidCollisionMode, boolean ignorePassableBlocks, double raySize, @Nullable Predicate<? super Entity> filter, @Nullable Predicate<? super Block> canCollide);
     // Paper end
 
     /**
@@ -1937,14 +1971,15 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the closest ray trace hit result with either a block or an
      *     entity, or <code>null</code> if there is no hit
      */
-    @Nullable RayTraceResult rayTrace(Consumer<PositionedRayTraceConfigurationBuilder> builderConsumer);
+    @Nullable RayTraceResult rayTrace(@NotNull Consumer<PositionedRayTraceConfigurationBuilder> builderConsumer);
 
     /**
      * Gets the default spawn {@link Location} of this world
      *
      * @return The spawn location of this world
      */
-    Location getSpawnLocation();
+    @NotNull
+    public Location getSpawnLocation();
 
     /**
      * Sets the spawn location of the world.
@@ -1954,7 +1989,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param location The {@link Location} to set the spawn for this world at.
      * @return True if it was successfully set.
      */
-    boolean setSpawnLocation(Location location);
+    public boolean setSpawnLocation(@NotNull Location location);
 
     /**
      * Sets the spawn location of the world
@@ -1965,7 +2000,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param angle the angle
      * @return True if it was successfully set.
      */
-    boolean setSpawnLocation(int x, int y, int z, float angle);
+    public boolean setSpawnLocation(int x, int y, int z, float angle);
 
     /**
      * Sets the spawn location of the world
@@ -1975,7 +2010,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z coordinate
      * @return True if it was successfully set.
      */
-    boolean setSpawnLocation(int x, int y, int z);
+    public boolean setSpawnLocation(int x, int y, int z);
 
     /**
      * Gets the relative in-game time of this world.
@@ -1985,7 +2020,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The current relative time
      * @see #getFullTime() Returns an absolute time of this world
      */
-    long getTime();
+    public long getTime();
 
     /**
      * Sets the relative in-game time on the server.
@@ -2000,7 +2035,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     hours*1000)
      * @see #setFullTime(long) Sets the absolute time of this world
      */
-    void setTime(long time);
+    public void setTime(long time);
 
     /**
      * Gets the full in-game time on this world
@@ -2008,7 +2043,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return The current absolute time
      * @see #getTime() Returns a relative time of this world
      */
-    long getFullTime();
+    public long getFullTime();
 
     /**
      * Sets the in-game time on the server
@@ -2019,7 +2054,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param time The new absolute time to set this world to
      * @see #setTime(long) Sets the relative time of this world
      */
-    void setFullTime(long time);
+    public void setFullTime(long time);
 
     // Paper start
 
@@ -2028,7 +2063,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return True if it is daytime
      */
-    boolean isDayTime();
+    public boolean isDayTime();
     // Paper end
 
     /**
@@ -2038,14 +2073,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #getTime() Returns a relative time of this world
      * @see #getFullTime() Returns an absolute time of this world
      */
-    long getGameTime();
+    public long getGameTime();
 
     /**
      * Returns whether the world has an ongoing storm.
      *
      * @return Whether there is an ongoing storm
      */
-    boolean hasStorm();
+    public boolean hasStorm();
 
     /**
      * Set whether there is a storm. A duration will be set for the new
@@ -2056,28 +2091,28 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param hasStorm Whether there is rain and snow
      */
-    void setStorm(boolean hasStorm);
+    public void setStorm(boolean hasStorm);
 
     /**
      * Get the remaining time in ticks of the current conditions.
      *
      * @return Time in ticks
      */
-    int getWeatherDuration();
+    public int getWeatherDuration();
 
     /**
      * Set the remaining time in ticks of the current conditions.
      *
      * @param duration Time in ticks
      */
-    void setWeatherDuration(int duration);
+    public void setWeatherDuration(int duration);
 
     /**
      * Returns whether there is thunder.
      *
      * @return Whether there is thunder
      */
-    boolean isThundering();
+    public boolean isThundering();
 
     /**
      * Set whether it is thundering.
@@ -2087,21 +2122,21 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param thundering Whether it is thundering
      */
-    void setThundering(boolean thundering);
+    public void setThundering(boolean thundering);
 
     /**
      * Get the thundering duration.
      *
      * @return Duration in ticks
      */
-    int getThunderDuration();
+    public int getThunderDuration();
 
     /**
      * Set the thundering duration.
      *
      * @param duration Duration in ticks
      */
-    void setThunderDuration(int duration);
+    public void setThunderDuration(int duration);
 
     /**
      * Returns whether the world has clear weather.
@@ -2111,7 +2146,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return true if clear weather
      */
-    boolean isClearWeather();
+    public boolean isClearWeather();
 
     /**
      * Set the clear weather duration.
@@ -2125,14 +2160,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param duration duration in ticks
      */
-    void setClearWeatherDuration(int duration);
+    public void setClearWeatherDuration(int duration);
 
     /**
      * Get the clear weather duration.
      *
      * @return duration in ticks
      */
-    int getClearWeatherDuration();
+    public int getClearWeatherDuration();
 
     /**
      * Creates explosion at given coordinates with given power
@@ -2143,7 +2178,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param power The power of explosion, where 4F is TNT
      * @return false if explosion was canceled, otherwise true
      */
-    boolean createExplosion(double x, double y, double z, float power);
+    public boolean createExplosion(double x, double y, double z, float power);
 
     /**
      * Creates explosion at given coordinates with given power and optionally
@@ -2156,7 +2191,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param setFire Whether or not to set blocks on fire
      * @return false if explosion was canceled, otherwise true
      */
-    boolean createExplosion(double x, double y, double z, float power, boolean setFire);
+    public boolean createExplosion(double x, double y, double z, float power, boolean setFire);
 
     /**
      * Creates explosion at given coordinates with given power and optionally
@@ -2170,7 +2205,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param breakBlocks Whether or not to have blocks be destroyed
      * @return false if explosion was canceled, otherwise true
      */
-    boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks);
+    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks);
 
     /**
      * Creates explosion at given coordinates with given power and optionally
@@ -2191,7 +2226,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param source the source entity, used for tracking damage
      * @return false if explosion was canceled, otherwise true
      */
-    boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, @Nullable Entity source);
+    public boolean createExplosion(double x, double y, double z, float power, boolean setFire, boolean breakBlocks, @Nullable Entity source);
 
     /**
      * Creates explosion at given coordinates with given power
@@ -2200,7 +2235,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param power The power of explosion, where 4F is TNT
      * @return false if explosion was canceled, otherwise true
      */
-    boolean createExplosion(Location loc, float power);
+    public boolean createExplosion(@NotNull Location loc, float power);
 
     /**
      * Creates explosion at given coordinates with given power and optionally
@@ -2211,7 +2246,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param setFire Whether or not to set blocks on fire
      * @return false if explosion was canceled, otherwise true
      */
-    boolean createExplosion(Location loc, float power, boolean setFire);
+    public boolean createExplosion(@NotNull Location loc, float power, boolean setFire);
 
     // Paper start
     /**
@@ -2226,7 +2261,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param excludeSourceFromDamage whether the explosion should exclude the passed source from taking damage like vanilla explosions do.
      * @return false if explosion was canceled, otherwise true
      */
-    boolean createExplosion(@Nullable Entity source, Location loc, float power, boolean setFire, boolean breakBlocks, boolean excludeSourceFromDamage);
+    public boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire, boolean breakBlocks, boolean excludeSourceFromDamage);
 
     /**
      * Creates explosion at given location with given power and optionally
@@ -2239,7 +2274,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param breakBlocks Whether or not to have blocks be destroyed
      * @return false if explosion was canceled, otherwise true
      */
-    default boolean createExplosion(@Nullable Entity source, Location loc, float power, boolean setFire, boolean breakBlocks) {
+    default boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire, boolean breakBlocks) {
         return createExplosion(source, loc, power, setFire, breakBlocks, true);
     }
 
@@ -2255,7 +2290,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param setFire Whether or not to set blocks on fire
      * @return false if explosion was canceled, otherwise true
      */
-    default boolean createExplosion(@Nullable Entity source, Location loc, float power, boolean setFire) {
+    public default boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power, boolean setFire) {
         return createExplosion(source, loc, power, setFire, true);
     }
     /**
@@ -2267,7 +2302,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param power The power of explosion, where 4F is TNT
      * @return false if explosion was canceled, otherwise true
      */
-    default boolean createExplosion(@Nullable Entity source, Location loc, float power) {
+    public default boolean createExplosion(@Nullable Entity source, @NotNull Location loc, float power) {
         return createExplosion(source, loc, power, true, true);
     }
     /**
@@ -2280,7 +2315,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param breakBlocks Whether or not to have blocks be destroyed
      * @return false if explosion was canceled, otherwise true
      */
-    default boolean createExplosion(Entity source, float power, boolean setFire, boolean breakBlocks) {
+    public default boolean createExplosion(@NotNull Entity source, float power, boolean setFire, boolean breakBlocks) {
         return createExplosion(source, source.getLocation(), power, setFire, breakBlocks);
     }
     /**
@@ -2294,7 +2329,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param setFire Whether or not to set blocks on fire
      * @return false if explosion was canceled, otherwise true
      */
-    default boolean createExplosion(Entity source, float power, boolean setFire) {
+    public default boolean createExplosion(@NotNull Entity source, float power, boolean setFire) {
         return createExplosion(source, source.getLocation(), power, setFire, true);
     }
 
@@ -2306,7 +2341,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param power The power of explosion, where 4F is TNT
      * @return false if explosion was canceled, otherwise true
      */
-    default boolean createExplosion(Entity source, float power) {
+    public default boolean createExplosion(@NotNull Entity source, float power) {
         return createExplosion(source, source.getLocation(), power, true, true);
     }
     // Paper end
@@ -2321,7 +2356,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param breakBlocks Whether or not to have blocks be destroyed
      * @return false if explosion was canceled, otherwise true
      */
-    boolean createExplosion(Location loc, float power, boolean setFire, boolean breakBlocks);
+    public boolean createExplosion(@NotNull Location loc, float power, boolean setFire, boolean breakBlocks);
 
     /**
      * Creates explosion at given coordinates with given power and optionally
@@ -2340,21 +2375,21 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param source the source entity, used for tracking damage
      * @return false if explosion was canceled, otherwise true
      */
-    boolean createExplosion(Location loc, float power, boolean setFire, boolean breakBlocks, @Nullable Entity source);
+    public boolean createExplosion(@NotNull Location loc, float power, boolean setFire, boolean breakBlocks, @Nullable Entity source);
 
     /**
      * Gets the current PVP setting for this world.
      *
      * @return True if PVP is enabled
      */
-    boolean getPVP();
+    public boolean getPVP();
 
     /**
      * Sets the PVP setting for this world.
      *
      * @param pvp True/False whether PVP should be Enabled.
      */
-    void setPVP(boolean pvp);
+    public void setPVP(boolean pvp);
 
     /**
      * Gets the chunk generator for this world
@@ -2362,7 +2397,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return ChunkGenerator associated with this world
      */
     @Nullable
-    ChunkGenerator getGenerator();
+    public ChunkGenerator getGenerator();
 
     /**
      * Gets the biome provider for this world
@@ -2370,7 +2405,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return BiomeProvider associated with this world
      */
     @Nullable
-    BiomeProvider getBiomeProvider();
+    public BiomeProvider getBiomeProvider();
 
     /**
      * Saves the world to disk
@@ -2382,7 +2417,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * Saves the world to disk
      * @param flush Whether to wait for the chunk writer to finish
-     */    
+     */
     void save(boolean flush);
 
     /**
@@ -2390,7 +2425,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return List containing any or none BlockPopulators
      */
-    List<BlockPopulator> getPopulators();
+    @NotNull
+    public List<BlockPopulator> getPopulators();
 
     /**
      * Creates a new entity at the given {@link Location} with the supplied
@@ -2420,7 +2456,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *                      in their default state and not further modifications
      *                      to the entity will be made.
      *                      Notably only entities that extend the
-     *                      {@link Mob} interface provide
+     *                      {@link org.bukkit.entity.Mob} interface provide
      *                      randomisation logic for their spawn.
      *                      This parameter is hence useless for any other type
      *                      of entity.
@@ -2428,7 +2464,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the spawned entity instance.
      * @throws IllegalArgumentException if either the world or clazz parameter are null.
      */
-    <T extends LivingEntity> T spawn(Location location, Class<T> clazz, CreatureSpawnEvent.SpawnReason spawnReason, boolean randomizeData, @Nullable Consumer<? super T> function) throws IllegalArgumentException;
+    @NotNull
+    public <T extends LivingEntity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull CreatureSpawnEvent.SpawnReason spawnReason, boolean randomizeData, @Nullable Consumer<? super T> function) throws IllegalArgumentException;
 
     /**
      * Spawn a {@link FallingBlock} entity at the given {@link Location} of
@@ -2445,8 +2482,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     MaterialData} are null or {@link Material} of the {@link MaterialData} is not a block
      * @deprecated Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
+    @NotNull
     @Deprecated(since = "1.20.2", forRemoval = true)
-    FallingBlock spawnFallingBlock(Location location, MaterialData data) throws IllegalArgumentException;
+    public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull MaterialData data) throws IllegalArgumentException;
 
     /**
      * Spawn a {@link FallingBlock} entity at the given {@link Location} of
@@ -2460,8 +2498,9 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     BlockData} are null
      * @deprecated Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
+    @NotNull
     @org.jetbrains.annotations.ApiStatus.Obsolete(since = "1.20.2") // Paper
-    FallingBlock spawnFallingBlock(Location location, BlockData data) throws IllegalArgumentException;
+    public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull BlockData data) throws IllegalArgumentException;
 
     /**
      * Spawn a {@link FallingBlock} entity at the given {@link Location} of the
@@ -2480,7 +2519,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Magic value. Use {@link #spawn(Location, Class, Consumer)} (or a variation thereof) in combination with {@link FallingBlock#setBlockData(BlockData)}
      */
     @Deprecated(since = "1.7.5", forRemoval = true)
-    FallingBlock spawnFallingBlock(Location location, Material material, byte data) throws IllegalArgumentException;
+    @NotNull
+    public FallingBlock spawnFallingBlock(@NotNull Location location, @NotNull Material material, byte data) throws IllegalArgumentException;
 
     /**
      * Plays an effect to all players within a default radius around a given
@@ -2491,7 +2531,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param effect the {@link Effect}
      * @param data a data bit needed for some effects
      */
-    void playEffect(Location location, Effect effect, int data);
+    public void playEffect(@NotNull Location location, @NotNull Effect effect, int data);
 
     /**
      * Plays an effect to all players within a given radius around a location.
@@ -2502,7 +2542,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param data a data bit needed for some effects
      * @param radius the radius around the location
      */
-    void playEffect(Location location, Effect effect, int data, int radius);
+    public void playEffect(@NotNull Location location, @NotNull Effect effect, int data, int radius);
 
     /**
      * Plays an effect to all players within a default radius around a given
@@ -2514,7 +2554,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param effect the {@link Effect}
      * @param data a data bit needed for some effects
      */
-    <T> void playEffect(Location location, Effect effect, @Nullable T data);
+    public <T> void playEffect(@NotNull Location location, @NotNull Effect effect, @Nullable T data);
 
     /**
      * Plays an effect to all players within a given radius around a location.
@@ -2526,7 +2566,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param data a data bit needed for some effects
      * @param radius the radius around the location
      */
-    <T> void playEffect(Location location, Effect effect, @Nullable T data, int radius);
+    public <T> void playEffect(@NotNull Location location, @NotNull Effect effect, @Nullable T data, int radius);
 
     /**
      * Get empty chunk snapshot (equivalent to all air blocks), optionally
@@ -2541,7 +2581,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     raw biome temperature
      * @return The empty snapshot.
      */
-    ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTemp);
+    @NotNull
+    public ChunkSnapshot getEmptyChunkSnapshot(int x, int z, boolean includeBiome, boolean includeBiomeTemp);
 
     /**
      * Sets the spawn flags for this.
@@ -2551,21 +2592,21 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param allowAnimals - if true, animals are allowed to spawn in this
      *     world.
      */
-    void setSpawnFlags(boolean allowMonsters, boolean allowAnimals);
+    public void setSpawnFlags(boolean allowMonsters, boolean allowAnimals);
 
     /**
      * Gets whether animals can spawn in this world.
      *
      * @return whether animals can spawn in this world.
      */
-    boolean getAllowAnimals();
+    public boolean getAllowAnimals();
 
     /**
      * Gets whether monsters can spawn in this world.
      *
      * @return whether monsters can spawn in this world.
      */
-    boolean getAllowMonsters();
+    public boolean getAllowMonsters();
 
     /**
      * Gets the biome for the given block coordinates.
@@ -2575,6 +2616,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return Biome of the requested block
      * @deprecated biomes are now 3-dimensional
      */
+    @NotNull
     @Deprecated(since = "1.15")
     Biome getBiome(int x, int z);
 
@@ -2587,7 +2629,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated biomes are now 3-dimensional
      */
     @Deprecated(since = "1.15")
-    void setBiome(int x, int z, Biome bio);
+    void setBiome(int x, int z, @NotNull Biome bio);
 
     /**
      * Gets the temperature for the given block coordinates.
@@ -2601,7 +2643,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated biomes are now 3-dimensional
      */
     @Deprecated(since = "1.15")
-    double getTemperature(int x, int z);
+    public double getTemperature(int x, int z);
 
     /**
      * Gets the temperature for the given block coordinates.
@@ -2614,7 +2656,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z coordinate of the block
      * @return Temperature of the requested block
      */
-    double getTemperature(int x, int y, int z);
+    public double getTemperature(int x, int y, int z);
 
     /**
      * Gets the humidity for the given block coordinates.
@@ -2628,7 +2670,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated biomes are now 3-dimensional
      */
     @Deprecated(since = "1.15")
-    double getHumidity(int x, int z);
+    public double getHumidity(int x, int z);
 
     /**
      * Gets the humidity for the given block coordinates.
@@ -2641,7 +2683,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z Z coordinate of the block
      * @return Humidity of the requested block
      */
-    double getHumidity(int x, int y, int z);
+    public double getHumidity(int x, int y, int z);
 
     /**
      * Gets the maximum height to which chorus fruits and nether portals can
@@ -2652,7 +2694,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return maximum logical height for chorus fruits and nether portals
      */
-    int getLogicalHeight();
+    public int getLogicalHeight();
 
     /**
      * Gets if this world is natural.
@@ -2663,7 +2705,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return true if world is natural
      */
-    boolean isNatural();
+    public boolean isNatural();
 
     /**
      * Gets if beds work in this world.
@@ -2673,21 +2715,21 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return true if beds work in this world
      */
-    boolean isBedWorks();
+    public boolean isBedWorks();
 
     /**
      * Gets if this world has skylight access.
      *
      * @return true if this world has skylight access
      */
-    boolean hasSkyLight();
+    public boolean hasSkyLight();
 
     /**
      * Gets if this world has a ceiling.
      *
      * @return true if this world has a bedrock ceiling
      */
-    boolean hasCeiling();
+    public boolean hasCeiling();
 
     /**
      * Gets if this world allow to piglins to survive without shaking and
@@ -2695,14 +2737,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return true if piglins will not transform to zombified piglins
      */
-    boolean isPiglinSafe();
+    public boolean isPiglinSafe();
 
     /**
      * Gets if this world allows players to charge and use respawn anchors.
      *
      * @return true if players can charge and use respawn anchors
      */
-    boolean isRespawnAnchorWorks();
+    public boolean isRespawnAnchorWorks();
 
     /**
      * Gets if players with the bad omen effect in this world will trigger a
@@ -2710,7 +2752,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return true if raids will be triggered
      */
-    boolean hasRaids();
+    public boolean hasRaids();
 
     /**
      * Gets if various water/lava mechanics will be triggered in this world, eg:
@@ -2723,7 +2765,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return true if this world has the above mechanics
      */
-    boolean isUltraWarm();
+    public boolean isUltraWarm();
 
     /**
      * Gets the sea level for this world.
@@ -2732,7 +2774,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return Sea level
      */
-    int getSeaLevel();
+    public int getSeaLevel();
 
     /**
      * Gets whether the world's spawn area should be kept loaded into memory
@@ -2742,7 +2784,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated use {@link GameRule#SPAWN_CHUNK_RADIUS} for finer control
      */
     @Deprecated(since = "1.20.5")
-    boolean getKeepSpawnInMemory();
+    public boolean getKeepSpawnInMemory();
 
     /**
      * Sets whether the world's spawn area should be kept loaded into memory
@@ -2753,14 +2795,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated use {@link GameRule#SPAWN_CHUNK_RADIUS} for finer control
      */
     @Deprecated(since = "1.20.5")
-    void setKeepSpawnInMemory(boolean keepLoaded);
+    public void setKeepSpawnInMemory(boolean keepLoaded);
 
     /**
      * Gets whether or not the world will automatically save
      *
      * @return true if the world will automatically save, otherwise false
      */
-    boolean isAutoSave();
+    public boolean isAutoSave();
 
     /**
      * Sets whether or not the world will automatically save
@@ -2770,21 +2812,22 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @apiNote This does not disable saving entirely, the world will still be saved on shutdown.<br>
      * The intended use of this method is to disable the periodical autosave by the game.
      */
-    void setAutoSave(boolean value);
+    public void setAutoSave(boolean value);
 
     /**
      * Sets the Difficulty of the world.
      *
      * @param difficulty the new difficulty you want to set the world to
      */
-    void setDifficulty(Difficulty difficulty);
+    public void setDifficulty(@NotNull Difficulty difficulty);
 
     /**
      * Gets the Difficulty of the world.
      *
      * @return The difficulty of the world.
      */
-    Difficulty getDifficulty();
+    @NotNull
+    public Difficulty getDifficulty();
 
     /**
      * Returns the view distance used for this world.
@@ -2805,7 +2848,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return The folder of this world.
      */
-    File getWorldFolder();
+    @NotNull
+    public File getWorldFolder();
 
     /**
      * Gets the type of this world.
@@ -2817,14 +2861,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Nullable
     @Deprecated(since = "1.16.1")
-    WorldType getWorldType();
+    public WorldType getWorldType();
 
     /**
      * Gets whether or not structures are being generated.
      *
      * @return True if structures are being generated.
      */
-    boolean canGenerateStructures();
+    public boolean canGenerateStructures();
 
     /**
      * Gets whether the world is hardcore or not.
@@ -2833,7 +2877,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return hardcore status
      */
-    boolean isHardcore();
+    public boolean isHardcore();
 
     /**
      * Sets whether the world is hardcore or not.
@@ -2842,7 +2886,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @param hardcore Whether the world is hardcore
      */
-    void setHardcore(boolean hardcore);
+    public void setHardcore(boolean hardcore);
 
     /**
      * Gets the world's ticks per animal spawns value
@@ -2870,7 +2914,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    long getTicksPerAnimalSpawns();
+    public long getTicksPerAnimalSpawns();
 
     /**
      * Sets the world's ticks per animal spawns value
@@ -2899,7 +2943,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
     @Deprecated(since = "1.18.1")
-    void setTicksPerAnimalSpawns(int ticksPerAnimalSpawns);
+    public void setTicksPerAnimalSpawns(int ticksPerAnimalSpawns);
 
     /**
      * Gets the world's ticks per monster spawns value
@@ -2927,7 +2971,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    long getTicksPerMonsterSpawns();
+    public long getTicksPerMonsterSpawns();
 
     /**
      * Sets the world's ticks per monster spawns value
@@ -2956,7 +3000,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
     @Deprecated(since = "1.18.1")
-    void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns);
+    public void setTicksPerMonsterSpawns(int ticksPerMonsterSpawns);
 
     /**
      * Gets the world's ticks per water mob spawns value
@@ -2982,7 +3026,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    long getTicksPerWaterSpawns();
+    public long getTicksPerWaterSpawns();
 
     /**
      * Sets the world's ticks per water mob spawns value
@@ -3009,7 +3053,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
     @Deprecated(since = "1.18.1")
-    void setTicksPerWaterSpawns(int ticksPerWaterSpawns);
+    public void setTicksPerWaterSpawns(int ticksPerWaterSpawns);
 
     /**
      * Gets the default ticks per water ambient mob spawns value.
@@ -3031,7 +3075,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    long getTicksPerWaterAmbientSpawns();
+    public long getTicksPerWaterAmbientSpawns();
 
     /**
      * Sets the world's ticks per water ambient mob spawns value
@@ -3058,7 +3102,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
     @Deprecated(since = "1.18.1")
-    void setTicksPerWaterAmbientSpawns(int ticksPerAmbientSpawns);
+    public void setTicksPerWaterAmbientSpawns(int ticksPerAmbientSpawns);
 
     /**
      * Gets the default ticks per water underground creature spawns value.
@@ -3080,7 +3124,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    long getTicksPerWaterUndergroundCreatureSpawns();
+    public long getTicksPerWaterUndergroundCreatureSpawns();
 
     /**
      * Sets the world's ticks per water underground creature spawns value
@@ -3107,7 +3151,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
     @Deprecated(since = "1.18.1")
-    void setTicksPerWaterUndergroundCreatureSpawns(int ticksPerWaterUndergroundCreatureSpawns);
+    public void setTicksPerWaterUndergroundCreatureSpawns(int ticksPerWaterUndergroundCreatureSpawns);
 
     /**
      * Gets the world's ticks per ambient mob spawns value
@@ -3133,7 +3177,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #getTicksPerSpawns(SpawnCategory)}
      */
     @Deprecated(since = "1.18.1")
-    long getTicksPerAmbientSpawns();
+    public long getTicksPerAmbientSpawns();
 
     /**
      * Sets the world's ticks per ambient mob spawns value
@@ -3160,7 +3204,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated Deprecated in favor of {@link #setTicksPerSpawns(SpawnCategory, int)}
      */
     @Deprecated(since = "1.18.1")
-    void setTicksPerAmbientSpawns(int ticksPerAmbientSpawns);
+    public void setTicksPerAmbientSpawns(int ticksPerAmbientSpawns);
 
     /**
      * Gets the world's ticks per {@link SpawnCategory} mob spawns value
@@ -3185,7 +3229,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param spawnCategory the category spawn
      * @return The world's ticks per {@link SpawnCategory} mob spawns value
      */
-    long getTicksPerSpawns(SpawnCategory spawnCategory);
+    public long getTicksPerSpawns(@NotNull SpawnCategory spawnCategory);
 
     /**
      * Sets the world's ticks per {@link SpawnCategory} mob spawns value
@@ -3211,7 +3255,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param ticksPerCategorySpawn the ticks per {@link SpawnCategory} mob spawns value you
      *     want to set the world to
      */
-    void setTicksPerSpawns(SpawnCategory spawnCategory, int ticksPerCategorySpawn);
+    public void setTicksPerSpawns(@NotNull SpawnCategory spawnCategory, int ticksPerCategorySpawn);
 
     /**
      * Gets limit for number of monsters that can spawn in a chunk in this
@@ -3358,7 +3402,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param spawnCategory the entity category
      * @return The ambient spawn limit
      */
-    int getSpawnLimit(SpawnCategory spawnCategory);
+    int getSpawnLimit(@NotNull SpawnCategory spawnCategory);
 
     /**
      * Sets the limit for number of {@link SpawnCategory} entities that can spawn in a chunk in
@@ -3370,7 +3414,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param spawnCategory the entity category
      * @param limit the new mob limit
      */
-    void setSpawnLimit(SpawnCategory spawnCategory, int limit);
+    void setSpawnLimit(@NotNull SpawnCategory spawnCategory, int limit);
 
     /**
      * Play a note at the provided Location in the World. <br>
@@ -3382,7 +3426,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param instrument The instrument
      * @param note The note
      */
-    void playNote(Location loc, Instrument instrument, Note note);
+    void playNote(@NotNull Location loc, @NotNull Instrument instrument, @NotNull Note note);
 
     /**
      * Play a Sound at the provided Location in the World.
@@ -3394,7 +3438,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    void playSound(Location location, Sound sound, float volume, float pitch);
+    void playSound(@NotNull Location location, @NotNull Sound sound, float volume, float pitch);
 
     /**
      * Play a Sound at the provided Location in the World.
@@ -3408,7 +3452,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    void playSound(Location location, String sound, float volume, float pitch);
+    void playSound(@NotNull Location location, @NotNull String sound, float volume, float pitch);
 
     /**
      * Play a Sound at the provided Location in the World.
@@ -3421,7 +3465,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    void playSound(Location location, Sound sound, SoundCategory category, float volume, float pitch);
+    void playSound(@NotNull Location location, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch);
 
     /**
      * Play a Sound at the provided Location in the World.
@@ -3436,7 +3480,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    void playSound(Location location, String sound, SoundCategory category, float volume, float pitch);
+    void playSound(@NotNull Location location, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
 
     /**
      * Play a Sound at the provided Location in the World. For sounds with multiple
@@ -3451,7 +3495,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param pitch The pitch of the sound
      * @param seed The seed for the sound
      */
-    void playSound(Location location, Sound sound, SoundCategory category, float volume, float pitch, long seed);
+    void playSound(@NotNull Location location, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
 
     /**
      * Play a Sound at the provided Location in the World. For sounds with multiple
@@ -3468,7 +3512,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param pitch The pitch of the sound
      * @param seed The seed for the sound
      */
-    void playSound(Location location, String sound, SoundCategory category, float volume, float pitch, long seed);
+    void playSound(@NotNull Location location, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
 
     /**
      * Play a Sound at the location of the provided entity in the World.
@@ -3480,7 +3524,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    void playSound(Entity entity, Sound sound, float volume, float pitch);
+    void playSound(@NotNull Entity entity, @NotNull Sound sound, float volume, float pitch);
 
     /**
      * Play a Sound at the location of the provided entity in the World.
@@ -3492,20 +3536,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    void playSound(Entity entity, String sound, float volume, float pitch);
-
-    /**
-     * Play a Sound at the location of the provided entity in the World.
-     * <p>
-     * This function will fail silently if Entity or Sound are null.
-     *
-     * @param entity The entity to play the sound
-     * @param sound The sound to play
-     * @param category The category of the sound
-     * @param volume The volume of the sound
-     * @param pitch The pitch of the sound
-     */
-    void playSound(Entity entity, Sound sound, SoundCategory category, float volume, float pitch);
+    void playSound(@NotNull Entity entity, @NotNull String sound, float volume, float pitch);
 
     /**
      * Play a Sound at the location of the provided entity in the World.
@@ -3518,7 +3549,20 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param volume The volume of the sound
      * @param pitch The pitch of the sound
      */
-    void playSound(Entity entity, String sound, SoundCategory category, float volume, float pitch);
+    void playSound(@NotNull Entity entity, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch);
+
+    /**
+     * Play a Sound at the location of the provided entity in the World.
+     * <p>
+     * This function will fail silently if Entity or Sound are null.
+     *
+     * @param entity The entity to play the sound
+     * @param sound The sound to play
+     * @param category The category of the sound
+     * @param volume The volume of the sound
+     * @param pitch The pitch of the sound
+     */
+    void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch);
 
     /**
      * Play a Sound at the location of the provided entity in the World. For sounds
@@ -3534,7 +3578,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param pitch The pitch of the sound
      * @param seed The seed for the sound
      */
-    void playSound(Entity entity, Sound sound, SoundCategory category, float volume, float pitch, long seed);
+    void playSound(@NotNull Entity entity, @NotNull Sound sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
 
     /**
      * Play a Sound at the location of the provided entity in the World. For sounds
@@ -3550,14 +3594,14 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param pitch The pitch of the sound
      * @param seed The seed for the sound
      */
-    void playSound(Entity entity, String sound, SoundCategory category, float volume, float pitch, long seed);
+    void playSound(@NotNull Entity entity, @NotNull String sound, @NotNull SoundCategory category, float volume, float pitch, long seed);
 
     /**
      * Get an array containing the names of all the {@link GameRule}s.
      *
      * @return An array of {@link GameRule} names.
      */
-    String[] getGameRules();
+    public @NotNull String @NotNull [] getGameRules();
 
     /**
      * Gets the current state of the specified rule
@@ -3571,7 +3615,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     @Deprecated(since = "1.13")
     @Contract("null -> null; !null -> !null")
     @Nullable
-    String getGameRuleValue(@Nullable String rule);
+    public String getGameRuleValue(@Nullable String rule);
 
     /**
      * Set the specified gamerule to specified value.
@@ -3587,7 +3631,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @deprecated use {@link #setGameRule(GameRule, Object)} instead.
      */
     @Deprecated(since = "1.13")
-    boolean setGameRuleValue(String rule, String value);
+    public boolean setGameRuleValue(@NotNull String rule, @NotNull String value);
 
     /**
      * Checks if string is a valid game rule
@@ -3595,7 +3639,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param rule Rule to check
      * @return True if rule exists
      */
-    boolean isGameRule(String rule);
+    public boolean isGameRule(@NotNull String rule);
 
     /**
      * Get the current value for a given {@link GameRule}.
@@ -3605,7 +3649,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the current value
      */
     @Nullable
-    <T> T getGameRuleValue(GameRule<T> rule);
+    public <T> T getGameRuleValue(@NotNull GameRule<T> rule);
 
     /**
      * Get the default value for a given {@link GameRule}. This value is not
@@ -3616,7 +3660,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the default value
      */
     @Nullable
-    <T> T getGameRuleDefault(GameRule<T> rule);
+    public <T> T getGameRuleDefault(@NotNull GameRule<T> rule);
 
     /**
      * Set the given {@link GameRule}'s new value.
@@ -3626,14 +3670,15 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param <T> the value type of the GameRule
      * @return true if the value was successfully set
      */
-    <T> boolean setGameRule(GameRule<T> rule, T newValue);
+    public <T> boolean setGameRule(@NotNull GameRule<T> rule, @NotNull T newValue);
 
     /**
      * Gets the world border for this world.
      *
      * @return The world border for this world.
      */
-    WorldBorder getWorldBorder();
+    @NotNull
+    public WorldBorder getWorldBorder();
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3643,7 +3688,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param location the location to spawn at
      * @param count the number of particles
      */
-    void spawnParticle( Particle particle,  Location location, int count);
+    public void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3655,7 +3700,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param z the position on the z axis to spawn at
      * @param count the number of particles
      */
-    void spawnParticle(Particle particle, double x, double y, double z, int count);
+    public void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3668,7 +3713,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    <T> void spawnParticle(Particle particle, Location location, int count, @Nullable T data);
+    public <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, @Nullable T data);
 
 
     /**
@@ -3684,7 +3729,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    <T> void spawnParticle(Particle particle, double x, double y, double z, int count, @Nullable T data);
+    public <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, @Nullable T data);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3699,7 +3744,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
      */
-    void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ);
+    public void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3716,7 +3761,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param offsetY the maximum random offset on the Y axis
      * @param offsetZ the maximum random offset on the Z axis
      */
-    void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ);
+    public void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3734,7 +3779,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, @Nullable T data);
+    public <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, @Nullable T data);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3754,7 +3799,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, @Nullable T data);
+    public <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, @Nullable T data);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3771,7 +3816,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param extra the extra data for this particle, depends on the
      *              particle used (normally speed)
      */
-    void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra);
+    public void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double extra);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3790,7 +3835,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param extra the extra data for this particle, depends on the
      *              particle used (normally speed)
      */
-    void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra);
+    public void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3810,7 +3855,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data);
+    public <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3832,7 +3877,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param data the data to use for the particle or null,
      *             the type of this depends on {@link Particle#getDataType()}
      */
-    default <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) { spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true); }// Paper start - Expand Particle API
+    public default <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) { spawnParticle(particle, null, null, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true); }// Paper start - Expand Particle API
     /**
      * Spawns the particle (the number of times specified by count)
      * at the target location. The position of each particle will be
@@ -3855,7 +3900,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *             the type of this depends on {@link Particle#getDataType()}
      * @param <T> Type
      */
-    default <T> void spawnParticle(Particle particle, @Nullable List<Player> receivers, Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) { spawnParticle(particle, receivers, source, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true); }
+    public default <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @NotNull Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data) { spawnParticle(particle, receivers, source, x, y, z, count, offsetX, offsetY, offsetZ, extra, data, true); }
     /**
      * Spawns the particle (the number of times specified by count)
      * at the target location. The position of each particle will be
@@ -3880,7 +3925,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param force allows the particle to be seen further away from the player
      *              and shows to players using any vanilla client particle settings
      */
-    <T> void spawnParticle(Particle particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
+    public <T> void spawnParticle(@NotNull Particle particle, @Nullable List<Player> receivers, @Nullable Player source, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
     // Paper end
 
 
@@ -3905,7 +3950,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *              range and encourage their client to render it regardless of
      *              settings
      */
-    <T> void spawnParticle(Particle particle, Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
+    public <T> void spawnParticle(@NotNull Particle particle, @NotNull Location location, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
 
     /**
      * Spawns the particle (the number of times specified by count)
@@ -3930,7 +3975,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *              range and encourage their client to render it regardless of
      *              settings
      */
-    <T> void spawnParticle(Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
+    public <T> void spawnParticle(@NotNull Particle particle, double x, double y, double z, int count, double offsetX, double offsetY, double offsetZ, double extra, @Nullable T data, boolean force);
 
     /**
      * Find the closest nearby structure of a given {@link StructureType}.
@@ -3964,7 +4009,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Nullable
     @Deprecated(since = "1.19")
-    Location locateNearestStructure(Location origin, org.bukkit.StructureType structureType, int radius, boolean findUnexplored);
+    public Location locateNearestStructure(@NotNull Location origin, @NotNull org.bukkit.StructureType structureType, int radius, boolean findUnexplored);
 
     /**
      * Find the closest nearby structure of a given {@link StructureType}.
@@ -3997,7 +4042,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #locateNearestStructure(Location, Structure, int, boolean)
      */
     @Nullable
-    StructureSearchResult locateNearestStructure(Location origin, StructureType structureType, int radius, boolean findUnexplored);
+    StructureSearchResult locateNearestStructure(@NotNull Location origin, @NotNull StructureType structureType, int radius, boolean findUnexplored);
 
     /**
      * Find the closest nearby structure of a given {@link Structure}. Finding
@@ -4030,7 +4075,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #locateNearestStructure(Location, StructureType, int, boolean)
      */
     @Nullable
-    StructureSearchResult locateNearestStructure(Location origin, Structure structure, int radius, boolean findUnexplored);
+    StructureSearchResult locateNearestStructure(@NotNull Location origin, @NotNull Structure structure, int radius, boolean findUnexplored);
 
     // Paper start
     /**
@@ -4045,7 +4090,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Deprecated
     @Nullable
-    default Location locateNearestBiome(Location origin, Biome biome, int radius) {
+    default Location locateNearestBiome(@NotNull Location origin, @NotNull Biome biome, int radius) {
         return java.util.Optional.ofNullable(this.locateNearestBiome(origin, radius, 8, 8, biome)).map(BiomeSearchResult::getLocation).orElse(null);
     }
 
@@ -4062,7 +4107,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      */
     @Deprecated
     @Nullable
-    default Location locateNearestBiome(Location origin, Biome biome, int radius, int step) {
+    default Location locateNearestBiome(@NotNull Location origin, @NotNull Biome biome, int radius, int step) {
         return java.util.Optional.ofNullable(this.locateNearestBiome(origin, radius, step, step, biome)).map(BiomeSearchResult::getLocation).orElse(null);
     }
 
@@ -4085,6 +4130,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return the materials that will forever stay lit by fire
      */
+    @NotNull
     Collection<Material> getInfiniburn();
 
     /**
@@ -4094,7 +4140,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @param gameEvent the game event to post
      * @param position the position in the world where to post the event to listeners
      */
-    void sendGameEvent(@Nullable Entity sourceEntity, GameEvent gameEvent, Vector position);
+    void sendGameEvent(@Nullable Entity sourceEntity, @NotNull GameEvent gameEvent, @NotNull Vector position);
     // Paper end
 
     // Spigot start
@@ -4108,10 +4154,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @param isSilent Whether this strike makes no sound
          * @return The lightning entity.
          * @deprecated sound is now client side and cannot be removed
-         * @see World#strikeLightning(Location)
+         * @see World#strikeLightning(org.bukkit.Location)
          */
+        @NotNull
         @Deprecated(since = "1.20.4")
-        public LightningStrike strikeLightning(Location loc, boolean isSilent) {
+        public LightningStrike strikeLightning(@NotNull Location loc, boolean isSilent) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -4122,10 +4169,11 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
          * @param isSilent Whether this strike makes no sound
          * @return The lightning entity.
          * @deprecated sound is now client side and cannot be removed
-         * @see World#strikeLightningEffect(Location)
+         * @see World#strikeLightningEffect(org.bukkit.Location)
          */
+        @NotNull
         @Deprecated(since = "1.20.4")
-        public LightningStrike strikeLightningEffect(Location loc, boolean isSilent) {
+        public LightningStrike strikeLightningEffect(@NotNull Location loc, boolean isSilent) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
@@ -4133,6 +4181,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     /**
      * @deprecated Unsupported api
      */
+    @NotNull
     @Deprecated // Paper
     Spigot spigot();
     // Spigot end
@@ -4161,7 +4210,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #locateNearestBiome(Location, int, int, int, Biome...)
      */
     @Nullable
-    BiomeSearchResult locateNearestBiome(Location origin, int radius, Biome... biomes);
+    BiomeSearchResult locateNearestBiome(@NotNull Location origin, int radius, @NotNull Biome... biomes);
 
     /**
      * Find the closest nearby location with a biome matching the provided
@@ -4188,7 +4237,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @see #locateNearestBiome(Location, int, Biome...)
      */
     @Nullable
-    BiomeSearchResult locateNearestBiome(Location origin, int radius, int horizontalInterval, int verticalInterval, Biome... biomes);
+    BiomeSearchResult locateNearestBiome(@NotNull Location origin, int radius, int horizontalInterval, int verticalInterval, @NotNull Biome... biomes);
 
     /**
      * Finds the nearest raid close to the given location.
@@ -4198,7 +4247,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the closest {@link Raid}, or null if no raids were found
      */
     @Nullable
-    Raid locateNearestRaid(Location location, int radius);
+    public Raid locateNearestRaid(@NotNull Location location, int radius);
 
     // Paper start - more Raid API
     /**
@@ -4216,7 +4265,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *
      * @return the list of all active raids
      */
-    List<Raid> getRaids();
+    @NotNull
+    public List<Raid> getRaids();
 
     /**
      * Get the {@link DragonBattle} associated with this world.
@@ -4231,14 +4281,15 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return the dragon battle instance
      */
     @Nullable
-    DragonBattle getEnderDragonBattle();
+    public DragonBattle getEnderDragonBattle();
 
     /**
      * Get all {@link FeatureFlag} enabled in this world.
      *
      * @return all enabled {@link FeatureFlag}
      */
-    Set<FeatureFlag> getFeatureFlags();
+    @NotNull
+    public Set<FeatureFlag> getFeatureFlags();
 
     // Paper start - view distance api
     /**
@@ -4310,7 +4361,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return a collection of placed structures in the chunk at the given
      * coordinates
      */
-    Collection<GeneratedStructure> getStructures(int x, int z);
+    @NotNull
+    public Collection<GeneratedStructure> getStructures(int x, int z);
 
     /**
      * Gets all generated structures of a given {@link Structure} that intersect
@@ -4323,7 +4375,8 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      * @return a collection of placed structures in the chunk at the given
      * coordinates
      */
-    Collection<GeneratedStructure> getStructures(int x, int z, Structure structure);
+    @NotNull
+    public Collection<GeneratedStructure> getStructures(int x, int z, @NotNull Structure structure);
 
     /**
      * Represents various map environment types that a world may be
