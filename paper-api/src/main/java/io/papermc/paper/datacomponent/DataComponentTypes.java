@@ -2,6 +2,7 @@ package io.papermc.paper.datacomponent;
 
 import io.papermc.paper.datacomponent.item.BannerPatternLayers;
 import io.papermc.paper.datacomponent.item.BlockItemDataProperties;
+import io.papermc.paper.datacomponent.item.BlocksAttacks;
 import io.papermc.paper.datacomponent.item.BundleContents;
 import io.papermc.paper.datacomponent.item.ChargedProjectiles;
 import io.papermc.paper.datacomponent.item.Consumable;
@@ -32,9 +33,10 @@ import io.papermc.paper.datacomponent.item.ResolvableProfile;
 import io.papermc.paper.datacomponent.item.SeededContainerLoot;
 import io.papermc.paper.datacomponent.item.SuspiciousStewEffects;
 import io.papermc.paper.datacomponent.item.Tool;
-import io.papermc.paper.datacomponent.item.Unbreakable;
+import io.papermc.paper.datacomponent.item.TooltipDisplay;
 import io.papermc.paper.datacomponent.item.UseCooldown;
 import io.papermc.paper.datacomponent.item.UseRemainder;
+import io.papermc.paper.datacomponent.item.Weapon;
 import io.papermc.paper.datacomponent.item.WritableBookContent;
 import io.papermc.paper.datacomponent.item.WrittenBookContent;
 import io.papermc.paper.item.MapPostProcessing;
@@ -58,7 +60,6 @@ import org.bukkit.entity.Frog;
 import org.bukkit.entity.Horse;
 import org.bukkit.entity.Llama;
 import org.bukkit.entity.MushroomCow;
-import org.bukkit.entity.Painting;
 import org.bukkit.entity.Parrot;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Rabbit;
@@ -109,7 +110,7 @@ public final class DataComponentTypes {
     /**
      * If set, the item will not lose any durability when used.
      */
-    public static final DataComponentType.Valued<Unbreakable> UNBREAKABLE = valued("unbreakable");
+    public static final DataComponentType.NonValued UNBREAKABLE = unvalued("unbreakable");
     /**
      * Custom name override for an item (as set by renaming with an Anvil).
      *
@@ -165,6 +166,7 @@ public final class DataComponentTypes {
      * Controls the minecraft:custom_model_data property in the item model.
      */
     public static final DataComponentType.Valued<CustomModelData> CUSTOM_MODEL_DATA = valued("custom_model_data");
+    public static final DataComponentType.Valued<TooltipDisplay> TOOLTIP_DISPLAY = valued("tooltip_display");
     /**
      * The additional experience cost required to modify an item in an Anvil.
      * If not present, has an implicit default value of: {@code 0}.
@@ -200,12 +202,14 @@ public final class DataComponentTypes {
      * Controls the behavior of the item as a tool.
      */
     public static final DataComponentType.Valued<Tool> TOOL = valued("tool");
+    public static final DataComponentType.Valued<Weapon> WEAPON = valued("weapon");
     public static final DataComponentType.Valued<Enchantable> ENCHANTABLE = valued("enchantable");
     public static final DataComponentType.Valued<Equippable> EQUIPPABLE = valued("equippable");
     public static final DataComponentType.Valued<Repairable> REPAIRABLE = valued("repairable");
     public static final DataComponentType.NonValued GLIDER = unvalued("glider");
     public static final DataComponentType.Valued<Key> TOOLTIP_STYLE = valued("tooltip_style");
     public static final DataComponentType.Valued<DeathProtection> DEATH_PROTECTION = valued("death_protection");
+    public static final DataComponentType.Valued<BlocksAttacks> BLOCKS_ATTACKS = valued("blocks_attacks");
     /**
      * Stores list of enchantments and their levels for an Enchanted Book.
      * Unlike {@link #ENCHANTMENTS}, the effects provided by enchantments

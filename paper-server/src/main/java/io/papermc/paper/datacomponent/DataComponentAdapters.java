@@ -3,6 +3,7 @@ package io.papermc.paper.datacomponent;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.item.PaperBannerPatternLayers;
 import io.papermc.paper.datacomponent.item.PaperBlockItemDataProperties;
+import io.papermc.paper.datacomponent.item.PaperBlocksAttacks;
 import io.papermc.paper.datacomponent.item.PaperBundleContents;
 import io.papermc.paper.datacomponent.item.PaperChargedProjectiles;
 import io.papermc.paper.datacomponent.item.PaperConsumable;
@@ -33,9 +34,10 @@ import io.papermc.paper.datacomponent.item.PaperRepairable;
 import io.papermc.paper.datacomponent.item.PaperResolvableProfile;
 import io.papermc.paper.datacomponent.item.PaperSeededContainerLoot;
 import io.papermc.paper.datacomponent.item.PaperSuspiciousStewEffects;
-import io.papermc.paper.datacomponent.item.PaperUnbreakable;
+import io.papermc.paper.datacomponent.item.PaperTooltipDisplay;
 import io.papermc.paper.datacomponent.item.PaperUseCooldown;
 import io.papermc.paper.datacomponent.item.PaperUseRemainder;
+import io.papermc.paper.datacomponent.item.PaperWeapon;
 import io.papermc.paper.datacomponent.item.PaperWritableBookContent;
 import io.papermc.paper.datacomponent.item.PaperWrittenBookContent;
 import java.util.HashMap;
@@ -73,7 +75,7 @@ public final class DataComponentAdapters {
         registerIdentity(DataComponents.MAX_STACK_SIZE);
         registerIdentity(DataComponents.MAX_DAMAGE);
         registerIdentity(DataComponents.DAMAGE);
-        register(DataComponents.UNBREAKABLE, PaperUnbreakable::new);
+        registerIdentity(DataComponents.POTION_DURATION_SCALE);
         register(DataComponents.CUSTOM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         register(DataComponents.ITEM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         register(DataComponents.ITEM_MODEL, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
@@ -84,8 +86,6 @@ public final class DataComponentAdapters {
         register(DataComponents.CAN_BREAK, PaperItemAdventurePredicate::new);
         register(DataComponents.ATTRIBUTE_MODIFIERS, PaperItemAttributeModifiers::new);
         register(DataComponents.CUSTOM_MODEL_DATA, PaperCustomModelData::new);
-        registerUntyped(DataComponents.HIDE_ADDITIONAL_TOOLTIP);
-        registerUntyped(DataComponents.HIDE_TOOLTIP);
         registerIdentity(DataComponents.REPAIR_COST);
         // registerUntyped(DataComponents.CREATIVE_SLOT_LOCK);
         registerIdentity(DataComponents.ENCHANTMENT_GLINT_OVERRIDE);
@@ -119,7 +119,7 @@ public final class DataComponentAdapters {
         // entity data
         // bucket entity data
         // block entity data
-        register(DataComponents.INSTRUMENT, CraftMusicInstrument::minecraftHolderToBukkit, CraftMusicInstrument::bukkitToMinecraftHolder);
+        //register(DataComponents.INSTRUMENT, CraftMusicInstrument::minecraftHolderToBukkit, CraftMusicInstrument::bukkitToMinecraftHolder); // TODO
         register(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, PaperOminousBottleAmplifier::new);
         register(DataComponents.JUKEBOX_PLAYABLE, PaperJukeboxPlayable::new);
         register(DataComponents.RECIPES,
@@ -139,6 +139,10 @@ public final class DataComponentAdapters {
         // bees
         // register(DataComponents.LOCK, PaperLockCode::new);
         register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
+        // TODO break_sound, provides_, entity data
+        register(DataComponents.TOOLTIP_DISPLAY, PaperTooltipDisplay::new);
+        register(DataComponents.WEAPON, PaperWeapon::new);
+        register(DataComponents.BLOCKS_ATTACKS, PaperBlocksAttacks::new);
 
         for (final Map.Entry<ResourceKey<DataComponentType<?>>, DataComponentType<?>> componentType : BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet()) {
             if (!ADAPTERS.containsKey(componentType.getKey())) {

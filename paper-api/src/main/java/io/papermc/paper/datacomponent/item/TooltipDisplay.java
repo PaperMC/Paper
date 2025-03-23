@@ -21,7 +21,7 @@ public interface TooltipDisplay {
      */
     @Contract(value = "-> new", pure = true)
     static Builder tooltipDisplay() {
-        // TODO:
+        return ItemComponentTypesBridge.bridge().tooltipDisplay();
     }
 
     boolean hideTooltip();

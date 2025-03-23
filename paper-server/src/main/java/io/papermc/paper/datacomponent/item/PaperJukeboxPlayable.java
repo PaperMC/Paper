@@ -16,16 +16,6 @@ public record PaperJukeboxPlayable(
     }
 
     @Override
-    public boolean showInTooltip() {
-        return this.impl.showInTooltip();
-    }
-
-    @Override
-    public PaperJukeboxPlayable showInTooltip(final boolean showInTooltip) {
-        return new PaperJukeboxPlayable(this.impl.withTooltip(showInTooltip));
-    }
-
-    @Override
     public JukeboxSong jukeboxSong() {
         return this.impl.song()
             .unwrap(CraftRegistry.getMinecraftRegistry())
@@ -36,16 +26,9 @@ public record PaperJukeboxPlayable(
     static final class BuilderImpl implements JukeboxPlayable.Builder {
 
         private JukeboxSong song;
-        private boolean showInTooltip = true;
 
         BuilderImpl(final JukeboxSong song) {
             this.song = song;
-        }
-
-        @Override
-        public JukeboxPlayable.Builder showInTooltip(final boolean showInTooltip) {
-            this.showInTooltip = showInTooltip;
-            return this;
         }
 
         @Override
@@ -56,7 +39,9 @@ public record PaperJukeboxPlayable(
 
         @Override
         public JukeboxPlayable build() {
-            return new PaperJukeboxPlayable(new net.minecraft.world.item.JukeboxPlayable(new EitherHolder<>(CraftJukeboxSong.bukkitToMinecraftHolder(this.song)), this.showInTooltip));
+            return new PaperJukeboxPlayable(new net.minecraft.world.item.JukeboxPlayable(
+                new EitherHolder<>(CraftJukeboxSong.bukkitToMinecraftHolder(this.song))
+            ));
         }
     }
 }

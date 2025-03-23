@@ -10,7 +10,7 @@ public interface Weapon {
      * @return a builder instance.
      */
     static Builder builder() {
-        // TODO
+        return ItemComponentTypesBridge.bridge().weapon();
     }
 
     /**

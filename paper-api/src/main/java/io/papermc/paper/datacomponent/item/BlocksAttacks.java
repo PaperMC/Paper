@@ -8,28 +8,30 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
+// TODO
 public interface BlocksAttacks {
 
     @Contract(value = "-> new", pure = true)
     static Builder blocksAttacks() {
+        return ItemComponentTypesBridge.bridge().blocksAttacks();
     }
 
     float blockDelaySeconds();
 
     float disableCooldownScale();
 
-    List<DamageReduction> damageReductions();
+    //List<DamageReduction> damageReductions();
 
-    ItemDamageFunction itemDamage();
+    //ItemDamageFunction itemDamage();
 
     @Nullable
     TagKey<DamageType> bypassedBy();
 
     @Nullable
-    TagKey<DamageType> blockSound();
+    Key blockSound();
 
     @Nullable
-    TagKey<DamageType> disableSound();
+    Key disableSound();
 
     /**
      * Builder for {@link BlocksAttacks}.
@@ -44,14 +46,14 @@ public interface BlocksAttacks {
         @Contract(value = "_ -> this", mutates = "this")
         Builder disableCooldownScale(float scale);
 
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder addDamageReduction(DamageReduction reduction);
+        //@Contract(value = "_ -> this", mutates = "this")
+        //Builder addDamageReduction(DamageReduction reduction);
 
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder damageReductions(List<DamageReduction> reductions);
+        //@Contract(value = "_ -> this", mutates = "this")
+        //Builder damageReductions(List<DamageReduction> reductions);
 
-        @Contract(value = "_ -> this", mutates = "this")
-        Builder itemDamage(ItemDamageFunction function);
+        //@Contract(value = "_ -> this", mutates = "this")
+        //Builder itemDamage(ItemDamageFunction function);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder bypassedBy(@Nullable TagKey<DamageType> bypassedBy);
