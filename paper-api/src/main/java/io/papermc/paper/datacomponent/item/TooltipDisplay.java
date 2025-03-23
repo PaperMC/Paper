@@ -39,7 +39,7 @@ public interface TooltipDisplay {
         Builder hideTooltip(boolean hide);
 
         @Contract(value = "_ -> this", mutates = "this")
-        Builder addHiddenComponents(DataComponentType... component);
+        Builder addHiddenComponents(DataComponentType... components);
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder hiddenComponents(Set<DataComponentType> components);

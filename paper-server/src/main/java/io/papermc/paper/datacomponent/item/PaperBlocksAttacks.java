@@ -1,5 +1,6 @@
 package io.papermc.paper.datacomponent.item;
 
+import com.google.common.base.Preconditions;
 import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.registry.PaperRegistries;
 import io.papermc.paper.registry.tag.TagKey;
@@ -31,8 +32,8 @@ public record PaperBlocksAttacks(
 
     @Override
     public @Nullable TagKey<DamageType> bypassedBy() {
-        final Optional<TagKey<DamageType>> optionalTagKey = this.impl.bypassedBy().map(PaperRegistries::fromNms);
-        return optionalTagKey.orElse(null);
+        final Optional<TagKey<DamageType>> tagKey = this.impl.bypassedBy().map(PaperRegistries::fromNms);
+        return tagKey.orElse(null);
     }
 
     @Override
@@ -57,12 +58,14 @@ public record PaperBlocksAttacks(
 
         @Override
         public Builder blockDelaySeconds(final float delay) {
+            Preconditions.checkArgument(delay >= 0, "delay must be non-negative, was %s", delay);
             this.blockDelaySeconds = delay;
             return this;
         }
 
         @Override
         public Builder disableCooldownScale(final float scale) {
+            Preconditions.checkArgument(scale >= 0, "scale must be non-negative, was %s", scale);
             this.disableCooldownScale = scale;
             return this;
         }

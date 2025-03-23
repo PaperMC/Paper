@@ -64,6 +64,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
         Boolean dispensable = SerializableMeta.getObject(Boolean.class, map, "dispensable", true);
         Boolean swappable = SerializableMeta.getObject(Boolean.class, map, "swappable", true);
         Boolean damageOnHurt = SerializableMeta.getObject(Boolean.class, map, "damage-on-hurt", true);
+        Boolean equipOnInteract = SerializableMeta.getObject(Boolean.class, map, "equip-on-interact", true);
 
         this.handle = new Equippable(slot,
                 (equipSound != null) ? CraftSound.bukkitToMinecraftHolder(equipSound) : SoundEvents.ARMOR_EQUIP_GENERIC,
@@ -73,7 +74,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
                 (dispensable != null) ? dispensable : true,
                 (swappable != null) ? swappable : true,
                 (damageOnHurt != null) ? damageOnHurt : true,
-                false
+                (equipOnInteract != null) ? equipOnInteract : false
         );
     }
 
@@ -98,6 +99,7 @@ public final class CraftEquippableComponent implements EquippableComponent {
         result.put("dispensable", this.isDispensable());
         result.put("swappable", this.isSwappable());
         result.put("damage-on-hurt", this.isDamageOnHurt());
+        result.put("equip-on-interact", this.isEquipOnInteract());
 
         return result;
     }

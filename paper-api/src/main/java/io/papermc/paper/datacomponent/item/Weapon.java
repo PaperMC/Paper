@@ -24,9 +24,10 @@ public interface Weapon {
     float disableBlockingForSeconds();
 
     /**
-     * Builder for Weapon.
+     * Builder for {@link Weapon}.
      */
     interface Builder extends DataComponentBuilder<Weapon> {
+
         /**
          * Sets the damage per attack.
          *
@@ -42,6 +43,5 @@ public interface Weapon {
          * @return the builder for chaining.
          */
         Builder disableBlockingForSeconds(float seconds);
-
     }
 }

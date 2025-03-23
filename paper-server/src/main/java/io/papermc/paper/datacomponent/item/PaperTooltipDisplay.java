@@ -41,8 +41,8 @@ public record PaperTooltipDisplay(
         }
 
         @Override
-        public Builder addHiddenComponents(final DataComponentType... component) {
-            this.hiddenComponents.addAll(Arrays.asList(component));
+        public Builder addHiddenComponents(final DataComponentType... components) {
+            this.hiddenComponents.addAll(Arrays.asList(components));
             return this;
         }
 
