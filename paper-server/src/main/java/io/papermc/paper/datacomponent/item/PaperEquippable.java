@@ -81,6 +81,11 @@ public record PaperEquippable(
     }
 
     @Override
+    public boolean equipOnInteract() {
+        return this.impl.equipOnInteract();
+    }
+
+    @Override
     public Builder toBuilder() {
         return new BuilderImpl(this.slot())
             .equipSound(this.equipSound())
@@ -89,7 +94,8 @@ public record PaperEquippable(
             .allowedEntities(this.allowedEntities())
             .dispensable(this.dispensable())
             .swappable(this.swappable())
-            .damageOnHurt(this.damageOnHurt());
+            .damageOnHurt(this.damageOnHurt())
+            .equipOnInteract(this.equipOnInteract());
     }
 
 
@@ -103,6 +109,7 @@ public record PaperEquippable(
         private boolean dispensable = true;
         private boolean swappable = true;
         private boolean damageOnHurt = true;
+        private boolean equipOnInteract;
 
         BuilderImpl(final EquipmentSlot equipmentSlot) {
             this.equipmentSlot = CraftEquipmentSlot.getNMS(equipmentSlot);
@@ -156,6 +163,12 @@ public record PaperEquippable(
         }
 
         @Override
+        public Builder equipOnInteract(final boolean equipOnInteract) {
+            this.equipOnInteract = equipOnInteract;
+            return this;
+        }
+
+        @Override
         public Equippable build() {
             return new PaperEquippable(
                 new net.minecraft.world.item.equipment.Equippable(
@@ -166,7 +179,8 @@ public record PaperEquippable(
                     this.allowedEntities,
                     this.dispensable,
                     this.swappable,
-                    this.damageOnHurt
+                    this.damageOnHurt,
+                    this.equipOnInteract
                 )
             );
         }

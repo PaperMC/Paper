@@ -208,6 +208,16 @@ public final class CraftEquippableComponent implements EquippableComponent {
     }
 
     @Override
+    public boolean isEquipOnInteract() {
+        return this.handle.equipOnInteract();
+    }
+
+    @Override
+    public void setEquipOnInteract(final boolean equip) {
+        this.handle = new Equippable(this.handle.slot(), this.handle.equipSound(), this.handle.assetId(), this.handle.cameraOverlay(), this.handle.allowedEntities(), this.handle.dispensable(), this.handle.swappable(), this.handle.damageOnHurt(), equip);
+    }
+
+    @Override
     public int hashCode() {
         int hash = 7;
         hash = 19 * hash + this.handle.hashCode();

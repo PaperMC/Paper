@@ -3117,7 +3117,7 @@ public final class CraftServer implements Server {
     }
 
     @Override
-    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@NonnNotNullull String name) {
+    public com.destroystokyo.paper.profile.PlayerProfile createProfile(@NotNull String name) {
         return createProfile(null, name);
     }
 

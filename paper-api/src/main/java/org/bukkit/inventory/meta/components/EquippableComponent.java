@@ -150,4 +150,18 @@ public interface EquippableComponent extends ConfigurationSerializable {
      * @param damage whether the item will be damaged
      */
     void setDamageOnHurt(boolean damage);
+
+    /**
+     * Gets if the item should be equipped when interacting with an entity.
+     *
+     * @return whether the item equips on interact
+     */
+    boolean isEquipOnInteract();
+
+    /**
+     * Sets if the item should be equipped when interacting with an entity.
+     *
+     * @param equip whether the item equips on interact
+     */
+    void setEquipOnInteract(boolean equip);
 }
