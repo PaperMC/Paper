@@ -36,7 +36,6 @@ import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftEntityTypes;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
@@ -48,7 +47,6 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
 import org.bukkit.entity.Horse;
 import org.bukkit.entity.LargeFireball;
-import org.bukkit.entity.LingeringPotion;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Minecart;
 import org.bukkit.entity.SizedFireball;
@@ -57,7 +55,6 @@ import org.bukkit.entity.ThrownPotion;
 import org.bukkit.entity.TippedArrow;
 import org.bukkit.entity.minecart.RideableMinecart;
 import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionType;
 
 public abstract class CraftRegionAccessor implements RegionAccessor {
@@ -476,15 +473,12 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             clazz = Horse.class;
         } else if (clazz == Fireball.class) {
             clazz = LargeFireball.class;
-        } else if (clazz == LingeringPotion.class) {
-            clazz = ThrownPotion.class;
-            runOld = other -> ((net.minecraft.world.entity.projectile.ThrownPotion) other).setItem(CraftItemStack.asNMSCopy(new ItemStack(org.bukkit.Material.LINGERING_POTION, 1)));
+        } else if (clazz == ThrownPotion.class) {
+            clazz = SplashPotion.class;
         } else if (clazz == Minecart.class) {
             clazz = RideableMinecart.class;
         } else if (clazz == SizedFireball.class) {
             clazz = LargeFireball.class;
-        } else if (clazz == SplashPotion.class) {
-            clazz = ThrownPotion.class;
         } else if (clazz == TippedArrow.class) {
             clazz = Arrow.class;
             runOld = other -> ((Arrow) other.getBukkitEntity()).setBasePotionType(PotionType.WATER);

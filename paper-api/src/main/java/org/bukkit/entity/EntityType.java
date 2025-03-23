@@ -110,9 +110,13 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
      */
     EYE_OF_ENDER("eye_of_ender", EnderSignal.class, 15),
     /**
-     * A flying splash potion.
+     * A thrown splash potion.
      */
-    POTION("potion", ThrownPotion.class, 16),
+    SPLASH_POTION("splash_potion", SplashPotion.class, 16),
+    /**
+     * A thrown lingering potion.
+     */
+    LINGERING_POTION("lingering_potion", LingeringPotion.class, -1),
     /**
      * A flying experience bottle.
      */
