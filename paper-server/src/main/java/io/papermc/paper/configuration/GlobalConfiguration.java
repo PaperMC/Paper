@@ -12,7 +12,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Items;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -202,6 +201,8 @@ public class GlobalConfiguration extends ConfigurationPart {
     public class Commands extends ConfigurationPart {
         public boolean suggestPlayerNamesWhenNullTabCompletions = true;
         public boolean timeCommandAffectsAllWorlds = false;
+        @Comment("Allow mounting entities to a player in the Vanilla '/ride' command.")
+        public boolean rideCommandAllowPlayerAsVehicle = false;
     }
 
     public Logging logging;
