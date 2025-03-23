@@ -2,15 +2,16 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FishingHook;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import org.bukkit.craftbukkit.CraftEquipmentSlot;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.FishHook;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
 
 public class CraftFishHook extends CraftProjectile implements FishHook {
     private double biteChance = -1;
@@ -240,9 +241,16 @@ public class CraftFishHook extends CraftProjectile implements FishHook {
     }
 
     @Override
-    public int retrieve(EquipmentSlot slot, ItemStack itemStack) {
+    public int retrieve(EquipmentSlot slot) {
         Preconditions.checkArgument(slot == EquipmentSlot.HAND || slot == EquipmentSlot.OFF_HAND, "Equipment slot must be HAND or OFF_HAND");
-        Preconditions.checkArgument(itemStack != null, "ItemStack cannot be null");
-        return getHandle().retrieve(CraftEquipmentSlot.getHand(slot), CraftItemStack.asNMSCopy(itemStack));
+        FishingHook fishingHook = getHandle();
+        Player playerOwner = fishingHook.getPlayerOwner();
+        Preconditions.checkState(playerOwner != null, "Player owner cannot be null");
+
+        InteractionHand hand = CraftEquipmentSlot.getHand(slot);
+        ItemStack itemInHand = playerOwner.getItemInHand(hand);
+        Preconditions.checkState(itemInHand.is(Items.FISHING_ROD), "Item in slot is not a FISHING_ROD");
+
+        return fishingHook.retrieve(hand, itemInHand);
     }
 }
