@@ -105,7 +105,7 @@ public final class CraftRaid implements Raid {
 
     @Override
     public int getId() {
-        return this.handle.getId();
+        return this.handle.idOrNegativeOne;
     }
 
     @Override
