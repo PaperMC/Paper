@@ -14,6 +14,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.material.MaterialData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 /**
  * A chunk generator is responsible for the initial shaping of an entire
@@ -789,6 +790,6 @@ public abstract class ChunkGenerator {
          * @param z the z location in the chunk from 0-15 inclusive
          * @return Y coordinate at highest position
          */
-        public int getHeight(@NotNull HeightMap heightMap, int x, int z);
+        int getHeight(@NotNull HeightMap heightMap, @Range(from = 0L, to = 15L) int x, @Range(from = 0L, to = 15L) int z);
     }
 }
