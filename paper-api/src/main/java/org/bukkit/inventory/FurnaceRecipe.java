@@ -4,7 +4,6 @@ import java.util.Collections;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.material.MaterialData;
-import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -41,7 +40,6 @@ public class FurnaceRecipe extends CookingRecipe<FurnaceRecipe> {
      * @param experience The experience given by this recipe
      * @param cookingTime The cooking time (in ticks)
      */
-    @ApiStatus.Internal
     public FurnaceRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull Material source, float experience, int cookingTime) {
         this(key, result, source, 0, experience, cookingTime);
     }
@@ -60,7 +58,6 @@ public class FurnaceRecipe extends CookingRecipe<FurnaceRecipe> {
      * @param experience The experience given by this recipe
      * @param cookingTime The cooking time (in ticks)
      */
-    @ApiStatus.Internal
     public FurnaceRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull RecipeChoice input, float experience, int cookingTime) {
         super(key, result, input, experience, cookingTime);
     }
