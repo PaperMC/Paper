@@ -933,14 +933,13 @@
              return null;
          } else {
              Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
-@@ -1340,11 +_,38 @@
+@@ -1340,10 +_,33 @@
      @Nullable
      @Override
      public MapItemSavedData getMapData(MapId mapId) {
 -        return this.getServer().overworld().getDataStorage().get(MapItemSavedData.type(mapId));
 +        // Paper start - Call missing map initialize event and set id
 +        final DimensionDataStorage storage = this.getServer().overworld().getDataStorage();
-+
 +        final Optional<net.minecraft.world.level.saveddata.SavedData> cacheEntry = storage.cache.get(mapId.key());
 +        if (cacheEntry == null) { // Cache did not contain, try to load and may init
 +            final MapItemSavedData mapData = storage.get(MapItemSavedData.type(mapId)); // get populates the cache
@@ -949,31 +948,27 @@
 +                new org.bukkit.event.server.MapInitializeEvent(mapData.mapView).callEvent();
 +                return mapData;
 +            }
-+
 +            return null; // Map does not exist, reading failed.
 +        }
-+
 +        // Cache entry exists, update it with the id ref and return.
 +        if (cacheEntry.orElse(null) instanceof final MapItemSavedData mapItemSavedData) {
 +            mapItemSavedData.id = mapId;
 +            return mapItemSavedData;
 +        }
-+
 +        return null;
 +        // Paper end - Call missing map initialize event and set id
      }
  
-     @Override
-     public void setMapData(MapId mapId, MapItemSavedData mapData) {
+     public void setMapData(MapId mapId, MapItemSavedData data) {
 +        // CraftBukkit start
-+        mapData.id = mapId;
-+        org.bukkit.event.server.MapInitializeEvent event = new org.bukkit.event.server.MapInitializeEvent(mapData.mapView);
++        data.id = mapId;
++        org.bukkit.event.server.MapInitializeEvent event = new org.bukkit.event.server.MapInitializeEvent(data.mapView);
 +        event.callEvent();
 +        // CraftBukkit end
-         this.getServer().overworld().getDataStorage().set(MapItemSavedData.type(mapId), mapData);
+         this.getServer().overworld().getDataStorage().set(MapItemSavedData.type(mapId), data);
      }
  
-@@ -1357,17 +_,27 @@
+@@ -1355,17 +_,27 @@
          BlockPos spawnPos = this.levelData.getSpawnPos();
          float spawnAngle = this.levelData.getSpawnAngle();
          if (!spawnPos.equals(pos) || spawnAngle != angle) {
@@ -1003,7 +998,7 @@
          }
  
          this.lastSpawnChunkRadius = i;
-@@ -1402,6 +_,11 @@
+@@ -1400,6 +_,11 @@
                  DebugPackets.sendPoiRemovedPacket(this, blockPos);
              }));
              optional1.ifPresent(holder -> this.getServer().execute(() -> {
@@ -1015,7 +1010,7 @@
                  this.getPoiManager().add(blockPos, (Holder<PoiType>)holder);
                  DebugPackets.sendPoiAddedPacket(this, blockPos);
              }));
-@@ -1554,12 +_,12 @@
+@@ -1552,12 +_,12 @@
      }
  
      public boolean isFlat() {
@@ -1030,7 +1025,7 @@
      }
  
      @Nullable
-@@ -1610,6 +_,7 @@
+@@ -1608,6 +_,7 @@
  
      @Override
      public LevelEntityGetter<Entity> getEntities() {
@@ -1038,7 +1033,7 @@
          return this.entityManager.getEntityGetter();
      }
  
-@@ -1699,6 +_,28 @@
+@@ -1697,6 +_,28 @@
          return this.serverLevelData.getGameRules();
      }
  
@@ -1067,7 +1062,7 @@
      @Override
      public CrashReportCategory fillReportDetails(CrashReport report) {
          CrashReportCategory crashReportCategory = super.fillReportDetails(report);
-@@ -1714,6 +_,7 @@
+@@ -1712,6 +_,7 @@
      final class EntityCallbacks implements LevelCallback<Entity> {
          @Override
          public void onCreated(Entity entity) {
@@ -1075,7 +1070,7 @@
          }
  
          @Override
-@@ -1723,24 +_,32 @@
+@@ -1721,24 +_,32 @@
  
          @Override
          public void onTickingStart(Entity entity) {
@@ -1110,7 +1105,7 @@
                      String string = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1757,10 +_,52 @@
+@@ -1755,10 +_,52 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::add);
@@ -1163,7 +1158,7 @@
              ServerLevel.this.getChunkSource().removeEntity(entity);
              if (entity instanceof ServerPlayer serverPlayer) {
                  ServerLevel.this.players.remove(serverPlayer);
-@@ -1768,7 +_,7 @@
+@@ -1766,7 +_,7 @@
              }
  
              if (entity instanceof Mob mob) {
@@ -1172,7 +1167,7 @@
                      String string = "onTrackingStart called during navigation iteration";
                      Util.logAndPauseIfInIde(
                          "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
-@@ -1785,6 +_,15 @@
+@@ -1783,6 +_,15 @@
              }
  
              entity.updateDynamicGameEventListener(DynamicGameEventListener::remove);
@@ -1188,7 +1183,7 @@
          }
  
          @Override
-@@ -1792,4 +_,24 @@
+@@ -1790,4 +_,24 @@
              entity.updateDynamicGameEventListener(DynamicGameEventListener::move);
          }
      }
