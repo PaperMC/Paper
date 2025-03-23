@@ -145,16 +145,15 @@ import org.bukkit.util.NumberConversions;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.StructureSearchResult;
 import org.bukkit.util.Vector;
-import org.jspecify.annotations.Nullable;
-import org.jspecify.annotations.NullMarked;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-@NullMarked
 public class CraftWorld extends CraftRegionAccessor implements World {
     public static final int CUSTOM_DIMENSION_OFFSET = 10;
     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
 
     private final ServerLevel world;
-    private @Nullable WorldBorder worldBorder;
+    private WorldBorder worldBorder;
     private Environment environment;
     private final CraftServer server = (CraftServer) Bukkit.getServer();
     private final ChunkGenerator generator;
@@ -163,7 +162,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     private final BlockMetadataStore blockMetadata = new BlockMetadataStore(this);
     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftWorld.DATA_TYPE_REGISTRY);
-    private net.kyori.adventure.pointer. @Nullable Pointers adventure$pointers; // Paper - implement pointers
+    private net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
     // Paper start - void damage configuration
     private boolean voidDamageEnabled;
     private float voidDamageAmount;
@@ -371,6 +370,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return new CraftChunk(chunk);
     }
 
+    @NotNull
     @Override
     public Chunk getChunkAt(int x, int z, boolean generate) {
         if (generate) {
@@ -595,8 +595,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return FeatureHooks.getPluginChunkTickets(this.world); // Paper - chunk system
     }
 
+    @NotNull
     @Override
-    public Collection<Chunk> getIntersectingChunks(BoundingBox boundingBox) {
+    public Collection<Chunk> getIntersectingChunks(@NotNull BoundingBox boundingBox) {
         List<Chunk> chunks = new ArrayList<>();
 
         int minX = NumberConversions.floor(boundingBox.getMinX()) >> 4;
@@ -936,8 +937,9 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return this.populators;
     }
 
+    @NotNull
     @Override
-    public <T extends LivingEntity> T spawn(Location location, Class<T> clazz, SpawnReason spawnReason, boolean randomizeData, @Nullable Consumer<? super T> function) throws IllegalArgumentException {
+    public <T extends LivingEntity> T spawn(@NotNull Location location, @NotNull Class<T> clazz, @NotNull SpawnReason spawnReason, boolean randomizeData, @Nullable Consumer<? super T> function) throws IllegalArgumentException {
         Preconditions.checkArgument(spawnReason != null, "Spawn reason cannot be null");
         return this.spawn(location, clazz, function, spawnReason, randomizeData);
     }
@@ -1833,7 +1835,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
-    public void playNote(Location loc, Instrument instrument, Note note) {
+    public void playNote(@NotNull Location loc, @NotNull Instrument instrument, @NotNull Note note) {
         this.playSound(loc, instrument.getSound(), org.bukkit.SoundCategory.RECORDS, 3f, note.getPitch());
     }
 
@@ -2411,7 +2413,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Spigot end
     // Paper start
     @Override
-    public void getChunkAtAsync(int x, int z, boolean gen, boolean urgent, Consumer<? super Chunk> cb) {
+    public void getChunkAtAsync(int x, int z, boolean gen, boolean urgent, @NotNull Consumer<? super Chunk> cb) {
         warnUnsafeChunk("getting a faraway chunk async", x, z); // Paper
         ca.spottedleaf.moonrise.common.PlatformHooks.get().scheduleChunkLoad(
             this.getHandle(), x, z, gen, ChunkStatus.FULL, true,

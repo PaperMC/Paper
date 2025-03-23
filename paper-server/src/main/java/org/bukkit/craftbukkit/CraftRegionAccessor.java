@@ -58,9 +58,7 @@ import org.bukkit.entity.minecart.RideableMinecart;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionType;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public abstract class CraftRegionAccessor implements RegionAccessor {
 
     public abstract WorldGenLevel getHandle();
