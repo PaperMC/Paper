@@ -15,7 +15,7 @@ Adds villagers as separate config
 
 diff --git a/io/papermc/paper/entity/activation/ActivationRange.java b/io/papermc/paper/entity/activation/ActivationRange.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ade6110cc6adb1263c0359ff7e96e96b959e61f3
+index 0000000000000000000000000000000000000000..2ebee223085fe7926c7f3e555df19ae69f36157e
 --- /dev/null
 +++ b/io/papermc/paper/entity/activation/ActivationRange.java
 @@ -0,0 +1,318 @@
@@ -32,7 +32,7 @@ index 0000000000000000000000000000000000000000..ade6110cc6adb1263c0359ff7e96e96b
 +import net.minecraft.world.entity.ai.Brain;
 +import net.minecraft.world.entity.animal.Animal;
 +import net.minecraft.world.entity.animal.Bee;
-+import net.minecraft.world.entity.animal.Sheep;
++import net.minecraft.world.entity.animal.sheep.Sheep;
 +import net.minecraft.world.entity.animal.horse.Llama;
 +import net.minecraft.world.entity.boss.EnderDragonPart;
 +import net.minecraft.world.entity.boss.enderdragon.EndCrystal;
@@ -338,7 +338,7 @@ index 0000000000000000000000000000000000000000..ade6110cc6adb1263c0359ff7e96e96b
 +    }
 +}
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index 7a86892eb69b01656848c755a4cabacfc0dce8e6..09c6ebe91ca80552a487d01ab5394db21cf3d34f 100644
+index 39da284a64377beda89108db22e354591a800028..1369bb2993885f426d0974a0c163ad0f0759b74a 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
 @@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
@@ -357,16 +357,8 @@ index 7a86892eb69b01656848c755a4cabacfc0dce8e6..09c6ebe91ca80552a487d01ab5394db2
  import java.io.IOException;
  import java.io.Writer;
  import java.nio.file.Path;
-@@ -98,7 +96,6 @@ import net.minecraft.world.level.levelgen.structure.StructureStart;
- import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
- import net.minecraft.world.level.storage.DimensionDataStorage;
- import net.minecraft.world.level.storage.LevelStorageSource;
--import net.minecraft.world.phys.Vec3;
- import org.apache.commons.lang3.mutable.MutableBoolean;
- import org.slf4j.Logger;
- 
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 5e5ee5e3531e38d2a285de8c3a5a332945a6df93..e26239bc6185d81e2ce82579843a4017d7c10943 100644
+index a2d286a86882b672a60f3679d4a8d84be8dcfae9..3dbed5d48684ba1082b2f217e9030d1e79d61540 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -544,6 +544,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -476,7 +468,7 @@ index bf44f6b9c8710e0c9a85d44f6217501abc98a7b1..bfd904e468bbf2cc1a5b3353d3a69ad5
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
-index ae9f61beeef828bccbf22160b9f8eaa7be2f87f3..cf6fa8a91e03cd79da20b072f72b29d1ddbb784d 100644
+index 63cc83233a440124f2ff368d07c1e2f6b4eed966..07f3f9c70d3ad41c2e51aea96a41774935e6199b 100644
 --- a/net/minecraft/world/entity/Entity.java
 +++ b/net/minecraft/world/entity/Entity.java
 @@ -388,6 +388,15 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -535,10 +527,10 @@ index ae9f61beeef828bccbf22160b9f8eaa7be2f87f3..cf6fa8a91e03cd79da20b072f72b29d1
              movement = this.maybeBackOffFromEdge(movement, type);
              Vec3 vec3 = this.collide(movement);
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 02ba7b842c77cdf843e3599b34fe1efef9a47d75..a9133d3918edb232df109ac5c3cd99512b3524ed 100644
+index 527a005c9aa9f84d17a76df1c3f448ef0827cb65..0868636a05461369ca3287f7e994692f372929a1 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -3174,6 +3174,14 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3164,6 +3164,14 @@ public abstract class LivingEntity extends Entity implements Attackable {
          return false;
      }
  
@@ -554,10 +546,10 @@ index 02ba7b842c77cdf843e3599b34fe1efef9a47d75..a9133d3918edb232df109ac5c3cd9951
      public void tick() {
          super.tick();
 diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index 2d25333ac207bff79863ff52e04e9aa9ea5c1279..c9b7f678dd0184ba852f511e5bb1c506959cf7e4 100644
+index 8f5c377540f83911c8d245fb00569f08dbc6a690..73ba442b9d39bc021cd5eb6c1c0f98aed94a5a02 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
-@@ -204,6 +204,19 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+@@ -203,6 +203,19 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
          return this.lookControl;
      }
  
@@ -830,10 +822,10 @@ index 6162415095b030b4cc47364c56fa66236b3b0535..a56d9cdeb6589a053ffaaf2cd599a98a
 +
  }
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 6db8e70a4d35540c9ef4b66457c359f4ea33a312..58057620891e9f68330770e434594621bde3883f 100644
+index 1aa98e4f70627632d3e676395c28fa0ecca72f56..1f26826b2161cfeb27e5b2060e178b493e9142d9 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -153,6 +153,12 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -143,6 +143,12 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
      @Nullable
      public List<net.minecraft.world.entity.item.ItemEntity> captureDrops;
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
