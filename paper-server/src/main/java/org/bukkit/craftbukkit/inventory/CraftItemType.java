@@ -3,9 +3,14 @@ package org.bukkit.craftbukkit.inventory;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import java.util.Collection;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import io.papermc.paper.inventory.CreativeModeTab;
+import io.papermc.paper.inventory.PaperCreativeModeTab;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
@@ -231,7 +236,21 @@ public class CraftItemType<M extends ItemMeta> implements ItemType.Typed<M>, Han
 
     @Override
     public CreativeCategory getCreativeCategory() {
-        return CreativeCategory.BUILDING_BLOCKS;
+        final CreativeModeTab tab = Iterables.getFirst(getCreativeModeTabs(), null);
+        return tab == null ? null : ((PaperCreativeModeTab) tab).toLegacy();
+    }
+
+    @Override
+    public @NotNull Collection<CreativeModeTab> getCreativeModeTabs() {
+        final ImmutableSet.Builder<CreativeModeTab> builder = ImmutableSet.builder();
+
+        for (final CreativeModeTab tab : Registry.CREATIVE_MODE_TAB) {
+            if (tab.getType() == CreativeModeTab.Type.CATEGORY && tab.containsItemType(this)) {
+                builder.add(tab);
+            }
+        }
+
+        return builder.build();
     }
 
     @Override
