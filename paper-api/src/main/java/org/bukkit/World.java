@@ -1,9 +1,7 @@
 package org.bukkit;
 
-import java.io.File;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
-import org.bukkit.generator.ChunkGenerator;
-
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -2410,9 +2408,17 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     public BiomeProvider getBiomeProvider();
 
     /**
-     * Saves world to disk
+     * Saves the world to disk
      */
-    public void save();
+    default void save() {
+        save(false);
+    }
+
+    /**
+     * Saves the world to disk
+     * @param flush Whether to wait for the chunk writer to finish
+     */
+    void save(boolean flush);
 
     /**
      * Gets a list of all applied {@link BlockPopulator}s for this World
