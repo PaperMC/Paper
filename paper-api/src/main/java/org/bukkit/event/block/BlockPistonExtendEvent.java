@@ -8,15 +8,19 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
 /**
  * Called when a piston extends
  */
 public class BlockPistonExtendEvent extends BlockPistonEvent {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final int length;
     private List<Block> blocks;
 
+    @ApiStatus.Internal
     @Deprecated(since = "1.8", forRemoval = true)
     public BlockPistonExtendEvent(@NotNull final Block block, final int length, @NotNull final BlockFace direction) {
         super(block, direction);
@@ -51,25 +55,26 @@ public class BlockPistonExtendEvent extends BlockPistonEvent {
      * @return Immutable list of the moved blocks.
      */
     @NotNull
+    @Unmodifiable
     public List<Block> getBlocks() {
-        if (blocks == null) {
-            List<Block> tmp = new ArrayList<Block>();
-            for (int i = 0; i < this.getLength(); i++) {
-                tmp.add(block.getRelative(getDirection(), i + 1));
+        if (this.blocks == null) {
+            List<Block> tmp = new ArrayList<>();
+            for (int i = 0; i < this.length; i++) {
+                tmp.add(this.block.getRelative(getDirection(), i + 1));
             }
-            blocks = Collections.unmodifiableList(tmp);
+            this.blocks = Collections.unmodifiableList(tmp);
         }
-        return blocks;
+        return this.blocks;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

@@ -3,41 +3,34 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Stores data for health-regain events
  */
 public class EntityRegainHealthEvent extends EntityEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private double amount;
     private final RegainReason regainReason;
-    private final boolean isFastRegen; // Paper
+    private final boolean isFastRegen;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public EntityRegainHealthEvent(@NotNull final Entity entity, final double amount, @NotNull final RegainReason regainReason) {
-        // Paper start - Forward
         this(entity, amount, regainReason, false);
     }
 
+    @ApiStatus.Internal
     public EntityRegainHealthEvent(@NotNull final Entity entity, final double amount, @NotNull final RegainReason regainReason, boolean isFastRegen) {
-        // Paper end
         super(entity);
         this.amount = amount;
         this.regainReason = regainReason;
-        this.isFastRegen = isFastRegen; // Paper
+        this.isFastRegen = isFastRegen;
     }
-
-    // Paper start - Add getter for isFastRegen
-    /**
-     * Is this event a result of the fast regeneration mechanic
-     *
-     * @return Whether the event is the result of a fast regeneration mechanic
-     */
-    public boolean isFastRegen() {
-        return isFastRegen;
-    }
-    // Paper end
 
     /**
      * Gets the amount of regained health
@@ -45,7 +38,7 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      * @return The amount of health regained
      */
     public double getAmount() {
-        return amount;
+        return this.amount;
     }
 
     /**
@@ -57,16 +50,6 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
         this.amount = amount;
     }
 
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        cancelled = cancel;
-    }
-
     /**
      * Gets the reason for why the entity is regaining health
      *
@@ -75,18 +58,37 @@ public class EntityRegainHealthEvent extends EntityEvent implements Cancellable 
      */
     @NotNull
     public RegainReason getRegainReason() {
-        return regainReason;
+        return this.regainReason;
+    }
+
+    /**
+     * Is this event a result of the fast regeneration mechanic
+     *
+     * @return Whether the event is the result of a fast regeneration mechanic
+     */
+    public boolean isFastRegen() {
+        return this.isFastRegen;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     /**

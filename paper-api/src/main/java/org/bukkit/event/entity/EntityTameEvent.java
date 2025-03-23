@@ -4,16 +4,20 @@ import org.bukkit.entity.AnimalTamer;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Thrown when a LivingEntity is tamed
  */
 public class EntityTameEvent extends EntityEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
-    private final AnimalTamer owner;
 
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final AnimalTamer owner;
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public EntityTameEvent(@NotNull final LivingEntity entity, @NotNull final AnimalTamer owner) {
         super(entity);
         this.owner = owner;
@@ -22,17 +26,7 @@ public class EntityTameEvent extends EntityEvent implements Cancellable {
     @NotNull
     @Override
     public LivingEntity getEntity() {
-        return (LivingEntity) entity;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        cancelled = cancel;
+        return (LivingEntity) this.entity;
     }
 
     /**
@@ -42,17 +36,27 @@ public class EntityTameEvent extends EntityEvent implements Cancellable {
      */
     @NotNull
     public AnimalTamer getOwner() {
-        return owner;
+        return this.owner;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

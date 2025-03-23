@@ -14,27 +14,34 @@ import org.jetbrains.annotations.Nullable;
  * Called when a projectile hits an object
  */
 public class ProjectileHitEvent extends EntityEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Entity hitEntity;
     private final Block hitBlock;
     private final BlockFace hitFace;
-    private boolean cancel = false;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public ProjectileHitEvent(@NotNull final Projectile projectile) {
         this(projectile, null, null, null);
     }
 
+    @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity) {
         this(projectile, hitEntity, null, null);
     }
 
+    @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Block hitBlock) {
         this(projectile, null, hitBlock, null);
     }
 
+    @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public ProjectileHitEvent(@NotNull final Projectile projectile, @Nullable Entity hitEntity, @Nullable Block hitBlock) {
         this(projectile, hitEntity, hitBlock, null);
@@ -51,72 +58,70 @@ public class ProjectileHitEvent extends EntityEvent implements Cancellable {
     @NotNull
     @Override
     public Projectile getEntity() {
-        return (Projectile) entity;
+        return (Projectile) this.entity;
+    }
+
+    /**
+     * Gets the entity that was hit, if it was an entity that was hit.
+     *
+     * @return hit entity or else {@code null}
+     */
+    @Nullable
+    public Entity getHitEntity() {
+        return this.hitEntity;
     }
 
     /**
      * Gets the block that was hit, if it was a block that was hit.
      *
-     * @return hit block or else null
+     * @return hit block or else {@code null}
      */
     @Nullable
     public Block getHitBlock() {
-        return hitBlock;
+        return this.hitBlock;
     }
 
     /**
      * Gets the block face that was hit, if it was a block that was hit and the
      * face was provided in the event.
      *
-     * @return hit face or else null
+     * @return hit face or else {@code null}
      */
     @Nullable
     public BlockFace getHitBlockFace() {
-        return hitFace;
-    }
-
-    /**
-     * Gets the entity that was hit, if it was an entity that was hit.
-     *
-     * @return hit entity or else null
-     */
-    @Nullable
-    public Entity getHitEntity() {
-        return hitEntity;
+        return this.hitFace;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancel;
+        return this.cancelled;
     }
 
     /**
      * Whether to cancel the action that occurs when the projectile hits.
-     *
+     * <p>
      * In the case of an entity, it will not collide (unless it's a firework,
      * then use {@link FireworkExplodeEvent}).
      * <br>
-     * In the case of a block, some blocks (eg target block, bell) will not
+     * In the case of a block, some blocks (e.g. target block, bell) will not
      * perform the action associated.
-     * <br>
+     * <p>
      * This does NOT prevent block collisions, and explosions will still occur
      * unless their respective events are cancelled.
-     *
-     * @param cancel true if you wish to cancel this event
      */
     @Override
     public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

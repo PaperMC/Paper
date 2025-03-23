@@ -13,12 +13,15 @@ import org.jetbrains.annotations.NotNull;
  */
 public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final ItemStack item;
     private final int originalDamage;
     private int damage;
-    private boolean cancelled = false;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public PlayerItemDamageEvent(@NotNull Player player, @NotNull ItemStack item, int damage) {
         this(player, item, damage, damage);
@@ -39,7 +42,7 @@ public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
      */
     @NotNull
     public ItemStack getItem() {
-        return item;
+        return this.item;
     }
 
     /**
@@ -51,6 +54,10 @@ public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
         return this.damage;
     }
 
+    public void setDamage(int damage) {
+        this.damage = damage;
+    }
+
     /**
      * Gets the amount of durability damage this item would have taken before
      * the Unbreaking reduction. If the item has no Unbreaking level then
@@ -60,10 +67,6 @@ public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
      */
     public int getOriginalDamage() {
         return this.originalDamage;
-    }
-
-    public void setDamage(int damage) {
-        this.damage = damage;
     }
 
     @Override
@@ -79,11 +82,11 @@ public class PlayerItemDamageEvent extends PlayerEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

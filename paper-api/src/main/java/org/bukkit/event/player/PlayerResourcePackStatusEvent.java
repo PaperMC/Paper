@@ -3,24 +3,48 @@ package org.bukkit.event.player;
 import java.util.UUID;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player takes action on a resource pack request.
+ *
  * @see Player#setResourcePack(String, String)
  * @see Player#setResourcePack(String, String, boolean)
  */
 public class PlayerResourcePackStatusEvent extends PlayerEvent {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final UUID id;
     private final Status status;
 
+    @ApiStatus.Internal
     public PlayerResourcePackStatusEvent(@NotNull final Player player, @NotNull UUID id, @NotNull Status resourcePackStatus) {
         super(player);
         this.id = id;
         this.status = resourcePackStatus;
+    }
+
+    /**
+     * Gets the unique ID of this pack.
+     *
+     * @return unique resource pack ID.
+     */
+    @NotNull
+    public UUID getID() {
+        return this.id;
+    }
+
+    /**
+     * Gets the status of this pack.
+     *
+     * @return the current status
+     */
+    @NotNull
+    public Status getStatus() {
+        return this.status;
     }
 
     /**
@@ -32,35 +56,15 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
         return null;
     }
 
-    /**
-     * Gets the unique ID of this pack.
-     *
-     * @return unique resource pack ID.
-     */
-    @NotNull
-    public UUID getID() {
-        return id;
-    }
-
-    /**
-     * Gets the status of this pack.
-     *
-     * @return the current status
-     */
-    @NotNull
-    public Status getStatus() {
-        return status;
-    }
-
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     /**
@@ -100,6 +104,6 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
         /**
          * The pack was discarded by the client.
          */
-        DISCARDED;
+        DISCARDED
     }
 }

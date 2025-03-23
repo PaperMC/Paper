@@ -12,9 +12,11 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Experimental
 public class PlayerLinksSendEvent extends PlayerEvent {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final ServerLinks links;
 
+    @ApiStatus.Internal
     public PlayerLinksSendEvent(@NotNull final Player player, @NotNull final ServerLinks links) {
         super(player);
         this.links = links;
@@ -27,17 +29,17 @@ public class PlayerLinksSendEvent extends PlayerEvent {
      */
     @NotNull
     public ServerLinks getLinks() {
-        return links;
+        return this.links;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

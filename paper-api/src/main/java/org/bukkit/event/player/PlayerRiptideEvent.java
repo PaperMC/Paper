@@ -16,7 +16,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public class PlayerRiptideEvent extends PlayerEvent {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final ItemStack item;
     private final Vector velocity;
 
@@ -27,9 +28,10 @@ public class PlayerRiptideEvent extends PlayerEvent {
         this.velocity = velocity;
     }
 
+    @ApiStatus.Internal
     @Deprecated(since = "1.20.4", forRemoval = true)
     public PlayerRiptideEvent(@NotNull final Player player, @NotNull final ItemStack item) {
-        this(player, item, new Vector());
+        this(player, item, new Vector(0, 0, 0));
     }
 
     /**
@@ -39,7 +41,7 @@ public class PlayerRiptideEvent extends PlayerEvent {
      */
     @NotNull
     public ItemStack getItem() {
-        return item;
+        return this.item;
     }
 
     /**
@@ -49,17 +51,17 @@ public class PlayerRiptideEvent extends PlayerEvent {
      */
     @NotNull
     public Vector getVelocity() {
-        return velocity.clone();
+        return this.velocity.clone();
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

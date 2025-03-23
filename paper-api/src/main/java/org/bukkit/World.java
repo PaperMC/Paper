@@ -69,7 +69,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     void setVoidDamageEnabled(boolean enabled);
 
     /**
-     * Gets the damage applied to the player when they are in the void in this world.
+     * Gets the damage applied to the entities when they are in the void in this world.
      * Check {@link #isVoidDamageEnabled()} to see if void damage is enabled.
      *
      * @return amount of damage to apply
@@ -78,7 +78,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     float getVoidDamageAmount();
 
     /**
-     * Sets the damage applied to the player when they are in the void in this world.
+     * Sets the damage applied to the entities when they are in the void in this world.
      * Check {@link #isVoidDamageEnabled()} to see if void damage is enabled.
      *
      * @param voidDamageAmount amount of damage to apply

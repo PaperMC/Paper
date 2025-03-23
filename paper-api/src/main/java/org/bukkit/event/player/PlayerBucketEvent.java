@@ -17,19 +17,23 @@ import org.jetbrains.annotations.Nullable;
  * Called when a player interacts with a Bucket
  */
 public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellable {
-    private ItemStack itemStack;
-    private boolean cancelled = false;
+
     private final Block block;
     private final Block blockClicked;
     private final BlockFace blockFace;
     private final Material bucket;
     private final EquipmentSlot hand;
+    private ItemStack itemStack;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     @Deprecated(since = "1.14.4", forRemoval = true)
     public PlayerBucketEvent(@NotNull final Player player, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
         this(player, null, blockClicked.getRelative(blockFace), blockFace, bucket, itemInHand, EquipmentSlot.HAND);
     }
 
+    @ApiStatus.Internal
     @Deprecated(since = "1.19.2", forRemoval = true)
     public PlayerBucketEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final Block blockClicked, @NotNull final BlockFace blockFace, @NotNull final Material bucket, @NotNull final ItemStack itemInHand) {
         this(player, block, blockClicked, blockFace, bucket, itemInHand, EquipmentSlot.HAND);
@@ -51,13 +55,53 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
     }
 
     /**
+     * Gets the block involved in this event.
+     *
+     * @return The Block which block is involved in this event
+     */
+    @NotNull
+    public final Block getBlock() {
+        return this.block;
+    }
+
+    /**
+     * Return the block clicked
+     *
+     * @return the clicked block
+     */
+    @NotNull
+    public Block getBlockClicked() {
+        return this.blockClicked;
+    }
+
+    /**
+     * Get the face on the clicked block
+     *
+     * @return the clicked face
+     */
+    @NotNull
+    public BlockFace getBlockFace() {
+        return this.blockFace;
+    }
+
+    /**
      * Returns the bucket used in this event
      *
      * @return the used bucket
      */
     @NotNull
     public Material getBucket() {
-        return bucket;
+        return this.bucket;
+    }
+
+    /**
+     * Get the hand that was used in this event.
+     *
+     * @return the hand
+     */
+    @NotNull
+    public EquipmentSlot getHand() {
+        return this.hand;
     }
 
     /**
@@ -67,7 +111,7 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
      */
     @Nullable
     public ItemStack getItemStack() {
-        return itemStack;
+        return this.itemStack;
     }
 
     /**
@@ -79,49 +123,9 @@ public abstract class PlayerBucketEvent extends PlayerEvent implements Cancellab
         this.itemStack = itemStack;
     }
 
-    /**
-     * Gets the block involved in this event.
-     *
-     * @return The Block which block is involved in this event
-     */
-    @NotNull
-    public final Block getBlock() {
-        return block;
-    }
-
-    /**
-     * Return the block clicked
-     *
-     * @return the clicked block
-     */
-    @NotNull
-    public Block getBlockClicked() {
-        return blockClicked;
-    }
-
-    /**
-     * Get the face on the clicked block
-     *
-     * @return the clicked face
-     */
-    @NotNull
-    public BlockFace getBlockFace() {
-        return blockFace;
-    }
-
-    /**
-     * Get the hand that was used in this event.
-     *
-     * @return the hand
-     */
-    @NotNull
-    public EquipmentSlot getHand() {
-        return hand;
-    }
-
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override

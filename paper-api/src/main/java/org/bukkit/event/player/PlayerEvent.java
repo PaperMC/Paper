@@ -8,13 +8,14 @@ import org.jetbrains.annotations.NotNull;
  * Represents a player related event
  */
 public abstract class PlayerEvent extends Event {
+
     protected Player player;
 
-    public PlayerEvent(@NotNull final Player player) {
+    protected PlayerEvent(@NotNull final Player player) {
         this.player = player;
     }
 
-    public PlayerEvent(@NotNull final Player player, boolean async) {
+    protected PlayerEvent(@NotNull final Player player, boolean async) {
         super(async);
         this.player = player;
     }
@@ -26,6 +27,6 @@ public abstract class PlayerEvent extends Event {
      */
     @NotNull
     public final Player getPlayer() {
-        return player;
+        return this.player;
     }
 }

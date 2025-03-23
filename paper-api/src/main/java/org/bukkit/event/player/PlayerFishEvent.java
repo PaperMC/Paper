@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -13,14 +14,18 @@ import org.jetbrains.annotations.Nullable;
  * Thrown when a player is fishing
  */
 public class PlayerFishEvent extends PlayerEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Entity entity;
-    private boolean cancel = false;
-    private int exp;
-    private final State state;
     private final FishHook hookEntity;
     private final EquipmentSlot hand;
+    private final State state;
+    private int exp;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public PlayerFishEvent(@NotNull final Player player, @Nullable final Entity entity, @NotNull final FishHook hookEntity, @Nullable EquipmentSlot hand, @NotNull final State state) {
         super(player);
         this.entity = entity;
@@ -29,6 +34,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
         this.state = state;
     }
 
+    @ApiStatus.Internal
     public PlayerFishEvent(@NotNull final Player player, @Nullable final Entity entity, @NotNull final FishHook hookEntity, @NotNull final State state) {
         this(player, entity, hookEntity, null, state);
     }
@@ -39,12 +45,12 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      * If player has fished successfully, the result may be cast to {@link
      * org.bukkit.entity.Item}.
      *
-     * @return Entity caught by the player, Entity if fishing, and null if
+     * @return Entity caught by the player, Entity if fishing, and {@code null} if
      *     bobber has gotten stuck in the ground or nothing has been caught
      */
     @Nullable
     public Entity getCaught() {
-        return entity;
+        return this.entity;
     }
 
     /**
@@ -54,17 +60,31 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      */
     @NotNull
     public FishHook getHook() {
-        return hookEntity;
+        return this.hookEntity;
     }
 
-    @Override
-    public boolean isCancelled() {
-        return cancel;
+    /**
+     * Get the hand that was used in this event.
+     * <p>
+     * The hand used is only present for player interactions.
+     * This means it will be {@code null} if state is set
+     * to {@link State#BITE} or {@link State#FAILED_ATTEMPT}.
+     *
+     * @return the hand
+     */
+    @Nullable
+    public EquipmentSlot getHand() {
+        return this.hand;
     }
 
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+    /**
+     * Gets the state of the fishing
+     *
+     * @return A State detailing the state of the fishing
+     */
+    @NotNull
+    public State getState() {
+        return this.state;
     }
 
     /**
@@ -76,7 +96,7 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      * @return the amount of experience to drop
      */
     public int getExpToDrop() {
-        return exp;
+        return this.exp;
     }
 
     /**
@@ -88,42 +108,28 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
      * @param amount the amount of experience to drop
      */
     public void setExpToDrop(int amount) {
-        exp = amount;
+        this.exp = amount;
     }
 
-    /**
-     * Get the hand that was used in this event.
-     * <p>
-     * The hand used is only present for player interactions.
-     * This means it will be null if state is set
-     * to {@link State#BITE} or {@link State#FAILED_ATTEMPT}.
-     *
-     * @return the hand
-     */
-    @Nullable
-    public EquipmentSlot getHand() {
-        return hand;
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
     }
 
-    /**
-     * Gets the state of the fishing
-     *
-     * @return A State detailing the state of the fishing
-     */
-    @NotNull
-    public State getState() {
-        return state;
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     /**
@@ -164,14 +170,11 @@ public class PlayerFishEvent extends PlayerEvent implements Cancellable {
          * Called when there is a bite on the hook and it is ready to be reeled
          * in.
          */
-        BITE
-        // Paper start - Add missing fishing event state
-        ,
+        BITE,
         /**
          * Called when a bobber was lured, and is now waiting to be hooked
          * (when a "fish" starts to swim toward the bobber to bite it).
          */
         LURED,
-        // Paper end - Add missing fishing event state
     }
 }

@@ -12,8 +12,10 @@ import org.jetbrains.annotations.NotNull;
  */
 @ApiStatus.Experimental
 public class TrialSpawnerSpawnEvent extends EntitySpawnEvent {
+
     private final TrialSpawner spawner;
 
+    @ApiStatus.Internal
     public TrialSpawnerSpawnEvent(@NotNull final Entity spawnee, @NotNull final TrialSpawner spawner) {
         super(spawnee);
         this.spawner = spawner;
@@ -21,6 +23,6 @@ public class TrialSpawnerSpawnEvent extends EntitySpawnEvent {
 
     @NotNull
     public TrialSpawner getTrialSpawner() {
-        return spawner;
+        return this.spawner;
     }
 }

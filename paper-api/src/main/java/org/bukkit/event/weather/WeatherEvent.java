@@ -8,10 +8,11 @@ import org.jetbrains.annotations.NotNull;
  * Represents a Weather-related event
  */
 public abstract class WeatherEvent extends Event {
+
     protected World world;
 
-    public WeatherEvent(@NotNull final World where) {
-        world = where;
+    protected WeatherEvent(@NotNull final World where) {
+        this.world = where;
     }
 
     /**
@@ -21,6 +22,6 @@ public abstract class WeatherEvent extends Event {
      */
     @NotNull
     public final World getWorld() {
-        return world;
+        return this.world;
     }
 }

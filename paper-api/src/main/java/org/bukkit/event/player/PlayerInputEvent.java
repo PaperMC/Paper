@@ -14,9 +14,11 @@ import org.jetbrains.annotations.NotNull;
 @ApiStatus.Experimental
 public class PlayerInputEvent extends PlayerEvent {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Input input;
 
+    @ApiStatus.Internal
     public PlayerInputEvent(@NotNull final Player player, @NotNull final Input input) {
         super(player);
         this.input = input;
@@ -29,17 +31,17 @@ public class PlayerInputEvent extends PlayerEvent {
      */
     @NotNull
     public Input getInput() {
-        return input;
+        return this.input;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

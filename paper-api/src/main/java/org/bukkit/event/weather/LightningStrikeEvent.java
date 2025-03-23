@@ -11,11 +11,15 @@ import org.jetbrains.annotations.NotNull;
  * Stores data for lightning striking
  */
 public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean canceled;
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final LightningStrike bolt;
     private final Cause cause;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     @Deprecated(since = "1.13.1", forRemoval = true)
     public LightningStrikeEvent(@NotNull final World world, @NotNull final LightningStrike bolt) {
         this(world, bolt, Cause.UNKNOWN);
@@ -28,16 +32,6 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
         this.cause = cause;
     }
 
-    @Override
-    public boolean isCancelled() {
-        return canceled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        canceled = cancel;
-    }
-
     /**
      * Gets the bolt which is striking the earth.
      *
@@ -45,7 +39,7 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
      */
     @NotNull
     public LightningStrike getLightning() {
-        return bolt;
+        return this.bolt;
     }
 
     /**
@@ -55,18 +49,28 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
      */
     @NotNull
     public Cause getCause() {
-        return cause;
+        return this.cause;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     public enum Cause {
@@ -101,6 +105,6 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
         /**
          * Unknown trigger.
          */
-        UNKNOWN;
+        UNKNOWN
     }
 }

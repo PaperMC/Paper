@@ -15,11 +15,11 @@ import org.jetbrains.annotations.Nullable;
  */
 public class EntityResurrectEvent extends EntityEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-
-    private boolean cancelled;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final EquipmentSlot hand;
+
+    private boolean cancelled;
 
     @ApiStatus.Internal
     public EntityResurrectEvent(@NotNull LivingEntity livingEntity, @Nullable EquipmentSlot hand) {
@@ -27,6 +27,7 @@ public class EntityResurrectEvent extends EntityEvent implements Cancellable {
         this.hand = hand;
     }
 
+    @ApiStatus.Internal
     @Deprecated(since = "1.19.2", forRemoval = true)
     public EntityResurrectEvent(@NotNull LivingEntity livingEntity) {
         this(livingEntity, null);
@@ -35,23 +36,23 @@ public class EntityResurrectEvent extends EntityEvent implements Cancellable {
     @NotNull
     @Override
     public LivingEntity getEntity() {
-        return (LivingEntity) entity;
+        return (LivingEntity) this.entity;
     }
 
     /**
-     * Get the hand in which the totem of undying was found, or null if the
+     * Get the hand in which the totem of undying was found, or {@code null} if the
      * entity did not have a totem of undying.
      *
-     * @return the hand, or null
+     * @return the hand, or {@code null}
      */
     @Nullable
     public EquipmentSlot getHand() {
-        return hand;
+        return this.hand;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -62,11 +63,11 @@ public class EntityResurrectEvent extends EntityEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

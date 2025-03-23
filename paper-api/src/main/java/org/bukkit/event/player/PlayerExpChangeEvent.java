@@ -1,30 +1,34 @@
 package org.bukkit.event.player;
 
-import org.bukkit.entity.Entity; // Paper
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
-import org.jetbrains.annotations.Nullable; // Paper
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a players experience changes naturally
  */
 public class PlayerExpChangeEvent extends PlayerEvent {
-    private static final HandlerList handlers = new HandlerList();
-    // Paper start
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     @Nullable
     private final Entity source;
     private int exp;
 
+    @ApiStatus.Internal
     public PlayerExpChangeEvent(@NotNull final Player player, final int expAmount) {
           this(player, null, expAmount);
     }
 
+    @ApiStatus.Internal
     public PlayerExpChangeEvent(@NotNull final Player player, @Nullable final Entity sourceEntity, final int expAmount) {
          super(player);
-         source = sourceEntity;
-         exp = expAmount;
+         this.source = sourceEntity;
+        this.exp = expAmount;
     }
 
     /**
@@ -34,9 +38,8 @@ public class PlayerExpChangeEvent extends PlayerEvent {
      */
     @Nullable
     public Entity getSource() {
-        return source;
+        return this.source;
     }
-    // Paper end
 
     /**
      * Get the amount of experience the player will receive
@@ -44,7 +47,7 @@ public class PlayerExpChangeEvent extends PlayerEvent {
      * @return The amount of experience
      */
     public int getAmount() {
-        return exp;
+        return this.exp;
     }
 
     /**
@@ -53,17 +56,17 @@ public class PlayerExpChangeEvent extends PlayerEvent {
      * @param amount The amount of experience to set
      */
     public void setAmount(int amount) {
-        exp = amount;
+        this.exp = amount;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }
