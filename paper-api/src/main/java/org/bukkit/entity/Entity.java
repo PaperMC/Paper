@@ -7,6 +7,7 @@ import io.papermc.paper.entity.LookAnchor;
 import org.bukkit.Chunk; // Paper
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Nameable;
 import org.bukkit.Server;
 import org.bukkit.Sound;
@@ -1026,23 +1027,43 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
 
     /**
      * Check if entity is in bubble column
+     *
+     * @deprecated check the block at the position of the entity
      */
-    boolean isInBubbleColumn();
+    @Deprecated(since = "1.21.5")
+    default boolean isInBubbleColumn() {
+        return this.getWorld().getBlockAt(this.getLocation()).getType() == Material.BUBBLE_COLUMN;
+    }
 
     /**
      * Check if entity is in water or rain
+     *
+     * @deprecated use {@link #isInWater()}} and {@link #isInRain()}
      */
-    boolean isInWaterOrRain();
+    @Deprecated(since = "1.21.5")
+    default boolean isInWaterOrRain() {
+        return this.isInWater() || this.isInRain();
+    }
 
     /**
      * Check if entity is in water or bubble column
+     *
+     * @deprecated use {@link #isInWater()}, bubble column is considered as water
      */
-    boolean isInWaterOrBubbleColumn();
+    @Deprecated(since = "1.21.5")
+    default boolean isInWaterOrBubbleColumn() {
+        return this.isInWater();
+    }
 
     /**
      * Check if entity is in water or rain or bubble column
+     *
+     * @deprecated use {@link #isInWaterOrRain()}, bubble column is considered as water
      */
-    boolean isInWaterOrRainOrBubbleColumn();
+    @Deprecated(since = "1.21.5")
+    default boolean isInWaterOrRainOrBubbleColumn() {
+        return this.isInWaterOrRain();
+    }
 
     /**
      * Check if entity is in lava
