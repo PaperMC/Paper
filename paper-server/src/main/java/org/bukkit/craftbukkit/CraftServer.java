@@ -1953,11 +1953,11 @@ public final class CraftServer implements Server {
     public CraftMapView createMap(World world) {
         Preconditions.checkArgument(world != null, "World cannot be null");
 
-        net.minecraft.world.level.Level minecraftWorld = ((CraftWorld) world).getHandle();
+        ServerLevel level = ((CraftWorld) world).getHandle();
         // creates a new map at world spawn with the scale of 3, without tracking position and unlimited tracking
-        BlockPos spawn = minecraftWorld.getLevelData().getSpawnPos();
-        MapId newId = MapItem.createNewSavedData(minecraftWorld, spawn.getX(), spawn.getZ(), 3, false, false, minecraftWorld.dimension());
-        return minecraftWorld.getMapData(newId).mapView;
+        BlockPos spawn = level.getLevelData().getSpawnPos();
+        MapId newId = MapItem.createNewSavedData(level, spawn.getX(), spawn.getZ(), 3, false, false, level.dimension());
+        return level.getMapData(newId).mapView;
     }
 
     @Override

@@ -30,8 +30,6 @@ public final class CapturedBlockState extends CraftBlockState {
     public boolean update(boolean force, boolean applyPhysics) {
         boolean result = super.update(force, applyPhysics);
 
-        // Probably no longer needed with the extra #updatedTree method,
-        // but leave if here for now in case a plugin for whatever reason relies on this.
         if (result) {
             this.addBees();
         }
@@ -43,8 +41,6 @@ public final class CapturedBlockState extends CraftBlockState {
     public boolean place(int flags) {
         boolean result = super.place(flags);
 
-        // Probably no longer needed with the extra #updatedTree method,
-        // but leave if here for now in case a plugin for whatever reason relies on this.
         if (result) {
             this.addBees();
         }
@@ -52,7 +48,7 @@ public final class CapturedBlockState extends CraftBlockState {
         return result;
     }
 
-    private void addBees() { // todo check if needed
+    private void addBees() {
         // SPIGOT-5537: Horrible hack to manually add bees given Level#captureTreeGeneration does not support block entities
         if (this.treeBlock && this.getType() == Material.BEE_NEST) {
             WorldGenLevel worldGenLevel = this.world.getHandle();

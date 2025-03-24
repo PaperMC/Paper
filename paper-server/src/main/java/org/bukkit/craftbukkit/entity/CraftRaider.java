@@ -33,7 +33,7 @@ public abstract class CraftRaider extends CraftMonster implements Raider {
 
     @Override
     public Raid getRaid() {
-        return this.getHandle().getCurrentRaid() == null ? null : new CraftRaid(this.getHandle().getCurrentRaid());
+        return this.getHandle().getCurrentRaid() == null ? null : new CraftRaid(this.getHandle().getCurrentRaid(), this.getHandle().level());
     }
 
     @Override
