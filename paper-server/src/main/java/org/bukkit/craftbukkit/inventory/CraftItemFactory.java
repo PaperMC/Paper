@@ -10,7 +10,6 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.tags.EnchantmentTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.Item;
@@ -154,7 +153,7 @@ public final class CraftItemFactory implements ItemFactory {
     public ItemStack createItemStack(String input) throws IllegalArgumentException {
         try {
             StringReader reader = new StringReader(input);
-            ItemParser.ItemResult arg = new ItemParser(MinecraftServer.getMinecraftRegistry()).parse(reader);
+            ItemParser.ItemResult arg = new ItemParser(CraftRegistry.getMinecraftRegistry()).parse(reader);
             Preconditions.checkArgument(!reader.canRead(), "Trailing input found when parsing ItemStack: %s", input);
 
             Item item = arg.item().value();
