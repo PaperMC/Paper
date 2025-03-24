@@ -20,11 +20,11 @@ public class PaperServerConfiguration implements ServerConfiguration {
 
     @Override
     public boolean isVelocityOnlineMode() {
-        return GlobalConfiguration.get().proxies.velocity.onlineMode;
+        return isVelocityEnabled() && GlobalConfiguration.get().proxies.velocity.onlineMode;
     }
 
     @Override
     public boolean isBungeeCordOnlineMode() {
-        return GlobalConfiguration.get().proxies.bungeeCord.onlineMode;
+        return isBungeeCordEnabled() && GlobalConfiguration.get().proxies.bungeeCord.onlineMode;
     }
 }
