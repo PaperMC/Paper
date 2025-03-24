@@ -247,11 +247,17 @@ public enum EntityEffect {
     // 22-28 player internal flags
     /**
      * Shield blocks attack.
+     *
+     * @deprecated replaced by a component
      */
+    @Deprecated(since = "1.21.5", forRemoval = true)
     SHIELD_BLOCK(29, LivingEntity.class),
     /**
      * Shield breaks.
+     *
+     * @deprecated replaced by a component
      */
+    @Deprecated(since = "1.21.5", forRemoval = true)
     SHIELD_BREAK(30, LivingEntity.class),
     // 31 - unused
     /**
@@ -359,7 +365,7 @@ public enum EntityEffect {
      */
     BREAK_EQUIPMENT_MAIN_HAND(47, LivingEntity.class),
     /**
-     * Entity breaks item in off hand.
+     * Entity breaks item in off-hand.
      *
      * @see org.bukkit.inventory.EquipmentSlot#OFF_HAND
      */
@@ -460,7 +466,17 @@ public enum EntityEffect {
     /**
      * A creaking shaking when being hit.
      */
-    SHAKE(66, Creaking.class);
+    SHAKE(66, Creaking.class),
+    /**
+     * Drown particles for entities.
+     */
+    DROWN_PARTICLES(67, LivingEntity.class),
+    /**
+     * Entity breaks item in saddle slot.
+     *
+     * @see org.bukkit.inventory.EquipmentSlot#SADDLE
+     */
+    SADDLE_BREAK(68, LivingEntity.class);
 
     private final byte data;
     private final Set<Class<? extends Entity>> applicableClasses;
