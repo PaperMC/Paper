@@ -9,7 +9,8 @@ package io.papermc.paper.configuration;
 public interface ServerConfiguration {
 
     /**
-     * Gets whether the server is behind a proxy that uses online mode.
+     * Gets whether the server is in {@link org.bukkit.Server#getOnlineMode() online mode}
+     * or behind a proxy that uses online mode.
      *
      * @return true if the server is in proxied online mode, false otherwise
      */
