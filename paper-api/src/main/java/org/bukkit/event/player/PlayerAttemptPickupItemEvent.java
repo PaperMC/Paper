@@ -21,7 +21,7 @@ public class PlayerAttemptPickupItemEvent extends PlayerEvent implements Cancell
 
     private boolean cancelled;
 
-    @Deprecated // Remove in 1.13 // Remove in 1.14?
+    @Deprecated(forRemoval = true) // Remove in 1.13 // Remove in 1.14? // Remove before the heat death of the universe?
     @ApiStatus.Internal
     public PlayerAttemptPickupItemEvent(final Player player, final Item item) {
         this(player, item, 0);

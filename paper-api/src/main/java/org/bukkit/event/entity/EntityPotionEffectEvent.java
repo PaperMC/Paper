@@ -221,7 +221,7 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable 
          *
          * @deprecated no longer used, player now gets an ominous bottle instead
          */
-        @Deprecated(since = "1.21") // Paper
+        @Deprecated(since = "1.21", forRemoval = true)
         PATROL_CAPTAIN,
         /**
          * When a potion effect is modified through the plugin methods.

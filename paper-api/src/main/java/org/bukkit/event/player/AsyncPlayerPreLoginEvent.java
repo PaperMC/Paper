@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.util.UUID;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -28,16 +29,17 @@ public class AsyncPlayerPreLoginEvent extends Event {
     private final String hostname; // Paper
     private final boolean transferred;
 
-    @Deprecated(since = "1.7.5")
+    @Deprecated(since = "1.7.5", forRemoval = true)
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress) {
         this(name, ipAddress, null);
     }
 
-    @Deprecated(since = "1.20.5")
+    @Deprecated(since = "1.20.5", forRemoval = true)
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId) {
         this(name, ipAddress, uniqueId, false);
     }
 
+    @ApiStatus.Internal
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final UUID uniqueId, boolean transferred) {
         // Paper start
         this(name, ipAddress, uniqueId, transferred, org.bukkit.Bukkit.createProfile(uniqueId, name));
@@ -53,7 +55,7 @@ public class AsyncPlayerPreLoginEvent extends Event {
         this(name, ipAddress, rawAddress, uniqueId, transferred, profile, "");
     }
 
-    @org.jetbrains.annotations.ApiStatus.Internal
+    @ApiStatus.Internal
     public AsyncPlayerPreLoginEvent(@NotNull final String name, @NotNull final InetAddress ipAddress, @NotNull final InetAddress rawAddress, @NotNull final UUID uniqueId, boolean transferred, @NotNull com.destroystokyo.paper.profile.PlayerProfile profile, @NotNull String hostname) {
         // Paper end
         super(true);

@@ -57,7 +57,7 @@ public class CreatureSpawnEvent extends EntitySpawnEvent {
          * {@link ChunkLoadEvent#isNewChunk()} and {@link Chunk#getEntities()}
          * for similar effect.
          */
-        @Deprecated(since = "1.14")
+        @Deprecated(since = "1.14", forRemoval = true)
         CHUNK_GEN,
         /**
          * When a creature spawns from a spawner

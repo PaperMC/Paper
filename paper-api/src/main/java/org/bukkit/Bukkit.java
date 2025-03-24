@@ -931,7 +931,6 @@ public final class Bukkit {
      * @param id the id of the map to get
      * @return a map view if it exists, or null otherwise
      */
-    // @Deprecated(since = "1.6.2") // Paper - Not a magic value
     @Nullable
     public static MapView getMap(int id) {
         return server.getMap(id);
@@ -1118,20 +1117,24 @@ public final class Bukkit {
 
     /**
      * Adds a recipe to the crafting manager.
+     * Recipes added with this method won't be sent to the client automatically.
+     * <p>
+     * Players still have to discover recipes via {@link Player#discoverRecipe(NamespacedKey)}
+     * before seeing them in their recipe book.
      *
      * @param recipe the recipe to add
-     * @return true if the recipe was added, false if it wasn't for some
-     *     reason
+     * @return true if the recipe was added, false if it wasn't for some reason
+     * @see #addRecipe(Recipe, boolean)
      */
     @Contract("null -> false")
     public static boolean addRecipe(@Nullable Recipe recipe) {
         return server.addRecipe(recipe);
     }
 
-    // Paper start - method to send recipes immediately
     /**
      * Adds a recipe to the crafting manager.
      *
+     * @apiNote resendRecipes is ignored at the moment for stability reasons, recipes will always be updated
      * @param recipe the recipe to add
      * @param resendRecipes true to update the client with the full set of recipes
      * @return true if the recipe was added, false if it wasn't for some reason
@@ -1140,7 +1143,6 @@ public final class Bukkit {
     public static boolean addRecipe(@Nullable Recipe recipe, boolean resendRecipes) {
         return server.addRecipe(recipe, resendRecipes);
     }
-    // Paper end - method to send recipes immediately
 
     /**
      * Get a list of all recipes for a given item. The stack size is ignored
@@ -1390,7 +1392,7 @@ public final class Bukkit {
      * @return true if the server should send a preview, false otherwise
      * @deprecated chat previews have been removed
      */
-    @Deprecated(since = "1.19.3")
+    @Deprecated(since = "1.19.3", forRemoval = true)
     public static boolean shouldSendChatPreviews() {
         return server.shouldSendChatPreviews();
     }
@@ -1522,7 +1524,6 @@ public final class Bukkit {
      * @return an offline player
      * @see #getOfflinePlayer(java.util.UUID)
      */
-    // @Deprecated(since = "1.7.5") // Paper
     @NotNull
     public static OfflinePlayer getOfflinePlayer(@NotNull String name) {
         return server.getOfflinePlayer(name);

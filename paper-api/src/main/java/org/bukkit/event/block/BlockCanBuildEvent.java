@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +28,7 @@ public class BlockCanBuildEvent extends BlockEvent {
     private final Player player;
     private final org.bukkit.inventory.EquipmentSlot hand; // Paper - expose hand
 
-    @Deprecated(since = "1.13.2")
+    @Deprecated(since = "1.13.2", forRemoval = true)
     public BlockCanBuildEvent(@NotNull final Block block, @NotNull final BlockData type, final boolean canBuild) {
         this(block, null, type, canBuild, org.bukkit.inventory.EquipmentSlot.HAND); // Paper - expose hand
     }
@@ -38,12 +39,13 @@ public class BlockCanBuildEvent extends BlockEvent {
      * @param type the id of the block to place
      * @param canBuild whether we can build
      */
-    @java.lang.Deprecated // Paper
-    @io.papermc.paper.annotation.DoNotUse // Paper
+    @Deprecated(forRemoval = true)
+    @io.papermc.paper.annotation.DoNotUse
     public BlockCanBuildEvent(@NotNull final Block block, @Nullable final Player player, @NotNull final BlockData type, final boolean canBuild) {
         this(block, player, type, canBuild, org.bukkit.inventory.EquipmentSlot.HAND); // Paper start - expose hand
     }
-    @org.jetbrains.annotations.ApiStatus.Internal
+
+    @ApiStatus.Internal
     public BlockCanBuildEvent(@NotNull final Block block, @Nullable final Player player, @NotNull final BlockData type, final boolean canBuild, @NotNull final org.bukkit.inventory.EquipmentSlot hand) { // Paper end - expose hand
         super(block);
         this.player = player;

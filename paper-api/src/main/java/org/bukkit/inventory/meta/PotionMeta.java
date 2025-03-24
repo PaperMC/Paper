@@ -20,7 +20,7 @@ public interface PotionMeta extends ItemMeta {
      * @param data PotionData to set the base potion state to
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #setBasePotionType} instead.
      */
-    @Deprecated(since = "1.20.6")
+    @Deprecated(since = "1.20.6", forRemoval = true)
     void setBasePotionData(@Nullable PotionData data);
 
     /**
@@ -30,7 +30,7 @@ public interface PotionMeta extends ItemMeta {
      * @deprecated Upgraded / extended potions are now their own {@link PotionType} use {@link #getBasePotionType()} instead.
      */
     @Nullable
-    @Deprecated(since = "1.20.6")
+    @Deprecated(since = "1.20.6", forRemoval = true)
     PotionData getBasePotionData();
 
     /**
