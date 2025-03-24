@@ -209,6 +209,11 @@ public abstract class CraftAbstractInventoryView implements InventoryView {
     }
 
     @Override
+    public void open() {
+        getPlayer().openInventory(this);
+    }
+
+    @Override
     public void close() {
         this.getPlayer().closeInventory();
     }

@@ -8,6 +8,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunkSection;
+import org.bukkit.HeightMap;
 import org.bukkit.Material;
 import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
@@ -198,5 +199,10 @@ public final class OldCraftChunkData implements ChunkGenerator.ChunkData {
 
     Set<BlockPos> getLights() {
         return this.lights;
+    }
+
+    @Override
+    public int getHeight(HeightMap heightMap, final int x, final int z) {
+        throw new UnsupportedOperationException("Unsupported, in older chunk generator api");
     }
 }

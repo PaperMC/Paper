@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundHorseScreenOpenPacket;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
 import net.minecraft.resources.ResourceLocation;
@@ -24,6 +25,8 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FireworkRocketEntity;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.HorseInventoryMenu;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.MerchantMenu;
 import net.minecraft.world.item.ItemCooldowns;
@@ -446,6 +449,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         AbstractContainerMenu container;
         if (inventory instanceof CraftInventoryView) {
             container = ((CraftInventoryView) inventory).getHandle();
+            Preconditions.checkArgument(!(container instanceof InventoryMenu), "Can not open player's InventoryView");
         } else {
             container = new CraftContainer(inventory, this.getHandle(), player.nextContainerCounter());
         }
@@ -470,8 +474,13 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
         net.kyori.adventure.text.Component adventure$title = inventory.title(); // Paper
         if (adventure$title == null) adventure$title = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(inventory.getTitle()); // Paper
         if (result.getFirst() != null) adventure$title = result.getFirst(); // Paper - Add titleOverride to InventoryOpenEvent
-
-        if (!player.isImmobile()) player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title))); // Paper - Prevent opening inventories when frozen
+        if (!player.isImmobile()) {
+            if (container instanceof HorseInventoryMenu horse) {
+                player.connection.send(new ClientboundHorseScreenOpenPacket(horse.containerId, horse.horse.getInventoryColumns(), horse.horse.getId()));
+            } else {
+                player.connection.send(new ClientboundOpenScreenPacket(container.containerId, windowType, io.papermc.paper.adventure.PaperAdventure.asVanilla(adventure$title)));
+            }
+        }
         player.containerMenu = container;
         player.initMenu(container);
     }

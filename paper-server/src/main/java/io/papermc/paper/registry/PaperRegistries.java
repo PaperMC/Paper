@@ -162,12 +162,12 @@ public final class PaperRegistries {
 
     @SuppressWarnings("unchecked")
     public static <M, T> RegistryKey<T> registryFromNms(final ResourceKey<? extends Registry<M>> registryResourceKey) {
-        return (RegistryKey<T>) Objects.requireNonNull(BY_RESOURCE_KEY.get(registryResourceKey), registryResourceKey + " doesn't have an api RegistryKey").apiKey();
+        return (RegistryKey<T>) Objects.requireNonNull(BY_RESOURCE_KEY.get(registryResourceKey), () -> registryResourceKey + " doesn't have an api RegistryKey").apiKey();
     }
 
     @SuppressWarnings("unchecked")
     public static <M, T> ResourceKey<? extends Registry<M>> registryToNms(final RegistryKey<T> registryKey) {
-        return (ResourceKey<? extends Registry<M>>) Objects.requireNonNull(BY_REGISTRY_KEY.get(registryKey), registryKey + " doesn't have an mc registry ResourceKey").mcKey();
+        return (ResourceKey<? extends Registry<M>>) Objects.requireNonNull(BY_REGISTRY_KEY.get(registryKey), () -> registryKey + " doesn't have an mc registry ResourceKey").mcKey();
     }
 
     public static <M, T> TypedKey<T> fromNms(final ResourceKey<M> resourceKey) {

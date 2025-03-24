@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -57,7 +58,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @org.jetbrains.annotations.Contract(value = "_, _ -> new", pure = true)
     public static @NotNull ItemStack of(final @NotNull Material type, final int amount) {
-        Preconditions.checkArgument(type.asItemType() != null, type + " isn't an item");
+        Preconditions.checkArgument(type.asItemType() != null, "%s isn't an item", type);
         Preconditions.checkArgument(amount > 0, "amount must be greater than 0");
         return java.util.Objects.requireNonNull(type.asItemType(), type + " is not an item").createItemStack(amount); // Paper - delegate
     }
@@ -1304,6 +1305,31 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     @org.jetbrains.annotations.ApiStatus.Experimental
     public void resetData(final io.papermc.paper.datacomponent.@NotNull DataComponentType type) {
         this.craftDelegate.resetData(type);
+    }
+
+    /**
+     * Copies component values and component removals from the provided ItemStack.
+     * <p>
+     * Example:
+     * <pre>{@code
+     * Set<DataComponentType> types = Set.of(
+     *     DataComponentTypes.CONSUMABLE,
+     *     DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE,
+     *     DataComponentTypes.RARITY
+     * );
+     *
+     * ItemStack source = ItemStack.of(Material.ENCHANTED_GOLDEN_APPLE);
+     * ItemStack target = ItemStack.of(Material.GOLDEN_CARROT);
+     *
+     * target.copyDataFrom(source, types::contains);
+     * }</pre>
+     *
+     * @param source the item stack to copy from
+     * @param filter predicate for which components to copy
+     */
+    @org.jetbrains.annotations.ApiStatus.Experimental
+    public void copyDataFrom(final @NotNull ItemStack source, final @NotNull Predicate<io.papermc.paper.datacomponent.@NotNull DataComponentType> filter) {
+        this.craftDelegate.copyDataFrom(source, filter);
     }
 
     /**

@@ -1265,13 +1265,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper end
 
     @Override
-    public void save() {
+    public void save(boolean flush) {
         org.spigotmc.AsyncCatcher.catchOp("world save"); // Spigot
         this.server.checkSaveState();
         boolean oldSave = this.world.noSave;
 
         this.world.noSave = false;
-        this.world.save(null, false, false);
+        this.world.save(null, flush, false);
 
         this.world.noSave = oldSave;
     }

@@ -558,7 +558,7 @@
  
              this.player.connection.send(new ClientboundSetHeldSlotPacket(inventory.getSelectedSlot()));
              this.player.inventoryMenu.broadcastChanges();
-+            this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
          }
      }
  
@@ -1093,7 +1093,7 @@
 +                        }
 +                        // CraftBukkit end
                          this.player.stopUsingItem();
-+                        this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++                        if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                      }
  
                      return;
@@ -1115,21 +1115,21 @@
 +                        }
 +                        // CraftBukkit end
                          this.player.drop(false);
-+                        this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++                        if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                      }
  
                      return;
                  case DROP_ALL_ITEMS:
                      if (!this.player.isSpectator()) {
                          this.player.drop(true);
-+                        this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++                        if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                      }
  
                      return;
                  case RELEASE_USE_ITEM:
 -                    this.player.releaseUsingItem();
 +                    if (this.player.getUseItem() == this.player.getItemInHand(this.player.getUsedItemHand())) this.player.releaseUsingItem(); // Paper - validate use item before processing release
-+                    this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                      return;
                  case START_DESTROY_BLOCK:
                  case ABORT_DESTROY_BLOCK:
@@ -1162,7 +1162,7 @@
 +                        }
 +                    }
 +                    // Paper end - Send block entities after destroy prediction
-+                    this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                      return;
                  default:
                      throw new IllegalArgumentException("Invalid player action");
@@ -1237,7 +1237,7 @@
  
                          this.player.connection.send(new ClientboundBlockUpdatePacket(serverLevel, blockPos));
                          this.player.connection.send(new ClientboundBlockUpdatePacket(serverLevel, blockPos.relative(direction)));
-+                        this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++                        if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                      } else {
                          LOGGER.warn(
                              "Rejecting UseItemOnPacket from {}: Location {} too far away from hit block {}.",
@@ -1387,7 +1387,7 @@
  
              this.player.getInventory().setSelectedSlot(packet.getSlot());
              this.player.resetLastActionTime();
-+            this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
          } else {
              LOGGER.warn("{} tried to set an invalid carried item", this.player.getName().getString());
 +            this.disconnect(Component.literal("Invalid hotbar selection (Hacking?)"), org.bukkit.event.player.PlayerKickEvent.Cause.ILLEGAL_ACTION); // CraftBukkit // Paper - kick event cause
@@ -1553,7 +1553,7 @@
                  return Optional.empty();
              }
  
-@@ -1538,22 +_,79 @@
+@@ -1538,22 +_,81 @@
          return false;
      }
  
@@ -1623,9 +1623,11 @@
 +    // Spigot start - spam exclusions
 +    private void detectRateSpam(String message) {
 +        // CraftBukkit start - replaced with thread safe throttle
-+        for (String exclude : org.spigotmc.SpigotConfig.spamExclusions) {
-+            if (exclude != null && message.startsWith(exclude)) {
-+                return;
++        if (org.spigotmc.SpigotConfig.enableSpamExclusions) {
++            for (String exclude : org.spigotmc.SpigotConfig.spamExclusions) {
++                if (exclude != null && message.startsWith(exclude)) {
++                    return;
++                }
 +            }
 +        }
 +        // Spigot end
@@ -1920,7 +1922,7 @@
 +                });
 +            }
 +            // Paper end - PlayerUseUnknownEntityEvent
-+            this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++            if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
          }
      }
  
@@ -2018,7 +2020,7 @@
 +                                        ItemStack cursor = this.player.containerMenu.getCarried();
 +                                        if (clickedItem.isEmpty()) {
 +                                            if (!cursor.isEmpty()) {
-+                                                if (cursor.getItem() instanceof net.minecraft.world.item.BundleItem && packet.buttonNum() != 0) {
++                                                if (cursor.getItem() instanceof net.minecraft.world.item.BundleItem && cursor.has(DataComponents.BUNDLE_CONTENTS) && packet.buttonNum() != 0) {
 +                                                    action = cursor.get(DataComponents.BUNDLE_CONTENTS).isEmpty() ? InventoryAction.NOTHING : InventoryAction.PLACE_FROM_BUNDLE;
 +                                                } else {
 +                                                    action = packet.buttonNum() == 0 ? InventoryAction.PLACE_ALL : InventoryAction.PLACE_ONE;
@@ -2026,7 +2028,7 @@
 +                                            }
 +                                        } else if (slot.mayPickup(this.player)) {
 +                                            if (cursor.isEmpty()) {
-+                                                if (slot.getItem().getItem() instanceof net.minecraft.world.item.BundleItem && packet.buttonNum() != 0) {
++                                                if (slot.getItem().getItem() instanceof net.minecraft.world.item.BundleItem && slot.getItem().has(DataComponents.BUNDLE_CONTENTS) && packet.buttonNum() != 0) {
 +                                                    action = slot.getItem().get(DataComponents.BUNDLE_CONTENTS).isEmpty() ? InventoryAction.NOTHING : InventoryAction.PICKUP_FROM_BUNDLE;
 +                                                } else {
 +                                                    action = packet.buttonNum() == 0 ? InventoryAction.PICKUP_ALL : InventoryAction.PICKUP_HALF;
@@ -2046,7 +2048,7 @@
 +                                                        action = InventoryAction.PLACE_SOME;
 +                                                    }
 +                                                } else if (cursor.getCount() <= slot.getMaxStackSize()) {
-+                                                    if (cursor.getItem() instanceof net.minecraft.world.item.BundleItem && packet.buttonNum() == 0) {
++                                                    if (cursor.getItem() instanceof net.minecraft.world.item.BundleItem && cursor.has(DataComponents.BUNDLE_CONTENTS) && packet.buttonNum() == 0) {
 +                                                        int toPickup = cursor.get(DataComponents.BUNDLE_CONTENTS).getMaxAmountToAdd(slot.getItem());
 +                                                        if (toPickup >= slot.getItem().getCount()) {
 +                                                            action = InventoryAction.PICKUP_ALL_INTO_BUNDLE;
@@ -2055,7 +2057,7 @@
 +                                                        } else {
 +                                                            action = InventoryAction.PICKUP_SOME_INTO_BUNDLE;
 +                                                        }
-+                                                    } else if (slot.getItem().getItem() instanceof net.minecraft.world.item.BundleItem && packet.buttonNum() == 0) {
++                                                    } else if (slot.getItem().getItem() instanceof net.minecraft.world.item.BundleItem && slot.getItem().has(DataComponents.BUNDLE_CONTENTS) && packet.buttonNum() == 0) {
 +                                                        int toPickup = slot.getItem().get(DataComponents.BUNDLE_CONTENTS).getMaxAmountToAdd(cursor);
 +                                                        if (toPickup >= cursor.getCount()) {
 +                                                            action = InventoryAction.PLACE_ALL_INTO_BUNDLE;
@@ -2325,7 +2327,7 @@
                      } else {
                          this.player.containerMenu.broadcastChanges();
                      }
-+                    this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++                    if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
                  }
              }
          }
@@ -2402,7 +2404,7 @@
                  if (flag) {
                      this.player.containerMenu.broadcastChanges();
                  }
-+                this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
              }
          }
      }
@@ -2451,7 +2453,7 @@
                  this.player.inventoryMenu.getSlot(packet.slotNum()).setByPlayer(itemStack);
                  this.player.inventoryMenu.setRemoteSlot(packet.slotNum(), itemStack);
                  this.player.inventoryMenu.broadcastChanges();
-+                this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
++                if (io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.updateEquipmentOnPlayerActions) this.player.detectEquipmentUpdates(); // Paper - Force update attributes.
              } else if (flag && flag2) {
                  if (this.dropSpamThrottler.isUnderThreshold()) {
                      this.dropSpamThrottler.increment();
