@@ -17,5 +17,4 @@ public enum BlockCollisionMode {
      * Use the visual shape.
      */
     VISUAL
-
 }
