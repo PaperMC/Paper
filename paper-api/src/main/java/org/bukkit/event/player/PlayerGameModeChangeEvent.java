@@ -4,6 +4,7 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -22,12 +23,13 @@ public class PlayerGameModeChangeEvent extends PlayerEvent implements Cancellabl
     private final Cause cause;
     private net.kyori.adventure.text.Component cancelMessage;
 
-    @Deprecated // Paper end
+    @Deprecated(forRemoval = true) // Paper end
     public PlayerGameModeChangeEvent(@NotNull final Player player, @NotNull final GameMode newGameMode) {
         // Paper start
         this(player, newGameMode, Cause.UNKNOWN, null);
     }
 
+    @ApiStatus.Internal
     public PlayerGameModeChangeEvent(@NotNull final Player player, @NotNull final GameMode newGameMode, @NotNull Cause cause, @org.jetbrains.annotations.Nullable net.kyori.adventure.text.Component cancelMessage) {
         // Paper end
         super(player);

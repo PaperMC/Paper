@@ -11,22 +11,22 @@ import org.jetbrains.annotations.NotNull;
  */
 public class FurnaceRecipe extends CookingRecipe<FurnaceRecipe> {
 
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     public FurnaceRecipe(@NotNull ItemStack result, @NotNull Material source) {
         this(NamespacedKey.randomKey(), result, source, 0, 0, 200);
     }
 
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     public FurnaceRecipe(@NotNull ItemStack result, @NotNull MaterialData source) {
         this(NamespacedKey.randomKey(), result, source.getItemType(), source.getData(), 0, 200);
     }
 
-    @Deprecated(since = "1.13")
+    @Deprecated(since = "1.13", forRemoval = true)
     public FurnaceRecipe(@NotNull ItemStack result, @NotNull MaterialData source, float experience) {
         this(NamespacedKey.randomKey(), result, source.getItemType(), source.getData(), experience, 200);
     }
 
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true)
     public FurnaceRecipe(@NotNull ItemStack result, @NotNull Material source, int data) {
         this(NamespacedKey.randomKey(), result, source, data, 0, 200);
     }
@@ -44,7 +44,7 @@ public class FurnaceRecipe extends CookingRecipe<FurnaceRecipe> {
         this(key, result, source, 0, experience, cookingTime);
     }
 
-    @Deprecated(since = "1.9")
+    @Deprecated(since = "1.9", forRemoval = true)
     public FurnaceRecipe(@NotNull NamespacedKey key, @NotNull ItemStack result, @NotNull Material source, int data, float experience, int cookingTime) {
         this(key, result, new RecipeChoice.MaterialChoice(Collections.singletonList(source)), experience, cookingTime);
     }
@@ -70,7 +70,7 @@ public class FurnaceRecipe extends CookingRecipe<FurnaceRecipe> {
      * @deprecated use {@link #setInputChoice(RecipeChoice)}
      */
     @NotNull
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public FurnaceRecipe setInput(@NotNull MaterialData input) {
         return setInput(input.getItemType(), input.getData());
     }
@@ -90,7 +90,7 @@ public class FurnaceRecipe extends CookingRecipe<FurnaceRecipe> {
      * @return The changed recipe, so you can chain calls.
      * @deprecated Magic value
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true)
     public FurnaceRecipe setInput(@NotNull Material input, int data) {
         return setInputChoice(new RecipeChoice.MaterialChoice(Collections.singletonList(input)));
     }

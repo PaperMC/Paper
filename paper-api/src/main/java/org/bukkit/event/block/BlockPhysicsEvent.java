@@ -5,6 +5,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -33,16 +34,18 @@ public class BlockPhysicsEvent extends BlockEvent implements Cancellable {
     private boolean cancel = false;
 
     // Paper start - Legacy constructor, use #BlockPhysicsEvent(Block, BlockData, Block)
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public BlockPhysicsEvent(final Block block, final BlockData changed, final int sourceX, final int sourceY, final int sourceZ) {
         this(block, changed, block.getWorld().getBlockAt(sourceX, sourceY, sourceZ));
     }
     // Paper end
 
+    @ApiStatus.Internal
     public BlockPhysicsEvent(@NotNull final Block block, @NotNull final BlockData changed) {
         this(block, changed, block);
     }
 
+    @ApiStatus.Internal
     public BlockPhysicsEvent(@NotNull final Block block, @NotNull final BlockData changed, @NotNull final Block sourceBlock) {
         super(block);
         this.changed = changed;

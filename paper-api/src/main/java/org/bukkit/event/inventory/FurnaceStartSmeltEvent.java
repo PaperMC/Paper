@@ -5,6 +5,7 @@ import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.InventoryBlockStartEvent;
 import org.bukkit.inventory.CookingRecipe;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,12 +19,13 @@ public class FurnaceStartSmeltEvent extends InventoryBlockStartEvent {
     private final CookingRecipe<?> recipe;
     private int totalCookTime;
 
-    @Deprecated // Paper - furnace cook speed multiplier
+    @Deprecated(forRemoval = true)
     public FurnaceStartSmeltEvent(@NotNull final Block furnace, @NotNull ItemStack source, @NotNull final CookingRecipe<?> recipe) {
         // Paper start
         this(furnace, source, recipe, recipe.getCookingTime());
     }
 
+    @ApiStatus.Internal
     public FurnaceStartSmeltEvent(final @NotNull Block furnace, final @NotNull ItemStack source, final @NotNull CookingRecipe<?> recipe, final int cookingTime) {
         // Paper end
         super(furnace, source);

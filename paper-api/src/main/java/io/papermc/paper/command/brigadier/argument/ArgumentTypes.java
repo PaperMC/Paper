@@ -7,6 +7,7 @@ import io.papermc.paper.command.brigadier.argument.range.IntegerRangeProvider;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.PlayerProfileListResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.RotationResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.entity.LookAnchor;
@@ -121,6 +122,15 @@ public final class ArgumentTypes {
      */
     public static ArgumentType<FinePositionResolver> finePosition(final boolean centerIntegers) {
         return provider().finePosition(centerIntegers);
+    }
+
+    /**
+     * A rotation argument.
+     *
+     * @return rotation argument
+     */
+    public static ArgumentType<RotationResolver> rotation() {
+        return provider().rotation();
     }
 
     /**

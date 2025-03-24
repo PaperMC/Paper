@@ -12,10 +12,10 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Called when a player uses sheers on a block.
+ * Called when a player uses shears on a block.
  * <p>
- * This event is <b>not</b> called when breaking blocks with shears but instead only when a
- * player uses the sheer item on a block to garner drops from said block and/or change its state.
+ * This event is <b>not</b> called when a player breaks blocks with shears, but rather when a
+ * player uses the shears on a block to collect drops from it and/or modify its state.
  * <p>
  * Examples include shearing a pumpkin to turn it into a carved pumpkin or shearing a beehive to get honeycomb.
  */

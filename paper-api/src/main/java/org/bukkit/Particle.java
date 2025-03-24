@@ -146,12 +146,10 @@ public enum Particle implements Keyed {
     /**
      * Uses {@link BlockData} as DataType
      */
-    @ApiStatus.Experimental
     BLOCK_CRUMBLE("block_crumble", BlockData.class),
     /**
      * Uses {@link Trail} as DataType
      */
-    @ApiStatus.Experimental
     TRAIL("trail", Trail.class),
     OMINOUS_SPAWNING("ominous_spawning"),
     RAID_OMEN("raid_omen"),
@@ -276,7 +274,6 @@ public enum Particle implements Keyed {
     /**
      * Options which can be applied to trail particles - a location, color and duration.
      */
-    @ApiStatus.Experimental
     public static class Trail {
 
         private final Location target;

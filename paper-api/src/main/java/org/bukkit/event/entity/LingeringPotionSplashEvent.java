@@ -7,6 +7,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.ThrownPotion;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,11 +20,12 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
     private final AreaEffectCloud entity;
     private boolean allowEmptyAreaEffectCreation; // Paper
 
-    @Deprecated(since = "1.20.2")
+    @Deprecated(since = "1.20.2", forRemoval = true)
     public LingeringPotionSplashEvent(@NotNull final ThrownPotion potion, @NotNull final AreaEffectCloud entity) {
        this(potion, null, null, null, entity);
     }
 
+    @ApiStatus.Internal
     public LingeringPotionSplashEvent(@NotNull final ThrownPotion potion, @Nullable Entity hitEntity, @Nullable Block hitBlock, @Nullable BlockFace hitFace, @NotNull final AreaEffectCloud entity) {
         super(potion, hitEntity, hitBlock, hitFace);
         this.entity = entity;

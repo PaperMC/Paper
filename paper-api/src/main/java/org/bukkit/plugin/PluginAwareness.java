@@ -21,7 +21,7 @@ public interface PluginAwareness {
          *
          * @deprecated all plugins are now assumed to be UTF-8 aware.
          */
-        @Deprecated(since = "1.9")
+        @Deprecated(since = "1.9", forRemoval = true)
         UTF8,
         ;
     }

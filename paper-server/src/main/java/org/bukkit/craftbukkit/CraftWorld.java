@@ -2,14 +2,11 @@ package org.bukkit.craftbukkit;
 
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.raytracing.RayTraceTarget;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilder;
 import io.papermc.paper.raytracing.PositionedRayTraceConfigurationBuilderImpl;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -45,13 +42,11 @@ import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.DistanceManager;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.Ticket;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.util.SortedArraySet;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
@@ -87,7 +82,6 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.Note;
 import org.bukkit.Particle;
 import org.bukkit.Raid;
-import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.TreeType;
 import org.bukkit.World;
@@ -209,8 +203,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public int getEntityCount() {
         int ret = 0;
-        for (net.minecraft.world.entity.Entity entity : world.getEntities().getAll()) {
-            if (entity.isChunkLoaded()) {
+        for (net.minecraft.world.entity.Entity entity : this.world.getEntities().getAll()) {
+            if (entity.getBukkitEntity().isValid()) {
                 ++ret;
             }
         }
@@ -356,7 +350,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper start
     private static void warnUnsafeChunk(String reason, int x, int z) {
         // if any chunk coord is outside of 30 million blocks
-        if (x > 1875000 || z > 1875000 || x < -1875000 || z < -1875000) {
+        int max = (30_000_000 / 16) + 625;
+        if (x > max || z > max || x < -max || z < -max) {
             Plugin plugin = io.papermc.paper.util.StackWalkerUtil.getFirstPluginCaller();
             if (plugin != null) {
                 plugin.getLogger().warning("Plugin is %s at (%s, %s), this might cause issues.".formatted(reason, x, z));
@@ -473,33 +468,6 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         this.world.getChunkSource().purgeUnload();
         return !this.isChunkLoaded(x, z);
-    }
-
-    @Override
-    public boolean regenerateChunk(int x, int z) {
-        org.spigotmc.AsyncCatcher.catchOp("chunk regenerate"); // Spigot
-        throw new UnsupportedOperationException("Not supported in this Minecraft version! Unless you can fix it, this is not a bug :)");
-        /*
-        if (!unloadChunk0(x, z, false)) {
-            return false;
-        }
-        warnUnsafeChunk("regenerating a faraway chunk", x, z); // Paper
-
-        final long chunkKey = ChunkCoordIntPair.pair(x, z);
-        world.getChunkProvider().unloadQueue.remove(chunkKey);
-
-        net.minecraft.server.Chunk chunk = world.getChunkProvider().generateChunk(x, z);
-        PlayerChunk playerChunk = world.getPlayerChunkMap().getChunk(x, z);
-        if (playerChunk != null) {
-            playerChunk.chunk = chunk;
-        }
-
-        if (chunk != null) {
-            refreshChunk(x, z);
-        }
-
-        return chunk != null;
-        */
     }
 
     @Override
@@ -1296,13 +1264,13 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     // Paper end
 
     @Override
-    public void save() {
+    public void save(boolean flush) {
         org.spigotmc.AsyncCatcher.catchOp("world save"); // Spigot
         this.server.checkSaveState();
         boolean oldSave = this.world.noSave;
 
         this.world.noSave = false;
-        this.world.save(null, false, false);
+        this.world.save(null, flush, false);
 
         this.world.noSave = oldSave;
     }
@@ -2077,13 +2045,19 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     @Override
     public <T> T getGameRuleValue(GameRule<T> rule) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
-        return this.convert(rule, this.getHandle().getGameRules().getRule(this.getGameRulesNMS().get(rule.getName())));
+        GameRules.Key<? extends GameRules.Value<?>> key = this.getGameRulesNMS().get(rule.getName());
+        Preconditions.checkArgument(key != null, "GameRule '%s' is not available", rule.getName());
+
+        return this.getGameRuleResult(rule, this.getHandle().getGameRules().getRule(key));
     }
 
     @Override
     public <T> T getGameRuleDefault(GameRule<T> rule) {
         Preconditions.checkArgument(rule != null, "GameRule cannot be null");
-        return this.convert(rule, this.getGameRuleDefinitions().get(rule.getName()).createRule());
+        GameRules.Type<?> type = this.getGameRuleDefinitions().get(rule.getName());
+        Preconditions.checkArgument(type != null, "GameRule '%s' is not available", rule.getName());
+
+        return this.getGameRuleResult(rule, type.createRule());
     }
 
     @Override
@@ -2103,7 +2077,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return true;
     }
 
-    private <T> T convert(GameRule<T> rule, GameRules.Value<?> value) {
+    private <T> T getGameRuleResult(GameRule<T> rule, GameRules.Value<?> value) {
         if (value == null) {
             return null;
         }

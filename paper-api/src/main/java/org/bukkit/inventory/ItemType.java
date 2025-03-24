@@ -2404,7 +2404,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
      * @deprecated creative categories no longer exist on the server
      */
     @Nullable
-    @Deprecated(since = "1.20.6")
+    @Deprecated(since = "1.20.6", forRemoval = true)
     CreativeCategory getCreativeCategory();
 
     /**

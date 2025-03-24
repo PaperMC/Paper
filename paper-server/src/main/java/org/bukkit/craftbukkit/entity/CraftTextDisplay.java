@@ -58,13 +58,13 @@ public class CraftTextDisplay extends CraftDisplay implements TextDisplay {
     public Color getBackgroundColor() {
         int color = this.getHandle().getBackgroundColor();
 
-        return (color == -1) ? null : Color.fromARGB(color);
+        return color == Display.TextDisplay.INITIAL_BACKGROUND ? null : Color.fromARGB(color);
     }
 
     @Override
     public void setBackgroundColor(Color color) {
         if (color == null) {
-            this.getHandle().getEntityData().set(Display.TextDisplay.DATA_BACKGROUND_COLOR_ID, -1);
+            this.getHandle().getEntityData().set(Display.TextDisplay.DATA_BACKGROUND_COLOR_ID, Display.TextDisplay.INITIAL_BACKGROUND);
         } else {
             this.getHandle().getEntityData().set(Display.TextDisplay.DATA_BACKGROUND_COLOR_ID, color.asARGB());
         }

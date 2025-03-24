@@ -62,7 +62,7 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      * @return no effect
      * @deprecated No effect
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     @Override
     public boolean willDismountPlayer() {
         return super.willDismountPlayer();
@@ -73,7 +73,7 @@ public class PlayerPortalEvent extends PlayerTeleportEvent {
      * @return no effect
      * @deprecated No effect
      */
-    @Deprecated
+    @Deprecated(forRemoval = true)
     @Override
     public @NotNull java.util.Set<io.papermc.paper.entity.TeleportFlag.@NotNull Relative> getRelativeTeleportationFlags() {
         return super.getRelativeTeleportationFlags();

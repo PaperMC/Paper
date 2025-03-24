@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.entity.EntityUnleashEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -18,11 +19,12 @@ public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Canc
     private final EquipmentSlot hand;
 
     // Paper start - drop leash variable
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player, @NotNull EquipmentSlot hand) {
         this(entity, player, hand, false);
     }
 
+    @ApiStatus.Internal
     public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player, @NotNull EquipmentSlot hand, boolean dropLeash) {
         super(entity, UnleashReason.PLAYER_UNLEASH, dropLeash);
         // Paper end
@@ -30,7 +32,7 @@ public class PlayerUnleashEntityEvent extends EntityUnleashEvent implements Canc
         this.hand = hand;
     }
 
-    @Deprecated(since = "1.19.2")
+    @Deprecated(since = "1.19.2", forRemoval = true)
     public PlayerUnleashEntityEvent(@NotNull Entity entity, @NotNull Player player) {
         this(entity, player, EquipmentSlot.HAND);
     }

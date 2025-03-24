@@ -150,7 +150,7 @@ public enum PotionType implements Keyed, io.papermc.paper.world.flag.FeatureDepe
     /**
      * @deprecated Do not use, interface will get removed, and the plugin won't run
      */
-    @Deprecated(since = "1.20.2")
+    @Deprecated(since = "1.20.2", forRemoval = true)
     @ApiStatus.Internal
     public interface InternalPotionData {
 

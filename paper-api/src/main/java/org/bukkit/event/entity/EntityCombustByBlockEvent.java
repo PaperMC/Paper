@@ -2,6 +2,7 @@ package org.bukkit.event.entity;
 
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,11 +12,12 @@ import org.jetbrains.annotations.Nullable;
 public class EntityCombustByBlockEvent extends EntityCombustEvent {
     private final Block combuster;
 
-    @Deprecated(since = "1.21")
+    @Deprecated(since = "1.21", forRemoval = true)
     public EntityCombustByBlockEvent(@Nullable final Block combuster, @NotNull final Entity combustee, final int duration) {
         this(combuster, combustee, (float) duration);
     }
 
+    @ApiStatus.Internal
     public EntityCombustByBlockEvent(@Nullable final Block combuster, @NotNull final Entity combustee, final float duration) {
         super(combustee, duration);
         this.combuster = combuster;

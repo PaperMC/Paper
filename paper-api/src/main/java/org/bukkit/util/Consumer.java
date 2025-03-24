@@ -10,7 +10,7 @@ package org.bukkit.util;
 // Bukkit developer note (NOT plugin developers):
 // NEVER use this consumer in the API.
 // API methods which use this consumer will be remapped to Java's consumer at runtime, resulting in an error.
-@Deprecated(since = "1.20.2")
+@Deprecated(since = "1.20.2", forRemoval = true)
 public interface Consumer<T> extends java.util.function.Consumer<T> {
 
     /**

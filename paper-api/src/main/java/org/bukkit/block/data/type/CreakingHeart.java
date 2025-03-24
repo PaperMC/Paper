@@ -1,14 +1,12 @@
 package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.Orientable;
-import org.jetbrains.annotations.ApiStatus;
 
 /**
  * 'active' is whether the block is active.
  * <br>
  * 'natural' is whether this is a naturally generated block.
  */
-@ApiStatus.Experimental
 public interface CreakingHeart extends Orientable {
 
     /**

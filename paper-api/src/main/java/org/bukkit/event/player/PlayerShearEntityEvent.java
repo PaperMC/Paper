@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -20,7 +21,7 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
     private final EquipmentSlot hand;
     private java.util.List<ItemStack> drops; // Paper - custom shear drops
 
-    @org.jetbrains.annotations.ApiStatus.Internal // Paper
+    @ApiStatus.Internal
     public PlayerShearEntityEvent(@NotNull Player who, @NotNull Entity what, @NotNull ItemStack item, @NotNull EquipmentSlot hand, final java.util.@NotNull List<ItemStack> drops) { // Paper - custom shear drops
         super(who);
         this.what = what;
@@ -29,7 +30,7 @@ public class PlayerShearEntityEvent extends PlayerEvent implements Cancellable {
         this.drops = drops; // Paper - custom shear drops
     }
 
-    @Deprecated(since = "1.15.2")
+    @Deprecated(since = "1.15.2", forRemoval = true)
     public PlayerShearEntityEvent(@NotNull final Player who, @NotNull final Entity what) {
         this(who, what, new ItemStack(Material.SHEARS), EquipmentSlot.HAND, java.util.Collections.emptyList()); // Paper - custom shear drops
     }

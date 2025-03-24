@@ -13,7 +13,7 @@ public enum EnchantmentTarget {
      *
      * @deprecated this target no longer exists in Vanilla
      */
-    @Deprecated(since = "1.16.1")
+    @Deprecated(since = "1.16.1", forRemoval = true)
     ALL {
         @Override
         public boolean includes(@NotNull Material item) {

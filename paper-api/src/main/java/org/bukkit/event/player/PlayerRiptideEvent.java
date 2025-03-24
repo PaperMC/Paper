@@ -4,6 +4,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -19,13 +20,14 @@ public class PlayerRiptideEvent extends PlayerEvent {
     private final ItemStack item;
     private final Vector velocity;
 
+    @ApiStatus.Internal
     public PlayerRiptideEvent(@NotNull final Player who, @NotNull final ItemStack item, @NotNull Vector velocity) {
         super(who);
         this.item = item;
         this.velocity = velocity;
     }
 
-    @Deprecated(since = "1.20.4")
+    @Deprecated(since = "1.20.4", forRemoval = true)
     public PlayerRiptideEvent(@NotNull final Player who, @NotNull final ItemStack item) {
         this(who, item, new Vector());
     }

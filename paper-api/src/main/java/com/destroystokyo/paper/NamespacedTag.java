@@ -5,6 +5,7 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -126,6 +127,7 @@ public final class NamespacedTag implements com.destroystokyo.paper.Namespaced {
      * @deprecated should never be used by plugins, for internal use only!!
      */
     @Deprecated
+    @ApiStatus.Internal
     public static NamespacedTag randomKey() {
         return new NamespacedTag(BUKKIT, UUID.randomUUID().toString());
     }

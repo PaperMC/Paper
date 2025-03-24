@@ -407,7 +407,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
      * @return the raw type id
      * @deprecated Magic value
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true)
     public short getTypeId() {
         return typeId;
     }
@@ -436,7 +436,7 @@ public enum EntityType implements Keyed, Translatable, net.kyori.adventure.trans
      * @return the matching entity type or null
      * @deprecated Magic value
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true)
     @Nullable
     public static EntityType fromId(int id) {
         if (id > Short.MAX_VALUE) {

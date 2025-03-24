@@ -12,7 +12,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Items;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.ConfigSerializable;
@@ -171,6 +170,8 @@ public class GlobalConfiguration extends ConfigurationPart {
     public class UnsupportedSettings extends ConfigurationPart {
         @Comment("This setting allows for exploits related to end portals, for example sand duping")
         public boolean allowUnsafeEndPortalTeleportation = false;
+        @Comment("This setting controls the ability to enable dupes related to tripwires.")
+        public boolean skipTripwireHookPlacementValidation = false;
         @Comment("This setting controls if players should be able to break bedrock, end portals and other intended to be permanent blocks.")
         public boolean allowPermanentBlockBreakExploits = false;
         @Comment("This setting controls if player should be able to use TNT duplication, but this also allows duplicating carpet, rails and potentially other items")
@@ -182,10 +183,15 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean skipVanillaDamageTickWhenShieldBlocked = false;
         @Comment("This setting controls what compression format is used for region files.")
         public CompressionFormat compressionFormat = CompressionFormat.ZLIB;
+        @Comment("This setting controls if equipment should be updated when handling certain player actions.")
+        public boolean updateEquipmentOnPlayerActions = true;
+        @Comment("Only checks an item's amount and type instead of its full data during inventory desync checks.")
+        public boolean simplifyRemoteItemMatching = false;
 
         public enum CompressionFormat {
             GZIP,
             ZLIB,
+            LZ4,
             NONE
         }
     }
@@ -195,6 +201,8 @@ public class GlobalConfiguration extends ConfigurationPart {
     public class Commands extends ConfigurationPart {
         public boolean suggestPlayerNamesWhenNullTabCompletions = true;
         public boolean timeCommandAffectsAllWorlds = false;
+        @Comment("Allow mounting entities to a player in the Vanilla '/ride' command.")
+        public boolean rideCommandAllowPlayerAsVehicle = false;
     }
 
     public Logging logging;

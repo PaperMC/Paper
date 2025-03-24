@@ -63,6 +63,10 @@ public final class DataComponentAdapters {
         throw new UnsupportedOperationException("Cannot convert the Unit type to an API value");
     };
 
+    static final Function UNIMPLEMENTED_TO_API_CONVERTER = $ -> {
+        throw new UnsupportedOperationException("Cannot convert the an unimplemented type to an API value");
+    };
+
     static final Map<ResourceKey<DataComponentType<?>>, DataComponentAdapter<?, ?>> ADAPTERS = new HashMap<>();
 
     public static void bootstrap() {
@@ -136,10 +140,9 @@ public final class DataComponentAdapters {
         // register(DataComponents.LOCK, PaperLockCode::new);
         register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
 
-        // TODO: REMOVE THIS... we want to build the PR... so lets just make things UNTYPED!
         for (final Map.Entry<ResourceKey<DataComponentType<?>>, DataComponentType<?>> componentType : BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet()) {
             if (!ADAPTERS.containsKey(componentType.getKey())) {
-                registerUntyped((DataComponentType<Unit>) componentType.getValue());
+                registerUnimplemented(componentType.getValue());
             }
         }
     }
@@ -150,6 +153,10 @@ public final class DataComponentAdapters {
 
     private static <COMMON> void registerIdentity(final DataComponentType<COMMON> type) {
         registerInternal(type, Function.identity(), Function.identity(), true);
+    }
+
+    public static <NMS> void registerUnimplemented(final DataComponentType<NMS> type) {
+        registerInternal(type, UNIMPLEMENTED_TO_API_CONVERTER, DataComponentAdapter.API_TO_UNIMPLEMENTED_CONVERTER, false);
     }
 
     private static <NMS, API extends Handleable<NMS>> void register(final DataComponentType<NMS> type, final Function<NMS, API> vanillaToApi) {

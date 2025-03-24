@@ -273,7 +273,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     static final ItemMetaKeyType<Integer> MAX_DAMAGE = new ItemMetaKeyType<>(DataComponents.MAX_DAMAGE, "max-damage");
     @Specific(Specific.To.NBT)
     static final ItemMetaKeyType<BlockItemStateProperties> BLOCK_DATA = new ItemMetaKeyType<>(DataComponents.BLOCK_STATE, "BlockStateTag");
-    static final ItemMetaKey BUKKIT_CUSTOM_TAG = new ItemMetaKey("PublicBukkitValues");
+    static final ItemMetaKey BUKKIT_CUSTOM_TAG = new ItemMetaKey(CraftItemStack.PDC_CUSTOM_DATA_KEY);
     @Specific(Specific.To.NBT)
     static final ItemMetaKeyType<Unit> HIDE_ADDITIONAL_TOOLTIP = new ItemMetaKeyType(DataComponents.HIDE_ADDITIONAL_TOOLTIP);
     @Specific(Specific.To.NBT)
@@ -1250,8 +1250,18 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void lore(final List<? extends net.kyori.adventure.text.Component> lore) {
-        Preconditions.checkArgument(lore == null || lore.size() <= ItemLore.MAX_LINES, "lore cannot have more than %s lines", ItemLore.MAX_LINES); // Paper - limit lore lines
-        this.lore = lore != null ? io.papermc.paper.adventure.PaperAdventure.asVanilla(lore) : null;
+        if (lore == null) {
+            this.lore = null;
+            return;
+        }
+
+        Preconditions.checkArgument(lore.size() <= ItemLore.MAX_LINES, "lore cannot have more than %s lines", ItemLore.MAX_LINES); // Paper - limit lore lines
+
+        for (int i = 0; i < lore.size(); i++) {
+            Preconditions.checkArgument(lore.get(i) != null, "lore contains null entry at index: %s", i);
+        }
+
+        this.lore = io.papermc.paper.adventure.PaperAdventure.asVanilla(lore);
     }
     // Paper end
 

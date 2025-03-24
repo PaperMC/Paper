@@ -153,7 +153,9 @@ public final class CraftItemFactory implements ItemFactory {
     @Override
     public ItemStack createItemStack(String input) throws IllegalArgumentException {
         try {
-            ItemParser.ItemResult arg = new ItemParser(MinecraftServer.getDefaultRegistryAccess()).parse(new StringReader(input));
+            StringReader reader = new StringReader(input);
+            ItemParser.ItemResult arg = new ItemParser(MinecraftServer.getDefaultRegistryAccess()).parse(reader);
+            Preconditions.checkArgument(!reader.canRead(), "Trailing input found when parsing ItemStack: %s", input);
 
             Item item = arg.item().value();
             net.minecraft.world.item.ItemStack nmsItemStack = new net.minecraft.world.item.ItemStack(item);
@@ -349,7 +351,6 @@ public final class CraftItemFactory implements ItemFactory {
     ) {
         Preconditions.checkArgument(itemStack != null, "Argument 'itemStack' must not be null");
         Preconditions.checkArgument(!itemStack.isEmpty(), "Argument 'itemStack' cannot be empty");
-        Preconditions.checkArgument(levels > 0 && levels <= 30, "Argument 'levels' must be in range [1, 30] (attempted " + levels + ")");
         Preconditions.checkArgument(random != null, "Argument 'random' must not be null");
         final net.minecraft.world.item.ItemStack internalStack = CraftItemStack.asNMSCopy(itemStack);
         if (internalStack.isEnchanted()) {

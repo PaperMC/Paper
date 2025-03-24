@@ -72,6 +72,41 @@
              }
          }
      }
+@@ -243,7 +_,7 @@
+     private void synchronizeSlotToRemote(int slotIndex, ItemStack stack, Supplier<ItemStack> supplier) {
+         if (!this.suppressRemoteUpdates) {
+             ItemStack itemStack = this.remoteSlots.get(slotIndex);
+-            if (!ItemStack.matches(itemStack, stack)) {
++            if (!this.matchesRemote(itemStack, stack)) { // Paper - add flag to simplify remote matching logic
+                 ItemStack itemStack1 = supplier.get();
+                 this.remoteSlots.set(slotIndex, itemStack1);
+                 if (this.synchronizer != null) {
+@@ -267,7 +_,7 @@
+ 
+     private void synchronizeCarriedToRemote() {
+         if (!this.suppressRemoteUpdates) {
+-            if (!ItemStack.matches(this.getCarried(), this.remoteCarried)) {
++            if (!this.matchesRemote(this.getCarried(), this.remoteCarried)) { // Paper - add flag to simplify remote matching logic
+                 this.remoteCarried = this.getCarried().copy();
+                 if (this.synchronizer != null) {
+                     this.synchronizer.sendCarriedChange(this, this.remoteCarried);
+@@ -276,6 +_,16 @@
+         }
+     }
+ 
++    // Paper start - add flag to simplify remote matching logic
++    private boolean matchesRemote(final ItemStack stack, final ItemStack other) {
++        if (this.synchronizer != null && this.synchronizer.player() != null && this.synchronizer.player().getBukkitEntity().simplifyContainerDesyncCheck()) {
++            // Only check the item type and count
++            return stack == other || (stack.getCount() == other.getCount() && ItemStack.isSameItem(stack, other));
++        }
++        return ItemStack.matches(stack, other);
++    }
++    // Paper end - add flag to simplify remote matching logic
++
+     public void setRemoteSlot(int slot, ItemStack stack) {
+         this.remoteSlots.set(slot, stack.copy());
+     }
 @@ -343,6 +_,7 @@
                      this.resetQuickCraft();
                  }

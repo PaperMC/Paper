@@ -4,6 +4,7 @@ import org.bukkit.World;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,11 +16,12 @@ public class LightningStrikeEvent extends WeatherEvent implements Cancellable {
     private final LightningStrike bolt;
     private final Cause cause;
 
-    @Deprecated(since = "1.13.1")
+    @Deprecated(since = "1.13.1", forRemoval = true)
     public LightningStrikeEvent(@NotNull final World world, @NotNull final LightningStrike bolt) {
         this(world, bolt, Cause.UNKNOWN);
     }
 
+    @ApiStatus.Internal
     public LightningStrikeEvent(@NotNull final World world, @NotNull final LightningStrike bolt, @NotNull final Cause cause) {
         super(world);
         this.bolt = bolt;
