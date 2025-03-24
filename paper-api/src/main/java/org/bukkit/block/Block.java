@@ -40,7 +40,7 @@ public interface Block extends Metadatable, Translatable, net.kyori.adventure.tr
      * @return block specific metadata
      * @deprecated Magic value
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true)
     byte getData();
 
     /**

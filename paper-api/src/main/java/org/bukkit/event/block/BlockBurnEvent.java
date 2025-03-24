@@ -3,6 +3,7 @@ package org.bukkit.event.block;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,11 +18,12 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
     private final Block ignitingBlock;
 
-    @Deprecated(since = "1.11.2")
+    @Deprecated(since = "1.11.2", forRemoval = true)
     public BlockBurnEvent(@NotNull final Block block) {
         this(block, null);
     }
 
+    @ApiStatus.Internal
     public BlockBurnEvent(@NotNull final Block block, @Nullable final Block ignitingBlock) {
         super(block);
         this.ignitingBlock = ignitingBlock;

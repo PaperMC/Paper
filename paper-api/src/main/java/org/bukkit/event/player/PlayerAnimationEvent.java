@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -14,7 +15,7 @@ public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
     private final PlayerAnimationType animationType;
     private boolean isCancelled = false;
 
-    @Deprecated(since = "1.19")
+    @Deprecated(since = "1.19", forRemoval = true)
     public PlayerAnimationEvent(@NotNull final Player player) {
         this(player, PlayerAnimationType.ARM_SWING);
     }
@@ -25,6 +26,7 @@ public class PlayerAnimationEvent extends PlayerEvent implements Cancellable {
      * @param player The player instance
      * @param playerAnimationType The animation type
      */
+    @ApiStatus.Internal
     public PlayerAnimationEvent(@NotNull final Player player, @NotNull final PlayerAnimationType playerAnimationType) {
         super(player);
         animationType = playerAnimationType;

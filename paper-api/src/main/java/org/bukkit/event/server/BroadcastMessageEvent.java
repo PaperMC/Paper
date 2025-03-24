@@ -5,6 +5,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -22,12 +23,12 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
     private final Set<CommandSender> recipients;
     private boolean cancelled = false;
 
-    @Deprecated(since = "1.14")
+    @Deprecated(since = "1.14", forRemoval = true)
     public BroadcastMessageEvent(@NotNull String message, @NotNull Set<CommandSender> recipients) {
         this(false, message, recipients);
     }
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public BroadcastMessageEvent(boolean isAsync, @NotNull String message, @NotNull Set<CommandSender> recipients) {
         // Paper start
         super(isAsync);
@@ -35,11 +36,12 @@ public class BroadcastMessageEvent extends ServerEvent implements Cancellable {
         this.recipients = recipients;
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public BroadcastMessageEvent(net.kyori.adventure.text.@NotNull Component message, @NotNull Set<CommandSender> recipients) {
         this(false, message, recipients);
     }
 
+    @ApiStatus.Internal
     public BroadcastMessageEvent(boolean isAsync, net.kyori.adventure.text.@NotNull Component message, @NotNull Set<CommandSender> recipients) {
         // Paper end
         super(isAsync);

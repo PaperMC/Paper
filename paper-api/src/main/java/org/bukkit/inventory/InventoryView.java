@@ -243,6 +243,11 @@ public interface InventoryView {
     public InventoryType.SlotType getSlotType(int slot);
 
     /**
+     * Opens the inventory view.
+     */
+    void open();
+
+    /**
      * Closes the inventory view.
      */
     public void close();

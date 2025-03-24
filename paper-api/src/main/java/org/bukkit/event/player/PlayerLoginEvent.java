@@ -3,6 +3,7 @@ package org.bukkit.event.player;
 import java.net.InetAddress;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -30,6 +31,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      *     timing issues
      * @param realAddress the actual, unspoofed connecting address
      */
+    @ApiStatus.Internal
     public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address, final @NotNull InetAddress realAddress) {
         super(player);
         this.hostname = hostname;
@@ -46,6 +48,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      * @param address The address the player used to connect, provided for
      *     timing issues
      */
+    @ApiStatus.Internal
     public PlayerLoginEvent(@NotNull final Player player, @NotNull final String hostname, @NotNull final InetAddress address) {
         this(player, hostname, address, address);
     }
@@ -62,7 +65,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      * @param realAddress the actual, unspoofed connecting address
      * @deprecated in favour of {@link #PlayerLoginEvent(Player, String, InetAddress, Result, net.kyori.adventure.text.Component, InetAddress)}
      */
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final String message, @NotNull final InetAddress realAddress) {
         this(player, hostname, address, realAddress);
         this.result = result;
@@ -81,6 +84,7 @@ public class PlayerLoginEvent extends PlayerEvent {
      * @param message The message to be displayed if result denies login
      * @param realAddress the actual, unspoofed connecting address
      */
+    @ApiStatus.Internal
     public PlayerLoginEvent(@NotNull final Player player, @NotNull String hostname, @NotNull final InetAddress address, @NotNull final Result result, @NotNull final net.kyori.adventure.text.Component message, @NotNull final InetAddress realAddress) {
         this(player, hostname, address, realAddress); // Spigot
         this.result = result;

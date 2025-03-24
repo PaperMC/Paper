@@ -109,9 +109,9 @@ public interface Art extends OldEnum<Art>, Keyed {
      * Get the ID of this painting.
      *
      * @return The ID of this painting
-     * @deprecated Magic value
+     * @deprecated Magic value that is based on inconsistent, data-driven registry
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true)
     int getId();
 
     // Paper start - deprecate getKey
@@ -162,9 +162,9 @@ public interface Art extends OldEnum<Art>, Keyed {
      *
      * @param id The ID
      * @return The painting
-     * @deprecated Magic value
+     * @deprecated Magic value that is based on inconsistent, data-driven registry
      */
-    @Deprecated(since = "1.6.2")
+    @Deprecated(since = "1.6.2", forRemoval = true)
     @Nullable
     static Art getById(int id) {
         for (Art art : Registry.ART) {

@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,13 +27,13 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
     private boolean cancelled;
     private final int consumedExperience; // Paper
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true) // Paper
     public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
         // Paper start
         this(who, item, slot, experienceOrb, repairAmount, repairAmount / 2);
     }
 
-    @org.jetbrains.annotations.ApiStatus.Internal
+    @ApiStatus.Internal
     public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull EquipmentSlot slot, @NotNull ExperienceOrb experienceOrb, int repairAmount, int consumedExperience) {
         // Paper end
         super(who);
@@ -86,7 +87,7 @@ public class PlayerItemMendEvent extends PlayerEvent implements Cancellable {
     }
     // Paper end
 
-    @Deprecated(since = "1.19.2")
+    @Deprecated(since = "1.19.2", forRemoval = true)
     public PlayerItemMendEvent(@NotNull Player who, @NotNull ItemStack item, @NotNull ExperienceOrb experienceOrb, int repairAmount) {
         this(who, item, null, experienceOrb, repairAmount);
     }

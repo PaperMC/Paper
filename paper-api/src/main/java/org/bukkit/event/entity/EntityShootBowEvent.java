@@ -7,6 +7,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -38,16 +39,18 @@ public class EntityShootBowEvent extends EntityEvent implements Cancellable {
         return this.getConsumable();
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public EntityShootBowEvent(@NotNull final LivingEntity shooter, @Nullable final ItemStack bow, @NotNull final Entity projectile, final float force) {
         this(shooter, bow, new ItemStack(org.bukkit.Material.AIR), projectile, force);
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public EntityShootBowEvent(@NotNull final LivingEntity shooter, @Nullable final ItemStack bow, @NotNull ItemStack arrowItem, @NotNull final Entity projectile, final float force) {
         this(shooter, bow, arrowItem, projectile, EquipmentSlot.HAND, force, true);
     }
     // Paper end
+
+    @ApiStatus.Internal
     public EntityShootBowEvent(@NotNull final LivingEntity shooter, @Nullable final ItemStack bow, @Nullable final ItemStack consumable, @NotNull final Entity projectile, @NotNull final EquipmentSlot hand, final float force, final boolean consumeItem) {
         super(shooter);
         this.bow = bow;

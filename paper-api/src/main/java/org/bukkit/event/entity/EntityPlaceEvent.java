@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -26,6 +27,7 @@ public class EntityPlaceEvent extends EntityEvent implements Cancellable {
     private final BlockFace blockFace;
     private final EquipmentSlot hand;
 
+    @ApiStatus.Internal
     public EntityPlaceEvent(@NotNull final Entity entity, @Nullable final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace, @NotNull final EquipmentSlot hand) {
         super(entity);
         this.player = player;
@@ -34,7 +36,7 @@ public class EntityPlaceEvent extends EntityEvent implements Cancellable {
         this.hand = hand;
     }
 
-    @Deprecated(since = "1.19.2")
+    @Deprecated(since = "1.19.2", forRemoval = true)
     public EntityPlaceEvent(@NotNull final Entity entity, @Nullable final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace) {
         this(entity, player, block, blockFace, EquipmentSlot.HAND);
     }

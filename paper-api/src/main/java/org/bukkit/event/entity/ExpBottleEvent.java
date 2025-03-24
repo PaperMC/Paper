@@ -5,6 +5,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.ThrownExpBottle;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,11 +17,12 @@ public class ExpBottleEvent extends ProjectileHitEvent {
     private int exp;
     private boolean showEffect = true;
 
-    @Deprecated(since = "1.20.2")
+    @Deprecated(since = "1.20.2", forRemoval = true)
     public ExpBottleEvent(@NotNull final ThrownExpBottle bottle, final int exp) {
         this(bottle, null, null, null, exp);
     }
 
+    @ApiStatus.Internal
     public ExpBottleEvent(@NotNull final ThrownExpBottle bottle, @Nullable Entity hitEntity, @Nullable Block hitBlock, @Nullable BlockFace hitFace, final int exp) {
         super(bottle, hitEntity, hitBlock, hitFace);
         this.exp = exp;

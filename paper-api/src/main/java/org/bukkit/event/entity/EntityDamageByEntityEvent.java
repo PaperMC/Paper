@@ -20,7 +20,7 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
         this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), damage);
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, final double damage) {
         super(damagee, cause, damageSource, damage);
         this.damager = damager;
@@ -32,7 +32,7 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
         this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), modifiers, modifierFunctions);
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         super(damagee, cause, damageSource, modifiers, modifierFunctions);
         this.damager = damager;

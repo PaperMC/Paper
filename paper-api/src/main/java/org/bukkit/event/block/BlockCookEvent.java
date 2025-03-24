@@ -4,6 +4,7 @@ import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -16,12 +17,13 @@ public class BlockCookEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
     private final org.bukkit.inventory.CookingRecipe<?> recipe; // Paper
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public BlockCookEvent(@NotNull final Block block, @NotNull final ItemStack source, @NotNull final ItemStack result) {
         // Paper start
         this(block, source, result, null);
     }
 
+    @ApiStatus.Internal
     public BlockCookEvent(@NotNull final Block block, @NotNull final ItemStack source, @NotNull final ItemStack result, @org.jetbrains.annotations.Nullable org.bukkit.inventory.CookingRecipe<?> recipe) {
         // Paper end
         super(block);

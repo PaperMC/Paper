@@ -6,6 +6,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,6 +32,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      * @param item the ItemStack being consumed
      * @param hand the hand that was used
      */
+    @ApiStatus.Internal
     public PlayerItemConsumeEvent(@NotNull final Player player, @NotNull final ItemStack item, @NotNull final EquipmentSlot hand) {
         super(player);
 
@@ -43,7 +45,7 @@ public class PlayerItemConsumeEvent extends PlayerEvent implements Cancellable {
      * @param item the ItemStack being consumed
      * @deprecated use {@link #PlayerItemConsumeEvent(Player, ItemStack, EquipmentSlot)}
      */
-    @Deprecated(since = "1.19.2")
+    @Deprecated(since = "1.19.2", forRemoval = true)
     public PlayerItemConsumeEvent(@NotNull final Player player, @NotNull final ItemStack item) {
         this(player, item, EquipmentSlot.HAND);
     }

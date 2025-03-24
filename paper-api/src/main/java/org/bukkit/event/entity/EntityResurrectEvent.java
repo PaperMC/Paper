@@ -4,6 +4,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.EquipmentSlot;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,12 +21,13 @@ public class EntityResurrectEvent extends EntityEvent implements Cancellable {
 
     private final EquipmentSlot hand;
 
+    @ApiStatus.Internal
     public EntityResurrectEvent(@NotNull LivingEntity what, @Nullable EquipmentSlot hand) {
         super(what);
         this.hand = hand;
     }
 
-    @Deprecated(since = "1.19.2")
+    @Deprecated(since = "1.19.2", forRemoval = true)
     public EntityResurrectEvent(@NotNull LivingEntity what) {
         this(what, null);
     }

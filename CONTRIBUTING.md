@@ -264,6 +264,40 @@ are assumed to be non-null by default. For less obvious placing such as on gener
 **For other classes**: Keep using both `@Nullable` and `@NotNull` from `org.jetbrains.annotations`. These
 will be replaced later.
 
+### API checks
+
+When performing API-related checks where an exception needs to be thrown under specific conditions, you should use the `Preconditions` class.
+
+#### Checking Method Arguments
+To validate method arguments, use `Preconditions#checkArgument`. This will throw an `IllegalArgumentException` if the condition is not met.
+> Don't use Preconditions#checkNotNull, as it throws a NullPointerException, which makes it harder to determine whether the error was caused by an internal issue or invalid arguments.
+
+ex:
+```java
+@Override
+public void sendMessage(Player player, Component message) {
+    Preconditions.checkArgument(player != null, "player cannot be null");
+    Preconditions.checkArgument(player.isOnline(), "player %s must be online", player.getName());
+    Preconditions.checkArgument(message != null, "message cannot be null");
+    // rest of code
+}
+```
+
+#### Checking Object State
+To validate the state of an object inside a method, use `Preconditions#checkState`. This will throw an `IllegalStateException` if the condition is not met.
+ex:
+```java
+private Player player;
+
+@Override
+public void sendMessage(Component message) {
+    Preconditions.checkArgument(message != null, "message cannot be null");
+    Preconditions.checkState(this.player != null, "player cannot be null");
+    Preconditions.checkState(this.player.isOnline(), "player %s must be online", this.player.getName());
+    // rest of code
+}
+```
+
 ## Access Transformers
 Sometimes, Vanilla code already contains a field, method, or type you want to access
 but the visibility is too low (e.g. a private field in an entity class). Paper can use access transformers

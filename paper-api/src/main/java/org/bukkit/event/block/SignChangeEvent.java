@@ -5,6 +5,7 @@ import org.bukkit.block.sign.Side;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,6 +22,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     private final Side side;
 
     // Paper start
+    @ApiStatus.Internal
     public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines, @NotNull Side side) {
         super(theBlock);
         this.player = player;
@@ -28,18 +30,18 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
         this.side = side;
     }
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player player, @NotNull final java.util.List<net.kyori.adventure.text.Component> adventure$lines) {
         this(theBlock, player, adventure$lines, Side.FRONT);
     }
     // Paper end
 
-    @Deprecated(since = "1.19.4")
+    @Deprecated(since = "1.19.4", forRemoval = true)
     public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines) {
         this(theBlock, thePlayer, theLines, Side.FRONT);
     }
 
-    @Deprecated // Paper
+    @Deprecated(forRemoval = true)
     public SignChangeEvent(@NotNull final Block theBlock, @NotNull final Player thePlayer, @NotNull final String[] theLines, @NotNull Side side) {
         super(theBlock);
         this.player = thePlayer;
