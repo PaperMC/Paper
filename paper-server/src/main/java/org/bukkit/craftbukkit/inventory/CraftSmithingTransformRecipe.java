@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.inventory;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.item.crafting.RecipeHolder;
+import net.minecraft.world.item.crafting.TransmuteResult;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.RecipeChoice;
@@ -28,12 +29,13 @@ public class CraftSmithingTransformRecipe extends SmithingTransformRecipe implem
     @Override
     public void addToCraftingManager() {
         ItemStack result = this.getResult();
-
-        final SmithingTransformRecipe recipe = new SmithingTransformRecipe(
+        final net.minecraft.world.item.ItemStack nmsStack = CraftItemStack.asNMSCopy(result);
+        final net.minecraft.world.item.crafting.SmithingTransformRecipe recipe = new net.minecraft.world.item.crafting.SmithingTransformRecipe(
             this.toNMSOptional(this.getTemplate(), false),
-            this.toNMSOptional(this.getBase(), false),
+            this.toNMS(this.getBase(), false),
             this.toNMSOptional(this.getAddition(), false),
-            CraftItemStack.asNMSCopy(result), this.willCopyDataComponents()
+            new TransmuteResult(nmsStack.getItemHolder(), nmsStack.getCount(), nmsStack.getComponentsPatch())
+            , this.willCopyDataComponents()
         );
         MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftRecipe.toMinecraft(this.getKey()), recipe)); // Paper - Option to prevent data components copy
     }
