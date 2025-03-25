@@ -28,7 +28,7 @@ public class ChatTest {
     public void testURLJsonConversion() {
         Component[] components;
         components = CraftChatMessage.fromString("https://spigotmc.org/test Test Message");
-        assertEquals("{\"text\":\"\",\"extra\":[{\"text\":\"https://spigotmc.org/test\",\"clickEvent\":{\"action\":\"open_url\",\"value\":\"https://spigotmc.org/test\"}},\" Test Message\"]}",
+        assertEquals("{\"text\":\"\",\"extra\":[{\"text\":\"https://spigotmc.org/test\",\"click_event\":{\"url\":\"https://spigotmc.org/test\",\"action\":\"open_url\"}},\" Test Message\"]}",
                 CraftChatMessage.toJSON(components[0]));
 
         components = CraftChatMessage.fromString("123 " + ChatColor.GOLD + "https://spigotmc.org " + ChatColor.BOLD + "test");
