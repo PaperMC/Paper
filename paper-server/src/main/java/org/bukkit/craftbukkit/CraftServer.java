@@ -64,7 +64,7 @@ import net.minecraft.server.dedicated.DedicatedServerProperties;
 import net.minecraft.server.dedicated.DedicatedServerSettings;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.level.TicketType;
+import net.minecraft.server.level.Ticket;
 import net.minecraft.server.players.IpBanListEntry;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.server.players.ServerOpListEntry;
@@ -475,7 +475,7 @@ public final class CraftServer implements Server {
         this.overrideSpawnLimits();
         console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
         this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
-        TicketType.PLUGIN.timeout = this.configuration.getInt("chunk-gc.period-in-ticks");
+        Ticket.PLUGIN_TYPE_TIMEOUT = this.configuration.getInt("chunk-gc.period-in-ticks");
         this.minimumAPI = ApiVersion.getOrCreateVersion(this.configuration.getString("settings.minimum-api"));
         this.loadIcon();
         this.loadCompatibilities();
@@ -1043,7 +1043,7 @@ public final class CraftServer implements Server {
         this.console.setMotd(config.motd);
         this.overrideSpawnLimits();
         this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
-        TicketType.PLUGIN.timeout = this.configuration.getInt("chunk-gc.period-in-ticks");
+        Ticket.PLUGIN_TYPE_TIMEOUT = this.configuration.getInt("chunk-gc.period-in-ticks");
         this.minimumAPI = ApiVersion.getOrCreateVersion(this.configuration.getString("settings.minimum-api"));
         this.printSaveWarning = false;
         this.console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
