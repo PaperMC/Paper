@@ -378,12 +378,21 @@ public final class DataComponentTypes {
 
 
     private static DataComponentType.NonValued unvalued(final String name) {
-        return (DataComponentType.NonValued) requireNonNull(Registry.DATA_COMPONENT_TYPE.get(NamespacedKey.minecraft(name)), name + " unvalued data component type couldn't be found, this is a bug.");
+        final DataComponentType dataComponentType = requireNonNull(Registry.DATA_COMPONENT_TYPE.get(NamespacedKey.minecraft(name)), name + " unvalued data component type couldn't be found, this is a bug.");
+        if (dataComponentType instanceof DataComponentType.NonValued) {
+            return (DataComponentType.NonValued) dataComponentType;
+        }
+        throw new IllegalStateException(name + " is not a valid unvalued type, it is a " + dataComponentType.getClass().getTypeName());
     }
 
     @SuppressWarnings("unchecked")
     private static <T> DataComponentType.Valued<T> valued(final String name) {
-        return (DataComponentType.Valued<T>) requireNonNull(Registry.DATA_COMPONENT_TYPE.get(NamespacedKey.minecraft(name)), name + " valued data component type couldn't be found, this is a bug.");
+        DataComponentType dataComponentType =  requireNonNull(Registry.DATA_COMPONENT_TYPE.get(NamespacedKey.minecraft(name)), name + " valued data component type couldn't be found, this is a bug.");
+        if (dataComponentType instanceof DataComponentType.Valued) {
+            return (DataComponentType.Valued<T>) dataComponentType;
+        }
+        throw new IllegalStateException(name + " is not a valid valued type, it is a " + dataComponentType.getClass().getTypeName());
+
     }
 
     private DataComponentTypes() {

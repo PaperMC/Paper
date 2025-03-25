@@ -43,6 +43,7 @@ import io.papermc.paper.datacomponent.item.PaperWrittenBookContent;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import io.papermc.paper.registry.PaperRegistries;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -53,6 +54,7 @@ import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.component.MapPostProcessing;
 import org.bukkit.DyeColor;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
+import org.bukkit.craftbukkit.entity.CraftWolf;
 import org.bukkit.craftbukkit.inventory.CraftMetaFirework;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.inventory.ItemRarity;
@@ -75,6 +77,7 @@ public final class DataComponentAdapters {
         registerIdentity(DataComponents.MAX_STACK_SIZE);
         registerIdentity(DataComponents.MAX_DAMAGE);
         registerIdentity(DataComponents.DAMAGE);
+        registerUntyped(DataComponents.UNBREAKABLE);
         registerIdentity(DataComponents.POTION_DURATION_SCALE);
         register(DataComponents.CUSTOM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
         register(DataComponents.ITEM_NAME, PaperAdventure::asAdventure, PaperAdventure::asVanilla);
@@ -120,8 +123,11 @@ public final class DataComponentAdapters {
         // bucket entity data
         // block entity data
         //register(DataComponents.INSTRUMENT, CraftMusicInstrument::minecraftHolderToBukkit, CraftMusicInstrument::bukkitToMinecraftHolder); // TODO
+        registerIdentity(DataComponents.INSTRUMENT);
+        registerIdentity(DataComponents.PROVIDES_TRIM_MATERIAL); // TODO
         register(DataComponents.OMINOUS_BOTTLE_AMPLIFIER, PaperOminousBottleAmplifier::new);
         register(DataComponents.JUKEBOX_PLAYABLE, PaperJukeboxPlayable::new);
+        register(DataComponents.PROVIDES_BANNER_PATTERNS, PaperRegistries::fromNms, PaperRegistries::toNms);
         register(DataComponents.RECIPES,
             nms -> transformUnmodifiable(nms, PaperAdventure::asAdventureKey),
             api -> transformUnmodifiable(api, key -> PaperAdventure.asVanilla(Registries.RECIPE, key))
@@ -139,6 +145,11 @@ public final class DataComponentAdapters {
         // bees
         // register(DataComponents.LOCK, PaperLockCode::new);
         register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
+        register(DataComponents.BREAK_SOUND,  nms -> PaperAdventure.asAdventureKey(nms.unwrapKey().get()), api -> BuiltInRegistries.SOUND_EVENT.getOrThrow(PaperAdventure.asVanilla(Registries.SOUND_EVENT, api)));
+        register(DataComponents.VILLAGER_VARIANT, nms -> PaperAdventure.asAdventureKey(nms.unwrapKey().get()), api -> BuiltInRegistries.VILLAGER_TYPE.getOrThrow(PaperAdventure.asVanilla(Registries.VILLAGER_TYPE, api)));
+        register(DataComponents.WOLF_VARIANT, CraftWolf.CraftVariant::minecraftHolderToBukkit, CraftWolf.CraftVariant::bukkitToMinecraftHolder);
+        register(DataComponents.WOLF_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
+        register(DataComponents.FOX_VARIANT, nms -> org.bukkit.entity.Fox.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.Fox.Variant.byId(api.ordinal()));
         // TODO break_sound, provides_, entity data
         register(DataComponents.TOOLTIP_DISPLAY, PaperTooltipDisplay::new);
         register(DataComponents.WEAPON, PaperWeapon::new);
