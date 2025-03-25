@@ -1,5 +1,6 @@
 package org.bukkit.craftbukkit.util;
 
+import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import java.util.List;
 import java.util.Map;
@@ -60,12 +61,10 @@ public class CraftNBTTagConfigSerializer {
             }
 
             return tagList;
-        } else if (object instanceof String) {
-            String string = (String) object;
-
+        } else if (object instanceof final String string) {
             if (CraftNBTTagConfigSerializer.ARRAY.matcher(string).matches()) {
                 try {
-                    return MOJANGSON_PARSER.parseFully(string);
+                    return MOJANGSON_PARSER.parseAsArgument(new StringReader(string));
                 } catch (CommandSyntaxException e) {
                     throw new RuntimeException("Could not deserialize found list ", e);
                 }
@@ -75,12 +74,14 @@ public class CraftNBTTagConfigSerializer {
                 return DoubleTag.valueOf(Double.parseDouble(string.substring(0, string.length() - 1)));
             } else {
                 try {
-                    Tag tag = CraftNBTTagConfigSerializer.MOJANGSON_PARSER.parseFully(string);
+                    Tag tag = CraftNBTTagConfigSerializer.MOJANGSON_PARSER.parseAsArgument(new StringReader(string));
 
                     if (tag instanceof IntTag) { // If this returns an integer, it did not use our method from above
                         return StringTag.valueOf(tag.toString()); // It then is a string that was falsely read as an int
                     } else if (tag instanceof DoubleTag) {
                         return StringTag.valueOf(String.valueOf(((DoubleTag) tag).doubleValue())); // Doubles add "d" at the end
+                    } else if (tag instanceof StringTag) {
+                        return StringTag.valueOf(string); // Return the whole string
                     } else {
                         return tag;
                     }
