@@ -2,6 +2,7 @@ package org.bukkit.block;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import io.papermc.paper.InternalAPIBridge;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.Locale;
@@ -95,7 +96,7 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
      * @deprecated Biome is no longer an enum, custom biomes will have their own biome instance.
      */
     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
-    Biome CUSTOM = Bukkit.getUnsafe().getCustomBiome();
+    Biome CUSTOM = InternalAPIBridge.get().constructLegacyCustomBiome();
 
     @NotNull
     private static Biome getBiome(@NotNull String key) {

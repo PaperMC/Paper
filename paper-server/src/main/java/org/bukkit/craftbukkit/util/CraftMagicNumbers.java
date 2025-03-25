@@ -479,16 +479,6 @@ public final class CraftMagicNumbers implements UnsafeValues {
         return CraftRegistry.get(registry, namespacedKey, ApiVersion.CURRENT);
     }
 
-    private Biome customBiome;
-    @Override
-    public Biome getCustomBiome() {
-        if (this.customBiome == null) {
-            this.customBiome = new CraftBiome.LegacyCustomBiomeImpl();
-        }
-
-        return this.customBiome;
-    }
-
     @Override
     public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
         return new com.destroystokyo.paper.PaperVersionFetcher();
