@@ -131,13 +131,7 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
      */
     interface SoundVariant extends Keyed {
 
-        SoundVariant CLASSIC = getSoundVariant("classic");
-        SoundVariant PUGLIN = getSoundVariant("puglin");
-        SoundVariant SAD = getSoundVariant("sad");
-        SoundVariant ANGRY = getSoundVariant("angry");
-        SoundVariant GRUMPY = getSoundVariant("grumpy");
-        SoundVariant BIG = getSoundVariant("big");
-        SoundVariant CUTE = getSoundVariant("cute");
+        // todo generators
 
         @NotNull
         private static SoundVariant getSoundVariant(@NotNull String key) {

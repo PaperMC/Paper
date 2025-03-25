@@ -248,14 +248,14 @@ public enum EntityEffect {
     /**
      * Shield blocks attack.
      *
-     * @deprecated replaced by a component
+     * @deprecated replaced by the {@code blocks_attacks} item data component
      */
     @Deprecated(since = "1.21.5", forRemoval = true)
     SHIELD_BLOCK(29, LivingEntity.class),
     /**
      * Shield breaks.
      *
-     * @deprecated replaced by a component
+     * @deprecated replaced by the {@code blocks_attacks} item data component
      */
     @Deprecated(since = "1.21.5", forRemoval = true)
     SHIELD_BREAK(30, LivingEntity.class),
@@ -476,7 +476,7 @@ public enum EntityEffect {
      *
      * @see org.bukkit.inventory.EquipmentSlot#SADDLE
      */
-    SADDLE_BREAK(68, LivingEntity.class);
+    BREAK_EQUIPMENT_SADDLE(68, LivingEntity.class);
 
     private final byte data;
     private final Set<Class<? extends Entity>> applicableClasses;
