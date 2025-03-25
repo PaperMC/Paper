@@ -498,9 +498,69 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
 
         CompoundTag compound = deserializeNbtFromBytes(data);
+        return deserializeItem(compound);
+    }
+
+    private ItemStack deserializeItem(CompoundTag compound) {
         final int dataVersion = compound.getIntOr("DataVersion", 0);
         compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, MinecraftServer.getServer().fixerUpper, compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
+    }
+
+    @Override
+    public @org.jetbrains.annotations.NotNull Map<String, Object> serializeStack(final ItemStack itemStack) {
+        CompoundTag tag = CraftItemStack.asNMSCopy(itemStack).save(MinecraftServer.getServer().registryAccess()).asCompound().orElseThrow();
+        net.minecraft.nbt.NbtUtils.addCurrentDataVersion(tag);
+        Map<String, Object> ret = new HashMap<>();
+        tag.asCompound().get().forEach((key, value) -> {
+            switch (key) {
+                case "id" -> {
+                    ret.put("id", value.asString().get());
+                }
+                case "count" -> {
+                    ret.put("count", value.asInt().get());
+                }
+                case "components" -> {
+                    ret.put("components", new net.minecraft.nbt.SnbtPrinterTagVisitor().visit(value.asCompound().get()));
+                }
+                case "DataVersion" -> {
+                    ret.put("DataVersion", value.asInt().get());
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + key);
+            }
+        });
+        return ret;
+    }
+
+    @Override
+    public @org.jetbrains.annotations.NotNull ItemStack deserializeStack(@org.jetbrains.annotations.NotNull final Map<String, Object> args) {
+        CompoundTag tag = new CompoundTag();
+        args.forEach((key, value) -> {
+            switch (key) {
+                case "id" -> {
+                    tag.putString("id", (String) value);
+                }
+                case "count" -> {
+                    tag.putInt("count", ((Number) value).intValue());
+                }
+                case "components" -> {
+                    try {
+                        tag.put("components", net.minecraft.nbt.TagParser.parseCompoundFully(((String) value)));
+                    } catch (CommandSyntaxException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                case "DataVersion" -> {
+                    tag.putInt("DataVersion", ((Number) value).intValue());
+                }
+                case "==" -> {
+                    // Ignore
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + key);
+            }
+        });
+
+        return deserializeItem(tag);
     }
 
     @Override
