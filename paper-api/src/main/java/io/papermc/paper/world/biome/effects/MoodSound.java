@@ -8,7 +8,7 @@ import org.bukkit.Sound;
 public interface MoodSound {
 
     /**
-     * One sound event — The mood sound.
+     * The mood sound.
      *
      * @return the mood sound.
      */

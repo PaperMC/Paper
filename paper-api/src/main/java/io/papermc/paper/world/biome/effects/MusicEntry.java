@@ -5,7 +5,7 @@ import org.bukkit.Sound;
 public interface MusicEntry {
 
     /**
-     * One sound event — The music sound.
+     * The music sound.
      *
      * @return the music sound.
      */

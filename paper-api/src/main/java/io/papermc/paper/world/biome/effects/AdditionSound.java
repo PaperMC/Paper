@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Range;
 public interface AdditionSound {
 
     /**
-     * One sound event — The additions sound.
+     * The additions sound.
      *
      * @return the sound event.
      */
