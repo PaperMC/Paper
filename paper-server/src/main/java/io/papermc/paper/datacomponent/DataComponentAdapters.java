@@ -53,10 +53,27 @@ import net.minecraft.util.Unit;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.component.MapPostProcessing;
 import org.bukkit.DyeColor;
+import org.bukkit.craftbukkit.CraftArt;
 import org.bukkit.craftbukkit.CraftMusicInstrument;
+import org.bukkit.craftbukkit.entity.CraftAxolotl;
+import org.bukkit.craftbukkit.entity.CraftCat;
+import org.bukkit.craftbukkit.entity.CraftChicken;
+import org.bukkit.craftbukkit.entity.CraftCow;
+import org.bukkit.craftbukkit.entity.CraftFrog;
+import org.bukkit.craftbukkit.entity.CraftPainting;
+import org.bukkit.craftbukkit.entity.CraftPig;
+import org.bukkit.craftbukkit.entity.CraftVillager;
 import org.bukkit.craftbukkit.entity.CraftWolf;
 import org.bukkit.craftbukkit.inventory.CraftMetaFirework;
 import org.bukkit.craftbukkit.util.Handleable;
+import org.bukkit.entity.Axolotl;
+import org.bukkit.entity.Horse;
+import org.bukkit.entity.Llama;
+import org.bukkit.entity.MushroomCow;
+import org.bukkit.entity.Parrot;
+import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Salmon;
+import org.bukkit.entity.TropicalFish;
 import org.bukkit.inventory.ItemRarity;
 
 import static io.papermc.paper.util.MCUtil.transformUnmodifiable;
@@ -147,13 +164,35 @@ public final class DataComponentAdapters {
         register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
         register(DataComponents.BREAK_SOUND,  nms -> PaperAdventure.asAdventureKey(nms.unwrapKey().get()), api -> BuiltInRegistries.SOUND_EVENT.getOrThrow(PaperAdventure.asVanilla(Registries.SOUND_EVENT, api)));
         register(DataComponents.VILLAGER_VARIANT, nms -> PaperAdventure.asAdventureKey(nms.unwrapKey().get()), api -> BuiltInRegistries.VILLAGER_TYPE.getOrThrow(PaperAdventure.asVanilla(Registries.VILLAGER_TYPE, api)));
-        register(DataComponents.WOLF_VARIANT, CraftWolf.CraftVariant::minecraftHolderToBukkit, CraftWolf.CraftVariant::bukkitToMinecraftHolder);
-        register(DataComponents.WOLF_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
-        register(DataComponents.FOX_VARIANT, nms -> org.bukkit.entity.Fox.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.Fox.Variant.byId(api.ordinal()));
         // TODO break_sound, provides_, entity data
         register(DataComponents.TOOLTIP_DISPLAY, PaperTooltipDisplay::new);
         register(DataComponents.WEAPON, PaperWeapon::new);
         register(DataComponents.BLOCKS_ATTACKS, PaperBlocksAttacks::new);
+
+        register(DataComponents.VILLAGER_VARIANT, CraftVillager.CraftType::minecraftHolderToBukkit, CraftVillager.CraftType::bukkitToMinecraftHolder);
+        register(DataComponents.WOLF_VARIANT, CraftWolf.CraftVariant::minecraftHolderToBukkit, CraftWolf.CraftVariant::bukkitToMinecraftHolder);
+        register(DataComponents.WOLF_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
+        register(DataComponents.FOX_VARIANT, nms -> org.bukkit.entity.Fox.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.Fox.Variant.byId(api.ordinal()));
+        register(DataComponents.SALMON_SIZE, (nms) -> Salmon.Variant.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.Salmon.Variant.values()[api.ordinal()]);
+        register(DataComponents.PARROT_VARIANT, (nms) -> Parrot.Variant.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.Parrot.Variant.byId(api.ordinal()));
+        register(DataComponents.TROPICAL_FISH_PATTERN, (nms) -> TropicalFish.Pattern.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.TropicalFish.Pattern.byId(api.ordinal()));
+        register(DataComponents.TROPICAL_FISH_BASE_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
+        register(DataComponents.TROPICAL_FISH_PATTERN_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
+        register(DataComponents.MOOSHROOM_VARIANT, (nms) -> MushroomCow.Variant.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.MushroomCow.Variant.values()[api.ordinal()]);
+        register(DataComponents.RABBIT_VARIANT, (nms) -> Rabbit.Type.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.Rabbit.Variant.byId(api.ordinal()));
+        register(DataComponents.PIG_VARIANT, CraftPig.CraftVariant::minecraftHolderToBukkit, CraftPig.CraftVariant::bukkitToMinecraftHolder);
+        register(DataComponents.COW_VARIANT, CraftCow.CraftVariant::minecraftHolderToBukkit, CraftCow.CraftVariant::bukkitToMinecraftHolder);
+        // TODO:
+        //register(DataComponents.CHICKEN_VARIANT, CraftChicken.CraftVariant::minecraftHolderToBukkit, CraftChicken.CraftVariant::bukkitToMinecraftHolder);
+        register(DataComponents.FROG_VARIANT, CraftFrog.CraftVariant::minecraftHolderToBukkit, CraftFrog.CraftVariant::bukkitToMinecraftHolder);
+        register(DataComponents.HORSE_VARIANT, (nms) -> Horse.Style.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.horse.Variant.byId(api.ordinal()));
+        register(DataComponents.PAINTING_VARIANT, CraftArt::minecraftHolderToBukkit, CraftArt::bukkitToMinecraftHolder);
+        register(DataComponents.LLAMA_VARIANT, (nms) -> Llama.Color.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.horse.Llama.Variant.byId(api.ordinal()));
+        register(DataComponents.AXOLOTL_VARIANT, (nms) -> Axolotl.Variant.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.axolotl.Axolotl.Variant.byId(api.ordinal()));
+        register(DataComponents.CAT_VARIANT, CraftCat.CraftType::minecraftHolderToBukkit, CraftCat.CraftType::bukkitToMinecraftHolder);
+        register(DataComponents.CAT_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
+        register(DataComponents.SHEEP_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
+        register(DataComponents.SHULKER_COLOR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
 
         for (final Map.Entry<ResourceKey<DataComponentType<?>>, DataComponentType<?>> componentType : BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet()) {
             if (!ADAPTERS.containsKey(componentType.getKey())) {
