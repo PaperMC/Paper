@@ -483,7 +483,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
     @Override
     public Biome getCustomBiome() {
         if (this.customBiome == null) {
-            this.customBiome = new CraftBiome(NamespacedKey.minecraft("custom"), null);
+            this.customBiome = new CraftBiome.LegacyCustomBiomeImpl();
         }
 
         return this.customBiome;
