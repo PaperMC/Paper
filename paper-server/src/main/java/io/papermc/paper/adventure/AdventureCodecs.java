@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
+import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -92,16 +93,16 @@ public final class AdventureCodecs {
      * Click
      */
     static final MapCodec<ClickEvent> OPEN_URL_CODEC = mapCodec((instance) -> instance.group(
-        Codec.STRING.fieldOf("url").forGetter(a -> !a.value().contains("://") ? "https://" + a.value() : a.value())
-    ).apply(instance, ClickEvent::openUrl));
+        ExtraCodecs.UNTRUSTED_URI.fieldOf("url").forGetter(a -> URI.create(!a.value().contains("://") ? "https://" + a.value() : a.value()))
+    ).apply(instance, (url) -> ClickEvent.openUrl(url.toString())));
     static final MapCodec<ClickEvent> OPEN_FILE_CODEC = mapCodec((instance) -> instance.group(
         Codec.STRING.fieldOf("path").forGetter(ClickEvent::value)
     ).apply(instance, ClickEvent::openFile));
     static final MapCodec<ClickEvent> RUN_COMMAND_CODEC = mapCodec((instance) -> instance.group(
-        Codec.STRING.fieldOf("command").forGetter(ClickEvent::value)
+        ExtraCodecs.CHAT_STRING.fieldOf("command").forGetter(ClickEvent::value)
     ).apply(instance, ClickEvent::runCommand));
     static final MapCodec<ClickEvent> SUGGEST_COMMAND_CODEC = mapCodec((instance) -> instance.group(
-        Codec.STRING.fieldOf("command").forGetter(ClickEvent::value)
+        ExtraCodecs.CHAT_STRING.fieldOf("command").forGetter(ClickEvent::value)
     ).apply(instance, ClickEvent::suggestCommand));
     static final MapCodec<ClickEvent> CHANGE_PAGE_CODEC = mapCodec((instance) -> instance.group(
         ExtraCodecs.POSITIVE_INT.fieldOf("page").forGetter(a -> Integer.parseInt(a.value()))
