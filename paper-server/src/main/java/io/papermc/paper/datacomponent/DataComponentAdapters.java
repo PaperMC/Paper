@@ -163,7 +163,6 @@ public final class DataComponentAdapters {
         // register(DataComponents.LOCK, PaperLockCode::new);
         register(DataComponents.CONTAINER_LOOT, PaperSeededContainerLoot::new);
         register(DataComponents.BREAK_SOUND,  nms -> PaperAdventure.asAdventureKey(nms.unwrapKey().get()), api -> BuiltInRegistries.SOUND_EVENT.getOrThrow(PaperAdventure.asVanilla(Registries.SOUND_EVENT, api)));
-        register(DataComponents.VILLAGER_VARIANT, nms -> PaperAdventure.asAdventureKey(nms.unwrapKey().get()), api -> BuiltInRegistries.VILLAGER_TYPE.getOrThrow(PaperAdventure.asVanilla(Registries.VILLAGER_TYPE, api)));
         // TODO break_sound, provides_, entity data
         register(DataComponents.TOOLTIP_DISPLAY, PaperTooltipDisplay::new);
         register(DataComponents.WEAPON, PaperWeapon::new);
@@ -182,8 +181,8 @@ public final class DataComponentAdapters {
         register(DataComponents.RABBIT_VARIANT, (nms) -> Rabbit.Type.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.Rabbit.Variant.byId(api.ordinal()));
         register(DataComponents.PIG_VARIANT, CraftPig.CraftVariant::minecraftHolderToBukkit, CraftPig.CraftVariant::bukkitToMinecraftHolder);
         register(DataComponents.COW_VARIANT, CraftCow.CraftVariant::minecraftHolderToBukkit, CraftCow.CraftVariant::bukkitToMinecraftHolder);
-        // TODO:
-        //register(DataComponents.CHICKEN_VARIANT, CraftChicken.CraftVariant::minecraftHolderToBukkit, CraftChicken.CraftVariant::bukkitToMinecraftHolder);
+        // TODO: We should probably find a cleaner pattern for handling this which retains the EitherHolder, this does kinda suck in terms of exposure, however
+        register(DataComponents.CHICKEN_VARIANT, CraftChicken.CraftVariant::minecraftEitherHolderToBukkit, CraftChicken.CraftVariant::bukkitToMinecraftEitherHolder);
         register(DataComponents.FROG_VARIANT, CraftFrog.CraftVariant::minecraftHolderToBukkit, CraftFrog.CraftVariant::bukkitToMinecraftHolder);
         register(DataComponents.HORSE_VARIANT, (nms) -> Horse.Style.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.horse.Variant.byId(api.ordinal()));
         register(DataComponents.PAINTING_VARIANT, CraftArt::minecraftHolderToBukkit, CraftArt::bukkitToMinecraftHolder);
