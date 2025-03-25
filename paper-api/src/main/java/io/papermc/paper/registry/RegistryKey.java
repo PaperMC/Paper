@@ -164,6 +164,11 @@ public sealed interface RegistryKey<T> extends Keyed permits RegistryKeyImpl {
      */
     RegistryKey<Wolf.Variant> WOLF_VARIANT = create("wolf_variant");
     /**
+     * Data-driven registry for wolf variants.
+     * @see io.papermc.paper.registry.keys.WolfSoundVariantKeys
+     */
+    RegistryKey<Wolf.SoundVariant> WOLF_SOUND_VARIANT = create("wolf_sound_variant");
+    /**
      * Data-driven registry for enchantments.
      * @see io.papermc.paper.registry.keys.EnchantmentKeys
      */

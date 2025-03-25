@@ -171,6 +171,7 @@ public final class DataComponentAdapters {
         register(DataComponents.VILLAGER_VARIANT, CraftVillager.CraftType::minecraftHolderToBukkit, CraftVillager.CraftType::bukkitToMinecraftHolder);
         register(DataComponents.WOLF_VARIANT, CraftWolf.CraftVariant::minecraftHolderToBukkit, CraftWolf.CraftVariant::bukkitToMinecraftHolder);
         register(DataComponents.WOLF_COLLAR, nms -> DyeColor.getByWoolData((byte) nms.getId()), api -> net.minecraft.world.item.DyeColor.byId(api.getWoolData()));
+        register(DataComponents.WOLF_SOUND_VARIANT, CraftWolf.CraftSoundVariant::minecraftHolderToBukkit, CraftWolf.CraftSoundVariant::bukkitToMinecraftHolder);
         register(DataComponents.FOX_VARIANT, nms -> org.bukkit.entity.Fox.Type.values()[nms.ordinal()], api -> net.minecraft.world.entity.animal.Fox.Variant.byId(api.ordinal()));
         register(DataComponents.SALMON_SIZE, (nms) -> Salmon.Variant.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.Salmon.Variant.values()[api.ordinal()]);
         register(DataComponents.PARROT_VARIANT, (nms) -> Parrot.Variant.values()[nms.ordinal()], (api) -> net.minecraft.world.entity.animal.Parrot.Variant.byId(api.ordinal()));

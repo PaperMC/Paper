@@ -352,7 +352,7 @@ public final class DataComponentTypes {
     public static final DataComponentType.Valued<Key> BREAK_SOUND = valued("break_sound");
     public static final DataComponentType.Valued<Villager.Type> VILLAGER_VARIANT = valued("villager/variant");
     public static final DataComponentType.Valued<Wolf.Variant> WOLF_VARIANT = valued("wolf/variant");
-    // public static final DataComponentType.Valued<Holder<WolfSoundVariant>> WOLF_SOUND_VARIANT = valued("wolf/sound_variant");
+    public static final DataComponentType.Valued<Wolf.SoundVariant> WOLF_SOUND_VARIANT = valued("wolf/sound_variant");
     public static final DataComponentType.Valued<DyeColor> WOLF_COLLAR = valued("wolf/collar");
     public static final DataComponentType.Valued<Fox.Type> FOX_VARIANT = valued("fox/variant");
     public static final DataComponentType.Valued<Salmon.Variant> SALMON_SIZE = valued("salmon/size");
