@@ -94,9 +94,10 @@ class ItemStackDataComponentTest {
     void testUnbreakable() {
         final ItemStack stack = new ItemStack(Material.STONE);
         stack.setData(DataComponentTypes.UNBREAKABLE);
+        stack.setData(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplay.tooltipDisplay().addHiddenComponents(DataComponentTypes.UNBREAKABLE).build());
 
         Assertions.assertTrue(stack.getItemMeta().isUnbreakable());
-        Assertions.assertTrue(stack.getItemMeta().getItemFlags().contains(ItemFlag.HIDE_UNBREAKABLE));
+        Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_UNBREAKABLE));
         stack.unsetData(DataComponentTypes.UNBREAKABLE);
         Assertions.assertFalse(stack.getItemMeta().isUnbreakable());
     }
@@ -312,7 +313,6 @@ class ItemStackDataComponentTest {
         Assertions.assertTrue(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM));
         Assertions.assertEquals(armorTrim.armorTrim(), ((ArmorMeta) stack.getItemMeta()).getTrim());
         stack.unsetData(DataComponentTypes.TRIM);
-        Assertions.assertFalse(stack.getItemMeta().hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM));
         Assertions.assertFalse(((ArmorMeta) stack.getItemMeta()).hasTrim());
     }
 
