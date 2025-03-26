@@ -1,7 +1,9 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public interface Weapon {
 
     /**

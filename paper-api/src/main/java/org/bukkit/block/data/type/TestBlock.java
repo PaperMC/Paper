@@ -1,6 +1,7 @@
 package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.BlockData;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'mode' is the reaction of the block to a redstone pulse or its supply.
@@ -12,6 +13,7 @@ public interface TestBlock extends BlockData {
      *
      * @return the 'mode' value
      */
+    @NotNull
     Mode getMode();
 
     /**
@@ -19,7 +21,7 @@ public interface TestBlock extends BlockData {
      *
      * @param mode the new 'mode' value
      */
-    void setMode(Mode mode);
+    void setMode(@NotNull Mode mode);
 
     enum Mode {
         START,

@@ -1,6 +1,7 @@
 package org.bukkit.block.data.type;
 
 import org.bukkit.block.data.Orientable;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * 'creaking_heart_state' is the state of the block depending on the time and its position.
@@ -36,6 +37,7 @@ public interface CreakingHeart extends Orientable {
      *
      * @return the 'creaking_heart_state' value
      */
+    @NotNull
     State getCreakingHeartState();
 
     /**
@@ -43,7 +45,7 @@ public interface CreakingHeart extends Orientable {
      *
      * @param state the new 'creaking_heart_state' value
      */
-    void setCreakingHeartState(State state);
+    void setCreakingHeartState(@NotNull State state);
 
     /**
      * Gets the value of the 'natural' property.
