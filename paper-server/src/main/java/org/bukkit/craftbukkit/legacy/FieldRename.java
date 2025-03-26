@@ -447,6 +447,7 @@ public class FieldRename {
     private static final FieldRenameData ITEM_FLAG_DATA = FieldRenameData.Builder.newBuilder()
             .forAllVersions()
             .change("HIDE_POTION_EFFECTS", "HIDE_ADDITIONAL_TOOLTIP")
+            .change("HIDE_ITEM_SPECIFICS", "HIDE_ADDITIONAL_TOOLTIP")
             .build();
 
     @DoNotReroute

@@ -28,8 +28,22 @@ public enum ItemFlag {
      */
     HIDE_PLACED_ON,
     /**
-     * Setting to show/hide potion effects, book and firework information, map
-     * tooltips, patterns of banners.
+     * Setting to show/hide item-specific information, including, but not limited to:
+     * <ul>
+     *     <li>Potion effects on potions, tipped arrows, and suspicious stew</li>
+     *     <li>Enchanted book enchantments</li>
+     *     <li>Book author and generation</li>
+     *     <li>Record names</li>
+     *     <li>Patterns of banners and shields</li>
+     *     <li>Fish bucket variants</li>
+     *     <li>Instrument item descriptions (i.e. goat horn sounds)</li>
+     *     <li>Map data</li>
+     *     <li>Firework data</li>
+     *     <li>Crossbow projectile info</li>
+     *     <li>Bundle fullness</li>
+     *     <li>Shulker box contents</li>
+     *     <li>Spawner descriptions</li>
+     * </ul>
      *
      * @see #HIDE_STORED_ENCHANTS HIDE_STORED_ENCHANTS for hiding stored enchants (like on enchanted books)
      * @deprecated each component can now be hidden individually in the {@code tooltip_display} component
@@ -50,27 +64,4 @@ public enum ItemFlag {
      */
     HIDE_STORED_ENCHANTS,
     ;
-    // Paper start
-    /**
-     * Setting to show/hide item-specific information, including, but not limited to:
-     * <ul>
-     *     <li>Potion effects on potions, tipped arrows, and suspicious stew</li>
-     *     <li>Enchanted book enchantments</li>
-     *     <li>Book author and generation</li>
-     *     <li>Record names</li>
-     *     <li>Patterns of banners and shields</li>
-     *     <li>Fish bucket variants</li>
-     *     <li>Instrument item descriptions (i.e. goat horn sounds)</li>
-     *     <li>Map data</li>
-     *     <li>Firework data</li>
-     *     <li>Crossbow projectile info</li>
-     *     <li>Bundle fullness</li>
-     *     <li>Shulker box contents</li>
-     *     <li>Spawner descriptions</li>
-     * </ul>
-     * @deprecated each component can now be hidden individually in the {@code tooltip_display} component
-     */
-    @Deprecated(since = "1.20.5", forRemoval = true)
-    public static final ItemFlag HIDE_ITEM_SPECIFICS = HIDE_ADDITIONAL_TOOLTIP;
-    // Paper end
 }
