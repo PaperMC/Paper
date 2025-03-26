@@ -6,9 +6,13 @@ import net.kyori.adventure.key.Key;
 import org.bukkit.damage.DamageType;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 // TODO
+@NullMarked
+@ApiStatus.Experimental
+@ApiStatus.NonExtendable
 public interface BlocksAttacks {
 
     @Contract(value = "-> new", pure = true)
@@ -24,14 +28,11 @@ public interface BlocksAttacks {
 
     //ItemDamageFunction itemDamage();
 
-    @Nullable
-    TagKey<DamageType> bypassedBy();
+    @Nullable TagKey<DamageType> bypassedBy();
 
-    @Nullable
-    Key blockSound();
+    @Nullable Key blockSound();
 
-    @Nullable
-    Key disableSound();
+    @Nullable Key disableSound();
 
     /**
      * Builder for {@link BlocksAttacks}.
@@ -63,6 +64,5 @@ public interface BlocksAttacks {
 
         @Contract(value = "_ -> this", mutates = "this")
         Builder disableSound(@Nullable Key sound);
-
     }
 }

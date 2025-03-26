@@ -1,9 +1,12 @@
 package io.papermc.paper.datacomponent.item;
 
 import io.papermc.paper.datacomponent.DataComponentBuilder;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
+@ApiStatus.Experimental
+@ApiStatus.NonExtendable
 public interface Weapon {
 
     /**
@@ -11,7 +14,7 @@ public interface Weapon {
      *
      * @return a builder instance.
      */
-    static Builder builder() {
+    static Builder weapon() {
         return ItemComponentTypesBridge.bridge().weapon();
     }
 
@@ -28,6 +31,8 @@ public interface Weapon {
     /**
      * Builder for {@link Weapon}.
      */
+    @ApiStatus.Experimental
+    @ApiStatus.NonExtendable
     interface Builder extends DataComponentBuilder<Weapon> {
 
         /**

@@ -8,7 +8,6 @@ import org.jspecify.annotations.NullMarked;
 
 import java.util.Set;
 
-
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
