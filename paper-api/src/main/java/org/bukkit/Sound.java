@@ -397,6 +397,11 @@ public interface Sound extends OldEnum<Sound>, Keyed, net.kyori.adventure.sound.
     Sound BLOCK_LAVA_AMBIENT = getSound("block.lava.ambient");
     Sound BLOCK_LAVA_EXTINGUISH = getSound("block.lava.extinguish");
     Sound BLOCK_LAVA_POP = getSound("block.lava.pop");
+    Sound BLOCK_LEAF_LITTER_BREAK = getSound("block.leaf_litter.break");
+    Sound BLOCK_LEAF_LITTER_STEP = getSound("block.leaf_litter.step");
+    Sound BLOCK_LEAF_LITTER_PLACE = getSound("block.leaf_litter.place");
+    Sound BLOCK_LEAF_LITTER_HIT = getSound("block.leaf_litter.hit");
+    Sound BLOCK_LEAF_LITTER_FALL = getSound("block.leaf_litter.fall");
     Sound BLOCK_LEVER_CLICK = getSound("block.lever.click");
     Sound BLOCK_LILY_PAD_PLACE = getSound("block.lily_pad.place");
     Sound BLOCK_LODESTONE_BREAK = getSound("block.lodestone.break");

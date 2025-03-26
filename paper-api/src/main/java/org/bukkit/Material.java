@@ -20,6 +20,7 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Brushable;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Hatchable;
+import org.bukkit.block.data.type.LeafLitter;
 import org.bukkit.block.data.Levelled;
 import org.bukkit.block.data.Lightable;
 import org.bukkit.block.data.MultipleFacing;
@@ -717,6 +718,14 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * BlockData: {@link PinkPetals}
      */
     PINK_PETALS(10420, PinkPetals.class),
+    /**
+     * BlockData: {@link PinkPetals}
+     */
+    WILDFLOWERS(27608, PinkPetals.class),
+    /**
+     * BlockData: {@link LeafLitter}
+     */
+    LEAF_LITTER(22095, LeafLitter.class),
     MOSS_CARPET(8221),
     MOSS_BLOCK(9175),
     /**

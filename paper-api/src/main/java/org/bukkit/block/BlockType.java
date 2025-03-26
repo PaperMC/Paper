@@ -71,6 +71,7 @@ import org.bukkit.block.data.type.Jigsaw;
 import org.bukkit.block.data.type.Jukebox;
 import org.bukkit.block.data.type.Ladder;
 import org.bukkit.block.data.type.Lantern;
+import org.bukkit.block.data.type.LeafLitter;
 import org.bukkit.block.data.type.Leaves;
 import org.bukkit.block.data.type.Lectern;
 import org.bukkit.block.data.type.Light;
@@ -3292,6 +3293,14 @@ public interface BlockType extends Keyed, Translatable, net.kyori.adventure.tran
      * BlockData: {@link PinkPetals}
      */
     BlockType.Typed<PinkPetals> PINK_PETALS = getBlockType("pink_petals");
+    /**
+     * BlockData: {@link PinkPetals}
+     */
+    BlockType.Typed<PinkPetals> WILDFLOWERS = getBlockType("wildflowers");
+    /**
+     * BlockData: {@link LeafLitter}
+     */
+    BlockType.Typed<LeafLitter> LEAF_LITTER = getBlockType("leaf_litter");
     BlockType.Typed<BlockData> MOSS_CARPET = getBlockType("moss_carpet");
     BlockType.Typed<BlockData> MOSS_BLOCK = getBlockType("moss_block");
     /**
