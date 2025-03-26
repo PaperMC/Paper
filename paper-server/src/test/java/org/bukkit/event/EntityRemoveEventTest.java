@@ -21,7 +21,7 @@ public class EntityRemoveEventTest {
     @ClassNodeTest(value = ClassNodeTest.ClassType.CRAFT_BUKKIT,
             excludedClasses = EntityAccess.class,
             excludedPackages = "net/minecraft/gametest/framework")
-    public void testForMissing(ClassNode classNode) throws ClassNotFoundException {
+    public void testForMissing(ClassNode classNode, String name) throws ClassNotFoundException {
         List<String> missingReason = new ArrayList<>();
 
         boolean minecraftCause = false;

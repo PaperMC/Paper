@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.entity.Rabbit;
-import org.bukkit.entity.Rabbit.Type;
 
 public class CraftRabbit extends CraftAnimals implements Rabbit {
 
@@ -29,7 +28,7 @@ public class CraftRabbit extends CraftAnimals implements Rabbit {
     public void setRabbitType(Type type) {
         this.getHandle().setVariant(net.minecraft.world.entity.animal.Rabbit.Variant.values()[type.ordinal()]);
     }
-    // Paper start
+
     @Override
     public void setMoreCarrotTicks(int ticks) {
         this.getHandle().moreCarrotTicks = ticks;
@@ -39,5 +38,4 @@ public class CraftRabbit extends CraftAnimals implements Rabbit {
     public int getMoreCarrotTicks() {
         return this.getHandle().moreCarrotTicks;
     }
-    // Paper end
 }

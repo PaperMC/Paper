@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.block;
 import com.google.common.base.Preconditions;
 import java.lang.ref.WeakReference;
 import java.util.List;
+import java.util.Objects;
 import javax.annotation.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.LevelAccessor;
@@ -27,26 +28,27 @@ public class CraftBlockState implements BlockState {
     protected final CraftWorld world;
     private final BlockPos position;
     protected net.minecraft.world.level.block.state.BlockState data;
-    protected int flag;
+    protected int capturedFlags; // todo move out of this class
     private WeakReference<LevelAccessor> weakWorld;
 
     protected CraftBlockState(final Block block) {
         this(block.getWorld(), ((CraftBlock) block).getPosition(), ((CraftBlock) block).getNMS());
-        this.flag = 3;
+        this.capturedFlags = net.minecraft.world.level.block.Block.UPDATE_ALL;
 
         this.setWorldHandle(((CraftBlock) block).getHandle());
     }
 
-    protected CraftBlockState(final Block block, int flag) {
+    @Deprecated
+    protected CraftBlockState(final Block block, int capturedFlags) {
         this(block);
-        this.flag = flag;
+        this.capturedFlags = capturedFlags;
     }
 
     // world can be null for non-placed BlockStates.
-    protected CraftBlockState(@Nullable World world, BlockPos blockPosition, net.minecraft.world.level.block.state.BlockState blockData) {
+    protected CraftBlockState(@Nullable World world, BlockPos pos, net.minecraft.world.level.block.state.BlockState data) {
         this.world = (CraftWorld) world;
-        this.position = blockPosition;
-        this.data = blockData;
+        this.position = pos;
+        this.data = data;
     }
 
     // Creates an unplaced copy of the given CraftBlockState at the given location
@@ -59,7 +61,7 @@ public class CraftBlockState implements BlockState {
             this.position = CraftLocation.toBlockPosition(location);
         }
         this.data = state.data;
-        this.flag = state.flag;
+        this.capturedFlags = state.capturedFlags;
         this.setWorldHandle(state.getWorldHandle());
     }
 
@@ -178,12 +180,12 @@ public class CraftBlockState implements BlockState {
         return this.data.getBukkitMaterial(); // Paper - optimise getType calls
     }
 
-    public void setFlag(int flag) {
-        this.flag = flag;
+    public void setFlags(int flags) {
+        this.capturedFlags = flags;
     }
 
-    public int getFlag() {
-        return this.flag;
+    public int getFlags() {
+        return this.capturedFlags;
     }
 
     @Override
@@ -222,13 +224,13 @@ public class CraftBlockState implements BlockState {
         }
 
         net.minecraft.world.level.block.state.BlockState newBlock = this.data;
-        block.setTypeAndData(newBlock, applyPhysics);
+        block.setBlockState(newBlock, applyPhysics);
         if (access instanceof net.minecraft.world.level.Level) {
             this.world.getHandle().sendBlockUpdated(
-                    this.position,
-                    block.getNMS(),
-                    newBlock,
-                    3
+                this.position,
+                block.getNMS(),
+                newBlock,
+                net.minecraft.world.level.block.Block.UPDATE_ALL
             );
         }
 
@@ -238,6 +240,26 @@ public class CraftBlockState implements BlockState {
         }
 
         return true;
+    }
+
+    // used when the flags matter for non API usage
+    public boolean place(int flags) {
+        if (!this.isPlaced()) {
+            return false;
+        }
+
+        return this.getWorldHandle().setBlock(this.position, this.data, flags);
+    }
+
+    // used to revert a block placement due to an event being cancelled for example
+    public boolean revertPlace() {
+        return this.place(
+            net.minecraft.world.level.block.Block.UPDATE_CLIENTS |
+            net.minecraft.world.level.block.Block.UPDATE_KNOWN_SHAPE |
+            net.minecraft.world.level.block.Block.UPDATE_SUPPRESS_DROPS |
+            net.minecraft.world.level.block.Block.UPDATE_SKIP_ON_PLACE |
+            net.minecraft.world.level.block.Block.UPDATE_SKIP_BLOCK_ENTITY_SIDEEFFECTS
+        );
     }
 
     @Override
@@ -278,16 +300,9 @@ public class CraftBlockState implements BlockState {
             return false;
         }
         final CraftBlockState other = (CraftBlockState) obj;
-        if (this.world != other.world && (this.world == null || !this.world.equals(other.world))) {
-            return false;
-        }
-        if (this.position != other.position && (this.position == null || !this.position.equals(other.position))) {
-            return false;
-        }
-        if (this.data != other.data && (this.data == null || !this.data.equals(other.data))) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.world, other.world) &&
+            Objects.equals(this.position, other.position) &&
+            Objects.equals(this.data, other.data);
     }
 
     @Override
@@ -353,13 +368,13 @@ public class CraftBlockState implements BlockState {
         this.requirePlaced();
         net.minecraft.world.item.ItemStack nms = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(item);
 
-        // Modelled off EntityHuman#hasBlock
-        if (item == null || !data.requiresCorrectToolForDrops() || nms.isCorrectToolForDrops(data)) {
+        // Modelled off Player#hasCorrectToolForDrops
+        if (item == null || !data.requiresCorrectToolForDrops() || nms.isCorrectToolForDrops(this.data)) {
             return net.minecraft.world.level.block.Block.getDrops(
-                data,
-                world.getHandle(),
-                position,
-                world.getHandle().getBlockEntity(position), entity == null ? null :
+                this.data,
+                this.world.getHandle(),
+                this.position,
+                this.world.getHandle().getBlockEntity(this.position), entity == null ? null :
                     ((org.bukkit.craftbukkit.entity.CraftEntity) entity).getHandle(), nms
             ).stream().map(org.bukkit.craftbukkit.inventory.CraftItemStack::asBukkitCopy).toList();
         } else {

@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
  * Represents a Chunk related event
  */
 public abstract class ChunkEvent extends WorldEvent {
+
     protected Chunk chunk;
 
     protected ChunkEvent(@NotNull final Chunk chunk) {
@@ -21,6 +22,6 @@ public abstract class ChunkEvent extends WorldEvent {
      */
     @NotNull
     public Chunk getChunk() {
-        return chunk;
+        return this.chunk;
     }
 }

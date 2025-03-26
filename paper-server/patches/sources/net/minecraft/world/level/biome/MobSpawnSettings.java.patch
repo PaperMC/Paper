@@ -1,43 +1,36 @@
 --- a/net/minecraft/world/level/biome/MobSpawnSettings.java
 +++ b/net/minecraft/world/level/biome/MobSpawnSettings.java
-@@ -75,8 +_,40 @@
+@@ -70,9 +_,33 @@
      }
  
      public static class Builder {
 +        // Paper start - Perf: keep track of data in a pair set to give O(1) contains calls - we have to hook removals incase plugins mess with it
-+        public static class MobList extends java.util.ArrayList<MobSpawnSettings.SpawnerData> {
-+            java.util.Set<MobSpawnSettings.SpawnerData> biomes = new java.util.HashSet<>();
-+
++        public static class MobListBuilder<E> extends WeightedList.Builder<E> {
 +            @Override
-+            public boolean contains(Object o) {
-+                return biomes.contains(o);
-+            }
-+
-+            @Override
-+            public boolean add(MobSpawnSettings.SpawnerData BiomeSettingsMobs) {
-+                biomes.add(BiomeSettingsMobs);
-+                return super.add(BiomeSettingsMobs);
-+            }
-+
-+            @Override
-+            public MobSpawnSettings.SpawnerData remove(int index) {
-+                MobSpawnSettings.SpawnerData removed = super.remove(index);
-+                if (removed != null) {
-+                    biomes.remove(removed);
-+                }
-+                return removed;
-+            }
-+
-+            @Override
-+            public void clear() {
-+                biomes.clear();
-+                super.clear();
++            public WeightedList<E> build() {
++                return new WeightedSpawnerDataList<>(this.result.build());
 +            }
 +        }
-+        // use toImmutableEnumMap collector
-         private final Map<MobCategory, List<MobSpawnSettings.SpawnerData>> spawners = Stream.of(MobCategory.values())
--            .collect(ImmutableMap.toImmutableMap(key -> (MobCategory)key, value -> Lists.newArrayList()));
-+            .collect(Maps.toImmutableEnumMap(mobCategory -> (MobCategory)mobCategory, mobCategory -> new MobList())); // Use MobList instead of ArrayList
++
++        public static class WeightedSpawnerDataList<E> extends WeightedList<E> {
++            private final java.util.Set<E> spawnerDataSet = new java.util.HashSet<>();
++
++            public WeightedSpawnerDataList(final java.util.List<? extends net.minecraft.util.random.Weighted<E>> items) {
++                super(items);
++                for (final net.minecraft.util.random.Weighted<E> item : items) {
++                    this.spawnerDataSet.add(item.value());
++                }
++            }
++
++            @Override
++            public boolean contains(final E element) {
++                return this.spawnerDataSet.contains(element);
++            }
++        }
+         private final Map<MobCategory, WeightedList.Builder<MobSpawnSettings.SpawnerData>> spawners = Util.makeEnumMap(
+-            MobCategory.class, mobCategory -> WeightedList.builder()
++            MobCategory.class, mobCategory -> new MobListBuilder<>()
+         );
 +        // Paper end - Perf: keep track of data in a pair set to give O(1) contains calls
          private final Map<EntityType<?>, MobSpawnSettings.MobSpawnCost> mobSpawnCosts = Maps.newLinkedHashMap();
          private float creatureGenerationProbability = 0.1F;

@@ -19,8 +19,8 @@ public class CraftStructureBlock extends CraftBlockEntityState<StructureBlockEnt
 
     private static final int MAX_SIZE = 48;
 
-    public CraftStructureBlock(World world, StructureBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftStructureBlock(World world, StructureBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftStructureBlock(CraftStructureBlock state, Location location) {
@@ -180,19 +180,19 @@ public class CraftStructureBlock extends CraftBlockEntityState<StructureBlockEnt
     }
 
     @Override
-    protected void applyTo(StructureBlockEntity tileEntity) {
-        super.applyTo(tileEntity);
+    protected void applyTo(StructureBlockEntity blockEntity) {
+        super.applyTo(blockEntity);
         net.minecraft.world.level.LevelAccessor access = this.getWorldHandle();
 
         // Ensure block type is correct
         if (access instanceof net.minecraft.world.level.Level) {
-            tileEntity.setMode(tileEntity.getMode());
+            blockEntity.setMode(blockEntity.getMode());
         } else if (access != null) {
             // Custom handle during world generation
-            // From TileEntityStructure#setUsageMode(BlockPropertyStructureMode)
-            net.minecraft.world.level.block.state.BlockState data = access.getBlockState(this.getPosition());
-            if (data.is(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK)) {
-                access.setBlock(this.getPosition(), data.setValue(net.minecraft.world.level.block.StructureBlock.MODE, tileEntity.getMode()), 2);
+            // From StructureBlockEntity#setMode(BlockPropertyStructureMode)
+            net.minecraft.world.level.block.state.BlockState state = access.getBlockState(this.getPosition());
+            if (state.is(net.minecraft.world.level.block.Blocks.STRUCTURE_BLOCK)) {
+                access.setBlock(this.getPosition(), state.setValue(net.minecraft.world.level.block.StructureBlock.MODE, blockEntity.getMode()), 2);
             }
         }
     }

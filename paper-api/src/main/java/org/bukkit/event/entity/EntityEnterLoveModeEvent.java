@@ -4,6 +4,7 @@ import org.bukkit.entity.Animals;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -15,11 +16,14 @@ import org.jetbrains.annotations.Nullable;
  */
 public class EntityEnterLoveModeEvent extends EntityEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancel;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final HumanEntity humanEntity;
     private int ticksInLove;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public EntityEnterLoveModeEvent(@NotNull Animals animalInLove, @Nullable HumanEntity humanEntity, int ticksInLove) {
         super(animalInLove);
         this.humanEntity = humanEntity;
@@ -34,18 +38,18 @@ public class EntityEnterLoveModeEvent extends EntityEvent implements Cancellable
     @NotNull
     @Override
     public Animals getEntity() {
-        return (Animals) entity;
+        return (Animals) this.entity;
     }
 
     /**
      * Gets the Human Entity that caused the animal to enter love mode.
      *
      * @return The Human entity that caused the animal to enter love mode, or
-     * null if there wasn't one.
+     * {@code null} if there wasn't one.
      */
     @Nullable
     public HumanEntity getHumanEntity() {
-        return humanEntity;
+        return this.humanEntity;
     }
 
     /**
@@ -54,7 +58,7 @@ public class EntityEnterLoveModeEvent extends EntityEvent implements Cancellable
      * @return The amount of ticks that the animal will fall in love for
      */
     public int getTicksInLove() {
-        return ticksInLove;
+        return this.ticksInLove;
     }
 
     /**
@@ -69,22 +73,22 @@ public class EntityEnterLoveModeEvent extends EntityEvent implements Cancellable
 
     @Override
     public boolean isCancelled() {
-        return cancel;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

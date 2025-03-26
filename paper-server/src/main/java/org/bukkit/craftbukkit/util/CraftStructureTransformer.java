@@ -103,10 +103,6 @@ public class CraftStructureTransformer {
     }
 
     public CraftBlockState transformCraftState(CraftBlockState originalState) {
-        BlockTransformer[] transformers = this.blockTransformers;
-        if (transformers == null || transformers.length == 0) {
-            return originalState;
-        }
         CraftLimitedRegion region = this.limitedRegion;
         if (region == null) {
             return originalState;
@@ -115,7 +111,7 @@ public class CraftStructureTransformer {
         BlockPos position = originalState.getPosition();
         BlockState blockState = originalState.copy();
         CraftTransformationState transformationState = new CraftTransformationState(originalState, region.getBlockState(position.getX(), position.getY(), position.getZ()));
-        for (BlockTransformer transformer : transformers) {
+        for (BlockTransformer transformer : this.blockTransformers) {
             blockState = Objects.requireNonNull(transformer.transform(region, position.getX(), position.getY(), position.getZ(), blockState, transformationState), "BlockState can't be null");
             transformationState.destroyCopies();
         }

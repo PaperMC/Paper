@@ -1,48 +1,48 @@
 --- a/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
 +++ b/net/minecraft/world/item/crafting/SmithingTrimRecipe.java
-@@ -27,8 +_,15 @@
-     final Optional<Ingredient> addition;
+@@ -28,8 +_,15 @@
+     final Holder<TrimPattern> pattern;
      @Nullable
      private PlacementInfo placementInfo;
 +    final boolean copyDataComponents; // Paper - Option to prevent data components copy
  
-     public SmithingTrimRecipe(Optional<Ingredient> template, Optional<Ingredient> base, Optional<Ingredient> addition) {
+     public SmithingTrimRecipe(Ingredient template, Ingredient base, Ingredient addition, Holder<TrimPattern> pattern) {
 +        // Paper start - Option to prevent data components copy
-+        this(template, base, addition, true);
++        this(template, base, addition, pattern, true);
 +    }
-+    public SmithingTrimRecipe(Optional<Ingredient> template, Optional<Ingredient> base, Optional<Ingredient> addition, boolean copyDataComponents) {
++    public SmithingTrimRecipe(Ingredient template, Ingredient base, Ingredient addition, Holder<TrimPattern> pattern, final boolean copyDataComponents) {
 +        this.copyDataComponents = copyDataComponents;
 +        // Paper end - Option to prevent data components copy
          this.template = template;
          this.base = base;
          this.addition = addition;
-@@ -36,10 +_,15 @@
+@@ -38,10 +_,15 @@
  
      @Override
      public ItemStack assemble(SmithingRecipeInput input, HolderLookup.Provider registries) {
--        return applyTrim(registries, input.base(), input.addition(), input.template());
-+        return applyTrim(registries, input.base(), input.addition(), input.template(), this.copyDataComponents); // Paper - Option to prevent data components copy
+-        return applyTrim(registries, input.base(), input.addition(), this.pattern);
++        return applyTrim(registries, input.base(), input.addition(), this.pattern, this.copyDataComponents); // Paper start - Option to prevent data components copy
      }
  
-     public static ItemStack applyTrim(HolderLookup.Provider registries, ItemStack base, ItemStack addition, ItemStack template) {
-+        // Paper start - Option to prevent data components copy
-+        return applyTrim(registries, base, addition, template, true);
+     public static ItemStack applyTrim(HolderLookup.Provider registries, ItemStack base, ItemStack addition, Holder<TrimPattern> pattern) {
++    // Paper start - Option to prevent data components copy
++        return applyTrim(registries, base, addition, pattern, true);
 +    }
-+    public static ItemStack applyTrim(HolderLookup.Provider registries, ItemStack base, ItemStack addition, ItemStack template, boolean copyDataComponents) {
-+        // Paper end - Option to prevent data components copy
-         Optional<Holder.Reference<TrimMaterial>> fromIngredient = TrimMaterials.getFromIngredient(registries, addition);
-         Optional<Holder.Reference<TrimPattern>> fromTemplate = TrimPatterns.getFromTemplate(registries, template);
-         if (fromIngredient.isPresent() && fromTemplate.isPresent()) {
-@@ -47,7 +_,7 @@
-             if (armorTrim != null && armorTrim.hasPatternAndMaterial(fromTemplate.get(), fromIngredient.get())) {
++    public static ItemStack applyTrim(HolderLookup.Provider registries, ItemStack base, ItemStack addition, Holder<TrimPattern> pattern, final boolean copyDataComponents) {
++    // Paper end - Option to prevent data components copy
+         Optional<Holder<TrimMaterial>> fromIngredient = TrimMaterials.getFromIngredient(registries, addition);
+         if (fromIngredient.isPresent()) {
+             ArmorTrim armorTrim = base.get(DataComponents.TRIM);
+@@ -49,7 +_,7 @@
+             if (Objects.equals(armorTrim, armorTrim1)) {
                  return ItemStack.EMPTY;
              } else {
 -                ItemStack itemStack = base.copyWithCount(1);
 +                ItemStack itemStack = copyDataComponents ? base.copyWithCount(1) : new ItemStack(base.getItem(), 1); // Paper - Option to prevent data components copy
-                 itemStack.set(DataComponents.TRIM, new ArmorTrim(fromIngredient.get(), fromTemplate.get()));
+                 itemStack.set(DataComponents.TRIM, armorTrim1);
                  return itemStack;
              }
-@@ -100,6 +_,13 @@
+@@ -102,6 +_,13 @@
              )
          );
      }
@@ -50,7 +50,7 @@
 +    // CraftBukkit start
 +    @Override
 +    public org.bukkit.inventory.Recipe toBukkitRecipe(org.bukkit.NamespacedKey id) {
-+        return new org.bukkit.craftbukkit.inventory.CraftSmithingTrimRecipe(id, org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.template), org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.base), org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.addition), this.copyDataComponents); // Paper - Option to prevent data components copy
++        return new org.bukkit.craftbukkit.inventory.CraftSmithingTrimRecipe(id, org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.template), org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.base), org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.addition), org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern.minecraftHolderToBukkit(this.pattern), this.copyDataComponents); // Paper - Option to prevent data components copy
 +    }
 +    // CraftBukkit end
  

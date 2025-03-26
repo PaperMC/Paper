@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java
 +++ b/net/minecraft/world/entity/boss/enderdragon/EndCrystal.java
 @@ -25,6 +_,7 @@
-     );
      private static final EntityDataAccessor<Boolean> DATA_SHOW_BOTTOM = SynchedEntityData.defineId(EndCrystal.class, EntityDataSerializers.BOOLEAN);
+     private static final boolean DEFAULT_SHOW_BOTTOM = true;
      public int time;
 +    public boolean generatedByDragonFight = false; // Paper - Fix invulnerable end crystals
  
      public EndCrystal(EntityType<? extends EndCrystal> entityType, Level level) {
          super(entityType, level);
-@@ -56,9 +_,23 @@
+@@ -56,21 +_,37 @@
          if (this.level() instanceof ServerLevel) {
              BlockPos blockPos = this.blockPosition();
              if (((ServerLevel)this.level()).getDragonFight() != null && this.level().getBlockState(blockPos).isAir()) {
@@ -22,7 +22,7 @@
 +
 +        // Paper start - Fix invulnerable end crystals
 +        if (this.level().paperConfig().unsupportedSettings.fixInvulnerableEndCrystalExploit && this.generatedByDragonFight && this.isInvulnerable()) {
-+            if (!java.util.Objects.equals(((ServerLevel) this.level()).uuid, this.getOriginWorld())
++            if (!java.util.Objects.equals(((ServerLevel) this.level()).uuid, this.originWorld)
 +                || ((ServerLevel) this.level()).getDragonFight() == null
 +                || ((ServerLevel) this.level()).getDragonFight().respawnStage == null
 +                || ((ServerLevel) this.level()).getDragonFight().respawnStage.ordinal() > net.minecraft.world.level.dimension.end.DragonRespawnAnimation.SUMMONING_DRAGON.ordinal()) {
@@ -34,23 +34,21 @@
      }
  
      @Override
-@@ -68,6 +_,7 @@
-         }
- 
+     protected void addAdditionalSaveData(CompoundTag compound) {
+         compound.storeNullable("beam_target", BlockPos.CODEC, this.getBeamTarget());
          compound.putBoolean("ShowBottom", this.showsBottom());
-+        if (this.generatedByDragonFight) compound.putBoolean("Paper.GeneratedByDragonFight", this.generatedByDragonFight); // Paper - Fix invulnerable end crystals
++        compound.putBoolean("Paper.GeneratedByDragonFight", this.generatedByDragonFight); // Paper - Fix invulnerable end crystals
      }
  
      @Override
-@@ -76,6 +_,7 @@
-         if (compound.contains("ShowBottom", 1)) {
-             this.setShowBottom(compound.getBoolean("ShowBottom"));
-         }
-+        if (compound.contains("Paper.GeneratedByDragonFight", 1)) this.generatedByDragonFight = compound.getBoolean("Paper.GeneratedByDragonFight"); // Paper - Fix invulnerable end crystals
+     protected void readAdditionalSaveData(CompoundTag compound) {
+         this.setBeamTarget(compound.read("beam_target", BlockPos.CODEC).orElse(null));
+         this.setShowBottom(compound.getBooleanOr("ShowBottom", true));
++        this.generatedByDragonFight = compound.getBooleanOr("Paper.GeneratedByDragonFight", false); // Paper - Fix invulnerable end crystals
      }
  
      @Override
-@@ -96,10 +_,24 @@
+@@ -91,10 +_,24 @@
              return false;
          } else {
              if (!this.isRemoved()) {

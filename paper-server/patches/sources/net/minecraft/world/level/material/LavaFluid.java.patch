@@ -1,35 +1,46 @@
 --- a/net/minecraft/world/level/material/LavaFluid.java
 +++ b/net/minecraft/world/level/material/LavaFluid.java
-@@ -88,6 +_,13 @@
-                     BlockState blockState = level.getBlockState(blockPos);
-                     if (blockState.isAir()) {
-                         if (this.hasFlammableNeighbours(level, blockPos)) {
+@@ -92,6 +_,13 @@
+                         BlockState blockState = level.getBlockState(blockPos);
+                         if (blockState.isAir()) {
+                             if (this.hasFlammableNeighbours(level, blockPos)) {
++                                // CraftBukkit start - Prevent lava putting something on fire
++                                if (!level.getBlockState(blockPos).is(Blocks.FIRE)) {
++                                    if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, blockPos, pos).isCancelled()) {
++                                        continue;
++                                    }
++                                }
++                                // CraftBukkit end
+                                 level.setBlockAndUpdate(blockPos, BaseFireBlock.getState(level, blockPos));
+                                 return;
+                             }
+@@ -107,6 +_,14 @@
+                         }
+ 
+                         if (level.isEmptyBlock(blockPos1.above()) && this.isFlammable(level, blockPos1)) {
 +                            // CraftBukkit start - Prevent lava putting something on fire
-+                            if (level.getBlockState(blockPos).getBlock() != Blocks.FIRE) {
-+                                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, blockPos, pos).isCancelled()) {
++                            BlockPos up = blockPos1.above();
++                            if (!level.getBlockState(up).is(Blocks.FIRE)) {
++                                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, up, pos).isCancelled()) {
 +                                    continue;
 +                                }
 +                            }
-+                            // CraftBukkit end
-                             level.setBlockAndUpdate(blockPos, BaseFireBlock.getState(level, blockPos));
-                             return;
++                            // CraftBukkit end - Prevent lava putting something on fire
+                             level.setBlockAndUpdate(blockPos1.above(), BaseFireBlock.getState(level, blockPos1));
                          }
-@@ -103,6 +_,14 @@
                      }
+@@ -117,8 +_,9 @@
  
-                     if (level.isEmptyBlock(blockPos1.above()) && this.isFlammable(level, blockPos1)) {
-+                        // CraftBukkit start - Prevent lava putting something on fire
-+                        BlockPos up = blockPos1.above();
-+                        if (level.getBlockState(up).getBlock() != Blocks.FIRE) {
-+                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, up, pos).isCancelled()) {
-+                                continue;
-+                            }
-+                        }
-+                        // CraftBukkit end
-                         level.setBlockAndUpdate(blockPos1.above(), BaseFireBlock.getState(level, blockPos1));
-                     }
-                 }
-@@ -195,7 +_,11 @@
+     @Override
+     protected void entityInside(Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
++        BlockPos savedPos = pos.immutable(); // Paper - track lava contact
+         effectApplier.apply(InsideBlockEffectType.LAVA_IGNITE);
+-        effectApplier.runAfter(InsideBlockEffectType.LAVA_IGNITE, Entity::lavaHurt);
++        effectApplier.runAfter(InsideBlockEffectType.LAVA_IGNITE, ignitedEntity -> ignitedEntity.lavaHurt(savedPos)); // Paper - track lava contact
+     }
+ 
+     private boolean hasFlammableNeighbours(LevelReader level, BlockPos pos) {
+@@ -206,7 +_,11 @@
              FluidState fluidState1 = level.getFluidState(pos);
              if (this.is(FluidTags.LAVA) && fluidState1.is(FluidTags.WATER)) {
                  if (blockState.getBlock() instanceof LiquidBlock) {
@@ -42,7 +53,7 @@
                  }
  
                  this.fizz(level, pos);
-@@ -213,7 +_,7 @@
+@@ -224,7 +_,7 @@
  
      @Override
      protected float getExplosionResistance() {

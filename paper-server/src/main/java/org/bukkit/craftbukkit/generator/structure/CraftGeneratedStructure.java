@@ -21,8 +21,8 @@ public class CraftGeneratedStructure implements GeneratedStructure {
 
     @Override
     public BoundingBox getBoundingBox() {
-        net.minecraft.world.level.levelgen.structure.BoundingBox bb = this.handle.getBoundingBox();
-        return new BoundingBox(bb.minX(), bb.minY(), bb.minZ(), bb.maxX(), bb.maxY(), bb.maxZ());
+        net.minecraft.world.level.levelgen.structure.BoundingBox box = this.handle.getBoundingBox();
+        return new BoundingBox(box.minX(), box.minY(), box.minZ(), box.maxX(), box.maxY(), box.maxZ());
     }
 
     @Override
@@ -33,7 +33,7 @@ public class CraftGeneratedStructure implements GeneratedStructure {
     @Override
     public Collection<StructurePiece> getPieces() {
         if (this.pieces == null) { // Cache the pieces on first request
-            ImmutableList.Builder<StructurePiece> builder = new ImmutableList.Builder<>();
+            ImmutableList.Builder<StructurePiece> builder = ImmutableList.builderWithExpectedSize(this.handle.getPieces().size());
             for (net.minecraft.world.level.levelgen.structure.StructurePiece piece : this.handle.getPieces()) {
                 builder.add(new CraftStructurePiece(piece));
             }

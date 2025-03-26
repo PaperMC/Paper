@@ -7,6 +7,7 @@ import io.papermc.paper.entity.LookAnchor;
 import org.bukkit.Chunk; // Paper
 import org.bukkit.EntityEffect;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.Nameable;
 import org.bukkit.Server;
 import org.bukkit.Sound;
@@ -337,7 +338,6 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      */
     boolean isFrozen();
 
-    // Paper start - missing entity api
     /**
      * Sets whether the entity is invisible or not.
      * <p>
@@ -347,14 +347,14 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      *
      * @param invisible If the entity is invisible
      */
-    void setInvisible(boolean invisible); // Paper - moved up from LivingEntity
+    void setInvisible(boolean invisible);
 
     /**
      * Gets whether the entity is invisible or not.
      *
      * @return Whether the entity is invisible
      */
-    boolean isInvisible(); // Paper - moved up from LivingEntity
+    boolean isInvisible();
 
     /**
      * Sets this entities no physics status.
@@ -369,9 +369,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @return true if the entity does not have physics.
      */
     boolean hasNoPhysics();
-    // Paper end - missing entity api
 
-    // Paper start - Freeze Tick Lock API
     /**
      * Gets if the entity currently has its freeze ticks locked
      * to a set amount.
@@ -389,12 +387,11 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param locked prevent vanilla modification or not
      */
     void lockFreezeTicks(boolean locked);
-    // Paper end - Freeze Tick Lock API
 
     /**
      * Mark the entity's removal.
      *
-     * @throws UnsupportedOperationException if you try to remove a {@link Player} use {@link Player#kickPlayer(String)} in this case instead
+     * @throws UnsupportedOperationException if you try to remove a {@link Player} use {@link Player#kick(net.kyori.adventure.text.Component)} in this case instead
      */
     public void remove();
 
@@ -533,6 +530,7 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
      * @param event a {@link EntityDamageEvent}
      * @deprecated method is for internal use only and will be removed
      */
+    @ApiStatus.Internal
     @Deprecated(since = "1.20.4", forRemoval = true)
     public void setLastDamageCause(@Nullable EntityDamageEvent event);
 
@@ -1029,23 +1027,43 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
 
     /**
      * Check if entity is in bubble column
+     *
+     * @deprecated check the block at the position of the entity
      */
-    boolean isInBubbleColumn();
+    @Deprecated(since = "1.21.5")
+    default boolean isInBubbleColumn() {
+        return this.getWorld().getBlockAt(this.getLocation()).getType() == Material.BUBBLE_COLUMN;
+    }
 
     /**
      * Check if entity is in water or rain
+     *
+     * @deprecated use {@link #isInWater()}} and {@link #isInRain()}
      */
-    boolean isInWaterOrRain();
+    @Deprecated(since = "1.21.5")
+    default boolean isInWaterOrRain() {
+        return this.isInWater() || this.isInRain();
+    }
 
     /**
      * Check if entity is in water or bubble column
+     *
+     * @deprecated use {@link #isInWater()}, bubble column is considered as water
      */
-    boolean isInWaterOrBubbleColumn();
+    @Deprecated(since = "1.21.5")
+    default boolean isInWaterOrBubbleColumn() {
+        return this.isInWater();
+    }
 
     /**
      * Check if entity is in water or rain or bubble column
+     *
+     * @deprecated use {@link #isInWaterOrRain()}, bubble column is considered as water
      */
-    boolean isInWaterOrRainOrBubbleColumn();
+    @Deprecated(since = "1.21.5")
+    default boolean isInWaterOrRainOrBubbleColumn() {
+        return this.isInWaterOrRain();
+    }
 
     /**
      * Check if entity is in lava

@@ -11,7 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Vanilla keys for {@link RegistryKey#BIOME}.
+ * Vanilla tag keys for {@link RegistryKey#BIOME}.
  *
  * @apiNote The fields provided here are a direct representation of
  * what is available from the vanilla game source. They may be
@@ -23,8 +23,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedFrom("1.21.5")
 @ApiStatus.Experimental
 public final class BiomeTagKeys {
     /**
@@ -448,6 +448,13 @@ public final class BiomeTagKeys {
     public static final TagKey<Biome> SNOW_GOLEM_MELTS = create(key("snow_golem_melts"));
 
     /**
+     * {@code #minecraft:spawns_cold_variant_farm_animals}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> SPAWNS_COLD_VARIANT_FARM_ANIMALS = create(key("spawns_cold_variant_farm_animals"));
+
+    /**
      * {@code #minecraft:spawns_cold_variant_frogs}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -467,6 +474,13 @@ public final class BiomeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<Biome> SPAWNS_SNOW_FOXES = create(key("spawns_snow_foxes"));
+
+    /**
+     * {@code #minecraft:spawns_warm_variant_farm_animals}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<Biome> SPAWNS_WARM_VARIANT_FARM_ANIMALS = create(key("spawns_warm_variant_farm_animals"));
 
     /**
      * {@code #minecraft:spawns_warm_variant_frogs}

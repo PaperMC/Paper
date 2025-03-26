@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import org.bukkit.block.Banner;
 import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -139,6 +140,10 @@ public final class SerializableMeta implements ConfigurationSerializable {
         throw new IllegalArgumentException(field + "(" + object + ") is not a valid " + clazz);
     }
 
+    public static <T> java.util.Optional<T> getObjectOptionally(Class<T> clazz, Map<?, ?> map, Object field, boolean nullable) {
+        return Optional.ofNullable(getObject(clazz, map, field, nullable));
+    }
+
     public static <T> List<T> getList(Class<T> clazz, Map<?, ?> map, Object field) {
         List<T> result = new ArrayList<>();
 
@@ -173,21 +178,4 @@ public final class SerializableMeta implements ConfigurationSerializable {
 
         return result;
     }
-
-    // Paper start - General ItemMeta Fixes
-    public static <T> java.util.Optional<T> getObjectOptionally(Class<T> clazz, Map<?, ?> map, Object field, boolean nullable) {
-        final Object object = map.get(field);
-
-        if (clazz.isInstance(object)) {
-            return java.util.Optional.of(clazz.cast(object));
-        }
-        if (object == null) {
-            if (!nullable) {
-                throw new NoSuchElementException(map + " does not contain " + field);
-            }
-            return java.util.Optional.empty();
-        }
-        throw new IllegalArgumentException(field + "(" + object + ") is not a valid " + clazz);
-    }
-    // Paper end - General ItemMeta Fixes
 }

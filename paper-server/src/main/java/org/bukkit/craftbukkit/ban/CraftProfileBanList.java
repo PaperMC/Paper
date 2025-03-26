@@ -13,7 +13,6 @@ import net.minecraft.server.players.UserBanList;
 import net.minecraft.server.players.UserBanListEntry;
 import org.bukkit.BanEntry;
 import org.bukkit.ban.ProfileBanList;
-import org.bukkit.craftbukkit.profile.CraftPlayerProfile;
 import org.bukkit.profile.PlayerProfile;
 
 public class CraftProfileBanList implements ProfileBanList {
@@ -36,7 +35,7 @@ public class CraftProfileBanList implements ProfileBanList {
 
         return this.getBanEntry(((com.destroystokyo.paper.profile.SharedPlayerProfile) target).buildGameProfile()); // Paper
     }
-    // Paper start - fix ban list API
+
     @Override
     public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> getBanEntry(final com.destroystokyo.paper.profile.PlayerProfile target) {
         Preconditions.checkArgument(target != null, "target cannot be null");
@@ -73,7 +72,6 @@ public class CraftProfileBanList implements ProfileBanList {
         Instant instant = duration != null ? Instant.now().plus(duration) : null;
         return this.addBan(target, reason, instant, source);
     }
-    // Paper end - fix ban list API
 
     @Override
     public BanEntry<com.destroystokyo.paper.profile.PlayerProfile> addBan(String target, String reason, Date expires, String source) { // Paper - fix ban list API
@@ -126,11 +124,10 @@ public class CraftProfileBanList implements ProfileBanList {
 
     @Override
     public boolean isBanned(PlayerProfile target) {
-        // Paper start
         return this.isBanned((com.destroystokyo.paper.profile.SharedPlayerProfile) target);
     }
+
     private boolean isBanned(com.destroystokyo.paper.profile.SharedPlayerProfile target) {
-        // Paper end
         Preconditions.checkArgument(target != null, "Target cannot be null");
 
         return this.isBanned(target.buildGameProfile()); // Paper
@@ -145,11 +142,10 @@ public class CraftProfileBanList implements ProfileBanList {
 
     @Override
     public void pardon(PlayerProfile target) {
-        // Paper start
         this.pardon((com.destroystokyo.paper.profile.SharedPlayerProfile) target);
     }
+
     private void pardon(com.destroystokyo.paper.profile.SharedPlayerProfile target) {
-        // Paper end
         Preconditions.checkArgument(target != null, "Target cannot be null");
 
         this.pardon(target.buildGameProfile()); // Paper

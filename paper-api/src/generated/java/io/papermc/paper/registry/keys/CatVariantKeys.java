@@ -22,8 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedFrom("1.21.5")
 public final class CatVariantKeys {
     /**
      * {@code minecraft:all_black}
@@ -105,7 +105,13 @@ public final class CatVariantKeys {
     private CatVariantKeys() {
     }
 
-    private static TypedKey<Cat.Type> create(final Key key) {
+    /**
+     * Creates a typed key for {@link Cat.Type} in the registry {@code minecraft:cat_variant}.
+     *
+     * @param key the value's key in the registry
+     * @return a new typed key
+     */
+    public static TypedKey<Cat.Type> create(final Key key) {
         return TypedKey.create(RegistryKey.CAT_VARIANT, key);
     }
 }

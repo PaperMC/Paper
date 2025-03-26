@@ -12,31 +12,35 @@ import org.jetbrains.annotations.NotNull;
  * Called when an entity is damaged by an entity
  */
 public class EntityDamageByEntityEvent extends EntityDamageEvent {
-    private final Entity damager;
-    private final boolean critical; // Paper
 
+    private final Entity damager;
+    private final boolean critical;
+
+    @ApiStatus.Internal
     @Deprecated(since = "1.20.4", forRemoval = true)
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, final double damage) {
         this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), damage);
     }
 
+    @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, final double damage) {
         super(damagee, cause, damageSource, damage);
         this.damager = damager;
-        this.critical = false; // Paper - add critical damage API
+        this.critical = false;
     }
 
+    @ApiStatus.Internal
     @Deprecated(since = "1.20.4", forRemoval = true)
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         this(damager, damagee, cause, DamageSource.builder(DamageType.GENERIC).build(), modifiers, modifierFunctions);
     }
 
+    @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public EntityDamageByEntityEvent(@NotNull final Entity damager, @NotNull final Entity damagee, @NotNull final DamageCause cause, @NotNull final DamageSource damageSource, @NotNull final Map<DamageModifier, Double> modifiers, @NotNull final Map<DamageModifier, ? extends Function<? super Double, Double>> modifierFunctions) {
         super(damagee, cause, damageSource, modifiers, modifierFunctions);
         this.damager = damager;
-        // Paper start
         this.critical = false;
     }
 
@@ -45,6 +49,16 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
         super(damagee, cause, damageSource, modifiers, modifierFunctions);
         this.damager = damager;
         this.critical = critical;
+    }
+
+    /**
+     * Returns the entity that damaged the defender.
+     *
+     * @return Entity that damaged the defender.
+     */
+    @NotNull
+    public Entity getDamager() {
+        return this.damager;
     }
 
     /**
@@ -58,9 +72,7 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
     public boolean isCritical() {
         return this.critical;
     }
-    // Paper end
 
-    // Paper start
     /**
      * {@inheritDoc}
      * <p>
@@ -71,16 +83,5 @@ public class EntityDamageByEntityEvent extends EntityDamageEvent {
     @Override
     public @NotNull DamageSource getDamageSource() {
         return super.getDamageSource();
-    }
-    // Paper end
-
-    /**
-     * Returns the entity that damaged the defender.
-     *
-     * @return Entity that damaged the defender.
-     */
-    @NotNull
-    public Entity getDamager() {
-        return damager;
     }
 }

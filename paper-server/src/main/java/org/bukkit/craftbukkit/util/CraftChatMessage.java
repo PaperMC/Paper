@@ -3,6 +3,7 @@ package org.bukkit.craftbukkit.util;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.gson.JsonParseException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -12,15 +13,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
-import net.minecraft.network.chat.ClickEvent.Action;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.chat.contents.PlainTextContents;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.server.MinecraftServer;
 import org.bukkit.ChatColor;
+import org.bukkit.craftbukkit.CraftRegistry;
 
 public final class CraftChatMessage {
 
@@ -146,7 +146,7 @@ public final class CraftChatMessage {
                         if (!(match.startsWith("http://") || match.startsWith("https://"))) {
                             match = "http://" + match;
                         }
-                        this.modifier = this.modifier.withClickEvent(new ClickEvent(Action.OPEN_URL, match));
+                        this.modifier = this.modifier.withClickEvent(new ClickEvent.OpenUrl(URI.create(match)));
                         this.appendNewComponent(matcher.end(groupId));
                         this.modifier = this.modifier.withClickEvent((ClickEvent) null);
                     }
@@ -220,7 +220,7 @@ public final class CraftChatMessage {
     }
 
     public static String toJSON(Component component) {
-        return Component.Serializer.toJson(component, MinecraftServer.getDefaultRegistryAccess());
+        return Component.Serializer.toJson(component, CraftRegistry.getMinecraftRegistry());
     }
 
     public static String toJSONOrNull(Component component) {
@@ -231,7 +231,7 @@ public final class CraftChatMessage {
     public static Component fromJSON(String jsonMessage) throws JsonParseException {
         // Note: This also parses plain Strings to text components.
         // Note: An empty message (empty, or only consisting of whitespace) results in null rather than a parse exception.
-        return Component.Serializer.fromJson(jsonMessage, MinecraftServer.getDefaultRegistryAccess());
+        return Component.Serializer.fromJson(jsonMessage, CraftRegistry.getMinecraftRegistry());
     }
 
     public static Component fromJSONOrNull(String jsonMessage) {
@@ -366,7 +366,7 @@ public final class CraftChatMessage {
                     extras.add(prev);
 
                     MutableComponent link = Component.literal(matcher.group());
-                    Style linkModi = modifier.withClickEvent(new ClickEvent(Action.OPEN_URL, match));
+                    Style linkModi = modifier.withClickEvent(new ClickEvent.OpenUrl(URI.create(match)));
                     link.setStyle(linkModi);
                     extras.add(link);
 

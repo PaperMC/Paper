@@ -30,7 +30,7 @@ public final class NamespacedKey implements net.kyori.adventure.key.Key, com.des
      * compatibility measures.
      */
     public static final String BUKKIT = "bukkit";
-    //
+
     private final String namespace;
     private final String key;
 

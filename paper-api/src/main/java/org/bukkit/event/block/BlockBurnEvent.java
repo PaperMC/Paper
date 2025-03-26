@@ -14,11 +14,14 @@ import org.jetbrains.annotations.Nullable;
  * result of being burnt by fire.
  */
 public class BlockBurnEvent extends BlockEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Block ignitingBlock;
+    private boolean cancelled;
 
     @Deprecated(since = "1.11.2", forRemoval = true)
+    @ApiStatus.Internal
     public BlockBurnEvent(@NotNull final Block block) {
         this(block, null);
     }
@@ -32,7 +35,7 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
     /**
      * Gets the block which ignited this block.
      *
-     * @return The Block that ignited and burned this block, or null if no
+     * @return The Block that ignited and burned this block, or {@code null} if no
      * source block exists
      */
     @Nullable
@@ -53,11 +56,11 @@ public class BlockBurnEvent extends BlockEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }
