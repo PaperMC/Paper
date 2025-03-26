@@ -4,6 +4,7 @@ import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
@@ -37,6 +38,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.entity.player.Player;
@@ -83,6 +85,7 @@ import org.bukkit.potion.PotionType;
 public final class CraftMagicNumbers implements UnsafeValues {
     public static final CraftMagicNumbers INSTANCE = new CraftMagicNumbers();
     public static final boolean DISABLE_OLD_API_SUPPORT = Boolean.getBoolean("paper.disableOldApiSupport"); // Paper
+    private static final Gson GSON = new Gson();
 
     private final Commodore commodore = new Commodore();
 
@@ -521,7 +524,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     ret.put("count", value.asInt().get());
                 }
                 case "components" -> {
-                    ret.put("components", new net.minecraft.nbt.SnbtPrinterTagVisitor().visit(value.asCompound().get()));
+                    ret.put("components", ExtraCodecs.converter(NbtOps.INSTANCE).encodeStart(JsonOps.INSTANCE, value).result().get().toString());
                 }
                 case "DataVersion" -> {
                     ret.put("DataVersion", value.asInt().get());
@@ -544,11 +547,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     tag.putInt("count", ((Number) value).intValue());
                 }
                 case "components" -> {
-                    try {
-                        tag.put("components", net.minecraft.nbt.TagParser.parseCompoundFully(((String) value)));
-                    } catch (CommandSyntaxException e) {
-                        throw new RuntimeException(e);
-                    }
+                    String json = (String) value;
+                    final JsonElement jsonElement = GSON.fromJson(json, JsonElement.class);
+                    tag.put("components", ExtraCodecs.converter(JsonOps.INSTANCE).encodeStart(NbtOps.INSTANCE, jsonElement).result().get());
                 }
                 case "DataVersion" -> {
                     tag.putInt("DataVersion", ((Number) value).intValue());
