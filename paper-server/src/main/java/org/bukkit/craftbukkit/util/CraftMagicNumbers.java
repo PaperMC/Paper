@@ -524,7 +524,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     ret.put("count", value.asInt().get());
                 }
                 case "components" -> {
-                    ret.put("components", new net.minecraft.nbt.SnbtPrinterTagVisitor().visit(value.asCompound().get()));
+                    ret.put("components", ExtraCodecs.converter(NbtOps.INSTANCE).encodeStart(JsonOps.INSTANCE, value).result().get().toString());
                 }
                 case "DataVersion" -> {
                     ret.put("DataVersion", value.asInt().get());
@@ -547,11 +547,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     tag.putInt("count", ((Number) value).intValue());
                 }
                 case "components" -> {
-                    try {
-                        tag.put("components", net.minecraft.nbt.TagParser.parseCompoundFully(((String) value)));
-                    } catch (CommandSyntaxException e) {
-                        throw new RuntimeException(e);
-                    }
+                    String json = (String) value;
+                    final JsonElement jsonElement = GSON.fromJson(json, JsonElement.class);
+                    tag.put("components", ExtraCodecs.converter(JsonOps.INSTANCE).encodeStart(NbtOps.INSTANCE, jsonElement).result().get());
                 }
                 case "DataVersion" -> {
                     tag.putInt("DataVersion", ((Number) value).intValue());
