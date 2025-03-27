@@ -1620,6 +1620,11 @@ public class CraftWorld extends CraftRegionAccessor implements World {
     }
 
     @Override
+    public boolean hasBonusChest() {
+        return this.world.serverLevelData.worldGenOptions().generateBonusChest();
+    }
+
+    @Override
     public boolean isHardcore() {
         return this.world.getLevelData().isHardcore();
     }
