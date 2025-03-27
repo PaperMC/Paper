@@ -37,6 +37,76 @@
                  this.dragonUUID = null;
              }
          }
+@@ -268,21 +_,40 @@
+         return false;
+     }
+ 
++    // Paper start - Fix inefficient Ender Dragon respawn sequence
+     @Nullable
+     public BlockPattern.BlockPatternMatch findExitPortal() {
++
++        BlockPos location = EndPodiumFeature.getLocation(this.origin);
++        LevelChunk chunk = this.level.getChunk(location.getX(), location.getZ());
++
++        
++        for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
++            if (blockEntity instanceof TheEndPortalBlockEntity) {
++                BlockPattern.BlockPatternMatch blockPatternMatch1 = this.exitPortalPattern.find(this.level, blockEntity.getBlockPos());
++                if (blockPatternMatch1 != null) {
++                    if (this.portalLocation == null) {
++                        this.portalLocation = blockPatternMatch1.getBlock(3, 3, 3).getPos();
++                    }
++    
++                    return blockPatternMatch1;
++                }
++            }
++
++        }
++
+         ChunkPos chunkPos = new ChunkPos(this.origin);
+ 
+-        for (int i = -8 + chunkPos.x; i <= 8 + chunkPos.x; i++) {
+-            for (int i1 = -8 + chunkPos.z; i1 <= 8 + chunkPos.z; i1++) {
+-                LevelChunk chunk = this.level.getChunk(i, i1);
++        for (int i = -8 + chunkPos.x; i <= 8 + chunkPos.x; i+=16) {
++            for (int i1 = -8 + chunkPos.z; i1 <= 8 + chunkPos.z; i1+=16) {
++                chunk = this.level.getChunk(i, i1);
+ 
+                 for (BlockEntity blockEntity : chunk.getBlockEntities().values()) {
+                     if (blockEntity instanceof TheEndPortalBlockEntity) {
+                         BlockPattern.BlockPatternMatch blockPatternMatch = this.exitPortalPattern.find(this.level, blockEntity.getBlockPos());
+                         if (blockPatternMatch != null) {
+-                            BlockPos pos = blockPatternMatch.getBlock(3, 3, 3).getPos();
+                             if (this.portalLocation == null) {
+-                                this.portalLocation = pos;
++                                this.portalLocation = blockPatternMatch.getBlock(3, 3, 3).getPos();
+                             }
+ 
+                             return blockPatternMatch;
+@@ -292,22 +_,9 @@
+             }
+         }
+ 
+-        BlockPos location = EndPodiumFeature.getLocation(this.origin);
+-        int i1 = this.level.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, location).getY();
+-
+-        for (int i2 = i1; i2 >= this.level.getMinY(); i2--) {
+-            BlockPattern.BlockPatternMatch blockPatternMatch1 = this.exitPortalPattern.find(this.level, new BlockPos(location.getX(), i2, location.getZ()));
+-            if (blockPatternMatch1 != null) {
+-                if (this.portalLocation == null) {
+-                    this.portalLocation = blockPatternMatch1.getBlock(3, 3, 3).getPos();
+-                }
+-
+-                return blockPatternMatch1;
+-            }
+-        }
+-
+         return null;
+     }
++    // Paper end - Fix inefficient Ender Dragon respawn sequence
+ 
+     private boolean isArenaLoaded() {
+         if (this.skipArenaLoadedCheck) {
 @@ -366,12 +_,22 @@
              this.dragonEvent.setVisible(false);
              this.spawnExitPortal(true);
