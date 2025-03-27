@@ -5,7 +5,7 @@ Subject: [PATCH] Anti-Xray
 
 
 diff --git a/io/papermc/paper/FeatureHooks.java b/io/papermc/paper/FeatureHooks.java
-index 81ff677e970ffbe7ad5381e56852e33cf7a8ea45..184e6c6fe2ba522d0ea0774604839320c4152371 100644
+index d153f707429ee816da82f8ca711c1dc88c40e123..30eced048bb49368076e37eb9a36ae28909d97a6 100644
 --- a/io/papermc/paper/FeatureHooks.java
 +++ b/io/papermc/paper/FeatureHooks.java
 @@ -37,20 +37,25 @@ public final class FeatureHooks {
@@ -144,7 +144,7 @@ index 3a384175f8e7f204234bbaf3081bdc20c47a0d4b..5699bc15eba92e22433a20cb8326b59f
  
      private ClientboundLevelChunkWithLightPacket(RegistryFriendlyByteBuf buffer) {
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index e26239bc6185d81e2ce82579843a4017d7c10943..e7795a62e9e3ffdba21bf42f2f107b6087bae90e 100644
+index ef201f4add358fbf1818f3b2ec9e75fe2cce4c8b..fe9b4484d683fe48f435a053c9c90557fdf80e7b 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -343,7 +343,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -187,7 +187,7 @@ index 342bc843c384761e883de861044f4f8930ae8763..14878690a88fd4de3e2c127086607e6c
          if (io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0) {
              new io.papermc.paper.event.packet.PlayerChunkLoadEvent(new org.bukkit.craftbukkit.CraftChunk(chunk), packetListener.getPlayer().getBukkitEntity()).callEvent();
 diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
-index 8b5a8929e7ca7d2e9534435308bdc7f7352791f9..69ee33bdd9ce8296b5601ee51e5f4940f14d4eb2 100644
+index a2a4dbcfb77d44657b3dfbe97cb629de215c29eb..73717609fccd9af12e2cc39824106f49426b581c 100644
 --- a/net/minecraft/server/players/PlayerList.java
 +++ b/net/minecraft/server/players/PlayerList.java
 @@ -407,7 +407,7 @@ public abstract class PlayerList {
@@ -200,18 +200,18 @@ index 8b5a8929e7ca7d2e9534435308bdc7f7352791f9..69ee33bdd9ce8296b5601ee51e5f4940
          }
          // Paper end - Send empty chunk
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index 58057620891e9f68330770e434594621bde3883f..699a1f6266d474ae7f1d6f8b9faac2d5489d14ea 100644
+index 1f26826b2161cfeb27e5b2060e178b493e9142d9..63f8b0c47e3321b74f4b6bcbc1e28cd751911198 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
-@@ -169,6 +169,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
-     // Paper end - add paper world config
+@@ -132,6 +132,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     private long subTickCount;
  
-     public static @Nullable BlockPos lastPhysicsProblem; // Spigot
+     // CraftBukkit start
 +    public final io.papermc.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
-     private int tileTickPosition;
-     public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new HashMap<>(); // Paper - Optimize explosions
-     public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
-@@ -211,7 +212,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     private final CraftWorld world;
+     public boolean pvpMode;
+     public org.bukkit.generator.ChunkGenerator generator;
+@@ -201,7 +202,8 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
          org.bukkit.generator.BiomeProvider biomeProvider, // CraftBukkit
          org.bukkit.World.Environment env, // CraftBukkit
          java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
@@ -221,7 +221,7 @@ index 58057620891e9f68330770e434594621bde3883f..699a1f6266d474ae7f1d6f8b9faac2d5
      ) {
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) levelData).getLevelName()); // Spigot
          this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
-@@ -288,6 +290,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -278,6 +280,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
              public void onBorderSetDamageSafeZOne(WorldBorder border, double safeZoneRadius) {}
          });
          // CraftBukkit end
@@ -229,7 +229,7 @@ index 58057620891e9f68330770e434594621bde3883f..699a1f6266d474ae7f1d6f8b9faac2d5
      }
  
      // Paper start - Cancel hit for vanished players
-@@ -493,6 +496,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+@@ -483,6 +486,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
                  snapshot.setFlags(flags); // Paper - always set the flag of the most recent call to mitigate issues with multiple update at the same pos with different flags
              }
              BlockState blockState = chunkAt.setBlockState(pos, state, flags);
