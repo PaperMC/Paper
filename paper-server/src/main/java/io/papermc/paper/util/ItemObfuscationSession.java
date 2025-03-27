@@ -71,6 +71,7 @@ public class ItemObfuscationSession implements SafeAutoClosable {
 
     private final ObfuscationContext root = new ObfuscationContext(this, null, null, ObfuscationLevel.NONE);
     private ObfuscationContext context = root;
+    public boolean disableOverride;
 
     public void switchContext(final ObfuscationContext context) {
         this.context = context;
