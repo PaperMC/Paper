@@ -81,7 +81,11 @@ public final class CraftEquippableComponent implements EquippableComponent {
     public Map<String, Object> serialize() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("slot", this.getSlot().name());
-        result.put("equip-sound", this.getEquipSound().getKey().toString());
+
+        NamespacedKey sound = Registry.SOUNDS.getKey(this.getEquipSound());
+        if (sound != null) {
+            result.put("equip-sound", sound.toString());
+        }
 
         NamespacedKey model = this.getModel();
         if (model != null) {
