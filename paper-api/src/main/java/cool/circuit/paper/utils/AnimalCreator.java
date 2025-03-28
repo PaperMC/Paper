@@ -13,6 +13,8 @@ public final class AnimalCreator {
     public void summonAnimal(final EntityType type, final Location location, final String displayName) {
         final World world = location.getWorld();
 
+        if (world == null) return;
+
         final Entity entity = world.spawnEntity(location, type);
 
         entity.setCustomName(displayName);
@@ -22,6 +24,8 @@ public final class AnimalCreator {
 
     public void summonAnimal(final EntityType type, final Location location, final Component displayName) {
         final World world = location.getWorld();
+
+        if (world == null) return;
 
         final Entity entity = world.spawnEntity(location, type);
 
