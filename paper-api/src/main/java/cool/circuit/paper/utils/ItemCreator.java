@@ -11,9 +11,9 @@ public final class ItemCreator {
 
     //Circuit board fork start
 
-    public static ItemStack createItem(Material material, String displayName, String... lore) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
+    public static ItemStack createItem(final Material material, final String displayName, final String... lore) {
+        final ItemStack item = new ItemStack(material);
+        final ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
             meta.setDisplayName(displayName);
@@ -24,9 +24,9 @@ public final class ItemCreator {
         return item;
     }
 
-    public static ItemStack createItem(Material material, Component displayName, Component... lore) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
+    public static ItemStack createItem(final Material material, final Component displayName, final Component... lore) {
+        final ItemStack item = new ItemStack(material);
+        final ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
             meta.displayName(displayName);
@@ -37,9 +37,9 @@ public final class ItemCreator {
         return item;
     }
 
-    public static ItemStack createItem(Material material, String displayName, boolean glowing, String... lore) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
+    public static ItemStack createItem(final Material material, final String displayName, final boolean glowing, final String... lore) {
+        final ItemStack item = new ItemStack(material);
+        final ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
             meta.setDisplayName(displayName);
@@ -55,9 +55,9 @@ public final class ItemCreator {
         return item;
     }
 
-    public static ItemStack createItem(Material material, Component displayName, boolean glowing, Component... lore) {
-        ItemStack item = new ItemStack(material);
-        ItemMeta meta = item.getItemMeta();
+    public static ItemStack createItem(final Material material, final Component displayName, final boolean glowing, final Component... lore) {
+        final ItemStack item = new ItemStack(material);
+        final ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
             meta.displayName(displayName);
