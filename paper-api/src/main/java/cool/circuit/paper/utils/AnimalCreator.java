@@ -10,7 +10,7 @@ public final class AnimalCreator {
 
     //Circuit board fork start
 
-    public void summonAnimal(final EntityType type, final Location location, final String displayName) {
+    public static void summonAnimal(final EntityType type, final Location location, final String displayName) {
         final World world = location.getWorld();
 
         if (world == null) return;
@@ -22,7 +22,7 @@ public final class AnimalCreator {
         entity.setCustomNameVisible(true);
     }
 
-    public void summonAnimal(final EntityType type, final Location location, final Component displayName) {
+    public static void summonAnimal(final EntityType type, final Location location, final Component displayName) {
         final World world = location.getWorld();
 
         if (world == null) return;
