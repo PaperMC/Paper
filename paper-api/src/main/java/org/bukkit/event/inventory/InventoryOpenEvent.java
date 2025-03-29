@@ -38,7 +38,7 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
      * Gets the title override set by another event or {@code null}
      * if not set.
      *
-     * @return the title override or null
+     * @return the title override or {@code null}
      */
     public @Nullable Component titleOverride() {
         return this.titleOverride;
@@ -62,7 +62,7 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
     /**
      * {@inheritDoc}
      * <p>
-     * If an inventory open event is cancelled, the inventory screen will not
+     * If this event is cancelled, the inventory screen will not
      * show.
      */
     @Override
@@ -73,7 +73,7 @@ public class InventoryOpenEvent extends InventoryEvent implements Cancellable {
     /**
      * {@inheritDoc}
      * <p>
-     * If an inventory open event is cancelled, the inventory screen will not
+     * If this event is cancelled, the inventory screen will not
      * show.
      */
     @Override

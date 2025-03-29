@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Called when an entity is spawned into a world by a trial spawner.
  * <p>
- * If a Trial Spawner Spawn event is cancelled, the entity will not spawn.
+ * If this event is cancelled, the entity will not spawn.
  */
 @ApiStatus.Experimental
 public class TrialSpawnerSpawnEvent extends EntitySpawnEvent {

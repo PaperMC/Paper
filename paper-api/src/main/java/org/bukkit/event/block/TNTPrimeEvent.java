@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when a block of TNT in the world become primed.
  * <p>
- * If a TNT Prime event is cancelled, the block of TNT will not become primed.
+ * If this event is cancelled, the block of TNT will not become primed.
  */
 public class TNTPrimeEvent extends BlockEvent implements Cancellable {
 

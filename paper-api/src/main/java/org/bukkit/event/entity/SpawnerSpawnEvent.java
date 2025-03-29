@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Called when an entity is spawned into a world by a spawner.
  * <p>
- * If a Spawner Spawn event is cancelled, the entity will not spawn.
+ * If this event is cancelled, the entity will not spawn.
  */
 public class SpawnerSpawnEvent extends EntitySpawnEvent {
 

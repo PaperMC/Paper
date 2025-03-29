@@ -14,6 +14,7 @@ import java.util.regex.Pattern;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.chat.ChatVersion;
 import net.md_5.bungee.chat.VersionedComponentSerializer;
+import com.mojang.serialization.JavaOps;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -21,13 +22,12 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.network.chat.contents.PlainTextContents;
-import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.util.ExtraCodecs;
 import org.bukkit.ChatColor;
 import org.bukkit.craftbukkit.CraftRegistry;
 
 public final class CraftChatMessage {
 
-    private static final Pattern LINK_PATTERN = Pattern.compile("((?:(?:https?):\\/\\/)?(?:[-\\w_\\.]{2,}\\.[a-z]{2,4}.*?(?=[\\.\\?!,;:]?(?:[" + String.valueOf(org.bukkit.ChatColor.COLOR_CHAR) + " \\n]|$))))");
     private static final Map<Character, ChatFormatting> formatMap;
 
     static {
@@ -119,7 +119,6 @@ public final class CraftChatMessage {
                             throw new AssertionError("Unexpected message format");
                         }
                     } else { // Color resets formatting
-                        // Paper start - Improve Legacy Component serialization size
                         Style previous = modifier;
                         modifier = (!hasReset ? RESET : EMPTY).withColor(format);
                         hasReset = true;
@@ -138,7 +137,6 @@ public final class CraftChatMessage {
                         if (previous.isUnderlined()) {
                             modifier = modifier.withUnderlined(false);
                         }
-                        // Paper end - Improve Legacy Component serialization size
                     }
                     needsAdd = true;
                     break;
@@ -149,9 +147,11 @@ public final class CraftChatMessage {
                         if (!(match.startsWith("http://") || match.startsWith("https://"))) {
                             match = "http://" + match;
                         }
-                        this.modifier = this.modifier.withClickEvent(new ClickEvent.OpenUrl(URI.create(match)));
+                        ExtraCodecs.UNTRUSTED_URI.parse(JavaOps.INSTANCE, match).ifSuccess(uri -> {
+                            this.modifier = this.modifier.withClickEvent(new ClickEvent.OpenUrl(uri));
+                        });
                         this.appendNewComponent(matcher.end(groupId));
-                        this.modifier = this.modifier.withClickEvent((ClickEvent) null);
+                        this.modifier = this.modifier.withClickEvent(null);
                     }
                     break;
                 case 3:
@@ -337,80 +337,6 @@ public final class CraftChatMessage {
             });
         }
         return out.toString();
-    }
-
-    public static Component fixComponent(MutableComponent component) {
-        Matcher matcher = CraftChatMessage.LINK_PATTERN.matcher("");
-        return CraftChatMessage.fixComponent(component, matcher);
-    }
-
-    private static Component fixComponent(MutableComponent component, Matcher matcher) {
-        if (component.getContents() instanceof PlainTextContents) {
-            PlainTextContents text = ((PlainTextContents) component.getContents());
-            String msg = text.text();
-            if (matcher.reset(msg).find()) {
-                matcher.reset();
-
-                Style modifier = component.getStyle();
-                List<Component> extras = new ArrayList<Component>();
-                List<Component> extrasOld = new ArrayList<Component>(component.getSiblings());
-                component = Component.empty();
-
-                int pos = 0;
-                while (matcher.find()) {
-                    String match = matcher.group();
-
-                    if (!(match.startsWith("http://") || match.startsWith("https://"))) {
-                        match = "http://" + match;
-                    }
-
-                    MutableComponent prev = Component.literal(msg.substring(pos, matcher.start()));
-                    prev.setStyle(modifier);
-                    extras.add(prev);
-
-                    MutableComponent link = Component.literal(matcher.group());
-                    Style linkModi = modifier.withClickEvent(new ClickEvent.OpenUrl(URI.create(match)));
-                    link.setStyle(linkModi);
-                    extras.add(link);
-
-                    pos = matcher.end();
-                }
-
-                MutableComponent prev = Component.literal(msg.substring(pos));
-                prev.setStyle(modifier);
-                extras.add(prev);
-                extras.addAll(extrasOld);
-
-                for (Component c : extras) {
-                    component.append(c);
-                }
-            }
-        }
-
-        List<Component> extras = component.getSiblings();
-        for (int i = 0; i < extras.size(); i++) {
-            Component comp = extras.get(i);
-            if (comp.getStyle() != null && comp.getStyle().getClickEvent() == null) {
-                extras.set(i, CraftChatMessage.fixComponent(comp.copy(), matcher));
-            }
-        }
-
-        if (component.getContents() instanceof TranslatableContents) {
-            Object[] subs = ((TranslatableContents) component.getContents()).getArgs();
-            for (int i = 0; i < subs.length; i++) {
-                Object comp = subs[i];
-                if (comp instanceof Component) {
-                    Component c = (Component) comp;
-                    if (c.getStyle() != null && c.getStyle().getClickEvent() == null) {
-                        subs[i] = CraftChatMessage.fixComponent(c.copy(), matcher);
-                    }
-                } else if (comp instanceof String && matcher.reset((String) comp).find()) {
-                    subs[i] = CraftChatMessage.fixComponent(Component.literal((String) comp), matcher);
-                }
-            }
-        }
-
-        return component;
     }
 
     private static VersionedComponentSerializer bungeeSerializer = VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5);

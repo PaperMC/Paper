@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
  * to air and utilize their own methods for determining what the default drop
  * for the block being broken is and what to do about it, if anything.
  * <p>
- * If a Block Break event is cancelled, the block will not break and
+ * If this event is cancelled, the block will not break and
  * experience will not drop.
  */
 public class BlockBreakEvent extends BlockExpEvent implements Cancellable {

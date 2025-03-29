@@ -5,7 +5,7 @@ import org.bukkit.entity.AbstractCow;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class CraftAbstractCow extends CraftAnimals implements AbstractCow {
+public abstract class CraftAbstractCow extends CraftAnimals implements AbstractCow {
 
     public CraftAbstractCow(CraftServer server, net.minecraft.world.entity.animal.AbstractCow entity) {
         super(server, entity);

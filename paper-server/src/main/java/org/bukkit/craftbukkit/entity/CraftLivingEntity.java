@@ -512,13 +512,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
 
     @Override
     public Player getKiller() {
-        if (this.getHandle().lastHurtByPlayer == null) {
-            return null;
-        }
-
-        return Optionull.map(this.getHandle().lastHurtByPlayer.getEntity(
-            this.getHandle().level(), net.minecraft.world.entity.player.Player.class
-        ), player -> (Player) player.getBukkitEntity());
+        return Optionull.map(this.getHandle().getLastHurtByPlayer(), player -> (Player) player.getBukkitEntity());
     }
 
     @Override

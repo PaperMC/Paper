@@ -37,7 +37,7 @@ public class PlayerJumpEvent extends PlayerEvent implements Cancellable {
     /**
      * {@inheritDoc}
      * <p>
-     * If a jump event is cancelled, the player will be moved or
+     * If this event is cancelled, the player will be moved or
      * teleported back to the Location as defined by {@link #getFrom()}. This will not
      * fire an event
      *
@@ -51,7 +51,7 @@ public class PlayerJumpEvent extends PlayerEvent implements Cancellable {
     /**
      * {@inheritDoc}
      * <p>
-     * If a jump event is cancelled, the player will be moved or
+     * If this event is cancelled, the player will be moved or
      * teleported back to the Location as defined by {@link #getFrom()}. This will not
      * fire an event
      *

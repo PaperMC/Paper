@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
  * <li>Turtle Egg
  * </ul>
  * <p>
- * If a Block Grow event is cancelled, the block will not grow.
+ * If this event is cancelled, the block will not grow.
  */
 public class BlockGrowEvent extends BlockEvent implements Cancellable {
 

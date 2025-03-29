@@ -86,24 +86,12 @@ public abstract class CraftMinecart extends CraftVehicle implements Minecart {
 
     @Override
     public void setDisplayBlock(MaterialData material) {
-        if (material != null) {
-            BlockState block = CraftMagicNumbers.getBlock(material);
-            this.getHandle().setCustomDisplayBlockState(Optional.of(block));
-        } else {
-            // Set block to air (default) and set the flag to not have a display block.
-            this.getHandle().setCustomDisplayBlockState(Optional.empty());
-        }
+        this.getHandle().setCustomDisplayBlockState(Optional.ofNullable(material).map(CraftMagicNumbers::getBlock));
     }
 
     @Override
     public void setDisplayBlockData(BlockData blockData) {
-        if (blockData != null) {
-            BlockState block = ((CraftBlockData) blockData).getState();
-            this.getHandle().setCustomDisplayBlockState(Optional.of(block));
-        } else {
-            // Set block to air (default) and set the flag to not have a display block.
-            this.getHandle().setCustomDisplayBlockState(Optional.empty());
-        }
+        this.getHandle().setCustomDisplayBlockState(Optional.ofNullable(blockData).map(data -> ((CraftBlockData) data).getState()));
     }
 
     @Override
