@@ -11,10 +11,17 @@
      }
  
      public Optional<ResourceKey<MapCodec<? extends ChunkGenerator>>> getTypeNameForDataFixer() {
-@@ -127,6 +_,24 @@
+@@ -127,6 +_,31 @@
      public Pair<BlockPos, Holder<Structure>> findNearestMapStructure(
          ServerLevel level, HolderSet<Structure> structure, BlockPos pos, int searchRadius, boolean skipKnownStructures
      ) {
++        // Paper start - fix structures not generating when decorations are disabled
++        org.bukkit.generator.ChunkGenerator generator = level.getMinecraftWorld().getWorld().getGenerator();
++        if (!level.structureManager().shouldGenerateStructures() || (generator != null && !generator.shouldGenerateStructures())) {
++            return null;
++        }
++        // Paper end - fix structures not generating when decorations are disabled
++
 +        // Paper start - StructuresLocateEvent
 +        final org.bukkit.World bukkitWorld = level.getWorld();
 +        final org.bukkit.Location origin = io.papermc.paper.util.MCUtil.toLocation(level, pos);
@@ -36,6 +43,20 @@
          ChunkGeneratorStructureState generatorState = level.getChunkSource().getGeneratorState();
          Map<StructurePlacement, Set<Holder<Structure>>> map = new Object2ObjectArrayMap<>();
  
+@@ -213,6 +_,13 @@
+         boolean skipKnownStructures,
+         ConcentricRingsStructurePlacement placement
+     ) {
++        // Paper start - fix structures not generating when decorations are disabled
++        org.bukkit.generator.ChunkGenerator generator = level.getMinecraftWorld().getWorld().getGenerator();
++        if (!level.structureManager().shouldGenerateStructures() || (generator != null && !generator.shouldGenerateStructures())) {
++            return null;
++        }
++        // Paper end - fix structures not generating when decorations are disabled
++
+         List<ChunkPos> ringPositionsFor = level.getChunkSource().getGeneratorState().getRingPositionsFor(placement);
+         if (ringPositionsFor == null) {
+             throw new IllegalStateException("Somehow tried to find structures for a placement that doesn't exist");
 @@ -222,6 +_,7 @@
              BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
  
@@ -121,7 +142,7 @@
  
                              try {
                                  level.setCurrentlyGenerating(supplier1);
-@@ -407,6 +_,45 @@
+@@ -407,6 +_,48 @@
              }
          }
      }
@@ -133,17 +154,20 @@
 +    public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager, boolean addVanillaDecorations) {
 +        if (addVanillaDecorations) {
 +            this.addVanillaDecorations(level, chunk, structureManager);
-+        } else if (structureManager.shouldGenerateStructures()) { // Paper start - fix structures not generating when decorations are disabled
-+            ChunkPos pos = chunk.getPos();
-+            SectionPos sectionPos = SectionPos.of(pos, level.getMinSectionY());
-+            Registry<Structure> registry = level.registryAccess().lookupOrThrow(Registries.STRUCTURE);
-+            Map<Integer, List<Structure>> structureStepMap = registry.stream()
-+                .collect(Collectors.groupingBy(s -> s.step().ordinal()));
-+            List<FeatureSorter.StepFeatureData> features = this.featuresPerStep.get();
-+            WorldgenRandom rand = new WorldgenRandom(new XoroshiroRandomSource(RandomSupport.generateUniqueSeed()));
-+            long seed = rand.setDecorationSeed(level.getSeed(), pos.getMinBlockX(), pos.getMinBlockZ());
-+            for (int i = 0; i < features.size(); i++) {
-+                this.placeStructuresInStep(i, seed, level, chunk, structureManager, sectionPos, structureStepMap, registry, rand);
++        } else{
++            org.bukkit.generator.ChunkGenerator generator = level.getMinecraftWorld().getWorld().getGenerator();
++            if (structureManager.shouldGenerateStructures() && (generator == null || generator.shouldGenerateStructures())) { // Paper start - fix structures not generating when decorations are disabled
++                ChunkPos pos = chunk.getPos();
++                SectionPos sectionPos = SectionPos.of(pos, level.getMinSectionY());
++                Registry<Structure> registry = level.registryAccess().lookupOrThrow(Registries.STRUCTURE);
++                Map<Integer, List<Structure>> structureStepMap = registry.stream()
++                    .collect(Collectors.groupingBy(s -> s.step().ordinal()));
++                List<FeatureSorter.StepFeatureData> features = this.featuresPerStep.get();
++                WorldgenRandom rand = new WorldgenRandom(new XoroshiroRandomSource(RandomSupport.generateUniqueSeed()));
++                long seed = rand.setDecorationSeed(level.getSeed(), pos.getMinBlockX(), pos.getMinBlockZ());
++                for (int i = 0; i < features.size(); i++) {
++                    this.placeStructuresInStep(i, seed, level, chunk, structureManager, sectionPos, structureStepMap, registry, rand);
++                }
 +            }
 +        }
 +        // Paper end - fix structures not generating when decorations are disabled
