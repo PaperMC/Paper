@@ -73,6 +73,38 @@
          ChunkPos pos = chunk.getPos();
          if (!SharedConstants.debugVoidTerrain(pos)) {
              SectionPos sectionPos = SectionPos.of(pos, level.getMinSectionY());
+@@ -338,30 +_,7 @@
+                 int max = Math.max(GenerationStep.Decoration.values().length, size);
+ 
+                 for (int i = 0; i < max; i++) {
+-                    int i1 = 0;
+-                    if (structureManager.shouldGenerateStructures()) {
+-                        for (Structure structure : map.getOrDefault(i, Collections.emptyList())) {
+-                            worldgenRandom.setFeatureSeed(l, i1, i);
+-                            Supplier<String> supplier = () -> registry.getResourceKey(structure).map(Object::toString).orElseGet(structure::toString);
+-
+-                            try {
+-                                level.setCurrentlyGenerating(supplier);
+-                                structureManager.startsForStructure(sectionPos, structure)
+-                                    .forEach(
+-                                        structureStart -> structureStart.placeInChunk(
+-                                            level, structureManager, this, worldgenRandom, getWritableArea(chunk), pos
+-                                        )
+-                                    );
+-                            } catch (Exception var29) {
+-                                CrashReport crashReport = CrashReport.forThrowable(var29, "Feature placement");
+-                                crashReport.addCategory("Feature").setDetail("Description", supplier::get);
+-                                throw new ReportedException(crashReport);
+-                            }
+-
+-                            i1++;
+-                        }
+-                    }
+-
++                    this.placeStructuresInStep(i, l, level, chunk, structureManager, sectionPos, map, registry, worldgenRandom); // Paper - fix structures not generating when decorations are disabled
+                     if (i < size) {
+                         IntSet set1 = new IntArraySet();
+ 
 @@ -385,7 +_,14 @@
                              int i3 = ints[i2];
                              PlacedFeature placedFeature = stepFeatureData1.features().get(i3);
@@ -89,7 +121,7 @@
  
                              try {
                                  level.setCurrentlyGenerating(supplier1);
-@@ -407,6 +_,32 @@
+@@ -407,6 +_,45 @@
              }
          }
      }
@@ -101,7 +133,20 @@
 +    public void applyBiomeDecoration(WorldGenLevel level, ChunkAccess chunk, StructureManager structureManager, boolean addVanillaDecorations) {
 +        if (addVanillaDecorations) {
 +            this.addVanillaDecorations(level, chunk, structureManager);
++        } else if (structureManager.shouldGenerateStructures()) { // Paper start - fix structures not generating when decorations are disabled
++            ChunkPos pos = chunk.getPos();
++            SectionPos sectionPos = SectionPos.of(pos, level.getMinSectionY());
++            Registry<Structure> registry = level.registryAccess().lookupOrThrow(Registries.STRUCTURE);
++            Map<Integer, List<Structure>> structureStepMap = registry.stream()
++                .collect(Collectors.groupingBy(s -> s.step().ordinal()));
++            List<FeatureSorter.StepFeatureData> features = this.featuresPerStep.get();
++            WorldgenRandom rand = new WorldgenRandom(new XoroshiroRandomSource(RandomSupport.generateUniqueSeed()));
++            long seed = rand.setDecorationSeed(level.getSeed(), pos.getMinBlockX(), pos.getMinBlockZ());
++            for (int i = 0; i < features.size(); i++) {
++                this.placeStructuresInStep(i, seed, level, chunk, structureManager, sectionPos, structureStepMap, registry, rand);
++            }
 +        }
++        // Paper end - fix structures not generating when decorations are disabled
 +
 +        org.bukkit.World world = level.getMinecraftWorld().getWorld();
 +        // only call when a populator is present (prevents unnecessary entity conversion)
@@ -146,3 +191,46 @@
              structureManager.setStartForStructure(sectionPos, structure, structureStart, chunk);
              return true;
          } else {
+@@ -648,4 +_,42 @@
+     public BiomeGenerationSettings getBiomeGenerationSettings(Holder<Biome> biome) {
+         return this.generationSettingsGetter.apply(biome);
+     }
++
++    // Paper start - fix structures not generating when decorations are disabled
++    private void placeStructuresInStep(
++        int stepIndex,
++        long decorationSeed,
++        WorldGenLevel level,
++        ChunkAccess chunk,
++        StructureManager structureManager,
++        SectionPos sectionPos,
++        Map<Integer, List<Structure>> structureStepMap,
++        Registry<Structure> structureRegistry,
++        WorldgenRandom worldgenRandom
++    ) {
++        int i1 = 0;
++        ChunkPos pos = chunk.getPos();
++        if (structureManager.shouldGenerateStructures()) {
++            for (Structure structure : structureStepMap.getOrDefault(stepIndex, Collections.emptyList())) {
++                worldgenRandom.setFeatureSeed(decorationSeed, i1, stepIndex);
++                Supplier<String> supplier = () -> structureRegistry.getResourceKey(structure).map(Object::toString).orElseGet(structure::toString);
++
++                try {
++                    level.setCurrentlyGenerating(supplier);
++                    structureManager.startsForStructure(sectionPos, structure)
++                        .forEach(
++                            structureStart -> structureStart.placeInChunk(
++                                level, structureManager, this, worldgenRandom, getWritableArea(chunk), pos)
++                        );
++                } catch (Exception var29) {
++                    CrashReport crashReport = CrashReport.forThrowable(var29, "Feature placement");
++                    crashReport.addCategory("Feature").setDetail("Description", supplier::get);
++                    throw new ReportedException(crashReport);
++                }
++
++                i1++;
++            }
++        }
++    }
++    // Paper end - fix structures not generating when decorations are disabled
+ }
