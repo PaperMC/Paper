@@ -42,6 +42,8 @@ import java.util.logging.Logger;
 import it.unimi.dsi.fastutil.objects.ReferenceLinkedOpenHashSet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import net.md_5.bungee.chat.ChatVersion;
+import net.md_5.bungee.chat.VersionedComponentSerializer;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
@@ -1153,7 +1155,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public net.md_5.bungee.api.chat.BaseComponent[] getDisplayNameComponent() {
-        return displayName == null ? new net.md_5.bungee.api.chat.BaseComponent[0] : net.md_5.bungee.chat.ComponentSerializer.parse(CraftChatMessage.toJSON(displayName));
+        return displayName == null ? new net.md_5.bungee.api.chat.BaseComponent[0] : VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).parse(CraftChatMessage.toJSON(displayName));
     }
 
     @Override
@@ -1163,7 +1165,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void setDisplayNameComponent(net.md_5.bungee.api.chat.BaseComponent[] component) {
-        this.displayName = CraftChatMessage.fromJSON(net.md_5.bungee.chat.ComponentSerializer.toString(component));
+        this.displayName = CraftChatMessage.fromJSON(VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).toString(component));
     }
 
     @Override
@@ -1349,7 +1351,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     @Override
     public List<net.md_5.bungee.api.chat.BaseComponent[]> getLoreComponents() {
         return this.lore == null ? null : new ArrayList<>(this.lore.stream().map(entry ->
-            net.md_5.bungee.chat.ComponentSerializer.parse(CraftChatMessage.toJSON(entry))
+            VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).parse(CraftChatMessage.toJSON(entry))
         ).collect(java.util.stream.Collectors.toList()));
     }
 
@@ -2334,7 +2336,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
         for (Object object : addFrom) {
             if (object instanceof net.md_5.bungee.api.chat.BaseComponent[] baseComponentArr) {
-                addTo.add(CraftChatMessage.fromJSON(net.md_5.bungee.chat.ComponentSerializer.toString(baseComponentArr)));
+                addTo.add(CraftChatMessage.fromJSON(VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).toString(baseComponentArr)));
             } else if (!(object instanceof String)) {
                 if (object != null) {
                     // SPIGOT-7399: Null check via if is important,

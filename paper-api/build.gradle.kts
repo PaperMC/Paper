@@ -12,6 +12,7 @@ java {
 val annotationsVersion = "26.0.1"
 val bungeeCordChatVersion = "1.20-R0.2"
 val adventureVersion = "4.18.0"
+val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
 val slf4jVersion = "2.0.9"
 val log4jVersion = "2.17.1"
 
@@ -38,6 +39,10 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
     }
 }
 
+repositories {
+    mavenLocal()
+}
+
 dependencies {
 
     // api dependencies are listed transitively to API consumers
@@ -56,7 +61,7 @@ dependencies {
     api("com.mojang:brigadier:1.3.10")
 
     // Deprecate bungeecord-chat in favor of adventure
-    api("net.md-5:bungeecord-chat:$bungeeCordChatVersion-deprecated+build.19") {
+    api("net.md-5:bungeecord-chat:$bungeeCordChatVersion") {
         exclude("com.google.guava", "guava")
     }
 
@@ -179,13 +184,13 @@ tasks.withType<Javadoc> {
         "https://javadoc.io/doc/org.joml/joml/1.10.8/",
         "https://www.javadoc.io/doc/com.google.code.gson/gson/2.11.0",
         "https://jspecify.dev/docs/api/",
-        "https://jd.advntr.dev/api/$adventureVersion/",
-        "https://jd.advntr.dev/key/$adventureVersion/",
-        "https://jd.advntr.dev/text-minimessage/$adventureVersion/",
-        "https://jd.advntr.dev/text-serializer-gson/$adventureVersion/",
-        "https://jd.advntr.dev/text-serializer-legacy/$adventureVersion/",
-        "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
-        "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
+        // "https://jd.advntr.dev/api/$adventureVersion/",
+        // "https://jd.advntr.dev/key/$adventureVersion/",
+        // "https://jd.advntr.dev/text-minimessage/$adventureVersion/",
+        // "https://jd.advntr.dev/text-serializer-gson/$adventureVersion/",
+        // "https://jd.advntr.dev/text-serializer-legacy/$adventureVersion/",
+        // "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
+        // "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
         "https://javadoc.io/doc/org.slf4j/slf4j-api/$slf4jVersion/",
         "https://javadoc.io/doc/org.apache.logging.log4j/log4j-api/$log4jVersion/",
         "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3",

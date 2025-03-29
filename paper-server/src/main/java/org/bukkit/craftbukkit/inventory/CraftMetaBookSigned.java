@@ -8,6 +8,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import net.md_5.bungee.chat.ChatVersion;
+import net.md_5.bungee.chat.VersionedComponentSerializer;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -23,7 +25,6 @@ import org.bukkit.inventory.meta.BookMeta;
 // Spigot start
 import java.util.AbstractList;
 import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.chat.ComponentSerializer;
 // Spigot end
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -375,13 +376,13 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
         private Component componentsToPage(BaseComponent[] components) {
             // asserted: components != null
             // Pages are in JSON format:
-            return CraftChatMessage.fromJSON(ComponentSerializer.toString(components));
+            return CraftChatMessage.fromJSON(VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).toString(components));
         }
 
         @Override
         public BaseComponent[] getPage(final int page) {
             Preconditions.checkArgument(CraftMetaBookSigned.this.isValidPage(page), "Invalid page number");
-            return ComponentSerializer.parse(this.pageToJSON(CraftMetaBookSigned.this.pages.get(page - 1)));
+            return VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).parse(this.pageToJSON(CraftMetaBookSigned.this.pages.get(page - 1)));
         }
 
         @Override
@@ -418,7 +419,7 @@ public class CraftMetaBookSigned extends CraftMetaItem implements BookMeta {
 
                 @Override
                 public BaseComponent[] get(int index) {
-                    return ComponentSerializer.parse(SpigotMeta.this.pageToJSON(copy.get(index)));
+                    return VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).parse(SpigotMeta.this.pageToJSON(copy.get(index)));
                 }
 
                 @Override

@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import net.md_5.bungee.chat.ChatVersion;
+import net.md_5.bungee.chat.VersionedComponentSerializer;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -24,7 +26,6 @@ import org.bukkit.inventory.meta.WritableBookMeta;
 // Spigot start
 import java.util.AbstractList;
 import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.chat.ComponentSerializer;
 // Spigot end
 
 @DelegateDeserialization(SerializableMeta.class)
@@ -426,14 +427,14 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
 
         private String componentsToPage(BaseComponent[] components) {
             // Convert component to plain String:
-            Component component = CraftChatMessage.fromJSONOrNull(ComponentSerializer.toString(components));
+            Component component = CraftChatMessage.fromJSONOrNull(VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).toString(components));
             return CraftChatMessage.fromComponent(component);
         }
 
         @Override
         public BaseComponent[] getPage(final int page) {
             Preconditions.checkArgument(CraftMetaBook.this.isValidPage(page), "Invalid page number");
-            return ComponentSerializer.parse(this.pageToJSON(CraftMetaBook.this.pages.get(page - 1)));
+            return VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).parse(this.pageToJSON(CraftMetaBook.this.pages.get(page - 1)));
         }
 
         @Override
@@ -470,7 +471,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
 
                 @Override
                 public BaseComponent[] get(int index) {
-                    return ComponentSerializer.parse(SpigotMeta.this.pageToJSON(copy.get(index)));
+                    return VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).parse(SpigotMeta.this.pageToJSON(copy.get(index)));
                 }
 
                 @Override
