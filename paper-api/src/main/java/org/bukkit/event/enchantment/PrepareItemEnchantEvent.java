@@ -19,11 +19,11 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
     private final Block table;
     private final ItemStack item;
     private final EnchantmentOffer[] offers;
-    private final int bonus;
+    private int bonus;
     private boolean cancelled;
     private final Player enchanter;
 
-    public PrepareItemEnchantEvent(@NotNull final Player enchanter, @NotNull EnchantmentView view, @NotNull final Block table, @NotNull final ItemStack item, @org.jetbrains.annotations.Nullable final EnchantmentOffer @NotNull [] offers, final int bonus) { // Paper - offers can contain null values
+    public PrepareItemEnchantEvent( @NotNull final Player enchanter, @NotNull EnchantmentView view, @NotNull final Block table, @NotNull final ItemStack item, @org.jetbrains.annotations.Nullable final EnchantmentOffer @NotNull [] offers, final int bonus) { // Paper - offers can contain null values
         super(view);
         this.enchanter = enchanter;
         this.table = table;
@@ -98,6 +98,9 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
     public int getEnchantmentBonus() {
         return bonus;
     }
+
+    // Paper - available to configure enchantment bonus
+    public void setEnchantmentBonus(final int bonus) { this.bonus = bonus; }
 
     @NotNull
     @Override
