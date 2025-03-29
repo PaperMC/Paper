@@ -9,8 +9,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import net.md_5.bungee.chat.ChatVersion;
-import net.md_5.bungee.chat.VersionedComponentSerializer;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
@@ -427,14 +425,14 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
 
         private String componentsToPage(BaseComponent[] components) {
             // Convert component to plain String:
-            Component component = CraftChatMessage.fromJSONOrNull(VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).toString(components));
+            Component component = CraftChatMessage.bungeeToVanilla(components);
             return CraftChatMessage.fromComponent(component);
         }
 
         @Override
         public BaseComponent[] getPage(final int page) {
             Preconditions.checkArgument(CraftMetaBook.this.isValidPage(page), "Invalid page number");
-            return VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).parse(this.pageToJSON(CraftMetaBook.this.pages.get(page - 1)));
+            return CraftChatMessage.jsonToBungee(this.pageToJSON(CraftMetaBook.this.pages.get(page - 1)));
         }
 
         @Override
@@ -471,7 +469,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta, WritableBo
 
                 @Override
                 public BaseComponent[] get(int index) {
-                    return VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).parse(SpigotMeta.this.pageToJSON(copy.get(index)));
+                    return CraftChatMessage.jsonToBungee(SpigotMeta.this.pageToJSON(copy.get(index)));
                 }
 
                 @Override

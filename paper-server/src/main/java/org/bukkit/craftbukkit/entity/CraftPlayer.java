@@ -44,8 +44,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import net.md_5.bungee.chat.ChatVersion;
-import net.md_5.bungee.chat.VersionedComponentSerializer;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
@@ -442,7 +440,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Deprecated
     public void sendActionBar(BaseComponent[] message) {
         if (getHandle().connection == null) return;
-        net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket packet = new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(org.bukkit.craftbukkit.util.CraftChatMessage.fromJSON(VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).toString(message)));
+        net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket packet = new net.minecraft.network.protocol.game.ClientboundSetActionBarTextPacket(org.bukkit.craftbukkit.util.CraftChatMessage.bungeeToVanilla(message));
         getHandle().connection.send(packet);
     }
 
@@ -463,14 +461,14 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     @Override
     public void setPlayerListHeaderFooter(BaseComponent[] header, BaseComponent[] footer) {
          if (header != null) {
-             String headerJson = VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).toString(header);
+             String headerJson = CraftChatMessage.bungeeToJson(header);
              playerListHeader = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().deserialize(headerJson);
          } else {
              playerListHeader = null;
          }
 
         if (footer != null) {
-             String footerJson = VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).toString(footer);
+             String footerJson =  CraftChatMessage.bungeeToJson(footer);
              playerListFooter = net.kyori.adventure.text.serializer.gson.GsonComponentSerializer.gson().deserialize(footerJson);
         } else {
              playerListFooter = null;
@@ -493,7 +491,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void setSubtitle(BaseComponent[] subtitle) {
-        final ClientboundSetSubtitleTextPacket packet = new ClientboundSetSubtitleTextPacket(org.bukkit.craftbukkit.util.CraftChatMessage.fromJSON(VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).toString(subtitle)));
+        final ClientboundSetSubtitleTextPacket packet = new ClientboundSetSubtitleTextPacket(org.bukkit.craftbukkit.util.CraftChatMessage.bungeeToVanilla(subtitle));
         getHandle().connection.send(packet);
     }
 
@@ -504,7 +502,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
     @Override
     public void showTitle(BaseComponent[] title) {
-        final ClientboundSetTitleTextPacket packet = new ClientboundSetTitleTextPacket(org.bukkit.craftbukkit.util.CraftChatMessage.fromJSON(VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5).toString(title)));
+        final ClientboundSetTitleTextPacket packet = new ClientboundSetTitleTextPacket(org.bukkit.craftbukkit.util.CraftChatMessage.bungeeToVanilla(title));
         getHandle().connection.send(packet);
     }
 

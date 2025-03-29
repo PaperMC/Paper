@@ -39,10 +39,6 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
     }
 }
 
-repositories {
-    mavenLocal()
-}
-
 dependencies {
 
     // api dependencies are listed transitively to API consumers
@@ -184,13 +180,13 @@ tasks.withType<Javadoc> {
         "https://javadoc.io/doc/org.joml/joml/1.10.8/",
         "https://www.javadoc.io/doc/com.google.code.gson/gson/2.11.0",
         "https://jspecify.dev/docs/api/",
-        // "https://jd.advntr.dev/api/$adventureVersion/",
-        // "https://jd.advntr.dev/key/$adventureVersion/",
-        // "https://jd.advntr.dev/text-minimessage/$adventureVersion/",
-        // "https://jd.advntr.dev/text-serializer-gson/$adventureVersion/",
-        // "https://jd.advntr.dev/text-serializer-legacy/$adventureVersion/",
-        // "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
-        // "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
+        "https://jd.advntr.dev/api/$adventureVersion/",
+        "https://jd.advntr.dev/key/$adventureVersion/",
+        "https://jd.advntr.dev/text-minimessage/$adventureVersion/",
+        "https://jd.advntr.dev/text-serializer-gson/$adventureVersion/",
+        "https://jd.advntr.dev/text-serializer-legacy/$adventureVersion/",
+        "https://jd.advntr.dev/text-serializer-plain/$adventureVersion/",
+        "https://jd.advntr.dev/text-logger-slf4j/$adventureVersion/",
         "https://javadoc.io/doc/org.slf4j/slf4j-api/$slf4jVersion/",
         "https://javadoc.io/doc/org.apache.logging.log4j/log4j-api/$log4jVersion/",
         "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3",

@@ -11,6 +11,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.chat.ChatVersion;
+import net.md_5.bungee.chat.VersionedComponentSerializer;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -408,6 +411,21 @@ public final class CraftChatMessage {
         }
 
         return component;
+    }
+
+    private static VersionedComponentSerializer bungeeSerializer = VersionedComponentSerializer.forVersion(ChatVersion.V1_21_5);
+    public static String bungeeToJson(BaseComponent... components) {
+        return bungeeSerializer.toString(components);
+    }
+
+    public static BaseComponent[] jsonToBungee(String json) {
+        return bungeeSerializer.parse(json);
+    }
+    public static Component bungeeToVanilla(BaseComponent... components) {
+        return fromJSON(bungeeToJson(components));
+    }
+    public static BaseComponent[] vanillaToBungee(Component component) {
+        return jsonToBungee(toJSON(component));
     }
 
     private CraftChatMessage() {
