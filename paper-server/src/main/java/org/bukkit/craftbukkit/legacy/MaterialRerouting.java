@@ -24,7 +24,7 @@ import org.bukkit.block.BlockState;
 import org.bukkit.block.DecoratedPot;
 import org.bukkit.block.Jukebox;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.block.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 import org.bukkit.craftbukkit.legacy.reroute.InjectPluginVersion;
 import org.bukkit.craftbukkit.legacy.reroute.RerouteStatic;

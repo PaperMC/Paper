@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.block.CraftBlockType;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.block.CraftBlockData;
 import org.bukkit.craftbukkit.util.Handleable;
 
 public record PaperBlockItemDataProperties(

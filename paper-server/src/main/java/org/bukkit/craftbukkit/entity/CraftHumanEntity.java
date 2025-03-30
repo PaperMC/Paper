@@ -42,6 +42,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.block.state.CraftSign;
 import org.bukkit.craftbukkit.event.CraftEventFactory;
 import org.bukkit.craftbukkit.inventory.CraftContainer;
 import org.bukkit.craftbukkit.inventory.CraftInventory;
@@ -784,7 +785,7 @@ public class CraftHumanEntity extends CraftLivingEntity implements HumanEntity {
 
     @Override
     public void openSign(final org.bukkit.block.Sign sign, final org.bukkit.block.sign.Side side) {
-        org.bukkit.craftbukkit.block.CraftSign.openSign(sign, (CraftPlayer) this, side);
+        CraftSign.openSign(sign, (CraftPlayer) this, side);
     }
 
     @Override

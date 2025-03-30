@@ -26,6 +26,7 @@ import org.bukkit.block.Biome;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftRegionAccessor;
+import org.bukkit.craftbukkit.block.state.CraftBlockEntityState;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.LimitedRegion;
@@ -271,7 +272,7 @@ public class CraftLimitedRegion extends CraftRegionAccessor implements LimitedRe
         if (!state.getBlockData().matches(getHandle().getBlockState(pos).createCraftBlockData())) {
             throw new IllegalArgumentException("BlockData does not match! Expected " + state.getBlockData().getAsString(false) + ", got " + getHandle().getBlockState(pos).createCraftBlockData().getAsString(false));
         }
-        getHandle().getBlockEntity(pos).loadWithComponents(((org.bukkit.craftbukkit.block.CraftBlockEntityState<?>) state).getSnapshotNBT(), this.getHandle().registryAccess());
+        getHandle().getBlockEntity(pos).loadWithComponents(((CraftBlockEntityState<?>) state).getSnapshotNBT(), this.getHandle().registryAccess());
     }
 
     @Override

@@ -5,7 +5,7 @@ import java.util.stream.Stream;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
 import org.bukkit.Instrument;
 import org.bukkit.craftbukkit.CraftSound;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.block.CraftBlockData;
 import org.bukkit.support.environment.AllFeatures;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;

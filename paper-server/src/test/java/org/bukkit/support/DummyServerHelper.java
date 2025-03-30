@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.Block;
 import org.bukkit.Material;
 import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftLootTable;
-import org.bukkit.craftbukkit.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.block.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemFactory;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
 import org.bukkit.craftbukkit.tag.CraftEntityTag;
