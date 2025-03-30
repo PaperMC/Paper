@@ -511,7 +511,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
 
         final PlayerShowTitleEvent event = new PlayerShowTitleEvent(this, titleText);
 
-        Bukkit.getServer().getPluginManager().callEvent(event);
+        event.callEvent();
         //CircuitBoard end
     }
 
