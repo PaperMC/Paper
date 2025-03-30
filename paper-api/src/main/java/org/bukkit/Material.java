@@ -186,7 +186,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     BONE_MEAL(-1),
     BOOK(-1),
     BORDURE_INDENTED_BANNER_PATTERN(-1, 1),
-    BOW(-1, 1, 384),
+    BOW(-1, 1),
     BOWL(-1),
     BREAD(-1),
     BREEZE_ROD(-1),
@@ -196,19 +196,19 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     BROWN_BUNDLE(-1, 1),
     BROWN_DYE(-1),
     BROWN_EGG(-1, 16),
-    BRUSH(-1, 1, 64),
+    BRUSH(-1, 1),
     BUCKET(-1, 16),
     BUNDLE(-1, 1),
     BURN_POTTERY_SHERD(-1),
     CAMEL_SPAWN_EGG(-1),
     CARROT(-1),
-    CARROT_ON_A_STICK(-1, 1, 25),
+    CARROT_ON_A_STICK(-1, 1),
     CAT_SPAWN_EGG(-1),
     CAVE_SPIDER_SPAWN_EGG(-1),
-    CHAINMAIL_BOOTS(-1, 1, 195),
-    CHAINMAIL_CHESTPLATE(-1, 1, 240),
-    CHAINMAIL_HELMET(-1, 1, 165),
-    CHAINMAIL_LEGGINGS(-1, 1, 225),
+    CHAINMAIL_BOOTS(-1, 1),
+    CHAINMAIL_CHESTPLATE(-1, 1),
+    CHAINMAIL_HELMET(-1, 1),
+    CHAINMAIL_LEGGINGS(-1, 1),
     CHARCOAL(-1),
     CHERRY_BOAT(-1, 1),
     CHERRY_CHEST_BOAT(-1, 1),
@@ -239,7 +239,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     CREAKING_SPAWN_EGG(-1),
     CREEPER_BANNER_PATTERN(-1, 1),
     CREEPER_SPAWN_EGG(-1),
-    CROSSBOW(-1, 1, 465),
+    CROSSBOW(-1, 1),
     CYAN_BUNDLE(-1, 1),
     CYAN_DYE(-1),
     DANGER_POTTERY_SHERD(-1),
@@ -247,16 +247,16 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     DARK_OAK_CHEST_BOAT(-1, 1),
     DEBUG_STICK(-1, 1),
     DIAMOND(-1),
-    DIAMOND_AXE(-1, 1, 1561),
-    DIAMOND_BOOTS(-1, 1, 429),
-    DIAMOND_CHESTPLATE(-1, 1, 528),
-    DIAMOND_HELMET(-1, 1, 363),
-    DIAMOND_HOE(-1, 1, 1561),
+    DIAMOND_AXE(-1, 1),
+    DIAMOND_BOOTS(-1, 1),
+    DIAMOND_CHESTPLATE(-1, 1),
+    DIAMOND_HELMET(-1, 1),
+    DIAMOND_HOE(-1, 1),
     DIAMOND_HORSE_ARMOR(-1, 1),
-    DIAMOND_LEGGINGS(-1, 1, 495),
-    DIAMOND_PICKAXE(-1, 1, 1561),
-    DIAMOND_SHOVEL(-1, 1, 1561),
-    DIAMOND_SWORD(-1, 1, 1561),
+    DIAMOND_LEGGINGS(-1, 1),
+    DIAMOND_PICKAXE(-1, 1),
+    DIAMOND_SHOVEL(-1, 1),
+    DIAMOND_SWORD(-1, 1),
     DRAGON_BREATH(-1),
     END_CRYSTAL(-1),
     FIELD_MASONED_BANNER_PATTERN(-1, 1),
@@ -275,7 +275,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     ECHO_SHARD(-1),
     EGG(-1, 16),
     ELDER_GUARDIAN_SPAWN_EGG(-1),
-    ELYTRA(-1, 1, 432),
+    ELYTRA(-1, 1),
     EMERALD(-1),
     ENCHANTED_BOOK(-1, 1),
     ENCHANTED_GOLDEN_APPLE(-1),
@@ -294,9 +294,9 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     FIRE_CHARGE(-1),
     FIREWORK_ROCKET(-1),
     FIREWORK_STAR(-1),
-    FISHING_ROD(-1, 1, 64),
+    FISHING_ROD(-1, 1),
     FLINT(-1),
-    FLINT_AND_STEEL(-1, 1, 64),
+    FLINT_AND_STEEL(-1, 1),
     FLOW_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
     FLOW_POTTERY_SHERD(-1),
     FLOWER_BANNER_PATTERN(-1, 1),
@@ -318,17 +318,17 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     GOLD_INGOT(-1),
     GOLD_NUGGET(-1),
     GOLDEN_APPLE(-1),
-    GOLDEN_AXE(-1, 1, 32),
-    GOLDEN_BOOTS(-1, 1, 91),
+    GOLDEN_AXE(-1, 1),
+    GOLDEN_BOOTS(-1, 1),
     GOLDEN_CARROT(-1),
-    GOLDEN_CHESTPLATE(-1, 1, 112),
-    GOLDEN_HELMET(-1, 1, 77),
-    GOLDEN_HOE(-1, 1, 32),
+    GOLDEN_CHESTPLATE(-1, 1),
+    GOLDEN_HELMET(-1, 1),
+    GOLDEN_HOE(-1, 1),
     GOLDEN_HORSE_ARMOR(-1, 1),
-    GOLDEN_LEGGINGS(-1, 1, 105),
-    GOLDEN_PICKAXE(-1, 1, 32),
-    GOLDEN_SHOVEL(-1, 1, 32),
-    GOLDEN_SWORD(-1, 1, 32),
+    GOLDEN_LEGGINGS(-1, 1),
+    GOLDEN_PICKAXE(-1, 1),
+    GOLDEN_SHOVEL(-1, 1),
+    GOLDEN_SWORD(-1, 1),
     GRAY_BUNDLE(-1, 1),
     GRAY_DYE(-1),
     GREEN_BUNDLE(-1, 1),
@@ -349,18 +349,18 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     HOWL_POTTERY_SHERD(-1),
     HUSK_SPAWN_EGG(-1),
     INK_SAC(-1),
-    IRON_AXE(-1, 1, 250),
-    IRON_BOOTS(-1, 1, 195),
-    IRON_CHESTPLATE(-1, 1, 240),
+    IRON_AXE(-1, 1),
+    IRON_BOOTS(-1, 1),
+    IRON_CHESTPLATE(-1, 1),
     IRON_GOLEM_SPAWN_EGG(-1),
-    IRON_HELMET(-1, 1, 165),
-    IRON_HOE(-1, 1, 250),
+    IRON_HELMET(-1, 1),
+    IRON_HOE(-1, 1),
     IRON_HORSE_ARMOR(-1, 1),
     IRON_INGOT(-1),
-    IRON_LEGGINGS(-1, 1, 225),
-    IRON_PICKAXE(-1, 1, 250),
-    IRON_SHOVEL(-1, 1, 250),
-    IRON_SWORD(-1, 1, 250),
+    IRON_LEGGINGS(-1, 1),
+    IRON_PICKAXE(-1, 1),
+    IRON_SHOVEL(-1, 1),
+    IRON_SWORD(-1, 1),
     ITEM_FRAME(-1),
     JUNGLE_BOAT(-1, 1),
     JUNGLE_CHEST_BOAT(-1, 1),
@@ -368,11 +368,11 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     LAVA_BUCKET(-1, 1),
     LEAD(-1),
     LEATHER(-1),
-    LEATHER_BOOTS(-1, 1, 65),
-    LEATHER_CHESTPLATE(-1, 1, 80),
-    LEATHER_HELMET(-1, 1, 55),
+    LEATHER_BOOTS(-1, 1),
+    LEATHER_CHESTPLATE(-1, 1),
+    LEATHER_HELMET(-1, 1),
     LEATHER_HORSE_ARMOR(-1, 1),
-    LEATHER_LEGGINGS(-1, 1, 75),
+    LEATHER_LEGGINGS(-1, 1),
     LIGHT_BLUE_BUNDLE(-1, 1),
     LIGHT_BLUE_DYE(-1),
     LIGHT_GRAY_BUNDLE(-1, 1),
@@ -380,7 +380,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     LIME_BUNDLE(-1, 1),
     LIME_DYE(-1),
     LLAMA_SPAWN_EGG(-1),
-    MACE(-1, 1, 500),
+    MACE(-1, 1),
     MAGENTA_BUNDLE(-1, 1),
     MAGENTA_DYE(-1),
     MAGMA_CREAM(-1),
@@ -421,17 +421,17 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     NAUTILUS_SHELL(-1),
     NETHER_BRICK(-1),
     NETHER_STAR(-1),
-    NETHERITE_AXE(-1, 1, 2031),
-    NETHERITE_BOOTS(-1, 1, 481),
-    NETHERITE_CHESTPLATE(-1, 1, 592),
-    NETHERITE_HELMET(-1, 1, 407),
-    NETHERITE_HOE(-1, 1, 2031),
+    NETHERITE_AXE(-1, 1),
+    NETHERITE_BOOTS(-1, 1),
+    NETHERITE_CHESTPLATE(-1, 1),
+    NETHERITE_HELMET(-1, 1),
+    NETHERITE_HOE(-1, 1),
     NETHERITE_INGOT(-1),
-    NETHERITE_LEGGINGS(-1, 1, 555),
-    NETHERITE_PICKAXE(-1, 1, 2031),
+    NETHERITE_LEGGINGS(-1, 1),
+    NETHERITE_PICKAXE(-1, 1),
     NETHERITE_SCRAP(-1),
-    NETHERITE_SHOVEL(-1, 1, 2031),
-    NETHERITE_SWORD(-1, 1, 2031),
+    NETHERITE_SHOVEL(-1, 1),
+    NETHERITE_SWORD(-1, 1),
     NETHERITE_UPGRADE_SMITHING_TEMPLATE(-1),
     OAK_BOAT(-1, 1),
     OAK_CHEST_BOAT(-1, 1),
@@ -500,10 +500,10 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     SENTRY_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
     SHAPER_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
     SHEAF_POTTERY_SHERD(-1),
-    SHEARS(-1, 1, 238),
+    SHEARS(-1, 1),
     SHEEP_SPAWN_EGG(-1),
     SHELTER_POTTERY_SHERD(-1),
-    SHIELD(-1, 1, 336),
+    SHIELD(-1, 1),
     SHULKER_SHELL(-1),
     SHULKER_SPAWN_EGG(-1),
     SILENCE_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
@@ -529,11 +529,11 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     SPYGLASS(-1, 1),
     SQUID_SPAWN_EGG(-1),
     STICK(-1),
-    STONE_AXE(-1, 1, 131),
-    STONE_HOE(-1, 1, 131),
-    STONE_PICKAXE(-1, 1, 131),
-    STONE_SHOVEL(-1, 1, 131),
-    STONE_SWORD(-1, 1, 131),
+    STONE_AXE(-1, 1),
+    STONE_HOE(-1, 1),
+    STONE_PICKAXE(-1, 1),
+    STONE_SHOVEL(-1, 1),
+    STONE_SWORD(-1, 1),
     STRAY_SPAWN_EGG(-1),
     STRIDER_SPAWN_EGG(-1),
     STRING(-1),
@@ -549,11 +549,11 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     TOTEM_OF_UNDYING(-1, 1),
     TRADER_LLAMA_SPAWN_EGG(-1),
     TRIAL_KEY(-1),
-    TRIDENT(-1, 1, 250),
+    TRIDENT(-1, 1),
     TROPICAL_FISH(-1),
     TROPICAL_FISH_BUCKET(-1, 1),
     TROPICAL_FISH_SPAWN_EGG(-1),
-    TURTLE_HELMET(-1, 1, 275),
+    TURTLE_HELMET(-1, 1),
     TURTLE_SCUTE(-1),
     TURTLE_SPAWN_EGG(-1),
     VEX_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
@@ -563,7 +563,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     WANDERING_TRADER_SPAWN_EGG(-1),
     WARD_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
     WARDEN_SPAWN_EGG(-1),
-    WARPED_FUNGUS_ON_A_STICK(-1, 1, 100),
+    WARPED_FUNGUS_ON_A_STICK(-1, 1),
     WATER_BUCKET(-1, 1),
     WAYFINDER_ARMOR_TRIM_SMITHING_TEMPLATE(-1),
     WHEAT_SEEDS(-1),
@@ -574,13 +574,13 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     WITCH_SPAWN_EGG(-1),
     WITHER_SKELETON_SPAWN_EGG(-1),
     WITHER_SPAWN_EGG(-1),
-    WOLF_ARMOR(-1, 1, 64),
+    WOLF_ARMOR(-1, 1),
     WOLF_SPAWN_EGG(-1),
-    WOODEN_AXE(-1, 1, 59),
-    WOODEN_HOE(-1, 1, 59),
-    WOODEN_PICKAXE(-1, 1, 59),
-    WOODEN_SHOVEL(-1, 1, 59),
-    WOODEN_SWORD(-1, 1, 59),
+    WOODEN_AXE(-1, 1),
+    WOODEN_HOE(-1, 1),
+    WOODEN_PICKAXE(-1, 1),
+    WOODEN_SHOVEL(-1, 1),
+    WOODEN_SWORD(-1, 1),
     WRITABLE_BOOK(-1, 1),
     WRITTEN_BOOK(-1, 16),
     YELLOW_BUNDLE(-1, 1),
@@ -2208,17 +2208,17 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     LEGACY_STRUCTURE_BLOCK(255),
     // ----- Item Separator -----
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_IRON_SPADE(256, 1, 250),
+    LEGACY_IRON_SPADE(256, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_IRON_PICKAXE(257, 1, 250),
+    LEGACY_IRON_PICKAXE(257, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_IRON_AXE(258, 1, 250),
+    LEGACY_IRON_AXE(258, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_FLINT_AND_STEEL(259, 1, 64),
+    LEGACY_FLINT_AND_STEEL(259, 1),
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_APPLE(260),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_BOW(261, 1, 384),
+    LEGACY_BOW(261, 1),
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_ARROW(262),
     @Deprecated(since = "1.13", forRemoval = true)
@@ -2230,31 +2230,31 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_GOLD_INGOT(266),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_IRON_SWORD(267, 1, 250),
+    LEGACY_IRON_SWORD(267, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_WOOD_SWORD(268, 1, 59),
+    LEGACY_WOOD_SWORD(268, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_WOOD_SPADE(269, 1, 59),
+    LEGACY_WOOD_SPADE(269, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_WOOD_PICKAXE(270, 1, 59),
+    LEGACY_WOOD_PICKAXE(270, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_WOOD_AXE(271, 1, 59),
+    LEGACY_WOOD_AXE(271, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_STONE_SWORD(272, 1, 131),
+    LEGACY_STONE_SWORD(272, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_STONE_SPADE(273, 1, 131),
+    LEGACY_STONE_SPADE(273, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_STONE_PICKAXE(274, 1, 131),
+    LEGACY_STONE_PICKAXE(274, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_STONE_AXE(275, 1, 131),
+    LEGACY_STONE_AXE(275, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_DIAMOND_SWORD(276, 1, 1561),
+    LEGACY_DIAMOND_SWORD(276, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_DIAMOND_SPADE(277, 1, 1561),
+    LEGACY_DIAMOND_SPADE(277, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_DIAMOND_PICKAXE(278, 1, 1561),
+    LEGACY_DIAMOND_PICKAXE(278, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_DIAMOND_AXE(279, 1, 1561),
+    LEGACY_DIAMOND_AXE(279, 1),
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STICK(280),
     @Deprecated(since = "1.13", forRemoval = true)
@@ -2262,13 +2262,13 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MUSHROOM_SOUP(282, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_GOLD_SWORD(283, 1, 32),
+    LEGACY_GOLD_SWORD(283, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_GOLD_SPADE(284, 1, 32),
+    LEGACY_GOLD_SPADE(284, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_GOLD_PICKAXE(285, 1, 32),
+    LEGACY_GOLD_PICKAXE(285, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_GOLD_AXE(286, 1, 32),
+    LEGACY_GOLD_AXE(286, 1),
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_STRING(287),
     @Deprecated(since = "1.13", forRemoval = true)
@@ -2276,15 +2276,15 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SULPHUR(289),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_WOOD_HOE(290, 1, 59),
+    LEGACY_WOOD_HOE(290, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_STONE_HOE(291, 1, 131),
+    LEGACY_STONE_HOE(291, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_IRON_HOE(292, 1, 250),
+    LEGACY_IRON_HOE(292, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_DIAMOND_HOE(293, 1, 1561),
+    LEGACY_DIAMOND_HOE(293, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_GOLD_HOE(294, 1, 32),
+    LEGACY_GOLD_HOE(294, 1),
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SEEDS(295),
     @Deprecated(since = "1.13", forRemoval = true)
@@ -2292,45 +2292,45 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BREAD(297),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_LEATHER_HELMET(298, 1, 55),
+    LEGACY_LEATHER_HELMET(298, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_LEATHER_CHESTPLATE(299, 1, 80),
+    LEGACY_LEATHER_CHESTPLATE(299, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_LEATHER_LEGGINGS(300, 1, 75),
+    LEGACY_LEATHER_LEGGINGS(300, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_LEATHER_BOOTS(301, 1, 65),
+    LEGACY_LEATHER_BOOTS(301, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_CHAINMAIL_HELMET(302, 1, 165),
+    LEGACY_CHAINMAIL_HELMET(302, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_CHAINMAIL_CHESTPLATE(303, 1, 240),
+    LEGACY_CHAINMAIL_CHESTPLATE(303, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_CHAINMAIL_LEGGINGS(304, 1, 225),
+    LEGACY_CHAINMAIL_LEGGINGS(304, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_CHAINMAIL_BOOTS(305, 1, 195),
+    LEGACY_CHAINMAIL_BOOTS(305, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_IRON_HELMET(306, 1, 165),
+    LEGACY_IRON_HELMET(306, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_IRON_CHESTPLATE(307, 1, 240),
+    LEGACY_IRON_CHESTPLATE(307, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_IRON_LEGGINGS(308, 1, 225),
+    LEGACY_IRON_LEGGINGS(308, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_IRON_BOOTS(309, 1, 195),
+    LEGACY_IRON_BOOTS(309, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_DIAMOND_HELMET(310, 1, 363),
+    LEGACY_DIAMOND_HELMET(310, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_DIAMOND_CHESTPLATE(311, 1, 528),
+    LEGACY_DIAMOND_CHESTPLATE(311, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_DIAMOND_LEGGINGS(312, 1, 495),
+    LEGACY_DIAMOND_LEGGINGS(312, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_DIAMOND_BOOTS(313, 1, 429),
+    LEGACY_DIAMOND_BOOTS(313, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_GOLD_HELMET(314, 1, 77),
+    LEGACY_GOLD_HELMET(314, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_GOLD_CHESTPLATE(315, 1, 112),
+    LEGACY_GOLD_CHESTPLATE(315, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_GOLD_LEGGINGS(316, 1, 105),
+    LEGACY_GOLD_LEGGINGS(316, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_GOLD_BOOTS(317, 1, 91),
+    LEGACY_GOLD_BOOTS(317, 1),
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_FLINT(318),
     @Deprecated(since = "1.13", forRemoval = true)
@@ -2388,7 +2388,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_COMPASS(345),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_FISHING_ROD(346, 1, 64),
+    LEGACY_FISHING_ROD(346, 1),
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_WATCH(347),
     @Deprecated(since = "1.13", forRemoval = true)
@@ -2417,7 +2417,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MAP(358, org.bukkit.material.MaterialData.class),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_SHEARS(359, 1, 238),
+    LEGACY_SHEARS(359, 1),
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_MELON(360),
     @Deprecated(since = "1.13", forRemoval = true)
@@ -2495,7 +2495,7 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_SKULL_ITEM(397),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_CARROT_STICK(398, 1, 25),
+    LEGACY_CARROT_STICK(398, 1),
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_NETHER_STAR(399),
     @Deprecated(since = "1.13", forRemoval = true)
@@ -2583,9 +2583,9 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_LINGERING_POTION(441, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_SHIELD(442, 1, 336),
+    LEGACY_SHIELD(442, 1),
     @Deprecated(since = "1.13", forRemoval = true)
-    LEGACY_ELYTRA(443, 1, 431),
+    LEGACY_ELYTRA(443, 1),
     @Deprecated(since = "1.13", forRemoval = true)
     LEGACY_BOAT_SPRUCE(444, 1),
     @Deprecated(since = "1.13", forRemoval = true)
@@ -2638,7 +2638,6 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     private final Constructor<? extends MaterialData> ctor;
     private static final Map<String, Material> BY_NAME = Maps.newHashMap();
     private final int maxStack;
-    private final short durability;
     public final Class<?> data;
     private final boolean legacy;
     private final NamespacedKey key;
@@ -2653,21 +2652,12 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
         this(id, stack, MaterialData.class);
     }
 
-    private Material(final int id, final int stack, final int durability) {
-        this(id, stack, durability, MaterialData.class);
-    }
-
-    private Material(final int id, /*@NotNull*/ final Class<?> data) {
+    private Material(final int id, final Class<?> data) {
         this(id, 64, data);
     }
 
-    private Material(final int id, final int stack, /*@NotNull*/ final Class<?> data) {
-        this(id, stack, 0, data);
-    }
-
-    private Material(final int id, final int stack, final int durability, /*@NotNull*/ final Class<?> data) {
+    private Material(final int id, final int stack, final Class<?> data) {
         this.id = id;
-        this.durability = (short) durability;
         this.maxStack = stack;
         this.data = data;
         this.legacy = this.name().startsWith(LEGACY_PREFIX);
@@ -2700,22 +2690,6 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
             return Registry.BLOCK.get(material.key);
         });
     }
-
-    // Paper start
-
-    /**
-     * @return If the type is either AIR, CAVE_AIR or VOID_AIR
-     */
-    public boolean isEmpty() {
-        switch (this) {
-            case AIR:
-            case CAVE_AIR:
-            case VOID_AIR:
-                return true;
-        }
-        return false;
-    }
-    // Paper end
 
     // Paper start - add Translatable
     @Override
@@ -2824,7 +2798,8 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      * @return Maximum durability for this material
      */
     public short getMaxDurability() {
-        return durability;
+        ItemType type = asItemType();
+        return type == null ? 0 : type.getMaxDurability();
     }
 
     /**
@@ -3041,6 +3016,15 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
     public boolean isAir() {
         BlockType type = asBlockType();
         return type != null && type.isAir();
+    }
+
+    /**
+     * @return If the type is either AIR, CAVE_AIR or VOID_AIR
+     * @deprecated use {@link #isAir()}
+     */
+    @Deprecated(since = "1.21.5")
+    public boolean isEmpty() {
+        return this.isAir();
     }
 
     /**

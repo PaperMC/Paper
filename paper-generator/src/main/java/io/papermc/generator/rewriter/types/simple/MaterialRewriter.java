@@ -94,15 +94,8 @@ public class MaterialRewriter {
             EnumValue.Builder value = super.rewriteEnumValue(reference);
             Item item = reference.value();
             int maxStackSize = item.getDefaultMaxStackSize();
-            int maxDamage = item.components().getOrDefault(DataComponents.MAX_DAMAGE, 0);
-
             if (maxStackSize != Item.DEFAULT_MAX_STACK_SIZE) {
-                if (maxDamage != 0) {
-                    value.arguments(asCode(-1, maxStackSize, maxDamage));
-                } else {
-                    value.arguments(asCode(-1, maxStackSize));
-                }
-                return value;
+                return value.arguments(asCode(-1, maxStackSize));
             }
 
             return value.argument(Integer.toString(-1)); // id not needed for non legacy material
