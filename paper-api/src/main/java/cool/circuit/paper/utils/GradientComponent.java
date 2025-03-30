@@ -6,6 +6,7 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A utility class to create gradient text components.
@@ -24,7 +25,7 @@ public final class GradientComponent {
      * @param endColor The ending color of the gradient
      * @param text The text to display with the gradient
      */
-    public GradientComponent(final TextColor startColor, final TextColor endColor, final String text) {
+    public GradientComponent(@NotNull final TextColor startColor, @NotNull final TextColor endColor, @NotNull final String text) {
         this.startColor = startColor;
         this.endColor = endColor;
         this.text = text;
