@@ -249,7 +249,9 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         boolean retainPassengers = flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS);
         // Don't allow teleporting between worlds while keeping passengers
         if (flagSet.contains(io.papermc.paper.entity.TeleportFlag.EntityState.RETAIN_PASSENGERS) && this.entity.isVehicle() && location.getWorld() != this.getWorld()) {
-            return false;
+            if (!new io.papermc.paper.event.entity.EntityTeleportHinderedEvent(entity.getBukkitEntity(),
+                io.papermc.paper.event.entity.EntityTeleportHinderedEvent.Reason.IS_VEHICLE, cause).callEvent()) // PartyRealms - Add EntityTeleportHinderedEvent
+                return false;
         }
 
         // Don't allow to teleport between worlds if remaining on vehicle

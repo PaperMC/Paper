@@ -1433,7 +1433,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         // Paper start - Teleport passenger API
         // Don't allow teleporting between worlds while keeping passengers
         if (ignorePassengers && entity.isVehicle() && location.getWorld() != this.getWorld()) {
-            return false;
+            if (!new io.papermc.paper.event.entity.EntityTeleportHinderedEvent(entity.getBukkitEntity(),
+                io.papermc.paper.event.entity.EntityTeleportHinderedEvent.Reason.IS_VEHICLE, cause).callEvent()) // PartyRealms - Add EntityTeleportHinderedEvent
+                return false;
         }
 
         // Don't allow to teleport between worlds if remaining on vehicle
@@ -1454,7 +1456,9 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
         }
 
         if (entity.isVehicle() && !ignorePassengers) { // Paper - Teleport API
-            return false;
+            if (!new io.papermc.paper.event.entity.EntityTeleportHinderedEvent(entity.getBukkitEntity(),
+                io.papermc.paper.event.entity.EntityTeleportHinderedEvent.Reason.IS_VEHICLE, cause).callEvent()) // PartyRealms - Add EntityTeleportHinderedEvent
+                return false;
         }
 
         // From = Players current Location
