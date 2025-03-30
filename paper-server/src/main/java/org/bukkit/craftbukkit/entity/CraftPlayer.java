@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.BaseEncoding;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
-import cool.circuit.paper.events.PlayerShowTitleEvent;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.entity.LookAnchor;
@@ -503,16 +502,6 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     public void showTitle(BaseComponent[] title) {
         final ClientboundSetTitleTextPacket packet = new ClientboundSetTitleTextPacket(org.bukkit.craftbukkit.util.CraftChatMessage.fromJSON(net.md_5.bungee.chat.ComponentSerializer.toString(title)));
         getHandle().connection.send(packet);
-
-        //CircuitBoard start
-        final String titleText = String.join("", Arrays.stream(title)
-            .map(BaseComponent::toString)
-            .toArray(String[]::new));
-
-        final PlayerShowTitleEvent event = new PlayerShowTitleEvent(this, titleText);
-
-        event.callEvent();
-        //CircuitBoard end
     }
 
     @Override
