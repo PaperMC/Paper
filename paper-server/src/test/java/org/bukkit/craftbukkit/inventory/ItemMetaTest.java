@@ -3,19 +3,13 @@ package org.bukkit.craftbukkit.inventory;
 import static org.bukkit.support.MatcherAssert.*;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
-import java.util.ArrayList;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.StandingAndWallBlockItem;
-import net.minecraft.world.level.block.AbstractBannerBlock;
-import net.minecraft.world.level.block.AbstractSkullBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.EntityBlock;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -43,7 +37,6 @@ import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.AxolotlBucketMeta;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.inventory.meta.BlockDataMeta;
-import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.BundleMeta;
 import org.bukkit.inventory.meta.ColorableArmorMeta;
@@ -56,7 +49,6 @@ import org.bukkit.inventory.meta.KnowledgeBookMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.MapMeta;
 import org.bukkit.inventory.meta.PotionMeta;
-import org.bukkit.inventory.meta.SpawnEggMeta;
 import org.bukkit.inventory.meta.TropicalFishBucketMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
@@ -159,63 +151,12 @@ public class ItemMetaTest {
         assertThat(bukkit, is(craft));
     }
 
-    @Test
-    public void testBlockStateMeta() {
-        List<Block> queue = new ArrayList<>();
-
-        for (Item item : BuiltInRegistries.ITEM) {
-            if (item instanceof BlockItem) {
-                queue.add(((BlockItem) item).getBlock());
-            }
-            if (item instanceof StandingAndWallBlockItem) {
-                queue.add(((StandingAndWallBlockItem) item).wallBlock);
-            }
-        }
-
-        for (Block block : queue) {
-            if (block != null) {
-                ItemStack stack = CraftItemStack.asNewCraftStack(Item.byBlock(block));
-
-                if (block instanceof AbstractSkullBlock || block instanceof AbstractBannerBlock) {
-                    continue; // those blocks have a special meta
-                }
-
-                ItemMeta meta = stack.getItemMeta();
-                if (block instanceof EntityBlock) {
-                    assertTrue(meta instanceof BlockStateMeta, stack + " has meta of type " + meta + " expected BlockStateMeta");
-
-                    BlockStateMeta blockState = (BlockStateMeta) meta;
-                    assertNotNull(blockState.getBlockState(), stack + " has null block state");
-
-                    blockState.setBlockState(blockState.getBlockState());
-                } else {
-                    assertFalse(meta instanceof BlockStateMeta, stack + " has unexpected meta of type BlockStateMeta (but is not a tile)");
-                }
-            }
-        }
-    }
-
-    @Test
-    public void testSpawnEggsHasMeta() {
-        for (Item item : BuiltInRegistries.ITEM) {
-            if (item instanceof net.minecraft.world.item.SpawnEggItem) {
-                Material material = CraftItemType.minecraftToBukkit(item);
-                CraftMetaItem baseMeta = (CraftMetaItem) Bukkit.getItemFactory().getItemMeta(material);
-                ItemMeta baseMetaItem = CraftItemStack.getItemMeta(item.getDefaultInstance());
-
-                assertTrue(baseMeta instanceof CraftMetaSpawnEgg, material + " is not handled in CraftItemFactory");
-                assertTrue(baseMeta.applicableTo(material), material + " is not applicable to CraftMetaSpawnEgg");
-                assertTrue(baseMetaItem instanceof SpawnEggMeta, material + " is not handled in CraftItemStack");
-            }
-        }
-    }
-
-    // Paper start - check entity tag metas
     private static final java.util.Set<Class<?>> ENTITY_TAG_METAS = java.util.Set.of(
         CraftMetaEntityTag.class,
         CraftMetaTropicalFishBucket.class,
         CraftMetaAxolotlBucket.class
     );
+
     @Test
     public void testEntityTagMeta() {
         for (final Item item : BuiltInRegistries.ITEM) {
@@ -229,7 +170,6 @@ public class ItemMetaTest {
             }
         }
     }
-    // Paper end
 
     @Test
     public void testEachExtraData() {

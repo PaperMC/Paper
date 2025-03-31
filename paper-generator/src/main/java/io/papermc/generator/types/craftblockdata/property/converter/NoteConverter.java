@@ -2,13 +2,14 @@ package io.papermc.generator.types.craftblockdata.property.converter;
 
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeName;
+import io.papermc.generator.types.Types;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Property;
-import org.bukkit.Note;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class NoteConverter implements Converter<Integer, Note> {
+public class NoteConverter implements Converter<Integer> {
 
     @Override
     public Property<Integer> getProperty() {
@@ -16,8 +17,8 @@ public class NoteConverter implements Converter<Integer, Note> {
     }
 
     @Override
-    public Class<Note> getApiType() {
-        return Note.class;
+    public TypeName getApiType() {
+        return Types.NOTE;
     }
 
     @Override

@@ -1,9 +1,13 @@
 package io.papermc.generator.rewriter.types.simple;
 
+import io.papermc.generator.rewriter.types.Types;
 import io.papermc.generator.rewriter.types.registry.EnumRegistryRewriter;
 import io.papermc.generator.utils.BlockStateMapping;
 import io.papermc.generator.utils.Formatting;
-import io.papermc.typewriter.preset.model.EnumValue;
+import io.papermc.typewriter.ClassNamed;
+import io.papermc.typewriter.preset.model.EnumConstant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -11,9 +15,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.WallSignBlock;
-import org.bukkit.block.data.BlockData;
-
-import static io.papermc.generator.utils.Formatting.asCode;
 
 @Deprecated(forRemoval = true)
 public class MaterialRewriter {
@@ -23,7 +24,7 @@ public class MaterialRewriter {
     public static class Blocks extends EnumRegistryRewriter<Block> {
 
         public Blocks() {
-            super(Registries.BLOCK, false);
+            super(Registries.BLOCK);
         }
 
         @Override
@@ -33,10 +34,12 @@ public class MaterialRewriter {
         }
 
         @Override
-        protected EnumValue.Builder rewriteEnumValue(Holder.Reference<Block> reference) {
-            EnumValue.Builder value = super.rewriteEnumValue(reference);
+        protected void rewriteConstant(EnumConstant.Builder builder, Holder.Reference<Block> reference) {
             Block block = reference.value();
-            if (BlockStateMapping.MAPPING.containsKey(block.getClass())) {
+            List<String> args = new ArrayList<>(3);
+            args.add(Integer.toString(-1)); // legacy id (not needed for non legacy material)
+
+            if (BlockStateMapping.getOrCreate().containsKey(block.getClass())) {
                 // some block can also be represented as item in that enum
                 // doing a double job
                 Optional<Item> equivalentItem = BuiltInRegistries.ITEM.getOptional(reference.key().location());
@@ -47,16 +50,16 @@ public class MaterialRewriter {
                     equivalentItem = Optional.of(block.asItem());
                 }
 
-                Class<?> blockData = BlockStateMapping.getBestSuitedApiClass(block.getClass());
+                ClassNamed blockData = BlockStateMapping.getBestSuitedApiClass(block.getClass());
                 if (blockData == null) {
-                    blockData = BlockData.class;
+                    blockData = Types.BLOCK_DATA;
                 }
                 if (equivalentItem.isPresent() && equivalentItem.get().getDefaultMaxStackSize() != Item.DEFAULT_MAX_STACK_SIZE) {
-                    return value.arguments(Integer.toString(-1), Integer.toString(equivalentItem.get().getDefaultMaxStackSize()), this.importCollector.getShortName(blockData).concat(".class"));
+                    args.add(Integer.toString(equivalentItem.get().getDefaultMaxStackSize())); // max stack size
                 }
-                return value.arguments(Integer.toString(-1), this.importCollector.getShortName(blockData).concat(".class"));
+                args.add(this.importCollector.getShortName(blockData).concat(".class")); // block data class
             }
-            return value.argument(Integer.toString(-1)); // id not needed for non legacy material
+            builder.arguments(args);
         }
     }
 
@@ -79,7 +82,7 @@ public class MaterialRewriter {
     public static class Items extends EnumRegistryRewriter<Item> {
 
         public Items() {
-            super(Registries.ITEM, false);
+            super(Registries.ITEM);
         }
 
         @Override
@@ -89,15 +92,17 @@ public class MaterialRewriter {
         }
 
         @Override
-        protected EnumValue.Builder rewriteEnumValue(Holder.Reference<Item> reference) {
-            EnumValue.Builder value = super.rewriteEnumValue(reference);
+        protected void rewriteConstant(EnumConstant.Builder builder, Holder.Reference<Item> reference) {
             Item item = reference.value();
+            List<String> args = new ArrayList<>(2);
+            args.add(Integer.toString(-1)); // legacy id (not needed for non legacy material)
+
             int maxStackSize = item.getDefaultMaxStackSize();
             if (maxStackSize != Item.DEFAULT_MAX_STACK_SIZE) {
-                return value.arguments(asCode(-1, maxStackSize));
+                args.add(Integer.toString(maxStackSize));
             }
 
-            return value.argument(Integer.toString(-1)); // id not needed for non legacy material
+            builder.arguments(args);
         }
     }
 }

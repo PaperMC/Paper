@@ -4,7 +4,8 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
-import io.papermc.generator.utils.BlockStateMapping;
+import io.papermc.generator.resources.DataFileLoader;
+import io.papermc.generator.resources.DataFiles;
 import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.jspecify.annotations.NullMarked;
@@ -25,13 +26,9 @@ public class EnumPropertyWriter<T extends Enum<T> & StringRepresentable> extends
     }
 
     @Override
-    protected Class<?> processApiType() {
-        Class<?> apiClass = this.property.getValueClass();
-        apiClass = BlockStateMapping.ENUM_BRIDGE.get(apiClass);
-        if (apiClass == null) {
-            throw new IllegalStateException("Unknown enum type for " + this.property);
-        }
-        return apiClass;
+    protected TypeName processApiType() {
+        Class<?> rawClass = this.property.getValueClass();
+        return DataFileLoader.get(DataFiles.BLOCK_STATE_ENUM_PROPERTY_TYPES).get(rawClass);
     }
 
     @Override

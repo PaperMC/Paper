@@ -19,10 +19,14 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface Tag<T extends Keyed> extends Keyed {
 
+    String REGISTRY_BLOCKS = "blocks";
+    String REGISTRY_ITEMS = "items";
+    String REGISTRY_FLUIDS = "fluids";
+    String REGISTRY_ENTITY_TYPES = "entity_types";
+    String REGISTRY_GAME_EVENTS = "game_events";
+
     // Start generate - Tag
     // @GeneratedFrom 1.21.6
-    String REGISTRY_BLOCKS = "blocks";
-
     Tag<Material> ACACIA_LOGS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("acacia_logs"), Material.class);
 
     Tag<Material> AIR = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("air"), Material.class);
@@ -411,8 +415,6 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> WOOL_CARPETS = Bukkit.getTag(REGISTRY_BLOCKS, NamespacedKey.minecraft("wool_carpets"), Material.class);
 
-    String REGISTRY_ITEMS = "items";
-
     Tag<Material> ITEMS_ACACIA_LOGS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("acacia_logs"), Material.class);
 
     Tag<Material> ITEMS_ANVIL = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("anvil"), Material.class);
@@ -771,13 +773,9 @@ public interface Tag<T extends Keyed> extends Keyed {
 
     Tag<Material> ITEMS_WOOL_CARPETS = Bukkit.getTag(REGISTRY_ITEMS, NamespacedKey.minecraft("wool_carpets"), Material.class);
 
-    String REGISTRY_FLUIDS = "fluids";
-
     Tag<Fluid> FLUIDS_LAVA = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("lava"), Fluid.class);
 
     Tag<Fluid> FLUIDS_WATER = Bukkit.getTag(REGISTRY_FLUIDS, NamespacedKey.minecraft("water"), Fluid.class);
-
-    String REGISTRY_ENTITY_TYPES = "entity_types";
 
     Tag<EntityType> ENTITY_TYPES_AQUATIC = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("aquatic"), EntityType.class);
 
@@ -856,8 +854,6 @@ public interface Tag<T extends Keyed> extends Keyed {
     Tag<EntityType> ENTITY_TYPES_WITHER_FRIENDS = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("wither_friends"), EntityType.class);
 
     Tag<EntityType> ENTITY_TYPES_ZOMBIES = Bukkit.getTag(REGISTRY_ENTITY_TYPES, NamespacedKey.minecraft("zombies"), EntityType.class);
-
-    String REGISTRY_GAME_EVENTS = "game_events";
 
     Tag<GameEvent> GAME_EVENT_ALLAY_CAN_LISTEN = Bukkit.getTag(REGISTRY_GAME_EVENTS, NamespacedKey.minecraft("allay_can_listen"), GameEvent.class);
 

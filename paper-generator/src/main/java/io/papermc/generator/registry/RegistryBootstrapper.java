@@ -7,7 +7,7 @@ import io.papermc.generator.rewriter.types.registry.RegistryEventsRewriter;
 import io.papermc.generator.types.SourceGenerator;
 import io.papermc.generator.types.registry.GeneratedKeyType;
 import io.papermc.generator.types.registry.GeneratedTagKeyType;
-import io.papermc.paper.registry.event.RegistryEvents;
+import io.papermc.generator.utils.BasePackage;
 import java.util.List;
 import net.minecraft.core.registries.Registries;
 import org.jspecify.annotations.NullMarked;
@@ -15,19 +15,19 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public class RegistryBootstrapper {
 
-    private static final String PAPER_REGISTRY_PACKAGE = "io.papermc.paper.registry";
+    private static final String PAPER_REGISTRY_PACKAGE = BasePackage.PAPER.name() + ".registry";
 
     public static void bootstrap(List<SourceGenerator> generators) {
         // typed/tag keys
         RegistryEntries.forEach(entry -> {
             generators.add(new GeneratedKeyType<>(PAPER_REGISTRY_PACKAGE + ".keys", entry));
             if (entry.registry().listTags().findAny().isPresent()) {
-                generators.add(new GeneratedTagKeyType(entry, PAPER_REGISTRY_PACKAGE + ".keys.tags"));
+                generators.add(new GeneratedTagKeyType<>(entry, PAPER_REGISTRY_PACKAGE + ".keys.tags"));
             }
         });
 
         // todo remove once entity type is a registry
-        generators.add(new GeneratedTagKeyType(RegistryEntries.byRegistryKey(Registries.ENTITY_TYPE), PAPER_REGISTRY_PACKAGE + ".keys.tags"));
+        generators.add(new GeneratedTagKeyType<>(RegistryEntries.byRegistryKey(Registries.ENTITY_TYPE), PAPER_REGISTRY_PACKAGE + ".keys.tags"));
     }
 
     public static void bootstrap(PatternSourceSetRewriter apiSourceSet, PatternSourceSetRewriter serverSourceSet) {
@@ -36,7 +36,7 @@ public class RegistryBootstrapper {
     }
 
     public static void bootstrapApi(PatternSourceSetRewriter sourceSet) {
-        sourceSet.register("RegistryEvents", RegistryEvents.class, new RegistryEventsRewriter());
+        sourceSet.register("RegistryEvents", Types.REGISTRY_EVENTS, new RegistryEventsRewriter());
     }
 
     public static void bootstrapServer(PatternSourceSetRewriter sourceSet) {

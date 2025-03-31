@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.type.SmallDripleaf;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
@@ -44,12 +45,12 @@ public class CraftSmallDripleaf extends CraftBlockData implements SmallDripleaf 
     }
 
     @Override
-    public org.bukkit.block.data.Bisected.Half getHalf() {
-        return this.get(HALF, org.bukkit.block.data.Bisected.Half.class);
+    public Bisected.Half getHalf() {
+        return this.get(HALF, Bisected.Half.class);
     }
 
     @Override
-    public void setHalf(final org.bukkit.block.data.Bisected.Half half) {
+    public void setHalf(final Bisected.Half half) {
         Preconditions.checkArgument(half != null, "half cannot be null!");
         this.set(HALF, half);
     }

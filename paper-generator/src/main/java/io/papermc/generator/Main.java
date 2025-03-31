@@ -11,7 +11,6 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -44,11 +43,11 @@ import picocli.CommandLine;
 )
 public class Main implements Callable<Integer> {
 
+    @CommandLine.Option(names = {"--root-dir"}, required = true)
+    Path rootDir;
+
     @CommandLine.Option(names = {"--sourceset"}, required = true)
     Path sourceSet;
-
-    @CommandLine.Option(names = {"-cp", "--classpath"}, split = "[;:]", required = true)
-    Set<Path> classpath;
 
     @CommandLine.Option(names = {"--rewrite"})
     boolean isRewrite;
@@ -61,17 +60,19 @@ public class Main implements Callable<Integer> {
 
     private static final Logger LOGGER = LogUtils.getLogger();
 
+    public static @MonotonicNonNull Path ROOT_DIR;
     public static RegistryAccess.@MonotonicNonNull Frozen REGISTRY_ACCESS;
     public static @MonotonicNonNull Map<TagKey<?>, String> EXPERIMENTAL_TAGS;
+    public static final boolean IS_UPDATING = Boolean.getBoolean("paper.updatingMinecraft");
 
     public static CompletableFuture<Void> bootStrap(boolean withTags) {
         SharedConstants.tryDetectVersion();
         Bootstrap.bootStrap();
         Bootstrap.validate();
 
-        PackRepository resourceRepository = ServerPacksSource.createVanillaTrustedRepository();
-        resourceRepository.reload();
-        MultiPackResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, resourceRepository.getAvailablePacks().stream().map(Pack::open).toList());
+        PackRepository packRepository = ServerPacksSource.createVanillaTrustedRepository();
+        packRepository.reload();
+        MultiPackResourceManager resourceManager = new MultiPackResourceManager(PackType.SERVER_DATA, packRepository.getAvailablePacks().stream().map(Pack::open).toList());
         LayeredRegistryAccess<RegistryLayer> layers = RegistryLayer.createRegistryAccess();
         List<Registry.PendingTags<?>> pendingTags = TagLoader.loadTagsForExistingRegistries(resourceManager, layers.getLayer(RegistryLayer.STATIC));
         List<HolderLookup.RegistryLookup<?>> worldGenLayer = TagLoader.buildUpdatedLookups(layers.getAccessForLoading(RegistryLayer.WORLDGEN), pendingTags);
@@ -106,9 +107,10 @@ public class Main implements Callable<Integer> {
     public Integer call() {
         bootStrap(this.tagBootstrap).join();
 
+        ROOT_DIR = this.rootDir;
         try {
             if (this.isRewrite) {
-                rewrite(this.sourceSet, this.classpath, this.side.equals("api") ? Rewriters.API : Rewriters.SERVER);
+                rewrite(this.sourceSet, Rewriters.VALUES.get(this.side));
             } else {
                 generate(this.sourceSet, this.side.equals("api") ? Generators.API : Generators.SERVER);
             }
@@ -120,22 +122,21 @@ public class Main implements Callable<Integer> {
         return 0;
     }
 
-    private static void rewrite(Path sourceSet, Set<Path> classpath, Consumer<PatternSourceSetRewriter> rewriters) throws IOException {
-        PatternSourceSetRewriter sourceSetRewriter = new PaperPatternSourceSetRewriter(classpath);
+    private static void rewrite(Path sourceSet, Consumer<PatternSourceSetRewriter> rewriters) throws IOException {
+        PatternSourceSetRewriter sourceSetRewriter = new PaperPatternSourceSetRewriter();
         rewriters.accept(sourceSetRewriter);
-        sourceSetRewriter.apply(sourceSet.resolve("src/main/java"));
+        sourceSetRewriter.apply(sourceSet);
     }
 
     private static void generate(Path sourceSet, Collection<SourceGenerator> generators) throws IOException {
-        Path output = sourceSet.resolve("src/generated/java");
-        if (Files.exists(output)) {
-            PathUtils.deleteDirectory(output);
+        if (Files.exists(sourceSet)) {
+            PathUtils.deleteDirectory(sourceSet);
         }
 
         for (SourceGenerator generator : generators) {
-            generator.writeToFile(output);
+            generator.writeToFile(sourceSet);
         }
-        LOGGER.info("Files written to {}", output.toAbsolutePath());
+        LOGGER.info("Files written to {}", sourceSet.toAbsolutePath());
     }
 
     public static void main(String[] args) {

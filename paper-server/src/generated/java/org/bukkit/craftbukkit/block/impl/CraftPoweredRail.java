@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.RailShape;
+import org.bukkit.block.data.Rail;
 import org.bukkit.block.data.type.RedstoneRail;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
@@ -34,20 +35,20 @@ public class CraftPoweredRail extends CraftBlockData implements RedstoneRail {
     }
 
     @Override
-    public org.bukkit.block.data.Rail.Shape getShape() {
-        return this.get(SHAPE, org.bukkit.block.data.Rail.Shape.class);
+    public Rail.Shape getShape() {
+        return this.get(SHAPE, Rail.Shape.class);
     }
 
     @Override
-    public void setShape(final org.bukkit.block.data.Rail.Shape shape) {
+    public void setShape(final Rail.Shape shape) {
         Preconditions.checkArgument(shape != null, "shape cannot be null!");
-        Preconditions.checkArgument(shape != org.bukkit.block.data.Rail.Shape.NORTH_EAST && shape != org.bukkit.block.data.Rail.Shape.NORTH_WEST && shape != org.bukkit.block.data.Rail.Shape.SOUTH_EAST && shape != org.bukkit.block.data.Rail.Shape.SOUTH_WEST, "Invalid rail shape, only straight rail are allowed for this property!");
+        Preconditions.checkArgument(shape != Rail.Shape.NORTH_EAST && shape != Rail.Shape.NORTH_WEST && shape != Rail.Shape.SOUTH_EAST && shape != Rail.Shape.SOUTH_WEST, "Invalid rail shape, only straight rail are allowed for this property!");
         this.set(SHAPE, shape);
     }
 
     @Override
-    public Set<org.bukkit.block.data.Rail.Shape> getShapes() {
-        return this.getValues(SHAPE, org.bukkit.block.data.Rail.Shape.class);
+    public Set<Rail.Shape> getShapes() {
+        return this.getValues(SHAPE, Rail.Shape.class);
     }
 
     @Override

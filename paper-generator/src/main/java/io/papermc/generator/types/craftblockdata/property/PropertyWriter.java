@@ -23,7 +23,7 @@ import org.jspecify.annotations.NullMarked;
 public class PropertyWriter<T extends Comparable<T>> implements PropertyMaker {
 
     protected final Property<T> property;
-    private final Supplier<Class<?>> apiClassSupplier;
+    private final Supplier<TypeName> apiClassSupplier;
 
     protected PropertyWriter(Property<T> property) {
         this.property = property;
@@ -35,16 +35,16 @@ public class PropertyWriter<T extends Comparable<T>> implements PropertyMaker {
         return TypeName.get(this.property.getClass());
     }
 
-    protected Class<?> processApiType() {
+    protected TypeName processApiType() {
         Class<T> apiClass = this.property.getValueClass();
         if (Primitives.isWrapperType(apiClass)) {
             apiClass = Primitives.unwrap(apiClass);
         }
-        return apiClass;
+        return TypeName.get(apiClass);
     }
 
     @Override
-    public Class<?> getApiType() {
+    public TypeName getApiType() {
         return this.apiClassSupplier.get();
     }
 
@@ -59,24 +59,27 @@ public class PropertyWriter<T extends Comparable<T>> implements PropertyMaker {
     }
 
     @Override
-    public void addExtras(TypeSpec.Builder builder, FieldSpec field, CraftBlockDataGenerator<?> generator, NamingManager naming) {
+    public void addExtras(TypeSpec.Builder builder, FieldSpec field, CraftBlockDataGenerator generator, NamingManager naming) {
         PropertyAppenders.ifPresent(this.property, appender -> appender.addExtras(builder, field, generator, naming));
     }
 
     public static Pair<Class<?>, String> referenceField(Class<? extends Block> from, Property<?> property, Map<Property<?>, Field> fields) {
         Class<?> fieldAccess = from;
         Field field = fields.get(property);
+        String fieldName;
         if (field == null || !Modifier.isPublic(field.getModifiers())) {
             fieldAccess = BlockStateProperties.class;
-            field = BlockStateMapping.FALLBACK_GENERIC_FIELDS.get(property);
+            fieldName = BlockStateMapping.GENERIC_FIELD_NAMES.get(property);
+        } else {
+            fieldName = field.getName();
         }
-        return Pair.of(fieldAccess, field.getName());
+        return Pair.of(fieldAccess, fieldName);
     }
 
     public static Pair<Class<?>, String> referenceFieldFromVar(Class<? extends Block> from, Property<?> property, Map<Property<?>, Field> fields) {
         Class<?> fieldAccess = from;
         Field field = fields.get(property);
-        Field genericField = BlockStateMapping.FALLBACK_GENERIC_FIELDS.get(property);
+        Field genericField = BlockStateMapping.GENERIC_FIELDS.get(property);
         if (field == null || !Modifier.isPublic(field.getModifiers()) || !genericField.getType().equals(field.getType())) {
             // field type can differ from BlockStateProperties constants (that's the case for the shulker box (#FACING) and the vault (#STATE)) ref: 1.20.5
             // in that case fallback to the more accurate type to avoid compile error

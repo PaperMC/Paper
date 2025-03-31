@@ -1,5 +1,7 @@
 package io.papermc.generator.rewriter.registration;
 
+import io.papermc.generator.registry.RegistryEntries;
+import io.papermc.generator.registry.RegistryIdentifiable;
 import io.papermc.typewriter.ClassNamed;
 import io.papermc.typewriter.replace.ReplaceOptionsLike;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
@@ -17,7 +19,12 @@ public record RewriterHolder(String pattern, @Nullable ClassNamed targetClass, S
     }
 
     @Contract(value = "_, _ -> new", pure = true)
-    public static RewriterHolder holder(String pattern, SearchReplaceRewriter rewriter) {
+    public static <E, T extends SearchReplaceRewriter & RegistryIdentifiable<E>> RewriterHolder holder(String pattern, T rewriter) {
+        return new RewriterHolder(pattern, RegistryEntries.byRegistryKey(rewriter.getRegistryKey()).data().api().klass().name(), rewriter);
+    }
+
+    @Contract(value = "_, _ -> new", pure = true)
+    public static RewriterHolder sameHolder(String pattern, SearchReplaceRewriter rewriter) {
         return holder(pattern, null, rewriter);
     }
 

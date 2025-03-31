@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.PistonType;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.PistonHead;
+import org.bukkit.block.data.type.TechnicalPiston;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 @GeneratedFrom("1.21.6")
@@ -53,12 +54,12 @@ public class CraftPistonHead extends CraftBlockData implements PistonHead {
     }
 
     @Override
-    public org.bukkit.block.data.type.TechnicalPiston.Type getType() {
-        return this.get(TYPE, org.bukkit.block.data.type.TechnicalPiston.Type.class);
+    public TechnicalPiston.Type getType() {
+        return this.get(TYPE, TechnicalPiston.Type.class);
     }
 
     @Override
-    public void setType(final org.bukkit.block.data.type.TechnicalPiston.Type type) {
+    public void setType(final TechnicalPiston.Type type) {
         Preconditions.checkArgument(type != null, "type cannot be null!");
         this.set(TYPE, type);
     }

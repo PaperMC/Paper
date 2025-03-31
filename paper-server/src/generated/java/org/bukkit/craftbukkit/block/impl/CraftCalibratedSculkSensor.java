@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.CalibratedSculkSensor;
+import org.bukkit.block.data.type.SculkSensor;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
 @GeneratedFrom("1.21.6")
@@ -61,12 +62,12 @@ public class CraftCalibratedSculkSensor extends CraftBlockData implements Calibr
     }
 
     @Override
-    public org.bukkit.block.data.type.SculkSensor.Phase getSculkSensorPhase() {
-        return this.get(PHASE, org.bukkit.block.data.type.SculkSensor.Phase.class);
+    public SculkSensor.Phase getSculkSensorPhase() {
+        return this.get(PHASE, SculkSensor.Phase.class);
     }
 
     @Override
-    public void setSculkSensorPhase(final org.bukkit.block.data.type.SculkSensor.Phase phase) {
+    public void setSculkSensorPhase(final SculkSensor.Phase phase) {
         Preconditions.checkArgument(phase != null, "phase cannot be null!");
         this.set(PHASE, phase);
     }

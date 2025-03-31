@@ -7,7 +7,7 @@ import io.papermc.typewriter.parser.token.CharSequenceBlockToken;
 import io.papermc.typewriter.parser.token.CharSequenceToken;
 import io.papermc.typewriter.parser.token.TokenType;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
-import io.papermc.typewriter.preset.model.EnumValue;
+import io.papermc.typewriter.preset.model.EnumConstant;
 import io.papermc.typewriter.replace.SearchMetadata;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -35,6 +35,10 @@ public class PoseRewriter extends EnumCloneRewriter<Pose> {
     private @MonotonicNonNull Map<String, CharSequenceBlockToken> javadocsPerConstant;
 
     private Map<String, CharSequenceBlockToken> parseConstantJavadocs(String content) {
+        if (content.isBlank()) {
+            return Map.of();
+        }
+
         Map<String, CharSequenceBlockToken> map = new HashMap<>();
 
         Lexer lex = new Lexer(content.toCharArray());
@@ -77,17 +81,17 @@ public class PoseRewriter extends EnumCloneRewriter<Pose> {
     }
 
     @Override
-    protected EnumValue.Builder rewriteEnumValue(Pose item) {
-        return super.rewriteEnumValue(item).rename(name -> RENAMES.getOrDefault(name, name));
+    protected void rewriteConstant(EnumConstant.Builder builder, Pose item) {
+        builder.rename(name -> RENAMES.getOrDefault(name, name));
     }
 
     @Override
-    protected void appendEnumValue(Pose item, StringBuilder builder, String indent, boolean reachEnd) {
+    protected void appendConstant(Pose item, StringBuilder builder, String indent, boolean reachEnd) {
         String constantName = RENAMES.getOrDefault(item.name(), item.name());
         if (this.javadocsPerConstant.containsKey(constantName)) {
             CharSequenceBlockToken token = this.javadocsPerConstant.get(constantName);
             builder.append(indent).append(this.metadata.replacedContent(), token.pos(), token.endPos()).append('\n');
         }
-        super.appendEnumValue(item, builder, indent, reachEnd);
+        super.appendConstant(item, builder, indent, reachEnd);
     }
 }

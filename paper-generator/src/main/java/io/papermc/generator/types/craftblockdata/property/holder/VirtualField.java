@@ -48,9 +48,9 @@ public record VirtualField(
         private final String baseName;
         private final @Nullable Class<?> keyClass;
 
-        private @Nullable Collection<T> values;
+        private @Nullable Collection<T> properties;
 
-        public FieldValue(String name, TypeToken<T> valueTypeToken, DataHolderType holderType, String baseName, @Nullable Class<?> keyClass) {
+        private FieldValue(String name, TypeToken<T> valueTypeToken, DataHolderType holderType, String baseName, @Nullable Class<?> keyClass) {
             this.name = name;
             this.valueTypeToken = valueTypeToken;
             this.holderType = holderType;
@@ -59,14 +59,15 @@ public record VirtualField(
         }
 
         @Contract(value = "_ -> this", mutates = "this")
-        public FieldValue<T> withValues(Collection<T> properties) {
-            this.values = List.copyOf(properties);
+        public FieldValue<T> group(Collection<T> properties) {
+            this.properties = List.copyOf(properties);
             return this;
         }
 
+        @Contract(value = "-> new", pure = true)
         public VirtualField make() {
-            Preconditions.checkState(this.values != null && !this.values.isEmpty(), "The field should doesn't have any content");
-            return new VirtualField(this.name, this.valueTypeToken.getType(), this.holderType, this.baseName, this.keyClass, this.values);
+            Preconditions.checkState(this.properties != null && !this.properties.isEmpty(), "The field doesn't have any content");
+            return new VirtualField(this.name, this.valueTypeToken.getType(), this.holderType, this.baseName, this.keyClass, this.properties);
         }
     }
 }

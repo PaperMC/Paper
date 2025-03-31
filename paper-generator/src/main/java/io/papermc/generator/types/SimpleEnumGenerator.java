@@ -6,11 +6,11 @@ import javax.lang.model.element.Modifier;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public class SimpleEnumGenerator<T extends Enum<T>> extends SimpleGenerator {
+public class SimpleEnumGenerator<E extends Enum<E>> extends SimpleGenerator {
 
-    private final Class<T> enumClass;
+    private final Class<E> enumClass;
 
-    public SimpleEnumGenerator(Class<T> enumClass, String packageName) {
+    public SimpleEnumGenerator(Class<E> enumClass, String packageName) {
         super(enumClass.getSimpleName(), packageName);
         this.enumClass = enumClass;
     }
@@ -21,7 +21,7 @@ public class SimpleEnumGenerator<T extends Enum<T>> extends SimpleGenerator {
             .addModifiers(Modifier.PUBLIC)
             .addAnnotations(Annotations.CLASS_HEADER);
 
-        for (T enumValue : this.enumClass.getEnumConstants()) {
+        for (E enumValue : this.enumClass.getEnumConstants()) {
             typeBuilder.addEnumConstant(enumValue.name());
         }
 

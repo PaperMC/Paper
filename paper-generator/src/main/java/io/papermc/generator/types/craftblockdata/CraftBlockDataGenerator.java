@@ -7,7 +7,10 @@ import com.mojang.datafixers.util.Either;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import io.papermc.generator.resources.DataFileLoader;
+import io.papermc.generator.resources.DataFiles;
 import io.papermc.generator.types.OverriddenClassGenerator;
 import io.papermc.generator.types.Types;
 import io.papermc.generator.types.craftblockdata.property.PropertyMaker;
@@ -19,12 +22,14 @@ import io.papermc.generator.types.craftblockdata.property.holder.VirtualField;
 import io.papermc.generator.types.craftblockdata.property.holder.converter.DataConverter;
 import io.papermc.generator.types.craftblockdata.property.holder.converter.DataConverters;
 import io.papermc.generator.utils.Annotations;
+import io.papermc.generator.utils.BasePackage;
 import io.papermc.generator.utils.BlockStateMapping;
 import io.papermc.generator.utils.CommonVariable;
 import io.papermc.generator.utils.NamingManager;
 import it.unimi.dsi.fastutil.Pair;
 import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import net.minecraft.world.level.block.Block;
@@ -32,10 +37,6 @@ import net.minecraft.world.level.block.ChiseledBookShelfBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.Property;
-import org.bukkit.Axis;
-import org.bukkit.block.BlockFace;
-import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.Rail;
 import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.generator.utils.NamingManager.keywordGet;
@@ -46,16 +47,20 @@ import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
 @NullMarked
-public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClassGenerator<T> {
+public class CraftBlockDataGenerator extends OverriddenClassGenerator {
 
     private final Class<? extends Block> blockClass;
     private final BlockStateMapping.BlockData blockData;
 
-    protected CraftBlockDataGenerator(Class<? extends Block> blockClass, BlockStateMapping.BlockData blockData, Class<T> baseClass) {
-        super(baseClass, blockData.implName(), Types.BASE_PACKAGE + ".block.impl");
+    protected CraftBlockDataGenerator(Class<? extends Block> blockClass, BlockStateMapping.BlockData blockData) {
+        super(blockData.api(), blockData.implName(), BasePackage.CRAFT_BUKKIT.name().concat(".block.impl"));
         this.blockClass = blockClass;
         this.blockData = blockData;
         this.printWarningOnMissingOverride = true;
+    }
+
+    public Class<? extends Block> getBlock() {
+        return this.blockClass;
     }
 
     // default keywords: get/set
@@ -77,19 +82,19 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
             method.addStatement("$1T.checkArgument($2N.isCartesian() && $2N.getModY() == 0, $3S)", Preconditions.class, param, "Invalid face, only cartesian horizontal face are allowed for this property!");
         },
         BlockStateProperties.FACING_HOPPER, (param, method) -> {
-            method.addStatement("$1T.checkArgument($2N.isCartesian() && $2N != $3T.UP, $4S)", Preconditions.class, param, BlockFace.class, "Invalid face, only cartesian face (excluding UP) are allowed for this property!");
+            method.addStatement("$1T.checkArgument($2N.isCartesian() && $2N != $3T.UP, $4S)", Preconditions.class, param, Types.BLOCK_FACE, "Invalid face, only cartesian face (excluding UP) are allowed for this property!");
         },
         BlockStateProperties.VERTICAL_DIRECTION, (param, method) -> {
             method.addStatement("$T.checkArgument($N.getModY() != 0, $S)", Preconditions.class, param, "Invalid face, only vertical face are allowed for this property!");
         },
         BlockStateProperties.ROTATION_16, (param, method) -> {
-            method.addStatement("$1T.checkArgument($2N != $3T.SELF && $2N.getModY() == 0, $4S)", Preconditions.class, param, BlockFace.class, "Invalid face, only horizontal face are allowed for this property!");
+            method.addStatement("$1T.checkArgument($2N != $3T.SELF && $2N.getModY() == 0, $4S)", Preconditions.class, param, Types.BLOCK_FACE, "Invalid face, only horizontal face are allowed for this property!");
         },
         BlockStateProperties.HORIZONTAL_AXIS, (param, method) -> {
-            method.addStatement("$1T.checkArgument($2N == $3T.X || $2N == $3T.Z, $4S)", Preconditions.class, param, Axis.class, "Invalid axis, only horizontal axis are allowed for this property!");
+            method.addStatement("$1T.checkArgument($2N == $3T.X || $2N == $3T.Z, $4S)", Preconditions.class, param, Types.AXIS, "Invalid axis, only horizontal axis are allowed for this property!");
         },
         BlockStateProperties.RAIL_SHAPE_STRAIGHT, (param, method) -> {
-            method.addStatement("$1T.checkArgument($2N != $3T.NORTH_EAST && $2N != $3T.NORTH_WEST && $2N != $3T.SOUTH_EAST && $2N != $3T.SOUTH_WEST, $4S)", Preconditions.class, param, Rail.Shape.class, "Invalid rail shape, only straight rail are allowed for this property!");
+            method.addStatement("$1T.checkArgument($2N != $3T.NORTH_EAST && $2N != $3T.NORTH_WEST && $2N != $3T.SOUTH_EAST && $2N != $3T.SOUTH_WEST, $4S)", Preconditions.class, param, Types.BLOCK_DATA_RAIL_SHAPE, "Invalid rail shape, only straight rail are allowed for this property!");
         }
     );
 
@@ -98,7 +103,15 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
             .addModifiers(PUBLIC)
             .addAnnotation(Annotations.GENERATED_FROM)
             .superclass(Types.CRAFT_BLOCK_DATA)
-            .addSuperinterface(this.baseClass);
+            .addSuperinterface(Types.typed(this.baseClass));
+
+        // since javapoet lack of context (doesn't know the api anymore), type clash with the super interface
+        Map<String, List<String>> ambiguousNames = DataFileLoader.get(DataFiles.BLOCK_STATE_AMBIGUOUS_NAMES);
+        for (Map.Entry<String, List<String>> entry : ambiguousNames.entrySet()) {
+            if (entry.getValue().contains(this.blockData.implName())) {
+                typeBuilder.alwaysQualify(entry.getKey());
+            }
+        }
 
         ParameterSpec parameter = ParameterSpec.builder(BlockState.class, "state").build();
         MethodSpec constructor = MethodSpec.constructorBuilder()
@@ -135,10 +148,10 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
             typeBuilder.addField(field);
 
             ConverterBase converter = Converters.getOrDefault(property, propertyMaker);
-            Class<?> apiClass = converter.getApiType();
+            TypeName apiType = converter.getApiType();
 
             NamingManager.AccessKeyword accessKeyword = null;
-            if (apiClass == Boolean.TYPE) {
+            if (apiType.equals(TypeName.BOOLEAN)) {
                 accessKeyword = keywordGet("is");
             }
             accessKeyword = FLUENT_KEYWORD.getOrDefault(property, accessKeyword);
@@ -148,18 +161,18 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
             {
                 MethodSpec.Builder methodBuilder = createMethod(propertyNaming.simpleGetterName(name -> !name.startsWith("is_") && !name.startsWith("has_")));
                 converter.convertGetter(methodBuilder, field);
-                methodBuilder.returns(apiClass);
+                methodBuilder.returns(apiType);
 
                 typeBuilder.addMethod(methodBuilder.build());
             }
 
             // set
             {
-                String paramName = propertyNaming.paramName(apiClass);
-                ParameterSpec parameter = ParameterSpec.builder(apiClass, paramName, FINAL).build();
+                String paramName = propertyNaming.paramName(apiType);
+                ParameterSpec parameter = ParameterSpec.builder(apiType, paramName, FINAL).build();
 
-                MethodSpec.Builder methodBuilder = createMethod(propertyNaming.simpleSetterName(name -> !name.startsWith("is_")), apiClass).addParameter(parameter);
-                if (!apiClass.isPrimitive()) {
+                MethodSpec.Builder methodBuilder = createUnsafeMethod(propertyNaming.simpleSetterName(name -> !name.startsWith("is_"))).addParameter(parameter);
+                if (!apiType.isPrimitive()) {
                     methodBuilder.addStatement("$T.checkArgument($N != null, $S)", Preconditions.class, parameter, "%s cannot be null!".formatted(paramName));
                 }
                 if (SETTER_PRECONDITIONS.containsKey(property)) {
@@ -188,20 +201,20 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
             typeBuilder.addField(field);
 
             DataConverter converter = DataConverters.getOrThrow(dataPropertyMaker.getType());
-            Class<?> apiClass = propertyConverter.getApiType();
+            TypeName apiClass = propertyConverter.getApiType();
 
             NamingManager.AccessKeyword accessKeyword = null;
-            if (apiClass == Boolean.TYPE) {
+            if (apiClass.equals(TypeName.BOOLEAN)) {
                 accessKeyword = NamingManager.keywordGet("has");
             }
             accessKeyword = FLUENT_KEYWORD.getOrDefault(firstProperty, accessKeyword);
             NamingManager baseNaming = new NamingManager(accessKeyword, CaseFormat.UPPER_UNDERSCORE, dataPropertyMaker.getBaseName());
 
-            ParameterSpec indexParameter = ParameterSpec.builder(dataPropertyMaker.getIndexClass(), dataPropertyMaker.getIndexClass() == Integer.TYPE ? CommonVariable.INDEX : baseNaming.paramName(dataPropertyMaker.getIndexClass()), FINAL).build();
+            ParameterSpec indexParameter = ParameterSpec.builder(dataPropertyMaker.getIndexClass(), dataPropertyMaker.getIndexClass().equals(TypeName.INT) ? CommonVariable.INDEX : baseNaming.paramName(dataPropertyMaker.getIndexClass()), FINAL).build();
 
             // get
             {
-                MethodSpec.Builder methodBuilder = createMethod(baseNaming.simpleGetterName(name -> true), dataPropertyMaker.getIndexClass())
+                MethodSpec.Builder methodBuilder = createUnsafeMethod(baseNaming.simpleGetterName(name -> true))
                     .addParameter(indexParameter);
                 if (!dataPropertyMaker.getIndexClass().isPrimitive()) {
                     methodBuilder.addStatement("$T.checkArgument($N != null, $S)", Preconditions.class, indexParameter, "%s cannot be null!".formatted(indexParameter.name));
@@ -217,7 +230,7 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
                 String paramName = baseNaming.paramName(apiClass);
                 ParameterSpec parameter = ParameterSpec.builder(apiClass, paramName, FINAL).build();
 
-                MethodSpec.Builder methodBuilder = createMethod(baseNaming.simpleSetterName(name -> true), dataPropertyMaker.getIndexClass(), apiClass)
+                MethodSpec.Builder methodBuilder = createUnsafeMethod(baseNaming.simpleSetterName(name -> true))
                     .addParameter(indexParameter)
                     .addParameter(parameter);
                 if (!dataPropertyMaker.getIndexClass().isPrimitive()) {

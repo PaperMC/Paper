@@ -9,5 +9,5 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public interface AppenderBase {
 
-    void addExtras(TypeSpec.Builder builder, FieldSpec field, CraftBlockDataGenerator<?> generator, NamingManager naming);
+    void addExtras(TypeSpec.Builder builder, FieldSpec field, CraftBlockDataGenerator generator, NamingManager naming);
 }

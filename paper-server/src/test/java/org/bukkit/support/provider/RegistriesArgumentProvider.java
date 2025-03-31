@@ -1,6 +1,8 @@
 package org.bukkit.support.provider;
 
 import com.google.common.collect.Lists;
+import io.papermc.paper.datacomponent.DataComponentType;
+import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.List;
 import java.util.stream.Stream;
@@ -19,6 +21,8 @@ import net.minecraft.world.entity.decoration.PaintingVariant;
 import net.minecraft.world.entity.npc.VillagerProfession;
 import net.minecraft.world.entity.npc.VillagerType;
 import net.minecraft.world.item.Instrument;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.level.saveddata.maps.MapDecorationType;
 import org.bukkit.Art;
@@ -85,40 +89,39 @@ public class RegistriesArgumentProvider implements ArgumentsProvider {
 
     static {
         // Order: RegistryKey, Bukkit class, Minecraft Registry key, CraftBukkit class, Minecraft class
-        register(RegistryKey.PAINTING_VARIANT, Art.class, Registries.PAINTING_VARIANT, CraftArt.class, PaintingVariant.class);
-        register(RegistryKey.ATTRIBUTE, Attribute.class, Registries.ATTRIBUTE, CraftAttribute.class, net.minecraft.world.entity.ai.attributes.Attribute.class);
-        register(RegistryKey.BIOME, Biome.class, Registries.BIOME, CraftBiome.class, net.minecraft.world.level.biome.Biome.class);
-        register(RegistryKey.ENCHANTMENT, Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class);
-        register(RegistryKey.FLUID, Fluid.class, Registries.FLUID, CraftFluid.class, net.minecraft.world.level.material.Fluid.class);
-        register(RegistryKey.GAME_EVENT, GameEvent.class, Registries.GAME_EVENT, CraftGameEvent.class, net.minecraft.world.level.gameevent.GameEvent.class);
-        register(RegistryKey.INSTRUMENT, MusicInstrument.class, Registries.INSTRUMENT, CraftMusicInstrument.class, Instrument.class);
-        register(RegistryKey.MOB_EFFECT, PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffect.class);
-        register(RegistryKey.SOUND_EVENT, Sound.class, Registries.SOUND_EVENT, CraftSound.class, SoundEvent.class);
-        register(RegistryKey.STRUCTURE, Structure.class, Registries.STRUCTURE, CraftStructure.class, net.minecraft.world.level.levelgen.structure.Structure.class);
-        register(RegistryKey.STRUCTURE_TYPE, StructureType.class, Registries.STRUCTURE_TYPE, CraftStructureType.class, net.minecraft.world.level.levelgen.structure.StructureType.class);
-        register(RegistryKey.VILLAGER_TYPE, Villager.Type.class, Registries.VILLAGER_TYPE, CraftVillager.CraftType.class, VillagerType.class);
-        register(RegistryKey.VILLAGER_PROFESSION, Villager.Profession.class, Registries.VILLAGER_PROFESSION, CraftVillager.CraftProfession.class, VillagerProfession.class);
-        register(RegistryKey.TRIM_MATERIAL, TrimMaterial.class, Registries.TRIM_MATERIAL, CraftTrimMaterial.class, net.minecraft.world.item.equipment.trim.TrimMaterial.class);
-        register(RegistryKey.TRIM_PATTERN, TrimPattern.class, Registries.TRIM_PATTERN, CraftTrimPattern.class, net.minecraft.world.item.equipment.trim.TrimPattern.class);
-        register(RegistryKey.DAMAGE_TYPE, DamageType.class, Registries.DAMAGE_TYPE, CraftDamageType.class, net.minecraft.world.damagesource.DamageType.class);
-        register(RegistryKey.JUKEBOX_SONG, JukeboxSong.class, Registries.JUKEBOX_SONG, CraftJukeboxSong.class, net.minecraft.world.item.JukeboxSong.class);
-        register(RegistryKey.WOLF_VARIANT, Wolf.Variant.class, Registries.WOLF_VARIANT, CraftWolf.CraftVariant.class, WolfVariant.class);
-        register(RegistryKey.WOLF_SOUND_VARIANT, Wolf.SoundVariant.class, Registries.WOLF_SOUND_VARIANT, CraftWolf.CraftSoundVariant.class, WolfSoundVariant.class);
-        register(RegistryKey.ITEM, ItemType.class, Registries.ITEM, CraftItemType.class, net.minecraft.world.item.Item.class, true);
-        register(RegistryKey.BLOCK, BlockType.class, Registries.BLOCK, CraftBlockType.class, net.minecraft.world.level.block.Block.class, true);
-        register(RegistryKey.FROG_VARIANT, Frog.Variant.class, Registries.FROG_VARIANT, CraftFrog.CraftVariant.class, FrogVariant.class);
-        register(RegistryKey.CAT_VARIANT, Cat.Type.class, Registries.CAT_VARIANT, CraftCat.CraftType.class, CatVariant.class);
-        register(RegistryKey.MAP_DECORATION_TYPE, MapCursor.Type.class, Registries.MAP_DECORATION_TYPE, CraftMapCursor.CraftType.class, MapDecorationType.class);
-        register(RegistryKey.BANNER_PATTERN, PatternType.class, Registries.BANNER_PATTERN, CraftPatternType.class, BannerPattern.class);
-        register(RegistryKey.MENU, MenuType.class, Registries.MENU, CraftMenuType.class, net.minecraft.world.inventory.MenuType.class);
-        register(RegistryKey.DATA_COMPONENT_TYPE, io.papermc.paper.datacomponent.DataComponentType.class, Registries.DATA_COMPONENT_TYPE, io.papermc.paper.datacomponent.PaperDataComponentType.class, net.minecraft.core.component.DataComponentType.class);
-        register(RegistryKey.CHICKEN_VARIANT, Chicken.Variant.class, Registries.CHICKEN_VARIANT, CraftChicken.CraftVariant.class, ChickenVariant.class);
-        register(RegistryKey.COW_VARIANT, Cow.Variant.class, Registries.COW_VARIANT, CraftCow.CraftVariant.class, CowVariant.class);
-        register(RegistryKey.PIG_VARIANT, Pig.Variant.class, Registries.PIG_VARIANT, CraftPig.CraftVariant.class, PigVariant.class);
-    }
-
-    private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft) { // Paper
-        RegistriesArgumentProvider.register(registryKey, bukkit, registry, craft, minecraft, false);
+        // Start generate - RegistriesArgumentProvider#DATA
+        // @GeneratedFrom 1.21.6
+        register(RegistryKey.GAME_EVENT, GameEvent.class, Registries.GAME_EVENT, CraftGameEvent.class, net.minecraft.world.level.gameevent.GameEvent.class, false);
+        register(RegistryKey.STRUCTURE_TYPE, StructureType.class, Registries.STRUCTURE_TYPE, CraftStructureType.class, net.minecraft.world.level.levelgen.structure.StructureType.class, false);
+        register(RegistryKey.MOB_EFFECT, PotionEffectType.class, Registries.MOB_EFFECT, CraftPotionEffectType.class, MobEffect.class, false);
+        register(RegistryKey.BLOCK, BlockType.class, Registries.BLOCK, CraftBlockType.class, Block.class, true);
+        register(RegistryKey.ITEM, ItemType.class, Registries.ITEM, CraftItemType.class, Item.class, true);
+        register(RegistryKey.VILLAGER_PROFESSION, Villager.Profession.class, Registries.VILLAGER_PROFESSION, CraftVillager.CraftProfession.class, VillagerProfession.class, false);
+        register(RegistryKey.VILLAGER_TYPE, Villager.Type.class, Registries.VILLAGER_TYPE, CraftVillager.CraftType.class, VillagerType.class, false);
+        register(RegistryKey.MAP_DECORATION_TYPE, MapCursor.Type.class, Registries.MAP_DECORATION_TYPE, CraftMapCursor.CraftType.class, MapDecorationType.class, false);
+        register(RegistryKey.MENU, MenuType.class, Registries.MENU, CraftMenuType.class, net.minecraft.world.inventory.MenuType.class, false);
+        register(RegistryKey.ATTRIBUTE, Attribute.class, Registries.ATTRIBUTE, CraftAttribute.class, net.minecraft.world.entity.ai.attributes.Attribute.class, false);
+        register(RegistryKey.FLUID, Fluid.class, Registries.FLUID, CraftFluid.class, net.minecraft.world.level.material.Fluid.class, false);
+        register(RegistryKey.SOUND_EVENT, Sound.class, Registries.SOUND_EVENT, CraftSound.class, SoundEvent.class, false);
+        register(RegistryKey.DATA_COMPONENT_TYPE, DataComponentType.class, Registries.DATA_COMPONENT_TYPE, PaperDataComponentType.class, net.minecraft.core.component.DataComponentType.class, false);
+        register(RegistryKey.BIOME, Biome.class, Registries.BIOME, CraftBiome.class, net.minecraft.world.level.biome.Biome.class, false);
+        register(RegistryKey.STRUCTURE, Structure.class, Registries.STRUCTURE, CraftStructure.class, net.minecraft.world.level.levelgen.structure.Structure.class, false);
+        register(RegistryKey.TRIM_MATERIAL, TrimMaterial.class, Registries.TRIM_MATERIAL, CraftTrimMaterial.class, net.minecraft.world.item.equipment.trim.TrimMaterial.class, false);
+        register(RegistryKey.TRIM_PATTERN, TrimPattern.class, Registries.TRIM_PATTERN, CraftTrimPattern.class, net.minecraft.world.item.equipment.trim.TrimPattern.class, false);
+        register(RegistryKey.DAMAGE_TYPE, DamageType.class, Registries.DAMAGE_TYPE, CraftDamageType.class, net.minecraft.world.damagesource.DamageType.class, false);
+        register(RegistryKey.WOLF_VARIANT, Wolf.Variant.class, Registries.WOLF_VARIANT, CraftWolf.CraftVariant.class, WolfVariant.class, false);
+        register(RegistryKey.WOLF_SOUND_VARIANT, Wolf.SoundVariant.class, Registries.WOLF_SOUND_VARIANT, CraftWolf.CraftSoundVariant.class, WolfSoundVariant.class, false);
+        register(RegistryKey.ENCHANTMENT, Enchantment.class, Registries.ENCHANTMENT, CraftEnchantment.class, net.minecraft.world.item.enchantment.Enchantment.class, false);
+        register(RegistryKey.JUKEBOX_SONG, JukeboxSong.class, Registries.JUKEBOX_SONG, CraftJukeboxSong.class, net.minecraft.world.item.JukeboxSong.class, false);
+        register(RegistryKey.BANNER_PATTERN, PatternType.class, Registries.BANNER_PATTERN, CraftPatternType.class, BannerPattern.class, false);
+        register(RegistryKey.PAINTING_VARIANT, Art.class, Registries.PAINTING_VARIANT, CraftArt.class, PaintingVariant.class, false);
+        register(RegistryKey.INSTRUMENT, MusicInstrument.class, Registries.INSTRUMENT, CraftMusicInstrument.class, Instrument.class, false);
+        register(RegistryKey.CAT_VARIANT, Cat.Type.class, Registries.CAT_VARIANT, CraftCat.CraftType.class, CatVariant.class, false);
+        register(RegistryKey.FROG_VARIANT, Frog.Variant.class, Registries.FROG_VARIANT, CraftFrog.CraftVariant.class, FrogVariant.class, false);
+        register(RegistryKey.CHICKEN_VARIANT, Chicken.Variant.class, Registries.CHICKEN_VARIANT, CraftChicken.CraftVariant.class, ChickenVariant.class, false);
+        register(RegistryKey.COW_VARIANT, Cow.Variant.class, Registries.COW_VARIANT, CraftCow.CraftVariant.class, CowVariant.class, false);
+        register(RegistryKey.PIG_VARIANT, Pig.Variant.class, Registries.PIG_VARIANT, CraftPig.CraftVariant.class, PigVariant.class, false);
+        // End generate - RegistriesArgumentProvider#DATA
     }
 
     private static void register(RegistryKey registryKey, Class bukkit, ResourceKey registry, Class craft, Class minecraft, boolean newClass) { // Paper

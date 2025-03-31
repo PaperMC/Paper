@@ -18,7 +18,7 @@ public class IntegerPropertyWriter extends PropertyWriter<Integer> {
     }
 
     @Override
-    public void addExtras(TypeSpec.Builder builder, FieldSpec field, CraftBlockDataGenerator<?> generator, NamingManager naming) {
+    public void addExtras(TypeSpec.Builder builder, FieldSpec field, CraftBlockDataGenerator generator, NamingManager naming) {
         if (Converters.has(this.property)) {
             return;
         }

@@ -2,13 +2,13 @@ package io.papermc.generator.utils.experimental;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashBiMap;
+import io.papermc.generator.utils.Formatting;
 import java.util.HashMap;
 import java.util.Map;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.flag.FeatureFlag;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.flag.FeatureFlags;
-import org.bukkit.MinecraftExperimental;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -39,11 +39,7 @@ public record SingleFlagHolder(FeatureFlag flag) implements FlagHolder { // todo
         }));
     }
 
-    public MinecraftExperimental.Requires asAnnotationMember() {
-        MinecraftExperimental.Requires annotationMember = FlagHolders.ANNOTATION_EQUIVALENT.get(this.flag);
-        if (annotationMember == null) {
-            throw new UnsupportedOperationException("Don't know that feature flag: " + FEATURE_FLAG_NAME.get(this.flag));
-        }
-        return annotationMember;
+    public String asAnnotationMember() {
+        return Formatting.formatKeyAsField(FEATURE_FLAG_NAME.get(this.flag).getPath());
     }
 }

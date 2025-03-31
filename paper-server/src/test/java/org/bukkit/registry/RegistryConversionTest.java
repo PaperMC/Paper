@@ -52,7 +52,7 @@ public class RegistryConversionTest {
 
     @Order(1)
     @RegistriesTest
-    public void testHandleableImplementation(io.papermc.paper.registry.RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz) { // Paper
+    public void testHandleableImplementation(RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz) { // Paper
         Set<Class<? extends Keyed>> notImplemented = new HashSet<>();
         Registry<? extends Keyed> registry = io.papermc.paper.registry.RegistryAccess.registryAccess().getRegistry(type); // Paper
 
@@ -74,7 +74,7 @@ public class RegistryConversionTest {
 
     @Order(2)
     @RegistriesTest
-    public void testMinecraftToBukkitPresent(io.papermc.paper.registry.RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz, ResourceKey<net.minecraft.core.Registry<?>> registryKey,
+    public void testMinecraftToBukkitPresent(RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz, ResourceKey<net.minecraft.core.Registry<?>> registryKey,
                                              Class<? extends Keyed> craftClazz, Class<?> minecraftClazz, boolean newMethod) {
         String methodName = (newMethod) ? RegistryConversionTest.MINECRAFT_TO_BUKKIT_NEW : RegistryConversionTest.MINECRAFT_TO_BUKKIT;
         Method method = null;
@@ -123,7 +123,7 @@ public class RegistryConversionTest {
 
     @Order(2)
     @RegistriesTest
-    public void testBukkitToMinecraftPresent(io.papermc.paper.registry.RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz, ResourceKey<net.minecraft.core.Registry<?>> registryKey,
+    public void testBukkitToMinecraftPresent(RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz, ResourceKey<net.minecraft.core.Registry<?>> registryKey,
                                              Class<? extends Keyed> craftClazz, Class<?> minecraftClazz, boolean newMethod) {
         String methodName = (newMethod) ? RegistryConversionTest.BUKKIT_TO_MINECRAFT_NEW : RegistryConversionTest.BUKKIT_TO_MINECRAFT;
         Method method = null;
@@ -172,7 +172,7 @@ public class RegistryConversionTest {
 
     @Order(3)
     @RegistriesTest
-    public void testMinecraftToBukkitNullValue(io.papermc.paper.registry.RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz) throws IllegalAccessException { // Paper
+    public void testMinecraftToBukkitNullValue(RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz) throws IllegalAccessException { // Paper
         this.checkValidMinecraftToBukkit(clazz);
 
         try {
@@ -191,7 +191,7 @@ public class RegistryConversionTest {
 
     @Order(3)
     @RegistriesTest
-    public void testBukkitToMinecraftNullValue(io.papermc.paper.registry.RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz) throws IllegalAccessException { // Paper
+    public void testBukkitToMinecraftNullValue(RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz) throws IllegalAccessException { // Paper
         this.checkValidBukkitToMinecraft(clazz);
 
         try {
@@ -210,7 +210,7 @@ public class RegistryConversionTest {
 
     @Order(3)
     @RegistriesTest
-    public void testMinecraftToBukkit(io.papermc.paper.registry.RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz) { // Paper
+    public void testMinecraftToBukkit(RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz) { // Paper
         this.checkValidMinecraftToBukkit(clazz);
         this.checkValidHandle(clazz);
 
@@ -241,7 +241,7 @@ public class RegistryConversionTest {
 
     @Order(3)
     @RegistriesTest
-    public void testBukkitToMinecraft(io.papermc.paper.registry.RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz) { // Paper
+    public void testBukkitToMinecraft(RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz) { // Paper
         this.checkValidBukkitToMinecraft(clazz);
         this.checkValidHandle(clazz);
 
@@ -270,7 +270,16 @@ public class RegistryConversionTest {
                 Joiner.on('\n').withKeyValueSeparator(" got: ").join(notMatching)));
     }
 
-    static final Set<RegistryKey<?>> IGNORE_FOR_DIRECT_HOLDER = Set.of(RegistryKey.TRIM_MATERIAL, RegistryKey.TRIM_PATTERN, RegistryKey.INSTRUMENT, RegistryKey.BANNER_PATTERN, RegistryKey.SOUND_EVENT); // Paper
+    static final Set<RegistryKey<?>> IGNORE_FOR_DIRECT_HOLDER = Set.of(
+        // Start generate - RegistryConversionTest#IGNORE_FOR_DIRECT_HOLDER
+        // @GeneratedFrom 1.21.6
+        RegistryKey.SOUND_EVENT,
+        RegistryKey.TRIM_MATERIAL,
+        RegistryKey.TRIM_PATTERN,
+        RegistryKey.BANNER_PATTERN,
+        RegistryKey.INSTRUMENT
+        // End generate - RegistryConversionTest#IGNORE_FOR_DIRECT_HOLDER
+    );
 
     /**
      * Minecraft registry can return a default key / value
@@ -278,7 +287,7 @@ public class RegistryConversionTest {
      */
     @Order(3)
     @RegistriesTest
-    public void testMinecraftToBukkitNoValidMinecraft(io.papermc.paper.registry.RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz, ResourceKey<net.minecraft.core.Registry<?>> registryKey, // Paper
+    public void testMinecraftToBukkitNoValidMinecraft(RegistryKey<? extends Keyed> type, Class<? extends Keyed> clazz, ResourceKey<net.minecraft.core.Registry<?>> registryKey, // Paper
                                                       Class<? extends Keyed> craftClazz, Class<?> minecraftClazz) throws IllegalAccessException {
         this.checkValidMinecraftToBukkit(clazz);
 

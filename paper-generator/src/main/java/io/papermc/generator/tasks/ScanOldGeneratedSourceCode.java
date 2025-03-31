@@ -1,9 +1,10 @@
-package io.papermc.generator.rewriter.utils;
+package io.papermc.generator.tasks;
 
 import io.papermc.generator.Main;
 import io.papermc.generator.Rewriters;
 import io.papermc.generator.rewriter.registration.PaperPatternSourceSetRewriter;
-import io.papermc.paper.generated.GeneratedFrom;
+import io.papermc.generator.rewriter.types.Types;
+import io.papermc.generator.rewriter.utils.Annotations;
 import io.papermc.typewriter.SourceFile;
 import io.papermc.typewriter.SourceRewriter;
 import io.papermc.typewriter.context.FileMetadata;
@@ -35,12 +36,14 @@ public class ScanOldGeneratedSourceCode {
 
     public static void main(String[] args) throws IOException {
         PaperPatternSourceSetRewriter apiSourceSet = new PaperPatternSourceSetRewriter();
-        PaperPatternSourceSetRewriter serverSourceSet = new PaperPatternSourceSetRewriter();
+        PaperPatternSourceSetRewriter implSourceSet = new PaperPatternSourceSetRewriter();
+        PaperPatternSourceSetRewriter implTestSourceSet = new PaperPatternSourceSetRewriter();
 
-        Rewriters.bootstrap(apiSourceSet, serverSourceSet);
+        Rewriters.bootstrap(apiSourceSet, implSourceSet, implTestSourceSet);
 
         checkOutdated(apiSourceSet, Path.of(args[0], "src/main/java"));
-        checkOutdated(serverSourceSet, Path.of(args[1], "src/main/java"));
+        checkOutdated(implSourceSet, Path.of(args[1], "src/main/java"));
+        checkOutdated(implTestSourceSet, Path.of(args[1], "src/test/java"));
     }
 
     private static void checkOutdated(PaperPatternSourceSetRewriter sourceSetRewriter, Path sourceSet) throws IOException {
@@ -86,7 +89,7 @@ public class ScanOldGeneratedSourceCode {
                             continue;
                         }
 
-                        String generatedComment = "// %s ".formatted(Annotations.annotationStyle(GeneratedFrom.class));
+                        String generatedComment = "// %s ".formatted(Annotations.annotationStyle(Types.GENERATED_FROM));
                         if (nextLineIterator.trySkipString(generatedComment) && nextLineIterator.canRead()) {
                             String generatedVersion = nextLineIterator.getRemaining();
                             if (!CURRENT_VERSION.equals(generatedVersion)) {

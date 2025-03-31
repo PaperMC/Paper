@@ -6,6 +6,7 @@ package org.bukkit.entity;
 public enum Pose {
 
     // Start generate - Pose
+    // @GeneratedFrom 1.21.6
     /**
      * Entity is standing normally.
      */
