@@ -24,9 +24,9 @@ public interface ServerConfiguration {
     boolean isVelocityEnabled();
 
     /**
-     * Gets whether the server is configured for BungeeCord online mode.
+     * Gets whether the server is configured for a BungeeCord proxy.
      *
-     * @return true if the server is in BungeeCord online mode, false otherwise
+     * @return true if the server has BungeeCord enabled, false otherwise
      */
     boolean isBungeeCordEnabled();
 
@@ -38,9 +38,9 @@ public interface ServerConfiguration {
     boolean isVelocityOnlineMode();
 
     /**
-     * Gets whether the server is configured for a BungeeCord proxy.
+     * Gets whether the server is configured for BungeeCord online mode.
      *
-     * @return true if the server has BungeeCord enabled, false otherwise
+     * @return true if the server is in BungeeCord online mode, false otherwise
      */
     boolean isBungeeCordOnlineMode();
 }
