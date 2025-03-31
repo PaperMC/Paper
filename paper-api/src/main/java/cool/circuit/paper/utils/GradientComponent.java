@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * A utility class to create gradient text components.
@@ -25,7 +26,7 @@ public final class GradientComponent {
      * @param endColor The ending color of the gradient
      * @param text The text to display with the gradient
      */
-    public GradientComponent(@NotNull final TextColor startColor, @NotNull final TextColor endColor, @NotNull final String text) {
+    public GradientComponent(final @NotNull TextColor startColor, final @NotNull TextColor endColor, final @NotNull String text) {
         this.startColor = startColor;
         this.endColor = endColor;
         this.text = text;
@@ -37,7 +38,7 @@ public final class GradientComponent {
      *
      * @return A Component representing the gradient text
      */
-    public Component getComponent() {
+    public @NotNull Component getComponent() {
         if (component == null) {
             component = MiniMessage.miniMessage()
                 .deserialize("<gradient:" + startColor.asHexString() + ":" + endColor.asHexString() + ">" + text + "</gradient>");
@@ -50,7 +51,7 @@ public final class GradientComponent {
      *
      * @return A String representing the gradient text
      */
-    public String getText() {
+    public @NotNull String getText() {
         return LegacyComponentSerializer.legacySection().serialize(getComponent());
     }
 
@@ -58,7 +59,7 @@ public final class GradientComponent {
      * Adds a click event to the component
      * @param event The event to be triggered on click
      */
-    public void addClickEvent(ClickEvent event) {
+    public void addClickEvent(final @NotNull ClickEvent event) {
         if (component == null) {
             component = MiniMessage.miniMessage()
                 .deserialize("<gradient:" + startColor.asHexString() + ":" + endColor.asHexString() + ">" + text + "</gradient>");
@@ -70,11 +71,20 @@ public final class GradientComponent {
      * Adds a hover event to the component
      * @param event The event to be triggered on hover
      */
-    public void addHoverEvent(HoverEvent<?> event) {
+    public void addHoverEvent(final @NotNull HoverEvent<?> event) {
         if (component == null) {
             component = MiniMessage.miniMessage()
                 .deserialize("<gradient:" + startColor.asHexString() + ":" + endColor.asHexString() + ">" + text + "</gradient>");
         }
         component = component.hoverEvent(event);
+    }
+
+    /**
+     * Appends the specified component to this component.
+     *
+     * @param whatToAppend The component to append.
+     */
+    public void append(final @NotNull Component whatToAppend) {
+        component = component.append(whatToAppend);
     }
 }

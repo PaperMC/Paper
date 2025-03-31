@@ -22,6 +22,7 @@ import org.bukkit.entity.Item;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Snake;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.generator.BiomeProvider;
@@ -36,6 +37,7 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.Metadatable;
 import org.bukkit.persistence.PersistentDataHolder;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.PluginMessageRecipient;
 import org.bukkit.util.BiomeSearchResult;
 import org.bukkit.util.BoundingBox;
@@ -4437,4 +4439,6 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
             }
         }
     }
+
+    Snake spawnSnake(final @NotNull Location location, final @NotNull JavaPlugin plugin);
 }

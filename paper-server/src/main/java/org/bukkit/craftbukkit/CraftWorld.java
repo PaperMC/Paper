@@ -99,6 +99,7 @@ import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.boss.CraftDragonBattle;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
+import org.bukkit.craftbukkit.entity.CraftSnake;
 import org.bukkit.craftbukkit.generator.structure.CraftGeneratedStructure;
 import org.bukkit.craftbukkit.generator.structure.CraftStructure;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -119,6 +120,7 @@ import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Snake;
 import org.bukkit.entity.SpawnCategory;
 import org.bukkit.entity.SpectralArrow;
 import org.bukkit.entity.TippedArrow;
@@ -137,8 +139,10 @@ import org.bukkit.material.MaterialData;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.messaging.StandardMessenger;
 import org.bukkit.potion.PotionType;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.BiomeSearchResult;
 import org.bukkit.util.BoundingBox;
 import org.bukkit.util.NumberConversions;
@@ -2359,6 +2363,14 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         ResourceLocation key = registry.getKey(CraftStructure.bukkitToMinecraft(structure));
 
         return this.getStructures(x, z, struct -> registry.getKey(struct).equals(key));
+    }
+
+    @Override
+    public Snake spawnSnake(final @NotNull Location location, final @NotNull JavaPlugin plugin) {
+        Snake snake = new CraftSnake(location);
+        snake.spawn();
+
+        return snake;
     }
 
     private List<GeneratedStructure> getStructures(int x, int z, Predicate<net.minecraft.world.level.levelgen.structure.Structure> predicate) {
