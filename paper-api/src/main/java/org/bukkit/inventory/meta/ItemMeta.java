@@ -335,7 +335,7 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      *
      * @return the custom model data that is set
      * @deprecated in favour of {@link io.papermc.paper.datacomponent.DataComponentTypes#CUSTOM_MODEL_DATA} and {@link io.papermc.paper.datacomponent.DataComponentTypes#ITEM_MODEL}
-     * This method is no longer able to represent the internal state of the item.
+     * This method is no longer able to fully represent the internal state of the item.
      */
     @Deprecated(since = "1.21.4")
     int getCustomModelData();
@@ -362,7 +362,10 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * custom item model.
      *
      * @param data the data to set, or null to clear
+     * @deprecated in favour of {@link io.papermc.paper.datacomponent.DataComponentTypes#CUSTOM_MODEL_DATA} and {@link io.papermc.paper.datacomponent.DataComponentTypes#ITEM_MODEL}
+     * This method is no longer able to fully represent the internal state of the item.
      */
+    @Deprecated(since = "1.21.4")
     void setCustomModelData(@Nullable Integer data);
 
     /**
