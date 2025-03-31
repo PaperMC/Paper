@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.io.BaseEncoding;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Pair;
-import io.netty.buffer.Unpooled;
 import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.GlobalConfiguration;
 import io.papermc.paper.entity.LookAnchor;
@@ -2440,7 +2439,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
     }
 
     private void sendCustomPayload(ResourceLocation id, byte[] message) {
-        ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(id, Unpooled.wrappedBuffer(message)));
+        ClientboundCustomPayloadPacket packet = new ClientboundCustomPayloadPacket(new DiscardedPayload(id, message));
         this.getHandle().connection.send(packet);
     }
 
