@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.AttachFace;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.FaceAttachable;
 import org.bukkit.block.data.type.Grindstone;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
@@ -23,13 +24,12 @@ public class CraftGrindstone extends CraftBlockData implements Grindstone {
     }
 
     @Override
-    public org.bukkit.block.data.FaceAttachable.AttachedFace getAttachedFace() {
-        return this.get(FACE, org.bukkit.block.data.FaceAttachable.AttachedFace.class);
+    public FaceAttachable.AttachedFace getAttachedFace() {
+        return this.get(FACE, FaceAttachable.AttachedFace.class);
     }
 
     @Override
-    public void setAttachedFace(
-            final org.bukkit.block.data.FaceAttachable.AttachedFace attachedFace) {
+    public void setAttachedFace(final FaceAttachable.AttachedFace attachedFace) {
         Preconditions.checkArgument(attachedFace != null, "attachedFace cannot be null!");
         this.set(FACE, attachedFace);
     }

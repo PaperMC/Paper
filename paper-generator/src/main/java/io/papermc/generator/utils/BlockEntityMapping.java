@@ -8,9 +8,7 @@ import java.util.Map;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public final class BlockEntityMapping {
 
     // if this become painful/too weird like the blockdata just rename the impl directly again

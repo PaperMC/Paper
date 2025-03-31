@@ -1,5 +1,6 @@
 package org.bukkit.inventory;
 
+import com.destroystokyo.paper.inventory.meta.ArmorStandMeta;
 import com.google.common.collect.Multimap;
 import io.papermc.paper.datacomponent.DataComponentType;
 import java.util.Set;
@@ -165,7 +166,7 @@ public interface ItemType extends Keyed, Translatable, net.kyori.adventure.trans
 
     ItemType.Typed<SpawnEggMeta> ARMADILLO_SPAWN_EGG = getItemType("armadillo_spawn_egg");
 
-    ItemType.Typed<com.destroystokyo.paper.inventory.meta.ArmorStandMeta> ARMOR_STAND = getItemType("armor_stand");
+    ItemType.Typed<ArmorStandMeta> ARMOR_STAND = getItemType("armor_stand");
 
     ItemType.Typed<ItemMeta> ARMS_UP_POTTERY_SHERD = getItemType("arms_up_pottery_sherd");
 

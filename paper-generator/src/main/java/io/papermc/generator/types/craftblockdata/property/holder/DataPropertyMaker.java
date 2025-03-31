@@ -2,6 +2,7 @@ package io.papermc.generator.types.craftblockdata.property.holder;
 
 import com.mojang.datafixers.util.Either;
 import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.TypeName;
 import io.papermc.generator.types.craftblockdata.property.holder.appender.DataAppender;
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -15,7 +16,7 @@ public interface DataPropertyMaker extends DataAppender {
 
     FieldSpec.Builder getOrCreateField(Map<Property<?>, Field> fields);
 
-    Class<?> getIndexClass();
+    TypeName getIndexClass();
 
     @Override
     DataHolderType getType();

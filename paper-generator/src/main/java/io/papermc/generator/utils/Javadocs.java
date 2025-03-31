@@ -1,11 +1,8 @@
 package io.papermc.generator.utils;
 
-import org.jspecify.annotations.NullMarked;
-
-@NullMarked
 public final class Javadocs {
 
-    public static String getVersionDependentClassHeader(String objectIdentifier, String headerIdentifier) {
+    public static String getVersionDependentClassHeader(String valueId, String holderId) {
         return """
             Vanilla %s for %s.
             
@@ -14,15 +11,15 @@ public final class Javadocs {
             changed (including removals) on any Minecraft version
             bump, so cross-version compatibility is not provided on the
             same level as it is on most of the other API.
-            """.formatted(objectIdentifier, headerIdentifier);
+            """.formatted(valueId, holderId);
     }
 
-    public static String getVersionDependentField(String headerIdentifier) {
+    public static String getVersionDependentField(String id) {
         return """
             %s
             
             @apiNote This field is version-dependant and may be removed in future Minecraft versions
-            """.formatted(headerIdentifier);
+            """.formatted(id);
     }
 
     public static final String CREATE_TYPED_KEY_JAVADOC = """

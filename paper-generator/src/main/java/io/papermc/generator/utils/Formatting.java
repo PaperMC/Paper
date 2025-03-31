@@ -5,17 +5,15 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.jspecify.annotations.NullMarked;
+import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.Nullable;
 
-@NullMarked
 public final class Formatting {
 
     private static final Pattern ILLEGAL_FIELD_CHARACTERS = Pattern.compile("[.-/]");
@@ -24,6 +22,7 @@ public final class Formatting {
         return ILLEGAL_FIELD_CHARACTERS.matcher(path.toUpperCase(Locale.ENGLISH)).replaceAll("_");
     }
 
+    @ApiStatus.Obsolete
     public static String formatTagFieldPrefix(String name, ResourceKey<? extends Registry<?>> registryKey) {
         if (registryKey == Registries.BLOCK) {
             return "";
@@ -34,45 +33,42 @@ public final class Formatting {
         return name.toUpperCase(Locale.ENGLISH) + "_";
     }
 
-    public static Optional<String> formatTagKey(String tagDir, String resourcePath) {
+    public static Optional<String> findTagKeyPath(String tagDir, String resourcePath) {
         int tagsIndex = resourcePath.indexOf(tagDir);
         int dotIndex = resourcePath.lastIndexOf('.');
         if (tagsIndex == -1 || dotIndex == -1) {
             return Optional.empty();
         }
-        return Optional.of(resourcePath.substring(tagsIndex + tagDir.length() + 1, dotIndex)); // namespace/tags/registry_key/[tag_key].json
+        return Optional.of(resourcePath.substring(tagsIndex + tagDir.length() + 1, dotIndex)); // namespace/tags/registry_key/[tag_key_path].json
     }
 
     public static String quoted(String value) {
         return "\"" + value + "\"";
     }
 
-    public static String[] asCode(int... values) {
-        return IntStream.of(values).mapToObj(Integer::toString).toArray(String[]::new);
+    public static String stripInitialWord(String name, String word) { // both ends
+        if (name.startsWith(word)) {
+            return name.substring(word.length());
+        }
+
+        if (name.endsWith(word)) {
+            return name.substring(0, name.length() - word.length());
+        }
+
+        return name;
     }
 
-    public static String stripWordOfCamelCaseName(String name, String word, boolean onlyOnce) {
-        String newName = name;
-        int startIndex = 0;
-        while (true) {
-            int baseIndex = newName.indexOf(word, startIndex);
-            if (baseIndex == -1) {
-                return newName;
+    public static String stripInitialWord(String name, String word, boolean fromEnd) {
+        if (fromEnd) {
+            if (name.endsWith(word)) {
+                return name.substring(0, name.length() - word.length());
             }
-
-            if ((baseIndex > 0 && !Character.isLowerCase(newName.charAt(baseIndex - 1))) ||
-                (baseIndex + word.length() < newName.length() && !Character.isUpperCase(newName.charAt(baseIndex + word.length())))) {
-                startIndex = baseIndex + word.length();
-                continue;
-            }
-
-            newName = newName.substring(0, baseIndex) + newName.substring(baseIndex + word.length());
-            startIndex = baseIndex;
-            if (onlyOnce) {
-                break;
+        } else {
+            if (name.startsWith(word)) {
+                return name.substring(word.length());
             }
         }
-        return newName;
+        return name;
     }
 
     public static final Comparator<Holder.Reference<?>> HOLDER_ORDER = alphabeticKeyOrder(reference -> reference.key().location().getPath());

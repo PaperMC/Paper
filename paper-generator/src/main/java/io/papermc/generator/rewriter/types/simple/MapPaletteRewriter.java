@@ -1,6 +1,7 @@
 package io.papermc.generator.rewriter.types.simple;
 
 import com.mojang.logging.LogUtils;
+import io.papermc.generator.Main;
 import io.papermc.typewriter.replace.SearchMetadata;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
 import java.awt.Color;
@@ -11,7 +12,6 @@ import org.slf4j.Logger;
 public class MapPaletteRewriter extends SearchReplaceRewriter {
 
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final boolean UPDATING = Boolean.getBoolean("paper.updatingMinecraft");
 
     @Override
     protected void insert(SearchMetadata metadata, StringBuilder builder) {
@@ -34,7 +34,7 @@ public class MapPaletteRewriter extends SearchReplaceRewriter {
             }
         }
 
-        if (UPDATING) {
+        if (Main.IS_UPDATING) {
             LOGGER.warn("There are {} map colors, check CraftMapView#render for possible change and update md5 hash in CraftMapColorCache", count);
         }
     }

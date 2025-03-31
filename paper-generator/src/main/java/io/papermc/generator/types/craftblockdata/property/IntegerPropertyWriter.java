@@ -18,14 +18,14 @@ public class IntegerPropertyWriter extends PropertyWriter<Integer> {
     }
 
     @Override
-    public void addExtras(TypeSpec.Builder builder, FieldSpec field, CraftBlockDataGenerator<?> generator, NamingManager naming) {
+    public void addExtras(TypeSpec.Builder builder, FieldSpec field, CraftBlockDataGenerator generator, NamingManager naming) {
         if (Converters.has(this.property)) {
             return;
         }
 
         IntegerProperty property = (IntegerProperty) this.property;
 
-        if (property.min != 0 || property.getName().equals(BlockStateProperties.LEVEL.getName())) { // special case (levelled: composter)
+        if (property.getPossibleValues().getFirst() != 0 || property.getName().equals(BlockStateProperties.LEVEL.getName())) { // special case (levelled: composter)
             MethodSpec.Builder methodBuilder = generator.createMethod(naming.getterName(name -> true).pre("Minimum").concat());
             methodBuilder.addStatement("return $N.min", field);
             methodBuilder.returns(this.getApiType());

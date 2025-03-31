@@ -2,159 +2,144 @@ package io.papermc.generator;
 
 import io.papermc.generator.registry.RegistryBootstrapper;
 import io.papermc.generator.registry.RegistryEntries;
+import io.papermc.generator.resources.DataFileLoader;
+import io.papermc.generator.resources.DataFiles;
+import io.papermc.generator.resources.data.EntityClassData;
 import io.papermc.generator.rewriter.registration.PatternSourceSetRewriter;
 import io.papermc.generator.rewriter.types.Types;
 import io.papermc.generator.rewriter.types.registry.EnumRegistryRewriter;
 import io.papermc.generator.rewriter.types.registry.FeatureFlagRewriter;
 import io.papermc.generator.rewriter.types.registry.PaperFeatureFlagMapping;
+import io.papermc.generator.rewriter.types.registry.RegistriesArgumentProviderRewriter;
+import io.papermc.generator.rewriter.types.registry.RegistryConversionTestRewriter;
 import io.papermc.generator.rewriter.types.registry.RegistryFieldRewriter;
 import io.papermc.generator.rewriter.types.registry.RegistryTagRewriter;
 import io.papermc.generator.rewriter.types.registry.TagRewriter;
+import io.papermc.generator.rewriter.types.simple.BlockPropertiesRewriter;
 import io.papermc.generator.rewriter.types.simple.BlockTypeRewriter;
 import io.papermc.generator.rewriter.types.simple.CraftBlockDataMapping;
 import io.papermc.generator.rewriter.types.simple.CraftBlockEntityStateMapping;
+import io.papermc.generator.rewriter.types.simple.CraftItemMetasRewriter;
 import io.papermc.generator.rewriter.types.simple.CraftPotionUtilRewriter;
 import io.papermc.generator.rewriter.types.simple.EntityTypeRewriter;
+import io.papermc.generator.rewriter.types.simple.ItemTypeRewriter;
 import io.papermc.generator.rewriter.types.simple.MapPaletteRewriter;
 import io.papermc.generator.rewriter.types.simple.MaterialRewriter;
 import io.papermc.generator.rewriter.types.simple.MemoryKeyRewriter;
 import io.papermc.generator.rewriter.types.simple.StatisticRewriter;
+import io.papermc.generator.rewriter.types.simple.trial.AttributeRewriter;
+import io.papermc.generator.rewriter.types.simple.trial.PoseRewriter;
 import io.papermc.generator.rewriter.types.simple.trial.VillagerProfessionRewriter;
-import io.papermc.generator.types.goal.MobGoalNames;
 import io.papermc.generator.utils.Formatting;
-import io.papermc.paper.datacomponent.item.consumable.ItemUseAnimation;
-import io.papermc.paper.dialog.Dialog;
 import io.papermc.typewriter.preset.EnumCloneRewriter;
-import io.papermc.typewriter.preset.model.EnumValue;
+import io.papermc.typewriter.preset.model.EnumConstant;
 import io.papermc.typewriter.replace.SearchMetadata;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import javax.lang.model.SourceVersion;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.minecraft.Util;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.animal.Fox;
+import net.minecraft.world.entity.animal.Panda;
+import net.minecraft.world.entity.animal.Salmon;
+import net.minecraft.world.entity.animal.TropicalFish;
+import net.minecraft.world.entity.animal.armadillo.Armadillo;
+import net.minecraft.world.entity.animal.sniffer.Sniffer;
+import net.minecraft.world.entity.vehicle.AbstractBoat;
+import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.JukeboxSong;
 import net.minecraft.world.item.Rarity;
-import org.bukkit.Art;
-import org.bukkit.FeatureFlag;
-import org.bukkit.Fluid;
-import org.bukkit.GameEvent;
-import org.bukkit.JukeboxSong;
-import org.bukkit.Material;
-import org.bukkit.MusicInstrument;
-import org.bukkit.Sound;
-import org.bukkit.SoundCategory;
-import org.bukkit.Statistic;
-import org.bukkit.Tag;
-import org.bukkit.block.Biome;
-import org.bukkit.block.BlockType;
-import org.bukkit.block.banner.PatternType;
-import org.bukkit.damage.DamageType;
-import org.bukkit.entity.Armadillo;
-import org.bukkit.entity.Boat;
-import org.bukkit.entity.Cat;
-import org.bukkit.entity.Chicken;
-import org.bukkit.entity.Cow;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Fox;
-import org.bukkit.entity.Frog;
-import org.bukkit.entity.Panda;
-import org.bukkit.entity.Pig;
-import org.bukkit.entity.Salmon;
-import org.bukkit.entity.Sniffer;
-import org.bukkit.entity.TropicalFish;
-import org.bukkit.entity.Villager;
-import org.bukkit.entity.Wolf;
-import org.bukkit.entity.memory.MemoryKey;
-import org.bukkit.generator.structure.Structure;
-import org.bukkit.generator.structure.StructureType;
-import org.bukkit.inventory.ItemRarity;
-import org.bukkit.inventory.meta.trim.TrimMaterial;
-import org.bukkit.inventory.meta.trim.TrimPattern;
-import org.bukkit.inventory.recipe.CookingBookCategory;
-import org.bukkit.inventory.recipe.CraftingBookCategory;
-import org.bukkit.map.MapCursor;
-import org.bukkit.map.MapPalette;
-import org.bukkit.potion.PotionType;
-import org.bukkit.scoreboard.DisplaySlot;
-import org.bukkit.tag.DamageTypeTags;
+import net.minecraft.world.item.crafting.CookingBookCategory;
+import net.minecraft.world.item.crafting.CraftingBookCategory;
+import net.minecraft.world.scores.DisplaySlot;
 import org.jspecify.annotations.NullMarked;
 
 import static io.papermc.generator.rewriter.registration.PaperPatternSourceSetRewriter.composite;
 import static io.papermc.generator.rewriter.registration.RewriterHolder.holder;
+import static io.papermc.generator.rewriter.registration.RewriterHolder.sameHolder;
 import static io.papermc.generator.utils.Formatting.quoted;
 
 @NullMarked
 public final class Rewriters {
 
-    public static void bootstrap(PatternSourceSetRewriter apiSourceSet, PatternSourceSetRewriter serverSourceSet) {
-        bootstrapApi(apiSourceSet);
-        bootstrapServer(serverSourceSet);
+    public static void bootstrap(PatternSourceSetRewriter... sourceSets) {
+        Iterator<Consumer<PatternSourceSetRewriter>> values = VALUES.values().iterator();
+        for (PatternSourceSetRewriter sourceSetRewriter : sourceSets) {
+            values.next().accept(sourceSetRewriter);
+        }
     }
 
-    public static final Consumer<PatternSourceSetRewriter> API = Rewriters::bootstrapApi;
-    public static final Consumer<PatternSourceSetRewriter> SERVER = Rewriters::bootstrapServer;
+    public static final Map<String, Consumer<PatternSourceSetRewriter>> VALUES = Util.make(new LinkedHashMap<>(), map -> {
+        map.put("api", Rewriters::bootstrapApi);
+        map.put("impl", Rewriters::bootstrapImpl);
+        map.put("impl-test", Rewriters::bootstrapImplTest);
+    });
 
     private static void bootstrapApi(PatternSourceSetRewriter sourceSet) {
         sourceSet
-            .register("PotionType", PotionType.class, new EnumRegistryRewriter<>(Registries.POTION))
-            .register("EntityType", EntityType.class, new EntityTypeRewriter())
-            .register("DisplaySlot", DisplaySlot.class, new EnumCloneRewriter<>(net.minecraft.world.scores.DisplaySlot.class) {
+            .register("PotionType", new EnumRegistryRewriter<>(Registries.POTION))
+            .register("EntityType", new EntityTypeRewriter())
+            .register("DisplaySlot", Types.DISPLAY_SLOT, new EnumCloneRewriter<>(DisplaySlot.class) {
+
                 @Override
-                protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.scores.DisplaySlot slot) {
-                    final String name;
-                    if (slot == net.minecraft.world.scores.DisplaySlot.LIST) {
-                        name = "PLAYER_LIST";
-                    } else {
-                        name = Formatting.formatKeyAsField(slot.getSerializedName());
+                protected EnumConstant.Builder constantPrototype(DisplaySlot slot) {
+                    return EnumConstant.builder(Formatting.formatKeyAsField(slot.getSerializedName()));
+                }
+
+                @Override
+                protected void rewriteConstant(EnumConstant.Builder builder, DisplaySlot slot) {
+                    if (slot == DisplaySlot.LIST) {
+                        builder.rename(name -> "PLAYER_LIST");
                     }
+                    builder.argument(quoted(slot.getSerializedName()));
+                }
+            })
+            .register("Pose", Types.POSE, new PoseRewriter())
+            .register("SnifferState", Types.SNIFFER_STATE, new EnumCloneRewriter<>(Sniffer.State.class))
+            .register("PandaGene", Types.PANDA_GENE, new EnumCloneRewriter<>(Panda.Gene.class) {
+                @Override
+                protected void rewriteConstant(EnumConstant.Builder builder, Panda.Gene gene) {
+                    builder.argument(String.valueOf(gene.isRecessive()));
+                }
+            })
+            .register("CookingBookCategory", Types.COOKING_BOOK_CATEGORY, new EnumCloneRewriter<>(CookingBookCategory.class))
+            .register("CraftingBookCategory", Types.CRAFTING_BOOK_CATEGORY, new EnumCloneRewriter<>(CraftingBookCategory.class))
+            .register("TropicalFishPattern", Types.TROPICAL_FISH_PATTERN, new EnumCloneRewriter<>(TropicalFish.Pattern.class))
+            .register("BoatStatus", Types.BOAT_STATUS, new EnumCloneRewriter<>(AbstractBoat.Status.class))
+            .register("FoxType", Types.FOX_TYPE, new EnumCloneRewriter<>(Fox.Variant.class))
+            .register("SalmonVariant", Types.SALMON_VARIANT, new EnumCloneRewriter<>(Salmon.Variant.class))
+            .register("ArmadilloState", Types.ARMADILLO_STATE, new EnumCloneRewriter<>(Armadillo.ArmadilloState.class))
+            .register("SoundCategory", Types.SOUND_CATEGORY, new EnumCloneRewriter<>(SoundSource.class))
+            .register("ItemUseAnimation", Types.ITEM_USE_ANIMATION, new EnumCloneRewriter<>(ItemUseAnimation.class))
+            .register("ItemRarity", Types.ITEM_RARITY, new EnumCloneRewriter<>(Rarity.class) {
+                @Override
+                protected void rewriteConstant(EnumConstant.Builder builder, Rarity rarity) {
+                    builder.argument("%s.%s".formatted(Types.NAMED_TEXT_COLOR.simpleName(), rarity.color().name()));
+                }
+            })
+            .register(Types.MATERIAL, composite(
+                sameHolder("Blocks", new MaterialRewriter.Blocks()),
+                //sameHolder("Material#isTransparent", MaterialRewriter.IsTransparent()),
 
-                    return EnumValue.builder(name).argument(quoted(slot.getSerializedName()));
-                }
-            })
-            .register("SnifferState", Sniffer.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.sniffer.Sniffer.State.class))
-            .register("PandaGene", Panda.Gene.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.Panda.Gene.class) {
-                @Override
-                protected EnumValue.Builder rewriteEnumValue(net.minecraft.world.entity.animal.Panda.Gene gene) {
-                    return super.rewriteEnumValue(gene).argument(String.valueOf(gene.isRecessive()));
-                }
-            })
-            .register("CookingBookCategory", CookingBookCategory.class, new EnumCloneRewriter<>(net.minecraft.world.item.crafting.CookingBookCategory.class))
-            .register("CraftingBookCategory", CraftingBookCategory.class, new EnumCloneRewriter<>(net.minecraft.world.item.crafting.CraftingBookCategory.class))
-            .register("TropicalFishPattern", TropicalFish.Pattern.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.TropicalFish.Pattern.class))
-            .register("BoatStatus", Boat.Status.class, new EnumCloneRewriter<>(net.minecraft.world.entity.vehicle.Boat.Status.class))
-            .register("FoxType", Fox.Type.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.Fox.Variant.class))
-            .register("SalmonVariant", Salmon.Variant.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.Salmon.Variant.class))
-            .register("ArmadilloState", Armadillo.State.class, new EnumCloneRewriter<>(net.minecraft.world.entity.animal.armadillo.Armadillo.ArmadilloState.class))
-            .register("SoundCategory", SoundCategory.class, new EnumCloneRewriter<>(SoundSource.class))
-            .register("ItemUseAnimation", ItemUseAnimation.class, new EnumCloneRewriter<>(net.minecraft.world.item.ItemUseAnimation.class))
-            .register("ItemRarity", ItemRarity.class, new EnumCloneRewriter<>(Rarity.class) {
-                @Override
-                protected EnumValue.Builder rewriteEnumValue(Rarity rarity) {
-                    return super.rewriteEnumValue(rarity).argument(
-                        "%s.%s".formatted(NamedTextColor.class.getSimpleName(), rarity.color().name())
-                    );
-                }
-            })
-            .register(Material.class, composite(
-                holder("Blocks", new MaterialRewriter.Blocks()),
-                //holder("Material#isTransparent", MaterialRewriter.IsTransparent()),
-
-                holder("Items", new MaterialRewriter.Items())
+                sameHolder("Items", new MaterialRewriter.Items())
             ))
-            .register(Statistic.class, composite(
-                holder("StatisticCustom", new StatisticRewriter.Custom()),
-                holder("StatisticType", new StatisticRewriter.Type())
+            .register(Types.STATISTIC, composite(
+                sameHolder("StatisticCustom", new StatisticRewriter.Custom()),
+                sameHolder("StatisticType", new StatisticRewriter.Type())
             ))
-            .register(Villager.class, composite(
-                holder("VillagerType", Villager.Type.class, new RegistryFieldRewriter<>(Registries.VILLAGER_TYPE, "getType")),
-                holder("VillagerProfession", Villager.Profession.class, new VillagerProfessionRewriter())
+            .register(Types.VILLAGER, composite(
+                holder("VillagerType", new RegistryFieldRewriter<>(Registries.VILLAGER_TYPE, "getType")),
+                holder("VillagerProfession", new VillagerProfessionRewriter())
             ))
-            .register("JukeboxSong", JukeboxSong.class, new RegistryFieldRewriter<>(Registries.JUKEBOX_SONG, "get") {
+            .register("JukeboxSong", new RegistryFieldRewriter<>(Registries.JUKEBOX_SONG, "get") {
                 @Override
-                protected String rewriteFieldName(Holder.Reference<net.minecraft.world.item.JukeboxSong> reference) {
+                protected String rewriteFieldName(Holder.Reference<JukeboxSong> reference) {
                     String keyedName = super.rewriteFieldName(reference);
                     if (!SourceVersion.isIdentifier(keyedName)) {
                         // fallback to field names for invalid identifier (happens for 5, 11, 13 etc.)
@@ -163,62 +148,70 @@ public final class Rewriters {
                     return keyedName;
                 }
             })
-            .register("DamageTypeTags", DamageTypeTags.class, new RegistryTagRewriter<>(Registries.DAMAGE_TYPE, DamageType.class))
-            .register("MapCursorType", MapCursor.Type.class, new RegistryFieldRewriter<>(Registries.MAP_DECORATION_TYPE, "getType"))
-            .register("Structure", Structure.class, new RegistryFieldRewriter<>(Registries.STRUCTURE, "getStructure"))
-            .register("StructureType", StructureType.class, new RegistryFieldRewriter<>(Registries.STRUCTURE_TYPE, "getStructureType"))
-            .register("TrimPattern", TrimPattern.class, new RegistryFieldRewriter<>(Registries.TRIM_PATTERN, "getTrimPattern"))
-            .register("TrimMaterial", TrimMaterial.class, new RegistryFieldRewriter<>(Registries.TRIM_MATERIAL, "getTrimMaterial"))
-            .register("DamageType", DamageType.class, new RegistryFieldRewriter<>(Registries.DAMAGE_TYPE, "getDamageType"))
-            .register("GameEvent", GameEvent.class, new RegistryFieldRewriter<>(Registries.GAME_EVENT, "getEvent"))
-            .register("MusicInstrument", MusicInstrument.class, new RegistryFieldRewriter<>(Registries.INSTRUMENT, "getInstrument"))
-            .register("WolfVariant", Wolf.Variant.class, new RegistryFieldRewriter<>(Registries.WOLF_VARIANT, "getVariant"))
-            .register("WolfSoundVariant", Wolf.SoundVariant.class, new RegistryFieldRewriter<>(Registries.WOLF_SOUND_VARIANT, "getSoundVariant"))
-            .register("CatType", Cat.Type.class, new RegistryFieldRewriter<>(Registries.CAT_VARIANT, "getType"))
-            .register("FrogVariant", Frog.Variant.class, new RegistryFieldRewriter<>(Registries.FROG_VARIANT, "getVariant"))
-            .register("PatternType", PatternType.class, new RegistryFieldRewriter<>(Registries.BANNER_PATTERN, "getType"))
-            .register("Biome", Biome.class, new RegistryFieldRewriter<>(Registries.BIOME, "getBiome"))
-            .register("Fluid", Fluid.class, new RegistryFieldRewriter<>(Registries.FLUID, "getFluid"))
-            // .register("Attribute", Attribute.class, new RegistryFieldRewriter<>(Registries.ATTRIBUTE, "getAttribute")) - disable for now (javadocs)
-            .register("Sound", Sound.class, new RegistryFieldRewriter<>(Registries.SOUND_EVENT, "getSound"))
-            .register("Art", Art.class, new RegistryFieldRewriter<>(Registries.PAINTING_VARIANT, "getArt"))
-            .register("ChickenVariant", Chicken.Variant.class, new RegistryFieldRewriter<>(Registries.CHICKEN_VARIANT, "getVariant"))
-            .register("CowVariant", Cow.Variant.class, new RegistryFieldRewriter<>(Registries.COW_VARIANT, "getVariant"))
-            .register("PigVariant", Pig.Variant.class, new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
-            .register("Dialog", Dialog.class, new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
-            .register("MemoryKey", MemoryKey.class, new MemoryKeyRewriter())
-            // .register("ItemType", org.bukkit.inventory.ItemType.class, new io.papermc.generator.rewriter.types.simple.ItemTypeRewriter()) - disable for now, lynx want the generic type
-            .register("BlockType", BlockType.class, new BlockTypeRewriter())
-            .register("FeatureFlag", FeatureFlag.class, new FeatureFlagRewriter())
-            .register("Tag", Tag.class, new TagRewriter())
-            .register("MapPalette#colors", MapPalette.class, new MapPaletteRewriter());
+            .register("DamageTypeTags", Types.DAMAGE_TYPE_TAGS, new RegistryTagRewriter<>(Registries.DAMAGE_TYPE))
+            .register("MapCursorType", new RegistryFieldRewriter<>(Registries.MAP_DECORATION_TYPE, "getType"))
+            .register("Structure", new RegistryFieldRewriter<>(Registries.STRUCTURE, "getStructure"))
+            .register("StructureType", new RegistryFieldRewriter<>(Registries.STRUCTURE_TYPE, "getStructureType"))
+            .register("TrimPattern", new RegistryFieldRewriter<>(Registries.TRIM_PATTERN, "getTrimPattern"))
+            .register("TrimMaterial", new RegistryFieldRewriter<>(Registries.TRIM_MATERIAL, "getTrimMaterial"))
+            .register("DamageType", new RegistryFieldRewriter<>(Registries.DAMAGE_TYPE, "getDamageType"))
+            .register("GameEvent", new RegistryFieldRewriter<>(Registries.GAME_EVENT, "getEvent"))
+            .register("MusicInstrument", new RegistryFieldRewriter<>(Registries.INSTRUMENT, "getInstrument"))
+            .register("WolfVariant", new RegistryFieldRewriter<>(Registries.WOLF_VARIANT, "getVariant"))
+            .register("WolfSoundVariant", new RegistryFieldRewriter<>(Registries.WOLF_SOUND_VARIANT, "getSoundVariant"))
+            .register("CatType", new RegistryFieldRewriter<>(Registries.CAT_VARIANT, "getType"))
+            .register("FrogVariant", new RegistryFieldRewriter<>(Registries.FROG_VARIANT, "getVariant"))
+            .register("PatternType", new RegistryFieldRewriter<>(Registries.BANNER_PATTERN, "getType"))
+            .register("Biome", new RegistryFieldRewriter<>(Registries.BIOME, "getBiome"))
+            .register("Fluid", new RegistryFieldRewriter<>(Registries.FLUID, "getFluid"))
+            .register("Attribute", new AttributeRewriter())
+            .register("Sound", new RegistryFieldRewriter<>(Registries.SOUND_EVENT, "getSound"))
+            .register("Art", new RegistryFieldRewriter<>(Registries.PAINTING_VARIANT, "getArt"))
+            .register("ChickenVariant", new RegistryFieldRewriter<>(Registries.CHICKEN_VARIANT, "getVariant"))
+            .register("CowVariant", new RegistryFieldRewriter<>(Registries.COW_VARIANT, "getVariant"))
+            .register("PigVariant", new RegistryFieldRewriter<>(Registries.PIG_VARIANT, "getVariant"))
+            .register("Dialog", new RegistryFieldRewriter<>(Registries.DIALOG, "getDialog"))
+            .register("BlockProperties", Types.BLOCK_PROPERTIES, new BlockPropertiesRewriter())
+            .register("MemoryKey", new MemoryKeyRewriter())
+            .register("ItemType", new ItemTypeRewriter())
+            .register("BlockType", new BlockTypeRewriter())
+            .register("FeatureFlag", Types.FEATURE_FLAG, new FeatureFlagRewriter())
+            .register("Tag", Types.TAG, new TagRewriter())
+            .register("MapPalette#colors", Types.MAP_PALETTE, new MapPaletteRewriter());
         RegistryBootstrapper.bootstrapApi(sourceSet);
     }
 
-    private static void bootstrapServer(PatternSourceSetRewriter sourceSet) {
+    private static void bootstrapImpl(PatternSourceSetRewriter sourceSet) {
         sourceSet
             .register("CraftBlockData#MAP", Types.CRAFT_BLOCK_DATA, new CraftBlockDataMapping())
             .register("CraftBlockEntityStates", Types.CRAFT_BLOCK_STATES, new CraftBlockEntityStateMapping())
+            .register("CraftItemMetas#getItemMetaData", Types.CRAFT_ITEM_METAS, new CraftItemMetasRewriter())
             .register(Types.CRAFT_STATISTIC, composite(
-                holder("CraftStatisticCustom", new StatisticRewriter.CraftCustom()),
-                holder("CraftStatisticType", new StatisticRewriter.CraftType())
+                sameHolder("CraftStatisticCustom", new StatisticRewriter.CraftCustom()),
+                sameHolder("CraftStatisticType", new StatisticRewriter.CraftType())
             ))
             .register(Types.CRAFT_POTION_UTIL, composite(
-                holder("CraftPotionUtil#upgradeable", new CraftPotionUtilRewriter("strong")),
-                holder("CraftPotionUtil#extendable", new CraftPotionUtilRewriter("long"))
+                sameHolder("CraftPotionUtil#upgradeable", new CraftPotionUtilRewriter("strong")),
+                sameHolder("CraftPotionUtil#extendable", new CraftPotionUtilRewriter("long"))
             ))
             .register("PaperFeatureFlagProviderImpl#FLAGS", Types.PAPER_FEATURE_FLAG_PROVIDER_IMPL, new PaperFeatureFlagMapping())
             .register("MobGoalHelper#BUKKIT_BRIDGE", Types.MOB_GOAL_HELPER, new SearchReplaceRewriter() {
                 @Override
                 protected void insert(SearchMetadata metadata, StringBuilder builder) {
-                    for (Map.Entry<Class<? extends Mob>, Class<? extends org.bukkit.entity.Mob>> entry : MobGoalNames.BUKKIT_BRIDGE.entrySet()) {
+                    for (Map.Entry<Class<? extends Mob>, EntityClassData> entry : DataFileLoader.get(DataFiles.ENTITY_CLASS_NAMES).entrySet()) {
                         builder.append(metadata.indent()).append("map.put(%s.class, %s.class);".formatted(
-                            entry.getKey().getCanonicalName(), this.importCollector.getShortName(entry.getValue())
+                            entry.getKey().getCanonicalName(), this.importCollector.getShortName(Types.typed(entry.getValue().name()))
                         ));
                         builder.append('\n');
                     }
                 }
             });
         RegistryBootstrapper.bootstrapServer(sourceSet);
+    }
+
+    private static void bootstrapImplTest(PatternSourceSetRewriter sourceSet) {
+        sourceSet
+            .register("RegistriesArgumentProvider#DATA", Types.REGISTRIES_ARGUMENT_PROVIDER, new RegistriesArgumentProviderRewriter())
+            .register("RegistryConversionTest#IGNORE_FOR_DIRECT_HOLDER", Types.REGISTRY_CONVERSION_TEST, new RegistryConversionTestRewriter());
     }
 }

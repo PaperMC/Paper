@@ -1,6 +1,7 @@
 package io.papermc.generator.types.craftblockdata.property.holder;
 
 import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.TypeName;
 import io.papermc.generator.types.craftblockdata.property.PropertyWriter;
 import io.papermc.generator.utils.Formatting;
 import it.unimi.dsi.fastutil.Pair;
@@ -46,7 +47,7 @@ public abstract class DataPropertyWriterBase implements DataPropertyMaker {
         code.unindent().add(isArray ? "}" : ")");
     }
 
-    protected void createSyntheticMap(CodeBlock.Builder code, Class<?> indexClass, Map<Property<?>, Field> fields) {
+    protected void createSyntheticMap(CodeBlock.Builder code, TypeName indexClass, Map<Property<?>, Field> fields) {
         // assume indexClass is an enum with its values matching the property names
         code.add("$T.of(\n", Map.class).indent();
         Iterator<? extends Property<?>> properties = this.properties.iterator();
@@ -64,5 +65,5 @@ public abstract class DataPropertyWriterBase implements DataPropertyMaker {
     }
 
     @Override
-    public abstract Class<?> getIndexClass();
+    public abstract TypeName getIndexClass();
 }

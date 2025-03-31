@@ -2,8 +2,10 @@ package io.papermc.generator.rewriter.types.simple;
 
 import com.google.gson.internal.Primitives;
 import io.papermc.generator.registry.RegistryEntries;
+import io.papermc.generator.rewriter.types.Types;
 import io.papermc.generator.rewriter.types.registry.RegistryFieldRewriter;
 import io.papermc.generator.utils.ClassHelper;
+import io.papermc.typewriter.ClassNamed;
 import java.lang.reflect.ParameterizedType;
 import java.util.Map;
 import java.util.Set;
@@ -21,8 +23,6 @@ import net.minecraft.world.entity.ai.memory.NearestVisibleLivingEntities;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
-import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 
 import static io.papermc.generator.utils.Formatting.quoted;
@@ -60,8 +60,8 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
         Entity.class
     );
 
-    private static final Map<Class<?>, Class<?>> API_BRIDGE = Map.of(
-        GlobalPos.class, Location.class
+    private static final Map<Class<?>, ClassNamed> API_BRIDGE = Map.of(
+        GlobalPos.class, Types.LOCATION
     );
 
     private static final Map<String, String> FIELD_RENAMES = Map.of(
@@ -83,7 +83,7 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
         return true;
     }
 
-    private @MonotonicNonNull Class<?> apiMemoryType;
+    private @MonotonicNonNull ClassNamed apiMemoryType;
 
     @Override
     protected String rewriteFieldType(Holder.Reference<MemoryModuleType<?>> reference) {
@@ -92,10 +92,10 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
         if (!Primitives.isWrapperType(memoryType) && API_BRIDGE.containsKey(memoryType)) {
             this.apiMemoryType = API_BRIDGE.get(memoryType);
         } else {
-            this.apiMemoryType = memoryType;
+            this.apiMemoryType = new ClassNamed(memoryType);
         }
 
-        return "%s<%s>".formatted(this.fieldClass.simpleName(), this.importCollector.getShortName(this.apiMemoryType));
+        return "%s<%s>".formatted(this.entry.data().api().klass().name().simpleName(), this.importCollector.getShortName(this.apiMemoryType));
     }
 
     @Override
@@ -107,10 +107,10 @@ public class MemoryKeyRewriter extends RegistryFieldRewriter<MemoryModuleType<?>
     @Override
     protected String rewriteFieldValue(Holder.Reference<MemoryModuleType<?>> reference) {
         return "new %s<>(%s.minecraft(%s), %s.class)".formatted(
-            this.fieldClass.simpleName(),
-            NamespacedKey.class.getSimpleName(),
+            this.entry.data().api().klass().name().simpleName(),
+            Types.NAMESPACED_KEY.simpleName(),
             quoted(reference.key().location().getPath()),
-            this.apiMemoryType.getSimpleName() // assume the type is already import (see above in rewriteFieldType)
+            this.apiMemoryType.simpleName() // assume the type is already imported (see above in rewriteFieldType)
         );
     }
 }

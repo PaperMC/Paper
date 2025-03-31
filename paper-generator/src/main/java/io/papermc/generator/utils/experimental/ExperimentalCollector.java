@@ -119,8 +119,8 @@ public final class ExperimentalCollector {
                 // without having at least one of the two values
                 String tagDir = Registries.tagsDirPath(entry.key());
                 pack.listResources(PackType.SERVER_DATA, namespace, tagDir, (id, supplier) -> {
-                    Formatting.formatTagKey(tagDir, id.getPath()).ifPresentOrElse(path -> output.accept(entry, path), () -> {
-                        LOGGER.warn("Unable to parse the path: {}/{}/{}.json in the data-pack {} into a tag key", namespace, tagDir, id.getPath(), pack.packId());
+                    Formatting.findTagKeyPath(tagDir, id.getPath()).ifPresentOrElse(path -> output.accept(entry, path), () -> {
+                        LOGGER.warn("Unable to find the tag key's path from the absolute path: {} in the data-pack '{}'", id.getPath(), pack.packId());
                     });
                 });
             });

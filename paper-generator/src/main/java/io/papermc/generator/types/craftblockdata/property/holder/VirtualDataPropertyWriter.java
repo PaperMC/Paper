@@ -1,15 +1,17 @@
 package io.papermc.generator.types.craftblockdata.property.holder;
 
 import com.squareup.javapoet.ArrayTypeName;
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import io.papermc.generator.resources.DataFileLoader;
+import io.papermc.generator.resources.DataFiles;
 import io.papermc.generator.types.craftblockdata.CraftBlockDataGenerator;
 import io.papermc.generator.types.craftblockdata.property.converter.ConverterBase;
-import io.papermc.generator.utils.BlockStateMapping;
 import io.papermc.generator.utils.NamingManager;
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -28,7 +30,7 @@ import static javax.lang.model.element.Modifier.STATIC;
 public class VirtualDataPropertyWriter extends DataPropertyWriterBase {
 
     private final VirtualField virtualField;
-    protected @MonotonicNonNull Class<?> indexClass;
+    protected @MonotonicNonNull TypeName indexClass;
     protected @MonotonicNonNull TypeName fieldType;
 
     protected VirtualDataPropertyWriter(VirtualField virtualField, Collection<? extends Property<?>> properties, Class<? extends Block> blockClass) {
@@ -40,23 +42,25 @@ public class VirtualDataPropertyWriter extends DataPropertyWriterBase {
     protected void computeTypes(VirtualField virtualField) {
         switch (virtualField.holderType()) {
             case ARRAY -> {
-                this.indexClass = Integer.TYPE;
+                this.indexClass = TypeName.INT;
                 this.fieldType = ArrayTypeName.of(virtualField.valueType());
             }
             case LIST -> {
-                this.indexClass = Integer.TYPE;
+                this.indexClass = TypeName.INT;
                 this.fieldType = ParameterizedTypeName.get(List.class, virtualField.valueType());
             }
             case MAP -> {
                 if (virtualField.keyClass() != null) {
-                    this.indexClass = virtualField.keyClass();
+                    this.indexClass = TypeName.get(virtualField.keyClass());
                 } else {
-                    this.indexClass = this.properties.iterator().next().getValueClass();
-                    if (this.indexClass.isEnum()) {
-                        this.indexClass = BlockStateMapping.ENUM_BRIDGE.getOrDefault(this.indexClass, (Class<? extends Enum<?>>) this.indexClass);
+                    Class<?> valueClass = this.properties.iterator().next().getValueClass();
+                    if (valueClass.isEnum()) {
+                        this.indexClass = DataFileLoader.get(DataFiles.BLOCK_STATE_ENUM_PROPERTY_TYPES).get(valueClass);
+                    } else {
+                        this.indexClass = TypeName.get(valueClass);
                     }
                 }
-                this.fieldType = ParameterizedTypeName.get(Map.class, this.indexClass, virtualField.valueType());
+                this.fieldType = ParameterizedTypeName.get(ClassName.get(Map.class), this.indexClass, TypeName.get(virtualField.valueType()));
             }
         }
     }
@@ -78,7 +82,7 @@ public class VirtualDataPropertyWriter extends DataPropertyWriterBase {
     }
 
     @Override
-    public Class<?> getIndexClass() {
+    public TypeName getIndexClass() {
         return this.indexClass;
     }
 
@@ -93,7 +97,7 @@ public class VirtualDataPropertyWriter extends DataPropertyWriterBase {
     }
 
     @Override
-    public void addExtras(TypeSpec.Builder builder, FieldSpec field, ParameterSpec indexParameter, ConverterBase converter, CraftBlockDataGenerator<?> generator, NamingManager baseNaming) {
+    public void addExtras(TypeSpec.Builder builder, FieldSpec field, ParameterSpec indexParameter, ConverterBase converter, CraftBlockDataGenerator generator, NamingManager baseNaming) {
 
     }
 }

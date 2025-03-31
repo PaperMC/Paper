@@ -1,15 +1,13 @@
 package io.papermc.generator.rewriter.types.registry;
 
+import io.papermc.generator.rewriter.types.Types;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.typewriter.replace.SearchMetadata;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
 import java.util.Iterator;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.flag.FeatureFlags;
-import org.bukkit.FeatureFlag;
-import org.jspecify.annotations.NullMarked;
 
-@NullMarked
 public class PaperFeatureFlagMapping extends SearchReplaceRewriter {
 
     @Override
@@ -20,7 +18,7 @@ public class PaperFeatureFlagMapping extends SearchReplaceRewriter {
             ResourceLocation name = flagIterator.next();
             String keyedName = Formatting.formatKeyAsField(name.getPath());
             builder.append(metadata.indent());
-            builder.append("%s.%s, %s.%s".formatted(FeatureFlag.class.getSimpleName(), keyedName, FeatureFlags.class.getSimpleName(), keyedName));
+            builder.append("%s.%s, %s.%s".formatted(Types.FEATURE_FLAG.simpleName(), keyedName, FeatureFlags.class.getSimpleName(), keyedName));
             if (flagIterator.hasNext()) {
                 builder.append(',');
             }

@@ -5,6 +5,7 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import io.papermc.generator.types.craftblockdata.CraftBlockDataGenerator;
 import io.papermc.generator.types.craftblockdata.property.converter.ConverterBase;
@@ -28,16 +29,16 @@ public class ListAppender implements DataAppender {
     }
 
     @Override
-    public void addExtras(TypeSpec.Builder builder, FieldSpec field, ParameterSpec indexParameter, ConverterBase childConverter, CraftBlockDataGenerator<?> generator, NamingManager baseNaming) {
+    public void addExtras(TypeSpec.Builder builder, FieldSpec field, ParameterSpec indexParameter, ConverterBase childConverter, CraftBlockDataGenerator generator, NamingManager baseNaming) {
         NamingManager.NameWrapper methodName = NamingManager.NameWrapper.wrap("get", METHOD_BASE_RENAMES.getOrDefault(baseNaming.getMethodBaseName(), baseNaming.getMethodBaseName()));
 
-        if (childConverter.getApiType() == Boolean.TYPE) {
+        if (childConverter.getApiType().equals(TypeName.BOOLEAN)) {
             String collectVarName = baseNaming.getVariableNameWrapper().post("s").concat();
             MethodSpec.Builder methodBuilder = generator.createMethod(methodName.post("s").concat());
             methodBuilder.addStatement("$T $L = $T.builder()", ParameterizedTypeName.get(ImmutableSet.Builder.class, Integer.class), collectVarName, ImmutableSet.class);
             methodBuilder.beginControlFlow("for (int $1L = 0, size = $2N.size(); $1L < size; $1L++)", CommonVariable.INDEX, field);
             {
-                methodBuilder.beginControlFlow("if (" + childConverter.rawGetExprent().formatted("$N.get($N)") + ")", field, indexParameter);
+                methodBuilder.beginControlFlow("if (" + childConverter.rawGetExprent().formatted("$N.get($N)") + ")", field, CommonVariable.INDEX);
                 {
                     methodBuilder.addStatement("$L.add($L)", collectVarName, CommonVariable.INDEX);
                 }

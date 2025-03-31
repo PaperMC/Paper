@@ -89,7 +89,6 @@ import org.bukkit.block.data.type.MangrovePropagule;
 import org.bukkit.block.data.type.MossyCarpet;
 import org.bukkit.block.data.type.NoteBlock;
 import org.bukkit.block.data.type.Observer;
-import org.bukkit.block.data.type.PinkPetals;
 import org.bukkit.block.data.type.Piston;
 import org.bukkit.block.data.type.PistonHead;
 import org.bukkit.block.data.type.PitcherCrop;

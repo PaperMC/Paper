@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.WallSide;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.MossyCarpet;
+import org.bukkit.block.data.type.Wall;
 import org.bukkit.craftbukkit.block.CraftBlock;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 
@@ -36,16 +37,15 @@ public class CraftMossyCarpet extends CraftBlockData implements MossyCarpet {
     }
 
     @Override
-    public org.bukkit.block.data.type.Wall.Height getHeight(final BlockFace blockFace) {
+    public Wall.Height getHeight(final BlockFace blockFace) {
         Preconditions.checkArgument(blockFace != null, "blockFace cannot be null!");
         EnumProperty<WallSide> property = PROPERTY_BY_DIRECTION.get(blockFace);
         Preconditions.checkArgument(property != null, "Invalid blockFace, only %s are allowed!", PROPERTY_BY_DIRECTION.keySet().stream().map(Enum::name).collect(Collectors.joining(", ")));
-        return this.get(property, org.bukkit.block.data.type.Wall.Height.class);
+        return this.get(property, Wall.Height.class);
     }
 
     @Override
-    public void setHeight(final BlockFace blockFace,
-            final org.bukkit.block.data.type.Wall.Height height) {
+    public void setHeight(final BlockFace blockFace, final Wall.Height height) {
         Preconditions.checkArgument(blockFace != null, "blockFace cannot be null!");
         Preconditions.checkArgument(height != null, "height cannot be null!");
         EnumProperty<WallSide> property = PROPERTY_BY_DIRECTION.get(blockFace);

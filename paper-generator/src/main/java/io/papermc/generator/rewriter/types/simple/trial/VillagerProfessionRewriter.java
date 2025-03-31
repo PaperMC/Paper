@@ -12,7 +12,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.npc.VillagerProfession;
@@ -32,6 +31,10 @@ public class VillagerProfessionRewriter extends RegistryFieldRewriter<VillagerPr
     private @MonotonicNonNull Map<String, CharSequenceBlockToken> javadocsPerConstant;
 
     private Map<String, CharSequenceBlockToken> parseConstantJavadocs(String content) {
+        if (content.isBlank()) {
+            return Map.of();
+        }
+
         Map<String, CharSequenceBlockToken> map = new HashMap<>();
 
         Lexer lex = new Lexer(content.toCharArray());
@@ -40,46 +43,22 @@ public class VillagerProfessionRewriter extends RegistryFieldRewriter<VillagerPr
             .group(action -> {
                 ProtoConstant constant = new ProtoConstant();
                 action
-                    .map(TokenType.JAVADOC, token -> {
+                    .map(TokenType.JAVADOC, token -> { // /** */
                         constant.javadocs(((CharSequenceBlockToken) token));
                     }, TokenTaskBuilder::asOptional)
-                    .skipQualifiedName(Predicate.isEqual(TokenType.JAVADOC))
-                    .map(TokenType.IDENTIFIER, token -> {
+                    .skip(TokenType.IDENTIFIER) // Profession
+                    .map(TokenType.IDENTIFIER, token -> { // <name>
                         constant.name(((CharSequenceToken) token).value());
                     })
-                    .skip(TokenType.IDENTIFIER)
-                    .skipClosure(TokenType.LPAREN, TokenType.RPAREN, true)
-                    .map(TokenType.SECO, $ -> {
+                    .skip(TokenType.IDENTIFIER) // getProfession
+                    .skipClosure(TokenType.LPAREN, TokenType.RPAREN, true) // (*)
+                    .map(TokenType.SECO, $ -> { // ;
                         if (constant.isComplete()) {
                             map.put(constant.name(), constant.javadocs());
                         }
                     });
             }, TokenTaskBuilder::asRepeatable)
             .executeOrThrow();
-        /*
-        for enums:
-        Set<TokenType> endMarkers = Set.of(TokenType.CO, TokenType.SECO); // move to static
-        SequenceTokens.wrap(lex, FORMAT_TOKENS)
-            .group(action -> {
-                ProtoConstant constant = new ProtoConstant();
-                action
-                    .map(TokenType.JAVADOC, token -> {
-                        constant.javadocs(((CharSequenceBlockToken) token).value());
-                    }, TokenTaskBuilder::asOptional)
-                    .map(TokenType.IDENTIFIER, token -> {
-                        constant.name(((CharSequenceToken) token).value());
-                    })
-                    .skipClosure(TokenType.LPAREN, TokenType.RPAREN, true)
-                    .skipClosure(TokenType.LSCOPE, TokenType.RSCOPE, true)
-                    .map(endMarkers::contains, $ -> {
-                        // this part will probably fail for the last entry for enum without end (,;)
-                        if (constant.isComplete()) {
-                            map.put(constant.name(), constant.javadocs());
-                        }
-                    });
-            }, TokenTaskBuilder::asRepeatable)
-            .executeOrThrow();
-        */
 
         return map;
     }

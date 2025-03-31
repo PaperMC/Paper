@@ -1,6 +1,5 @@
 package io.papermc.generator.types.goal;
 
-import com.destroystokyo.paper.entity.ai.GoalKey;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
@@ -12,6 +11,7 @@ import com.squareup.javapoet.TypeVariableName;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ScanResult;
 import io.papermc.generator.types.SimpleGenerator;
+import io.papermc.generator.types.Types;
 import io.papermc.generator.utils.Annotations;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.generator.utils.Javadocs;
@@ -22,8 +22,6 @@ import java.util.stream.Stream;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.GoalSelector;
 import net.minecraft.world.entity.ai.goal.WrappedGoal;
-import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Mob;
 import org.jspecify.annotations.NullMarked;
 
 import static javax.lang.model.element.Modifier.FINAL;
@@ -42,9 +40,9 @@ public class MobGoalGenerator extends SimpleGenerator {
 
     @Override
     protected TypeSpec getTypeSpec() {
-        TypeVariableName type = TypeVariableName.get("T", Mob.class);
+        TypeVariableName type = TypeVariableName.get("T", Types.MOB);
         TypeSpec.Builder typeBuilder = TypeSpec.interfaceBuilder(this.className)
-            .addSuperinterface(ParameterizedTypeName.get(ClassName.get(com.destroystokyo.paper.entity.ai.Goal.class), type))
+            .addSuperinterface(ParameterizedTypeName.get(Types.GOAL, type))
             .addModifiers(PUBLIC)
             .addTypeVariable(type)
             .addAnnotations(Annotations.CLASS_HEADER)
@@ -58,31 +56,31 @@ public class MobGoalGenerator extends SimpleGenerator {
             .addModifiers(PRIVATE, STATIC)
             .addParameter(keyParam)
             .addParameter(typeParam)
-            .addCode("return $T.of($N, $T.minecraft($N));", GoalKey.class, typeParam, NamespacedKey.class, keyParam)
+            .addCode("return $T.of($N, $T.minecraft($N));", Types.GOAL_KEY, typeParam, Types.NAMESPACED_KEY, keyParam)
             .addTypeVariable(type)
-            .returns(ParameterizedTypeName.get(ClassName.get(GoalKey.class), type));
+            .returns(ParameterizedTypeName.get(Types.GOAL_KEY, type));
 
         List<Class<Goal>> classes;
-        try (ScanResult scanResult = new ClassGraph().enableAllInfo().whitelistPackages("net.minecraft").scan()) {
+        try (ScanResult scanResult = new ClassGraph().enableAllInfo().acceptPackages("net.minecraft").scan()) {
             classes = scanResult.getSubclasses(Goal.class.getName()).loadClasses(Goal.class);
         }
 
-        Stream<GoalKey<Mob>> vanillaGoals = classes.stream()
+        Stream<GoalKey> vanillaGoals = classes.stream()
             .filter(clazz -> !java.lang.reflect.Modifier.isAbstract(clazz.getModifiers()))
             .filter(clazz -> !clazz.isAnonymousClass() || ClassHelper.getTopLevelClass(clazz) != GoalSelector.class)
             .filter(clazz -> !WrappedGoal.class.equals(clazz)) // TODO - properly fix
             .map(MobGoalNames::getKey)
-            .sorted(Comparator.<GoalKey<?>, String>comparing(o -> o.getEntityClass().getSimpleName())
-                .thenComparing(vanillaGoalKey -> vanillaGoalKey.getNamespacedKey().getKey())
+            .sorted(Comparator.<GoalKey, String>comparing(o -> o.type().simpleName())
+                .thenComparing(vanillaGoalKey -> vanillaGoalKey.key().getPath())
             );
 
         vanillaGoals.forEach(goalKey -> {
-            String keyPath = goalKey.getNamespacedKey().getKey();
+            String keyPath = goalKey.key().getPath();
             String fieldName = Formatting.formatKeyAsField(keyPath);
 
-            TypeName typedKey = ParameterizedTypeName.get(GoalKey.class, goalKey.getEntityClass());
+            TypeName typedKey = ParameterizedTypeName.get(Types.GOAL_KEY, goalKey.type());
             FieldSpec.Builder fieldBuilder = FieldSpec.builder(typedKey, fieldName, PUBLIC, STATIC, FINAL)
-                .initializer("$N($S, $T.class)", createMethod.build(), keyPath, goalKey.getEntityClass());
+                .initializer("$N($S, $T.class)", createMethod.build(), keyPath, goalKey.type());
             typeBuilder.addField(fieldBuilder.build());
         });
 

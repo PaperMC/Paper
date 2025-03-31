@@ -1,20 +1,18 @@
 package io.papermc.generator.rewriter.types.registry;
 
-import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
-import com.mojang.logging.LogUtils;
-import io.papermc.generator.Main;
+import io.papermc.generator.registry.RegistryEntries;
+import io.papermc.generator.registry.RegistryEntry;
+import io.papermc.generator.registry.RegistryIdentifiable;
 import io.papermc.generator.rewriter.utils.Annotations;
 import io.papermc.generator.utils.Formatting;
 import io.papermc.generator.utils.experimental.ExperimentalCollector;
 import io.papermc.generator.utils.experimental.SingleFlagHolder;
-import io.papermc.typewriter.ClassNamed;
 import io.papermc.typewriter.SourceFile;
 import io.papermc.typewriter.replace.SearchMetadata;
 import io.papermc.typewriter.replace.SearchReplaceRewriter;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Supplier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -22,25 +20,20 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.flag.FeatureElement;
 import net.minecraft.world.flag.FeatureFlags;
 import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
 
 import static io.papermc.generator.utils.Formatting.quoted;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
-@NullMarked
-public class RegistryFieldRewriter<T> extends SearchReplaceRewriter {
-
-    private static final Logger LOGGER = LogUtils.getLogger();
+public class RegistryFieldRewriter<T> extends SearchReplaceRewriter implements RegistryIdentifiable<T> {
 
     private final ResourceKey<? extends Registry<T>> registryKey;
     private final boolean isFilteredRegistry;
     private final @Nullable String fetchMethod;
 
-    protected @MonotonicNonNull ClassNamed fieldClass;
+    protected @MonotonicNonNull RegistryEntry<T> entry;
     private @MonotonicNonNull Supplier<Map<ResourceKey<T>, SingleFlagHolder>> experimentalKeys;
 
     public RegistryFieldRewriter(ResourceKey<? extends Registry<T>> registryKey, @Nullable String fetchMethod) {
@@ -50,26 +43,20 @@ public class RegistryFieldRewriter<T> extends SearchReplaceRewriter {
     }
 
     @Override
+    public ResourceKey<? extends Registry<T>> getRegistryKey() {
+        return this.registryKey;
+    }
+
+    @Override
     public boolean registerFor(SourceFile file) {
-        this.fieldClass = this.options.targetClass().orElse(file.mainClass());
-        Preconditions.checkState(this.fieldClass.knownClass() != null, "This rewriter can't run without knowing the field class at runtime!");
-
-        if (this.fetchMethod != null) {
-            try {
-                this.fieldClass.knownClass().getDeclaredMethod(this.fetchMethod, String.class);
-            } catch (NoSuchMethodException e) {
-                LOGGER.error("Fetch method not found, skipping the rewriter for registry fields of {}", this.registryKey, e);
-                return false;
-            }
-        }
-
+        this.entry = RegistryEntries.byRegistryKey(this.registryKey);
         return super.registerFor(file);
     }
 
     @Override
     protected void insert(SearchMetadata metadata, StringBuilder builder) {
-        boolean isInterface = Objects.requireNonNull(this.fieldClass.knownClass()).isInterface();
-        Registry<T> registry = Main.REGISTRY_ACCESS.lookupOrThrow(this.registryKey);
+        boolean isInterface = this.entry.data().api().holderClass().isEmpty() || this.entry.data().api().holderClass().get().isInterface();
+        Registry<T> registry = this.entry.registry();
         this.experimentalKeys = Suppliers.memoize(() -> ExperimentalCollector.collectDataDrivenElementIds(registry));
         Iterator<Holder.Reference<T>> referenceIterator = registry.listElements().filter(this::canPrintField).sorted(Formatting.HOLDER_ORDER).iterator();
 
@@ -108,7 +95,7 @@ public class RegistryFieldRewriter<T> extends SearchReplaceRewriter {
     }
 
     protected String rewriteFieldType(Holder.Reference<T> reference) {
-        return this.fieldClass.simpleName();
+        return this.entry.data().api().klass().name().simpleName();
     }
 
     protected String rewriteFieldName(Holder.Reference<T> reference) {

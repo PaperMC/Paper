@@ -3,12 +3,13 @@ package io.papermc.generator.types.craftblockdata.property.converter;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
 public interface ConverterBase {
 
-    Class<?> getApiType();
+    TypeName getApiType();
 
     default void convertSetter(MethodSpec.Builder method, FieldSpec field, ParameterSpec parameter) {
         method.addStatement(this.rawSetExprent().formatted("$N"), field, parameter);

@@ -14,5 +14,5 @@ public interface DataAppender {
 
     DataHolderType getType();
 
-    void addExtras(TypeSpec.Builder builder, FieldSpec field, ParameterSpec indexParameter, ConverterBase converter, CraftBlockDataGenerator<?> generator, NamingManager baseNaming);
+    void addExtras(TypeSpec.Builder builder, FieldSpec field, ParameterSpec indexParameter, ConverterBase converter, CraftBlockDataGenerator generator, NamingManager baseNaming);
 }
