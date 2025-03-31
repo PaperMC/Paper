@@ -4440,5 +4440,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
         }
     }
 
+    //CircuitBoard start
     Snake spawnSnake(final @NotNull Location location, final @NotNull JavaPlugin plugin);
+    //CircuitBoard end
 }

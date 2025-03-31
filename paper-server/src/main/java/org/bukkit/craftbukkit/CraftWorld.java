@@ -2365,6 +2365,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
         return this.getStructures(x, z, struct -> registry.getKey(struct).equals(key));
     }
 
+    //CircuitBoard start
+
     @Override
     public Snake spawnSnake(final @NotNull Location location, final @NotNull JavaPlugin plugin) {
         Snake snake = new CraftSnake(location);
@@ -2372,6 +2374,8 @@ public class CraftWorld extends CraftRegionAccessor implements World {
 
         return snake;
     }
+
+    //CircuitBoard end
 
     private List<GeneratedStructure> getStructures(int x, int z, Predicate<net.minecraft.world.level.levelgen.structure.Structure> predicate) {
         List<GeneratedStructure> structures = new ArrayList<>();
