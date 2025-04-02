@@ -5,7 +5,7 @@ import java.util.List;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import org.bukkit.block.BlockState;
-import org.bukkit.craftbukkit.block.state.CraftBlockStates;
+import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.structure.Palette;
 
 public class CraftPalette implements Palette {

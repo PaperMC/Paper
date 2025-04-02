@@ -8,7 +8,6 @@ import org.bukkit.Color;
 import org.bukkit.Effect;
 import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
-import org.bukkit.craftbukkit.block.CraftBlockData;
 import org.bukkit.craftbukkit.block.CraftBlockType;
 import org.bukkit.craftbukkit.inventory.CraftItemType;
 
@@ -80,7 +79,7 @@ public class CraftEffect {
                 break;
             }
         case PARTICLES_AND_SOUND_BRUSH_BLOCK_COMPLETE:
-            datavalue = Block.getId(((CraftBlockData) data).getState());
+            datavalue = Block.getId(((org.bukkit.craftbukkit.block.data.CraftBlockData) data).getState());
             // Paper end
             break;
         case COMPOSTER_FILL_ATTEMPT:

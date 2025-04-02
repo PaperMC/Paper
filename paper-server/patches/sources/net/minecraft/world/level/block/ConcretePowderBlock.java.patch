@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/ConcretePowderBlock.java
 +++ b/net/minecraft/world/level/block/ConcretePowderBlock.java
-@@ -38,16 +_,31 @@
+@@ -38,16 +_,33 @@
      @Override
      public void onLand(Level level, BlockPos pos, BlockState state, BlockState replaceableState, FallingBlockEntity fallingBlock) {
          if (shouldSolidify(level, pos, replaceableState)) {
@@ -22,11 +22,13 @@
 +        }
 +
 +        // TODO: An event factory call for methods like this
-+        org.bukkit.craftbukkit.block.state.CraftBlockState craftBlockState = org.bukkit.craftbukkit.block.state.CraftBlockStates.getBlockState(level, clickedPos);
++        org.bukkit.craftbukkit.block.CraftBlockState craftBlockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState((net.minecraft.world.level.LevelAccessor) level, clickedPos);
 +        craftBlockState.setData(this.concrete.defaultBlockState());
 +
 +        org.bukkit.event.block.BlockFormEvent event = new org.bukkit.event.block.BlockFormEvent(craftBlockState.getBlock(), craftBlockState);
-+        if (event.callEvent()) {
++        level.getServer().server.getPluginManager().callEvent(event);
++
++        if (!event.isCancelled()) {
 +            return craftBlockState.getHandle();
 +        }
 +
@@ -35,7 +37,7 @@
      }
  
      private static boolean shouldSolidify(BlockGetter level, BlockPos pos, BlockState state) {
-@@ -88,9 +_,23 @@
+@@ -88,9 +_,25 @@
          BlockState neighborState,
          RandomSource random
      ) {
@@ -48,11 +50,13 @@
 +            if (!(level instanceof Level world1)) {
 +                return this.concrete.defaultBlockState();
 +            }
-+            org.bukkit.craftbukkit.block.state.CraftBlockState blockState = org.bukkit.craftbukkit.block.state.CraftBlockStates.getBlockState(world1, pos);
++            org.bukkit.craftbukkit.block.CraftBlockState blockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(world1, pos);
 +            blockState.setData(this.concrete.defaultBlockState());
 +
 +            org.bukkit.event.block.BlockFormEvent event = new org.bukkit.event.block.BlockFormEvent(blockState.getBlock(), blockState);
-+            if (event.callEvent()) {
++            world1.getCraftServer().getPluginManager().callEvent(event);
++
++            if (!event.isCancelled()) {
 +                return blockState.getHandle();
 +            }
 +        }

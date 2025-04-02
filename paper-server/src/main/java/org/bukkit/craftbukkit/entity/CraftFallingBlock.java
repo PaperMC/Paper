@@ -1,15 +1,11 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
-import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.item.FallingBlockEntity;
 import org.bukkit.Material;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.block.CraftBlockData;
-import org.bukkit.craftbukkit.block.state.CraftBlockEntityState;
-import org.bukkit.craftbukkit.block.state.CraftBlockStates;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.entity.FallingBlock;
 
 public class CraftFallingBlock extends CraftEntity implements FallingBlock {
@@ -50,7 +46,7 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
 
     @Override
     public org.bukkit.block.BlockState getBlockState() {
-        return CraftBlockStates.getBlockState(this.getHandle().level(), BlockPos.ZERO, this.getHandle().blockState, this.getHandle().blockData);
+        return org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(this.getHandle().blockState, this.getHandle().blockData);
     }
 
     @Override
@@ -59,7 +55,7 @@ public class CraftFallingBlock extends CraftEntity implements FallingBlock {
         // Calls #update if needed, the block data compound tag is not synced with the client and hence can be mutated after the sync with clients.
         // The call also clears any potential old block data.
         this.setBlockData(blockState.getBlockData());
-        if (blockState instanceof final CraftBlockEntityState<?> blockEntitySnapshot) this.getHandle().blockData = blockEntitySnapshot.getSnapshotNBT();
+        if (blockState instanceof final org.bukkit.craftbukkit.block.CraftBlockEntityState<?> blockEntitySnapshot) this.getHandle().blockData = blockEntitySnapshot.getSnapshotNBT();
     }
 
     @Override

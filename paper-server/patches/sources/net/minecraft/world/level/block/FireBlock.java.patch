@@ -1,15 +1,18 @@
 --- a/net/minecraft/world/level/block/FireBlock.java
 +++ b/net/minecraft/world/level/block/FireBlock.java
-@@ -101,7 +_,22 @@
+@@ -101,7 +_,25 @@
          BlockState neighborState,
          RandomSource random
      ) {
 -        return this.canSurvive(state, level, pos) ? this.getStateWithAge(level, pos, state.getValue(AGE)) : Blocks.AIR.defaultBlockState();
 +        // CraftBukkit start
-+        if (!(level instanceof ServerLevel)) return this.canSurvive(state, level, pos) ? this.getStateWithAge(level, pos, state.getValue(AGE)) : Blocks.AIR.defaultBlockState(); // Paper - don't fire events in world generation
++        if (!(level instanceof ServerLevel)) return this.canSurvive(state, level, pos) ? (BlockState) this.getStateWithAge(level, pos, (Integer) state.getValue(FireBlock.AGE)) : Blocks.AIR.defaultBlockState(); // Paper - don't fire events in world generation
 +        if (!this.canSurvive(state, level, pos)) {
-+            net.minecraft.world.level.Level world1 = (net.minecraft.world.level.Level) level;
-+            org.bukkit.craftbukkit.block.state.CraftBlockState blockState = org.bukkit.craftbukkit.block.state.CraftBlockStates.getBlockState(world1, pos);
++            // Suppress during worldgen
++            if (!(level instanceof Level world1)) {
++                return Blocks.AIR.defaultBlockState();
++            }
++            org.bukkit.craftbukkit.block.CraftBlockState blockState = org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(world1, pos);
 +            blockState.setData(Blocks.AIR.defaultBlockState());
 +
 +            org.bukkit.event.block.BlockFadeEvent event = new org.bukkit.event.block.BlockFadeEvent(blockState.getBlock(), blockState);
@@ -19,7 +22,7 @@
 +                return blockState.getHandle();
 +            }
 +        }
-+        return this.getStateWithAge(level, pos, state.getValue(AGE)); // Paper - don't fire events in world generation; diff on change, see "don't fire events in world generation"
++        return this.getStateWithAge(level, pos, (Integer) state.getValue(FireBlock.AGE)); // Paper - don't fire events in world generation; diff on change, see "don't fire events in world generation"
 +        // CraftBukkit end
      }
  

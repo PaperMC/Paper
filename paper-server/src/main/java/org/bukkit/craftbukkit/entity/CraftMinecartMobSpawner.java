@@ -11,7 +11,7 @@ import net.minecraft.world.level.SpawnData;
 import org.bukkit.block.spawner.SpawnRule;
 import org.bukkit.block.spawner.SpawnerEntry;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.block.state.CraftCreatureSpawner;
+import org.bukkit.craftbukkit.block.CraftCreatureSpawner;
 import org.bukkit.entity.EntitySnapshot;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.minecart.SpawnerMinecart;

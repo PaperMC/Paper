@@ -52,7 +52,7 @@ public class CraftBlockDataGenerator<T extends BlockData> extends OverriddenClas
     private final BlockStateMapping.BlockData blockData;
 
     protected CraftBlockDataGenerator(Class<? extends Block> blockClass, BlockStateMapping.BlockData blockData, Class<T> baseClass) {
-        super(baseClass, blockData.implName(), Types.CRAFT_BLOCK_DATA.packageName() + ".data");
+        super(baseClass, blockData.implName(), Types.BASE_PACKAGE + ".block.impl");
         this.blockClass = blockClass;
         this.blockData = blockData;
         this.printWarningOnMissingOverride = true;

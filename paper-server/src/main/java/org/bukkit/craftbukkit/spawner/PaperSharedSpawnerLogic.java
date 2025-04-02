@@ -10,13 +10,12 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.BaseSpawner;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.SpawnData;
-import org.bukkit.craftbukkit.block.state.CraftCreatureSpawner;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.spawner.Spawner;
 
 /**
- * A common parent interface for both the {@link CraftCreatureSpawner} and minecart mob spawner.
+ * A common parent interface for both the {@link org.bukkit.craftbukkit.block.CraftCreatureSpawner} and minecart mob spawner.
  */
 public interface PaperSharedSpawnerLogic extends Spawner {
 

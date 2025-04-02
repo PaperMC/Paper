@@ -2,7 +2,6 @@ package org.bukkit.craftbukkit.entity;
 
 import net.minecraft.world.entity.item.PrimedTnt;
 import org.bukkit.craftbukkit.CraftServer;
-import org.bukkit.craftbukkit.block.CraftBlockData;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.TNTPrimed;
@@ -72,11 +71,11 @@ public class CraftTNTPrimed extends CraftEntity implements TNTPrimed {
     @Override
     public void setBlockData(org.bukkit.block.data.BlockData data) {
         com.google.common.base.Preconditions.checkArgument(data != null, "The visual block data of this tnt cannot be null. To reset it just set to the TNT default block data");
-        this.getHandle().setBlockState(((CraftBlockData) data).getState());
+        this.getHandle().setBlockState(((org.bukkit.craftbukkit.block.data.CraftBlockData) data).getState());
     }
 
     @Override
     public org.bukkit.block.data.BlockData getBlockData() {
-        return CraftBlockData.fromData(this.getHandle().getBlockState());
+        return org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(this.getHandle().getBlockState());
     }
 }

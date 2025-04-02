@@ -7,9 +7,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.material.FluidState;
-import org.bukkit.craftbukkit.block.state.CraftBlockEntityState;
-import org.bukkit.craftbukkit.block.state.CraftBlockState;
-import org.bukkit.craftbukkit.block.state.CraftBlockStates;
+import org.bukkit.craftbukkit.block.CraftBlockEntityState;
+import org.bukkit.craftbukkit.block.CraftBlockState;
+import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason;
 import org.jetbrains.annotations.Nullable;
 
@@ -72,7 +72,7 @@ public class TransformerGeneratorAccess extends DelegatedGeneratorAccess {
     @Override
     public boolean setBlock(BlockPos pos, BlockState state, int flags, int recursionLeft) {
         if (this.canTransformBlocks()) {
-            return this.setCraftBlock(pos, CraftBlockStates.getBlockState(this, pos, state, null), flags, recursionLeft);
+            return this.setCraftBlock(pos, (CraftBlockState) CraftBlockStates.getBlockState(this, pos, state, null), flags, recursionLeft);
         }
         return super.setBlock(pos, state, flags, recursionLeft);
     }

@@ -13,7 +13,7 @@ import org.bukkit.block.BlockType;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Cake;
 import org.bukkit.block.data.type.Chest;
-import org.bukkit.craftbukkit.block.CraftBlockData;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.support.environment.VanillaFeature;
 import org.junit.jupiter.api.Test;
 

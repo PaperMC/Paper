@@ -21,7 +21,7 @@ import net.minecraft.world.item.enchantment.LevelBasedValue;
 import net.minecraft.world.item.enchantment.effects.EnchantmentAttributeEffect;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import org.bukkit.craftbukkit.block.CraftBlockData;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.support.environment.AllFeatures;
@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 import static net.minecraft.resources.ResourceLocation.fromNamespaceAndPath;
 
 /**
- * CraftBlockData's {@link CraftBlockData#getDestroySpeed(ItemStack, boolean)}
+ * CraftBlockData's {@link org.bukkit.craftbukkit.block.data.CraftBlockData#getDestroySpeed(ItemStack, boolean)}
  * uses a reimplementation of AttributeValue without any map to avoid attribute instance allocation and mutation
  * for 0 gain.
  * <p>

@@ -41,8 +41,7 @@ import org.bukkit.block.PistonMoveReaction;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftFluidCollisionMode;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.state.CraftBlockState;
-import org.bukkit.craftbukkit.block.state.CraftBlockStates;
+import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.entity.CraftEntity;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -192,7 +191,7 @@ public class CraftBlock implements Block {
         this.setBlockState(((CraftBlockData) data).getState(), applyPhysics);
     }
 
-    public boolean setBlockState(final net.minecraft.world.level.block.state.BlockState state, final boolean applyPhysics) {
+    boolean setBlockState(final net.minecraft.world.level.block.state.BlockState state, final boolean applyPhysics) {
         return CraftBlock.setBlockState(this.world, this.position, this.getNMS(), state, applyPhysics);
     }
 

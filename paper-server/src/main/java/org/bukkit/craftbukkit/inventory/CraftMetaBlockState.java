@@ -24,9 +24,8 @@ import org.bukkit.Material;
 import org.bukkit.block.BlockState;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.block.CraftBlockData;
-import org.bukkit.craftbukkit.block.state.CraftBlockEntityState;
-import org.bukkit.craftbukkit.block.state.CraftBlockStates;
+import org.bukkit.craftbukkit.block.CraftBlockEntityState;
+import org.bukkit.craftbukkit.block.CraftBlockStates;
 import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.util.BlockVector;
 
@@ -108,7 +107,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             // Paper start - store data in a DataComponentMap to be used to construct CraftBlockEntityStates
             final DataComponentMap.Builder map = DataComponentMap.builder();
             final net.minecraft.world.level.block.entity.BlockEntity dummyBlockEntity = java.util.Objects.requireNonNull(
-                CraftBlockStates.createNewBlockEntity(this.materialForBlockEntityType())
+                org.bukkit.craftbukkit.block.CraftBlockStates.createNewBlockEntity(this.materialForBlockEntityType())
             );
 
             // we don't care about what's in here, all
@@ -286,7 +285,7 @@ public class CraftMetaBlockState extends CraftMetaItem implements BlockStateMeta
             pos = BlockEntity.getPosFromTag(null, this.blockEntityTag.getUnsafe()); // unsafe is fine here, just querying
         }
         final net.minecraft.world.level.block.entity.BlockEntityType<?> type = java.util.Objects.requireNonNull(CraftBlockStates.getBlockEntityType(stateMaterial));
-        final net.minecraft.world.level.block.state.BlockState nmsBlockState = ((CraftBlockData) this.getBlockData(stateMaterial)).getState();
+        final net.minecraft.world.level.block.state.BlockState nmsBlockState = ((org.bukkit.craftbukkit.block.data.CraftBlockData) this.getBlockData(stateMaterial)).getState();
         final net.minecraft.world.level.block.entity.BlockEntity blockEntity = java.util.Objects.requireNonNull(type.create(pos, nmsBlockState));
         if (!this.blockEntityTag.isEmpty()) {
             this.blockEntityTag.loadInto(blockEntity, CraftRegistry.getMinecraftRegistry());
