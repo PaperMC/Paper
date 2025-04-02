@@ -5,10 +5,10 @@ Subject: [PATCH] Optional per player mob spawns
 
 
 diff --git a/net/minecraft/server/level/ChunkMap.java b/net/minecraft/server/level/ChunkMap.java
-index ff6503bf8eb88d1264c3d848a89d0255b4b3ae68..9eed24939fc09f00a9dbce1be2ab9c34d024fd29 100644
+index 886340232b58afd59caa6df29e211589a7781070..4f4bcc4bbfcc9b191d12d667b8fc1e644a9d5957 100644
 --- a/net/minecraft/server/level/ChunkMap.java
 +++ b/net/minecraft/server/level/ChunkMap.java
-@@ -236,11 +236,29 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -243,11 +243,29 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
          // Paper - rewrite chunk system
      }
  
@@ -43,20 +43,11 @@ index ff6503bf8eb88d1264c3d848a89d0255b4b3ae68..9eed24939fc09f00a9dbce1be2ab9c34
      protected ChunkGenerator generator() {
          return this.worldGenContext.generator();
 diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
-index 87d4291a3944f706a694536da6de0f28c548ab8d..5576bf1d1d70ab7a010653d3207909b5de867e70 100644
+index 5d63bf024cbcbd2f627c64fee77553c9a512bd15..f863377a807b672f49f7140688f378eca2cf650b 100644
 --- a/net/minecraft/server/level/ServerChunkCache.java
 +++ b/net/minecraft/server/level/ServerChunkCache.java
-@@ -517,7 +517,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
-                     profilerFiller.popPush("shuffleChunks");
-                     // Paper start - chunk tick iteration optimisation
-                     this.shuffleRandom.setSeed(this.level.random.nextLong());
--                    Util.shuffle(list, this.shuffleRandom);
-+                    if (!this.level.paperConfig().entities.spawning.perPlayerMobSpawns) Util.shuffle(list, this.shuffleRandom); // Paper - Optional per player mob spawns; do not need this when per-player is enabled
-                     // Paper end - chunk tick iteration optimisation
-                     this.tickChunks(profilerFiller, l, list);
-                     profilerFiller.pop();
-@@ -571,9 +571,18 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
-     private void tickChunks(ProfilerFiller profiler, long timeInhabited, List<LevelChunk> chunks) {
+@@ -541,9 +541,18 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+     private void tickChunks(ProfilerFiller profiler, long timeInhabited) {
          profiler.popPush("naturalSpawnCount");
          int naturalSpawnChunkCount = this.distanceManager.getNaturalSpawnChunkCount();
 -        NaturalSpawner.SpawnState spawnState = NaturalSpawner.createState(
@@ -77,13 +68,22 @@ index 87d4291a3944f706a694536da6de0f28c548ab8d..5576bf1d1d70ab7a010653d3207909b5
          this.lastSpawnState = spawnState;
          profiler.popPush("spawnAndTick");
          boolean _boolean = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
+@@ -572,7 +581,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+             profiler.popPush("shuffleSpawningChunks");
+             // Paper start - chunk tick iteration optimisation
+             this.shuffleRandom.setSeed(this.level.random.nextLong());
+-            Util.shuffle(list, this.shuffleRandom);
++            if (!this.level.paperConfig().entities.spawning.perPlayerMobSpawns) Util.shuffle(list, this.shuffleRandom); // Paper - Optional per player mob spawns; do not need this when per-player is enabled
+             // Paper end - chunk tick iteration optimisation
+             profiler.popPush("tickSpawningChunks");
+ 
 diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
-index 02fb30a3adf92de0795aee213caf94a228b01ca0..67f6e40216e0be063a3cfb61427f095f7c74d785 100644
+index 8e7ee4dc951eb53ccf65ab71214a0b89bd932ba0..73a450e045eba5dbfc7a4e861e4c614c8f60d6b4 100644
 --- a/net/minecraft/server/level/ServerPlayer.java
 +++ b/net/minecraft/server/level/ServerPlayer.java
-@@ -375,6 +375,10 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+@@ -403,6 +403,10 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
      public boolean queueHealthUpdatePacket;
-     public net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
+     public @Nullable net.minecraft.network.protocol.game.ClientboundSetHealthPacket queuedHealthUpdatePacket;
      // Paper end - cancellable death event
 +    // Paper start - Optional per player mob spawns
 +    public static final int MOBCATEGORY_TOTAL_ENUMS = net.minecraft.world.entity.MobCategory.values().length;
@@ -93,10 +93,10 @@ index 02fb30a3adf92de0795aee213caf94a228b01ca0..67f6e40216e0be063a3cfb61427f095f
      public org.bukkit.craftbukkit.entity.CraftPlayer.TransferCookieConnection transferCookieConnection;
      public String displayName;
 diff --git a/net/minecraft/world/level/NaturalSpawner.java b/net/minecraft/world/level/NaturalSpawner.java
-index 913ea92ace9d610c25bf28f703a3b227044aea63..ef8bacbbb43a9b80281a313ca43b7efff5a93e03 100644
+index 3a864c568cd66a680760bb4df2cb020e323e9a9d..17b13baa3465530b11ff918c806c772eb5c39a2c 100644
 --- a/net/minecraft/world/level/NaturalSpawner.java
 +++ b/net/minecraft/world/level/NaturalSpawner.java
-@@ -72,6 +72,14 @@ public final class NaturalSpawner {
+@@ -66,6 +66,14 @@ public final class NaturalSpawner {
      public static NaturalSpawner.SpawnState createState(
          int spawnableChunkCount, Iterable<Entity> entities, NaturalSpawner.ChunkGetter chunkGetter, LocalMobCapCalculator calculator
      ) {
@@ -111,7 +111,7 @@ index 913ea92ace9d610c25bf28f703a3b227044aea63..ef8bacbbb43a9b80281a313ca43b7eff
          PotentialCalculator potentialCalculator = new PotentialCalculator();
          Object2IntOpenHashMap<MobCategory> map = new Object2IntOpenHashMap<>();
  
-@@ -93,11 +101,16 @@ public final class NaturalSpawner {
+@@ -87,11 +95,16 @@ public final class NaturalSpawner {
                              potentialCalculator.addCharge(entity.blockPosition(), mobSpawnCost.charge());
                          }
  
@@ -129,7 +129,7 @@ index 913ea92ace9d610c25bf28f703a3b227044aea63..ef8bacbbb43a9b80281a313ca43b7eff
                      });
                  }
              }
-@@ -135,7 +148,7 @@ public final class NaturalSpawner {
+@@ -129,7 +142,7 @@ public final class NaturalSpawner {
              if ((spawnFriendlies || !mobCategory.isFriendly())
                  && (spawnEnemies || mobCategory.isFriendly())
                  && (spawnPassives || !mobCategory.isPersistent())
@@ -138,7 +138,7 @@ index 913ea92ace9d610c25bf28f703a3b227044aea63..ef8bacbbb43a9b80281a313ca43b7eff
                  list.add(mobCategory);
                  // CraftBukkit end
              }
-@@ -149,8 +162,37 @@ public final class NaturalSpawner {
+@@ -143,8 +156,37 @@ public final class NaturalSpawner {
          profilerFiller.push("spawner");
  
          for (MobCategory mobCategory : categories) {
@@ -178,7 +178,7 @@ index 913ea92ace9d610c25bf28f703a3b227044aea63..ef8bacbbb43a9b80281a313ca43b7eff
              }
          }
  
-@@ -170,9 +212,16 @@ public final class NaturalSpawner {
+@@ -164,9 +206,16 @@ public final class NaturalSpawner {
      public static void spawnCategoryForChunk(
          MobCategory category, ServerLevel level, LevelChunk chunk, NaturalSpawner.SpawnPredicate filter, NaturalSpawner.AfterSpawnCallback callback
      ) {
@@ -196,7 +196,7 @@ index 913ea92ace9d610c25bf28f703a3b227044aea63..ef8bacbbb43a9b80281a313ca43b7eff
          }
      }
  
-@@ -189,6 +238,12 @@ public final class NaturalSpawner {
+@@ -183,6 +232,12 @@ public final class NaturalSpawner {
          NaturalSpawner.SpawnPredicate filter,
          NaturalSpawner.AfterSpawnCallback callback
      ) {
@@ -209,7 +209,7 @@ index 913ea92ace9d610c25bf28f703a3b227044aea63..ef8bacbbb43a9b80281a313ca43b7eff
          StructureManager structureManager = level.structureManager();
          ChunkGenerator generator = level.getChunkSource().getGenerator();
          int y = pos.getY();
-@@ -252,9 +307,14 @@ public final class NaturalSpawner {
+@@ -247,9 +302,14 @@ public final class NaturalSpawner {
                                          ++i;
                                          ++i3;
                                          callback.run(mobForSpawn, chunk);
@@ -225,7 +225,7 @@ index 913ea92ace9d610c25bf28f703a3b227044aea63..ef8bacbbb43a9b80281a313ca43b7eff
                                          return;
                                      }
  
-@@ -565,7 +625,7 @@ public final class NaturalSpawner {
+@@ -563,7 +623,7 @@ public final class NaturalSpawner {
              this.spawnPotential.addCharge(blockPos, d);
              MobCategory category = type.getCategory();
              this.mobCategoryCounts.addTo(category, 1);
