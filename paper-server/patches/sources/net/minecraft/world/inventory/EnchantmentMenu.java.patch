@@ -19,7 +19,7 @@
      public final int[] enchantClue = new int[]{-1, -1, -1};
      public final int[] levelClue = new int[]{-1, -1, -1};
 +    // CraftBukkit start
-+    private org.bukkit.craftbukkit.inventory.view.CraftEnchantmentView bukkitEntity = null;
++    private @javax.annotation.Nullable org.bukkit.craftbukkit.inventory.view.CraftEnchantmentView view = null;
 +    private final org.bukkit.entity.Player player;
 +    // CraftBukkit end
  
@@ -107,7 +107,7 @@
                      this.broadcastChanges();
                  });
              } else {
-@@ -145,19 +_,53 @@
+@@ -145,19 +_,52 @@
                  return false;
              } else {
                  this.access.execute((level, blockPos) -> {
@@ -121,7 +121,7 @@
 +                        // player.onEnchantmentPerformed(item, i); // Moved down
 +                        java.util.Map<org.bukkit.enchantments.Enchantment, Integer> enchants = new java.util.HashMap<>();
 +                        for (EnchantmentInstance instance : enchantmentList) {
-+                            enchants.put(org.bukkit.craftbukkit.enchantments.CraftEnchantment.minecraftHolderToBukkit(instance.enchantment), instance.level);
++                            enchants.put(org.bukkit.craftbukkit.enchantments.CraftEnchantment.minecraftHolderToBukkit(instance.enchantment()), instance.level());
 +                        }
 +                        org.bukkit.craftbukkit.inventory.CraftItemStack craftItemStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack);
 +                        Holder<Enchantment> holder = registry.byId(this.enchantClue[id]);
@@ -148,13 +148,12 @@
 +
 +                        // CraftBukkit start
 +                        for (java.util.Map.Entry<org.bukkit.enchantments.Enchantment, Integer> entry : event.getEnchantsToAdd().entrySet()) {
-+                            Holder<Enchantment> nms = org.bukkit.craftbukkit.enchantments.CraftEnchantment.bukkitToMinecraftHolder(entry.getKey());
-+                            if (nms == null) {
++                            Holder<Enchantment> enchant = org.bukkit.craftbukkit.enchantments.CraftEnchantment.bukkitToMinecraftHolder(entry.getKey());
++                            if (enchant == null) {
 +                                continue;
 +                            }
 +
-+                            EnchantmentInstance weightedrandomenchant = new EnchantmentInstance(nms, entry.getValue());
-+                            itemStack.enchant(weightedrandomenchant.enchantment, weightedrandomenchant.level);
++                            itemStack.enchant(enchant, entry.getValue());
 +                        }
                          player.onEnchantmentPerformed(item, i);
 -                        if (item.is(Items.BOOK)) {
@@ -163,7 +162,7 @@
 -                        }
 -
 -                        for (EnchantmentInstance enchantmentInstance : enchantmentList) {
--                            itemStack.enchant(enchantmentInstance.enchantment, enchantmentInstance.level);
+-                            itemStack.enchant(enchantmentInstance.enchantment(), enchantmentInstance.level());
 -                        }
 -
 +                        // CraftBukkit end
@@ -172,6 +171,19 @@
                          item1.consume(i, player);
                          if (item1.isEmpty()) {
                              this.enchantSlots.setItem(1, ItemStack.EMPTY);
+@@ -202,6 +_,12 @@
+         return item.isEmpty() ? 0 : item.getCount();
+     }
+ 
++    // Paper start - add enchantment seed update API
++    public void setEnchantmentSeed(int seed) {
++        this.enchantmentSeed.set(seed);
++    }
++    // Paper end - add enchantment seed update API
++
+     public int getEnchantmentSeed() {
+         return this.enchantmentSeed.get();
+     }
 @@ -214,6 +_,7 @@
  
      @Override
@@ -180,7 +192,7 @@
          return stillValid(this.access, player, Blocks.ENCHANTING_TABLE);
      }
  
-@@ -261,4 +_,23 @@
+@@ -261,4 +_,17 @@
  
          return itemStack;
      }
@@ -188,19 +200,13 @@
 +    // CraftBukkit start
 +    @Override
 +    public org.bukkit.craftbukkit.inventory.view.CraftEnchantmentView getBukkitView() {
-+        if (this.bukkitEntity != null) {
-+            return this.bukkitEntity;
++        if (this.view != null) {
++            return this.view;
 +        }
 +
 +        org.bukkit.craftbukkit.inventory.CraftInventoryEnchanting inventory = new org.bukkit.craftbukkit.inventory.CraftInventoryEnchanting(this.enchantSlots);
-+        this.bukkitEntity = new org.bukkit.craftbukkit.inventory.view.CraftEnchantmentView(this.player, inventory, this);
-+        return this.bukkitEntity;
++        this.view = new org.bukkit.craftbukkit.inventory.view.CraftEnchantmentView(this.player, inventory, this);
++        return this.view;
 +    }
 +    // CraftBukkit end
-+
-+    // Paper start - add enchantment seed update API
-+    public void setEnchantmentSeed(int seed) {
-+        this.enchantmentSeed.set(seed);
-+    }
-+    // Paper end - add enchantment seed update API
  }

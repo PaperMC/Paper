@@ -1,38 +1,50 @@
 --- a/net/minecraft/world/entity/player/Inventory.java
 +++ b/net/minecraft/world/entity/player/Inventory.java
-@@ -36,6 +_,54 @@
+@@ -49,6 +_,66 @@
      public final Player player;
+     public final EntityEquipment equipment;
      private int timesChanged;
- 
 +    // CraftBukkit start - add fields and methods
-+    public List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
++    public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
 +    private int maxStack = MAX_STACK;
 +
-+    public List<ItemStack> getContents() {
-+        List<ItemStack> combined = new java.util.ArrayList<>(this.items.size() + this.armor.size() + this.offhand.size());
-+        for (List<ItemStack> sub : this.compartments) {
-+            combined.addAll(sub);
-+        }
-+
++    @Override
++    public java.util.List<ItemStack> getContents() {
++        java.util.List<ItemStack> combined = new java.util.ArrayList<>(this.items.size() + EQUIPMENT_SLOT_MAPPING.size());
++        combined.addAll(this.items);
++        EQUIPMENT_SLOT_MAPPING.int2ObjectEntrySet().forEach(entry -> {
++            ItemStack itemStack = this.equipment.get(entry.getValue());
++            combined.add(itemStack); // Include empty items
++        });
 +        return combined;
 +    }
 +
-+    public List<ItemStack> getArmorContents() {
-+        return this.armor;
++    public java.util.List<ItemStack> getArmorContents() {
++        java.util.List<ItemStack> items = new java.util.ArrayList<>();
++        EQUIPMENT_SLOT_MAPPING.int2ObjectEntrySet().forEach(entry -> {
++            if (entry.getValue().isArmor()) {
++                items.add(this.equipment.get(entry.getValue()));
++            }
++        });
++        return items;
 +    }
 +
++    @Override
 +    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
 +        this.transaction.add(player);
 +    }
 +
++    @Override
 +    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
 +        this.transaction.remove(player);
 +    }
 +
-+    public List<org.bukkit.entity.HumanEntity> getViewers() {
++    @Override
++    public java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
 +        return this.transaction;
 +    }
 +
++    @Override
 +    public org.bukkit.inventory.InventoryHolder getOwner() {
 +        return this.player.getBukkitEntity();
 +    }
@@ -42,6 +54,7 @@
 +        return this.maxStack;
 +    }
 +
++    @Override
 +    public void setMaxStackSize(int size) {
 +        this.maxStack = size;
 +    }
@@ -51,11 +64,10 @@
 +        return this.player.getBukkitEntity().getLocation();
 +    }
 +    // CraftBukkit end
-+
-     public Inventory(Player player) {
+ 
+     public Inventory(Player player, EntityEquipment equipment) {
          this.player = player;
-     }
-@@ -50,10 +_,39 @@
+@@ -85,10 +_,39 @@
  
      private boolean hasRemainingSpaceForItem(ItemStack destination, ItemStack origin) {
          return !destination.isEmpty()
@@ -84,7 +96,7 @@
 +            }
 +        }
 +
-+        ItemStack itemInOffhand = this.getItem(this.items.size() + this.armor.size());
++        ItemStack itemInOffhand = this.equipment.get(EquipmentSlot.OFFHAND);
 +        if (this.hasRemainingSpaceForItem(itemInOffhand, itemStack)) {
 +            remains -= (itemInOffhand.getMaxStackSize() < this.getMaxStackSize() ? itemInOffhand.getMaxStackSize() : this.getMaxStackSize()) - itemInOffhand.getCount();
 +        }
@@ -98,27 +110,29 @@
  
      public int getFreeSlot() {
          for (int i = 0; i < this.items.size(); i++) {
-@@ -65,7 +_,10 @@
+@@ -100,8 +_,10 @@
          return -1;
      }
  
 -    public void addAndPickItem(ItemStack stack) {
+-        this.setSelectedSlot(this.getSuitableHotbarSlot());
 +    // Paper start - Add PlayerPickItemEvent
 +    public void addAndPickItem(ItemStack stack, final int targetSlot) {
-+        this.selected = targetSlot;
++        this.setSelectedSlot(targetSlot);
 +        // Paper end - Add PlayerPickItemEvent
-         this.selected = this.getSuitableHotbarSlot();
          if (!this.items.get(this.selected).isEmpty()) {
              int freeSlot = this.getFreeSlot();
-@@ -77,7 +_,10 @@
+             if (freeSlot != -1) {
+@@ -112,8 +_,10 @@
          this.items.set(this.selected, stack);
      }
  
 -    public void pickSlot(int index) {
+-        this.setSelectedSlot(this.getSuitableHotbarSlot());
 +    // Paper start - Add PlayerPickItemEvent
 +    public void pickSlot(int index, final int targetSlot) {
-+        this.selected = targetSlot;
-+        // Paper end - Add PlayerPickItemEvent
-         this.selected = this.getSuitableHotbarSlot();
++        this.setSelectedSlot(targetSlot);
++    // Paper end - Add PlayerPickItemEvent
          ItemStack itemStack = this.items.get(this.selected);
          this.items.set(this.selected, this.items.get(index));
+         this.items.set(index, itemStack);

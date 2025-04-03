@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/FireBlock.java
 +++ b/net/minecraft/world/level/block/FireBlock.java
-@@ -122,7 +_,25 @@
+@@ -101,7 +_,25 @@
          BlockState neighborState,
          RandomSource random
      ) {
@@ -27,95 +27,94 @@
      }
  
      @Override
-@@ -162,10 +_,10 @@
+@@ -141,11 +_,11 @@
  
      @Override
      protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
 -        level.scheduleTick(pos, this, getFireTickDelay(level.random));
 +        level.scheduleTick(pos, this, getFireTickDelay(level)); // Paper - Add fire-tick-delay option
          if (level.getGameRules().getBoolean(GameRules.RULE_DOFIRETICK)) {
-             if (!state.canSurvive(level, pos)) {
--                level.removeBlock(pos, false);
-+                this.fireExtinguished(level, pos); // CraftBukkit - invalid place location
-             }
- 
-             BlockState blockState = level.getBlockState(pos.below());
-@@ -184,26 +_,28 @@
-                     if (!this.isValidFireLocation(level, pos)) {
-                         BlockPos blockPos = pos.below();
-                         if (!level.getBlockState(blockPos).isFaceSturdy(level, blockPos, Direction.UP) || ageValue > 3) {
--                            level.removeBlock(pos, false);
-+                            this.fireExtinguished(level, pos); // CraftBukkit - extinguished by rain
-                         }
- 
-                         return;
-                     }
- 
-                     if (ageValue == 15 && random.nextInt(4) == 0 && !this.canBurn(level.getBlockState(pos.below()))) {
--                        level.removeBlock(pos, false);
-+                        this.fireExtinguished(level, pos); // CraftBukkit
-                         return;
-                     }
+             if (level.getGameRules().getBoolean(GameRules.RULE_ALLOWFIRETICKAWAYFROMPLAYERS) || level.anyPlayerCloseEnoughForSpawning(pos)) {
+                 if (!state.canSurvive(level, pos)) {
+-                    level.removeBlock(pos, false);
++                    this.fireExtinguished(level, pos); // CraftBukkit - invalid place location
                  }
  
-                 boolean isIncreasedFireBurnout = level.getBiome(pos).is(BiomeTags.INCREASED_FIRE_BURNOUT);
-                 int i = isIncreasedFireBurnout ? -50 : 0;
--                this.checkBurnOut(level, pos.east(), 300 + i, random, ageValue);
--                this.checkBurnOut(level, pos.west(), 300 + i, random, ageValue);
--                this.checkBurnOut(level, pos.below(), 250 + i, random, ageValue);
--                this.checkBurnOut(level, pos.above(), 250 + i, random, ageValue);
--                this.checkBurnOut(level, pos.north(), 300 + i, random, ageValue);
--                this.checkBurnOut(level, pos.south(), 300 + i, random, ageValue);
-+                // CraftBukkit start - add source blockposition to burn calls
-+                this.checkBurnOut(level, pos.east(), 300 + i, random, ageValue, pos);
-+                this.checkBurnOut(level, pos.west(), 300 + i, random, ageValue, pos);
-+                this.checkBurnOut(level, pos.below(), 250 + i, random, ageValue, pos);
-+                this.checkBurnOut(level, pos.above(), 250 + i, random, ageValue, pos);
-+                this.checkBurnOut(level, pos.north(), 300 + i, random, ageValue, pos);
-+                this.checkBurnOut(level, pos.south(), 300 + i, random, ageValue, pos);
-+                // CraftBukkit end
-                 BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
+                 BlockState blockState = level.getBlockState(pos.below());
+@@ -164,26 +_,28 @@
+                         if (!this.isValidFireLocation(level, pos)) {
+                             BlockPos blockPos = pos.below();
+                             if (!level.getBlockState(blockPos).isFaceSturdy(level, blockPos, Direction.UP) || ageValue > 3) {
+-                                level.removeBlock(pos, false);
++                                this.fireExtinguished(level, pos); // CraftBukkit - extinguished by rain
+                             }
  
-                 for (int i1 = -1; i1 <= 1; i1++) {
-@@ -225,7 +_,15 @@
+                             return;
+                         }
  
-                                     if (i5 > 0 && random.nextInt(i4) <= i5 && (!level.isRaining() || !this.isNearRain(level, mutableBlockPos))) {
-                                         int min1 = Math.min(15, ageValue + random.nextInt(5) / 4);
--                                        level.setBlock(mutableBlockPos, this.getStateWithAge(level, mutableBlockPos, min1), 3);
-+                                        // CraftBukkit start - Call to stop spread of fire
-+                                        if (level.getBlockState(mutableBlockPos).getBlock() != Blocks.FIRE) {
-+                                            if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, mutableBlockPos, pos).isCancelled()) {
-+                                                continue;
-+                                            }
+                         if (ageValue == 15 && random.nextInt(4) == 0 && !this.canBurn(level.getBlockState(pos.below()))) {
+-                            level.removeBlock(pos, false);
++                            this.fireExtinguished(level, pos); // CraftBukkit
+                             return;
+                         }
+                     }
+ 
+                     boolean isIncreasedFireBurnout = level.getBiome(pos).is(BiomeTags.INCREASED_FIRE_BURNOUT);
+                     int i = isIncreasedFireBurnout ? -50 : 0;
+-                    this.checkBurnOut(level, pos.east(), 300 + i, random, ageValue);
+-                    this.checkBurnOut(level, pos.west(), 300 + i, random, ageValue);
+-                    this.checkBurnOut(level, pos.below(), 250 + i, random, ageValue);
+-                    this.checkBurnOut(level, pos.above(), 250 + i, random, ageValue);
+-                    this.checkBurnOut(level, pos.north(), 300 + i, random, ageValue);
+-                    this.checkBurnOut(level, pos.south(), 300 + i, random, ageValue);
++                    // CraftBukkit start - add source blockPos to burn calls
++                    this.checkBurnOut(level, pos.east(), 300 + i, random, ageValue, pos);
++                    this.checkBurnOut(level, pos.west(), 300 + i, random, ageValue, pos);
++                    this.checkBurnOut(level, pos.below(), 250 + i, random, ageValue, pos);
++                    this.checkBurnOut(level, pos.above(), 250 + i, random, ageValue, pos);
++                    this.checkBurnOut(level, pos.north(), 300 + i, random, ageValue, pos);
++                    this.checkBurnOut(level, pos.south(), 300 + i, random, ageValue, pos);
++                    // CraftBukkit end
+                     BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
+ 
+                     for (int i1 = -1; i1 <= 1; i1++) {
+@@ -205,7 +_,15 @@
+ 
+                                         if (i5 > 0 && random.nextInt(i4) <= i5 && (!level.isRaining() || !this.isNearRain(level, mutableBlockPos))) {
+                                             int min1 = Math.min(15, ageValue + random.nextInt(5) / 4);
+-                                            level.setBlock(mutableBlockPos, this.getStateWithAge(level, mutableBlockPos, min1), 3);
++                                            // CraftBukkit start - Call to stop spread of fire
++                                            if (!level.getBlockState(mutableBlockPos).is(Blocks.FIRE)) {
++                                                if (org.bukkit.craftbukkit.event.CraftEventFactory.callBlockIgniteEvent(level, mutableBlockPos, pos).isCancelled()) {
++                                                    continue;
++                                                }
 +
-+                                            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, mutableBlockPos, this.getStateWithAge(level, mutableBlockPos, min1), 3); // CraftBukkit
-+                                        }
-+                                        // CraftBukkit end
++                                                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, pos, mutableBlockPos, this.getStateWithAge(level, mutableBlockPos, min1), 3); // CraftBukkit
++                                            }
++                                            // CraftBukkit end
+                                         }
                                      }
                                  }
-                             }
-@@ -256,19 +_,42 @@
+@@ -237,19 +_,40 @@
              : this.igniteOdds.getInt(state.getBlock());
      }
  
 -    private void checkBurnOut(Level level, BlockPos pos, int chance, RandomSource random, int age) {
-+    private void checkBurnOut(Level level, BlockPos pos, int chance, RandomSource random, int age, BlockPos sourceposition) { // CraftBukkit add sourceposition
++    private void checkBurnOut(Level level, BlockPos pos, int chance, RandomSource random, int age, BlockPos sourcePos) { // CraftBukkit add sourcePos
          int burnOdds = this.getBurnOdds(level.getBlockState(pos));
          if (random.nextInt(chance) < burnOdds) {
              BlockState blockState = level.getBlockState(pos);
 +
 +            // CraftBukkit start
-+            org.bukkit.block.Block theBlock = level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
-+            org.bukkit.block.Block sourceBlock = level.getWorld().getBlockAt(sourceposition.getX(), sourceposition.getY(), sourceposition.getZ());
++            org.bukkit.block.Block burnBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
++            org.bukkit.block.Block sourceBlock = org.bukkit.craftbukkit.block.CraftBlock.at(level, sourcePos);
 +
-+            org.bukkit.event.block.BlockBurnEvent event = new org.bukkit.event.block.BlockBurnEvent(theBlock, sourceBlock);
-+            level.getCraftServer().getPluginManager().callEvent(event);
-+
-+            if (event.isCancelled()) {
++            org.bukkit.event.block.BlockBurnEvent event = new org.bukkit.event.block.BlockBurnEvent(burnBlock, sourceBlock);
++            if (!event.callEvent()) {
 +                return;
 +            }
 +
-+            if (blockState.getBlock() instanceof TntBlock && !org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, pos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.FIRE, null, sourceposition)) {
++            if (blockState.getBlock() instanceof TntBlock && !org.bukkit.craftbukkit.event.CraftEventFactory.callTNTPrimeEvent(level, pos, org.bukkit.event.block.TNTPrimeEvent.PrimeCause.FIRE, null, sourcePos)) {
 +                return;
 +            }
 +            // CraftBukkit end
@@ -136,10 +135,10 @@
 +                }
 +                level.removeBlock(pos, false);
 +                // Paper end - TNTPrimeEvent
-                 TntBlock.explode(level, pos);
+                 TntBlock.prime(level, pos);
              }
          }
-@@ -310,13 +_,14 @@
+@@ -291,13 +_,14 @@
      }
  
      @Override

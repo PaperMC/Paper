@@ -110,7 +110,6 @@ public interface Zombie extends Monster, Ageable {
      */
     void setCanBreakDoors(boolean flag);
 
-    // Paper start
     /**
      * Check if zombie is drowning
      *
@@ -176,5 +175,4 @@ public interface Zombie extends Monster, Ageable {
      */
     @Deprecated(since = "1.21.2", forRemoval = true)
     boolean supportsBreakingDoors();
-    // Paper end
 }

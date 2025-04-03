@@ -1,10 +1,12 @@
 package org.bukkit.event.block;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.Instrument;
 import org.bukkit.Note;
 import org.bukkit.block.Block;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -13,14 +15,61 @@ import org.jetbrains.annotations.NotNull;
  */
 public class NotePlayEvent extends BlockEvent implements Cancellable {
 
-    private static HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private Instrument instrument;
     private Note note;
-    private boolean cancelled = false;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public NotePlayEvent(@NotNull Block block, @NotNull Instrument instrument, @NotNull Note note) {
         super(block);
         this.instrument = instrument;
+        this.note = note;
+    }
+
+    /**
+     * Gets the {@link Instrument} to be used.
+     *
+     * @return the Instrument
+     */
+    @NotNull
+    public Instrument getInstrument() {
+        return this.instrument;
+    }
+
+    /**
+     * Gets the {@link Note} to be played.
+     *
+     * @return the Note
+     */
+    @NotNull
+    public Note getNote() {
+        return this.note;
+    }
+
+    /**
+     * Overrides the {@link Instrument} to be used.
+     * <p>
+     * Only works when the note block isn't under a player head.
+     * For this specific case the 'note_block_sound' property of the
+     * player head state takes the priority.
+     *
+     * @param instrument the Instrument.
+     */
+    public void setInstrument(@NotNull Instrument instrument) {
+        Preconditions.checkArgument(instrument != null, "instrument cannot be null");
+        this.instrument = instrument;
+    }
+
+    /**
+     * Overrides the {@link Note} to be played.
+     *
+     * @param note the Note.
+     */
+    public void setNote(@NotNull Note note) {
+        Preconditions.checkArgument(note != null, "note cannot be null");
         this.note = note;
     }
 
@@ -34,60 +83,14 @@ public class NotePlayEvent extends BlockEvent implements Cancellable {
         this.cancelled = cancel;
     }
 
-    /**
-     * Gets the {@link Instrument} to be used.
-     *
-     * @return the Instrument
-     */
-    @NotNull
-    public Instrument getInstrument() {
-        return instrument;
-    }
-
-    /**
-     * Gets the {@link Note} to be played.
-     *
-     * @return the Note
-     */
-    @NotNull
-    public Note getNote() {
-        return note;
-    }
-
-    /**
-     * Overrides the {@link Instrument} to be used.
-     * <p>
-     * Only works when the note block isn't under a player head.
-     * For this specific case the 'note_block_sound' property of the
-     * player head state takes the priority.
-     *
-     * @param instrument the Instrument. Has no effect if null.
-     */
-    public void setInstrument(@NotNull Instrument instrument) {
-        if (instrument != null) {
-            this.instrument = instrument;
-        }
-    }
-
-    /**
-     * Overrides the {@link Note} to be played.
-     *
-     * @param note the Note. Has no effect if null.
-     */
-    public void setNote(@NotNull Note note) {
-        if (note != null) {
-            this.note = note;
-        }
-    }
-
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

@@ -3,34 +3,29 @@ package org.bukkit.event.player;
 import java.util.UUID;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player takes action on a resource pack request.
+ *
  * @see Player#setResourcePack(String, String)
  * @see Player#setResourcePack(String, String, boolean)
  */
 public class PlayerResourcePackStatusEvent extends PlayerEvent {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final UUID id;
     private final Status status;
 
-    public PlayerResourcePackStatusEvent(@NotNull final Player who, @NotNull UUID id, @NotNull Status resourcePackStatus) {
-        super(who);
+    @ApiStatus.Internal
+    public PlayerResourcePackStatusEvent(@NotNull final Player player, @NotNull UUID id, @NotNull Status resourcePackStatus) {
+        super(player);
         this.id = id;
         this.status = resourcePackStatus;
     }
-
-    // Paper start - add hash (not used anymore)
-    /**
-     * @deprecated Hash does not seem to ever be set
-     */
-    @Deprecated(forRemoval = true)
-    public String getHash() {
-        return null;
-    }
-    // Paper end
 
     /**
      * Gets the unique ID of this pack.
@@ -39,7 +34,7 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
      */
     @NotNull
     public UUID getID() {
-        return id;
+        return this.id;
     }
 
     /**
@@ -49,18 +44,27 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
      */
     @NotNull
     public Status getStatus() {
-        return status;
+        return this.status;
+    }
+
+    /**
+     * @deprecated This is no longer sent from the client and will always be null
+     */
+    @Deprecated(forRemoval = true)
+    @Contract("-> null")
+    public String getHash() {
+        return null;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     /**
@@ -100,6 +104,6 @@ public class PlayerResourcePackStatusEvent extends PlayerEvent {
         /**
          * The pack was discarded by the client.
          */
-        DISCARDED;
+        DISCARDED
     }
 }

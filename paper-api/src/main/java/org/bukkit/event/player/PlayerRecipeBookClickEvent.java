@@ -1,25 +1,30 @@
 package org.bukkit.event.player;
 
 import com.google.common.base.Preconditions;
+import org.bukkit.Warning;
 import org.bukkit.entity.Player;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.CraftingRecipe;
 import org.bukkit.inventory.Recipe;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a player clicks a recipe in the recipe book.
+ *
  * @deprecated use {@link com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent}
  */
-@Deprecated(forRemoval = true) // Paper
-@org.bukkit.Warning(false) // Paper
+@Deprecated(forRemoval = true)
+@Warning
 public class PlayerRecipeBookClickEvent extends PlayerEvent {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Recipe originalRecipe;
     private Recipe recipe;
     private boolean shiftClick;
 
+    @ApiStatus.Internal
     public PlayerRecipeBookClickEvent(@NotNull final Player player, @NotNull final Recipe recipe, boolean shiftClick) {
         super(player);
         this.originalRecipe = recipe;
@@ -28,8 +33,9 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent {
     }
 
     /**
-     * Gets the original recipe the player was trying to craft. <br>
-     * This <em>will not</em> reflect any changes made with {@link setRecipe}.
+     * Gets the original recipe the player was trying to craft.
+     * <br>
+     * This <em>will not</em> reflect any changes made with {@link #setRecipe(Recipe)}.
      *
      * @return the original recipe
      */
@@ -39,8 +45,9 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent {
     }
 
     /**
-     * Gets the recipe the player is trying to craft. <br>
-     * This <em>will</em> reflect changes made with {@link setRecipe}.
+     * Gets the recipe the player is trying to craft.
+     * <br>
+     * This <em>will</em> reflect changes made with {@link #setRecipe(Recipe)}.
      *
      * @return the recipe
      */
@@ -71,7 +78,7 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent {
     }
 
     /**
-     * If true the game will attempt to move the ingredients for as many copies
+     * If {@code true} the game will attempt to move the ingredients for as many copies
      * of this recipe as possible into the appropriate slots, otherwise only 1
      * copy will be moved.
      *
@@ -94,11 +101,11 @@ public class PlayerRecipeBookClickEvent extends PlayerEvent {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

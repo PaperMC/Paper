@@ -9,8 +9,8 @@ import org.bukkit.inventory.BrewerInventory;
 
 public class CraftBrewingStand extends CraftContainer<BrewingStandBlockEntity> implements BrewingStand {
 
-    public CraftBrewingStand(World world, BrewingStandBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftBrewingStand(World world, BrewingStandBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftBrewingStand(CraftBrewingStand state, Location location) {
@@ -28,7 +28,7 @@ public class CraftBrewingStand extends CraftContainer<BrewingStandBlockEntity> i
             return this.getSnapshotInventory();
         }
 
-        return new CraftInventoryBrewer(this.getTileEntity());
+        return new CraftInventoryBrewer(this.getBlockEntity());
     }
 
     @Override

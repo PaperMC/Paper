@@ -1,49 +1,21 @@
 --- a/net/minecraft/world/entity/projectile/AbstractArrow.java
 +++ b/net/minecraft/world/entity/projectile/AbstractArrow.java
-@@ -33,6 +_,7 @@
- import net.minecraft.world.entity.OminousItemSpawner;
- import net.minecraft.world.entity.SlotAccess;
- import net.minecraft.world.entity.ai.attributes.Attributes;
-+import net.minecraft.world.entity.item.ItemEntity;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
-@@ -63,16 +_,16 @@
-     protected int inGroundTime;
-     public AbstractArrow.Pickup pickup = AbstractArrow.Pickup.DISALLOWED;
-     public int shakeTime;
--    private int life;
-+    public int life; // Paper - private -> public
-     private double baseDamage = 2.0;
--    private SoundEvent soundEvent = this.getDefaultHitGroundSoundEvent();
-+    public SoundEvent soundEvent = this.getDefaultHitGroundSoundEvent(); // Paper - private -> public
-     @Nullable
-     private IntOpenHashSet piercingIgnoreEntityIds;
-     @Nullable
-     private List<Entity> piercedAndKilledEntities;
--    private ItemStack pickupItemStack = this.getDefaultPickupItem();
-+    public ItemStack pickupItemStack = this.getDefaultPickupItem(); // Paper - private -> public
-     @Nullable
--    private ItemStack firedFromWeapon = null;
-+    public ItemStack firedFromWeapon = null; // Paper - private -> public
- 
-     protected AbstractArrow(EntityType<? extends AbstractArrow> entityType, Level level) {
-         super(entityType, level);
-@@ -87,7 +_,13 @@
+@@ -93,7 +_,14 @@
          ItemStack pickupItemStack,
          @Nullable ItemStack firedFromWeapon
      ) {
 +        // CraftBukkit start - handle the owner before the rest of things
 +        this(entityType, x, y, z, level, pickupItemStack, firedFromWeapon, null);
 +    }
++
 +    protected AbstractArrow(EntityType<? extends AbstractArrow> entityType, double x, double y, double z, Level level, ItemStack pickupItemStack, @Nullable ItemStack firedFromWeapon, @Nullable LivingEntity ownerEntity) {
          this(entityType, level);
 +        this.setOwner(ownerEntity);
 +        // CraftBukkit end
          this.pickupItemStack = pickupItemStack.copy();
-         this.setCustomName(pickupItemStack.get(DataComponents.CUSTOM_NAME));
+         this.applyComponentsFromItemStack(pickupItemStack);
          Unit unit = pickupItemStack.remove(DataComponents.INTANGIBLE_PROJECTILE);
-@@ -112,8 +_,8 @@
+@@ -118,8 +_,8 @@
      protected AbstractArrow(
          EntityType<? extends AbstractArrow> entityType, LivingEntity owner, Level level, ItemStack pickupItemStack, @Nullable ItemStack firedFromWeapon
      ) {
@@ -54,15 +26,15 @@
      }
  
      public void setSoundEvent(SoundEvent soundEvent) {
-@@ -209,6 +_,7 @@
-                 this.applyEffectsFromBlocks();
+@@ -214,6 +_,7 @@
+                 this.setSharedFlagOnFire(this.getRemainingFireTicks() > 0);
              }
          } else {
-+            if (this.tickCount > 200) this.tickDespawn(); // Paper - tick despawnCounter regardless after 10 seconds
++            if (this.tickCount > 200) this.tickDespawn(); // Paper - tick life regardless after 10 seconds
              this.inGroundTime = 0;
              Vec3 vec31 = this.position();
              if (this.isInWater()) {
-@@ -275,12 +_,12 @@
+@@ -280,12 +_,12 @@
  
              if (entityHitResult == null) {
                  if (this.isAlive() && hitResult.getType() != HitResult.Type.MISS) {
@@ -77,7 +49,7 @@
                  this.hasImpulse = true;
                  if (this.getPierceLevel() > 0 && projectileDeflection == ProjectileDeflection.NONE) {
                      continue;
-@@ -313,13 +_,26 @@
+@@ -318,13 +_,26 @@
          }
      }
  
@@ -105,16 +77,7 @@
      }
  
      private void startFalling() {
-@@ -329,7 +_,7 @@
-         this.life = 0;
-     }
- 
--    protected boolean isInGround() {
-+    public boolean isInGround() { // Paper - protected -> public
-         return this.entityData.get(IN_GROUND);
-     }
- 
-@@ -347,8 +_,8 @@
+@@ -357,8 +_,8 @@
  
      protected void tickDespawn() {
          this.life++;
@@ -125,7 +88,7 @@
          }
      }
  
-@@ -375,9 +_,9 @@
+@@ -392,9 +_,9 @@
      }
  
      @Override
@@ -137,7 +100,7 @@
          }
      }
  
-@@ -404,7 +_,7 @@
+@@ -421,7 +_,7 @@
              }
  
              if (this.piercingIgnoreEntityIds.size() >= this.getPierceLevel() + 1) {
@@ -146,7 +109,7 @@
                  return;
              }
  
-@@ -420,10 +_,17 @@
+@@ -437,10 +_,16 @@
              livingEntity.setLastHurtMob(entity);
          }
  
@@ -157,15 +120,14 @@
 -            entity.igniteForSeconds(5.0F);
 +            // CraftBukkit start
 +            org.bukkit.event.entity.EntityCombustByEntityEvent combustEvent = new org.bukkit.event.entity.EntityCombustByEntityEvent(this.getBukkitEntity(), entity.getBukkitEntity(), 5.0F);
-+            org.bukkit.Bukkit.getPluginManager().callEvent(combustEvent);
-+            if (!combustEvent.isCancelled()) {
++            if (combustEvent.callEvent()) {
 +                entity.igniteForSeconds(combustEvent.getDuration(), false);
 +            }
 +            // CraftBukkit end
          }
  
          if (entity.hurtOrSimulate(damageSource, ceil)) {
-@@ -461,7 +_,7 @@
+@@ -478,7 +_,7 @@
  
              this.playSound(this.soundEvent, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
              if (this.getPierceLevel() <= 0) {
@@ -174,7 +136,7 @@
              }
          } else {
              entity.setRemainingFireTicks(remainingFireTicks);
-@@ -472,7 +_,7 @@
+@@ -489,7 +_,7 @@
                      this.spawnAtLocation(serverLevel2, this.getPickupItem(), 0.1F);
                  }
  
@@ -183,7 +145,7 @@
              }
          }
      }
-@@ -485,7 +_,7 @@
+@@ -502,7 +_,7 @@
              double max = Math.max(0.0, 1.0 - entity.getAttributeValue(Attributes.KNOCKBACK_RESISTANCE));
              Vec3 vec3 = this.getDeltaMovement().multiply(1.0, 0.0, 1.0).normalize().scale(d * 0.6 * max);
              if (vec3.lengthSqr() > 0.0) {
@@ -192,16 +154,7 @@
              }
          }
      }
-@@ -597,7 +_,7 @@
-         this.setPierceLevel(compound.getByte("PierceLevel"));
-         if (compound.contains("SoundEvent", 8)) {
-             this.soundEvent = BuiltInRegistries.SOUND_EVENT
--                .getOptional(ResourceLocation.parse(compound.getString("SoundEvent")))
-+                .getOptional(ResourceLocation.tryParse(compound.getString("SoundEvent"))) // Paper - Validate resource location
-                 .orElse(this.getDefaultHitGroundSoundEvent());
-         }
- 
-@@ -616,7 +_,14 @@
+@@ -610,7 +_,14 @@
  
      @Override
      public void setOwner(@Nullable Entity entity) {
@@ -216,7 +169,7 @@
  
          this.pickup = switch (entity) {
              case Player player when this.pickup == AbstractArrow.Pickup.DISALLOWED -> AbstractArrow.Pickup.ALLOWED;
-@@ -628,9 +_,24 @@
+@@ -622,9 +_,22 @@
      @Override
      public void playerTouch(Player entity) {
          if (!this.level().isClientSide && (this.isInGround() || this.isNoPhysics()) && this.shakeTime <= 0) {
@@ -224,12 +177,10 @@
 +            // CraftBukkit start
 +            ItemStack itemstack = this.getPickupItem();
 +            if (this.pickup == Pickup.ALLOWED && !itemstack.isEmpty() && entity.getInventory().canHold(itemstack) > 0) {
-+                ItemEntity item = new ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemstack);
++                net.minecraft.world.entity.item.ItemEntity item = new net.minecraft.world.entity.item.ItemEntity(this.level(), this.getX(), this.getY(), this.getZ(), itemstack);
 +                org.bukkit.event.player.PlayerPickupArrowEvent event = new org.bukkit.event.player.PlayerPickupArrowEvent((org.bukkit.entity.Player) entity.getBukkitEntity(), (org.bukkit.entity.Item) item.getBukkitEntity(), (org.bukkit.entity.AbstractArrow) this.getBukkitEntity());
 +                // event.setCancelled(!entityhuman.canPickUpLoot); TODO
-+                this.level().getCraftServer().getPluginManager().callEvent(event);
-+
-+                if (event.isCancelled()) {
++                if (!event.callEvent()) {
 +                    return;
 +                }
 +                itemstack = item.getItem();
@@ -243,34 +194,3 @@
              }
          }
      }
-@@ -643,7 +_,7 @@
-         };
-     }
- 
--    protected ItemStack getPickupItem() {
-+    public ItemStack getPickupItem() { // Paper - protected -> public
-         return this.pickupItemStack.copy();
-     }
- 
-@@ -675,7 +_,7 @@
-         this.setFlag(1, critArrow);
-     }
- 
--    private void setPierceLevel(byte pierceLevel) {
-+    public void setPierceLevel(byte pierceLevel) { // Paper - private -> public
-         this.entityData.set(PIERCE_LEVEL, pierceLevel);
-     }
- 
-@@ -687,6 +_,12 @@
-             this.entityData.set(ID_FLAGS, (byte)(b & ~id));
-         }
-     }
-+
-+    // Paper start
-+    public void setPickupItemStackPublic(final ItemStack pickupItemStack) {
-+        this.setPickupItemStack(pickupItemStack);
-+    }
-+    // Paper end
- 
-     protected void setPickupItemStack(ItemStack pickupItemStack) {
-         if (!pickupItemStack.isEmpty()) {

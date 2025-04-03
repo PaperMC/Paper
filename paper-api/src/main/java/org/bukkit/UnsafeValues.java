@@ -142,9 +142,6 @@ public interface UnsafeValues {
     @ApiStatus.Internal
     <B extends Keyed> B get(RegistryKey<B> registry, NamespacedKey key);
 
-    @ApiStatus.Internal
-    Biome getCustomBiome();
-
     // Paper start
     @Deprecated(forRemoval = true)
     boolean isSupportedApiVersion(String apiVersion);

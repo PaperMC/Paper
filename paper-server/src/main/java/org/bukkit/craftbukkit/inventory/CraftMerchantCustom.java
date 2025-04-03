@@ -88,17 +88,17 @@ public class CraftMerchantCustom implements CraftMerchant {
 
         // Paper start - Add PlayerTradeEvent and PlayerPurchaseEvent
         @Override
-        public void processTrade(MerchantOffer merchantRecipe, @javax.annotation.Nullable io.papermc.paper.event.player.PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
-            /** Based on {@link net.minecraft.world.entity.npc.AbstractVillager#processTrade(MerchantOffer, io.papermc.paper.event.player.PlayerPurchaseEvent)} */
+        public void processTrade(MerchantOffer offer, @javax.annotation.Nullable io.papermc.paper.event.player.PlayerPurchaseEvent event) { // The MerchantRecipe passed in here is the one set by the PlayerPurchaseEvent
+            /* Based on {@link net.minecraft.world.entity.npc.AbstractVillager#processTrade(MerchantOffer, io.papermc.paper.event.player.PlayerPurchaseEvent)} */
             if (getTradingPlayer() instanceof net.minecraft.server.level.ServerPlayer) {
                 if (event == null || event.willIncreaseTradeUses()) {
-                    merchantRecipe.increaseUses();
+                    offer.increaseUses();
                 }
                 if (event == null || event.isRewardingExp()) {
-                    this.tradingPlayer.level().addFreshEntity(new net.minecraft.world.entity.ExperienceOrb(this.tradingPlayer.level(), this.tradingPlayer.getX(), this.tradingPlayer.getY(), this.tradingPlayer.getZ(), merchantRecipe.getXp(), org.bukkit.entity.ExperienceOrb.SpawnReason.VILLAGER_TRADE, this.tradingPlayer, null));
+                    this.tradingPlayer.level().addFreshEntity(new net.minecraft.world.entity.ExperienceOrb(this.tradingPlayer.level(), this.tradingPlayer.getX(), this.tradingPlayer.getY(), this.tradingPlayer.getZ(), offer.getXp(), org.bukkit.entity.ExperienceOrb.SpawnReason.VILLAGER_TRADE, this.tradingPlayer, null));
                 }
             }
-            this.notifyTrade(merchantRecipe);
+            this.notifyTrade(offer);
         }
         // Paper end - Add PlayerTradeEvent and PlayerPurchaseEvent
         @Override

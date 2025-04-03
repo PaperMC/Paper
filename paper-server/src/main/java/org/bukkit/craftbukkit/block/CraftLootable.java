@@ -10,8 +10,8 @@ import org.bukkit.loot.Lootable;
 
 public abstract class CraftLootable<T extends RandomizableContainerBlockEntity> extends CraftContainer<T> implements Nameable, Lootable, com.destroystokyo.paper.loottable.PaperLootableBlockInventory { // Paper
 
-    public CraftLootable(World world, T tileEntity) {
-        super(world, tileEntity);
+    public CraftLootable(World world, T blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftLootable(CraftLootable<T> state, Location location) {
@@ -19,11 +19,11 @@ public abstract class CraftLootable<T extends RandomizableContainerBlockEntity> 
     }
 
     @Override
-    public void applyTo(T lootable) {
-        super.applyTo(lootable);
+    public void applyTo(T blockEntity) {
+        super.applyTo(blockEntity);
 
         if (this.getSnapshot().lootTable == null) {
-            lootable.setLootTable(null, 0L);
+            blockEntity.setLootTable(null, 0L);
         }
     }
 

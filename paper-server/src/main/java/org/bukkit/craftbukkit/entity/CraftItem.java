@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import java.util.UUID;
+import com.google.common.base.Preconditions;
 import net.minecraft.world.entity.item.ItemEntity;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.inventory.CraftItemStack;
@@ -9,10 +10,8 @@ import org.bukkit.inventory.ItemStack;
 
 public class CraftItem extends CraftEntity implements Item {
 
-    // Paper start
-    private final static int NO_AGE_TIME = Short.MIN_VALUE;
-    private final static int NO_PICKUP_TIME = Short.MAX_VALUE;
-    // Paper end
+    private final static int NO_AGE_TIME = Short.MIN_VALUE; // ItemEntity#INFINITE_LIFETIME
+    private final static int NO_PICKUP_TIME = Short.MAX_VALUE; // ItemEntity#INFINITE_PICKUP_DELAY
 
     public CraftItem(CraftServer server, ItemEntity entity) {
         super(server, entity);
@@ -68,7 +67,6 @@ public class CraftItem extends CraftEntity implements Item {
         }
     }
 
-    // Paper start
     @Override
     public boolean canMobPickup() {
         return this.getHandle().canMobPickup;
@@ -107,7 +105,7 @@ public class CraftItem extends CraftEntity implements Item {
 
      @Override
      public void setFrictionState(@org.jetbrains.annotations.NotNull net.kyori.adventure.util.TriState state) {
-         java.util.Objects.requireNonNull(state, "state may not be null");
+         Preconditions.checkArgument(state != null, "state may not be null");
          this.getHandle().frictionState = state;
      }
 
@@ -125,7 +123,6 @@ public class CraftItem extends CraftEntity implements Item {
             this.getHandle().health = health;
         }
     }
-    // Paper end
 
     @Override
     public void setOwner(UUID uuid) {

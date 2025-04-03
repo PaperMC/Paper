@@ -17,7 +17,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface ItemAttributeModifiers extends ShownInTooltip<ItemAttributeModifiers> {
+public interface ItemAttributeModifiers {
 
     @Contract(value = "-> new", pure = true)
     static ItemAttributeModifiers.Builder itemAttributes() {
@@ -69,7 +69,7 @@ public interface ItemAttributeModifiers extends ShownInTooltip<ItemAttributeModi
      */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
-    interface Builder extends ShownInTooltip.Builder<Builder>, DataComponentBuilder<ItemAttributeModifiers> {
+    interface Builder extends DataComponentBuilder<ItemAttributeModifiers> {
 
         /**
          * Adds a modifier to this builder.

@@ -1,8 +1,9 @@
 package com.destroystokyo.paper.entity;
 
-import org.apache.commons.lang.Validate;
+import com.google.common.base.Preconditions;
 import org.bukkit.Location;
 import org.bukkit.craftbukkit.entity.CraftLivingEntity;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import javax.annotation.Nonnull;
@@ -31,77 +32,78 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
 
     @Override
     public void stopPathfinding() {
-        entity.getNavigation().stop();
+        this.entity.getNavigation().stop();
     }
 
     @Override
     public boolean hasPath() {
-        return entity.getNavigation().getPath() != null && !entity.getNavigation().getPath().isDone();
+        return this.entity.getNavigation().getPath() != null && !this.entity.getNavigation().getPath().isDone();
     }
 
     @Nullable
     @Override
     public PathResult getCurrentPath() {
-        Path path = entity.getNavigation().getPath();
+        Path path = this.entity.getNavigation().getPath();
         return path != null && !path.isDone() ? new PaperPathResult(path) : null;
     }
 
     @Nullable
     @Override
     public PathResult findPath(Location loc) {
-        Validate.notNull(loc, "Location can not be null");
-        Path path = entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), 0);
+        Preconditions.checkArgument(loc != null, "Location can not be null");
+        Path path = this.entity.getNavigation().createPath(loc.getX(), loc.getY(), loc.getZ(), 0);
         return path != null ? new PaperPathResult(path) : null;
     }
 
     @Nullable
     @Override
     public PathResult findPath(LivingEntity target) {
-        Validate.notNull(target, "Target can not be null");
-        Path path = entity.getNavigation().createPath(((CraftLivingEntity) target).getHandle(), 0);
+        Preconditions.checkArgument(target != null, "Target can not be null");
+        Path path = this.entity.getNavigation().createPath(((CraftLivingEntity) target).getHandle(), 0);
         return path != null ? new PaperPathResult(path) : null;
     }
 
     @Override
     public boolean moveTo(@Nonnull PathResult path, double speed) {
-        Validate.notNull(path, "PathResult can not be null");
+        Preconditions.checkArgument(path != null, "PathResult can not be null");
         Path pathEntity = ((PaperPathResult) path).path;
-        return entity.getNavigation().moveTo(pathEntity, speed);
+        return this.entity.getNavigation().moveTo(pathEntity, speed);
     }
 
     @Override
     public boolean canOpenDoors() {
-        return entity.getNavigation().pathFinder.nodeEvaluator.canOpenDoors();
+        return this.entity.getNavigation().pathFinder.nodeEvaluator.canOpenDoors();
     }
 
     @Override
     public void setCanOpenDoors(boolean canOpenDoors) {
-        entity.getNavigation().pathFinder.nodeEvaluator.setCanOpenDoors(canOpenDoors);
+        this.entity.getNavigation().pathFinder.nodeEvaluator.setCanOpenDoors(canOpenDoors);
     }
 
     @Override
     public boolean canPassDoors() {
-        return entity.getNavigation().pathFinder.nodeEvaluator.canPassDoors();
+        return this.entity.getNavigation().pathFinder.nodeEvaluator.canPassDoors();
     }
 
     @Override
     public void setCanPassDoors(boolean canPassDoors) {
-        entity.getNavigation().pathFinder.nodeEvaluator.setCanPassDoors(canPassDoors);
+        this.entity.getNavigation().pathFinder.nodeEvaluator.setCanPassDoors(canPassDoors);
     }
 
     @Override
     public boolean canFloat() {
-        return entity.getNavigation().pathFinder.nodeEvaluator.canFloat();
+        return this.entity.getNavigation().pathFinder.nodeEvaluator.canFloat();
     }
 
     @Override
     public void setCanFloat(boolean canFloat) {
-        entity.getNavigation().pathFinder.nodeEvaluator.setCanFloat(canFloat);
+        this.entity.getNavigation().pathFinder.nodeEvaluator.setCanFloat(canFloat);
     }
 
     public class PaperPathResult implements com.destroystokyo.paper.entity.PaperPathfinder.PathResult {
 
         private final Path path;
+
         PaperPathResult(Path path) {
             this.path = path;
         }
@@ -109,40 +111,36 @@ public class PaperPathfinder implements com.destroystokyo.paper.entity.Pathfinde
         @Nullable
         @Override
         public Location getFinalPoint() {
-            Node point = path.getEndNode();
-            return point != null ? toLoc(point) : null;
+            Node point = this.path.getEndNode();
+            return point != null ? CraftLocation.toBukkit(point, PaperPathfinder.this.entity.level()) : null;
         }
 
         @Override
         public boolean canReachFinalPoint() {
-            return path.canReach();
+            return this.path.canReach();
         }
 
         @Override
         public List<Location> getPoints() {
             List<Location> points = new ArrayList<>();
-            for (Node point : path.nodes) {
-                points.add(toLoc(point));
+            for (Node point : this.path.nodes) {
+                points.add(CraftLocation.toBukkit(point, PaperPathfinder.this.entity.level()));
             }
             return points;
         }
 
         @Override
         public int getNextPointIndex() {
-            return path.getNextNodeIndex();
+            return this.path.getNextNodeIndex();
         }
 
         @Nullable
         @Override
         public Location getNextPoint() {
-            if (path.isDone()) {
+            if (this.path.isDone()) {
                 return null;
             }
-            return toLoc(path.nodes.get(path.getNextNodeIndex()));
+            return CraftLocation.toBukkit(this.path.nodes.get(this.path.getNextNodeIndex()), PaperPathfinder.this.entity.level());
         }
-    }
-
-    private Location toLoc(Node point) {
-        return new Location(entity.level().getWorld(), point.x, point.y, point.z);
     }
 }

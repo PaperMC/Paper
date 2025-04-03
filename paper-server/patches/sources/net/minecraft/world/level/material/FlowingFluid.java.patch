@@ -46,7 +46,7 @@
              FluidState fluidState = blockState.getFluidState();
              if (fluidState.getType().isSame(this) && canPassThroughWall(direction, level, pos, state, blockPos, blockState)) {
                  if (fluidState.isSource()) {
-@@ -252,13 +_,14 @@
+@@ -252,13 +_,15 @@
              liquidBlockContainer.placeLiquid(level, pos, blockState, fluidState);
          } else {
              if (!blockState.isAir()) {
@@ -59,6 +59,7 @@
      }
  
 +    protected void beforeDestroyingBlock(LevelAccessor level, BlockPos pos, BlockState state, BlockPos source) { beforeDestroyingBlock(level, pos, state); } // Paper - Add BlockBreakBlockEvent
++
      protected abstract void beforeDestroyingBlock(LevelAccessor level, BlockPos pos, BlockState state);
  
      protected int getSlopeDistance(LevelReader level, BlockPos pos, int depth, Direction direction, BlockState state, FlowingFluid.SpreadContext spreadContext) {
@@ -94,7 +95,7 @@
 +                blockState = ((org.bukkit.craftbukkit.block.data.CraftBlockData) event.getNewData()).getState();
 +                // CraftBukkit end
                  level.setBlock(pos, blockState, 3);
-             } else if (!newLiquid.equals(fluidState)) {
+             } else if (newLiquid != fluidState) {
                  fluidState = newLiquid;
                  blockState = newLiquid.createLegacyBlock();
 +                // CraftBukkit start
@@ -107,7 +108,7 @@
                  level.setBlock(pos, blockState, 3);
                  level.scheduleTick(pos, newLiquid.getType(), spreadDelay);
              }
-@@ -476,9 +_,26 @@
+@@ -476,9 +_,27 @@
          public BlockState getBlockState(BlockPos pos) {
              return this.getBlockState(pos, this.getCacheKey(pos));
          }
@@ -122,6 +123,7 @@
 +        // Paper start - Prevent chunk loading from fluid flowing
 +            return getBlockState(pos, cacheKey, true);
 +        }
++
 +        private @javax.annotation.Nullable BlockState getBlockState(BlockPos pos, short packed, boolean load) {
 +            BlockState blockState = this.stateCache.get(packed);
 +            if (blockState == null) {

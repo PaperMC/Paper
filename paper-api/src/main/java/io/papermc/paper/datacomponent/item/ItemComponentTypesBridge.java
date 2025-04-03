@@ -34,8 +34,6 @@ interface ItemComponentTypesBridge {
 
     PotDecorations.Builder potDecorations();
 
-    Unbreakable.Builder unbreakable();
-
     ItemLore.Builder lore();
 
     ItemEnchantments.Builder enchantments();
@@ -109,4 +107,10 @@ interface ItemComponentTypesBridge {
     DeathProtection.Builder deathProtection();
 
     OminousBottleAmplifier ominousBottleAmplifier(int amplifier);
+
+    BlocksAttacks.Builder blocksAttacks();
+
+    TooltipDisplay.Builder tooltipDisplay();
+
+    Weapon.Builder weapon();
 }

@@ -6,6 +6,7 @@ import org.bukkit.block.SculkCatalyst;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -27,13 +28,14 @@ import org.jetbrains.annotations.NotNull;
  */
 public class SculkBloomEvent extends BlockEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancel = false;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private int charge;
+    private boolean cancelled;
 
-    public SculkBloomEvent(@NotNull Block theBlock, int charge) {
-        super(theBlock);
+    @ApiStatus.Internal
+    public SculkBloomEvent(@NotNull Block block, int charge) {
+        super(block);
         this.charge = charge;
     }
 
@@ -43,7 +45,7 @@ public class SculkBloomEvent extends BlockEvent implements Cancellable {
      * @return the charge of the cursor
      */
     public int getCharge() {
-        return charge;
+        return this.charge;
     }
 
     /**
@@ -67,22 +69,22 @@ public class SculkBloomEvent extends BlockEvent implements Cancellable {
 
     @Override
     public boolean isCancelled() {
-        return cancel;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

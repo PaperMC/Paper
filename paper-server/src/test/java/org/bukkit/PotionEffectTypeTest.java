@@ -33,7 +33,7 @@ public class PotionEffectTypeTest {
             effects.remove(effect);
         }
 
-        assertThat(effects, is(Collections.EMPTY_LIST), "org.bukkit.PotionEffectType has too many effects");
+        assertThat(effects, is(Collections.emptyList()), "org.bukkit.PotionEffectType has too many effects");
     }
 
     @Test

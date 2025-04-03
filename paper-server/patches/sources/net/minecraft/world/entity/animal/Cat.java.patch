@@ -1,15 +1,6 @@
 --- a/net/minecraft/world/entity/animal/Cat.java
 +++ b/net/minecraft/world/entity/animal/Cat.java
-@@ -342,7 +_,7 @@
-         TagKey<CatVariant> tagKey = flag ? CatVariantTags.FULL_MOON_SPAWNS : CatVariantTags.DEFAULT_SPAWNS;
-         BuiltInRegistries.CAT_VARIANT.getRandomElementOf(tagKey, level.getRandom()).ifPresent(this::setVariant);
-         ServerLevel level1 = level.getLevel();
--        if (level1.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK).isValid()) {
-+        if (level1.structureManager().getStructureWithPieceAt(this.blockPosition(), StructureTags.CATS_SPAWN_AS_BLACK, level).isValid()) { // Paper - Fix swamp hut cat generation deadlock
-             this.setVariant(BuiltInRegistries.CAT_VARIANT.getOrThrow(CatVariant.ALL_BLACK));
-             this.setPersistenceRequired();
-         }
-@@ -359,6 +_,11 @@
+@@ -372,6 +_,11 @@
                  if (item instanceof DyeItem dyeItem) {
                      DyeColor dyeColor = dyeItem.getDyeColor();
                      if (dyeColor != this.getCollarColor()) {
@@ -21,7 +12,7 @@
                          if (!this.level().isClientSide()) {
                              this.setCollarColor(dyeColor);
                              itemInHand.consume(1, player);
-@@ -371,7 +_,7 @@
+@@ -384,7 +_,7 @@
                      if (!this.level().isClientSide()) {
                          this.usePlayerItem(player, hand, itemInHand);
                          FoodProperties foodProperties = itemInHand.get(DataComponents.FOOD);
@@ -30,7 +21,7 @@
                          this.playEatingSound();
                      }
  
-@@ -433,7 +_,7 @@
+@@ -446,7 +_,7 @@
      }
  
      private void tryToTame(Player player) {
@@ -39,32 +30,32 @@
              this.tame(player);
              this.setOrderedToSit(true);
              this.level().broadcastEntityEvent(this, (byte)7);
-@@ -567,15 +_,20 @@
+@@ -580,15 +_,20 @@
                  .dropFromGiftLootTable(
                      getServerLevel(this.cat),
                      BuiltInLootTables.CAT_MORNING_GIFT,
--                    (serverLevel, itemStack) -> serverLevel.addFreshEntity(
+-                    (level, stack) -> level.addFreshEntity(
 -                        new ItemEntity(
-+                    (serverLevel, itemStack) -> {
-+                        // CraftBukkit start
-+                        ItemEntity item = new ItemEntity(
-                             serverLevel,
++                    // CraftBukkit start
++                    (level, stack) -> {
++                        final ItemEntity item = new ItemEntity(
+                             level,
                              (double)mutableBlockPos.getX() - Mth.sin(this.cat.yBodyRot * (float) (Math.PI / 180.0)),
                              mutableBlockPos.getY(),
                              (double)mutableBlockPos.getZ() + Mth.cos(this.cat.yBodyRot * (float) (Math.PI / 180.0)),
-                             itemStack
+                             stack
 -                        )
 -                    )
 +                        );
 +                        org.bukkit.event.entity.EntityDropItemEvent event = new org.bukkit.event.entity.EntityDropItemEvent(this.cat.getBukkitEntity(), (org.bukkit.entity.Item) item.getBukkitEntity());
 +                        if (!event.callEvent()) return;
-+                        serverLevel.addFreshEntity(item);
-+                        // CraftBukkit end
++                        level.addFreshEntity(item);
 +                    }
++                    // CraftBukkit end
                  );
          }
  
-@@ -602,7 +_,7 @@
+@@ -615,7 +_,7 @@
  
      static class CatTemptGoal extends TemptGoal {
          @Nullable

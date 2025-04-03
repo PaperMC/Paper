@@ -4,25 +4,21 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.mojang.serialization.Codec;
 import io.papermc.paper.FeatureHooks;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Objects;
-import java.util.concurrent.locks.LockSupport;
-import java.util.function.BooleanSupplier;
+import java.util.List;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.thread.ConsecutiveExecutor;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.biome.Biomes;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.DataLayer;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
@@ -30,9 +26,7 @@ import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraft.world.level.chunk.PalettedContainerRO;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.chunk.storage.EntityStorage;
 import net.minecraft.world.level.chunk.storage.SerializableChunkData;
-import net.minecraft.world.level.entity.PersistentEntitySectionManager;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.lighting.LevelLightEngine;
@@ -54,7 +48,7 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.plugin.Plugin;
 
 public class CraftChunk implements Chunk {
-    private final ServerLevel worldServer;
+    private final ServerLevel level;
     private final int x;
     private final int z;
     private static final PalettedContainer<net.minecraft.world.level.block.state.BlockState> emptyBlockIDs = FeatureHooks.emptyPalettedBlockContainer();
@@ -62,20 +56,20 @@ public class CraftChunk implements Chunk {
     private static final byte[] EMPTY_LIGHT = new byte[2048];
 
     public CraftChunk(net.minecraft.world.level.chunk.LevelChunk chunk) {
-        this.worldServer = chunk.level;
+        this.level = chunk.level;
         this.x = chunk.getPos().x;
         this.z = chunk.getPos().z;
     }
 
-    public CraftChunk(ServerLevel worldServer, int x, int z) {
-        this.worldServer = worldServer;
+    public CraftChunk(ServerLevel level, int x, int z) {
+        this.level = level;
         this.x = x;
         this.z = z;
     }
 
     @Override
     public World getWorld() {
-        return this.worldServer.getWorld();
+        return this.level.getWorld();
     }
 
     public CraftWorld getCraftWorld() {
@@ -84,12 +78,12 @@ public class CraftChunk implements Chunk {
 
     public ChunkAccess getHandle(ChunkStatus chunkStatus) {
         // Paper start - chunk system
-        net.minecraft.world.level.chunk.LevelChunk full = this.worldServer.getChunkIfLoaded(this.x, this.z);
+        net.minecraft.world.level.chunk.LevelChunk full = this.level.getChunkIfLoaded(this.x, this.z);
         if (full != null) {
             return full;
         }
         // Paper end - chunk system
-        ChunkAccess chunkAccess = this.worldServer.getChunk(this.x, this.z, chunkStatus);
+        ChunkAccess chunkAccess = this.level.getChunk(this.x, this.z, chunkStatus);
 
         // SPIGOT-7332: Get unwrapped extension
         if (chunkAccess instanceof ImposterProtoChunk extension) {
@@ -116,9 +110,9 @@ public class CraftChunk implements Chunk {
 
     @Override
     public Block getBlock(int x, int y, int z) {
-        CraftChunk.validateChunkCoordinates(this.worldServer.getMinY(), this.worldServer.getMaxY(), x, y, z);
+        CraftChunk.validateChunkCoordinates(this.level.getMinY(), this.level.getMaxY(), x, y, z);
 
-        return new CraftBlock(this.worldServer, new BlockPos((this.x << 4) | x, y, (this.z << 4) | z));
+        return new CraftBlock(this.level, new BlockPos((this.x << 4) | x, y, (this.z << 4) | z));
     }
 
     @Override
@@ -128,53 +122,49 @@ public class CraftChunk implements Chunk {
 
     @Override
     public Entity[] getEntities() {
-        return FeatureHooks.getChunkEntities(this.worldServer, this.x, this.z); // Paper - chunk system
+        return FeatureHooks.getChunkEntities(this.level, this.x, this.z); // Paper - chunk system
     }
 
     @Override
     public BlockState[] getTileEntities() {
-        // Paper start
-        return getTileEntities(true);
+        return this.getTileEntities(true);
     }
 
     @Override
     public BlockState[] getTileEntities(boolean useSnapshot) {
-        // Paper end
         if (!this.isLoaded()) {
             this.getWorld().getChunkAt(this.x, this.z); // Transient load for this tick
         }
+
         int index = 0;
         ChunkAccess chunk = this.getHandle(ChunkStatus.FULL);
 
-        BlockState[] entities = new BlockState[chunk.blockEntities.size()];
-
-        for (BlockPos position : chunk.blockEntities.keySet()) {
-            // Paper start
-            entities[index++] = this.worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ()).getState(useSnapshot);
+        BlockState[] states = new BlockState[chunk.blockEntities.size()];
+        for (BlockPos pos : chunk.blockEntities.keySet()) {
+            states[index++] = CraftBlock.at(this.level, pos).getState(useSnapshot);
         }
 
-        return entities;
+        return states;
     }
 
     @Override
     public Collection<BlockState> getTileEntities(Predicate<? super Block> blockPredicate, boolean useSnapshot) {
-        Preconditions.checkNotNull(blockPredicate, "blockPredicate");
+        Preconditions.checkArgument(blockPredicate != null, "blockPredicate cannot be null");
+
         if (!this.isLoaded()) {
             this.getWorld().getChunkAt(this.x, this.z); // Transient load for this tick
         }
         ChunkAccess chunk = this.getHandle(ChunkStatus.FULL);
 
-        java.util.List<BlockState> entities = new java.util.ArrayList<>();
-
-        for (BlockPos position : chunk.blockEntities.keySet()) {
-            Block block = this.worldServer.getWorld().getBlockAt(position.getX(), position.getY(), position.getZ());
+        List<BlockState> states = new ArrayList<>();
+        for (BlockPos pos : chunk.blockEntities.keySet()) {
+            Block block = CraftBlock.at(this.level, pos);
             if (blockPredicate.test(block)) {
-                entities.add(block.getState(useSnapshot));
+                states.add(block.getState(useSnapshot));
             }
-            // Paper end
         }
 
-        return entities;
+        return states;
     }
 
     @Override
@@ -205,8 +195,8 @@ public class CraftChunk implements Chunk {
 
     @Override
     public boolean isSlimeChunk() {
-        // 987234911L is deterimined in EntitySlime when seeing if a slime can spawn in a chunk
-        return this.worldServer.paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), worldServer.spigotConfig.slimeSeed).nextInt(10) == 0; // Paper
+        // 987234911L is taken from Slime when seeing if a slime can spawn in a chunk
+        return this.level.paperConfig().entities.spawning.allChunksAreSlimeChunks || WorldgenRandom.seedSlimeChunk(this.getX(), this.getZ(), this.getWorld().getSeed(), level.spigotConfig.slimeSeed).nextInt(10) == 0; // Paper
     }
 
     @Override
@@ -255,9 +245,9 @@ public class CraftChunk implements Chunk {
     public boolean contains(BlockData block) {
         Preconditions.checkArgument(block != null, "Block cannot be null");
 
-        Predicate<net.minecraft.world.level.block.state.BlockState> nms = Predicates.equalTo(((CraftBlockData) block).getState());
+        Predicate<net.minecraft.world.level.block.state.BlockState> filter = Predicates.equalTo(((CraftBlockData) block).getState());
         for (LevelChunkSection section : this.getHandle(ChunkStatus.FULL).getSections()) {
-            if (section != null && section.getStates().maybeHas(nms)) {
+            if (section != null && section.getStates().maybeHas(filter)) {
                 return true;
             }
         }
@@ -270,9 +260,9 @@ public class CraftChunk implements Chunk {
         Preconditions.checkArgument(biome != null, "Biome cannot be null");
 
         ChunkAccess chunk = this.getHandle(ChunkStatus.BIOMES);
-        Predicate<Holder<net.minecraft.world.level.biome.Biome>> nms = Predicates.equalTo(CraftBiome.bukkitToMinecraftHolder(biome));
+        Predicate<Holder<net.minecraft.world.level.biome.Biome>> filter = Predicates.equalTo(CraftBiome.bukkitToMinecraftHolder(biome));
         for (LevelChunkSection section : chunk.getSections()) {
-            if (section != null && section.getBiomes().maybeHas(nms)) {
+            if (section != null && section.getBiomes().maybeHas(filter)) {
                 return true;
             }
         }
@@ -287,25 +277,19 @@ public class CraftChunk implements Chunk {
 
     @Override
     public ChunkSnapshot getChunkSnapshot(boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain) {
-        // Paper start - Add getChunkSnapshot includeLightData parameter
         return getChunkSnapshot(includeMaxBlockY, includeBiome, includeBiomeTempRain, true);
     }
 
     @Override
     public ChunkSnapshot getChunkSnapshot(boolean includeMaxBlockY, boolean includeBiome, boolean includeBiomeTempRain, boolean includeLightData) {
-        // Paper end - Add getChunkSnapshot includeLightData parameter
         ChunkAccess chunk = this.getHandle(ChunkStatus.FULL);
 
         LevelChunkSection[] cs = chunk.getSections();
         PalettedContainer[] sectionBlockIDs = new PalettedContainer[cs.length];
-        // Paper start - Add getChunkSnapshot includeLightData parameter
         byte[][] sectionSkyLights = includeLightData ? new byte[cs.length][] : null;
         byte[][] sectionEmitLights = includeLightData ? new byte[cs.length][] : null;
-        // Paper end - Add getChunkSnapshot includeLightData parameter
         boolean[] sectionEmpty = new boolean[cs.length];
         PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[cs.length] : null;
-
-        Registry<net.minecraft.world.level.biome.Biome> iregistry = this.worldServer.registryAccess().lookupOrThrow(Registries.BIOME);
 
         for (int i = 0; i < cs.length; i++) {
 
@@ -318,38 +302,39 @@ public class CraftChunk implements Chunk {
             }
             // Paper end - Fix ChunkSnapshot#isSectionEmpty(int)
 
-            if (includeLightData) { // Paper - Add getChunkSnapshot includeLightData parameter
-            LevelLightEngine lightengine = this.worldServer.getLightEngine();
-            DataLayer skyLightArray = lightengine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
-            if (skyLightArray == null) {
-                sectionSkyLights[i] = this.worldServer.dimensionType().hasSkyLight() ? CraftChunk.FULL_LIGHT : CraftChunk.EMPTY_LIGHT;
-            } else {
-                sectionSkyLights[i] = new byte[2048];
-                System.arraycopy(skyLightArray.getData(), 0, sectionSkyLights[i], 0, 2048);
+            if (includeLightData) {
+                LevelLightEngine lightEngine = this.level.getLightEngine();
+                DataLayer skyLightArray = lightEngine.getLayerListener(LightLayer.SKY).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
+                if (skyLightArray == null) {
+                    sectionSkyLights[i] = this.level.dimensionType().hasSkyLight() ? CraftChunk.FULL_LIGHT : CraftChunk.EMPTY_LIGHT;
+                } else {
+                    sectionSkyLights[i] = new byte[2048];
+                    System.arraycopy(skyLightArray.getData(), 0, sectionSkyLights[i], 0, 2048);
+                }
+
+                DataLayer emitLightArray = lightEngine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
+                if (emitLightArray == null) {
+                    sectionEmitLights[i] = CraftChunk.EMPTY_LIGHT;
+                } else {
+                    sectionEmitLights[i] = new byte[2048];
+                    System.arraycopy(emitLightArray.getData(), 0, sectionEmitLights[i], 0, 2048);
+                }
             }
-            DataLayer emitLightArray = lightengine.getLayerListener(LightLayer.BLOCK).getDataLayerData(SectionPos.of(this.x, chunk.getSectionYFromSectionIndex(i), this.z)); // SPIGOT-7498: Convert section index
-            if (emitLightArray == null) {
-                sectionEmitLights[i] = CraftChunk.EMPTY_LIGHT;
-            } else {
-                sectionEmitLights[i] = new byte[2048];
-                System.arraycopy(emitLightArray.getData(), 0, sectionEmitLights[i], 0, 2048);
-            }
-            } // Paper - Add getChunkSnapshot includeLightData parameter
 
             if (biome != null) {
-                biome[i] = ((PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>) cs[i].getBiomes()).copy(); // Paper - Perf: use copy instead of round tripping with codecs
+                biome[i] = cs[i].getBiomes().copy(); // Paper - Perf: use copy instead of round tripping with codecs
             }
         }
 
-        Heightmap hmap = null;
+        Heightmap heightmap = null;
 
         if (includeMaxBlockY) {
-            hmap = new Heightmap(chunk, Heightmap.Types.MOTION_BLOCKING);
-            hmap.setRawData(chunk, Heightmap.Types.MOTION_BLOCKING, chunk.heightmaps.get(Heightmap.Types.MOTION_BLOCKING).getRawData());
+            heightmap = new Heightmap(chunk, Heightmap.Types.MOTION_BLOCKING);
+            heightmap.setRawData(chunk, Heightmap.Types.MOTION_BLOCKING, chunk.heightmaps.get(Heightmap.Types.MOTION_BLOCKING).getRawData());
         }
 
         World world = this.getWorld();
-        return new CraftChunkSnapshot(this.getX(), this.getZ(), chunk.getMinY(), chunk.getMaxY(), world.getSeaLevel(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, hmap, iregistry, biome);
+        return new CraftChunkSnapshot(this.getX(), this.getZ(), chunk.getMinY(), chunk.getMaxY(), world.getSeaLevel(), world.getName(), world.getFullTime(), sectionBlockIDs, sectionSkyLights, sectionEmitLights, sectionEmpty, heightmap, biome);
     }
 
     @Override
@@ -359,7 +344,7 @@ public class CraftChunk implements Chunk {
 
     @Override
     public LoadLevel getLoadLevel() {
-        net.minecraft.world.level.chunk.LevelChunk chunk = this.worldServer.getChunkIfLoaded(this.getX(), this.getZ());
+        net.minecraft.world.level.chunk.LevelChunk chunk = this.level.getChunkIfLoaded(this.getX(), this.getZ());
         if (chunk == null) {
             return LoadLevel.UNLOADED;
         }
@@ -390,12 +375,12 @@ public class CraftChunk implements Chunk {
 
         if (this.x != that.x) return false;
         if (this.z != that.z) return false;
-        return this.worldServer.equals(that.worldServer);
+        return this.level.equals(that.level);
     }
 
     @Override
     public int hashCode() {
-        int result = this.worldServer.hashCode();
+        int result = this.level.hashCode();
         result = 31 * result + this.x;
         result = 31 * result + this.z;
         return result;
@@ -410,9 +395,9 @@ public class CraftChunk implements Chunk {
         byte[][] skyLight = new byte[hSection][];
         byte[][] emitLight = new byte[hSection][];
         boolean[] empty = new boolean[hSection];
-        Registry<net.minecraft.world.level.biome.Biome> iregistry = world.getHandle().registryAccess().lookupOrThrow(Registries.BIOME);
+        Registry<net.minecraft.world.level.biome.Biome> registry = world.getHandle().registryAccess().lookupOrThrow(Registries.BIOME);
         PalettedContainer<Holder<net.minecraft.world.level.biome.Biome>>[] biome = (includeBiome || includeBiomeTempRain) ? new PalettedContainer[hSection] : null;
-        Codec<PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>> biomeCodec = PalettedContainer.codecRO(iregistry.asHolderIdMap(), iregistry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, iregistry.getOrThrow(Biomes.PLAINS));
+        Codec<PalettedContainerRO<Holder<net.minecraft.world.level.biome.Biome>>> biomeCodec = PalettedContainer.codecRO(registry.asHolderIdMap(), registry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, registry.getOrThrow(Biomes.PLAINS));
 
         for (int i = 0; i < hSection; i++) {
             blockIDs[i] = CraftChunk.emptyBlockIDs;
@@ -425,7 +410,7 @@ public class CraftChunk implements Chunk {
             }
         }
 
-        return new CraftChunkSnapshot(x, z, world.getMinHeight(), world.getMaxY(), world.getSeaLevel(), world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new Heightmap(actual, Heightmap.Types.MOTION_BLOCKING), iregistry, biome);
+        return new CraftChunkSnapshot(x, z, world.getMinHeight(), world.getMaxY(), world.getSeaLevel(), world.getName(), world.getFullTime(), blockIDs, skyLight, emitLight, empty, new Heightmap(actual, Heightmap.Types.MOTION_BLOCKING), biome);
     }
 
     static void validateChunkCoordinates(int minY, int maxY, int x, int y, int z) {

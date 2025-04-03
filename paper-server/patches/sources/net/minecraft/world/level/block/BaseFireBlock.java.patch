@@ -1,29 +1,27 @@
 --- a/net/minecraft/world/level/block/BaseFireBlock.java
 +++ b/net/minecraft/world/level/block/BaseFireBlock.java
-@@ -12,6 +_,7 @@
- import net.minecraft.world.entity.Entity;
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.context.BlockPlaceContext;
-+import net.minecraft.world.item.context.UseOnContext;
- import net.minecraft.world.level.BlockGetter;
- import net.minecraft.world.level.Level;
- import net.minecraft.world.level.block.state.BlockBehaviour;
-@@ -128,6 +_,7 @@
+@@ -129,11 +_,12 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
+         effectApplier.apply(InsideBlockEffectType.FIRE_IGNITE);
+         effectApplier.runAfter(InsideBlockEffectType.FIRE_IGNITE, entity1 -> entity1.hurt(entity1.level().damageSources().inFire(), this.fireDamage));
+     }
+ 
+-    public static void fireIgnite(Entity entity) {
++    public static void fireIgnite(Entity entity, BlockPos pos) { // Paper - track position inside effect was triggered on
          if (!entity.fireImmune()) {
              if (entity.getRemainingFireTicks() < 0) {
                  entity.setRemainingFireTicks(entity.getRemainingFireTicks() + 1);
-@@ -137,7 +_,18 @@
+@@ -143,30 +_,41 @@
              }
  
              if (entity.getRemainingFireTicks() >= 0) {
 -                entity.igniteForSeconds(8.0F);
 +                // CraftBukkit start
-+                org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.event.entity.EntityCombustByBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(level, pos), entity.getBukkitEntity(), 8.0F);
-+                level.getCraftServer().getPluginManager().callEvent(event);
++                org.bukkit.event.entity.EntityCombustEvent event = new org.bukkit.event.entity.EntityCombustByBlockEvent(org.bukkit.craftbukkit.block.CraftBlock.at(entity.level(), pos), entity.getBukkitEntity(), 8.0F);
++                entity.level().getCraftServer().getPluginManager().callEvent(event);
 +
 +                if (!event.isCancelled()) {
 +                    entity.igniteForSeconds(event.getDuration(), false);
@@ -35,13 +33,11 @@
 +                // CraftBukkit end
              }
          }
- 
-@@ -146,24 +_,24 @@
      }
  
      @Override
 -    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-+    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving, UseOnContext context) { // CraftBukkit - context
++    protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving, net.minecraft.world.item.context.UseOnContext context) { // CraftBukkit - context
          if (!oldState.is(state.getBlock())) {
              if (inPortalDimension(level)) {
                  Optional<PortalShape> optional = PortalShape.findEmptyPortalShape(level, pos, Direction.Axis.X);
@@ -65,7 +61,7 @@
      }
  
      @Override
-@@ -208,4 +_,12 @@
+@@ -211,4 +_,12 @@
              }
          }
      }

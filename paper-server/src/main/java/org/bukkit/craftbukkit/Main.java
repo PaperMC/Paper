@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import joptsimple.OptionParser;
@@ -26,12 +25,6 @@ public class Main {
     // Paper end - Reset loggers after shutdown
 
     public static void main(String[] args) {
-        // Paper start
-        final String warnWhenLegacyFormattingDetected = String.join(".", "net", "kyori", "adventure", "text", "warnWhenLegacyFormattingDetected");
-        if (false && System.getProperty(warnWhenLegacyFormattingDetected) == null) {
-            System.setProperty(warnWhenLegacyFormattingDetected, String.valueOf(true));
-        }
-        // Paper end
         // Todo: Installation script
         if (System.getProperty("jdk.nio.maxCachedBufferSize") == null) System.setProperty("jdk.nio.maxCachedBufferSize", "262144"); // Paper - cap per-thread NIO cache size; https://www.evanjones.ca/java-bytebuffer-leak.html
         OptionParser parser = new OptionParser() {
@@ -149,15 +142,12 @@ public class Main {
 
                 this.acceptsAll(Main.asList("initSettings"), "Only create configuration files and then exit"); // SPIGOT-5761: Add initSettings option
 
-                // Spigot start
                 this.acceptsAll(Main.asList("S", "spigot-settings"), "File for spigot settings")
                         .withRequiredArg()
                         .ofType(File.class)
                         .defaultsTo(new File("spigot.yml"))
                         .describedAs("Yml file");
-                // Spigot end
 
-                // Paper start
                 acceptsAll(asList("paper-dir", "paper-settings-directory"), "Directory for Paper settings")
                     .withRequiredArg()
                     .ofType(File.class)
@@ -174,15 +164,12 @@ public class Main {
                         .ofType(File.class)
                         .defaultsTo(new File[] {})
                         .describedAs("Jar file");
-                // Paper end
 
-                // Paper start
                 acceptsAll(asList("server-name"), "Name of the server")
                         .withRequiredArg()
                         .ofType(String.class)
                         .defaultsTo("Unknown Server")
                         .describedAs("Name");
-                // Paper end
             }
         };
 
@@ -226,32 +213,10 @@ public class Main {
             // Paper end - Improve java version check
 
             try {
-                // Paper start - Handled by TerminalConsoleAppender
-                /*
-                // This trick bypasses Maven Shade's clever rewriting of our getProperty call when using String literals
-                String jline_UnsupportedTerminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 'U', 'n', 's', 'u', 'p', 'p', 'o', 'r', 't', 'e', 'd', 'T', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
-                String jline_terminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 't', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
-
-                Main.useJline = !(jline_UnsupportedTerminal).equals(System.getProperty(jline_terminal));
-
-                if (options.has("nojline")) {
-                    System.setProperty("user.language", "en");
-                    Main.useJline = false;
-                }
-
-                if (Main.useJline) {
-                    AnsiConsole.systemInstall();
-                } else {
-                    // This ensures the terminal literal will always match the jline implementation
-                    System.setProperty(jline.TerminalFactory.JLINE_TERMINAL, jline.UnsupportedTerminal.class.getName());
-                }
-                */
-
                 if (options.has("nojline")) {
                     System.setProperty(net.minecrell.terminalconsole.TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false");
                     useJline = false;
                 }
-                // Paper end
 
                 if (options.has("noconsole")) {
                     Main.useConsole = false;
@@ -267,17 +232,14 @@ public class Main {
                     if (buildDate.before(deadline.getTime())) {
                         // Paper start - This is some stupid bullshit
                         System.err.println("*** Warning, you've not updated in a while! ***");
-                        System.err.println("*** Please download a new build from https://papermc.io/downloads/paper ***"); // Paper
-                        //System.err.println("*** Server will start in 20 seconds ***");
-                        //Thread.sleep(TimeUnit.SECONDS.toMillis(20));
+                        System.err.println("*** Please download a new build from https://papermc.io/downloads/paper ***");
                         // Paper end
                     }
                 }
 
                 System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
                 System.setProperty("jdk.console", "java.base"); // Paper - revert default console provider back to java.base so we can have our own jline
-                //System.out.println("Loading libraries, please wait...");
-                //net.minecraft.server.Main.main(options);
+
                 io.papermc.paper.PaperBootstrap.boot(options);
             } catch (Throwable t) {
                 t.printStackTrace();

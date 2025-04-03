@@ -15,11 +15,15 @@ import org.jetbrains.annotations.Nullable;
  * Called when a splash potion hits an area
  */
 public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
-    private final AreaEffectCloud entity;
-    private boolean allowEmptyAreaEffectCreation; // Paper
 
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final AreaEffectCloud entity;
+    private boolean allowEmptyAreaEffectCreation;
+
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     @Deprecated(since = "1.20.2", forRemoval = true)
     public LingeringPotionSplashEvent(@NotNull final ThrownPotion potion, @NotNull final AreaEffectCloud entity) {
        this(potion, null, null, null, entity);
@@ -34,7 +38,7 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
     @NotNull
     @Override
     public ThrownPotion getEntity() {
-        return (ThrownPotion) super.getEntity();
+        return (ThrownPotion) this.entity;
     }
 
     /**
@@ -80,11 +84,11 @@ public class LingeringPotionSplashEvent extends ProjectileHitEvent implements Ca
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

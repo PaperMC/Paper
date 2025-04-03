@@ -67,7 +67,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     void setVoidDamageEnabled(boolean enabled);
 
     /**
-     * Gets the damage applied to the player when they are in the void in this world.
+     * Gets the damage applied to the entities when they are in the void in this world.
      * Check {@link #isVoidDamageEnabled()} to see if void damage is enabled.
      *
      * @return amount of damage to apply
@@ -76,7 +76,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
     float getVoidDamageAmount();
 
     /**
-     * Sets the damage applied to the player when they are in the void in this world.
+     * Sets the damage applied to the entities when they are in the void in this world.
      * Check {@link #isVoidDamageEnabled()} to see if void damage is enabled.
      *
      * @param voidDamageAmount amount of damage to apply
@@ -101,27 +101,27 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
 
     // Paper start
     /**
-     * @return The amount of Entities in this world
+     * @return The amount of entities in this world
      */
     int getEntityCount();
 
     /**
-     * @return The amount of Tile Entities in this world
+     * @return The amount of block entities in this world
      */
     int getTileEntityCount();
 
     /**
-     * @return The amount of Tickable Tile Entities in this world
+     * @return The amount of tickable block entities in this world
      */
     int getTickableTileEntityCount();
 
     /**
-     * @return The amount of Chunks in this world
+     * @return The amount of chunks in this world
      */
     int getChunkCount();
 
     /**
-     * @return The amount of Players in this world
+     * @return The amount of players in this world
      */
     int getPlayerCount();
     // Paper end
@@ -741,7 +741,7 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      *     this method
      * @return true if the tree was created successfully, otherwise false
      * @see #generateTree(org.bukkit.Location, java.util.Random, org.bukkit.TreeType, java.util.function.Consumer)
-     * @deprecated this method does not handle tile entities (bee nests)
+     * @deprecated this method does not handle block entities (bee nests)
      */
     @Deprecated(since = "1.17.1")
     public boolean generateTree(@NotNull Location loc, @NotNull TreeType type, @NotNull BlockChangeDelegate delegate);

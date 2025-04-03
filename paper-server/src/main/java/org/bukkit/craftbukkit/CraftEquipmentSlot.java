@@ -1,54 +1,55 @@
 package org.bukkit.craftbukkit;
 
 import java.util.Locale;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.EnumBiMap;
+import net.minecraft.Util;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import org.bukkit.inventory.EquipmentSlot;
 
-public class CraftEquipmentSlot {
+public final class CraftEquipmentSlot {
 
-    private static final net.minecraft.world.entity.EquipmentSlot[] slots = new net.minecraft.world.entity.EquipmentSlot[EquipmentSlot.values().length];
-    private static final EquipmentSlot[] enums = new EquipmentSlot[net.minecraft.world.entity.EquipmentSlot.values().length];
-
-    static {
-        set(EquipmentSlot.HAND, net.minecraft.world.entity.EquipmentSlot.MAINHAND);
-        set(EquipmentSlot.OFF_HAND, net.minecraft.world.entity.EquipmentSlot.OFFHAND);
-        set(EquipmentSlot.FEET, net.minecraft.world.entity.EquipmentSlot.FEET);
-        set(EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.LEGS);
-        set(EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.CHEST);
-        set(EquipmentSlot.HEAD, net.minecraft.world.entity.EquipmentSlot.HEAD);
-        set(EquipmentSlot.BODY, net.minecraft.world.entity.EquipmentSlot.BODY);
+    private CraftEquipmentSlot() {
     }
 
-    private static void set(EquipmentSlot type, net.minecraft.world.entity.EquipmentSlot value) {
-        CraftEquipmentSlot.slots[type.ordinal()] = value;
-        CraftEquipmentSlot.enums[value.ordinal()] = type;
+    private static final BiMap<net.minecraft.world.entity.EquipmentSlot, EquipmentSlot> BRIDGE =
+        Util.make(EnumBiMap.create(net.minecraft.world.entity.EquipmentSlot.class, EquipmentSlot.class), data -> {
+            data.put(net.minecraft.world.entity.EquipmentSlot.MAINHAND, EquipmentSlot.HAND);
+            data.put(net.minecraft.world.entity.EquipmentSlot.OFFHAND, EquipmentSlot.OFF_HAND);
+            data.put(net.minecraft.world.entity.EquipmentSlot.FEET, EquipmentSlot.FEET);
+            data.put(net.minecraft.world.entity.EquipmentSlot.LEGS, EquipmentSlot.LEGS);
+            data.put(net.minecraft.world.entity.EquipmentSlot.CHEST, EquipmentSlot.CHEST);
+            data.put(net.minecraft.world.entity.EquipmentSlot.HEAD, EquipmentSlot.HEAD);
+            data.put(net.minecraft.world.entity.EquipmentSlot.BODY, EquipmentSlot.BODY);
+            data.put(net.minecraft.world.entity.EquipmentSlot.SADDLE, EquipmentSlot.SADDLE);
+        });
+
+    public static EquipmentSlot getSlot(net.minecraft.world.entity.EquipmentSlot slot) {
+        return BRIDGE.get(slot);
     }
 
-    public static EquipmentSlot getSlot(net.minecraft.world.entity.EquipmentSlot nms) {
-        return CraftEquipmentSlot.enums[nms.ordinal()];
-    }
-
-    public static org.bukkit.inventory.EquipmentSlotGroup getSlot(EquipmentSlotGroup nms) {
-        return org.bukkit.inventory.EquipmentSlotGroup.getByName(nms.getSerializedName());
+    public static org.bukkit.inventory.EquipmentSlotGroup getSlotGroup(EquipmentSlotGroup slotGroup) {
+        return org.bukkit.inventory.EquipmentSlotGroup.getByName(slotGroup.getSerializedName());
     }
 
     public static net.minecraft.world.entity.EquipmentSlot getNMS(EquipmentSlot slot) {
-        return CraftEquipmentSlot.slots[slot.ordinal()];
+        return BRIDGE.inverse().get(slot);
     }
 
     public static EquipmentSlotGroup getNMSGroup(org.bukkit.inventory.EquipmentSlotGroup slot) {
         return EquipmentSlotGroup.valueOf(slot.toString().toUpperCase(Locale.ROOT));
     }
 
-    public static EquipmentSlot getHand(InteractionHand enumhand) {
-        return (enumhand == InteractionHand.MAIN_HAND) ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND;
+    public static EquipmentSlot getHand(InteractionHand hand) {
+        return hand == InteractionHand.MAIN_HAND ? EquipmentSlot.HAND : EquipmentSlot.OFF_HAND;
     }
 
     public static InteractionHand getHand(EquipmentSlot hand) {
         if (hand == EquipmentSlot.HAND) {
             return InteractionHand.MAIN_HAND;
-        } else if (hand == EquipmentSlot.OFF_HAND) {
+        }
+        if (hand == EquipmentSlot.OFF_HAND) {
             return InteractionHand.OFF_HAND;
         }
 

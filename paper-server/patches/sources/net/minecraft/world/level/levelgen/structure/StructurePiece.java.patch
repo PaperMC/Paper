@@ -1,35 +1,27 @@
 --- a/net/minecraft/world/level/levelgen/structure/StructurePiece.java
 +++ b/net/minecraft/world/level/levelgen/structure/StructurePiece.java
-@@ -47,7 +_,7 @@
-     private Rotation rotation;
-     protected int genDepth;
-     private final StructurePieceType type;
--    private static final Set<Block> SHAPE_CHECK_BLOCKS = ImmutableSet.<Block>builder()
-+    public static final Set<Block> SHAPE_CHECK_BLOCKS = ImmutableSet.<Block>builder() // PAIL private -> public
-         .add(Blocks.NETHER_BRICK_FENCE)
-         .add(Blocks.TORCH)
-         .add(Blocks.WALL_TORCH)
-@@ -189,6 +_,11 @@
+@@ -181,6 +_,11 @@
                  }
  
                  level.setBlock(worldPos, blockstate, 2);
 +                // CraftBukkit start - fluid handling is already done if we have a transformer generator access
-+                if (level instanceof org.bukkit.craftbukkit.util.TransformerGeneratorAccess) {
++                if (level instanceof org.bukkit.craftbukkit.util.TransformerGeneratorAccess transformerAccess && transformerAccess.canTransformBlocks()) {
 +                    return;
 +                }
 +                // CraftBukkit end
                  FluidState fluidState = level.getFluidState(worldPos);
                  if (!fluidState.isEmpty()) {
                      level.scheduleTick(worldPos, fluidState.getType(), 0);
-@@ -201,6 +_,38 @@
+@@ -193,6 +_,39 @@
          }
      }
  
 +    // CraftBukkit start
 +    protected boolean placeCraftBlockEntity(ServerLevelAccessor levelAccessor, BlockPos pos, org.bukkit.craftbukkit.block.CraftBlockEntityState<?> craftBlockEntityState, int flags) {
-+        if (levelAccessor instanceof org.bukkit.craftbukkit.util.TransformerGeneratorAccess transformerAccess) {
++        if (levelAccessor instanceof org.bukkit.craftbukkit.util.TransformerGeneratorAccess transformerAccess && transformerAccess.canTransformBlocks()) {
 +            return transformerAccess.setCraftBlock(pos, craftBlockEntityState, flags);
 +        }
++
 +        boolean result = levelAccessor.setBlock(pos, craftBlockEntityState.getHandle(), flags);
 +        BlockEntity blockEntity = levelAccessor.getBlockEntity(pos);
 +        if (blockEntity != null) {
@@ -50,7 +42,7 @@
 +        net.minecraft.world.level.block.entity.BlockEntity blockEntity = levelAccessor.getBlockEntity(pos);
 +        if (blockEntity instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity lootContainerBlockEntity) {
 +            lootContainerBlockEntity.setLootTable(lootTable, randomSource.nextLong());
-+            if (levelAccessor instanceof org.bukkit.craftbukkit.util.TransformerGeneratorAccess transformerAccess) {
++            if (levelAccessor instanceof org.bukkit.craftbukkit.util.TransformerGeneratorAccess transformerAccess && transformerAccess.canTransformBlocks()) {
 +                transformerAccess.setCraftBlock(pos, (org.bukkit.craftbukkit.block.CraftBlockState) org.bukkit.craftbukkit.block.CraftBlockStates.getBlockState(levelAccessor, pos, blockEntity.getBlockState(), lootContainerBlockEntity.saveWithFullMetadata(levelAccessor.registryAccess())), 3);
 +            }
 +        }
@@ -60,7 +52,7 @@
      protected boolean canBeReplaced(LevelReader level, int x, int y, int z, BoundingBox box) {
          return true;
      }
-@@ -429,11 +_,17 @@
+@@ -421,11 +_,17 @@
                  state = reorient(level, pos, Blocks.CHEST.defaultBlockState());
              }
  
@@ -83,7 +75,7 @@
  
              return true;
          } else {
-@@ -446,11 +_,28 @@
+@@ -438,11 +_,28 @@
      ) {
          BlockPos worldPos = this.getWorldPos(x, y, z);
          if (box.isInside(worldPos) && !level.getBlockState(worldPos).is(Blocks.DISPENSER)) {
