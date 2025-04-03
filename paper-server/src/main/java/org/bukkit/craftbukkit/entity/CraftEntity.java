@@ -5,6 +5,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import io.papermc.paper.datacomponent.DataComponentType;
 import io.papermc.paper.entity.TeleportFlag;
 import java.util.HashSet;
 import java.util.List;
@@ -68,6 +69,8 @@ import org.bukkit.util.NumberConversions;
 import org.bukkit.util.Vector;
 
 import net.md_5.bungee.api.chat.BaseComponent; // Spigot
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class CraftEntity implements org.bukkit.entity.Entity {
     private static PermissibleBase perm;
@@ -1263,4 +1266,19 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
             ((CraftPlayer) player).sendHurtAnimation(0, this);
         }
     }
+    @Override
+    public <T> @Nullable T getData(@NotNull final DataComponentType.Valued<T> type) {
+        return this.entity.get(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type));
+    }
+
+    @Override
+    public <T> @Nullable T getDataOrDefault(@NotNull final DataComponentType.Valued<? extends T> type, @Nullable final T fallback) {
+        return this.entity.getOrDefault(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type), fallback);
+    }
+
+    @Override
+    public boolean hasData(final @NotNull DataComponentType type) {
+        return this.entity.get(io.papermc.paper.datacomponent.PaperDataComponentType.bukkitToMinecraft(type)) != null;
+    }
+
 }

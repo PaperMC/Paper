@@ -1,6 +1,7 @@
 package org.bukkit.inventory;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.datacomponent.DataComponentHolder;
 import io.papermc.paper.registry.RegistryKey;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -30,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
  * use this class to encapsulate Materials for which {@link Material#isItem()}
  * returns false.</b>
  */
-public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.persistence.PersistentDataViewHolder { // Paper
+public class ItemStack implements Cloneable, ConfigurationSerializable, Translatable, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowItem>, net.kyori.adventure.translation.Translatable, io.papermc.paper.persistence.PersistentDataViewHolder, DataComponentHolder { // Paper
     private ItemStack craftDelegate; // Paper - always delegate to server-backed stack
     private MaterialData data = null;
 

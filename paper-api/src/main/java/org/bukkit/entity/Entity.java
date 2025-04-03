@@ -3,6 +3,7 @@ package org.bukkit.entity;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import io.papermc.paper.datacomponent.DataComponentView;
 import io.papermc.paper.entity.LookAnchor;
 import org.bukkit.Chunk; // Paper
 import org.bukkit.EntityEffect;
@@ -34,7 +35,7 @@ import org.jetbrains.annotations.Nullable;
  * Not all methods are guaranteed to work/may have side effects when
  * {@link #isInWorld()} is false.
  */
-public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter { // Paper
+public interface Entity extends Metadatable, CommandSender, Nameable, PersistentDataHolder, net.kyori.adventure.text.event.HoverEventSource<net.kyori.adventure.text.event.HoverEvent.ShowEntity>, net.kyori.adventure.sound.Sound.Emitter, DataComponentView { // Paper
 
     /**
      * Gets the entity's current position
