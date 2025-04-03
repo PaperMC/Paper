@@ -263,7 +263,10 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
         }
 
         // Paper start - fix teleport event not being called
-        if (location.getWorld() == this.getWorld()) { // Don't call event for cross world teleports
+        if (location.getWorld() == this.getWorld() || location.getWorld() == null) { // Don't call event for cross world teleports
+            if (location.getWorld() == null) {
+                location.setWorld(this.getWorld());
+            }
             org.bukkit.event.entity.EntityTeleportEvent event = new org.bukkit.event.entity.EntityTeleportEvent(
                 this, this.getLocation(), location);
             // cancelling the event is handled differently for players and entities,
