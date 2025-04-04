@@ -5,11 +5,16 @@ import io.papermc.paper.adventure.PaperAdventure;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.PaperDataComponentType;
 import io.papermc.paper.registry.data.PaperBannerPatternRegistryEntry;
+import io.papermc.paper.registry.data.PaperCatTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperChickenVariantRegistryEntry;
+import io.papermc.paper.registry.data.PaperCowVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperDamageTypeRegistryEntry;
 import io.papermc.paper.registry.data.PaperEnchantmentRegistryEntry;
+import io.papermc.paper.registry.data.PaperFrogVariantRegistryEntry;
 import io.papermc.paper.registry.data.PaperGameEventRegistryEntry;
 import io.papermc.paper.registry.data.PaperPaintingVariantRegistryEntry;
+import io.papermc.paper.registry.data.PaperPigVariantRegistryEntry;
+import io.papermc.paper.registry.data.PaperWolfVariantRegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntry;
 import io.papermc.paper.registry.entry.RegistryEntryMeta;
 import io.papermc.paper.registry.tag.TagKey;
@@ -112,18 +117,18 @@ public final class PaperRegistries {
             start(Registries.TRIM_MATERIAL, RegistryKey.TRIM_MATERIAL).craft(TrimMaterial.class, CraftTrimMaterial::new, true).build().delayed(),
             start(Registries.TRIM_PATTERN, RegistryKey.TRIM_PATTERN).craft(TrimPattern.class, CraftTrimPattern::new, true).build().delayed(),
             start(Registries.DAMAGE_TYPE, RegistryKey.DAMAGE_TYPE).craft(DamageType.class, CraftDamageType::new).writable(PaperDamageTypeRegistryEntry.PaperBuilder::new).delayed(),
-            start(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT).craft(Wolf.Variant.class, CraftWolf.CraftVariant::new).build().delayed(),
+            start(Registries.WOLF_VARIANT, RegistryKey.WOLF_VARIANT).craft(Wolf.Variant.class, CraftWolf.CraftVariant::new).writable(PaperWolfVariantRegistryEntry.PaperBuilder::new),
             start(Registries.WOLF_SOUND_VARIANT, RegistryKey.WOLF_SOUND_VARIANT).craft(Wolf.SoundVariant.class, CraftWolf.CraftSoundVariant::new).build(),
             start(Registries.ENCHANTMENT, RegistryKey.ENCHANTMENT).craft(Enchantment.class, CraftEnchantment::new).serializationUpdater(FieldRename.ENCHANTMENT_RENAME).writable(PaperEnchantmentRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.JUKEBOX_SONG, RegistryKey.JUKEBOX_SONG).craft(JukeboxSong.class, CraftJukeboxSong::new).build().delayed(),
             start(Registries.BANNER_PATTERN, RegistryKey.BANNER_PATTERN).craft(PatternType.class, CraftPatternType::new, true).writable(PaperBannerPatternRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.PAINTING_VARIANT, RegistryKey.PAINTING_VARIANT).craft(Art.class, CraftArt::new, true).writable(PaperPaintingVariantRegistryEntry.PaperBuilder::new).delayed(),
             start(Registries.INSTRUMENT, RegistryKey.INSTRUMENT).craft(MusicInstrument.class, CraftMusicInstrument::new, true).build().delayed(),
-            start(Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT).craft(Cat.Type.class, CraftCat.CraftType::new).build().delayed(),
-            start(Registries.FROG_VARIANT, RegistryKey.FROG_VARIANT).craft(Frog.Variant.class, CraftFrog.CraftVariant::new).build().delayed(),
-            start(Registries.CHICKEN_VARIANT, RegistryKey.CHICKEN_VARIANT).craft(Chicken.Variant.class, CraftChicken.CraftVariant::new).writable(PaperChickenVariantRegistryEntry.PaperBuilder::new).delayed(),
-            start(Registries.COW_VARIANT, RegistryKey.COW_VARIANT).craft(Cow.Variant.class, CraftCow.CraftVariant::new).build(),
-            start(Registries.PIG_VARIANT, RegistryKey.PIG_VARIANT).craft(Pig.Variant.class, CraftPig.CraftVariant::new).build(),
+            start(Registries.CAT_VARIANT, RegistryKey.CAT_VARIANT).craft(Cat.Type.class, CraftCat.CraftType::new).writable(PaperCatTypeRegistryEntry.PaperBuilder::new),
+            start(Registries.FROG_VARIANT, RegistryKey.FROG_VARIANT).craft(Frog.Variant.class, CraftFrog.CraftVariant::new).writable(PaperFrogVariantRegistryEntry.PaperBuilder::new),
+            start(Registries.CHICKEN_VARIANT, RegistryKey.CHICKEN_VARIANT).craft(Chicken.Variant.class, CraftChicken.CraftVariant::new).writable(PaperChickenVariantRegistryEntry.PaperBuilder::new),
+            start(Registries.COW_VARIANT, RegistryKey.COW_VARIANT).craft(Cow.Variant.class, CraftCow.CraftVariant::new).writable(PaperCowVariantRegistryEntry.PaperBuilder::new),
+            start(Registries.PIG_VARIANT, RegistryKey.PIG_VARIANT).craft(Pig.Variant.class, CraftPig.CraftVariant::new).writable(PaperPigVariantRegistryEntry.PaperBuilder::new),
 
             // api-only
             start(Registries.ENTITY_TYPE, RegistryKey.ENTITY_TYPE).apiOnly(PaperSimpleRegistry::entityType),

@@ -5,27 +5,27 @@ import io.papermc.paper.registry.PaperRegistryBuilder;
 import io.papermc.paper.registry.data.util.Conversions;
 import net.kyori.adventure.key.Key;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.animal.ChickenVariant;
+import net.minecraft.world.entity.animal.CowVariant;
 import net.minecraft.world.entity.variant.ModelAndTexture;
 import net.minecraft.world.entity.variant.SpawnPrioritySelectors;
-import org.bukkit.craftbukkit.entity.CraftChicken;
-import org.bukkit.entity.Chicken;
+import org.bukkit.craftbukkit.entity.CraftCow;
+import org.bukkit.entity.Cow;
 import org.jspecify.annotations.Nullable;
 
 import static io.papermc.paper.registry.data.util.Checks.asArgument;
 import static io.papermc.paper.registry.data.util.Checks.asConfigured;
 
-public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryEntry {
+public class PaperCowVariantRegistryEntry implements CowVariantRegistryEntry {
 
-    protected ChickenVariant.@Nullable ModelType model;
+    protected CowVariant.@Nullable ModelType model;
     protected ResourceLocation assetId;
     protected SpawnPrioritySelectors spawnConditions;
 
     protected final Conversions conversions;
 
-    public PaperChickenVariantRegistryEntry(
+    public PaperCowVariantRegistryEntry(
         final Conversions conversions,
-        final @Nullable ChickenVariant internal
+        final @Nullable CowVariant internal
     ) {
         this.conversions = conversions;
         if (internal == null) return;
@@ -41,19 +41,19 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
     }
 
     @Override
-    public Chicken.Variant.@Nullable Model model() {
-        return this.model == null ? Chicken.Variant.Model.NORMAL : Chicken.Variant.Model.values()[this.model.ordinal()];
+    public Cow.Variant.@Nullable Model model() {
+        return this.model == null ? Cow.Variant.Model.NORMAL : Cow.Variant.Model.values()[this.model.ordinal()];
     }
 
-    public static final class PaperBuilder extends PaperChickenVariantRegistryEntry implements Builder, PaperRegistryBuilder<ChickenVariant, Chicken.Variant> {
+    public static final class PaperBuilder extends PaperCowVariantRegistryEntry implements Builder, PaperRegistryBuilder<CowVariant, Cow.Variant> {
 
-        public PaperBuilder(final Conversions conversions, final @Nullable ChickenVariant internal) {
+        public PaperBuilder(final Conversions conversions, final @Nullable CowVariant internal) {
             super(conversions, internal);
         }
 
         @Override
-        public Builder model(final Chicken.Variant.Model model) {
-            this.model = CraftChicken.CraftVariant.toNms(model);
+        public Builder model(final Cow.Variant.Model model) {
+            this.model = CraftCow.CraftVariant.toNms(model);
             return this;
         }
 
@@ -64,9 +64,9 @@ public class PaperChickenVariantRegistryEntry implements ChickenVariantRegistryE
         }
 
         @Override
-        public ChickenVariant build() {
-            return new ChickenVariant(
-                new ModelAndTexture<>(this.model == null ? ChickenVariant.ModelType.NORMAL : this.model, this.assetId),
+        public CowVariant build() {
+            return new CowVariant(
+                new ModelAndTexture<>(this.model == null ? CowVariant.ModelType.NORMAL : this.model, this.assetId),
                 SpawnPrioritySelectors.EMPTY
             );
         }
