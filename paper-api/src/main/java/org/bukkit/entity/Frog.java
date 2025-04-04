@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import java.util.Locale;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Registry;
@@ -60,6 +61,13 @@ public interface Frog extends Animals {
 
         Variant WARM = getVariant("warm");
         // End generate - FrogVariant
+
+        /**
+         * Get the frog variant's asset id
+         *
+         * @return the asset id
+         */
+        @NotNull Key assetId();
 
         @NotNull
         private static Variant getVariant(@NotNull String key) {

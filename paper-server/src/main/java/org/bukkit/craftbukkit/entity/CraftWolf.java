@@ -1,6 +1,7 @@
 package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
+import io.papermc.paper.adventure.PaperAdventure;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.animal.wolf.WolfSoundVariant;
@@ -11,6 +12,7 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Wolf;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftWolf extends CraftTameableAnimal implements Wolf {
 
@@ -134,6 +136,21 @@ public class CraftWolf extends CraftTameableAnimal implements Wolf {
         @Override
         public NamespacedKey getKey() {
             return this.key;
+        }
+
+        @NotNull
+        public net.kyori.adventure.key.Key assetIdAngry() {
+            return PaperAdventure.asAdventure(this.getHandle().assetInfo().angry().id());
+        }
+
+        @NotNull
+        public net.kyori.adventure.key.Key assetIdWild() {
+            return PaperAdventure.asAdventure(this.getHandle().assetInfo().wild().id());
+        }
+
+        @NotNull
+        public net.kyori.adventure.key.Key assetIdTame() {
+            return PaperAdventure.asAdventure(this.getHandle().assetInfo().tame().id());
         }
 
         @Override

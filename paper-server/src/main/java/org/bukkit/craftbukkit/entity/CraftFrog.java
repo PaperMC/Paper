@@ -2,6 +2,7 @@ package org.bukkit.craftbukkit.entity;
 
 import com.google.common.base.Preconditions;
 import java.util.Locale;
+import io.papermc.paper.adventure.PaperAdventure;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.animal.frog.Frog;
@@ -11,6 +12,7 @@ import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.util.Handleable;
 import org.bukkit.entity.Entity;
+import org.jetbrains.annotations.NotNull;
 
 public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
 
@@ -96,6 +98,11 @@ public class CraftFrog extends CraftAnimals implements org.bukkit.entity.Frog {
         @Override
         public NamespacedKey getKey() {
             return this.key;
+        }
+
+        @NotNull
+        public net.kyori.adventure.key.Key assetId() {
+            return PaperAdventure.asAdventure(this.getHandle().assetInfo().id());
         }
 
         @Override
