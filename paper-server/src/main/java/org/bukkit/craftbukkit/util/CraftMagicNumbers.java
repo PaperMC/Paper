@@ -512,9 +512,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public @org.jetbrains.annotations.NotNull Map<String, Object> serializeStack(final ItemStack itemStack) {
-        CompoundTag tag = CraftItemStack.asNMSCopy(itemStack).save(MinecraftServer.getServer().registryAccess()).asCompound().orElseThrow();
+        final CompoundTag tag = CraftItemStack.asNMSCopy(itemStack).save(MinecraftServer.getServer().registryAccess()).asCompound().orElseThrow();
         net.minecraft.nbt.NbtUtils.addCurrentDataVersion(tag);
-        Map<String, Object> ret = new HashMap<>();
+        final Map<String, Object> ret = new HashMap<>();
         tag.asCompound().get().forEach((key, value) -> {
             switch (key) {
                 case "id" -> {
@@ -524,7 +524,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     ret.put("count", value.asInt().get());
                 }
                 case "components" -> {
-                    ret.put("components", ExtraCodecs.converter(NbtOps.INSTANCE).encodeStart(JsonOps.INSTANCE, value).result().get().toString());
+                    final com.mojang.serialization.Codec<Tag> converter = ExtraCodecs.converter(NbtOps.INSTANCE);
+                    final Map<String, Object> components = new HashMap<>();
+                    value.asCompound().ifPresent((compoundTag) -> {
+                        compoundTag.keySet().forEach((componentKey) -> {
+                            components.put(componentKey, converter.encodeStart(JsonOps.INSTANCE, compoundTag.get(componentKey)).result().get().toString());
+                        });
+                    });
+                    ret.put("components", components);
                 }
                 case "DataVersion" -> {
                     ret.put("DataVersion", value.asInt().get());
@@ -532,11 +539,14 @@ public final class CraftMagicNumbers implements UnsafeValues {
                 default -> throw new IllegalStateException("Unexpected value: " + key);
             }
         });
+        ret.put("schema_version", 2);
         return ret;
     }
 
     @Override
     public @org.jetbrains.annotations.NotNull ItemStack deserializeStack(@org.jetbrains.annotations.NotNull final Map<String, Object> args) {
+        int version = args.getOrDefault("schema_version", 1) instanceof Number val ? val.intValue() : -1;
+
         CompoundTag tag = new CompoundTag();
         args.forEach((key, value) -> {
             switch (key) {
@@ -547,14 +557,28 @@ public final class CraftMagicNumbers implements UnsafeValues {
                     tag.putInt("count", ((Number) value).intValue());
                 }
                 case "components" -> {
-                    String json = (String) value;
-                    final JsonElement jsonElement = GSON.fromJson(json, JsonElement.class);
-                    tag.put("components", ExtraCodecs.converter(JsonOps.INSTANCE).encodeStart(NbtOps.INSTANCE, jsonElement).result().get());
+                    if (version == 1) {
+                        String json = (String) value;
+                        final JsonElement jsonElement = GSON.fromJson(json, JsonElement.class);
+                        tag.put("components", ExtraCodecs.converter(JsonOps.INSTANCE).encodeStart(NbtOps.INSTANCE, jsonElement).result().get());
+                    } else if (version == 2) {
+                        Map<String, String> componentMap = (Map<String, String>) value;
+                        componentMap.forEach((keyString, valueString) -> {
+                            final JsonElement jsonElement = GSON.fromJson(valueString, JsonElement.class);
+                            tag.put(keyString, ExtraCodecs.converter(JsonOps.INSTANCE).encodeStart(NbtOps.INSTANCE, jsonElement).result().get());
+                        });
+
+                     } else {
+                        throw new IllegalStateException("Unexpected version: " + version);
+                    }
                 }
                 case "DataVersion" -> {
                     tag.putInt("DataVersion", ((Number) value).intValue());
                 }
                 case "==" -> {
+                    // Ignore
+                }
+                case "schema_version" -> {
                     // Ignore
                 }
                 default -> throw new IllegalStateException("Unexpected value: " + key);
