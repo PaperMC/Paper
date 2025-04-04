@@ -2,6 +2,7 @@ package org.bukkit.entity;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
 import org.bukkit.DyeColor;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -130,6 +131,27 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
 
         Variant WOODS = getVariant("woods");
         // End generate - WolfVariant
+
+        /**
+         * Get the wolf variant's asset id used when the wolf is angry
+         *
+         * @return the asset id
+         */
+        @NotNull Key assetIdAngry();
+
+        /**
+         * Get the wolf variant's asset id used when the wolf is wild
+         *
+         * @return the asset id
+         */
+        @NotNull Key assetIdWild();
+
+        /**
+         * Get the wolf variant's asset id used when the wolf is tame
+         *
+         * @return the asset id
+         */
+        @NotNull Key assetIdTame();
 
         @NotNull
         private static Variant getVariant(@NotNull String key) {
