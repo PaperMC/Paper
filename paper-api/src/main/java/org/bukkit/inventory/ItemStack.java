@@ -496,6 +496,7 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
     @NotNull
     @Utility
     public Map<String, Object> serialize() {
+        if (true) return org.bukkit.Bukkit.getUnsafe().serializeStack(this); // Paper - testing
         Map<String, Object> result = new LinkedHashMap<>();
 
         result.put("v", Bukkit.getUnsafe().getDataVersion()); // Include version to indicate we are using modern material names (or LEGACY prefix)
@@ -522,6 +523,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @NotNull
     public static ItemStack deserialize(@NotNull Map<String, Object> args) {
+        // Parse internally, if DataVersion is not defined, assume legacy and fall through to unsafe legacy deserialization logic
+        if (args.containsKey("DataVersion")) return org.bukkit.Bukkit.getUnsafe().deserializeStack(args);
         int version = (args.containsKey("v")) ? ((Number) args.get("v")).intValue() : -1;
         short damage = 0;
         int amount = 1;
