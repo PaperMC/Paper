@@ -1034,6 +1034,7 @@ public class CraftEventFactory {
         // Paper end
 
         victim.keepLevel = event.getKeepLevel();
+        victim.keepInventory = event.getKeepInventory(); // Paper - keep inventory tracking
         victim.newLevel = event.getNewLevel();
         victim.newTotalExp = event.getNewTotalExp();
         victim.expToDrop = event.getDroppedExp();
