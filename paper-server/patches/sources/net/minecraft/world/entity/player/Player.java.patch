@@ -261,21 +261,21 @@
      public void attack(Entity target) {
 -        if (target.isAttackable()) {
 -            if (!target.skipAttackInteraction(this)) {
-+        // Paper start - PlayerAttackEntityEvent
++        // Paper start - PrePlayerAttackEntityEvent
 +        boolean willAttack = target.isAttackable() && !target.skipAttackInteraction(this); // Vanilla logic
-+        io.papermc.paper.event.player.PrePlayerAttackEntityEvent playerAttackEntityEvent = new io.papermc.paper.event.player.PrePlayerAttackEntityEvent(
++        io.papermc.paper.event.player.PrePlayerAttackEntityEvent prePlayerAttackEntityEvent = new io.papermc.paper.event.player.PrePlayerAttackEntityEvent(
 +            (org.bukkit.entity.Player) this.getBukkitEntity(),
 +            target.getBukkitEntity(),
 +            willAttack
 +        );
 +
-+        if (playerAttackEntityEvent.callEvent() && willAttack) { // Logic moved to willAttack local variable.
++        if (prePlayerAttackEntityEvent.callEvent() && willAttack) { // Logic moved to willAttack local variable.
 +            {
-+        // Paper end - PlayerAttackEntityEvent
++        // Paper end - PrePlayerAttackEntityEvent
                  float f = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
                  ItemStack weaponItem = this.getWeaponItem();
                  DamageSource damageSource = Optional.ofNullable(weaponItem.getItem().getDamageSource(this)).orElse(this.damageSources().playerAttack(this));
-@@ -1134,18 +_,25 @@
+@@ -1134,23 +_,30 @@
                  float attackStrengthScale = this.getAttackStrengthScale(0.5F);
                  f *= 0.2F + attackStrengthScale * attackStrengthScale * 0.8F;
                  f1 *= attackStrengthScale;
@@ -299,26 +299,74 @@
 +                {
 +                    // CraftBukkit end
                      if (f > 0.0F || f1 > 0.0F) {
++                        io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType attackType = io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.NORMAL;
                          boolean flag = attackStrengthScale > 0.9F;
                          boolean flag1;
                          if (this.isSprinting() && flag) {
 -                            this.level()
 -                                .playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F);
-+                            this.sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
                              flag1 = true;
++                            attackType = io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.KNOCKBACK; // Paper - PlayerAttackEntityEvent
                          } else {
                              flag1 = false;
-@@ -1161,7 +_,9 @@
+                         }
+-
+                         f += weaponItem.getItem().getAttackDamageBonus(target, f, damageSource);
+                         boolean flag2 = flag
+                             && this.fallDistance > 0.0F
+@@ -1161,47 +_,67 @@
                              && !this.isPassenger()
                              && target instanceof LivingEntity
                              && !this.isSprinting();
 +                        flag2 = flag2 && !this.level().paperConfig().entities.behavior.disablePlayerCrits; // Paper - Toggleable player crits
                          if (flag2) {
-+                            damageSource = damageSource.critical(); // Paper - critical damage API
-                             f *= 1.5F;
+-                            f *= 1.5F;
++                            attackType = io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.CRIT; // Paper - PlayerAttackEntityEvent
                          }
  
-@@ -1188,17 +_,23 @@
+-                        float f2 = f + f1;
+-                        boolean flag3 = false;
+                         if (flag && !flag2 && !flag1 && this.onGround()) {
+                             double d = this.getKnownMovement().horizontalDistanceSqr();
+                             double d1 = this.getSpeed() * 2.5;
+                             if (d < Mth.square(d1) && this.getItemInHand(InteractionHand.MAIN_HAND).is(ItemTags.SWORDS)) {
+-                                flag3 = true;
++                                attackType = io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.SWEEP; // Paper - PlayerAttackEntityEvent
+                             }
+                         }
+-
++                        // Paper start - PlayerAttackEntityEvent
++                        final io.papermc.paper.event.player.PlayerAttackEntityEvent playerAttackEntityEvent = new io.papermc.paper.event.player.PlayerAttackEntityEvent((org.bukkit.entity.Player) getBukkitEntity(), target.getBukkitEntity(), attackType);
++                        boolean allowAttack = playerAttackEntityEvent.callEvent();
+                         float f3 = 0.0F;
+-                        if (target instanceof LivingEntity livingEntity) {
+-                            f3 = livingEntity.getHealth();
+-                        }
+-
+                         Vec3 deltaMovement = target.getDeltaMovement();
+-                        boolean flag4 = target.hurtOrSimulate(damageSource, f2);
++                        boolean flag4 = false;
++                        if (allowAttack) {
++                            attackType = playerAttackEntityEvent.getType();
++                            switch (attackType) {
++                                case KNOCKBACK ->
++                                    this.sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
++                                case CRIT -> {
++                                    f *= 1.5F;
++                                    damageSource = damageSource.critical(); // Paper - critical damage API
++                                }
++                            }
++                            float f2 = f + f1;
++                            if (target instanceof LivingEntity livingEntity) {
++                                f3 = livingEntity.getHealth();
++                            }
++                            flag4 = target.hurtOrSimulate(damageSource, f2);
++                        }
++                        // Paper end - PlayerAttackEntityEvent
+                         if (flag4) {
+-                            float f4 = this.getKnockback(target, damageSource) + (flag1 ? 1.0F : 0.0F);
++                            float f4 = this.getKnockback(target, damageSource) + (attackType == io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.KNOCKBACK ? 1.0F : 0.0F); // Paper - PlayerAttackEntityEvent
+                             if (f4 > 0.0F) {
                                  if (target instanceof LivingEntity livingEntity1) {
                                      livingEntity1.knockback(
                                          f4 * 0.5F, Mth.sin(this.getYRot() * (float) (Math.PI / 180.0)), -Mth.cos(this.getYRot() * (float) (Math.PI / 180.0))
@@ -341,7 +389,11 @@
 +                                // Paper end - Configurable sprint interruption on attack
                              }
  
-                             if (flag3) {
+-                            if (flag3) {
++                            if (attackType == io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.SWEEP) { // Paper - PlayerAttackEntityEvent
+                                 float f5 = 1.0F + (float)this.getAttributeValue(Attributes.SWEEPING_DAMAGE_RATIO) * f;
+ 
+                                 for (LivingEntity livingEntity2 : this.level()
 @@ -1212,43 +_,64 @@
                                          && (!(livingEntity2 instanceof ArmorStand) || !((ArmorStand)livingEntity2).isMarker())
                                          && this.distanceToSqr(livingEntity2) < 9.0) {
@@ -394,14 +446,16 @@
 +                                // CraftBukkit end
                              }
  
-                             if (flag2) {
+-                            if (flag2) {
 -                                this.level()
 -                                    .playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, this.getSoundSource(), 1.0F, 1.0F);
++                            if (attackType == io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.CRIT) { // Paper - PlayerAttackEntityEvent
 +                                this.sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_CRIT, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
                                  this.crit(target);
                              }
  
-                             if (!flag2 && !flag3) {
+-                            if (!flag2 && !flag3) {
++                            if (attackType != io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.CRIT && attackType != io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.SWEEP) { // Paper - PlayerAttackEntityEvent
                                  if (flag) {
 -                                    this.level()
 -                                        .playSound(
