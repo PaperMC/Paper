@@ -19,7 +19,7 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
     private final Block table;
     private final ItemStack item;
     private final EnchantmentOffer[] offers;
-    private final int bonus;
+    private int bonus;
     private boolean cancelled;
     private final Player enchanter;
 
@@ -98,6 +98,13 @@ public class PrepareItemEnchantEvent extends InventoryEvent implements Cancellab
     public int getEnchantmentBonus() {
         return bonus;
     }
+
+    /**
+     * set enchantment bonus in effect - corresponds to number of bookshelves
+     *
+     * @param bonus enchantment bonus
+     */
+    public void setEnchantmentBonus(final int bonus) { this.bonus = bonus; }
 
     @NotNull
     @Override
