@@ -5,6 +5,8 @@ import com.google.common.base.Functions;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.mojang.datafixers.util.Either;
+import io.papermc.paper.block.PaperLidded;
+import io.papermc.paper.event.player.PlayerLiddedOpenEvent;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -2277,4 +2279,14 @@ public class CraftEventFactory {
         return event;
     }
     // Paper end - add EntityFertilizeEggEvent
+
+    public static boolean callPlayerLiddedOpenEvent(net.minecraft.world.entity.player.Player who, final Level world, final BlockPos pos) {
+        Player player = (Player) who.getBukkitEntity();
+        Block block = CraftBlock.at(world, pos);
+        PaperLidded blockState = (PaperLidded) CraftBlockStates.getBlockState(block);
+
+        PlayerLiddedOpenEvent event = new PlayerLiddedOpenEvent(player, blockState, block);
+
+        return event.callEvent();
+    }
 }
