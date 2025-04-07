@@ -75,11 +75,11 @@ public interface PotionMeta extends ItemMeta {
     List<PotionEffect> getCustomEffects();
 
     /**
-     * Gets an immutable list containing all potion effects applied when using this potion
+     * All effects that this item applies.
      * <p>
      * This is a Combination of the base potion type and any custom effects.
      *
-     * @return the immutable list of all effective potion effects.
+     * @return an unmodifiable list of all effects.
      */
     @NotNull
     List<PotionEffect> getEffects();
