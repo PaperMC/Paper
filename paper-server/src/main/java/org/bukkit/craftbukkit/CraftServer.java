@@ -307,6 +307,7 @@ public final class CraftServer implements Server {
     private CraftIconCache icon;
     private boolean overrideAllCommandBlockCommands = false;
     public boolean ignoreVanillaPermissions = false;
+    public boolean ignoreBukkitPermissions = false; // Paper
     private final List<CraftPlayer> playerView;
     public int reloadCount;
     public Set<String> activeCompatibilities = Collections.emptySet();
@@ -477,6 +478,9 @@ public final class CraftServer implements Server {
         this.saveCommandsConfig();
         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+        // Paper start
+        this.ignoreBukkitPermissions = this.commandsConfiguration.getBoolean("ignore-bukkit-permissions");
+        // Paper end
         this.overrideSpawnLimits();
         console.autosavePeriod = this.configuration.getInt("ticks-per.autosave");
         this.warningState = WarningState.value(this.configuration.getString("settings.deprecated-verbose"));
@@ -1122,6 +1126,9 @@ public final class CraftServer implements Server {
         this.spark.registerCommandBeforePlugins(this); // Paper - spark
         this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
         this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
+        // Paper start
+        this.ignoreBukkitPermissions = this.commandsConfiguration.getBoolean("ignore-bukkit-permissions");
+        // Paper end
 
         int pollCount = 0;
 
