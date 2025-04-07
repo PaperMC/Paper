@@ -5,6 +5,8 @@ import io.papermc.paper.util.MCUtil;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import net.minecraft.world.effect.MobEffectInstance;
 import org.bukkit.Color;
 import org.bukkit.craftbukkit.potion.CraftPotionType;
@@ -46,6 +48,19 @@ public record PaperPotionContents(
     @Override
     public @Nullable String customName() {
         return this.impl.customName().orElse(null);
+    }
+
+    @Override
+    public @Unmodifiable List<PotionEffect> allEffects() {
+        //noinspection SimplifyStreamApiCallChains - explicity want it unmodifiable, as toList() api doesnt guarantee this.
+        return StreamSupport.stream(this.impl.getAllEffects().spliterator(), false)
+            .map(CraftPotionUtil::toBukkit)
+            .collect(Collectors.toUnmodifiableList());
+    }
+
+    @Override
+    public Color resultingColor() {
+        return Color.fromARGB(this.impl.getColor());
     }
 
     static final class BuilderImpl implements PotionContents.Builder {
