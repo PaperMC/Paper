@@ -21,14 +21,16 @@ public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Entity attacked;
+    private boolean hasExtraKnockback;
     private PlayerAttackType type;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerAttackEntityEvent(final Player player, final Entity attacked, final PlayerAttackType type) {
+    public PlayerAttackEntityEvent(final Player player, final Entity attacked, final boolean hasExtraKnockback, final PlayerAttackType type) {
         super(player);
         this.attacked = attacked;
+        this.hasExtraKnockback = hasExtraKnockback;
         this.type = type;
     }
 
@@ -39,6 +41,28 @@ public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable 
      */
     public Entity getAttacked() {
         return this.attacked;
+    }
+
+    /**
+     * Gets whether the attack has extra knockback.
+     * <p>
+     * A value of true indicates that the knockback of this attack be increased by the equivalent of a level of the knockback enchantment. This occurs in vanilla when a player attacks while they are sprinting and their attack cooldown completion is greater than 90%
+     *
+     * @return whether the attack has extra knockback
+     */
+    public boolean hasExtraKnockback() {
+        return this.hasExtraKnockback;
+    }
+
+    /**
+     * Sets whether the attack has extra knockback.
+     * <p>
+     * A value of true indicates that the knockback of this attack be increased by the equivalent of a level of the knockback enchantment. This occurs in vanilla when a player attacks while they are sprinting and their attack cooldown completion is greater than 90%
+     *
+     * @param hasExtraKnockback whether the attack has extra knockback
+     */
+    public void setExtraKnockback(final boolean hasExtraKnockback) {
+        this.hasExtraKnockback = hasExtraKnockback;
     }
 
     /**
@@ -79,6 +103,6 @@ public class PlayerAttackEntityEvent extends PlayerEvent implements Cancellable 
     }
 
     public enum PlayerAttackType {
-        NORMAL, KNOCKBACK, CRIT, SWEEP
+        NORMAL, CRIT, SWEEP
     }
 }
