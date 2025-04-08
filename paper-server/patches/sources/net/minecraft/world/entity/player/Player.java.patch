@@ -275,7 +275,7 @@
                  float f = this.isAutoSpinAttack() ? this.autoSpinAttackDmg : (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
                  ItemStack weaponItem = this.getWeaponItem();
                  DamageSource damageSource = Optional.ofNullable(weaponItem.getItem().getDamageSource(this)).orElse(this.damageSources().playerAttack(this));
-@@ -1134,23 +_,30 @@
+@@ -1134,23 +_,29 @@
                  float attackStrengthScale = this.getAttackStrengthScale(0.5F);
                  f *= 0.2F + attackStrengthScale * attackStrengthScale * 0.8F;
                  f1 *= attackStrengthScale;
@@ -306,7 +306,6 @@
 -                            this.level()
 -                                .playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F);
                              flag1 = true;
-+                            attackType = io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.KNOCKBACK; // Paper - PlayerAttackEntityEvent
                          } else {
                              flag1 = false;
                          }
@@ -314,7 +313,7 @@
                          f += weaponItem.getItem().getAttackDamageBonus(target, f, damageSource);
                          boolean flag2 = flag
                              && this.fallDistance > 0.0F
-@@ -1161,47 +_,67 @@
+@@ -1161,47 +_,66 @@
                              && !this.isPassenger()
                              && target instanceof LivingEntity
                              && !this.isSprinting();
@@ -336,7 +335,7 @@
                          }
 -
 +                        // Paper start - PlayerAttackEntityEvent
-+                        final io.papermc.paper.event.player.PlayerAttackEntityEvent playerAttackEntityEvent = new io.papermc.paper.event.player.PlayerAttackEntityEvent((org.bukkit.entity.Player) getBukkitEntity(), target.getBukkitEntity(), attackType);
++                        final io.papermc.paper.event.player.PlayerAttackEntityEvent playerAttackEntityEvent = new io.papermc.paper.event.player.PlayerAttackEntityEvent((org.bukkit.entity.Player) getBukkitEntity(), target.getBukkitEntity(), flag1, attackType);
 +                        boolean allowAttack = playerAttackEntityEvent.callEvent();
                          float f3 = 0.0F;
 -                        if (target instanceof LivingEntity livingEntity) {
@@ -348,13 +347,12 @@
 +                        boolean flag4 = false;
 +                        if (allowAttack) {
 +                            attackType = playerAttackEntityEvent.getType();
-+                            switch (attackType) {
-+                                case KNOCKBACK ->
-+                                    this.sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
-+                                case CRIT -> {
-+                                    f *= 1.5F;
-+                                    damageSource = damageSource.critical(); // Paper - critical damage API
-+                                }
++                            if (attackType == io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.CRIT) {
++                                f *= 1.5F;
++                                damageSource = damageSource.critical(); // Paper - critical damage API
++                            }
++                            if (playerAttackEntityEvent.hasExtraKnockback()) {
++                                this.sendSoundEffect(this, this.getX(), this.getY(), this.getZ(), net.minecraft.sounds.SoundEvents.PLAYER_ATTACK_KNOCKBACK, this.getSoundSource(), 1.0F, 1.0F); // Paper - send while respecting visibility
 +                            }
 +                            float f2 = f + f1;
 +                            if (target instanceof LivingEntity livingEntity) {
@@ -365,7 +363,7 @@
 +                        // Paper end - PlayerAttackEntityEvent
                          if (flag4) {
 -                            float f4 = this.getKnockback(target, damageSource) + (flag1 ? 1.0F : 0.0F);
-+                            float f4 = this.getKnockback(target, damageSource) + (attackType == io.papermc.paper.event.player.PlayerAttackEntityEvent.PlayerAttackType.KNOCKBACK ? 1.0F : 0.0F); // Paper - PlayerAttackEntityEvent
++                            float f4 = this.getKnockback(target, damageSource) + (playerAttackEntityEvent.hasExtraKnockback() ? 1.0F : 0.0F); // Paper - PlayerAttackEntityEvent
                              if (f4 > 0.0F) {
                                  if (target instanceof LivingEntity livingEntity1) {
                                      livingEntity1.knockback(
