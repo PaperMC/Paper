@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import java.util.Random;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents options for placing a {@link Structure}.
@@ -25,17 +26,18 @@ public class PlacementOptions {
      * @param random The randomizer used for setting the structure's
      *               {@link org.bukkit.loot.LootTable LootTables} and integrity.
      */
-    public PlacementOptions(Random random) {
+    public PlacementOptions(@NotNull Random random) {
         this.random = random;
     }
 
     /**
-     * Whether to include entities when the structure is placed.
+     * Set whether to include entities when the structure is placed.
+     * <p>Will default to true if not set.</p>
      *
      * @param includeEntities Whether to include entities.
      * @return This PlacementOptions.
      */
-    public PlacementOptions includeEntities(boolean includeEntities) {
+    public @NotNull PlacementOptions includeEntities(boolean includeEntities) {
         this.includeEntities = includeEntities;
         return this;
     }
@@ -51,11 +53,12 @@ public class PlacementOptions {
 
     /**
      * Set the rotation a structure will place with.
+     * <p>Will default to {@link StructureRotation#NONE} if not set.</p>
      *
      * @param structureRotation Rotation to place with.
      * @return This PlacementOptions.
      */
-    public PlacementOptions structureRotation(StructureRotation structureRotation) {
+    public @NotNull PlacementOptions structureRotation(@NotNull StructureRotation structureRotation) {
         this.structureRotation = structureRotation;
         return this;
     }
@@ -65,17 +68,18 @@ public class PlacementOptions {
      *
      * @return Rotation to place with.
      */
-    public StructureRotation getStructureRotation() {
+    public @NotNull StructureRotation getStructureRotation() {
         return structureRotation;
     }
 
     /**
      * Set the mirror a structure will place with.
+     * <p>Will default to {@link Mirror#NONE} if not set</p>
      *
      * @param mirror Mirror to place with.
      * @return This PlacementOptions.
      */
-    public PlacementOptions mirror(Mirror mirror) {
+    public @NotNull PlacementOptions mirror(@NotNull Mirror mirror) {
         this.mirror = mirror;
         return this;
     }
@@ -85,18 +89,19 @@ public class PlacementOptions {
      *
      * @return Mirror to place with.
      */
-    public Mirror getMirror() {
+    public @NotNull Mirror getMirror() {
         return mirror;
     }
 
     /**
      * Set the palette used for placing a structure.
+     * <p>Will default to {@code -1} if not set.</p>
      *
      * @param palette The palette index of the structure to use, starting at
      *                {@code 0}, or {@code -1} to pick a random palette.
      * @return This PlacementOptions.
      */
-    public PlacementOptions palette(int palette) {
+    public @NotNull PlacementOptions palette(int palette) {
         this.palette = palette;
         return this;
     }
@@ -112,13 +117,14 @@ public class PlacementOptions {
 
     /**
      * Set the integrity used for placing a structure.
+     * <p>Will default to 1 if not set</p>
      *
      * @param integrity Determines how damaged the building should look by
      *                  randomly skipping blocks to place. This value can range from 0 to 1. With
      *                  0 removing all blocks and 1 spawning the structure in pristine condition.
      * @return This PlacementOptions
      */
-    public PlacementOptions integrity(float integrity) {
+    public @NotNull PlacementOptions integrity(float integrity) {
         Preconditions.checkArgument(integrity >= 0F && integrity <= 1F, "Integrity value (%S) must be between 0 and 1 inclusive", integrity);
         this.integrity = integrity;
         return this;
@@ -137,11 +143,12 @@ public class PlacementOptions {
      * Set whether the structure will place with strict block placement.
      * <p>When true, blocks placed in the structure will not perform block updates.
      * ie: Water won't spread, fences won't connect to blocks.</p>
+     * <p>Will default to false if not set.</p>
      *
      * @param strict Whether to restrict block updates.
      * @return This PlacementOptions
      */
-    public PlacementOptions strict(boolean strict) {
+    public @NotNull PlacementOptions strict(boolean strict) {
         this.strict = strict;
         return this;
     }
@@ -157,11 +164,12 @@ public class PlacementOptions {
 
     /**
      * Set whether to apply waterlogging when placing a structure.
+     * <p>Will default to true if not set.</p>
      *
      * @param applyWaterlogging Whether to apply waterlogging.
      * @return This PlacementOptions
      */
-    public PlacementOptions applyWaterlogging(boolean applyWaterlogging) {
+    public @NotNull PlacementOptions applyWaterlogging(boolean applyWaterlogging) {
         this.applyWaterlogging = applyWaterlogging;
         return this;
     }
@@ -180,7 +188,7 @@ public class PlacementOptions {
      *
      * @return Random assigned.
      */
-    public Random getRandom() {
+    public @NotNull Random getRandom() {
         return random;
     }
 
