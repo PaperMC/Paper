@@ -16,5 +16,13 @@ public enum FluidCollisionMode {
     /**
      * Collide with all fluids.
      */
-    ALWAYS;
+    ALWAYS,
+    /**
+     * Only collide with lava fluid blocks.
+     */
+    LAVA,
+    /**
+     * Only collide with water fluid blocks.
+     */
+    WATER
 }
