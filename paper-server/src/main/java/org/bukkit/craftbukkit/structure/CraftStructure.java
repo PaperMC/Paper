@@ -17,6 +17,7 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.templatesystem.BlockRotProcessor;
+import net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import org.bukkit.Bukkit;
@@ -99,6 +100,7 @@ public class CraftStructure implements Structure {
                 .setIgnoreEntities(!placementOptions.isIncludeEntities())
                 .addProcessor(new BlockRotProcessor(placementOptions.getIntegrity()))
                 .setKnownShape(placementOptions.isStrict())
+                .setLiquidSettings(placementOptions.isApplyWaterlogging() ? LiquidSettings.APPLY_WATERLOGGING : LiquidSettings.IGNORE_WATERLOGGING)
                 .setRandom(randomSource);
         definedstructureinfo.palette = placementOptions.getPalette();
 

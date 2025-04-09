@@ -14,6 +14,7 @@ public class PlacementOptions {
     private float integrity = 1;
     private final Random random;
     private boolean strict = false;
+    private boolean applyWaterlogging = true;
 
     public PlacementOptions(Random random) {
         this.random = random;
@@ -50,6 +51,11 @@ public class PlacementOptions {
         return this;
     }
 
+    public PlacementOptions applyWaterlogging(boolean applyWaterlogging) {
+        this.applyWaterlogging = applyWaterlogging;
+        return this;
+    }
+
     public boolean isIncludeEntities() {
         return includeEntities;
     }
@@ -76,6 +82,10 @@ public class PlacementOptions {
 
     public boolean isStrict() {
         return strict;
+    }
+
+    public boolean isApplyWaterlogging() {
+        return applyWaterlogging;
     }
 
 }
