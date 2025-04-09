@@ -40,8 +40,10 @@ import org.bukkit.craftbukkit.util.BlockStateListPopulator;
 import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.craftbukkit.util.RandomSourceWrapper;
 import org.bukkit.entity.AbstractArrow;
+import org.bukkit.entity.AbstractCow;
 import org.bukkit.entity.AbstractHorse;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.Cow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Fireball;
@@ -471,6 +473,8 @@ public abstract class CraftRegionAccessor implements RegionAccessor {
             clazz = Arrow.class;
         } else if (clazz == AbstractHorse.class) {
             clazz = Horse.class;
+        } else if (clazz == AbstractCow.class) {
+            clazz = Cow.class;
         } else if (clazz == Fireball.class) {
             clazz = LargeFireball.class;
         } else if (clazz == ThrownPotion.class) {
