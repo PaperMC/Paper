@@ -10,7 +10,7 @@ public class PlacementOptions {
     private boolean includeEntities = true;
     private StructureRotation structureRotation = StructureRotation.NONE;
     private Mirror mirror = Mirror.NONE;
-    private int palette = 0;
+    private int palette = -1;
     private float integrity = 1;
     private final Random random;
     private boolean strict = false;
