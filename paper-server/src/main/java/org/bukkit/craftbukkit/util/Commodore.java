@@ -229,6 +229,12 @@ public class Commodore {
         ClassVisitor visitor = cw;
 
         visitor = io.papermc.paper.pluginremap.reflect.ReflectionRemapper.visitor(visitor); // Paper
+
+        Map<String, String> renames = new HashMap<>(RENAMES);
+        if (pluginVersion.isOlderThan(ApiVersion.ABSTRACT_COW)) {
+            renames.put("org/bukkit/entity/Cow", "org/bukkit/entity/AbstractCow");
+        }
+
         cr.accept(new ClassRemapper(new ClassVisitor(Opcodes.ASM9, visitor) {
             final Set<RerouteMethodData> rerouteMethodData = new HashSet<>();
             String className;
@@ -704,7 +710,7 @@ public class Commodore {
                     }
                 };
             }
-        }, new SimpleRemapper(Commodore.RENAMES)), 0);
+        }, new SimpleRemapper(renames)), 0);
 
         return cw.toByteArray();
     }

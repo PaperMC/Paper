@@ -169,7 +169,7 @@ public class FieldRename {
             .change("DROPPED_ITEM", "ITEM")
             .change("LEASH_HITCH", "LEASH_KNOT")
             .change("ENDER_SIGNAL", "EYE_OF_ENDER")
-            .change("SPLASH_POTION", "POTION")
+            .change("POTION", "SPLASH_POTION")
             .change("THROWN_EXP_BOTTLE", "EXPERIENCE_BOTTLE")
             .change("PRIMED_TNT", "TNT")
             .change("FIREWORK", "FIREWORK_ROCKET")
