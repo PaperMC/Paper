@@ -52,47 +52,27 @@ public class CraftStructure implements Structure {
 
     @Override
     public void place(Location location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random) {
-        this.place(location, includeEntities, structureRotation, mirror, palette, integrity, random, false);
-    }
-
-    @Override
-    public void place(Location location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, boolean strict) {
-        this.place(location, includeEntities, structureRotation, mirror, palette, integrity, random, strict, Collections.emptyList(), Collections.emptyList());
+        this.place(location, includeEntities, structureRotation, mirror, palette, integrity, random, Collections.emptyList(), Collections.emptyList());
     }
 
     @Override
     public void place(Location location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
-        this.place(location, includeEntities, structureRotation, mirror, palette, integrity, random, false, blockTransformers, entityTransformers);
-    }
-
-    @Override
-    public void place(Location location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, boolean strict, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         location.checkFinite();
         World world = location.getWorld();
         Preconditions.checkArgument(world != null, "The World of Location cannot be null");
 
         BlockVector blockVector = new BlockVector(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        this.place(world, blockVector, includeEntities, structureRotation, mirror, palette, integrity, random, strict, blockTransformers, entityTransformers);
+        this.place(world, blockVector, includeEntities, structureRotation, mirror, palette, integrity, random, blockTransformers, entityTransformers);
     }
 
     @Override
     public void place(RegionAccessor regionAccessor, BlockVector location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random) {
-       this.place(regionAccessor, location, includeEntities, structureRotation, mirror, palette, integrity, random, false);
-    }
-
-    @Override
-    public void place(RegionAccessor regionAccessor, BlockVector location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, boolean strict) {
-        this.place(regionAccessor, location, includeEntities, structureRotation, mirror, palette, integrity, random, strict, Collections.emptyList(), Collections.emptyList());
+       this.place(regionAccessor, location, includeEntities, structureRotation, mirror, palette, integrity, random, Collections.emptyList(), Collections.emptyList());
     }
 
     @Override
     public void place(RegionAccessor regionAccessor, BlockVector location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
-        this.place(regionAccessor, location, includeEntities, structureRotation, mirror, palette, integrity, random,false, blockTransformers, entityTransformers);
-    }
-
-    @Override
-    public void place(RegionAccessor regionAccessor, BlockVector location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, boolean strict, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(regionAccessor != null, "RegionAccessor cannot be null");
         Preconditions.checkArgument(blockTransformers != null, "BlockTransformers cannot be null");
@@ -107,8 +87,7 @@ public class CraftStructure implements Structure {
                 .setRotation(Rotation.valueOf(structureRotation.name()))
                 .setIgnoreEntities(!includeEntities)
                 .addProcessor(new BlockRotProcessor(integrity))
-                .setRandom(randomSource)
-                .setKnownShape(strict);
+                .setRandom(randomSource);
         definedstructureinfo.palette = palette;
 
         BlockPos pos = CraftBlockVector.toBlockPosition(location);
@@ -118,7 +97,7 @@ public class CraftStructure implements Structure {
         access.setDelegate(handle);
         access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(pos), blockTransformers, entityTransformers));
 
-        this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, 2 | (strict ? 816 : 0));
+        this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, 2);
         access.getStructureTransformer().discard();
     }
 
