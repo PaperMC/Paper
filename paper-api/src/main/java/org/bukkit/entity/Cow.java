@@ -2,9 +2,12 @@ package org.bukkit.entity;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
+import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents a Cow.
@@ -31,6 +34,12 @@ public interface Cow extends AbstractCow {
      */
     interface Variant extends Keyed {
 
+        enum Model {
+            COLD,
+            NORMAL,
+            WARM
+        }
+
         // Start generate - CowVariant
         // @GeneratedFrom 1.21.5
         Variant COLD = getVariant("cold");
@@ -39,6 +48,20 @@ public interface Cow extends AbstractCow {
 
         Variant WARM = getVariant("warm");
         // End generate - CowVariant
+
+        /**
+         * Get the cow variant's asset id
+         *
+         * @return the asset id
+         */
+        @NotNull Key assetId();
+
+        /**
+         * Get the cow variant's {@link Cow.Variant.Model}. Defaults to {@link Cow.Variant.Model#NORMAL}.
+         *
+         * @return the model
+         */
+        @Nullable Model getModel();
 
         private static Variant getVariant(String key) {
             return RegistryAccess.registryAccess().getRegistry(RegistryKey.COW_VARIANT).getOrThrow(NamespacedKey.minecraft(key));

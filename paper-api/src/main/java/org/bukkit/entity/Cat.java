@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import java.util.Locale;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.key.Key;
 import org.bukkit.DyeColor;
 import org.bukkit.Keyed;
 import org.bukkit.NamespacedKey;
@@ -78,6 +79,13 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
 
         Type WHITE = getType("white");
         // End generate - CatType
+
+        /**
+         * Get the cat type's asset id
+         *
+         * @return the asset id
+         */
+        @NotNull Key assetId();
 
         @NotNull
         private static Type getType(@NotNull String key) {
