@@ -76,21 +76,24 @@ public class CraftStructure implements Structure {
         Preconditions.checkArgument(world != null, "The World of Location cannot be null");
 
         BlockVector blockVector = new BlockVector(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        this.place(world, blockVector, placementOptions, blockTransformers, entityTransformers);
+        this.place(world, blockVector, placementOptions);
     }
 
     @Override
     public void place(RegionAccessor regionAccessor, BlockVector location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
-        PlacementOptions placementOptions = new PlacementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity);
-        this.place(regionAccessor, location, placementOptions, blockTransformers, entityTransformers);
+        PlacementOptions placementOptions = new PlacementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity)
+            .blockTransformers(blockTransformers).entityTransformers(entityTransformers);
+        this.place(regionAccessor, location, placementOptions);
     }
 
     @Override
-    public void place(RegionAccessor regionAccessor, BlockVector location, PlacementOptions placementOptions, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
+    public void place(RegionAccessor regionAccessor, BlockVector location, PlacementOptions placementOptions) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(regionAccessor != null, "RegionAccessor cannot be null");
-        Preconditions.checkArgument(blockTransformers != null, "BlockTransformers cannot be null");
-        Preconditions.checkArgument(entityTransformers != null, "EntityTransformers cannot be null");
+        Collection<BlockTransformer> blockTransformers = placementOptions.getBlockTransformers();
+        Preconditions.checkState(blockTransformers != null, "BlockTransformers cannot be null");
+        Collection<EntityTransformer> entityTransformers = placementOptions.getEntityTransformers();
+        Preconditions.checkState(entityTransformers != null, "EntityTransformers cannot be null");
         location.checkFinite();
 
         RandomSource randomSource = new RandomSourceWrapper(placementOptions.getRandom());

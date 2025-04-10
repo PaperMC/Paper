@@ -172,12 +172,9 @@ public interface Structure extends PersistentDataHolder {
      * @param regionAccessor The world to place the structure in.
      * @param location The location to place the structure at.
      * @param placementOptions Options used to determine different settings applied to the structure.
-     * {@link org.bukkit.loot.LootTable}s and integrity.
-     * @param blockTransformers A collection of {@link BlockTransformer}s to apply to the structure.
-     * @param entityTransformers A collection of {@link EntityTransformer}s to apply to the structure.
      */
     @ApiStatus.Experimental
-    void place(@NotNull RegionAccessor regionAccessor, @NotNull BlockVector location, @NotNull PlacementOptions placementOptions, @NotNull Collection<BlockTransformer> blockTransformers, @NotNull Collection<EntityTransformer> entityTransformers);
+    void place(@NotNull RegionAccessor regionAccessor, @NotNull BlockVector location, @NotNull PlacementOptions placementOptions);
 
     /**
      * Fills the structure from an area in a world. The origin and size will be

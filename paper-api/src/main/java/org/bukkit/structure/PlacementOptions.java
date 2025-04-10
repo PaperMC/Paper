@@ -1,9 +1,13 @@
 package org.bukkit.structure;
 
 import com.google.common.base.Preconditions;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Random;
 import org.bukkit.block.structure.Mirror;
 import org.bukkit.block.structure.StructureRotation;
+import org.bukkit.util.BlockTransformer;
+import org.bukkit.util.EntityTransformer;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -19,6 +23,8 @@ public class PlacementOptions {
     private final Random random;
     private boolean strict = false;
     private boolean applyWaterlogging = true;
+    private Collection<BlockTransformer> blockTransformers = Collections.emptyList();
+    private Collection<EntityTransformer> entityTransformers = Collections.emptyList();
 
     /**
      * Create a new set of placement options for placing a {@link Structure}.
@@ -181,6 +187,71 @@ public class PlacementOptions {
      */
     public boolean isApplyWaterlogging() {
         return applyWaterlogging;
+    }
+
+    /**
+     * Set the collection of {@link BlockTransformer BlockTransformers} to apply to the structure.
+     *
+     * @param blockTransformers Collection of BlockTransformers.
+     * @return This PlacementOptions.
+     */
+    public @NotNull PlacementOptions blockTransformers(@NotNull Collection<BlockTransformer> blockTransformers) {
+        this.blockTransformers = blockTransformers;
+        return this;
+    }
+
+    /**
+     * Add a {@link BlockTransformer} to apply to the structure.
+     * <p>Will default to an empty list if not included.</p>
+     *
+     * @param blockTransformer BlockTransformer to apply.
+     * @return This PlacementOptions.
+     */
+    public @NotNull PlacementOptions addBlockTransformer(@NotNull BlockTransformer blockTransformer) {
+        this.blockTransformers.add(blockTransformer);
+        return this;
+    }
+
+    /**
+     * Collection of {@link BlockTransformer BlockTransformers} to apply to the structure.
+     *
+     * @return BlockTransformers to apply.
+     */
+    public @NotNull Collection<BlockTransformer> getBlockTransformers() {
+        return blockTransformers;
+    }
+
+    /**
+     * Set the collection of {@link EntityTransformer EntityTransformers} to apply to the structure.
+     * <p>Will default to an empty list if not included.</p>
+     *
+     * @param entityTransformers EntityTransformers to apply.
+     * @return This PlacementOptions.
+     */
+    public @NotNull PlacementOptions entityTransformers(@NotNull Collection<EntityTransformer> entityTransformers) {
+        this.entityTransformers = entityTransformers;
+        return this;
+    }
+
+    /**
+     * Add an {@link EntityTransformer} to apply to the structure.
+     * <p>Will default to an empty list if not included.</p>
+     *
+     * @param entityTransformer EntityTransformer to apply.
+     * @return This PlacementOptions.
+     */
+    public @NotNull PlacementOptions addEntityTransformer(@NotNull EntityTransformer entityTransformer) {
+        this.entityTransformers.add(entityTransformer);
+        return this;
+    }
+
+    /**
+     * Collection of {@link EntityTransformer EntityTransformers} to apply to the structure.
+     *
+     * @return EntityTransformers to apply.
+     */
+    public @NotNull Collection<EntityTransformer> getEntityTransformers() {
+        return entityTransformers;
     }
 
     /**
