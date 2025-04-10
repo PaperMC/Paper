@@ -4,6 +4,7 @@ import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
@@ -37,6 +38,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.entity.player.Player;
@@ -83,6 +85,7 @@ import org.bukkit.potion.PotionType;
 public final class CraftMagicNumbers implements UnsafeValues {
     public static final CraftMagicNumbers INSTANCE = new CraftMagicNumbers();
     public static final boolean DISABLE_OLD_API_SUPPORT = Boolean.getBoolean("paper.disableOldApiSupport"); // Paper
+    private static final Gson GSON = new Gson();
 
     private final Commodore commodore = new Commodore();
 
@@ -498,9 +501,93 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
 
         CompoundTag compound = deserializeNbtFromBytes(data);
+        return deserializeItem(compound);
+    }
+
+    private ItemStack deserializeItem(CompoundTag compound) {
         final int dataVersion = compound.getIntOr("DataVersion", 0);
         compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, MinecraftServer.getServer().fixerUpper, compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
+    }
+
+    @Override
+    public @org.jetbrains.annotations.NotNull Map<String, Object> serializeStack(final ItemStack itemStack) {
+        final CompoundTag tag = CraftItemStack.asNMSCopy(itemStack).save(CraftRegistry.getMinecraftRegistry()).asCompound().orElseThrow();
+        net.minecraft.nbt.NbtUtils.addCurrentDataVersion(tag);
+        final Map<String, Object> ret = new HashMap<>();
+        tag.asCompound().get().forEach((key, value) -> {
+            switch (key) {
+                case "id" -> {
+                    ret.put("id", value.asString().get());
+                }
+                case "count" -> {
+                    ret.put("count", value.asInt().get());
+                }
+                case "components" -> {
+                    final com.mojang.serialization.Codec<Tag> converter = ExtraCodecs.converter(NbtOps.INSTANCE);
+                    final Map<String, Object> components = new HashMap<>();
+                    value.asCompound().ifPresent((compoundTag) -> {
+                        compoundTag.keySet().forEach((componentKey) -> {
+                            components.put(componentKey, converter.encodeStart(JsonOps.INSTANCE, compoundTag.get(componentKey)).result().get().toString());
+                        });
+                    });
+                    ret.put("components", components);
+                }
+                case "DataVersion" -> {
+                    ret.put("DataVersion", value.asInt().get());
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + key);
+            }
+        });
+        ret.put("schema_version", 2);
+        return ret;
+    }
+
+    @Override
+    public @org.jetbrains.annotations.NotNull ItemStack deserializeStack(@org.jetbrains.annotations.NotNull final Map<String, Object> args) {
+        int version = args.getOrDefault("schema_version", 1) instanceof Number val ? val.intValue() : -1;
+
+        CompoundTag tag = new CompoundTag();
+        args.forEach((key, value) -> {
+            switch (key) {
+                case "id" -> {
+                    tag.putString("id", (String) value);
+                }
+                case "count" -> {
+                    tag.putInt("count", ((Number) value).intValue());
+                }
+                case "components" -> {
+                    if (version == 1) {
+                        String json = (String) value;
+                        final JsonElement jsonElement = GSON.fromJson(json, JsonElement.class);
+                        tag.put("components", ExtraCodecs.converter(JsonOps.INSTANCE).encodeStart(NbtOps.INSTANCE, jsonElement).result().get());
+                    } else if (version == 2) {
+                        Map<String, String> componentMap = (Map<String, String>) value;
+                        CompoundTag components = new CompoundTag();
+                        componentMap.forEach((keyString, valueString) -> {
+                            final JsonElement jsonElement = GSON.fromJson(valueString, JsonElement.class);
+                            components.put(keyString, ExtraCodecs.converter(JsonOps.INSTANCE).encodeStart(NbtOps.INSTANCE, jsonElement).result().get());
+                        });
+                        tag.put("components", components);
+
+                     } else {
+                        throw new IllegalStateException("Unexpected version: " + version);
+                    }
+                }
+                case "DataVersion" -> {
+                    tag.putInt("DataVersion", ((Number) value).intValue());
+                }
+                case "==" -> {
+                    // Ignore
+                }
+                case "schema_version" -> {
+                    // Ignore
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + key);
+            }
+        });
+
+        return deserializeItem(tag);
     }
 
     @Override
