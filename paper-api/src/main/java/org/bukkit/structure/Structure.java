@@ -156,6 +156,27 @@ public interface Structure extends PersistentDataHolder {
     void place(@NotNull RegionAccessor regionAccessor, @NotNull BlockVector location, boolean includeEntities, @NotNull StructureRotation structureRotation, @NotNull Mirror mirror, int palette, float integrity, @NotNull Random random, @NotNull Collection<BlockTransformer> blockTransformers, @NotNull Collection<EntityTransformer> entityTransformers);
 
     /**
+     * Place a structure in the world.
+     *
+     * @param location The location to place the structure at.
+     * @param placementOptions Options used to determine different settings applied to the structure.
+     * @param blockTransformers A collection of {@link BlockTransformer}s to apply to the structure.
+     * @param entityTransformers A collection of {@link EntityTransformer}s to apply to the structure.
+     */
+    @ApiStatus.Experimental
+    void place(@NotNull Location location, @NotNull PlacementOptions placementOptions, @NotNull Collection<BlockTransformer> blockTransformers, @NotNull Collection<EntityTransformer> entityTransformers);
+
+    /**
+     * Place a structure in the world.
+     *
+     * @param regionAccessor The world to place the structure in.
+     * @param location The location to place the structure at.
+     * @param placementOptions Options used to determine different settings applied to the structure.
+     */
+    @ApiStatus.Experimental
+    void place(@NotNull RegionAccessor regionAccessor, @NotNull BlockVector location, @NotNull PlacementOptions placementOptions);
+
+    /**
      * Fills the structure from an area in a world. The origin and size will be
      * calculated automatically from the two corners provided.
      * <p>
