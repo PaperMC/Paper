@@ -512,7 +512,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     @Override
     public @org.jetbrains.annotations.NotNull Map<String, Object> serializeStack(final ItemStack itemStack) {
-        final CompoundTag tag = CraftItemStack.asNMSCopy(itemStack).save(MinecraftServer.getServer().registryAccess()).asCompound().orElseThrow();
+        final CompoundTag tag = CraftItemStack.asNMSCopy(itemStack).save(CraftRegistry.getMinecraftRegistry()).asCompound().orElseThrow();
         net.minecraft.nbt.NbtUtils.addCurrentDataVersion(tag);
         final Map<String, Object> ret = new HashMap<>();
         tag.asCompound().get().forEach((key, value) -> {
@@ -563,10 +563,12 @@ public final class CraftMagicNumbers implements UnsafeValues {
                         tag.put("components", ExtraCodecs.converter(JsonOps.INSTANCE).encodeStart(NbtOps.INSTANCE, jsonElement).result().get());
                     } else if (version == 2) {
                         Map<String, String> componentMap = (Map<String, String>) value;
+                        CompoundTag components = new CompoundTag();
                         componentMap.forEach((keyString, valueString) -> {
                             final JsonElement jsonElement = GSON.fromJson(valueString, JsonElement.class);
-                            tag.put(keyString, ExtraCodecs.converter(JsonOps.INSTANCE).encodeStart(NbtOps.INSTANCE, jsonElement).result().get());
+                            components.put(keyString, ExtraCodecs.converter(JsonOps.INSTANCE).encodeStart(NbtOps.INSTANCE, jsonElement).result().get());
                         });
+                        tag.put("components", components);
 
                      } else {
                         throw new IllegalStateException("Unexpected version: " + version);
