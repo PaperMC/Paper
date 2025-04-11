@@ -195,7 +195,7 @@ public abstract class Command {
             // Paper start - use components for permissionMessage
         net.kyori.adventure.text.Component permissionMessage = this.permissionMessage != null ? this.permissionMessage : Bukkit.permissionMessage();
         if (!permissionMessage.equals(net.kyori.adventure.text.Component.empty())) {
-            target.sendMessage(permissionMessage.replaceText(net.kyori.adventure.text.TextReplacementConfig.builder().matchLiteral("<permission>").replacement(permission).build()));
+            target.sendMessage(permissionMessage.replaceText(net.kyori.adventure.text.TextReplacementConfig.builder().matchLiteral("<permission>").replacement(getPermission()).build()));
             // Paper end
         }
 
@@ -212,11 +212,11 @@ public abstract class Command {
      * @return true if they can use it, otherwise false
      */
     public boolean testPermissionSilent(@NotNull CommandSender target) {
-        if ((permission == null) || (permission.length() == 0)) {
+        if ((getPermission() == null) || (getPermission().length() == 0)) {
             return true;
         }
 
-        for (String p : permission.split(";")) {
+        for (String p : getPermission().split(";")) {
             if (target.hasPermission(p)) {
                 return true;
             }
