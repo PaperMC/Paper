@@ -14,6 +14,7 @@ import org.bukkit.Server;
 import org.bukkit.craftbukkit.CraftLootTable;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.inventory.CraftItemFactory;
+import org.bukkit.craftbukkit.scheduler.CraftScheduler;
 import org.bukkit.craftbukkit.tag.CraftBlockTag;
 import org.bukkit.craftbukkit.tag.CraftEntityTag;
 import org.bukkit.craftbukkit.tag.CraftFluidTag;
@@ -26,6 +27,9 @@ public final class DummyServerHelper {
 
     public static Server setup() {
         Server instance = mock(withSettings().stubOnly());
+
+        final CraftScheduler scheduler = new CraftScheduler();
+        when(instance.getScheduler()).then(mock -> scheduler);
 
         when(instance.getItemFactory()).thenAnswer(mock -> CraftItemFactory.instance());
 
