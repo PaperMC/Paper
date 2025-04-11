@@ -95,6 +95,11 @@ public class CraftContainer extends AbstractContainerMenu {
                 this.title = title;
             }
 
+            @Override
+            public MenuType getMenuType() {
+                return CraftMenuType.minecraftToBukkit(getNotchInventoryType(inventory));
+            }
+
         }, player, id);
     }
 
