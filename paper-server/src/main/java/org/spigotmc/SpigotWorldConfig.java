@@ -83,7 +83,7 @@ public class SpigotWorldConfig {
     public int beetrootModifier;
     public int carrotModifier;
     public int potatoModifier;
-    public int torchFlowerModifier; // Paper
+    public int torchFlowerModifier;
     public int wheatModifier;
     public int wartModifier;
     public int vineModifier;
@@ -94,8 +94,8 @@ public class SpigotWorldConfig {
     public int twistingVinesModifier;
     public int weepingVinesModifier;
     public int caveVinesModifier;
-    public int glowBerryModifier; // Paper
-    public int pitcherPlantModifier; // Paper
+    public int glowBerryModifier;
+    public int pitcherPlantModifier;
 
     private int getAndValidateGrowth(String crop) {
         int modifier = this.getInt("growth." + crop.toLowerCase(java.util.Locale.ENGLISH) + "-modifier", 100);
@@ -118,7 +118,7 @@ public class SpigotWorldConfig {
         this.beetrootModifier = this.getAndValidateGrowth("Beetroot");
         this.carrotModifier = this.getAndValidateGrowth("Carrot");
         this.potatoModifier = this.getAndValidateGrowth("Potato");
-        this.torchFlowerModifier = this.getAndValidateGrowth("TorchFlower"); // Paper
+        this.torchFlowerModifier = this.getAndValidateGrowth("TorchFlower");
         this.wheatModifier = this.getAndValidateGrowth("Wheat");
         this.wartModifier = this.getAndValidateGrowth("NetherWart");
         this.vineModifier = this.getAndValidateGrowth("Vine");
@@ -129,8 +129,16 @@ public class SpigotWorldConfig {
         this.twistingVinesModifier = this.getAndValidateGrowth("TwistingVines");
         this.weepingVinesModifier = this.getAndValidateGrowth("WeepingVines");
         this.caveVinesModifier = this.getAndValidateGrowth("CaveVines");
-        this.glowBerryModifier = this.getAndValidateGrowth("GlowBerry"); // Paper
-        this.pitcherPlantModifier = this.getAndValidateGrowth("PitcherPlant"); // Paper
+        this.glowBerryModifier = this.getAndValidateGrowth("GlowBerry");
+        this.pitcherPlantModifier = this.getAndValidateGrowth("PitcherPlant");
+    }
+
+    public static int computeBlockGrowingAgeProgression(final net.minecraft.util.RandomSource random, final int modifier) {
+        final double modifierScaled = modifier / 100.0D;
+        final int baseGrowth = (int) modifierScaled;
+        final double chanceOfDoubleGrowth = modifierScaled - baseGrowth;
+
+        return baseGrowth + (random.nextFloat() < chanceOfDoubleGrowth ? 1 : 0);
     }
 
     public double itemMerge;
