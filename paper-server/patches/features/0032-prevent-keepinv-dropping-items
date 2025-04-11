@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Newwind <newwindserver@gmail.com>
+Date: Wed, 05 Apr 2025 12:02:37 +0200
+Subject: [PATCH] Prevent keep inventory deaths from dropping open container/cursor items
+
+When a player has an open inventory—such as with a merchant or anvil—and
+places items in it, or has an item on their cursor, closing the inventory typically 
+returns those items to the player's main inventory. However, if the player dies with
+the inventory still open, the items are dropped onto the ground.
+
+This usually isn't a problem, as their entire inventory would be dropped anyway.
+But when keep inventory is enabled, these items should return directly to the player's inventory
+to prevent valuable items from being accidentally dropped—especially
+in spawn areas where keep inventory is active.
+
+diff --git a/net/minecraft/server/level/ServerPlayer.java b/net/minecraft/server/level/ServerPlayer.java
+index 3de65c4..2083cd4 100644
+--- a/net/minecraft/server/level/ServerPlayer.java
++++ b/net/minecraft/server/level/ServerPlayer.java
+@@ -391,6 +391,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+     public int newLevel = 0;
+     public int newTotalExp = 0;
+     public boolean keepLevel = false;
++    public boolean keepInventory = false; // Paper - Keep inventory tracking
+     public double maxHealthCache;
+     public boolean joining = true;
+     public boolean sentListPacket = false;
+@@ -3076,6 +3077,7 @@ public class ServerPlayer extends Player implements ca.spottedleaf.moonrise.patc
+             this.giveExperiencePoints(this.newExp);
+         }
+         this.keepLevel = false;
++        this.keepInventory = false; // Paper - Keep inventory tracking
+         this.setDeltaMovement(0, 0, 0); // CraftBukkit - SPIGOT-6948: Reset velocity on death
+         this.skipDropExperience = false; // CraftBukkit - SPIGOT-7462: Reset experience drop skip, so that further deaths drop xp
+     }
+diff --git a/net/minecraft/world/inventory/AbstractContainerMenu.java b/net/minecraft/world/inventory/AbstractContainerMenu.java
+index acca8c5..6a35330 100644
+--- a/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -689,7 +689,8 @@ public abstract class AbstractContainerMenu {
+     }
+ 
+     private static void dropOrPlaceInInventory(Player player, ItemStack stack) {
+-        boolean flag = player.isRemoved() && player.getRemovalReason() != Entity.RemovalReason.CHANGED_DIMENSION;
++        boolean shouldPutBackIntoInventory = ((ServerPlayer) player).keepInventory && io.papermc.paper.configuration.GlobalConfiguration.get().misc.returnItemsToInventoryUponKeepInventoryDeath; // Paper - don't drop items on keep inventory death
++        boolean flag = player.isRemoved() && player.getRemovalReason() != Entity.RemovalReason.CHANGED_DIMENSION && !shouldPutBackIntoInventory; // Paper - don't drop items on keep inventory death
+         boolean flag1 = player instanceof ServerPlayer serverPlayer && serverPlayer.hasDisconnected();
+         if (flag || flag1) {
+             player.drop(stack, false);
+diff --git a/net/minecraft/world/inventory/MerchantMenu.java b/net/minecraft/world/inventory/MerchantMenu.java
+index 3019790..7a8b0c7 100644
+--- a/net/minecraft/world/inventory/MerchantMenu.java
++++ b/net/minecraft/world/inventory/MerchantMenu.java
+@@ -182,7 +182,8 @@ public class MerchantMenu extends AbstractContainerMenu {
+         super.removed(player);
+         this.trader.setTradingPlayer(null);
+         if (!this.trader.isClientSide()) {
+-            if (!player.isAlive() || player instanceof ServerPlayer && ((ServerPlayer)player).hasDisconnected()) {
++            boolean shouldPutBackIntoInventory = ((ServerPlayer) player).keepInventory && io.papermc.paper.configuration.GlobalConfiguration.get().misc.returnItemsToInventoryUponKeepInventoryDeath; // Paper - don't drop items on keep inventory death
++            if ((!player.isAlive() && !shouldPutBackIntoInventory) || (player instanceof ServerPlayer && ((ServerPlayer)player).hasDisconnected())) { // Paper - don't drop items on keep inventory death
+                 ItemStack itemStack = this.tradeContainer.removeItemNoUpdate(0);
+                 if (!itemStack.isEmpty()) {
+                     player.drop(itemStack, false);
