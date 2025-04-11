@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import io.papermc.paper.configuration.ServerConfiguration;
 import org.bukkit.Warning.WarningState;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.block.data.BlockData;
@@ -1432,6 +1433,15 @@ public final class Bukkit {
      */
     public static boolean getOnlineMode() {
         return server.getOnlineMode();
+    }
+
+    /**
+     * Retrieves the server configuration.
+     *
+     * @return the instance of ServerConfiguration containing the server's configuration details
+     */
+    public static @NotNull ServerConfiguration getServerConfig() {
+        return server.getServerConfig();
     }
 
     /**
