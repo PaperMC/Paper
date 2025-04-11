@@ -1,22 +1,26 @@
 --- a/net/minecraft/world/entity/monster/ZombifiedPiglin.java
 +++ b/net/minecraft/world/entity/monster/ZombifiedPiglin.java
-@@ -56,6 +_,7 @@
+@@ -56,6 +_,8 @@
      private static final int ALERT_RANGE_Y = 10;
      private static final UniformInt ALERT_INTERVAL = TimeUtil.rangeOfSeconds(4, 6);
      private int ticksUntilNextAlert;
 +    private HurtByTargetGoal pathfinderGoalHurtByTarget; // Paper - fix PigZombieAngerEvent cancellation
++    private ResetUniversalAngerTargetGoal<ZombifiedPiglin> resetUniversalTarget; // Paper - fix ZombifiedPiglin anger persistence after player death
  
      public ZombifiedPiglin(EntityType<? extends ZombifiedPiglin> entityType, Level level) {
          super(entityType, level);
-@@ -71,7 +_,7 @@
+@@ -71,9 +_,9 @@
      protected void addBehaviourGoals() {
          this.goalSelector.addGoal(2, new ZombieAttackGoal(this, 1.0, false));
          this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0));
 -        this.targetSelector.addGoal(1, new HurtByTargetGoal(this).setAlertOthers());
 +        this.targetSelector.addGoal(1, this.pathfinderGoalHurtByTarget = (new HurtByTargetGoal(this)).setAlertOthers()); // Paper - fix PigZombieAngerEvent cancellation
          this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
-         this.targetSelector.addGoal(3, new ResetUniversalAngerTargetGoal<>(this, true));
+-        this.targetSelector.addGoal(3, new ResetUniversalAngerTargetGoal<>(this, true));
++        this.targetSelector.addGoal(3,this.resetUniversalTarget = (new ResetUniversalAngerTargetGoal<ZombifiedPiglin>(this, true))); // Paper - fix ZombifiedPiglin anger persistence after player death
      }
+ 
+     public static AttributeSupplier.Builder createAttributes() {
 @@ -148,7 +_,7 @@
              .filter(zombifiedPiglin -> zombifiedPiglin != this)
              .filter(zombifiedPiglin -> zombifiedPiglin.getTarget() == null)
@@ -51,8 +55,8 @@
 +        org.bukkit.event.entity.PigZombieAngerEvent event = new org.bukkit.event.entity.PigZombieAngerEvent((org.bukkit.entity.PigZombie) this.getBukkitEntity(), (entity == null) ? null : entity.getBukkitEntity(), ZombifiedPiglin.PERSISTENT_ANGER_TIME.sample(this.random));
 +        this.level().getCraftServer().getPluginManager().callEvent(event);
 +        if (event.isCancelled()) {
-+            this.setPersistentAngerTarget(null);
 +            this.pathfinderGoalHurtByTarget.stop(); // Paper - fix PigZombieAngerEvent cancellation
++            this.resetUniversalTarget.start(); // Paper - fix ZombifiedPiglin anger persistence after player death
 +            return;
 +        }
 +        this.setRemainingPersistentAngerTime(event.getNewAnger());
