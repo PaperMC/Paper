@@ -8,8 +8,8 @@ import org.bukkit.block.Bed;
 
 public class CraftBed extends CraftBlockEntityState<BedBlockEntity> implements Bed {
 
-    public CraftBed(World world, BedBlockEntity tileEntity) {
-        super(world, tileEntity);
+    public CraftBed(World world, BedBlockEntity blockEntity) {
+        super(world, blockEntity);
     }
 
     protected CraftBed(CraftBed state, Location location) {
@@ -18,42 +18,25 @@ public class CraftBed extends CraftBlockEntityState<BedBlockEntity> implements B
 
     @Override
     public DyeColor getColor() {
-        switch (this.getType()) {
-            case BLACK_BED:
-                return DyeColor.BLACK;
-            case BLUE_BED:
-                return DyeColor.BLUE;
-            case BROWN_BED:
-                return DyeColor.BROWN;
-            case CYAN_BED:
-                return DyeColor.CYAN;
-            case GRAY_BED:
-                return DyeColor.GRAY;
-            case GREEN_BED:
-                return DyeColor.GREEN;
-            case LIGHT_BLUE_BED:
-                return DyeColor.LIGHT_BLUE;
-            case LIGHT_GRAY_BED:
-                return DyeColor.LIGHT_GRAY;
-            case LIME_BED:
-                return DyeColor.LIME;
-            case MAGENTA_BED:
-                return DyeColor.MAGENTA;
-            case ORANGE_BED:
-                return DyeColor.ORANGE;
-            case PINK_BED:
-                return DyeColor.PINK;
-            case PURPLE_BED:
-                return DyeColor.PURPLE;
-            case RED_BED:
-                return DyeColor.RED;
-            case WHITE_BED:
-                return DyeColor.WHITE;
-            case YELLOW_BED:
-                return DyeColor.YELLOW;
-            default:
-                throw new IllegalArgumentException("Unknown DyeColor for " + this.getType());
-        }
+        return switch (this.getType()) {
+            case BLACK_BED -> DyeColor.BLACK;
+            case BLUE_BED -> DyeColor.BLUE;
+            case BROWN_BED -> DyeColor.BROWN;
+            case CYAN_BED -> DyeColor.CYAN;
+            case GRAY_BED -> DyeColor.GRAY;
+            case GREEN_BED -> DyeColor.GREEN;
+            case LIGHT_BLUE_BED -> DyeColor.LIGHT_BLUE;
+            case LIGHT_GRAY_BED -> DyeColor.LIGHT_GRAY;
+            case LIME_BED -> DyeColor.LIME;
+            case MAGENTA_BED -> DyeColor.MAGENTA;
+            case ORANGE_BED -> DyeColor.ORANGE;
+            case PINK_BED -> DyeColor.PINK;
+            case PURPLE_BED -> DyeColor.PURPLE;
+            case RED_BED -> DyeColor.RED;
+            case WHITE_BED -> DyeColor.WHITE;
+            case YELLOW_BED -> DyeColor.YELLOW;
+            default -> throw new IllegalArgumentException("Unknown DyeColor for " + this.getType());
+        };
     }
 
     @Override

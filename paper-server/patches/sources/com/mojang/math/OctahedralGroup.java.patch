@@ -1,28 +1,34 @@
 --- a/com/mojang/math/OctahedralGroup.java
 +++ b/com/mojang/math/OctahedralGroup.java
-@@ -111,6 +_,7 @@
-         this.permutation = permutation;
-         this.transformation = new Matrix3f().scaling(invertX ? -1.0F : 1.0F, invertY ? -1.0F : 1.0F, invertZ ? -1.0F : 1.0F);
-         this.transformation.mul(permutation.transformation());
-+        this.initializeRotationDirections(); // Paper - Avoid Lazy Initialization for Enum Fields
-     }
+@@ -123,6 +_,12 @@
+         }
+     );
  
-     private BooleanList packInversions() {
-@@ -139,7 +_,7 @@
++    static {
++        for (OctahedralGroup octahedralGroup : values()) {
++            octahedralGroup.initializeRotationDirections(); // Paper - Avoid Lazy Initialization for Enum Fields
++        }
++    }
++
+     private OctahedralGroup(final String name, final SymmetricGroup3 permutation, final boolean invertX, final boolean invertY, final boolean invertZ) {
+         this.name = name;
+         this.invertX = invertX;
+@@ -160,7 +_,7 @@
          return this.name;
      }
  
 -    public Direction rotate(Direction direction) {
 +    public void initializeRotationDirections() { // Paper - Avoid Lazy Initialization for Enum Fields
          if (this.rotatedDirections == null) {
-             this.rotatedDirections = Maps.newEnumMap(Direction.class);
-             Direction.Axis[] axiss = Direction.Axis.values();
-@@ -154,6 +_,10 @@
-             }
+             this.rotatedDirections = Util.makeEnumMap(Direction.class, direction1 -> {
+                 Direction.Axis axis = direction1.getAxis();
+@@ -171,6 +_,11 @@
+             });
          }
  
 +    // Paper start - Avoid Lazy Initialization for Enum Fields
 +    }
++
 +    public Direction rotate(Direction direction) {
 +    // Paper end - Avoid Lazy Initialization for Enum Fields
          return this.rotatedDirections.get(direction);

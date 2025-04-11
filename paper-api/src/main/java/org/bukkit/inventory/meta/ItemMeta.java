@@ -400,18 +400,18 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     /**
      * Checks for existence of the specified enchantment.
      *
-     * @param ench enchantment to check
+     * @param enchant enchantment to check
      * @return true if this enchantment exists for this meta
      */
-    boolean hasEnchant(@NotNull Enchantment ench);
+    boolean hasEnchant(@NotNull Enchantment enchant);
 
     /**
      * Checks for the level of the specified enchantment.
      *
-     * @param ench enchantment to check
+     * @param enchant enchantment to check
      * @return The level that the specified enchantment has, or 0 if none
      */
-    int getEnchantLevel(@NotNull Enchantment ench);
+    int getEnchantLevel(@NotNull Enchantment enchant);
 
     /**
      * Returns a copy the enchantments in this ItemMeta. <br>
@@ -425,23 +425,23 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
     /**
      * Adds the specified enchantment to this item meta.
      *
-     * @param ench Enchantment to add
+     * @param enchant Enchantment to add
      * @param level Level for the enchantment
      * @param ignoreLevelRestriction this indicates the enchantment should be
      *     applied, ignoring the level limit
      * @return true if the item meta changed as a result of this call, false
      *     otherwise
      */
-    boolean addEnchant(@NotNull Enchantment ench, int level, boolean ignoreLevelRestriction);
+    boolean addEnchant(@NotNull Enchantment enchant, int level, boolean ignoreLevelRestriction);
 
     /**
      * Removes the specified enchantment from this item meta.
      *
-     * @param ench Enchantment to remove
+     * @param enchant Enchantment to remove
      * @return true if the item meta changed as a result of this call, false
      *     otherwise
      */
-    boolean removeEnchant(@NotNull Enchantment ench);
+    boolean removeEnchant(@NotNull Enchantment enchant);
 
     /**
      * Removes all enchantments from this item meta.
@@ -452,10 +452,10 @@ public interface ItemMeta extends Cloneable, ConfigurationSerializable, Persiste
      * Checks if the specified enchantment conflicts with any enchantments in
      * this ItemMeta.
      *
-     * @param ench enchantment to test
+     * @param enchant enchantment to test
      * @return true if the enchantment conflicts, false otherwise
      */
-    boolean hasConflictingEnchant(@NotNull Enchantment ench);
+    boolean hasConflictingEnchant(@NotNull Enchantment enchant);
 
     /**
      * Set itemflags which should be ignored when rendering a ItemStack in the Client. This Method does silently ignore double set itemFlags.

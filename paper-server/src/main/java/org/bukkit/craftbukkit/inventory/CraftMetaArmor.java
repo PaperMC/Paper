@@ -6,12 +6,9 @@ import java.util.Map;
 import java.util.Objects;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.configuration.serialization.DelegateDeserialization;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimMaterial;
 import org.bukkit.craftbukkit.inventory.trim.CraftTrimPattern;
-import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.trim.ArmorTrim;
 import org.bukkit.inventory.meta.trim.TrimMaterial;
@@ -34,18 +31,14 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
         }
     }
 
-    CraftMetaArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) { // Paper
-        super(tag, extraHandledDcts); // Paper
+    CraftMetaArmor(DataComponentPatch tag, java.util.Set<net.minecraft.core.component.DataComponentType<?>> extraHandledDcts) {
+        super(tag, extraHandledDcts);
 
         getOrEmpty(tag, CraftMetaArmor.TRIM).ifPresent((trimCompound) -> {
             TrimMaterial trimMaterial = CraftTrimMaterial.minecraftHolderToBukkit(trimCompound.material());
             TrimPattern trimPattern = CraftTrimPattern.minecraftHolderToBukkit(trimCompound.pattern());
 
             this.trim = new ArmorTrim(trimMaterial, trimPattern);
-
-            if (!trimCompound.showInTooltip()) {
-                this.addItemFlags(ItemFlag.HIDE_ARMOR_TRIM);
-            }
         });
     }
 
@@ -70,22 +63,22 @@ public class CraftMetaArmor extends CraftMetaItem implements ArmorMeta {
     }
 
     @Override
-    void applyToItem(CraftMetaItem.Applicator itemTag) {
-        super.applyToItem(itemTag);
+    void applyToItem(CraftMetaItem.Applicator tag) {
+        super.applyToItem(tag);
 
         if (this.hasTrim()) {
-            itemTag.put(CraftMetaArmor.TRIM, new net.minecraft.world.item.equipment.trim.ArmorTrim(CraftTrimMaterial.bukkitToMinecraftHolder(this.trim.getMaterial()), CraftTrimPattern.bukkitToMinecraftHolder(this.trim.getPattern()), !this.hasItemFlag(ItemFlag.HIDE_ARMOR_TRIM)));
+            tag.put(CraftMetaArmor.TRIM, new net.minecraft.world.item.equipment.trim.ArmorTrim(CraftTrimMaterial.bukkitToMinecraftHolder(this.trim.getMaterial()), CraftTrimPattern.bukkitToMinecraftHolder(this.trim.getPattern())));
         }
     }
 
     @Override
-    boolean equalsCommon(CraftMetaItem that) {
-        if (!super.equalsCommon(that)) {
+    boolean equalsCommon(CraftMetaItem meta) {
+        if (!super.equalsCommon(meta)) {
             return false;
         }
 
-        if (that instanceof CraftMetaArmor armorMeta) {
-            return Objects.equals(this.trim, armorMeta.trim);
+        if (meta instanceof CraftMetaArmor other) {
+            return Objects.equals(this.trim, other.trim);
         }
 
         return true;

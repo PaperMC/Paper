@@ -1,7 +1,11 @@
 package org.bukkit.craftbukkit.entity;
 
+import net.minecraft.Optionull;
+import org.bukkit.Location;
 import org.bukkit.craftbukkit.CraftServer;
+import org.bukkit.craftbukkit.util.CraftLocation;
 import org.bukkit.entity.Phantom;
+import java.util.UUID;
 
 public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
 
@@ -20,8 +24,8 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
     }
 
     @Override
-    public void setSize(int sz) {
-        this.getHandle().setPhantomSize(sz);
+    public void setSize(int size) {
+        this.getHandle().setPhantomSize(size);
     }
 
     @Override
@@ -29,9 +33,8 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
         return "CraftPhantom";
     }
 
-    // Paper start
     @Override
-    public java.util.UUID getSpawningEntity() {
+    public UUID getSpawningEntity() {
         return this.getHandle().spawningEntity;
     }
 
@@ -46,15 +49,13 @@ public class CraftPhantom extends CraftFlying implements Phantom, CraftEnemy {
     }
 
     @Override
-    public org.bukkit.Location getAnchorLocation() {
-        net.minecraft.core.BlockPos pos = this.getHandle().anchorPoint;
-        return io.papermc.paper.util.MCUtil.toLocation(this.getHandle().level(), pos);
+    public Location getAnchorLocation() {
+        return Optionull.map(this.getHandle().anchorPoint, pos -> CraftLocation.toBukkit(pos, this.getHandle().level()));
     }
 
     @Override
-    public void setAnchorLocation(org.bukkit.Location location) {
+    public void setAnchorLocation(Location location) {
         com.google.common.base.Preconditions.checkArgument(location != null, "location cannot be null");
-        this.getHandle().anchorPoint = io.papermc.paper.util.MCUtil.toBlockPosition(location);
+        this.getHandle().anchorPoint = location == null ? null : CraftLocation.toBlockPosition(location);
     }
-    // Paper end
 }

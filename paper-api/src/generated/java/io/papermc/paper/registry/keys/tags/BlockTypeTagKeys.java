@@ -11,7 +11,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Vanilla keys for {@link RegistryKey#BLOCK}.
+ * Vanilla tag keys for {@link RegistryKey#BLOCK}.
  *
  * @apiNote The fields provided here are a direct representation of
  * what is available from the vanilla game source. They may be
@@ -23,8 +23,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedFrom("1.21.5")
 @ApiStatus.Experimental
 public final class BlockTypeTagKeys {
     /**
@@ -224,6 +224,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> CAMEL_SAND_STEP_SOUND_BLOCKS = create(key("camel_sand_step_sound_blocks"));
 
     /**
+     * {@code #minecraft:camels_spawnable_on}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> CAMELS_SPAWNABLE_ON = create(key("camels_spawnable_on"));
+
+    /**
      * {@code #minecraft:campfires}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -378,13 +385,6 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> DARK_OAK_LOGS = create(key("dark_oak_logs"));
 
     /**
-     * {@code #minecraft:dead_bush_may_place_on}
-     *
-     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
-     */
-    public static final TagKey<BlockType> DEAD_BUSH_MAY_PLACE_ON = create(key("dead_bush_may_place_on"));
-
-    /**
      * {@code #minecraft:deepslate_ore_replaceables}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -439,6 +439,20 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> DRIPSTONE_REPLACEABLE_BLOCKS = create(key("dripstone_replaceable_blocks"));
+
+    /**
+     * {@code #minecraft:dry_vegetation_may_place_on}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> DRY_VEGETATION_MAY_PLACE_ON = create(key("dry_vegetation_may_place_on"));
+
+    /**
+     * {@code #minecraft:edible_for_sheep}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> EDIBLE_FOR_SHEEP = create(key("edible_for_sheep"));
 
     /**
      * {@code #minecraft:emerald_ores}
@@ -896,6 +910,13 @@ public final class BlockTypeTagKeys {
     public static final TagKey<BlockType> PLANKS = create(key("planks"));
 
     /**
+     * {@code #minecraft:plays_ambient_desert_block_sounds}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> PLAYS_AMBIENT_DESERT_BLOCK_SOUNDS = create(key("plays_ambient_desert_block_sounds"));
+
+    /**
      * {@code #minecraft:polar_bears_spawnable_on_alternate}
      *
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
@@ -950,6 +971,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> REPLACEABLE = create(key("replaceable"));
+
+    /**
+     * {@code #minecraft:replaceable_by_mushrooms}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> REPLACEABLE_BY_MUSHROOMS = create(key("replaceable_by_mushrooms"));
 
     /**
      * {@code #minecraft:replaceable_by_trees}
@@ -1146,6 +1174,13 @@ public final class BlockTypeTagKeys {
      * @apiNote This field is version-dependant and may be removed in future Minecraft versions
      */
     public static final TagKey<BlockType> SWORD_EFFICIENT = create(key("sword_efficient"));
+
+    /**
+     * {@code #minecraft:sword_instantly_mines}
+     *
+     * @apiNote This field is version-dependant and may be removed in future Minecraft versions
+     */
+    public static final TagKey<BlockType> SWORD_INSTANTLY_MINES = create(key("sword_instantly_mines"));
 
     /**
      * {@code #minecraft:terracotta}

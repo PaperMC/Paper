@@ -1,42 +1,46 @@
 package org.bukkit.event.block;
 
+import com.google.common.base.Preconditions;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Called when a block is damaged by a player.
  * <p>
- * If a Block Damage event is cancelled, the block will not be damaged.
+ * If this event is cancelled, the block will not be damaged.
+ *
  * @see BlockDamageAbortEvent
  */
 public class BlockDamageEvent extends BlockEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final BlockFace blockFace;
+    private final ItemStack itemInHand;
     private final Player player;
     private boolean instaBreak;
-    private boolean cancel;
-    private final ItemStack itemstack;
-    private final org.bukkit.block.BlockFace blockFace; // Paper - Expose BlockFace
 
-    // Paper start - expose blockface
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     @Deprecated(forRemoval = true)
-    @io.papermc.paper.annotation.DoNotUse
     public BlockDamageEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final ItemStack itemInHand, final boolean instaBreak) {
-        this(player, block, null, itemInHand, instaBreak); // Some plugin do bad things...
+        this(player, block, null, itemInHand, instaBreak);
     }
 
-    @org.jetbrains.annotations.ApiStatus.Internal // Paper
-    public BlockDamageEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final org.bukkit.block.BlockFace blockFace, @NotNull final ItemStack itemInHand, final boolean instaBreak) { // Paper - Expose BlockFace
+    @ApiStatus.Internal
+    public BlockDamageEvent(@NotNull final Player player, @NotNull final Block block, @NotNull final BlockFace blockFace, @NotNull final ItemStack itemInHand, final boolean instaBreak) { // Paper - Expose BlockFace
         super(block);
-        this.blockFace = blockFace;
-        // Paper end - expose blockface
         this.instaBreak = instaBreak;
+        this.blockFace = blockFace;
+        this.itemInHand = itemInHand;
         this.player = player;
-        this.itemstack = itemInHand;
-        this.cancel = false;
     }
 
     /**
@@ -46,27 +50,27 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public Player getPlayer() {
-        return player;
+        return this.player;
     }
 
     /**
      * Gets if the block is set to instantly break when damaged by the player.
      *
-     * @return true if the block should instantly break when damaged by the
+     * @return {@code true} if the block should instantly break when damaged by the
      *     player
      */
     public boolean getInstaBreak() {
-        return instaBreak;
+        return this.instaBreak;
     }
 
     /**
      * Sets if the block should instantly break when damaged by the player.
      *
-     * @param bool true if you want the block to instantly break when damaged
+     * @param instaBreak {@code true} if you want the block to instantly break when damaged
      *     by the player
      */
-    public void setInstaBreak(boolean bool) {
-        this.instaBreak = bool;
+    public void setInstaBreak(boolean instaBreak) {
+        this.instaBreak = instaBreak;
     }
 
     /**
@@ -76,9 +80,9 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public ItemStack getItemInHand() {
-        return itemstack;
+        return this.itemInHand;
     }
-    // Paper start - Expose BlockFace
+
     /**
      * Gets the BlockFace the player is interacting with.
      *
@@ -86,31 +90,28 @@ public class BlockDamageEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public org.bukkit.block.BlockFace getBlockFace() {
-        if (this.blockFace == null) {
-            throw new IllegalStateException("BlockFace is not available for this event, most likely due to a bad constructor call by a plugin");
-        }
+        Preconditions.checkState(this.blockFace != null, "BlockFace is not available for this event, most likely due to a bad constructor call by a plugin");
         return this.blockFace;
     }
-    //Paper end
 
     @Override
     public boolean isCancelled() {
-        return cancel;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

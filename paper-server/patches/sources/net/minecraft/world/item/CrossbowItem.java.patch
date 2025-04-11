@@ -1,38 +1,23 @@
 --- a/net/minecraft/world/item/CrossbowItem.java
 +++ b/net/minecraft/world/item/CrossbowItem.java
-@@ -90,7 +_,14 @@
-     public boolean releaseUsing(ItemStack stack, Level level, LivingEntity entity, int timeLeft) {
-         int i = this.getUseDuration(stack, entity) - timeLeft;
-         float powerForTime = getPowerForTime(i, stack, entity);
--        if (powerForTime >= 1.0F && !isCharged(stack) && tryLoadProjectiles(entity, stack)) {
-+        // Paper start - Add EntityLoadCrossbowEvent
-+        if (powerForTime >= 1.0F && !isCharged(stack)) {
-+            final io.papermc.paper.event.entity.EntityLoadCrossbowEvent event = new io.papermc.paper.event.entity.EntityLoadCrossbowEvent(entity.getBukkitLivingEntity(), stack.asBukkitMirror(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(entity.getUsedItemHand()));
-+            if (!event.callEvent() || !tryLoadProjectiles(entity, stack, event.shouldConsumeItem()) || !event.shouldConsumeItem()) {
-+                if (entity instanceof ServerPlayer player) player.containerMenu.sendAllDataToRemote();
-+                return false;
-+            }
-+            // Paper end - Add EntityLoadCrossbowEvent
-             CrossbowItem.ChargingSounds chargingSounds = this.getChargingSounds(stack);
-             chargingSounds.end()
-                 .ifPresent(
-@@ -111,8 +_,14 @@
-         }
+@@ -88,8 +_,15 @@
+         return getPowerForTime(i, stack, entity) >= 1.0F && isCharged(stack);
      }
  
-+    @io.papermc.paper.annotation.DoNotUse // Paper - Add EntityLoadCrossbowEvent
++    @Deprecated @io.papermc.paper.annotation.DoNotUse // Paper - Add EntityLoadCrossbowEvent
      private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbowStack) {
 -        List<ItemStack> list = draw(crossbowStack, shooter.getProjectile(crossbowStack), shooter);
 +        // Paper start - Add EntityLoadCrossbowEvent
-+        return CrossbowItem.tryLoadProjectiles(shooter, crossbowStack, true);
++        return tryLoadProjectiles(shooter, crossbowStack, true);
 +    }
++
 +    private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbowStack, boolean consume) {
 +        List<ItemStack> list = draw(crossbowStack, shooter.getProjectile(crossbowStack), shooter, consume);
 +        // Paper end - Add EntityLoadCrossbowEvent
          if (!list.isEmpty()) {
              crossbowStack.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(list));
              return true;
-@@ -164,7 +_,11 @@
+@@ -141,7 +_,11 @@
      @Override
      protected Projectile createProjectile(Level level, LivingEntity shooter, ItemStack weapon, ItemStack ammo, boolean isCrit) {
          if (ammo.is(Items.FIREWORK_ROCKET)) {
@@ -45,3 +30,19 @@
          } else {
              Projectile projectile = super.createProjectile(level, shooter, weapon, ammo, isCrit);
              if (projectile instanceof AbstractArrow abstractArrow) {
+@@ -211,7 +_,14 @@
+                     );
+             }
+ 
+-            if (f >= 1.0F && !isCharged(stack) && tryLoadProjectiles(livingEntity, stack)) {
++            if (f >= 1.0F && !isCharged(stack)) {
++                // Paper start - Add EntityLoadCrossbowEvent
++                final io.papermc.paper.event.entity.EntityLoadCrossbowEvent event = new io.papermc.paper.event.entity.EntityLoadCrossbowEvent(livingEntity.getBukkitLivingEntity(), stack.asBukkitMirror(), org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(livingEntity.getUsedItemHand()));
++                if (!event.callEvent() || !tryLoadProjectiles(livingEntity, stack, event.shouldConsumeItem()) || !event.shouldConsumeItem()) {
++                    if (livingEntity instanceof ServerPlayer player) player.containerMenu.sendAllDataToRemote();
++                    return;
++                }
++                // Paper end - Add EntityLoadCrossbowEvent
+                 chargingSounds.end()
+                     .ifPresent(
+                         sound -> level.playSound(

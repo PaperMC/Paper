@@ -78,7 +78,7 @@ public class SpigotConfig {
         }
     }
 
-    public static void readConfig(Class<?> clazz, Object instance) { // Paper - package-private -> public
+    public static void readConfig(Class<?> clazz, Object instance) {
         for (Method method : clazz.getDeclaredMethods()) {
             if (Modifier.isPrivate(method.getModifiers())) {
                 if (method.getParameterTypes().length == 0 && method.getReturnType() == Void.TYPE) {

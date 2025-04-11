@@ -40,7 +40,6 @@ public class CraftEnderman extends CraftMonster implements Enderman {
         this.getHandle().setCarriedBlock(blockData == null ? null : ((CraftBlockData) blockData).getState());
     }
 
-    // Paper start
     @Override
     public boolean isScreaming() {
         return this.getHandle().isCreepy();
@@ -60,7 +59,6 @@ public class CraftEnderman extends CraftMonster implements Enderman {
     public void setHasBeenStaredAt(boolean hasBeenStaredAt) {
         this.getHandle().setHasBeenStaredAt(hasBeenStaredAt);
     }
-    // Paper end
 
     @Override
     public EnderMan getHandle() {

@@ -22,8 +22,8 @@ import org.jspecify.annotations.NullMarked;
         "unused",
         "SpellCheckingInspection"
 })
-@GeneratedFrom("1.21.4")
 @NullMarked
+@GeneratedFrom("1.21.5")
 public final class TrimPatternKeys {
     /**
      * {@code minecraft:bolt}
@@ -155,7 +155,7 @@ public final class TrimPatternKeys {
     }
 
     /**
-     * Creates a key for {@link TrimPattern} in the registry {@code minecraft:trim_pattern}.
+     * Creates a typed key for {@link TrimPattern} in the registry {@code minecraft:trim_pattern}.
      *
      * @param key the value's key in the registry
      * @return a new typed key

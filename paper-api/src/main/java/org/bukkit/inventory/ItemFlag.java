@@ -28,27 +28,6 @@ public enum ItemFlag {
      */
     HIDE_PLACED_ON,
     /**
-     * Setting to show/hide potion effects, book and firework information, map
-     * tooltips, patterns of banners.
-     * @see #HIDE_STORED_ENCHANTS HIDE_STORED_ENCHANTS for hiding stored enchants (like on enchanted books)
-     */
-    HIDE_ADDITIONAL_TOOLTIP,
-    /**
-     * Setting to show/hide dyes from colored leather armor.
-     */
-    HIDE_DYE,
-    /**
-     * Setting to show/hide armor trim from armor.
-     */
-    HIDE_ARMOR_TRIM,
-    /**
-     * Setting to show/hide stored enchants on an item, such as enchantments
-     * on an enchanted book.
-     */
-    HIDE_STORED_ENCHANTS,
-    ;
-    // Paper start
-    /**
      * Setting to show/hide item-specific information, including, but not limited to:
      * <ul>
      *     <li>Potion effects on potions, tipped arrows, and suspicious stew</li>
@@ -65,9 +44,24 @@ public enum ItemFlag {
      *     <li>Shulker box contents</li>
      *     <li>Spawner descriptions</li>
      * </ul>
-     * @deprecated use {@link #HIDE_ADDITIONAL_TOOLTIP}
+     *
+     * @see #HIDE_STORED_ENCHANTS HIDE_STORED_ENCHANTS for hiding stored enchants (like on enchanted books)
+     * @deprecated each component can now be hidden individually in the {@code tooltip_display} component
      */
-    @Deprecated(since = "1.20.5")
-    public static final ItemFlag HIDE_ITEM_SPECIFICS = HIDE_ADDITIONAL_TOOLTIP;
-    // Paper end
+    @Deprecated(since = "1.21.5", forRemoval = true)
+    HIDE_ADDITIONAL_TOOLTIP,
+    /**
+     * Setting to show/hide dyes from colored leather armor.
+     */
+    HIDE_DYE,
+    /**
+     * Setting to show/hide armor trim from armor.
+     */
+    HIDE_ARMOR_TRIM,
+    /**
+     * Setting to show/hide stored enchants on an item, such as enchantments
+     * on an enchanted book.
+     */
+    HIDE_STORED_ENCHANTS,
+    ;
 }

@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/level/WorldGenRegion.java
 +++ b/net/minecraft/server/level/WorldGenRegion.java
-@@ -151,6 +_,26 @@
+@@ -151,6 +_,28 @@
          return chessboardDistance < this.generatingStep.directDependencies().size();
      }
  
@@ -11,16 +11,18 @@
 +        return this.getChunk(x, z, ChunkStatus.FULL, false);
 +    }
 +
++    @Nullable
 +    @Override
-+    public final BlockState getBlockStateIfLoaded(BlockPos blockposition) {
-+        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
-+        return chunk == null ? null : chunk.getBlockState(blockposition);
++    public final BlockState getBlockStateIfLoaded(BlockPos pos) {
++        ChunkAccess chunk = this.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);
++        return chunk == null ? null : chunk.getBlockState(pos);
 +    }
 +
++    @Nullable
 +    @Override
-+    public final FluidState getFluidIfLoaded(BlockPos blockposition) {
-+        ChunkAccess chunk = this.getChunkIfLoadedImmediately(blockposition.getX() >> 4, blockposition.getZ() >> 4);
-+        return chunk == null ? null : chunk.getFluidState(blockposition);
++    public final FluidState getFluidIfLoaded(BlockPos pos) {
++        ChunkAccess chunk = this.getChunkIfLoadedImmediately(pos.getX() >> 4, pos.getZ() >> 4);
++        return chunk == null ? null : chunk.getFluidState(pos);
 +    }
 +    // Paper end
 +
@@ -71,10 +73,10 @@
              return false;
          } else {
              ChunkAccess chunk = this.getChunk(pos);
--            BlockState blockState = chunk.setBlockState(pos, state, false);
-+            BlockState blockState = chunk.setBlockState(pos, state, false); final BlockState previousBlockState = blockState; // Paper - Clear block entity before setting up a DUMMY block entity - obfhelper
+-            BlockState blockState = chunk.setBlockState(pos, state, flags);
++            BlockState blockState = chunk.setBlockState(pos, state, flags); final BlockState previousBlockState = blockState; // Paper - Clear block entity before setting up a DUMMY block entity - obfhelper
              if (blockState != null) {
-                 this.level.onBlockStateChange(pos, blockState, state);
+                 this.level.updatePOIOnBlockStateChange(pos, blockState, state);
              }
 @@ -294,6 +_,17 @@
                          chunk.removeBlockEntity(pos);

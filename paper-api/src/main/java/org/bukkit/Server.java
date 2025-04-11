@@ -151,8 +151,8 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * uses. Normal and immediate iterator use without consequences that
      * affect the collection are fully supported. The effects following
      * (non-exhaustive) {@link Entity#teleport(Location) teleportation},
-     * {@link Player#setHealth(double) death}, and {@link Player#kickPlayer(
-     * String) kicking} are undefined. Any use of this collection from
+     * {@link Player#setHealth(double) death}, and {@link Player#kick(
+     * Component) kicking} are undefined. Any use of this collection from
      * asynchronous threads is unsafe.
      * <p>
      * For safe consequential iteration or mimicking the old array behavior,
@@ -387,7 +387,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated use {@link #broadcast(net.kyori.adventure.text.Component)}
      */
     @Deprecated // Paper
-    public int broadcastMessage(@NotNull String message);
+    default int broadcastMessage(@NotNull String message) {
+        return this.broadcast(message, BROADCAST_CHANNEL_USERS);
+    }
 
     // Paper start
     /**
@@ -1296,7 +1298,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @deprecated in favour of {@link #broadcast(net.kyori.adventure.text.Component, String)}
      */
     @Deprecated // Paper
-    public int broadcast(@NotNull String message, @NotNull String permission);
+    default int broadcast(@NotNull String message, @NotNull String permission) {
+        return this.broadcast(net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(message), permission);
+    }
+
     // Paper start
     /**
      * Broadcast a message to all players.
@@ -1307,7 +1312,9 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
      * @param message the message
      * @return the number of players
      */
-    int broadcast(net.kyori.adventure.text.@NotNull Component message);
+    default int broadcast(net.kyori.adventure.text.@NotNull Component message) {
+        return this.broadcast(message, BROADCAST_CHANNEL_USERS);
+    }
 
     /**
      * Broadcasts the specified message to every user with the given

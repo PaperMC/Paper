@@ -1,86 +1,62 @@
 --- a/net/minecraft/world/level/levelgen/PatrolSpawner.java
 +++ b/net/minecraft/world/level/levelgen/PatrolSpawner.java
-@@ -20,28 +_,66 @@
+@@ -20,18 +_,47 @@
  
      @Override
-     public int tick(ServerLevel level, boolean spawnEnemies, boolean spawnFriendlies) {
-+        if (level.paperConfig().entities.behavior.pillagerPatrols.disable || level.paperConfig().entities.behavior.pillagerPatrols.spawnChance == 0) return 0; // Paper - Add option to disable pillager patrols & Pillager patrol spawn settings and per player options
-         if (!spawnEnemies) {
-             return 0;
-         } else if (!level.getGameRules().getBoolean(GameRules.RULE_DO_PATROL_SPAWNING)) {
-             return 0;
-         } else {
-             RandomSource randomSource = level.random;
--            this.nextTick--;
--            if (this.nextTick > 0) {
--                return 0;
--            } else {
--                this.nextTick = this.nextTick + 12000 + randomSource.nextInt(1200);
--                long l = level.getDayTime() / 24000L;
--                if (l < 5L || !level.isDay()) {
--                    return 0;
--                } else if (randomSource.nextInt(5) != 0) {
--                    return 0;
--                } else {
--                    int size = level.players().size();
-+            // this.nextTick--;
-+            // if (this.nextTick > 0) {
-+            //     return 0;
-+            // } else {
-+            //     this.nextTick = this.nextTick + 12000 + randomSource.nextInt(1200);
-+            //     long l = level.getDayTime() / 24000L;
-+            //     if (l < 5L || !level.isDay()) {
-+            //         return 0;
-+            //     } else if (randomSource.nextInt(5) != 0) {
-+            // Paper start - Pillager patrol spawn settings and per player options
-+            // Random player selection moved up for per player spawning and configuration
-+            int size = level.players().size();
-+            if (size < 1) {
-+                return 0;
-+            }
-+
-+            net.minecraft.server.level.ServerPlayer player = level.players().get(randomSource.nextInt(size));
-+            if (player.isSpectator()) {
-+                return 0;
-+            }
-+
-+            int patrolSpawnDelay;
-+            if (level.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.perPlayer) {
-+                --player.patrolSpawnDelay;
-+                patrolSpawnDelay = player.patrolSpawnDelay;
-+            } else {
-+                this.nextTick--;
-+                patrolSpawnDelay = this.nextTick;
-+            }
-+            if (patrolSpawnDelay > 0) {
-+                return 0;
-+            } else {
-+                long days;
-+                if (level.paperConfig().entities.behavior.pillagerPatrols.start.perPlayer) {
-+                    days = player.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.PLAY_TIME)) / 24000L; // PLAY_TIME is counting in ticks
-+                } else {
-+                    days = level.getDayTime() / 24000L;
+     public void tick(ServerLevel level, boolean spawnEnemies, boolean spawnFriendlies) {
++        if (level.paperConfig().entities.behavior.pillagerPatrols.disable || level.paperConfig().entities.behavior.pillagerPatrols.spawnChance == 0) return; // Paper - Add option to disable pillager patrols & Pillager patrol spawn settings and per player options
+         if (spawnEnemies) {
+             if (level.getGameRules().getBoolean(GameRules.RULE_DO_PATROL_SPAWNING)) {
+                 RandomSource randomSource = level.random;
+-                this.nextTick--;
+-                if (this.nextTick <= 0) {
+-                    this.nextTick = this.nextTick + 12000 + randomSource.nextInt(1200);
+-                    long l = level.getDayTime() / 24000L;
+-                    if (l >= 5L && level.isBrightOutside()) {
+-                        if (randomSource.nextInt(5) == 0) {
+-                            int size = level.players().size();
++                // this.nextTick--;
++                // Paper start - Pillager patrol spawn settings and per player options
++                int size = level.players().size();
++                if (size < 1) {
++                    return;
 +                }
++
++                net.minecraft.server.level.ServerPlayer player = level.players().get(randomSource.nextInt(size));
++                if (player.isSpectator()) {
++                    return;
++                }
++
++                int patrolSpawnDelay;
 +                if (level.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.perPlayer) {
-+                    player.patrolSpawnDelay += level.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.ticks + randomSource.nextInt(1200);
++                    --player.patrolSpawnDelay;
++                    patrolSpawnDelay = player.patrolSpawnDelay;
 +                } else {
-+                    this.nextTick += level.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.ticks + randomSource.nextInt(1200);
++                    this.nextTick--;
++                    patrolSpawnDelay = this.nextTick;
 +                }
++                if (patrolSpawnDelay <= 0) {
++                    long days;
++                    if (level.paperConfig().entities.behavior.pillagerPatrols.start.perPlayer) {
++                        days = player.getStats().getValue(net.minecraft.stats.Stats.CUSTOM.get(net.minecraft.stats.Stats.PLAY_TIME)) / 24000L; // PLAY_TIME is counting in ticks
++                    } else {
++                        days = level.getDayTime() / 24000L;
++                    }
++                    if (level.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.perPlayer) {
++                        player.patrolSpawnDelay += level.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.ticks + randomSource.nextInt(1200);
++                    } else {
++                        this.nextTick += level.paperConfig().entities.behavior.pillagerPatrols.spawnDelay.ticks + randomSource.nextInt(1200);
++                    }
 +
-+                if (days < level.paperConfig().entities.behavior.pillagerPatrols.start.day || !level.isDay()) {
-+                    return 0;
-+                } else if (randomSource.nextDouble() >= level.paperConfig().entities.behavior.pillagerPatrols.spawnChance) {
-+                    // Paper end - Pillager patrol spawn settings and per player options
-+                    return 0;
-+                } else {
-                     if (size < 1) {
-                         return 0;
-                     } else {
--                        Player player = level.players().get(randomSource.nextInt(size));
-                         if (player.isSpectator()) {
-                             return 0;
-                         } else if (level.isCloseToVillage(player.blockPosition(), 2)) {
-@@ -104,7 +_,7 @@
++                    if (days >= level.paperConfig().entities.behavior.pillagerPatrols.start.day && level.isBrightOutside()) {
++                        if (randomSource.nextDouble() < level.paperConfig().entities.behavior.pillagerPatrols.spawnChance) {
++                            // Paper end - Pillager patrol spawn settings and per player options
+                             if (size >= 1) {
+-                                Player player = level.players().get(randomSource.nextInt(size));
+                                 if (!player.isSpectator()) {
+                                     if (!level.isCloseToVillage(player.blockPosition(), 2)) {
+                                         int i = (24 + randomSource.nextInt(24)) * (randomSource.nextBoolean() ? -1 : 1);
+@@ -88,7 +_,7 @@
  
                  patrollingMonster.setPos(pos.getX(), pos.getY(), pos.getZ());
                  patrollingMonster.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), EntitySpawnReason.PATROL, null);
