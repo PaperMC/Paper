@@ -135,7 +135,7 @@ dependencies {
     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
     implementation("net.minecrell:terminalconsoleappender:1.3.0")
-    implementation("net.kyori:adventure-text-serializer-ansi:4.18.0") // Keep in sync with adventureVersion from Paper-API build file
+    implementation("io.papermc.adventure:adventure-text-serializer-ansi:4.21.0-mc1215-SNAPSHOT") // Keep in sync with adventureVersion from Paper-API build file // FIXME back to release
     runtimeConfiguration(sourceSets.main.map { it.runtimeClasspath })
 
     /*

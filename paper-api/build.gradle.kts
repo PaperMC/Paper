@@ -10,7 +10,8 @@ java {
 }
 
 val annotationsVersion = "26.0.1"
-val adventureVersion = "4.20.0"
+// Keep in sync with paper-server adventure-text-serializer-ansi dep
+val adventureVersion = "4.21.0-mc1215-SNAPSHOT" // FIXME move to release asap
 val bungeeCordChatVersion = "1.21-R0.2-deprecated+build.21"
 val slf4jVersion = "2.0.9"
 val log4jVersion = "2.17.1"
@@ -60,13 +61,15 @@ dependencies {
         exclude("com.google.guava", "guava")
     }
 
-    apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
-    apiAndDocs("net.kyori:adventure-api")
-    apiAndDocs("net.kyori:adventure-text-minimessage")
-    apiAndDocs("net.kyori:adventure-text-serializer-gson")
-    apiAndDocs("net.kyori:adventure-text-serializer-legacy")
-    apiAndDocs("net.kyori:adventure-text-serializer-plain")
-    apiAndDocs("net.kyori:adventure-text-logger-slf4j")
+    // FIXME remove me when we are using a release again
+    val adventureGroup = "io.papermc.adventure"
+    apiAndDocs(platform("$adventureGroup:adventure-bom:$adventureVersion"))
+    apiAndDocs("$adventureGroup:adventure-api")
+    apiAndDocs("$adventureGroup:adventure-text-minimessage")
+    apiAndDocs("$adventureGroup:adventure-text-serializer-gson")
+    apiAndDocs("$adventureGroup:adventure-text-serializer-legacy")
+    apiAndDocs("$adventureGroup:adventure-text-serializer-plain")
+    apiAndDocs("$adventureGroup:adventure-text-logger-slf4j")
 
     api("org.apache.maven:maven-resolver-provider:3.9.6") // make API dependency for Paper Plugins
     compileOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
