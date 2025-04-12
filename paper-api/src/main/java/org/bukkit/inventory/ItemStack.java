@@ -508,8 +508,8 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
      */
     @NotNull
     public static ItemStack deserialize(@NotNull Map<String, Object> args) {
-        // Parse internally, if DataVersion is not defined, assume legacy and fall through to unsafe legacy deserialization logic
-        if (args.containsKey("DataVersion")) {
+        // Parse internally, if schema_version is not defined, assume legacy and fall through to unsafe legacy deserialization logic
+        if (args.containsKey("schema_version")) {
             return org.bukkit.Bukkit.getUnsafe().deserializeStack(args);
         }
 
