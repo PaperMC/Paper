@@ -507,11 +507,17 @@ public final class CraftMagicNumbers implements UnsafeValues {
     private ItemStack deserializeItem(CompoundTag compound) {
         final int dataVersion = compound.getIntOr("DataVersion", 0);
         compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, DataFixers.getDataFixer(), compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
+        if (compound.getStringOr("id", "minecraft:air").equals("minecraft:air")) {
+            return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.EMPTY);
+        }
         return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(CraftRegistry.getMinecraftRegistry(), compound).orElseThrow());
     }
 
     @Override
     public @org.jetbrains.annotations.NotNull Map<String, Object> serializeStack(final ItemStack itemStack) {
+        if (itemStack.isEmpty()) {
+            return Map.of("id", "minecraft:air", SharedConstants.DATA_VERSION_TAG, this.getDataVersion(), "schema_version", 1);
+        }
         final CompoundTag tag = CraftItemStack.asNMSCopy(itemStack).save(CraftRegistry.getMinecraftRegistry()).asCompound().orElseThrow();
         NbtUtils.addCurrentDataVersion(tag);
 
