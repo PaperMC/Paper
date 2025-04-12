@@ -1,18 +1,6 @@
 --- a/net/minecraft/world/item/BlockItem.java
 +++ b/net/minecraft/world/item/BlockItem.java
-@@ -30,6 +_,11 @@
- import net.minecraft.world.level.block.state.BlockState;
- import net.minecraft.world.level.gameevent.GameEvent;
- import net.minecraft.world.phys.shapes.CollisionContext;
-+// CraftBukkit start
-+import org.bukkit.craftbukkit.block.CraftBlock;
-+import org.bukkit.craftbukkit.block.data.CraftBlockData;
-+import org.bukkit.event.block.BlockCanBuildEvent;
-+// CraftBukkit end
- 
- public class BlockItem extends Item {
-     @Deprecated
-@@ -59,6 +_,14 @@
+@@ -57,6 +_,14 @@
                  return InteractionResult.FAIL;
              } else {
                  BlockState placementState = this.getPlacementState(blockPlaceContext);
@@ -27,7 +15,7 @@
                  if (placementState == null) {
                      return InteractionResult.FAIL;
                  } else if (!this.placeBlock(blockPlaceContext, placementState)) {
-@@ -71,15 +_,40 @@
+@@ -69,15 +_,40 @@
                      BlockState blockState = level.getBlockState(clickedPos);
                      if (blockState.is(placementState.getBlock())) {
                          blockState = this.updateBlockStateFromTag(clickedPos, level, itemInHand, blockState);
@@ -36,7 +24,7 @@
                          this.updateCustomBlockEntityTag(clickedPos, level, player, itemInHand, blockState);
                          updateBlockEntityComponents(level, clickedPos, itemInHand);
 +                        } catch (Exception ex) {
-+                            oldBukkitState.update(true, false);
++                            ((org.bukkit.craftbukkit.block.CraftBlockState) oldBukkitState).revertPlace();
 +                            if (player instanceof ServerPlayer serverPlayer) {
 +                                org.apache.logging.log4j.LogManager.getLogger().error("Player {} tried placing invalid block", player.getScoreboardName(), ex);
 +                                serverPlayer.getBukkitEntity().kickPlayer("Packet processing error");
@@ -48,9 +36,9 @@
                          blockState.getBlock().setPlacedBy(level, clickedPos, blockState, player, itemInHand);
 +                        // CraftBukkit start
 +                        if (bukkitState != null) {
-+                            org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent((net.minecraft.server.level.ServerLevel) level, player, blockPlaceContext.getHand(), bukkitState, clickedPos.getX(), clickedPos.getY(), clickedPos.getZ());
++                            org.bukkit.event.block.BlockPlaceEvent placeEvent = org.bukkit.craftbukkit.event.CraftEventFactory.callBlockPlaceEvent((net.minecraft.server.level.ServerLevel) level, player, blockPlaceContext.getHand(), bukkitState, clickedPos);
 +                            if (placeEvent != null && (placeEvent.isCancelled() || !placeEvent.canBuild())) {
-+                                bukkitState.update(true, false);
++                                ((org.bukkit.craftbukkit.block.CraftBlockState) bukkitState).revertPlace();
 +
 +                                // Paper - if the event is called here, the inventory should be updated
 +                                player.containerMenu.sendAllDataToRemote(); // SPIGOT-4541
@@ -68,18 +56,21 @@
                      level.playSound(
                          player,
                          clickedPos,
-@@ -140,8 +_,16 @@
+@@ -137,8 +_,19 @@
+ 
      protected boolean canPlace(BlockPlaceContext context, BlockState state) {
          Player player = context.getPlayer();
-         CollisionContext collisionContext = player == null ? CollisionContext.empty() : CollisionContext.of(player);
 -        return (!this.mustSurvive() || state.canSurvive(context.getLevel(), context.getClickedPos()))
--            && context.getLevel().isUnobstructed(state, context.getClickedPos(), collisionContext);
+-            && context.getLevel().isUnobstructed(state, context.getClickedPos(), CollisionContext.placementContext(player));
 +        // CraftBukkit start
 +        Level world = context.getLevel(); // Paper - Cancel hit for vanished players
-+        boolean canBuild = (!this.mustSurvive() || state.canSurvive(world, context.getClickedPos())) && world.checkEntityCollision(state, player, collisionContext, context.getClickedPos(), true); // Paper - Cancel hit for vanished players
++        boolean canBuild = (!this.mustSurvive() || state.canSurvive(world, context.getClickedPos())) && world.checkEntityCollision(state, player, CollisionContext.placementContext(player), context.getClickedPos(), true); // Paper - Cancel hit for vanished players
 +        org.bukkit.entity.Player bukkitPlayer = (context.getPlayer() instanceof ServerPlayer) ? (org.bukkit.entity.Player) context.getPlayer().getBukkitEntity() : null;
 +
-+        BlockCanBuildEvent event = new BlockCanBuildEvent(CraftBlock.at(world, context.getClickedPos()), bukkitPlayer, CraftBlockData.fromData(state), canBuild, org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(context.getHand())); // Paper - Expose hand in BlockCanBuildEvent
++        org.bukkit.event.block.BlockCanBuildEvent event = new org.bukkit.event.block.BlockCanBuildEvent(
++            org.bukkit.craftbukkit.block.CraftBlock.at(world, context.getClickedPos()), bukkitPlayer,
++            org.bukkit.craftbukkit.block.data.CraftBlockData.fromData(state), canBuild, org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(context.getHand())
++        );
 +        world.getCraftServer().getPluginManager().callEvent(event);
 +
 +        return event.isBuildable();
@@ -87,7 +78,7 @@
      }
  
      protected boolean mustSurvive() {
-@@ -170,7 +_,7 @@
+@@ -167,7 +_,7 @@
                          return false;
                      }
  

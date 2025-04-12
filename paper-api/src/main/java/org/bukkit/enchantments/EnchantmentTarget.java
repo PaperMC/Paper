@@ -6,7 +6,10 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Represents the applicable target for a {@link Enchantment}
+ *
+ * @deprecated enchantment groupings are now managed by tags, not categories
  */
+@Deprecated(since = "1.20.5", forRemoval = true)
 public enum EnchantmentTarget {
     /**
      * Allows the Enchantment to be placed on all items

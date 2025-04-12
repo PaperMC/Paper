@@ -75,7 +75,7 @@ public abstract class PaperPersistentDataContainerView implements PersistentData
 
     @Override
     public Set<NamespacedKey> getKeys() {
-        final Set<String> names = this.toTagCompound().getAllKeys();
+        final Set<String> names = this.toTagCompound().keySet();
         final Set<NamespacedKey> keys = new HashSet<>(names.size());
         names.forEach(key -> {
             final String[] keyPart = key.split(":", 2);
@@ -96,7 +96,7 @@ public abstract class PaperPersistentDataContainerView implements PersistentData
         Preconditions.checkArgument(other != null, "The target container cannot be null");
         final CraftPersistentDataContainer target = (CraftPersistentDataContainer) other;
         final CompoundTag tag = this.toTagCompound();
-        for (final String key : tag.getAllKeys()) {
+        for (final String key : tag.keySet()) {
             if (replace || !target.getRaw().containsKey(key)) {
                 target.getRaw().put(key, tag.get(key).copy());
             }

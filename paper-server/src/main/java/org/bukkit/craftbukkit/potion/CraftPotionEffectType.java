@@ -1,18 +1,29 @@
 package org.bukkit.craftbukkit.potion;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Suppliers;
+import io.papermc.paper.util.Holderable;
+import io.papermc.paper.world.flag.PaperFeatureDependent;
+import java.util.Map;
+import java.util.function.Supplier;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.effect.MobEffect;
+import net.minecraft.world.effect.MobEffectCategory;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import org.bukkit.Color;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.craftbukkit.CraftRegistry;
-import org.bukkit.craftbukkit.util.Handleable;
+import org.bukkit.craftbukkit.attribute.CraftAttribute;
+import org.bukkit.craftbukkit.attribute.CraftAttributeInstance;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionEffectTypeCategory;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NullMarked;
 
-public class CraftPotionEffectType extends PotionEffectType implements Handleable<MobEffect>, io.papermc.paper.world.flag.PaperFeatureDependent { // Paper - feature flag API
+@NullMarked
+public class CraftPotionEffectType extends PotionEffectType implements Holderable<MobEffect>, io.papermc.paper.world.flag.PaperFeatureDependent<MobEffect> {
 
     public static PotionEffectType minecraftHolderToBukkit(Holder<MobEffect> minecraft) {
         return CraftPotionEffectType.minecraftToBukkit(minecraft.value());
@@ -30,25 +41,22 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
         return CraftRegistry.bukkitToMinecraftHolder(bukkit, Registries.MOB_EFFECT);
     }
 
-    private final NamespacedKey key;
-    private final MobEffect handle;
-    private final int id;
+    private final Holder<MobEffect> holder;
+    private final Supplier<Integer> id;
 
-    public CraftPotionEffectType(NamespacedKey key, MobEffect handle) {
-        this.key = key;
-        this.handle = handle;
-        this.id = CraftRegistry.getMinecraftRegistry(Registries.MOB_EFFECT).getId(handle) + 1;
+    public CraftPotionEffectType(final Holder<MobEffect> holder) {
+        this.holder = holder;
+        this.id = Suppliers.memoize(() -> CraftRegistry.getMinecraftRegistry(Registries.MOB_EFFECT).getId(this.getHandle()) + 1);
     }
 
     @Override
-    public MobEffect getHandle() {
-        return this.handle;
+    public Holder<MobEffect> getHolder() {
+        return this.holder;
     }
 
-    @NotNull
     @Override
     public NamespacedKey getKey() {
-        return this.key;
+        return PaperFeatureDependent.super.getKey();
     }
 
     @Override
@@ -58,7 +66,7 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
 
     @Override
     public int getId() {
-        return this.id;
+        return this.id.get();
     }
 
     @Override
@@ -101,7 +109,6 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
         };
     }
 
-    @NotNull
     @Override
     public PotionEffect createEffect(int duration, int amplifier) {
         return new PotionEffect(this, this.isInstant() ? 1 : (int) (duration * this.getDurationModifier()), amplifier);
@@ -109,87 +116,76 @@ public class CraftPotionEffectType extends PotionEffectType implements Handleabl
 
     @Override
     public boolean isInstant() {
-        return this.handle.isInstantenous();
+        return this.getHandle().isInstantenous();
     }
 
     @Override
     public PotionEffectTypeCategory getCategory() {
-        return CraftPotionEffectTypeCategory.minecraftToBukkit(this.handle.getCategory());
+        return CraftPotionEffectTypeCategory.minecraftToBukkit(this.getHandle().getCategory());
     }
 
     @Override
     public Color getColor() {
-        return Color.fromRGB(this.handle.getColor());
+        return Color.fromRGB(this.getHandle().getColor());
     }
 
-    @NotNull
     @Override
     public String getTranslationKey() {
-        return this.handle.getDescriptionId();
+        return this.getHandle().getDescriptionId();
     }
 
-    // Paper start
     @Override
-    public java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> getEffectAttributes() {
+    public Map<org.bukkit.attribute.Attribute, AttributeModifier> getEffectAttributes() {
         // re-create map each time because a nms MobEffect can have its attributes modified
-        final java.util.Map<org.bukkit.attribute.Attribute, org.bukkit.attribute.AttributeModifier> attributeMap = new java.util.HashMap<>();
-        this.handle.attributeModifiers.forEach((attribute, attributeModifier) -> {
+        final Map<org.bukkit.attribute.Attribute, AttributeModifier> attributeMap = new java.util.HashMap<>();
+        this.getHandle().attributeModifiers.forEach((attribute, attributeModifier) -> {
             attributeMap.put(
-                org.bukkit.craftbukkit.attribute.CraftAttribute.minecraftHolderToBukkit(attribute),
+                CraftAttribute.minecraftHolderToBukkit(attribute),
                 // use zero as amplifier to get the base amount, as it is amount = base * (amplifier + 1)
-                org.bukkit.craftbukkit.attribute.CraftAttributeInstance.convert(attributeModifier.create(0))
+                CraftAttributeInstance.convert(attributeModifier.create(0))
             );
         });
-        return java.util.Map.copyOf(attributeMap);
+        return Map.copyOf(attributeMap);
     }
 
     @Override
     public double getAttributeModifierAmount(org.bukkit.attribute.Attribute attribute, int effectAmplifier) {
-        com.google.common.base.Preconditions.checkArgument(effectAmplifier >= 0, "effectAmplifier must be greater than or equal to 0");
-        Holder<net.minecraft.world.entity.ai.attributes.Attribute> nmsAttribute = org.bukkit.craftbukkit.attribute.CraftAttribute.bukkitToMinecraftHolder(attribute);
-        com.google.common.base.Preconditions.checkArgument(this.handle.attributeModifiers.containsKey(nmsAttribute), attribute + " is not present on " + this.getKey());
-        return this.handle.attributeModifiers.get(nmsAttribute).create(effectAmplifier).amount();
+        Preconditions.checkArgument(effectAmplifier >= 0, "effectAmplifier must be greater than or equal to 0");
+        Holder<Attribute> nmsAttribute = CraftAttribute.bukkitToMinecraftHolder(attribute);
+        Preconditions.checkArgument(this.getHandle().attributeModifiers.containsKey(nmsAttribute), attribute + " is not present on " + this.getKey());
+        return this.getHandle().attributeModifiers.get(nmsAttribute).create(effectAmplifier).amount();
     }
 
     @Override
     public PotionEffectType.Category getEffectCategory() {
-        return fromNMS(handle.getCategory());
+        return fromNMS(this.getHandle().getCategory());
     }
 
     @Override
     public String translationKey() {
-        return this.handle.getDescriptionId();
+        return this.getHandle().getDescriptionId();
     }
 
-    public static PotionEffectType.Category fromNMS(net.minecraft.world.effect.MobEffectCategory mobEffectInfo) {
+    public static PotionEffectType.Category fromNMS(MobEffectCategory mobEffectInfo) {
         return switch (mobEffectInfo) {
             case BENEFICIAL -> PotionEffectType.Category.BENEFICIAL;
             case HARMFUL -> PotionEffectType.Category.HARMFUL;
             case NEUTRAL -> PotionEffectType.Category.NEUTRAL;
         };
     }
-    // Paper end
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-
-        if (!(other instanceof PotionEffectType)) {
-            return false;
-        }
-
-        return this.getKey().equals(((PotionEffectType) other).getKey());
+        return PaperFeatureDependent.super.implEquals(other);
     }
 
     @Override
     public int hashCode() {
-        return this.getKey().hashCode();
+        return PaperFeatureDependent.super.implHashCode();
     }
 
     @Override
     public String toString() {
-        return "CraftPotionEffectType[" + this.getKey() + "]";
+        return PaperFeatureDependent.super.implToString();
     }
 }

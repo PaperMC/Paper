@@ -10,15 +10,17 @@ public final class ApiVersion implements Comparable<ApiVersion>, Serializable {
     public static final ApiVersion CURRENT;
     public static final ApiVersion FLATTENING;
     public static final ApiVersion FIELD_NAME_PARITY;
+    public static final ApiVersion ABSTRACT_COW;
     public static final ApiVersion NONE;
 
     private static final Map<String, ApiVersion> versions;
 
     static {
         versions = new HashMap<>();
-        CURRENT = getOrCreateVersion("1.21.4");
+        CURRENT = getOrCreateVersion("1.21.5");
         FLATTENING = getOrCreateVersion("1.13");
         FIELD_NAME_PARITY = getOrCreateVersion("1.20.5");
+        ABSTRACT_COW = getOrCreateVersion("1.21.5");
         NONE = getOrCreateVersion("none");
     }
 

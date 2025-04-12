@@ -55,8 +55,7 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
     private final LightningStrike.Spigot spigot = new LightningStrike.Spigot() {
 
         @Override
-        public boolean isSilent()
-        {
+        public boolean isSilent() {
             return false;
         }
     };
@@ -67,7 +66,6 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
     }
     // Spigot end
 
-    // Paper start
     @Override
     public int getFlashCount() {
         return getHandle().flashes;
@@ -84,5 +82,4 @@ public class CraftLightningStrike extends CraftEntity implements LightningStrike
         final var cause = this.getHandle().getCause();
         return cause == null ? null : cause.getBukkitEntity();
     }
-    // Paper end
 }

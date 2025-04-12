@@ -38,14 +38,13 @@ public class SimpleHelpMap implements HelpMap {
     private final CraftServer server;
     private HelpYamlReader yaml;
 
-    @SuppressWarnings("unchecked")
     public SimpleHelpMap(CraftServer server) {
-        this.helpTopics = new TreeMap<String, HelpTopic>(HelpTopicComparator.topicNameComparatorInstance()); // Using a TreeMap for its explicit sorting on key
-        this.topicFactoryMap = new HashMap<Class, HelpTopicFactory<Command>>();
+        this.helpTopics = new TreeMap<>(HelpTopicComparator.topicNameComparatorInstance()); // Using a TreeMap for its explicit sorting on key
+        this.topicFactoryMap = new HashMap<>();
         this.server = server;
         this.yaml = new HelpYamlReader(server);
 
-        Predicate indexFilter = Predicates.not(Predicates.instanceOf(CommandAliasHelpTopic.class));
+        Predicate<? super HelpTopic> indexFilter = Predicates.not(Predicates.instanceOf(CommandAliasHelpTopic.class));
         if (!this.yaml.commandTopicsInMasterIndex()) {
             indexFilter = Predicates.and(indexFilter, Predicates.not(new IsCommandTopicPredicate()));
         }
@@ -57,7 +56,7 @@ public class SimpleHelpMap implements HelpMap {
 
     @Override
     public synchronized HelpTopic getHelpTopic(String topicName) {
-        if (topicName.equals("")) {
+        if (topicName.isEmpty()) {
             return this.defaultTopic;
         }
 
@@ -166,7 +165,7 @@ public class SimpleHelpMap implements HelpMap {
         }
 
         // Initialize plugin-level sub-topics
-        Map<String, Set<HelpTopic>> pluginIndexes = new HashMap<String, Set<HelpTopic>>();
+        Map<String, Set<HelpTopic>> pluginIndexes = new HashMap<>();
         this.fillPluginIndexes(pluginIndexes, this.server.getCommandMap().getCommands());
 
         for (Map.Entry<String, Set<HelpTopic>> entry : pluginIndexes.entrySet()) {
@@ -191,7 +190,7 @@ public class SimpleHelpMap implements HelpMap {
                 HelpTopic topic = this.getHelpTopic("/" + command.getLabel());
                 if (topic != null) {
                     if (!pluginIndexes.containsKey(pluginName)) {
-                        pluginIndexes.put(pluginName, new TreeSet<HelpTopic>(HelpTopicComparator.helpTopicComparatorInstance())); //keep things in topic order
+                        pluginIndexes.put(pluginName, new TreeSet<>(HelpTopicComparator.helpTopicComparatorInstance())); //keep things in topic order
                     }
                     pluginIndexes.get(pluginName).add(topic);
                 }

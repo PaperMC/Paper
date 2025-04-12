@@ -1,9 +1,9 @@
 --- a/net/minecraft/world/entity/vehicle/AbstractMinecart.java
 +++ b/net/minecraft/world/entity/vehicle/AbstractMinecart.java
-@@ -74,6 +_,17 @@
-         map.put(RailShape.NORTH_WEST, Pair.of(unitVec3i2, unitVec3i));
-         map.put(RailShape.NORTH_EAST, Pair.of(unitVec3i2, unitVec3i1));
-     });
+@@ -94,6 +_,17 @@
+             }
+         )
+     );
 +    // CraftBukkit start
 +    public boolean slowWhenEmpty = true;
 +    private double derailedX = 0.5;
@@ -12,13 +12,13 @@
 +    private double flyingX = 0.95;
 +    private double flyingY = 0.95;
 +    private double flyingZ = 0.95;
-+    public Double maxSpeed;
++    public @Nullable Double maxSpeed;
 +    public net.kyori.adventure.util.TriState frictionState = net.kyori.adventure.util.TriState.NOT_SET; // Paper - Friction API
 +    // CraftBukkit end
  
      protected AbstractMinecart(EntityType<?> entityType, Level level) {
          super(entityType, level);
-@@ -134,11 +_,19 @@
+@@ -153,11 +_,19 @@
  
      @Override
      public boolean canCollideWith(Entity entity) {
@@ -29,7 +29,7 @@
 +            return false;
 +        }
 +
-+        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent((org.bukkit.entity.Vehicle) getBukkitEntity(), entity.getBukkitEntity());
++        org.bukkit.event.vehicle.VehicleEntityCollisionEvent collisionEvent = new org.bukkit.event.vehicle.VehicleEntityCollisionEvent((org.bukkit.entity.Vehicle) this.getBukkitEntity(), entity.getBukkitEntity());
 +        return collisionEvent.callEvent();
 +        // Paper end - fix VehicleEntityCollisionEvent not called when colliding with player
      }
@@ -40,7 +40,7 @@
          return true;
      }
  
-@@ -239,6 +_,14 @@
+@@ -258,6 +_,14 @@
  
      @Override
      public void tick() {
@@ -55,7 +55,7 @@
          if (this.getHurtTime() > 0) {
              this.setHurtTime(this.getHurtTime() - 1);
          }
-@@ -248,8 +_,20 @@
+@@ -267,8 +_,20 @@
          }
  
          this.checkBelowWorld();
@@ -76,8 +76,8 @@
 +        // CraftBukkit end
          this.updateInWaterStateAndDoFluidPushing();
          if (this.isInLava()) {
-             this.lavaHurt();
-@@ -360,12 +_,16 @@
+             this.lavaIgnite();
+@@ -350,12 +_,16 @@
          Vec3 deltaMovement = this.getDeltaMovement();
          this.setDeltaMovement(Mth.clamp(deltaMovement.x, -maxSpeed, maxSpeed), deltaMovement.y, Mth.clamp(deltaMovement.z, -maxSpeed, maxSpeed));
          if (this.onGround()) {
@@ -96,24 +96,23 @@
          }
      }
  
-@@ -469,6 +_,16 @@
- 
-         this.flipped = compound.getBoolean("FlippedRotation");
-         this.firstTick = compound.getBoolean("HasTicked");
+@@ -457,6 +_,15 @@
+         this.setDisplayOffset(compound.getIntOr("DisplayOffset", this.getDefaultDisplayOffset()));
+         this.flipped = compound.getBooleanOr("FlippedRotation", false);
+         this.firstTick = compound.getBooleanOr("HasTicked", false);
 +        // Paper start - Friction API
-+        if (compound.contains("Paper.FrictionState")) {
-+            String fs = compound.getString("Paper.FrictionState");
++        compound.getString("Paper.FrictionState").ifPresent(frictionState -> {
 +            try {
-+                frictionState = net.kyori.adventure.util.TriState.valueOf(fs);
++                this.frictionState = net.kyori.adventure.util.TriState.valueOf(frictionState);
 +            } catch (Exception ignored) {
-+                com.mojang.logging.LogUtils.getLogger().error("Unknown friction state " + fs + " for " + this);
++                com.mojang.logging.LogUtils.getLogger().error("Unknown friction state {} for {}", frictionState, this);
 +            }
-+        }
++        });
 +        // Paper end - Friction API
      }
  
      @Override
-@@ -481,13 +_,27 @@
+@@ -472,13 +_,27 @@
  
          compound.putBoolean("FlippedRotation", this.flipped);
          compound.putBoolean("HasTicked", this.firstTick);
@@ -141,7 +140,7 @@
                      double d = entity.getX() - this.getX();
                      double d1 = entity.getZ() - this.getZ();
                      double d2 = d * d + d1 * d1;
-@@ -602,4 +_,28 @@
+@@ -587,4 +_,26 @@
      public boolean isFurnace() {
          return false;
      }
@@ -167,6 +166,4 @@
 +        this.derailedZ = derailed.getZ();
 +    }
 +    // CraftBukkit end
-+
-+    public net.minecraft.world.item.Item publicGetDropItem() { return getDropItem(); } // Paper - api to get boat and minecart material - expose public drop item
  }

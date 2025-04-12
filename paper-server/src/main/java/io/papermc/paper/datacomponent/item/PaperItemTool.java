@@ -49,6 +49,11 @@ public record PaperItemTool(
         return this.impl.damagePerBlock();
     }
 
+    @Override
+    public boolean canDestroyBlocksInCreative() {
+        return this.impl.canDestroyBlocksInCreative();
+    }
+
     record PaperRule(RegistryKeySet<BlockType> blocks, @Nullable Float speed, TriState correctForDrops) implements Rule {
 
         public static PaperRule fromUnsafe(final RegistryKeySet<BlockType> blocks, final @Nullable Float speed, final TriState correctForDrops) {
@@ -62,6 +67,7 @@ public record PaperItemTool(
         private final List<net.minecraft.world.item.component.Tool.Rule> rules = new ObjectArrayList<>();
         private int damage = 1;
         private float miningSpeed = 1.0F;
+        private boolean canDestroyBlocksInCreative = true;
 
         @Override
         public Builder damagePerBlock(final int damage) {
@@ -87,6 +93,12 @@ public record PaperItemTool(
         }
 
         @Override
+        public Builder canDestroyBlocksInCreative(final boolean canDestroyBlocksInCreative) {
+            this.canDestroyBlocksInCreative = canDestroyBlocksInCreative;
+            return this;
+        }
+
+        @Override
         public Builder addRules(final Collection<Rule> rules) {
             rules.forEach(this::addRule);
             return this;
@@ -94,7 +106,9 @@ public record PaperItemTool(
 
         @Override
         public Tool build() {
-            return new PaperItemTool(new net.minecraft.world.item.component.Tool(new ObjectArrayList<>(this.rules), this.miningSpeed, this.damage));
+            return new PaperItemTool(new net.minecraft.world.item.component.Tool(
+                new ObjectArrayList<>(this.rules), this.miningSpeed, this.damage, this.canDestroyBlocksInCreative
+            ));
         }
     }
 }

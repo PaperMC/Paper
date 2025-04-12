@@ -3,16 +3,20 @@ package org.bukkit.event.vehicle;
 import org.bukkit.Location;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
  * Raised when a vehicle moves.
  */
 public class VehicleMoveEvent extends VehicleEvent {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Location from;
     private final Location to;
 
+    @ApiStatus.Internal
     public VehicleMoveEvent(@NotNull final Vehicle vehicle, @NotNull final Location from, @NotNull final Location to) {
         super(vehicle);
 
@@ -27,7 +31,7 @@ public class VehicleMoveEvent extends VehicleEvent {
      */
     @NotNull
     public Location getFrom() {
-        return from.clone(); // Paper - clone to avoid changes
+        return this.from.clone();
     }
 
     /**
@@ -37,18 +41,17 @@ public class VehicleMoveEvent extends VehicleEvent {
      */
     @NotNull
     public Location getTo() {
-        return to.clone(); // Paper - clone to avoid changes
+        return this.to.clone();
     }
-
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

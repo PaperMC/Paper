@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/entity/animal/Bee.java
 +++ b/net/minecraft/world/entity/animal/Bee.java
-@@ -141,10 +_,26 @@
+@@ -145,10 +_,26 @@
      Bee.BeeGoToHiveGoal goToHiveGoal;
      private Bee.BeeGoToKnownFlowerGoal goToKnownFlowerGoal;
      private int underWaterTicks;
@@ -28,7 +28,7 @@
          this.lookControl = new Bee.BeeLookControl(this);
          this.setPathfindingMalus(PathType.DANGER_FIRE, -1.0F);
          this.setPathfindingMalus(PathType.WATER, -1.0F);
-@@ -191,12 +_,19 @@
+@@ -195,9 +_,18 @@
  
      @Override
      public void addAdditionalSaveData(CompoundTag compound) {
@@ -37,20 +37,17 @@
 +    }
 +
 +    @Override
-+    public void addAdditionalSaveData(CompoundTag compound, boolean includeAll) {
++    public void addAdditionalSaveData(CompoundTag compound, boolean saveAll) {
 +        // CraftBukkit end
          super.addAdditionalSaveData(compound);
--        if (this.hasHive()) {
-+        if (includeAll && this.hasHive()) { // CraftBukkit - selectively save hive
-             compound.put("hive_pos", NbtUtils.writeBlockPos(this.getHivePos()));
-         }
- 
--        if (this.hasSavedFlowerPos()) {
-+        if (includeAll && this.hasSavedFlowerPos()) { // CraftBukkit - selectively save hive
-             compound.put("flower_pos", NbtUtils.writeBlockPos(this.getSavedFlowerPos()));
-         }
- 
-@@ -237,7 +_,7 @@
++        if (saveAll) { // Paper
+         compound.storeNullable("hive_pos", BlockPos.CODEC, this.hivePos);
+         compound.storeNullable("flower_pos", BlockPos.CODEC, this.savedFlowerPos);
++        } // Paper
+         compound.putBoolean("HasNectar", this.hasNectar());
+         compound.putBoolean("HasStung", this.hasStung());
+         compound.putInt("TicksSincePollination", this.ticksWithoutNectarSinceExitingHive);
+@@ -235,7 +_,7 @@
                  }
  
                  if (i > 0) {
@@ -59,7 +56,7 @@
                  }
              }
  
-@@ -492,7 +_,11 @@
+@@ -490,7 +_,11 @@
          if (this.hivePos == null) {
              return null;
          } else {
@@ -72,7 +69,7 @@
          }
      }
  
-@@ -525,6 +_,7 @@
+@@ -523,6 +_,7 @@
      }
  
      public void setRolling(boolean isRolling) {
@@ -80,7 +77,7 @@
          this.setFlag(2, isRolling);
      }
  
-@@ -581,7 +_,7 @@
+@@ -579,7 +_,7 @@
              if (beeInteractionEffect != null) {
                  this.usePlayerItem(player, hand, itemInHand);
                  if (!this.level().isClientSide) {
@@ -89,7 +86,7 @@
                  }
  
                  return InteractionResult.SUCCESS;
-@@ -650,8 +_,9 @@
+@@ -648,8 +_,9 @@
          if (this.isInvulnerableTo(level, damageSource)) {
              return false;
          } else {
@@ -100,7 +97,7 @@
          }
      }
  
-@@ -772,7 +_,7 @@
+@@ -770,7 +_,7 @@
      @VisibleForDebug
      public class BeeGoToHiveGoal extends Bee.BaseBeeGoal {
          public static final int MAX_TRAVELLING_TICKS = 2400;
@@ -109,7 +106,7 @@
          private static final int MAX_BLACKLISTED_TARGETS = 3;
          final List<BlockPos> blacklistedTargets = Lists.newArrayList();
          @Nullable
-@@ -888,7 +_,7 @@
+@@ -886,7 +_,7 @@
  
      public class BeeGoToKnownFlowerGoal extends Bee.BaseBeeGoal {
          private static final int MAX_TRAVELLING_TICKS = 2400;
@@ -118,7 +115,7 @@
  
          BeeGoToKnownFlowerGoal() {
              this.setFlags(EnumSet.of(Goal.Flag.MOVE));
-@@ -986,7 +_,7 @@
+@@ -983,7 +_,7 @@
                              }
                          }
  
@@ -127,16 +124,16 @@
                              Bee.this.level().levelEvent(2011, blockPos, 15);
                              Bee.this.level().setBlockAndUpdate(blockPos, blockState1);
                              Bee.this.incrementNumCropsGrownSincePollination();
-@@ -1010,7 +_,7 @@
+@@ -1007,7 +_,7 @@
          @Override
          protected void alertOther(Mob mob, LivingEntity target) {
              if (mob instanceof Bee && this.mob.hasLineOfSight(target)) {
 -                mob.setTarget(target);
-+                mob.setTarget(target, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY, true); // CraftBukkit - reason
++                mob.setTarget(target, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TARGET_ATTACKED_ENTITY); // CraftBukkit - reason
              }
          }
      }
-@@ -1168,7 +_,7 @@
+@@ -1165,7 +_,7 @@
                      Bee.this.dropFlower();
                      this.pollinating = false;
                      Bee.this.remainingCooldownBeforeLocatingNewFlower = 200;

@@ -5,6 +5,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.block.BlockEvent;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -13,12 +14,15 @@ import org.jetbrains.annotations.NotNull;
  */
 public class BrewingStandFuelEvent extends BlockEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final ItemStack fuel;
     private int fuelPower;
-    private boolean cancelled;
     private boolean consuming = true;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public BrewingStandFuelEvent(@NotNull Block brewingStand, @NotNull ItemStack fuel, int fuelPower) {
         super(brewingStand);
         this.fuel = fuel;
@@ -32,7 +36,7 @@ public class BrewingStandFuelEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public ItemStack getFuel() {
-        return fuel;
+        return this.fuel;
     }
 
     /**
@@ -42,7 +46,7 @@ public class BrewingStandFuelEvent extends BlockEvent implements Cancellable {
      * @return the fuel power for this fuel
      */
     public int getFuelPower() {
-        return fuelPower;
+        return this.fuelPower;
     }
 
     /**
@@ -61,7 +65,7 @@ public class BrewingStandFuelEvent extends BlockEvent implements Cancellable {
      * @return whether the fuel will be reduced or not
      */
     public boolean isConsuming() {
-        return consuming;
+        return this.consuming;
     }
 
     /**
@@ -75,7 +79,7 @@ public class BrewingStandFuelEvent extends BlockEvent implements Cancellable {
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -86,11 +90,11 @@ public class BrewingStandFuelEvent extends BlockEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

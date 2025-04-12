@@ -1,32 +1,19 @@
 --- a/net/minecraft/world/entity/ai/sensing/TemptingSensor.java
 +++ b/net/minecraft/world/entity/ai/sensing/TemptingSensor.java
-@@ -16,6 +_,14 @@
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.ItemStack;
- 
-+// CraftBukkit start
-+import org.bukkit.craftbukkit.entity.CraftHumanEntity;
-+import org.bukkit.craftbukkit.event.CraftEventFactory;
-+import org.bukkit.entity.HumanEntity;
-+import org.bukkit.event.entity.EntityTargetEvent;
-+import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
-+// CraftBukkit end
-+
- public class TemptingSensor extends Sensor<PathfinderMob> {
-     private static final TargetingConditions TEMPT_TARGETING = TargetingConditions.forNonCombat().ignoreLineOfSight();
-     private final Predicate<ItemStack> temptations;
-@@ -38,7 +_,17 @@
+@@ -38,7 +_,19 @@
              .collect(Collectors.toList());
          if (!list.isEmpty()) {
              Player player = list.get(0);
 -            brain.setMemory(MemoryModuleType.TEMPTING_PLAYER, player);
 +            // CraftBukkit start
-+            EntityTargetLivingEntityEvent event = CraftEventFactory.callEntityTargetLivingEvent(entity, player, EntityTargetEvent.TargetReason.TEMPT);
++            org.bukkit.event.entity.EntityTargetLivingEntityEvent event = org.bukkit.craftbukkit.event.CraftEventFactory.callEntityTargetLivingEvent(
++                entity, player, org.bukkit.event.entity.EntityTargetEvent.TargetReason.TEMPT
++            );
 +            if (event.isCancelled()) {
 +                return;
 +            }
-+            if (event.getTarget() instanceof HumanEntity) {
-+                brain.setMemory(MemoryModuleType.TEMPTING_PLAYER, ((CraftHumanEntity) event.getTarget()).getHandle());
++            if (event.getTarget() instanceof org.bukkit.craftbukkit.entity.CraftHumanEntity target) {
++                brain.setMemory(MemoryModuleType.TEMPTING_PLAYER, target.getHandle());
 +            } else {
 +                brain.eraseMemory(MemoryModuleType.TEMPTING_PLAYER);
 +            }

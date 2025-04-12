@@ -1,32 +1,31 @@
 --- a/net/minecraft/world/item/crafting/SmithingTransformRecipe.java
 +++ b/net/minecraft/world/item/crafting/SmithingTransformRecipe.java
 @@ -21,8 +_,15 @@
-     final ItemStack result;
+     final TransmuteResult result;
      @Nullable
      private PlacementInfo placementInfo;
 +    final boolean copyDataComponents; // Paper - Option to prevent data components copy
  
-     public SmithingTransformRecipe(Optional<Ingredient> template, Optional<Ingredient> base, Optional<Ingredient> addition, ItemStack result) {
-+        // Paper start - Option to prevent data components copy
+     public SmithingTransformRecipe(Optional<Ingredient> template, Ingredient base, Optional<Ingredient> addition, TransmuteResult result) {
++    // Paper start - Option to prevent data components copy
 +        this(template, base, addition, result, true);
 +    }
-+    public SmithingTransformRecipe(Optional<Ingredient> template, Optional<Ingredient> base, Optional<Ingredient> addition, ItemStack result, boolean copyDataComponents) {
++    public SmithingTransformRecipe(Optional<Ingredient> template, Ingredient base, Optional<Ingredient> addition, TransmuteResult result, boolean copyDataComponents) {
 +        this.copyDataComponents = copyDataComponents;
-+        // Paper end - Option to prevent data components copy
++    // Paper end - Option to prevent data components copy
          this.template = template;
          this.base = base;
          this.addition = addition;
-@@ -32,7 +_,9 @@
+@@ -31,7 +_,7 @@
+ 
      @Override
      public ItemStack assemble(SmithingRecipeInput input, HolderLookup.Provider registries) {
-         ItemStack itemStack = input.base().transmuteCopy(this.result.getItem(), this.result.getCount());
-+        if (this.copyDataComponents) { // Paper - Option to prevent data components copy
-         itemStack.applyComponents(this.result.getComponentsPatch());
-+        } // Paper - Option to prevent data components copy
-         return itemStack;
+-        return this.result.apply(input.base());
++        return this.result.apply(input.base(), this.copyDataComponents); // Paper - Option to prevent data components copy
      }
  
-@@ -77,6 +_,17 @@
+     @Override
+@@ -75,6 +_,17 @@
              )
          );
      }
@@ -34,7 +33,7 @@
 +    // CraftBukkit start
 +    @Override
 +    public org.bukkit.inventory.Recipe toBukkitRecipe(org.bukkit.NamespacedKey id) {
-+        org.bukkit.craftbukkit.inventory.CraftItemStack result = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(this.result);
++        org.bukkit.craftbukkit.inventory.CraftItemStack result = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(new ItemStack(this.result.item(), this.result.count(), this.result.components()));
 +
 +        org.bukkit.craftbukkit.inventory.CraftSmithingTransformRecipe recipe = new org.bukkit.craftbukkit.inventory.CraftSmithingTransformRecipe(id, result, org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.template), org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.base), org.bukkit.craftbukkit.inventory.CraftRecipe.toBukkit(this.addition), this.copyDataComponents); // Paper - Option to prevent data components copy
 +

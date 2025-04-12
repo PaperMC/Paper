@@ -148,8 +148,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Server cat types.
      *
      * @see Cat.Type
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#CAT_VARIANT}
      */
-    Registry<Cat.Type> CAT_VARIANT = registryFor(RegistryKey.CAT_VARIANT);
+    @Deprecated(since = "1.21.5")
+    Registry<Cat.Type> CAT_VARIANT = legacyRegistryFor(Cat.Type.class);
     /**
      * Server enchantments.
      *
@@ -291,10 +293,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      *
      * @see MemoryKey
      */
-    Registry<MemoryKey> MEMORY_MODULE_TYPE = new NotARegistry<>() {
+    Registry<MemoryKey<?>> MEMORY_MODULE_TYPE = new NotARegistry<>() {
 
         @Override
-        public Iterator iterator() {
+        public Iterator<MemoryKey<?>> iterator() {
             return MemoryKey.values().iterator();
         }
 
@@ -304,7 +306,7 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
         }
 
         @Override
-        public @Nullable MemoryKey get(final NamespacedKey key) {
+        public @Nullable MemoryKey<?> get(final NamespacedKey key) {
             return MemoryKey.getByKey(key);
         }
     };
@@ -318,8 +320,10 @@ public interface Registry<T extends Keyed> extends Iterable<T> {
      * Frog variants.
      *
      * @see Frog.Variant
+     * @deprecated use {@link RegistryAccess#getRegistry(RegistryKey)} with {@link RegistryKey#FROG_VARIANT}
      */
-    Registry<Frog.Variant> FROG_VARIANT = registryFor(RegistryKey.FROG_VARIANT);
+    @Deprecated(since = "1.21.5")
+    Registry<Frog.Variant> FROG_VARIANT = legacyRegistryFor(Frog.Variant.class);
     /**
      * Wolf variants.
      *

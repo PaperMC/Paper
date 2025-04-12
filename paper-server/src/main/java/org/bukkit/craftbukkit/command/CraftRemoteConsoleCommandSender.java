@@ -39,12 +39,10 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
         return "Rcon";
     }
 
-    // Paper start
     @Override
     public net.kyori.adventure.text.Component name() {
         return net.kyori.adventure.text.Component.text(this.getName());
     }
-    // Paper end
 
     @Override
     public boolean isOp() {
@@ -56,7 +54,6 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
         throw new UnsupportedOperationException("Cannot change operator status of remote controller.");
     }
 
-    // Paper start
     @Override
     public boolean hasPermission(String name) {
         return io.papermc.paper.configuration.GlobalConfiguration.get().console.hasAllPermissions || super.hasPermission(name);
@@ -66,5 +63,4 @@ public class CraftRemoteConsoleCommandSender extends ServerCommandSender impleme
     public boolean hasPermission(org.bukkit.permissions.Permission perm) {
         return io.papermc.paper.configuration.GlobalConfiguration.get().console.hasAllPermissions || super.hasPermission(perm);
     }
-    // Paper end
 }

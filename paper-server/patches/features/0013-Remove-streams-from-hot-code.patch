@@ -98,18 +98,27 @@ index c215d97c24e6501e1a48a76fc08bf48ff4dfe462..bd31d1cac0d022a72bd536c41d1ef811
      }
  }
 diff --git a/net/minecraft/world/entity/ai/gossip/GossipContainer.java b/net/minecraft/world/entity/ai/gossip/GossipContainer.java
-index 2c839dc80f451c83135828a97aced1a531004bab..b74a4ce1b629d440681a1f5c026997ccaf1d0373 100644
+index d93ef8d7ff04ffd3d7434ea6e2d476115203215b..425ca1931fb0a5c33ba7aaf4f639409c9fea836f 100644
 --- a/net/minecraft/world/entity/ai/gossip/GossipContainer.java
 +++ b/net/minecraft/world/entity/ai/gossip/GossipContainer.java
-@@ -59,8 +59,22 @@ public class GossipContainer {
-         return this.gossips.entrySet().stream().flatMap(gossip -> gossip.getValue().unpack(gossip.getKey()));
+@@ -28,7 +28,7 @@ import net.minecraft.util.VisibleForDebug;
+ public class GossipContainer {
+     public static final Codec<GossipContainer> CODEC = GossipContainer.GossipEntry.CODEC
+         .listOf()
+-        .xmap(GossipContainer::new, gossipContainer -> gossipContainer.unpack().toList());
++        .xmap(GossipContainer::new, gossipContainer -> gossipContainer.decompress()); // Paper - Perf: Remove streams from hot code
+     public static final int DISCARD_THRESHOLD = 2;
+     public final Map<UUID, GossipContainer.EntityGossips> gossips = new HashMap<>();
+ 
+@@ -65,8 +65,22 @@ public class GossipContainer {
+         return this.gossips.entrySet().stream().flatMap(entry -> entry.getValue().unpack(entry.getKey()));
      }
  
 +    // Paper start - Perf: Remove streams from hot code
 +    private List<GossipContainer.GossipEntry> decompress() {
-+        List<GossipContainer.GossipEntry> list = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
-+        for (Map.Entry<UUID, GossipContainer.EntityGossips> entry : this.gossips.entrySet()) {
-+            for (GossipContainer.GossipEntry cur : entry.getValue().decompress(entry.getKey())) {
++        final List<GossipContainer.GossipEntry> list = new it.unimi.dsi.fastutil.objects.ObjectArrayList<>();
++        for (final Map.Entry<UUID, GossipContainer.EntityGossips> entry : this.gossips.entrySet()) {
++            for (final GossipContainer.GossipEntry cur : entry.getValue().decompress(entry.getKey())) {
 +                if (cur.weightedValue() != 0) {
 +                    list.add(cur);
 +                }
@@ -125,16 +134,7 @@ index 2c839dc80f451c83135828a97aced1a531004bab..b74a4ce1b629d440681a1f5c026997cc
          if (list.isEmpty()) {
              return Collections.emptyList();
          } else {
-@@ -145,7 +159,7 @@ public class GossipContainer {
- 
-     public <T> T store(DynamicOps<T> ops) {
-         return GossipContainer.GossipEntry.LIST_CODEC
--            .encodeStart(ops, this.unpack().toList())
-+            .encodeStart(ops, this.decompress()) // Paper - Perf: Remove streams from hot code
-             .resultOrPartial(errorMessage -> LOGGER.warn("Failed to serialize gossips: {}", errorMessage))
-             .orElseGet(ops::emptyList);
-     }
-@@ -172,12 +186,23 @@ public class GossipContainer {
+@@ -176,12 +190,23 @@ public class GossipContainer {
          final Object2IntMap<GossipType> entries = new Object2IntOpenHashMap<>();
  
          public int weightedValue(Predicate<GossipType> gossipType) {
@@ -194,7 +194,7 @@ index 38873e56e95dc772b184e4271f7af1fb411ac9f8..09fd13e2d958da8326276c4dadf25bf4
      }
  }
 diff --git a/net/minecraft/world/level/levelgen/Beardifier.java b/net/minecraft/world/level/levelgen/Beardifier.java
-index 1a09da5aa1ae047a002d6779326c2a29e47d32b5..131923282c9ecbcb1d7f45a826da907c02bd2716 100644
+index 8bc2dd4fa128fc2f88b974b8712cb0953a024eaa..74d8202b5c9bb2a3ee832be70f95c0b5cbecb460 100644
 --- a/net/minecraft/world/level/levelgen/Beardifier.java
 +++ b/net/minecraft/world/level/levelgen/Beardifier.java
 @@ -35,9 +35,10 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
@@ -211,7 +211,7 @@ index 1a09da5aa1ae047a002d6779326c2a29e47d32b5..131923282c9ecbcb1d7f45a826da907c
                      TerrainAdjustment terrainAdjustment = structureStart.getStructure().terrainAdaptation();
  
                      for (StructurePiece structurePiece : structureStart.getPieces()) {
-@@ -65,8 +66,7 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
+@@ -64,8 +65,7 @@ public class Beardifier implements DensityFunctions.BeardifierOrMarker {
                              }
                          }
                      }

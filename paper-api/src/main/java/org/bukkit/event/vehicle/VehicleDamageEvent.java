@@ -4,6 +4,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Vehicle;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,11 +12,15 @@ import org.jetbrains.annotations.Nullable;
  * Raised when a vehicle receives damage.
  */
 public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Entity attacker;
     private double damage;
+
     private boolean cancelled;
 
+    @ApiStatus.Internal
     public VehicleDamageEvent(@NotNull final Vehicle vehicle, @Nullable final Entity attacker, final double damage) {
         super(vehicle);
         this.attacker = attacker;
@@ -29,7 +34,7 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
      */
     @Nullable
     public Entity getAttacker() {
-        return attacker;
+        return this.attacker;
     }
 
     /**
@@ -38,7 +43,7 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
      * @return the damage done to the vehicle
      */
     public double getDamage() {
-        return damage;
+        return this.damage;
     }
 
     /**
@@ -52,7 +57,7 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
 
     @Override
     public boolean isCancelled() {
-        return cancelled;
+        return this.cancelled;
     }
 
     @Override
@@ -63,11 +68,11 @@ public class VehicleDamageEvent extends VehicleEvent implements Cancellable {
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }

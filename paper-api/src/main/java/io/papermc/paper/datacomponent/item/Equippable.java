@@ -97,6 +97,14 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
     boolean damageOnHurt();
 
     /**
+     * Checks if the item should be equipped when interacting with an entity.
+     *
+     * @return true if it equips on interact, false otherwise
+     */
+    @Contract(pure = true)
+    boolean equipOnInteract();
+
+    /**
      * Builder for {@link Equippable}.
      */
     @ApiStatus.Experimental
@@ -165,5 +173,14 @@ public interface Equippable extends BuildableDataComponent<Equippable, Equippabl
          */
         @Contract(value = "_ -> this", mutates = "this")
         Builder damageOnHurt(boolean damageOnHurt);
+
+        /**
+         * Sets whether the item should be equipped when interacting with an entity.
+         *
+         * @param equipOnInteract true if it equips on interact
+         * @return the builder for chaining
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        Builder equipOnInteract(boolean equipOnInteract);
     }
 }

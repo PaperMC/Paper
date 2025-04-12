@@ -1,22 +1,31 @@
 --- a/net/minecraft/world/entity/AgeableMob.java
 +++ b/net/minecraft/world/entity/AgeableMob.java
-@@ -20,6 +_,7 @@
-     protected int age;
-     protected int forcedAge;
+@@ -22,6 +_,7 @@
+     protected int age = 0;
+     protected int forcedAge = 0;
      protected int forcedAgeTimer;
 +    public boolean ageLocked; // CraftBukkit
  
      protected AgeableMob(EntityType<? extends AgeableMob> entityType, Level level) {
          super(entityType, level);
-@@ -66,6 +_,7 @@
+@@ -68,13 +_,15 @@
      }
  
      public void ageUp(int amount, boolean forced) {
 +        if (this.ageLocked) return; // Paper - Honor ageLock
          int age = this.getAge();
++        int previousAge = age; // Paper - Decompile fix: lvt reassignment lost
          age += amount * 20;
          if (age > 0) {
-@@ -104,6 +_,7 @@
+             age = 0;
+         }
+ 
+-        int i1 = age - age;
++        int i1 = age - previousAge; // Paper - Decompile fix
+         this.setAge(age);
+         if (forced) {
+             this.forcedAge += i1;
+@@ -106,6 +_,7 @@
          super.addAdditionalSaveData(compound);
          compound.putInt("Age", this.getAge());
          compound.putInt("ForcedAge", this.forcedAge);
@@ -24,15 +33,15 @@
      }
  
      @Override
-@@ -111,6 +_,7 @@
+@@ -113,6 +_,7 @@
          super.readAdditionalSaveData(compound);
-         this.setAge(compound.getInt("Age"));
-         this.forcedAge = compound.getInt("ForcedAge");
-+        this.ageLocked = compound.getBoolean("AgeLocked"); // CraftBukkit
+         this.setAge(compound.getIntOr("Age", 0));
+         this.forcedAge = compound.getIntOr("ForcedAge", 0);
++        this.ageLocked = compound.getBooleanOr("AgeLocked", false); // CraftBukkit
      }
  
      @Override
-@@ -125,7 +_,7 @@
+@@ -127,7 +_,7 @@
      @Override
      public void aiStep() {
          super.aiStep();

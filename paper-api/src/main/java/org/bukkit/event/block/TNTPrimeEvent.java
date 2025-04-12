@@ -4,37 +4,31 @@ import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Called when a block of TNT in the world become primed.
  * <p>
- * If a TNT Prime event is cancelled, the block of TNT will not become primed.
+ * If this event is cancelled, the block of TNT will not become primed.
  */
 public class TNTPrimeEvent extends BlockEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancelled;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final PrimeCause igniteCause;
     private final Entity primingEntity;
     private final Block primingBlock;
 
+    private boolean cancelled;
+
+    @ApiStatus.Internal
     public TNTPrimeEvent(@NotNull final Block block, @NotNull final PrimeCause igniteCause, @Nullable final Entity primingEntity, @Nullable final Block primingBlock) {
         super(block);
         this.igniteCause = igniteCause;
         this.primingEntity = primingEntity;
         this.primingBlock = primingBlock;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        this.cancelled = cancel;
     }
 
     /**
@@ -44,40 +38,50 @@ public class TNTPrimeEvent extends BlockEvent implements Cancellable {
      */
     @NotNull
     public PrimeCause getCause() {
-        return igniteCause;
+        return this.igniteCause;
     }
 
     /**
      * Get the entity that caused the TNT to be primed.
      *
-     * @return the entity that caused the TNT to be primed, or null if it was
+     * @return the entity that caused the TNT to be primed, or {@code null} if it was
      * not caused by an entity.
      */
     @Nullable
     public Entity getPrimingEntity() {
-        return primingEntity;
+        return this.primingEntity;
     }
 
     /**
      * Get the block that caused the TNT to be primed.
      *
-     * @return the block that caused the TNT to be primed, or null if it was not
+     * @return the block that caused the TNT to be primed, or {@code null} if it was not
      * caused by a block.
      */
     @Nullable
     public Block getPrimingBlock() {
-        return primingBlock;
+        return this.primingBlock;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     /**
@@ -106,7 +110,7 @@ public class TNTPrimeEvent extends BlockEvent implements Cancellable {
          */
         PROJECTILE,
         /**
-         * When TNT with the unstable block state set to true is broken.
+         * When TNT with the unstable block state set to {@code true} is broken.
          * <p>
          * Note: Canceling a prime event with this cause will stop the primed
          * TNT from spawning but will not stop the block from being broken.

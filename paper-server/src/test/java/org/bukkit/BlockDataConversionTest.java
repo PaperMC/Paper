@@ -24,8 +24,8 @@ public class BlockDataConversionTest {
 
     @ParameterizedTest
     @MethodSource("data")
-    public void testNotNull(BlockState data) {
-        assertNotNull(data);
-        assertNotNull(CraftBlockData.fromData(data));
+    public void testNotNull(BlockState state) {
+        assertNotNull(state);
+        assertNotNull(CraftBlockData.fromData(state));
     }
 }

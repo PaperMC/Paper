@@ -223,7 +223,7 @@ public interface AreaEffectCloud extends Entity {
      * @param type the potion effect type to check for
      * @return true if the potion has this effect
      */
-    boolean hasCustomEffect(@Nullable PotionEffectType type);
+    boolean hasCustomEffect(@NotNull PotionEffectType type);
 
     /**
      * Removes all custom potion effects from this cloud.
