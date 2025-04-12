@@ -4,6 +4,7 @@ import ca.spottedleaf.moonrise.common.PlatformHooks;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Files;
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,11 +34,14 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.NbtUtils;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.TagParser;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.datafix.DataFixers;
 import net.minecraft.util.datafix.fixes.References;
 import net.minecraft.world.entity.player.Player;
@@ -54,12 +59,10 @@ import org.bukkit.World;
 import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeModifier;
-import org.bukkit.block.Biome;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.CraftRegistry;
 import org.bukkit.craftbukkit.CraftServer;
 import org.bukkit.craftbukkit.CraftWorld;
-import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.block.data.CraftBlockData;
 import org.bukkit.craftbukkit.damage.CraftDamageSourceBuilder;
 import org.bukkit.craftbukkit.entity.CraftEntity;
@@ -498,9 +501,92 @@ public final class CraftMagicNumbers implements UnsafeValues {
         Preconditions.checkArgument(data.length > 0, "cannot deserialize nothing");
 
         CompoundTag compound = deserializeNbtFromBytes(data);
+        return deserializeItem(compound);
+    }
+
+    private ItemStack deserializeItem(CompoundTag compound) {
         final int dataVersion = compound.getIntOr("DataVersion", 0);
-        compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, MinecraftServer.getServer().fixerUpper, compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
-        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
+        compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, DataFixers.getDataFixer(), compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
+        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(CraftRegistry.getMinecraftRegistry(), compound).orElseThrow());
+    }
+
+    @Override
+    public @org.jetbrains.annotations.NotNull Map<String, Object> serializeStack(final ItemStack itemStack) {
+        final CompoundTag tag = CraftItemStack.asNMSCopy(itemStack).save(CraftRegistry.getMinecraftRegistry()).asCompound().orElseThrow();
+        NbtUtils.addCurrentDataVersion(tag);
+
+        final Map<String, Object> ret = new LinkedHashMap<>();
+        tag.asCompound().get().forEach((key, value) -> {
+            switch (key) {
+                case "id" -> {
+                    ret.put("id", value.asString().get());
+                }
+                case "count" -> {
+                    ret.put("count", value.asInt().get());
+                }
+                case "components" -> {
+                    final Map<String, Object> components = new LinkedHashMap<>();
+                    value.asCompound().ifPresent((compoundTag) -> {
+                        compoundTag.forEach((componentKey, componentTag) -> {
+                            final String serializedComponent = componentTag.toString();
+                            components.put(componentKey, serializedComponent);
+                        });
+                    });
+                    ret.put("components", components);
+                }
+                case SharedConstants.DATA_VERSION_TAG -> {
+                    ret.put(SharedConstants.DATA_VERSION_TAG, value.asInt().get());
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + key);
+            }
+        });
+        ret.put("schema_version", 1);
+        return ret;
+    }
+
+    @Override
+    public @org.jetbrains.annotations.NotNull ItemStack deserializeStack(@org.jetbrains.annotations.NotNull final Map<String, Object> args) {
+        final int version = args.getOrDefault("schema_version", 1) instanceof Number val ? val.intValue() : -1;
+
+        final CompoundTag tag = new CompoundTag();
+        args.forEach((key, value) -> {
+            switch (key) {
+                case "id" -> {
+                    tag.putString("id", (String) value);
+                }
+                case "count" -> {
+                    tag.putInt("count", ((Number) value).intValue());
+                }
+                case "components" -> {
+                    if (version == 1) {
+                        final Map<String, String> componentMap = (Map<String, String>) value;
+                        final CompoundTag componentsTag = new CompoundTag();
+                        componentMap.forEach((componentKey, componentString) -> {
+                            final Tag componentTag;
+                            try {
+                                componentTag = TagParser.create(NbtOps.INSTANCE).parseFully(componentString);
+                            } catch (final CommandSyntaxException e) {
+                                throw new RuntimeException("Error parsing item stack data components", e);
+                            }
+                            componentsTag.put(componentKey, componentTag);
+                        });
+                        tag.put("components", componentsTag);
+
+                     } else {
+                        throw new IllegalStateException("Unexpected version: " + version);
+                    }
+                }
+                case SharedConstants.DATA_VERSION_TAG -> {
+                    tag.putInt(SharedConstants.DATA_VERSION_TAG, ((Number) value).intValue());
+                }
+                case "==", "schema_version" -> {
+                    // Ignore
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + key);
+            }
+        });
+
+        return deserializeItem(tag);
     }
 
     @Override
