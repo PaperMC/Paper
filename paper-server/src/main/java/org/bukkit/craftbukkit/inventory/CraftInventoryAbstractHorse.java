@@ -50,12 +50,12 @@ public class CraftInventoryAbstractHorse extends CraftInventory implements Abstr
 
     @Override
     public int getSize() {
-        return this.getMainInventory().getContainerSize() + this.getArmorInventory().getContainerSize();
+        return this.getMainInventory().getContainerSize() + this.getArmorInventory().getContainerSize() + this.getSaddleInventory().getContainerSize();
     }
 
     @Override
     public boolean isEmpty() {
-        return this.getMainInventory().isEmpty() && this.getArmorInventory().isEmpty();
+        return this.getMainInventory().isEmpty() && this.getArmorInventory().isEmpty() && this.getSaddleInventory().isEmpty();
     }
 
     @Override
@@ -116,8 +116,10 @@ public class CraftInventoryAbstractHorse extends CraftInventory implements Abstr
             if (index > HorseInventoryMenu.SLOT_BODY_ARMOR) {
                 shiftedIndex--;
             }
+            if (index > HorseInventoryMenu.SLOT_SADDLE) {
+                shiftedIndex--;
+            }
             this.getMainInventory().setItem(shiftedIndex, CraftItemStack.asNMSCopy(item));
         }
     }
-    // Paper end - combine both horse inventories
 }
