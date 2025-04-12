@@ -17,6 +17,7 @@ import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.levelgen.structure.templatesystem.BlockRotProcessor;
+import net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import org.bukkit.Bukkit;
@@ -35,6 +36,7 @@ import org.bukkit.craftbukkit.util.TransformerGeneratorAccess;
 import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.structure.Palette;
+import org.bukkit.structure.PlacementOptions;
 import org.bukkit.structure.Structure;
 import org.bukkit.util.BlockTransformer;
 import org.bukkit.util.BlockVector;
@@ -57,13 +59,8 @@ public class CraftStructure implements Structure {
 
     @Override
     public void place(Location location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
-        Preconditions.checkArgument(location != null, "Location cannot be null");
-        location.checkFinite();
-        World world = location.getWorld();
-        Preconditions.checkArgument(world != null, "The World of Location cannot be null");
-
-        BlockVector blockVector = new BlockVector(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-        this.place(world, blockVector, includeEntities, structureRotation, mirror, palette, integrity, random, blockTransformers, entityTransformers);
+        PlacementOptions placementOptions = new PlacementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity);
+        this.place(location, placementOptions, blockTransformers, entityTransformers);
     }
 
     @Override
@@ -72,32 +69,52 @@ public class CraftStructure implements Structure {
     }
 
     @Override
+    public void place(Location location, PlacementOptions placementOptions, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
+        Preconditions.checkArgument(location != null, "Location cannot be null");
+        location.checkFinite();
+        World world = location.getWorld();
+        Preconditions.checkArgument(world != null, "The World of Location cannot be null");
+
+        BlockVector blockVector = new BlockVector(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+        this.place(world, blockVector, placementOptions);
+    }
+
+    @Override
     public void place(RegionAccessor regionAccessor, BlockVector location, boolean includeEntities, StructureRotation structureRotation, Mirror mirror, int palette, float integrity, Random random, Collection<BlockTransformer> blockTransformers, Collection<EntityTransformer> entityTransformers) {
+        PlacementOptions placementOptions = new PlacementOptions(random).includeEntities(includeEntities).structureRotation(structureRotation).mirror(mirror).palette(palette).integrity(integrity)
+            .blockTransformers(blockTransformers).entityTransformers(entityTransformers);
+        this.place(regionAccessor, location, placementOptions);
+    }
+
+    @Override
+    public void place(RegionAccessor regionAccessor, BlockVector location, PlacementOptions placementOptions) {
         Preconditions.checkArgument(location != null, "Location cannot be null");
         Preconditions.checkArgument(regionAccessor != null, "RegionAccessor cannot be null");
-        Preconditions.checkArgument(blockTransformers != null, "BlockTransformers cannot be null");
-        Preconditions.checkArgument(entityTransformers != null, "EntityTransformers cannot be null");
+        Collection<BlockTransformer> blockTransformers = placementOptions.getBlockTransformers();
+        Preconditions.checkState(blockTransformers != null, "BlockTransformers cannot be null");
+        Collection<EntityTransformer> entityTransformers = placementOptions.getEntityTransformers();
+        Preconditions.checkState(entityTransformers != null, "EntityTransformers cannot be null");
         location.checkFinite();
 
-        Preconditions.checkArgument(integrity >= 0F && integrity <= 1F, "Integrity value (%S) must be between 0 and 1 inclusive", integrity);
-
-        RandomSource randomSource = new RandomSourceWrapper(random);
+        RandomSource randomSource = new RandomSourceWrapper(placementOptions.getRandom());
         StructurePlaceSettings definedstructureinfo = new StructurePlaceSettings()
-                .setMirror(net.minecraft.world.level.block.Mirror.valueOf(mirror.name()))
-                .setRotation(Rotation.valueOf(structureRotation.name()))
-                .setIgnoreEntities(!includeEntities)
-                .addProcessor(new BlockRotProcessor(integrity))
+                .setMirror(net.minecraft.world.level.block.Mirror.valueOf(placementOptions.getMirror().name()))
+                .setRotation(Rotation.valueOf(placementOptions.getStructureRotation().name()))
+                .setIgnoreEntities(!placementOptions.isIncludeEntities())
+                .addProcessor(new BlockRotProcessor(placementOptions.getIntegrity()))
+                .setKnownShape(placementOptions.isStrict())
+                .setLiquidSettings(placementOptions.isApplyWaterlogging() ? LiquidSettings.APPLY_WATERLOGGING : LiquidSettings.IGNORE_WATERLOGGING)
                 .setRandom(randomSource);
-        definedstructureinfo.palette = palette;
+        definedstructureinfo.palette = placementOptions.getPalette();
 
-        BlockPos blockPosition = CraftBlockVector.toBlockPosition(location);
+        BlockPos pos = CraftBlockVector.toBlockPosition(location);
         WorldGenLevel handle = ((CraftRegionAccessor) regionAccessor).getHandle();
 
         TransformerGeneratorAccess access = new TransformerGeneratorAccess();
-        access.setHandle(handle);
-        access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(blockPosition), blockTransformers, entityTransformers));
+        access.setDelegate(handle);
+        access.setStructureTransformer(new CraftStructureTransformer(handle, new ChunkPos(pos), blockTransformers, entityTransformers));
 
-        this.structure.placeInWorld(access, blockPosition, blockPosition, definedstructureinfo, randomSource, 2);
+        this.structure.placeInWorld(access, pos, pos, definedstructureinfo, randomSource, 2 | (placementOptions.isStrict() ? 816 : 0));
         access.getStructureTransformer().discard();
     }
 
