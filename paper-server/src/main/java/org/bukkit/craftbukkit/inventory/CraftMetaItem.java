@@ -372,7 +372,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         this.repairCost = meta.repairCost;
-        if (meta.tooltipDisplay !=  null) {
+        if (meta.tooltipDisplay != null) {
             this.tooltipDisplay = new TooltipDisplay(meta.tooltipDisplay.hideTooltip(), new ReferenceLinkedOpenHashSet<>(meta.tooltipDisplay.hiddenComponents()));
         }
         this.tooltipStyle = meta.tooltipStyle;
