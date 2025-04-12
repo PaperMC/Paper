@@ -506,8 +506,8 @@ public final class CraftMagicNumbers implements UnsafeValues {
 
     private ItemStack deserializeItem(CompoundTag compound) {
         final int dataVersion = compound.getIntOr("DataVersion", 0);
-        compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, MinecraftServer.getServer().fixerUpper, compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
-        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(MinecraftServer.getServer().registryAccess(), compound).orElseThrow());
+        compound = PlatformHooks.get().convertNBT(References.ITEM_STACK, DataFixers.getDataFixer(), compound, dataVersion, this.getDataVersion()); // Paper - possibly use dataconverter
+        return CraftItemStack.asCraftMirror(net.minecraft.world.item.ItemStack.parse(CraftRegistry.getMinecraftRegistry(), compound).orElseThrow());
     }
 
     @Override
