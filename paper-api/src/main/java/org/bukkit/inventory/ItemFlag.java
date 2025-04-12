@@ -1,5 +1,7 @@
 package org.bukkit.inventory;
 
+import io.papermc.paper.datacomponent.DataComponentType;
+
 /**
  * A ItemFlag can hide some Attributes from ItemStacks
  * @apiNote Setting these without also setting the data they are hiding
@@ -46,9 +48,9 @@ public enum ItemFlag {
      * </ul>
      *
      * @see #HIDE_STORED_ENCHANTS HIDE_STORED_ENCHANTS for hiding stored enchants (like on enchanted books)
-     * @deprecated each component can now be hidden individually in the {@code tooltip_display} component
+     * @deprecated does not exist anymore and will not properly work with individually hidden data components; see {@link io.papermc.paper.datacomponent.item.TooltipDisplay} and {@link ItemStack#setData(DataComponentType.Valued, Object)}
      */
-    @Deprecated(since = "1.21.5", forRemoval = true)
+    @Deprecated
     HIDE_ADDITIONAL_TOOLTIP,
     /**
      * Setting to show/hide dyes from colored leather armor.
