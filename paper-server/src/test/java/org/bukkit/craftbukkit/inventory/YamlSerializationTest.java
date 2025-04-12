@@ -9,6 +9,8 @@ import io.papermc.paper.registry.keys.BlockTypeKeys;
 import io.papermc.paper.registry.set.RegistrySet;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.util.TriState;
+import net.minecraft.world.level.storage.DataVersion;
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -34,7 +36,7 @@ public class YamlSerializationTest {
         testYamlRoundTrip(item, """
             item:
               ==: org.bukkit.inventory.ItemStack
-              DataVersion: 4325
+              DataVersion: %s
               id: minecraft:written_book
               count: 1
               components:
@@ -43,7 +45,7 @@ public class YamlSerializationTest {
                 minecraft:enchantments: '{"minecraft:aqua_affinity":1,"minecraft:density":2}'
                 minecraft:tool: '{rules:[{blocks:"minecraft:acacia_door",correct_for_drops:1b,speed:1.0f}]}'
               schema_version: 1
-            """);
+            """.formatted(Bukkit.getUnsafe().getDataVersion()));
     }
 
     @Test
@@ -61,14 +63,41 @@ public class YamlSerializationTest {
         testYamlRoundTrip(item, """
             item:
               ==: org.bukkit.inventory.ItemStack
-              DataVersion: 4325
+              DataVersion: %s
               id: minecraft:written_book
               count: 1
               components:
                 minecraft:written_book_content: '{author:"The Destroyer",pages:[{raw:"hi"}],title:{raw:"Jon"}}'
                 minecraft:enchantments: '{"minecraft:aqua_affinity":1,"minecraft:density":2}'
               schema_version: 1
-            """);
+            """.formatted(Bukkit.getUnsafe().getDataVersion()));
+    }
+
+    @Test
+    void testUpgrading() {
+        // 4189 = 1.21.4
+        testYamlUpgrade("""
+            item:
+              ==: org.bukkit.inventory.ItemStack
+              DataVersion: 4189
+              id: minecraft:diamond_hoe
+              count: 1
+              components:
+                minecraft:unbreakable: '{show_in_tooltip:false}'
+                minecraft:enchantments: '{levels:{"minecraft:sharpness":2},show_in_tooltip:false}'
+              schema_version: 1
+            """, """
+            item:
+              ==: org.bukkit.inventory.ItemStack
+              DataVersion: %s
+              id: minecraft:diamond_hoe
+              count: 1
+              components:
+                minecraft:unbreakable: '{}'
+                minecraft:enchantments: '{"minecraft:sharpness":2}'
+                minecraft:tooltip_display: '{hidden_components:["minecraft:enchantments","minecraft:unbreakable"]}'
+              schema_version: 1
+            """.formatted(Bukkit.getUnsafe().getDataVersion()));
     }
 
     private void testYamlRoundTrip(ItemStack itemStack, String expectedYamlString) {
@@ -86,5 +115,16 @@ public class YamlSerializationTest {
         }
 
         assertEquals(itemStack, in.getItemStack("item"));
+    }
+
+    private void testYamlUpgrade(String oldYamlString, String expectedYamlString) {
+        final YamlConfiguration config = new YamlConfiguration();
+        try {
+            config.loadFromString(oldYamlString);
+        } catch (final InvalidConfigurationException e) {
+            throw new RuntimeException(e);
+        }
+
+        assertEquals(expectedYamlString, config.saveToString());
     }
 }
