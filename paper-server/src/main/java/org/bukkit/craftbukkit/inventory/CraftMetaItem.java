@@ -283,8 +283,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
     private EnchantmentMap enchantments;
     private Multimap<Attribute, AttributeModifier> attributeModifiers;
     private int repairCost;
-    private SequencedSet<DataComponentType<?>> hiddenDataComponents;
-    private boolean hideTooltip;
+    private @Nullable TooltipDisplay tooltipDisplay;
     private NamespacedKey tooltipStyle;
     private NamespacedKey itemModel;
     private boolean unbreakable;
@@ -373,8 +372,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         }
 
         this.repairCost = meta.repairCost;
-        this.hiddenDataComponents = meta.hiddenDataComponents;
-        this.hideTooltip = meta.hideTooltip;
+        if (meta.tooltipDisplay !=  null) {
+            this.tooltipDisplay = new TooltipDisplay(meta.tooltipDisplay.hideTooltip(), new ReferenceLinkedOpenHashSet<>(meta.tooltipDisplay.hiddenComponents()));
+        }
         this.tooltipStyle = meta.tooltipStyle;
         this.itemModel = meta.itemModel;
         this.unbreakable = meta.unbreakable;
@@ -453,13 +453,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         });
 
         CraftMetaItem.getOrEmpty(tag, CraftMetaItem.TOOLTIP_DISPLAY).ifPresent((en) -> {
-            this.hideTooltip = en.hideTooltip();
-            SequencedSet<DataComponentType<?>> hiddenComponents = en.hiddenComponents();
-            for (Entry<ItemFlag, Set<DataComponentType<?>>> entry : ITEM_FLAG_EQUIVALENTS.entrySet()) {
-                if (hiddenComponents.containsAll(entry.getValue())) {
-                    this.addItemFlags(entry.getKey());
-                }
-            }
+            this.tooltipDisplay = new TooltipDisplay(en.hideTooltip(), new ReferenceLinkedOpenHashSet<>(en.hiddenComponents()));
         });
 
         CraftMetaItem.getOrEmpty(tag, CraftMetaItem.TOOLTIP_STYLE).ifPresent((key) -> {
@@ -964,8 +958,8 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             tag.put(CraftMetaItem.REPAIR, this.repairCost);
         }
 
-        if (this.isHideTooltip() || !this.hiddenDataComponents.isEmpty()) {
-            tag.put(CraftMetaItem.TOOLTIP_DISPLAY, new TooltipDisplay(this.isHideTooltip(), new ReferenceLinkedOpenHashSet<>(this.hiddenDataComponents)));
+        if (this.tooltipDisplay != null) {
+            tag.put(CraftMetaItem.TOOLTIP_DISPLAY, new TooltipDisplay(this.tooltipDisplay.hideTooltip(), new ReferenceLinkedOpenHashSet<>(this.tooltipDisplay.hiddenComponents())));
         }
 
         if (this.hasTooltipStyle()) {
@@ -1122,7 +1116,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Overridden
     boolean isEmpty() {
-        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasEnchantable() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || !this.hiddenDataComponents.isEmpty() || this.isHideTooltip() || this.hasTooltipStyle() || this.hasItemModel() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isGlider() || this.hasDamageResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasUseRemainder() || this.hasUseCooldown() || this.hasFood() || this.hasTool() || this.hasJukeboxPlayable() || this.hasEquippable() || this.hasDamageValue() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null);
+        return !(this.hasDisplayName() || this.hasItemName() || this.hasLocalizedName() || this.hasEnchants() || (this.lore != null) || this.hasCustomModelData() || this.hasEnchantable() || this.hasBlockData() || this.hasRepairCost() || !this.unhandledTags.build().isEmpty() || !this.removedTags.isEmpty() || !this.persistentDataContainer.isEmpty() || this.hasAnyItemFlag() || this.isHideTooltip() || this.hasTooltipStyle() || this.hasItemModel() || this.isUnbreakable() || this.hasEnchantmentGlintOverride() || this.isGlider() || this.hasDamageResistant() || this.hasMaxStackSize() || this.hasRarity() || this.hasUseRemainder() || this.hasUseCooldown() || this.hasFood() || this.hasTool() || this.hasJukeboxPlayable() || this.hasEquippable() || this.hasDamageValue() || this.hasMaxDamage() || this.hasAttributeModifiers() || this.customTag != null || this.canPlaceOnPredicates != null || this.canBreakPredicates != null);
     }
 
     @Override
@@ -1295,20 +1289,26 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public void addItemFlags(ItemFlag... hideFlags) {
+        if (this.tooltipDisplay == null) {
+            this.tooltipDisplay = new TooltipDisplay(false, new ReferenceLinkedOpenHashSet<>());
+        }
         for (ItemFlag f : hideFlags) {
-            this.hiddenDataComponents.addAll(ITEM_FLAG_EQUIVALENTS.get(hideFlags));
+            this.tooltipDisplay.hiddenComponents().addAll(ITEM_FLAG_EQUIVALENTS.get(f));
         }
     }
 
     @Override
     public void removeItemFlags(ItemFlag... hideFlags) {
+        if (this.tooltipDisplay == null) {
+            return;
+        }
         for (ItemFlag f : hideFlags) {
             final Set<DataComponentType<?>> dataComponentTypes = ITEM_FLAG_EQUIVALENTS.get(f);
             // Specifically ensure *all* expected data components are available. Otherwise we might remove components
             // not tracked by the ItemFlag system (e.g. HIDE_ADDITIONAL removal should not remove a single POTION_CONTENTS
             // if that was set as the item does not have the HIDE_ADDITIONAL ItemFlag.
-            if (this.hiddenDataComponents.containsAll(dataComponentTypes)) {
-                this.hiddenDataComponents.removeAll(dataComponentTypes);
+            if (this.tooltipDisplay.hiddenComponents().containsAll(dataComponentTypes)) {
+                this.tooltipDisplay.hiddenComponents().removeAll(dataComponentTypes);
             }
         }
     }
@@ -1328,7 +1328,14 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public boolean hasItemFlag(ItemFlag flag) {
-        return this.hiddenDataComponents.containsAll(ITEM_FLAG_EQUIVALENTS.get(flag));
+        if (this.tooltipDisplay == null) {
+            return false;
+        }
+        return this.tooltipDisplay.hiddenComponents().containsAll(ITEM_FLAG_EQUIVALENTS.get(flag));
+    }
+
+    private boolean hasAnyItemFlag() {
+        return this.tooltipDisplay != null && !this.tooltipDisplay.hiddenComponents().isEmpty();
     }
 
     @Override
@@ -1445,12 +1452,16 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
 
     @Override
     public boolean isHideTooltip() {
-        return this.hideTooltip;
+        return this.tooltipDisplay != null && this.tooltipDisplay.hideTooltip();
     }
 
     @Override
     public void setHideTooltip(boolean hideTooltip) {
-        this.hideTooltip = hideTooltip;
+        if (this.tooltipDisplay == null) {
+            this.tooltipDisplay = new TooltipDisplay(hideTooltip, new ReferenceLinkedOpenHashSet<>());
+        } else {
+            this.tooltipDisplay = new TooltipDisplay(hideTooltip, this.tooltipDisplay.hiddenComponents());
+        }
     }
 
     @Override
@@ -1941,7 +1952,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
                 && (this.removedTags.equals(meta.removedTags))
                 && (Objects.equals(this.customTag, meta.customTag))
                 && (this.persistentDataContainer.equals(meta.persistentDataContainer))
-                && (Objects.equals(this.hiddenDataComponents, meta.hiddenDataComponents))
+                && (Objects.equals(this.tooltipDisplay, meta.tooltipDisplay))
                 && (this.isHideTooltip() == meta.isHideTooltip())
                 && (this.hasTooltipStyle() ? meta.hasTooltipStyle() && this.tooltipStyle.equals(meta.tooltipStyle) : !meta.hasTooltipStyle())
                 && (this.hasItemModel() ? meta.hasItemModel() && this.itemModel.equals(meta.itemModel) : !meta.hasItemModel())
@@ -1994,7 +2005,7 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
         hash = 61 * hash + this.removedTags.hashCode();
         hash = 61 * hash + ((this.customTag != null) ? this.customTag.hashCode() : 0);
         hash = 61 * hash + (!this.persistentDataContainer.isEmpty() ? this.persistentDataContainer.hashCode() : 0);
-        hash = 61 * hash + this.hiddenDataComponents.hashCode();
+        hash = 61 * hash + ((this.tooltipDisplay != null) ? this.tooltipDisplay.hashCode() : 0);
         hash = 61 * hash + (this.isHideTooltip() ? 1231 : 1237);
         hash = 61 * hash + (this.hasTooltipStyle() ? this.tooltipStyle.hashCode() : 0);
         hash = 61 * hash + (this.hasItemModel() ? this.itemModel.hashCode() : 0);
@@ -2043,8 +2054,9 @@ class CraftMetaItem implements ItemMeta, Damageable, Repairable, BlockDataMeta {
             }
             clone.removedTags = Sets.newHashSet(this.removedTags);
             clone.persistentDataContainer = new CraftPersistentDataContainer(this.persistentDataContainer.getTagsCloned(), CraftMetaItem.DATA_TYPE_REGISTRY); // Paper - deep clone NBT tags
-            clone.hiddenDataComponents = new ReferenceLinkedOpenHashSet<>(this.hiddenDataComponents);
-            clone.hideTooltip = this.hideTooltip;
+            if (this.tooltipDisplay != null) {
+                clone.tooltipDisplay = new TooltipDisplay(this.tooltipDisplay.hideTooltip(), new ReferenceLinkedOpenHashSet<>(this.tooltipDisplay.hiddenComponents()));
+            }
             clone.tooltipStyle = this.tooltipStyle;
             clone.itemModel = this.itemModel;
             clone.unbreakable = this.unbreakable;
