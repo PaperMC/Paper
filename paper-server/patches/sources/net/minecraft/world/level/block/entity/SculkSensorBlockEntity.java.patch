@@ -1,34 +1,27 @@
 --- a/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/SculkSensorBlockEntity.java
-@@ -26,6 +_,7 @@
+@@ -24,6 +_,7 @@
      private final VibrationSystem.Listener vibrationListener;
-     private final VibrationSystem.User vibrationUser = this.createVibrationUser();
-     public int lastVibrationFrequency;
+     private final VibrationSystem.User vibrationUser;
+     public int lastVibrationFrequency = 0;
 +    @Nullable public Integer rangeOverride = null; // Paper - Configurable sculk sensor listener range
  
      protected SculkSensorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState blockState) {
          super(type, pos, blockState);
-@@ -52,8 +_,16 @@
-                 .resultOrPartial(string -> LOGGER.error("Failed to parse vibration listener for Sculk Sensor: '{}'", string))
-                 .ifPresent(data -> this.vibrationData = data);
-         }
-+        // Paper start - Configurable sculk sensor listener range
-+        if (tag.contains(PAPER_LISTENER_RANGE_NBT_KEY)) {
-+            this.rangeOverride = tag.getInt(PAPER_LISTENER_RANGE_NBT_KEY);
-+        } else {
-+            this.rangeOverride = null;
-+        }
-+        // Paper end - Configurable sculk sensor listener range
+@@ -46,15 +_,23 @@
+         this.lastVibrationFrequency = tag.getIntOr("last_vibration_frequency", 0);
+         RegistryOps<Tag> registryOps = registries.createSerializationContext(NbtOps.INSTANCE);
+         this.vibrationData = tag.read("listener", VibrationSystem.Data.CODEC, registryOps).orElseGet(VibrationSystem.Data::new);
++        this.rangeOverride = tag.getInt(PAPER_LISTENER_RANGE_NBT_KEY).orElse(null); // Paper start - Configurable sculk sensor listener range
      }
  
 +    protected static final String PAPER_LISTENER_RANGE_NBT_KEY = "Paper.ListenerRange"; // Paper - Configurable sculk sensor listener range
      @Override
      protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
          super.saveAdditional(tag, registries);
-@@ -63,7 +_,13 @@
-             .encodeStart(registryOps, this.vibrationData)
-             .resultOrPartial(string -> LOGGER.error("Failed to encode vibration listener for Sculk Sensor: '{}'", string))
-             .ifPresent(tag1 -> tag.put("listener", tag1));
+         tag.putInt("last_vibration_frequency", this.lastVibrationFrequency);
+         RegistryOps<Tag> registryOps = registries.createSerializationContext(NbtOps.INSTANCE);
+         tag.store("listener", VibrationSystem.Data.CODEC, registryOps, this.vibrationData);
 -    }
 +        this.saveRangeOverride(tag); // Paper - Configurable sculk sensor listener range
 +    }
@@ -40,7 +33,7 @@
  
      @Override
      public VibrationSystem.Data getVibrationData() {
-@@ -100,6 +_,7 @@
+@@ -91,6 +_,7 @@
  
          @Override
          public int getListenerRadius() {

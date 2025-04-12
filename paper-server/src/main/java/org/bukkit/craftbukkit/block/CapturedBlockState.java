@@ -5,24 +5,23 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.entity.BeehiveBlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockState;
-import org.bukkit.craftbukkit.util.CraftLocation;
 
+@Deprecated(forRemoval = true)
 public final class CapturedBlockState extends CraftBlockState {
 
     private final boolean treeBlock;
 
-    public CapturedBlockState(Block block, int flag, boolean treeBlock) {
-        super(block, flag);
+    public CapturedBlockState(Block block, int capturedFlags, boolean treeBlock) {
+        super(block, capturedFlags);
 
         this.treeBlock = treeBlock;
     }
 
-    protected CapturedBlockState(CapturedBlockState state, Location location) {
+    private CapturedBlockState(CapturedBlockState state, Location location) {
         super(state, location);
         this.treeBlock = state.treeBlock;
     }
@@ -31,39 +30,39 @@ public final class CapturedBlockState extends CraftBlockState {
     public boolean update(boolean force, boolean applyPhysics) {
         boolean result = super.update(force, applyPhysics);
 
-        // Probably no longer needed with the extra #updatedTree method,
-        // but leave if here for now in case a plugin for whatever reason relies on this.
-        this.addBees();
+        if (result) {
+            this.addBees();
+        }
 
         return result;
     }
 
-    private void updatedTree() {
-        // SPIGOT-7248 - Manual update to avoid physics where appropriate
-        // SPIGOT-7572 - Move SPIGOT-7248 fix from nms ItemStack to here, to allow bee generation in nests
-        this.world.getHandle().setBlock(CraftLocation.toBlockPosition(this.getLocation()), this.getHandle(), this.getFlag());
+    @Override
+    public boolean place(int flags) {
+        boolean result = super.place(flags);
 
-        this.addBees();
+        if (result) {
+            this.addBees();
+        }
+
+        return result;
     }
 
     private void addBees() {
-        // SPIGOT-5537: Horrible hack to manually add bees given World.captureTreeGeneration does not support tiles
+        // SPIGOT-5537: Horrible hack to manually add bees given Level#captureTreeGeneration does not support block entities
         if (this.treeBlock && this.getType() == Material.BEE_NEST) {
-            WorldGenLevel generatoraccessseed = this.world.getHandle();
-            BlockPos blockposition1 = this.getPosition();
-            RandomSource random = generatoraccessseed.getRandom();
+            WorldGenLevel worldGenLevel = this.world.getHandle();
+            BlockPos pos = this.getPosition();
+            RandomSource randomSource = worldGenLevel.getRandom();
 
-            // Begin copied block from WorldGenFeatureTreeBeehive
-            BlockEntity tileentity = generatoraccessseed.getBlockEntity(blockposition1);
+            // Begin copied block from BeehiveDecorator
+            worldGenLevel.getBlockEntity(pos, BlockEntityType.BEEHIVE).ifPresent(beehiveBlockEntity -> {
+                int i1 = 2 + randomSource.nextInt(2);
 
-            if (tileentity instanceof BeehiveBlockEntity) {
-                BeehiveBlockEntity tileentitybeehive = (BeehiveBlockEntity) tileentity;
-                int j = 2 + random.nextInt(2);
-
-                for (int k = 0; k < j; ++k) {
-                    tileentitybeehive.storeBee(BeehiveBlockEntity.Occupant.create(random.nextInt(599)));
+                for (int i2 = 0; i2 < i1; i2++) {
+                    beehiveBlockEntity.storeBee(BeehiveBlockEntity.Occupant.create(randomSource.nextInt(599)));
                 }
-            }
+            });
             // End copied block
         }
     }
@@ -78,19 +77,7 @@ public final class CapturedBlockState extends CraftBlockState {
         return new CapturedBlockState(this, location);
     }
 
-    public static CapturedBlockState getBlockState(Level world, BlockPos pos, int flag) {
-        return new CapturedBlockState(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), flag, false);
-    }
-
     public static CapturedBlockState getTreeBlockState(Level world, BlockPos pos, int flag) {
-        return new CapturedBlockState(world.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()), flag, true);
-    }
-
-    public static void setBlockState(BlockState blockState) {
-        if (blockState instanceof CapturedBlockState capturedBlockState) {
-            capturedBlockState.updatedTree();
-        } else {
-            blockState.update(true);
-        }
+        return new CapturedBlockState(CraftBlock.at(world, pos), flag, true);
     }
 }

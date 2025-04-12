@@ -3,6 +3,7 @@ package org.bukkit.event.entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,45 +16,47 @@ import org.jetbrains.annotations.NotNull;
  * This can be visually estimated by the animation in which a player turns horizontal.
  */
 public class EntityToggleGlideEvent extends EntityEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
 
-    private boolean cancel = false;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final boolean isGliding;
 
-    public EntityToggleGlideEvent(@NotNull LivingEntity who, final boolean isGliding) {
-        super(who);
+    private boolean cancelled;
+
+    @ApiStatus.Internal
+    public EntityToggleGlideEvent(@NotNull LivingEntity livingEntity, boolean isGliding) {
+        super(livingEntity);
         this.isGliding = isGliding;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancel;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        this.cancelled = cancel;
     }
 
     /**
-     * Returns true if the entity is now gliding or
-     * false if the entity stops gliding.
+     * Returns {@code true} if the entity is now gliding or
+     * {@code false} if the entity stops gliding.
      *
      * @return new gliding state
      */
     public boolean isGliding() {
-        return isGliding;
+        return this.isGliding;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
-
 }

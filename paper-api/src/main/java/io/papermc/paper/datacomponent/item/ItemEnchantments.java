@@ -17,11 +17,11 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 @ApiStatus.Experimental
 @ApiStatus.NonExtendable
-public interface ItemEnchantments extends ShownInTooltip<ItemEnchantments> {
+public interface ItemEnchantments {
 
     @Contract(value = "_, _ -> new", pure = true)
-    static ItemEnchantments itemEnchantments(final Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments, final boolean showInTooltip) {
-        return itemEnchantments().addAll(enchantments).showInTooltip(showInTooltip).build();
+    static ItemEnchantments itemEnchantments(final Map<Enchantment, @IntRange(from = 1, to = 255) Integer> enchantments) {
+        return itemEnchantments().addAll(enchantments).build();
     }
 
     @Contract(value = "-> new", pure = true)
@@ -42,7 +42,7 @@ public interface ItemEnchantments extends ShownInTooltip<ItemEnchantments> {
      */
     @ApiStatus.Experimental
     @ApiStatus.NonExtendable
-    interface Builder extends ShownInTooltip.Builder<Builder>, DataComponentBuilder<ItemEnchantments> {
+    interface Builder extends DataComponentBuilder<ItemEnchantments> {
 
         /**
          * Adds an enchantment with the given level to this component.

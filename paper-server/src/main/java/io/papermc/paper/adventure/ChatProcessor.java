@@ -81,34 +81,34 @@ public final class ChatProcessor {
         final boolean listenersOnSyncEvent = canYouHearMe(PlayerChatEvent.getHandlerList());
         if (listenersOnAsyncEvent || listenersOnSyncEvent) {
             final CraftPlayer player = this.player.getBukkitEntity();
-            final AsyncPlayerChatEvent ae = new AsyncPlayerChatEvent(this.async, player, this.craftbukkit$originalMessage, new LazyPlayerSet(this.server));
-            this.post(ae);
+            final AsyncPlayerChatEvent asyncChatEvent = new AsyncPlayerChatEvent(this.async, player, this.craftbukkit$originalMessage, new LazyPlayerSet(this.server));
+            this.post(asyncChatEvent);
             if (listenersOnSyncEvent) {
-                final PlayerChatEvent se = new PlayerChatEvent(player, ae.getMessage(), ae.getFormat(), ae.getRecipients());
-                se.setCancelled(ae.isCancelled()); // propagate cancelled state
-                this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
+                final PlayerChatEvent chatEvent = new PlayerChatEvent(player, asyncChatEvent.getMessage(), asyncChatEvent.getFormat(), asyncChatEvent.getRecipients());
+                chatEvent.setCancelled(asyncChatEvent.isCancelled()); // propagate cancelled state
+                this.queueIfAsyncOrRunImmediately(new Waitable<>() {
                     @Override
                     protected Void evaluate() {
-                        ChatProcessor.this.post(se);
+                        ChatProcessor.this.post(chatEvent);
                         return null;
                     }
                 });
-                this.readLegacyModifications(se.getMessage(), se.getFormat(), se.getPlayer());
+                this.readLegacyModifications(chatEvent.getMessage(), chatEvent.getFormat(), chatEvent.getPlayer());
                 this.processModern(
-                    this.modernRenderer(se.getFormat()),
-                    this.viewersFromLegacy(se.getRecipients()),
-                    this.modernMessage(se.getMessage()),
-                    se.getPlayer(),
-                    se.isCancelled()
+                    this.modernRenderer(chatEvent.getFormat()),
+                    this.viewersFromLegacy(chatEvent.getRecipients()),
+                    this.modernMessage(chatEvent.getMessage()),
+                    chatEvent.getPlayer(),
+                    chatEvent.isCancelled()
                 );
             } else {
-                this.readLegacyModifications(ae.getMessage(), ae.getFormat(), ae.getPlayer());
+                this.readLegacyModifications(asyncChatEvent.getMessage(), asyncChatEvent.getFormat(), asyncChatEvent.getPlayer());
                 this.processModern(
-                    this.modernRenderer(ae.getFormat()),
-                    this.viewersFromLegacy(ae.getRecipients()),
-                    this.modernMessage(ae.getMessage()),
-                    ae.getPlayer(),
-                    ae.isCancelled()
+                    this.modernRenderer(asyncChatEvent.getFormat()),
+                    this.viewersFromLegacy(asyncChatEvent.getRecipients()),
+                    this.modernMessage(asyncChatEvent.getMessage()),
+                    asyncChatEvent.getPlayer(),
+                    asyncChatEvent.isCancelled()
                 );
             }
         } else {
@@ -151,14 +151,14 @@ public final class ChatProcessor {
         this.post(ae);
         final boolean listenersOnSyncEvent = canYouHearMe(ChatEvent.getHandlerList());
         if (listenersOnSyncEvent) {
-            this.queueIfAsyncOrRunImmediately(new Waitable<Void>() {
+            this.queueIfAsyncOrRunImmediately(new Waitable<>() {
                 @Override
                 protected Void evaluate() {
-                    final ChatEvent se = new ChatEvent(player, ae.viewers(), ae.renderer(), ae.message(), ChatProcessor.this.paper$originalMessage/*, ae.usePreviewComponent()*/, signedMessage);
-                    se.setCancelled(ae.isCancelled()); // propagate cancelled state
-                    ChatProcessor.this.post(se);
-                    ChatProcessor.this.readModernModifications(se, renderer);
-                    ChatProcessor.this.complete(se);
+                    final ChatEvent chatEvent = new ChatEvent(player, ae.viewers(), ae.renderer(), ae.message(), ChatProcessor.this.paper$originalMessage/*, ae.usePreviewComponent()*/, signedMessage);
+                    chatEvent.setCancelled(ae.isCancelled()); // propagate cancelled state
+                    ChatProcessor.this.post(chatEvent);
+                    ChatProcessor.this.readModernModifications(chatEvent, renderer);
+                    ChatProcessor.this.complete(chatEvent);
                     return null;
                 }
             });

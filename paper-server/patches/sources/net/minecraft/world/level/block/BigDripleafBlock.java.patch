@@ -1,6 +1,6 @@
 --- a/net/minecraft/world/level/block/BigDripleafBlock.java
 +++ b/net/minecraft/world/level/block/BigDripleafBlock.java
-@@ -136,7 +_,7 @@
+@@ -129,7 +_,7 @@
  
      @Override
      protected void onProjectileHit(Level level, BlockState state, BlockHitResult hit, Projectile projectile) {
@@ -9,10 +9,10 @@
      }
  
      @Override
-@@ -199,9 +_,23 @@
+@@ -192,9 +_,23 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (!level.isClientSide) {
              if (state.getValue(TILT) == Tilt.NONE && canEntityTilt(pos, entity) && !level.hasNeighborSignal(pos)) {
@@ -22,7 +22,7 @@
 +                if (entity instanceof net.minecraft.world.entity.player.Player player) {
 +                    cancellable = org.bukkit.craftbukkit.event.CraftEventFactory.callPlayerInteractEvent(player, org.bukkit.event.block.Action.PHYSICAL, pos, null, null, null);
 +                } else {
-+                    cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ()));
++                    cancellable = new org.bukkit.event.entity.EntityInteractEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos));
 +                    level.getCraftServer().getPluginManager().callEvent((org.bukkit.event.entity.EntityInteractEvent) cancellable);
 +                }
 +
@@ -34,7 +34,7 @@
              }
          }
      }
-@@ -213,9 +_,9 @@
+@@ -206,9 +_,9 @@
          } else {
              Tilt tilt = state.getValue(TILT);
              if (tilt == Tilt.UNSTABLE) {
@@ -46,7 +46,7 @@
              } else if (tilt == Tilt.FULL) {
                  resetTilt(state, level, pos);
              }
-@@ -238,8 +_,11 @@
+@@ -231,8 +_,11 @@
          return entity.onGround() && entity.position().y > pos.getY() + 0.6875F;
      }
  
@@ -60,7 +60,7 @@
          if (sound != null) {
              playTiltSound(level, pos, sound);
          }
-@@ -251,18 +_,26 @@
+@@ -244,18 +_,26 @@
      }
  
      private static void resetTilt(BlockState state, Level level, BlockPos pos) {

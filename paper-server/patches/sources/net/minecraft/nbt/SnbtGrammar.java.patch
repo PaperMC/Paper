@@ -1,0 +1,21 @@
+--- a/net/minecraft/nbt/SnbtGrammar.java
++++ b/net/minecraft/nbt/SnbtGrammar.java
+@@ -591,7 +_,7 @@
+         Atom<List<Entry<String, T>>> atom30 = Atom.of("map_entries");
+         dictionary.put(atom30, Term.repeatedWithTrailingSeparator(namedRule3, atom30, StringReaderTerms.character(',')), scope -> scope.getOrThrow(atom30));
+         Atom<T> atom31 = Atom.of("map_literal");
+-        dictionary.put(atom31, Term.sequence(StringReaderTerms.character('{'), dictionary.named(atom30), StringReaderTerms.character('}')), scope -> {
++        dictionary.put(atom31, Term.sequence(StringReaderTerms.character('{'), Scope.increaseDepth(), dictionary.named(atom30), Scope.decreaseDepth(), StringReaderTerms.character('}')), scope -> { // Paper - track depth
+             List<Entry<String, T>> list = scope.getOrThrow(atom30);
+             if (list.isEmpty()) {
+                 return object2;
+@@ -626,7 +_,9 @@
+             atom35,
+             Term.sequence(
+                 StringReaderTerms.character('['),
++                Scope.increaseDepth(), // Paper - track depth
+                 Term.alternative(Term.sequence(dictionary.named(atom33), StringReaderTerms.character(';'), dictionary.named(atom34)), dictionary.named(atom32)),
++                Scope.decreaseDepth(), // Paper - track depth
+                 StringReaderTerms.character(']')
+             ),
+             parseState -> {

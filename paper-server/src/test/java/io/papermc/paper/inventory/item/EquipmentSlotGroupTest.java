@@ -46,7 +46,7 @@ class EquipmentSlotGroupTest {
     @ParameterizedTest
     @EnumSource(net.minecraft.world.entity.EquipmentSlotGroup.class)
     void testNmsToBukkit(final net.minecraft.world.entity.EquipmentSlotGroup slotGroup) {
-        final EquipmentSlotGroup apiGroup = CraftEquipmentSlot.getSlot(slotGroup);
+        final EquipmentSlotGroup apiGroup = CraftEquipmentSlot.getSlotGroup(slotGroup);
         assertNotNull(apiGroup, "No api slot group found for " + slotGroup);
         assertEquals(apiGroup.toString(), slotGroup.getSerializedName(), "slot group name mismatch");
     }

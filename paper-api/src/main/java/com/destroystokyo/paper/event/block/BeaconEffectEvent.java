@@ -24,8 +24,8 @@ public class BeaconEffectEvent extends BlockEvent implements Cancellable {
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public BeaconEffectEvent(final Block block, final PotionEffect effect, final Player player, final boolean primary) {
-        super(block);
+    public BeaconEffectEvent(final Block beacon, final PotionEffect effect, final Player player, final boolean primary) {
+        super(beacon);
         this.effect = effect;
         this.player = player;
         this.primary = primary;

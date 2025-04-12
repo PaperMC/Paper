@@ -2,13 +2,16 @@ package org.bukkit.craftbukkit.util;
 
 import net.minecraft.resources.ResourceLocation;
 import org.bukkit.NamespacedKey;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 public final class CraftNamespacedKey {
 
     public CraftNamespacedKey() {
     }
 
-    public static NamespacedKey fromStringOrNull(String string) {
+    public static @Nullable NamespacedKey fromStringOrNull(@Nullable String string) {
         if (string == null || string.isEmpty()) {
             return null;
         }

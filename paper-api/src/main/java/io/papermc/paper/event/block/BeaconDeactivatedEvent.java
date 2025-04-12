@@ -18,8 +18,8 @@ public class BeaconDeactivatedEvent extends BlockEvent {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     @ApiStatus.Internal
-    public BeaconDeactivatedEvent(final Block block) {
-        super(block);
+    public BeaconDeactivatedEvent(final Block beacon) {
+        super(beacon);
     }
 
     /**

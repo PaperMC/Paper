@@ -1,20 +1,11 @@
 --- a/net/minecraft/core/dispenser/DefaultDispenseItemBehavior.java
 +++ b/net/minecraft/core/dispenser/DefaultDispenseItemBehavior.java
-@@ -10,23 +_,46 @@
+@@ -9,24 +_,37 @@
+ 
  public class DefaultDispenseItemBehavior implements DispenseItemBehavior {
      private static final int DEFAULT_ACCURACY = 6;
- 
-+    // CraftBukkit start
 +    private Direction direction; // Paper - cache facing direction
-+    private boolean dropper;
-+
-+    public DefaultDispenseItemBehavior(boolean dropper) {
-+        this.dropper = dropper;
-+    }
-+
-+    public DefaultDispenseItemBehavior() {}
-+    // CraftBukkit end
-+
+ 
      @Override
      public final ItemStack dispense(BlockSource blockSource, ItemStack item) {
 +        this.direction = blockSource.state().getValue(DispenserBlock.FACING); // Paper - cache facing direction
@@ -32,7 +23,7 @@
          ItemStack itemStack = item.split(1);
 -        spawnItem(blockSource.level(), itemStack, 6, direction, dispensePosition);
 +        // CraftBukkit start
-+        if (!DefaultDispenseItemBehavior.spawnItem(blockSource.level(), itemStack, 6, this.direction, dispensePosition, blockSource, this.dropper)) {
++        if (!DefaultDispenseItemBehavior.spawnItem(blockSource.level(), itemStack, 6, this.direction, dispensePosition, blockSource)) {
 +            item.grow(1);
 +        }
 +        // CraftBukkit end
@@ -50,37 +41,35 @@
          double d = position.x();
          double d1 = position.y();
          double d2 = position.z();
-@@ -43,7 +_,45 @@
+@@ -43,7 +_,43 @@
              level.random.triangle(0.2, 0.0172275 * speed),
              level.random.triangle(facing.getStepZ() * d3, 0.0172275 * speed)
          );
 +        return itemEntity; // CraftBukkit
 +    }
 +
-+    // CraftBukkit - void -> boolean return, IPosition -> ISourceBlock last argument, dropper
-+    public static boolean spawnItem(Level level, ItemStack stack, int speed, Direction facing, Position dispensePosition, BlockSource blockSource, boolean dropper) {
++    // CraftBukkit start - void -> boolean return
++    public static boolean spawnItem(Level level, ItemStack stack, int speed, Direction facing, Position position, BlockSource blockSource) {
 +        if (stack.isEmpty()) return true;
-+        ItemEntity itemEntity = DefaultDispenseItemBehavior.prepareItem(level, stack, speed, facing, dispensePosition);
++        ItemEntity itemEntity = DefaultDispenseItemBehavior.prepareItem(level, stack, speed, facing, position);
 +
 +        org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, blockSource.pos());
 +        org.bukkit.craftbukkit.inventory.CraftItemStack craftItem = org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(stack);
 +
 +        org.bukkit.event.block.BlockDispenseEvent event = new org.bukkit.event.block.BlockDispenseEvent(block, craftItem.clone(), org.bukkit.craftbukkit.util.CraftVector.toBukkit(itemEntity.getDeltaMovement()));
-+        if (!DispenserBlock.eventFired) {
-+            level.getCraftServer().getPluginManager().callEvent(event);
-+        }
++        level.getCraftServer().getPluginManager().callEvent(event);
 +
 +        if (event.isCancelled()) {
 +            return false;
 +        }
 +
 +        itemEntity.setItem(org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem()));
-+        itemEntity.setDeltaMovement(org.bukkit.craftbukkit.util.CraftVector.toNMS(event.getVelocity()));
++        itemEntity.setDeltaMovement(org.bukkit.craftbukkit.util.CraftVector.toVec3(event.getVelocity()));
 +
-+        if (!dropper && !event.getItem().getType().equals(craftItem.getType())) {
++        if (blockSource.state().is(net.minecraft.world.level.block.Blocks.DISPENSER) && !event.getItem().getType().equals(craftItem.getType())) {
 +            // Chain to handler for new item
 +            ItemStack eventStack = org.bukkit.craftbukkit.inventory.CraftItemStack.asNMSCopy(event.getItem());
-+            DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack); // Paper - Fix NPE with equippable and items without behavior
++            DispenseItemBehavior dispenseBehavior = DispenserBlock.getDispenseBehavior(blockSource, eventStack);
 +            if (dispenseBehavior != DispenseItemBehavior.NOOP && dispenseBehavior.getClass() != DefaultDispenseItemBehavior.class) {
 +                dispenseBehavior.dispense(blockSource, eventStack);
 +            } else {

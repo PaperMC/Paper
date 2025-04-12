@@ -10,55 +10,36 @@ import org.jetbrains.annotations.NotNull;
  * Stores data for weather changing in a world
  */
 public class WeatherChangeEvent extends WeatherEvent implements Cancellable {
-    private static final HandlerList handlers = new HandlerList();
-    private boolean canceled;
-    private final boolean to;
+
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
+    private final boolean newWeatherState;
     private final Cause cause;
 
+    private boolean cancelled;
+
     @ApiStatus.Internal
-    public WeatherChangeEvent(@NotNull final World world, final boolean to, @NotNull Cause cause) {
+    public WeatherChangeEvent(@NotNull final World world, final boolean newWeatherState, @NotNull Cause cause) {
         super(world);
-        this.to = to;
+        this.newWeatherState = newWeatherState;
         this.cause = cause;
     }
 
+    @ApiStatus.Internal
     @Deprecated(forRemoval = true)
-    public WeatherChangeEvent(@NotNull final World world, final boolean to) {
-        super(world);
-        this.to = to;
-        this.cause = Cause.UNKNOWN; // Paper
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return canceled;
-    }
-
-    @Override
-    public void setCancelled(boolean cancel) {
-        canceled = cancel;
+    public WeatherChangeEvent(@NotNull final World world, final boolean newWeatherState) {
+        this(world, newWeatherState, Cause.UNKNOWN);
     }
 
     /**
      * Gets the state of weather that the world is being set to
      *
-     * @return true if the weather is being set to raining, false otherwise
+     * @return {@code true} if the weather is being set to raining, {@code false} otherwise
      */
     public boolean toWeatherState() {
-        return to;
+        return this.newWeatherState;
     }
 
-    @NotNull
-    @Override
-    public HandlerList getHandlers() {
-        return handlers;
-    }
-
-    @NotNull
-    public static HandlerList getHandlerList() {
-        return handlers;
-    }
-    // Paper start
     /**
      * Gets the cause of the weather change.
      *
@@ -66,7 +47,28 @@ public class WeatherChangeEvent extends WeatherEvent implements Cancellable {
      */
     @NotNull
     public Cause getCause() {
-        return cause;
+        return this.cause;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return this.cancelled;
+    }
+
+    @Override
+    public void setCancelled(boolean cancel) {
+        this.cancelled = cancel;
+    }
+
+    @NotNull
+    @Override
+    public HandlerList getHandlers() {
+        return HANDLER_LIST;
+    }
+
+    @NotNull
+    public static HandlerList getHandlerList() {
+        return HANDLER_LIST;
     }
 
     public enum Cause {
@@ -76,5 +78,4 @@ public class WeatherChangeEvent extends WeatherEvent implements Cancellable {
         PLUGIN,
         UNKNOWN
     }
-    // Paper end
 }

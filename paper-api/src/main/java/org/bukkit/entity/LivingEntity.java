@@ -663,14 +663,12 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     @NotNull
     public Collection<PotionEffect> getActivePotionEffects();
 
-    // Paper start - LivingEntity#clearActivePotionEffects();
     /**
      * Removes all active potion effects for this entity.
      *
      * @return true if any were removed
      */
     boolean clearActivePotionEffects();
-    // Paper end
 
     /**
      * Checks whether the living entity has block line of sight to another.
@@ -683,7 +681,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      */
     public boolean hasLineOfSight(@NotNull Entity other);
 
-    // Paper start
     /**
      * Checks whether the living entity has block line of sight to the given block.
      * <p>
@@ -694,7 +691,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return true if there is a line of sight, false if not
      */
     public boolean hasLineOfSight(@NotNull Location location);
-    // Paper end
 
     /**
      * Returns if the living entity despawns when away from players or not.
@@ -1061,23 +1057,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
     public EntityCategory getCategory();
 
     /**
-     * Sets whether the entity is invisible or not.
-     *
-     * @param invisible If the entity is invisible
-     */
-    @Override // Paper - move invisibility up to Entity
-    public void setInvisible(boolean invisible);
-
-    /**
-     * Gets whether the entity is invisible or not.
-     *
-     * @return Whether the entity is invisible
-     */
-    @Override // Paper - move invisibility up to Entity
-    public boolean isInvisible();
-
-    // Paper start
-    /**
      * Get the number of arrows stuck in this entity
      * @return Number of arrows stuck
      * @deprecated use {@link #getArrowsInBody()}
@@ -1108,9 +1087,7 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @param delay Delay in ticks
      */
     void setShieldBlockingDelay(int delay);
-    // Paper end
 
-    // Paper start - missing entity API
     /**
      * Retrieves the sideways movement direction of the entity.
      * <p>
@@ -1167,7 +1144,6 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
      * @return Forwards movement direction, ranging from -1 (backward) to 1 (forward).
      */
     float getForwardsMovement();
-    // Paper end - missing entity API
 
     // Paper start - active item API
     /**

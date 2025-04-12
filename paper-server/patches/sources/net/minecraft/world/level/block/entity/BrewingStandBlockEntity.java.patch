@@ -1,14 +1,14 @@
 --- a/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
 +++ b/net/minecraft/world/level/block/entity/BrewingStandBlockEntity.java
-@@ -36,6 +_,7 @@
-     public static final int NUM_DATA_VALUES = 2;
+@@ -38,6 +_,7 @@
+     private static final byte DEFAULT_FUEL = 0;
      private NonNullList<ItemStack> items = NonNullList.withSize(5, ItemStack.EMPTY);
      public int brewTime;
 +    public int recipeBrewTime = 400; // Paper - Add recipeBrewTime
      private boolean[] lastPotionCount;
      private Item ingredient;
      public int fuel;
-@@ -45,6 +_,7 @@
+@@ -47,6 +_,7 @@
              return switch (index) {
                  case 0 -> BrewingStandBlockEntity.this.brewTime;
                  case 1 -> BrewingStandBlockEntity.this.fuel;
@@ -16,7 +16,7 @@
                  default -> 0;
              };
          }
-@@ -57,14 +_,49 @@
+@@ -59,14 +_,54 @@
                      break;
                  case 1:
                      BrewingStandBlockEntity.this.fuel = value;
@@ -39,18 +39,22 @@
 +    public java.util.List<org.bukkit.entity.HumanEntity> transaction = new java.util.ArrayList<>();
 +    private int maxStack = MAX_STACK;
 +
++    @Override
 +    public void onOpen(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
 +        this.transaction.add(player);
 +    }
 +
++    @Override
 +    public void onClose(org.bukkit.craftbukkit.entity.CraftHumanEntity player) {
 +        this.transaction.remove(player);
 +    }
 +
++    @Override
 +    public java.util.List<org.bukkit.entity.HumanEntity> getViewers() {
 +        return this.transaction;
 +    }
 +
++    @Override
 +    public java.util.List<net.minecraft.world.item.ItemStack> getContents() {
 +        return this.items;
 +    }
@@ -60,6 +64,7 @@
 +        return this.maxStack;
 +    }
 +
++    @Override
 +    public void setMaxStackSize(int size) {
 +        this.maxStack = size;
 +    }
@@ -67,7 +72,7 @@
  
      public BrewingStandBlockEntity(BlockPos pos, BlockState state) {
          super(BlockEntityType.BREWING_STAND, pos, state);
-@@ -93,8 +_,21 @@
+@@ -95,8 +_,21 @@
      public static void serverTick(Level level, BlockPos pos, BlockState state, BrewingStandBlockEntity blockEntity) {
          ItemStack itemStack = blockEntity.items.get(4);
          if (blockEntity.fuel <= 0 && itemStack.is(ItemTags.BREWING_FUEL)) {
@@ -91,7 +96,7 @@
              setChanged(level, pos, state);
          }
  
-@@ -105,7 +_,7 @@
+@@ -107,7 +_,7 @@
              blockEntity.brewTime--;
              boolean flag1 = blockEntity.brewTime == 0;
              if (flag1 && isBrewable) {
@@ -100,7 +105,7 @@
              } else if (!isBrewable || !itemStack1.is(blockEntity.ingredient)) {
                  blockEntity.brewTime = 0;
              }
-@@ -113,7 +_,14 @@
+@@ -115,7 +_,14 @@
              setChanged(level, pos, state);
          } else if (isBrewable && blockEntity.fuel > 0) {
              blockEntity.fuel--;
@@ -116,7 +121,7 @@
              blockEntity.ingredient = itemStack1.getItem();
              setChanged(level, pos, state);
          }
-@@ -164,13 +_,37 @@
+@@ -166,13 +_,37 @@
          }
      }
  
@@ -157,7 +162,7 @@
  
          itemStack.shrink(1);
          ItemStack craftingRemainder = itemStack.getItem().getCraftingRemainder();
-@@ -209,13 +_,13 @@
+@@ -211,13 +_,13 @@
  
      @Override
      public boolean canPlaceItem(int index, ItemStack stack) {

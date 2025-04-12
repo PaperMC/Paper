@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class ForwardLogHandler extends ConsoleHandler {
-    private Map<String, Logger> cachedLoggers = new ConcurrentHashMap<String, Logger>();
+    private final Map<String, Logger> cachedLoggers = new ConcurrentHashMap<>();
 
     private Logger getLogger(String name) {
         Logger logger = this.cachedLoggers.get(name);

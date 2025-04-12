@@ -1,12 +1,12 @@
 --- a/net/minecraft/world/level/block/ButtonBlock.java
 +++ b/net/minecraft/world/level/block/ButtonBlock.java
-@@ -114,6 +_,19 @@
+@@ -89,6 +_,19 @@
          if (state.getValue(POWERED)) {
              return InteractionResult.CONSUME;
          } else {
 +            // CraftBukkit start
 +            boolean powered = state.getValue(ButtonBlock.POWERED);
-+            org.bukkit.block.Block block = level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +            int old = (powered) ? 15 : 0;
 +            int current = (!powered) ? 15 : 0;
 +
@@ -20,21 +20,21 @@
              this.press(state, level, pos, player);
              return InteractionResult.SUCCESS;
          }
-@@ -179,6 +_,7 @@
+@@ -150,6 +_,7 @@
  
      @Override
-     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
+     protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier effectApplier) {
 +        if (!new io.papermc.paper.event.entity.EntityInsideBlockEvent(entity.getBukkitEntity(), org.bukkit.craftbukkit.block.CraftBlock.at(level, pos)).callEvent()) { return; } // Paper - Add EntityInsideBlockEvent
          if (!level.isClientSide && this.type.canButtonBeActivatedByArrows() && !state.getValue(POWERED)) {
              this.checkPressed(state, level, pos);
          }
-@@ -190,7 +_,31 @@
+@@ -161,7 +_,31 @@
              : null;
          boolean flag = abstractArrow != null;
          boolean poweredValue = state.getValue(POWERED);
 +        // CraftBukkit start - Call interact event when arrows turn on wooden buttons
 +        if (poweredValue != flag && flag) {
-+            org.bukkit.block.Block block = level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +            org.bukkit.event.entity.EntityInteractEvent event = new org.bukkit.event.entity.EntityInteractEvent(abstractArrow.getBukkitEntity(), block);
 +            level.getCraftServer().getPluginManager().callEvent(event);
 +
@@ -46,7 +46,7 @@
          if (flag != poweredValue) {
 +            // CraftBukkit start
 +            boolean powered = poweredValue;
-+            org.bukkit.block.Block block = level.getWorld().getBlockAt(pos.getX(), pos.getY(), pos.getZ());
++            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(level, pos);
 +            int old = (powered) ? 15 : 0;
 +            int current = (!powered) ? 15 : 0;
 +
@@ -57,6 +57,6 @@
 +                return;
 +            }
 +            // CraftBukkit end
-             level.setBlock(pos, state.setValue(POWERED, Boolean.valueOf(flag)), 3);
+             level.setBlock(pos, state.setValue(POWERED, flag), 3);
              this.updateNeighbours(state, level, pos);
              this.playSound(null, level, pos, flag);

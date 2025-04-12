@@ -22,11 +22,13 @@ import org.jetbrains.annotations.NotNull;
  */
 public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable {
 
-    private static final HandlerList handlers = new HandlerList();
-    private boolean cancel = false;
+    private static final HandlerList HANDLER_LIST = new HandlerList();
+
     private final Block harvestedBlock;
     private final EquipmentSlot hand;
     private final List<ItemStack> itemsHarvested;
+
+    private boolean cancelled;
 
     @ApiStatus.Internal
     public PlayerHarvestBlockEvent(@NotNull Player player, @NotNull Block harvestedBlock, @NotNull EquipmentSlot hand, @NotNull List<ItemStack> itemsHarvested) {
@@ -36,6 +38,7 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
         this.itemsHarvested = itemsHarvested;
     }
 
+    @ApiStatus.Internal
     @Deprecated(since = "1.19.2", forRemoval = true)
     public PlayerHarvestBlockEvent(@NotNull Player player, @NotNull Block harvestedBlock, @NotNull List<ItemStack> itemsHarvested) {
         this(player, harvestedBlock, EquipmentSlot.HAND, itemsHarvested);
@@ -48,7 +51,7 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
      */
     @NotNull
     public Block getHarvestedBlock() {
-        return harvestedBlock;
+        return this.harvestedBlock;
     }
 
     /**
@@ -58,7 +61,7 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
      */
     @NotNull
     public EquipmentSlot getHand() {
-        return hand;
+        return this.hand;
     }
 
     /**
@@ -68,27 +71,27 @@ public class PlayerHarvestBlockEvent extends PlayerEvent implements Cancellable 
      */
     @NotNull
     public List<ItemStack> getItemsHarvested() {
-        return itemsHarvested;
+        return this.itemsHarvested;
     }
 
     @Override
     public boolean isCancelled() {
-        return cancel;
+        return this.cancelled;
     }
 
     @Override
     public void setCancelled(boolean cancel) {
-        this.cancel = cancel;
+        this.cancelled = cancel;
     }
 
     @NotNull
     @Override
     public HandlerList getHandlers() {
-        return handlers;
+        return HANDLER_LIST;
     }
 
     @NotNull
     public static HandlerList getHandlerList() {
-        return handlers;
+        return HANDLER_LIST;
     }
 }
