@@ -41,12 +41,7 @@ public class PlayerRespawnEvent extends PlayerEvent {
     @ApiStatus.Internal
     @Deprecated(forRemoval = true)
     public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final RespawnReason respawnReason) {
-        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, respawnReason, com.google.common.collect.ImmutableSet.builder());
-    }
-
-    @ApiStatus.Internal
-    public PlayerRespawnEvent(@NotNull final Player respawnPlayer, @NotNull final Location respawnLocation, final boolean isBedSpawn, final boolean isAnchorSpawn, @NotNull final RespawnReason respawnReason, @NotNull final com.google.common.collect.ImmutableSet.Builder<org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag> respawnFlags) {
-        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, false, respawnReason, respawnFlags);
+        this(respawnPlayer, respawnLocation, isBedSpawn, isAnchorSpawn, false, respawnReason, com.google.common.collect.ImmutableSet.builder());
     }
 
     @ApiStatus.Internal
