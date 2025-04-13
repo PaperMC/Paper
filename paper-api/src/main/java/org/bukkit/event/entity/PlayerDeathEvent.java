@@ -264,13 +264,13 @@ public class PlayerDeathEvent extends EntityDeathEvent {
      * <br>
      * You <b>MUST</b> remove the item from the .getDrops() collection too or it will duplicate!
      * <pre>{@code
-     * private static final NamespacedKey soulboundKey = new NamespacedKey("testplugin", "soulbound");
+     * private static final NamespacedKey SOULBOUND_KEY = new NamespacedKey("testplugin", "soulbound");
      *
      * @EventHandler(ignoreCancelled = true)
      * public void onPlayerDeath(PlayerDeathEvent event) {
      *     for (Iterator<ItemStack> iterator = event.getDrops().iterator(); iterator.hasNext(); ) {
      *         ItemStack drop = iterator.next();
-     *         if (drop.getPersistentDataContainer().getOrDefault(soulboundKey, PersistentDataType.BOOLEAN, false)) {
+     *         if (drop.getPersistentDataContainer().getOrDefault(SOULBOUND_KEY, PersistentDataType.BOOLEAN, false)) {
      *             iterator.remove();
      *             event.getItemsToKeep().add(drop);
      *         }
