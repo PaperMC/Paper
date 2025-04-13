@@ -7,6 +7,8 @@ import org.bukkit.craftbukkit.block.CraftBiome;
 import org.bukkit.craftbukkit.damage.CraftDamageEffect;
 import org.bukkit.damage.DamageEffect;
 import org.jspecify.annotations.NullMarked;
+import java.util.ArrayList;
+import java.util.List;
 
 @NullMarked
 public class PaperServerInternalAPIBridge implements InternalAPIBridge {
@@ -25,17 +27,18 @@ public class PaperServerInternalAPIBridge implements InternalAPIBridge {
         return Holder.LEGACY_CUSTOM;
     }
 
+    private final List<String> enabledGameRules = new ArrayList<>();
+
     @Override
     public boolean isGameRuleEnabled(final String gameRule) {
-        final boolean[] isPresent = {false};
-        MinecraftServer.getServer().getGameRules().visitGameRuleTypes(new GameRules.GameRuleTypeVisitor() {
-            @Override
-            public <T extends GameRules.Value<T>> void visit(final GameRules.Key<T> key, final GameRules.Type<T> type) {
-                if (key.getId().equals(gameRule)) {
-                    isPresent[0] |= true;
+        if (enabledGameRules.isEmpty()) {
+            MinecraftServer.getServer().getGameRules().visitGameRuleTypes(new GameRules.GameRuleTypeVisitor() {
+                @Override
+                public <T extends GameRules.Value<T>> void visit(final GameRules.Key<T> key, final GameRules.Type<T> type) {
+                    enabledGameRules.add(key.toString());
                 }
-            }
-        });
-        return isPresent[0];
+            });
+        }
+        return enabledGameRules.contains(gameRule);
     }
 }
