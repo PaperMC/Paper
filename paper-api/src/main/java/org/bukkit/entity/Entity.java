@@ -1048,12 +1048,10 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
     /**
      * Check if entity is in water or rain
      *
-     * @deprecated use {@link #isInWater()}} and {@link #isInRain()}
+     * @see #isInWater()
+     * @see #isInRain()
      */
-    @Deprecated(since = "1.21.5")
-    default boolean isInWaterOrRain() {
-        return this.isInWater() || this.isInRain();
-    }
+    boolean isInWaterOrRain();
 
     /**
      * Check if entity is in water or bubble column
