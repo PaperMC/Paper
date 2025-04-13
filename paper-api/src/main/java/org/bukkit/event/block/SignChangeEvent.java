@@ -1,5 +1,6 @@
 package org.bukkit.event.block;
 
+import com.google.common.base.Preconditions;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.block.Block;
@@ -24,7 +25,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
     private final Player player;
-    private final List<@Nullable Component> adventure$lines;
+    private List<@Nullable Component> adventure$lines;
     private final Side side;
 
     private boolean cancelled;
@@ -32,8 +33,9 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     @ApiStatus.Internal
     public SignChangeEvent(final Block sign, final Player player, final List<@Nullable Component> adventure$lines, Side side) {
         super(sign);
+        Preconditions.checkArgument(adventure$lines != null && adventure$lines.size() == 4, "Signs must contain exactly 4 lines of text");
         this.player = player;
-        this.adventure$lines = adventure$lines;
+        this.adventure$lines = new ArrayList<>(adventure$lines);
         this.side = side;
     }
 
@@ -53,8 +55,9 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
     @Deprecated(forRemoval = true)
     public SignChangeEvent(final Block sign, final Player thePlayer, final @Nullable String[] theLines, Side side) {
         super(sign);
+        Preconditions.checkArgument(theLines != null && theLines.length == 4, "Signs must contain exactly 4 lines of text");
         this.player = thePlayer;
-        this.adventure$lines = new ArrayList<>();
+        this.adventure$lines = new ArrayList<>(4);
         for (String theLine : theLines) {
             this.adventure$lines.add(theLine == null ? null : LegacyComponentSerializer.legacySection().deserialize(theLine));
         }
@@ -72,11 +75,23 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
 
     /**
      * Gets all the lines of text from the sign involved in this event.
+     * <p>Changes to the list won't affect the sign's lines of text.
      *
      * @return the String array for the sign's lines new text
      */
     public List<@Nullable Component> lines() {
-        return this.adventure$lines;
+        return new ArrayList<>(this.adventure$lines);
+    }
+
+    /**
+     * Sets all the lines of text for the sign involved in this event.
+     *
+     * @param lines lines
+     * @throws IllegalArgumentException if there aren't exactly 4 lines of text
+     */
+    public void lines(List<@Nullable Component> lines) {
+        Preconditions.checkArgument(lines != null && lines.size() == 4, "Signs must contain exactly 4 lines of text");
+        this.adventure$lines = new ArrayList<>(lines);
     }
 
     /**
@@ -106,6 +121,7 @@ public class SignChangeEvent extends BlockEvent implements Cancellable {
 
     /**
      * Gets all the lines of text from the sign involved in this event.
+     * <p>Changes to the array won't affect the sign's lines of text.
      *
      * @return the String array for the sign's lines new text
      * @deprecated in favour of {@link #lines()}
