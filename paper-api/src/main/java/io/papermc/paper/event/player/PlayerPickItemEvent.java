@@ -1,6 +1,8 @@
 package io.papermc.paper.event.player;
 
 import com.google.common.base.Preconditions;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.HandlerList;
@@ -8,6 +10,7 @@ import org.bukkit.event.player.PlayerEvent;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Range;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Event that is fired when a player uses the pick item functionality (middle-clicking a block or entity to get the
@@ -19,16 +22,50 @@ public class PlayerPickItemEvent extends PlayerEvent implements Cancellable {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
 
+    private final @Nullable Block block;
+    private final @Nullable Entity entity;
+    private final boolean includeData;
+
     private int targetSlot;
     private int sourceSlot;
 
     private boolean cancelled;
 
     @ApiStatus.Internal
-    public PlayerPickItemEvent(final Player player, final int targetSlot, final int sourceSlot) {
+    public PlayerPickItemEvent(final Player player, final @Nullable Block block, final @Nullable Entity entity, final boolean includeData, final int targetSlot, final int sourceSlot) {
         super(player);
+        this.block = block;
+        this.entity = entity;
+        this.includeData = includeData;
         this.targetSlot = targetSlot;
         this.sourceSlot = sourceSlot;
+    }
+
+    /**
+     * Retrieves the block associated with this event.
+     *
+     * @return the block involved in the event, or {@code null} if no block is associated
+     */
+    public @Nullable Block getBlock() {
+        return this.block;
+    }
+
+    /**
+     * Retrieves the entity associated with this event.
+     *
+     * @return the entity involved in the event, or {@code null} if no entity is associated
+     */
+    public @Nullable Entity getEntity() {
+        return this.entity;
+    }
+
+    /**
+     * Checks whether the player wants block/entity data included.
+     *
+     * @return {@code true} if data is included, otherwise {@code false}.
+     */
+    public boolean isIncludeData() {
+        return includeData;
     }
 
     /**
